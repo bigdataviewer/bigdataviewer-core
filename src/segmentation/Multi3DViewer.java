@@ -1,19 +1,9 @@
 package segmentation;
 
-import gui.AbstractInteractiveViewer;
-import gui.GUI;
-import gui.TransformEventHandler3D;
-import ij.ImagePlus;
-import ij.process.ColorProcessor;
-
-import java.awt.Color;
 import java.awt.Font;
-import java.awt.Graphics2D;
-import java.awt.Image;
-import java.awt.RenderingHints;
+import java.awt.Graphics;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.awt.geom.GeneralPath;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -31,8 +21,12 @@ import net.imglib2.realtransform.AffineRandomAccessible;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.NumericType;
+import net.imglib2.ui.AbstractInteractiveDisplay3D;
+import net.imglib2.ui.ScreenImageRenderer;
+import net.imglib2.ui.TransformListener3D;
+import net.imglib2.ui.swing.SwingInteractiveDisplay3D;
 
-public class Multi3DViewer extends AbstractInteractiveViewer implements TransformEventHandler3D.TransformListener
+public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 {
 	public static class SourceAndConverter< T extends NumericType< T > >
 	{
@@ -65,40 +59,32 @@ public class Multi3DViewer extends AbstractInteractiveViewer implements Transfor
 	protected XYRandomAccessibleProjector< ?, ARGBType > projector;
 
 	/**
-	 * the size of the {@link #source}. This is used for displaying the
-	 * navigation wire-frame cube.
+	 * render target
 	 */
-	final Interval sourceInterval;
+	protected ARGBScreenImage screenImage;
 
 	/**
-	 * Display.
+	 * A transformation to apply to {@link #source} before applying the
+	 * interactive viewer {@link #viewerTransform transform}.
 	 */
-	final protected ImagePlus imp;
+	final protected AffineTransform3D sourceTransform;
 
 	/**
-	 * Used to render into {@link #imp}.
+	 * Transformation set by the interactive viewer.
 	 */
-	final protected ARGBScreenImage screenImage;
+	final protected AffineTransform3D viewerTransform = new AffineTransform3D();
 
 	/**
-	 * Key and mouse handler, that maintains the current transformation. It
-	 * triggers {@link #setTransform(AffineTransform2D), {
-	 * @link #toggleInterpolation()}, and {@link #quit()}.
+	 * Transformation from {@link #source} to {@link #screenImage}. This is a
+	 * concatenation of {@link #sourceTransform} and the interactive
+	 * viewer {@link #viewerTransform transform}.
 	 */
-	protected TransformEventHandler3D transformEventHandler;
+	final protected AffineTransform3D sourceToScreen = new AffineTransform3D();
 
 	/**
-	 * Register and restore key and mouse handlers.
+	 * Window used for displaying the rendered {@link #screenImage}.
 	 */
-	protected GUI gui;
-
-	final private ArrayList< AffineTransform3D > list = new ArrayList< AffineTransform3D >();
-
-	final private AffineTransform3D affine = new AffineTransform3D();
-
-	final private AffineTransform3D reducedAffine = new AffineTransform3D();
-
-	final private AffineTransform3D reducedAffineCopy = new AffineTransform3D();
+	final protected AbstractInteractiveDisplay3D display;
 
 	protected int currentSource = 0;
 
@@ -126,33 +112,58 @@ public class Multi3DViewer extends AbstractInteractiveViewer implements Transfor
 	 * @param currentSlice
 	 *            which slice to display initially.
 	 */
-	public Multi3DViewer( final int width, final int height, final Collection< SourceAndConverter< ? > > sources, final Interval sourceInterval, final AffineTransform3D initialTransform, final double yScale, final double zScale, final double currentSlice )
+	public Multi3DViewer( final int width, final int height, final Collection< SourceAndConverter< ? > > sources, final Interval sourceInterval, final AffineTransform3D sourceTransform )
 	{
 		this.sources = new ArrayList< SourceAndConverter< ? > >( sources );
-		this.sourceInterval = sourceInterval;
+		this.sourceTransform = sourceTransform;
 
-		final ColorProcessor cp = new ColorProcessor( width, height );
-		screenImage = new ARGBScreenImage( cp.getWidth(), cp.getHeight(), ( int[] ) cp.getPixels() );
-		projector = ( this.sources.size() > 0 ) ? createProjector( this.sources.get( 0 ) ) : null;
+//		display = new ImagePlusInteractiveDisplay3D( width, height, sourceInterval, sourceTransform, this, this );
+		display = new SwingInteractiveDisplay3D( width, height, sourceInterval, sourceTransform, this, this );
+		display.addHandler( new SourceSwitcher() );
+		display.startPainter();
+	}
 
-		if ( initialTransform != null )
-			list.add( initialTransform );
-		list.add( affine );
-		TransformEventHandler3D.reduceAffineTransformList( list, reducedAffine );
+	public void setSourceTransform( final AffineTransform3D transform )
+	{
+		sourceTransform.set( transform );
+		display.requestRepaint();
+	}
 
-		imp = new ImagePlus( "argbScreenProjection", cp );
-		imp.show();
-		imp.getCanvas().setMagnification( 1.0 );
-		imp.updateAndDraw();
+	@Override
+	public void screenImageChanged( final ARGBScreenImage screenImage )
+	{
+		this.screenImage = screenImage;
+		projector = createProjector( sources.get( currentSource ) );
+	}
 
-		// create and register key and mouse handler
-		transformEventHandler = new TransformEventHandler3D( imp, this, yScale, zScale, currentSlice );
-		gui = new GUI( imp );
-		gui.addHandler( transformEventHandler );
-		gui.addHandler( new SourceSwitcher() );
+	@Override
+	public void drawScreenImage()
+	{
+		synchronized( viewerTransform )
+		{
+			sourceToScreen.set( viewerTransform );
+		}
+		sourceToScreen.concatenate( sourceTransform );
+		projector.map();
+	}
 
-		requestRepaint();
-		startPainter();
+	@Override
+	public void drawOverlays( final Graphics g )
+	{
+		if ( !sources.isEmpty() )
+		{
+			g.setFont( new Font( "SansSerif", Font.PLAIN, 12 ) );
+			g.drawString( sources.get( currentSource ).name, ( int ) screenImage.dimension( 0 ) / 2, 10 );
+		}
+	}
+
+	@Override
+	public void transformChanged( final AffineTransform3D transform )
+	{
+		synchronized( viewerTransform )
+		{
+			viewerTransform.set( transform );
+		}
 	}
 
 	/**
@@ -172,15 +183,7 @@ public class Multi3DViewer extends AbstractInteractiveViewer implements Transfor
 		currentSource = sourceIndex < 0 ? 0 : ( sourceIndex >= sources.size() ? sources.size() - 1 : sourceIndex );
 		if ( currentSource >= 0 )
 			projector = createProjector( sources.get( currentSource ) );
-		requestRepaint();
-	}
-
-	/**
-	 * Add new event handler.
-	 */
-	public void addHandler( final Object handler )
-	{
-		gui.addHandler( handler );
+		display.requestRepaint();
 	}
 
 	protected < T extends NumericType< T > > XYRandomAccessibleProjector< T, ARGBType > createProjector( final SourceAndConverter< T > source )
@@ -197,7 +200,7 @@ public class Multi3DViewer extends AbstractInteractiveViewer implements Transfor
 			break;
 		}
 		final Interpolant< T, RandomAccessible< T > > interpolant = new Interpolant< T, RandomAccessible< T > >( source.source, interpolatorFactory );
-		final AffineRandomAccessible< T, AffineGet > mapping = new AffineRandomAccessible< T, AffineGet >( interpolant, reducedAffineCopy.inverse() );
+		final AffineRandomAccessible< T, AffineGet > mapping = new AffineRandomAccessible< T, AffineGet >( interpolant, sourceToScreen.inverse() );
 		return new XYRandomAccessibleProjector< T, ARGBType >( mapping, screenImage, source.converter );
 	}
 
@@ -210,7 +213,9 @@ public class Multi3DViewer extends AbstractInteractiveViewer implements Transfor
 		@Override
 		public void keyPressed( final KeyEvent e )
 		{
-			if ( e.getKeyCode() == KeyEvent.VK_1 )
+			if ( e.getKeyCode() == KeyEvent.VK_I )
+				toggleInterpolation();
+			else if ( e.getKeyCode() == KeyEvent.VK_1 )
 				setCurrentSource( 0 );
 			else if ( e.getKeyCode() == KeyEvent.VK_2 )
 				setCurrentSource( 1 );
@@ -241,33 +246,9 @@ public class Multi3DViewer extends AbstractInteractiveViewer implements Transfor
 		{}
 	}
 
-	// -- TransformEventHandler3D.TransformListener --
-
-	@Override
-	public void setTransform( final AffineTransform3D transform )
-	{
-		synchronized ( reducedAffine )
-		{
-			affine.set( transform );
-			TransformEventHandler3D.reduceAffineTransformList( list, reducedAffine );
-		}
-		requestRepaint();
-	}
-
-	@Override
-	public void quit()
-	{
-		stopPainter();
-		if ( imp != null )
-		{
-			gui.restoreGui();
-		}
-	}
-
 	protected int interpolation = 0;
 
-	@Override
-	public void toggleInterpolation()
+	protected void toggleInterpolation()
 	{
 		++interpolation;
 		interpolation %= 2;
@@ -275,166 +256,6 @@ public class Multi3DViewer extends AbstractInteractiveViewer implements Transfor
 			currentSource = sources.size() - 1;
 		if ( currentSource >= 0 )
 			projector = createProjector( sources.get( currentSource ) );
-		requestRepaint();
-	}
-
-	// -- AbstractInteractiveExample --
-
-	@Override
-	public void paint()
-	{
-		synchronized ( reducedAffine )
-		{
-			reducedAffineCopy.set( reducedAffine );
-		}
-		projector.map();
-		visualize();
-		imp.updateAndDraw();
-	}
-
-	private double perspectiveX( final double[] p, final double d, final double w2 )
-	{
-		return ( p[ 0 ] - w2 ) / 10 / ( p[ 2 ] / 10 + d ) * d + w2 / 5;
-	}
-
-	private double perspectiveY( final double[] p, final double d, final double h2 )
-	{
-		return ( p[ 1 ] - h2 ) / 10 / ( p[ 2 ] / 10 + d ) * d + h2 / 5;
-	}
-
-	private void splitEdge( final double[] a, final double[] b, final GeneralPath before, final GeneralPath behind, final double d2, final double w2, final double h2 )
-	{
-		final double[] t = new double[ 3 ];
-		if ( a[ 2 ] <= 0 )
-		{
-			before.moveTo( perspectiveX( a, d2, w2 ), perspectiveY( a, d2, h2 ) );
-			if ( b[ 2 ] <= 0 )
-				before.lineTo( perspectiveX( b, d2, w2 ), perspectiveY( b, d2, h2 ) );
-			else
-			{
-				final double d = a[ 2 ] / ( a[ 2 ] - b[ 2 ] );
-				t[ 0 ] = ( b[ 0 ] - a[ 0 ] ) * d + a[ 0 ];
-				t[ 1 ] = ( b[ 1 ] - a[ 1 ] ) * d + a[ 1 ];
-				before.lineTo( perspectiveX( t, d2, w2 ), perspectiveY( t, d2, h2 ) );
-				behind.moveTo( perspectiveX( t, d2, w2 ), perspectiveY( t, d2, h2 ) );
-				behind.lineTo( perspectiveX( b, d2, w2 ), perspectiveY( b, d2, h2 ) );
-			}
-		}
-		else
-		{
-			behind.moveTo( perspectiveX( a, d2, w2 ), perspectiveY( a, d2, h2 ) );
-			if ( b[ 2 ] > 0 )
-				behind.lineTo( perspectiveX( b, d2, w2 ), perspectiveY( b, d2, h2 ) );
-			else
-			{
-				final double d = a[ 2 ] / ( a[ 2 ] - b[ 2 ] );
-				t[ 0 ] = ( b[ 0 ] - a[ 0 ] ) * d + a[ 0 ];
-				t[ 1 ] = ( b[ 1 ] - a[ 1 ] ) * d + a[ 1 ];
-				behind.lineTo( perspectiveX( t, d2, w2 ), perspectiveY( t, d2, h2 ) );
-				before.moveTo( perspectiveX( t, d2, w2 ), perspectiveY( t, d2, h2 ) );
-				before.lineTo( perspectiveX( b, d2, w2 ), perspectiveY( b, d2, h2 ) );
-			}
-		}
-	}
-
-	final protected void visualize()
-	{
-		final double w = sourceInterval.dimension( 0 ) - 1;
-		final double h = sourceInterval.dimension( 1 ) - 1;
-		final double d = sourceInterval.dimension( 2 ) - 1;
-		final double w2 = screenImage.dimension( 0 ) / 2.0;
-		final double h2 = screenImage.dimension( 1 ) / 2.0;
-		final double d2 = d;
-
-		final double[] p000 = new double[] { 0, 0, 0 };
-		final double[] p100 = new double[] { w, 0, 0 };
-		final double[] p010 = new double[] { 0, h, 0 };
-		final double[] p110 = new double[] { w, h, 0 };
-		final double[] p001 = new double[] { 0, 0, d };
-		final double[] p101 = new double[] { w, 0, d };
-		final double[] p011 = new double[] { 0, h, d };
-		final double[] p111 = new double[] { w, h, d };
-
-		final double[] q000 = new double[ 3 ];
-		final double[] q100 = new double[ 3 ];
-		final double[] q010 = new double[ 3 ];
-		final double[] q110 = new double[ 3 ];
-		final double[] q001 = new double[ 3 ];
-		final double[] q101 = new double[ 3 ];
-		final double[] q011 = new double[ 3 ];
-		final double[] q111 = new double[ 3 ];
-
-		final double[] px = new double[] { w / 2, 0, 0 };
-		final double[] py = new double[] { 0, h / 2, 0 };
-		final double[] pz = new double[] { 0, 0, d / 2 };
-
-		final double[] qx = new double[ 3 ];
-		final double[] qy = new double[ 3 ];
-		final double[] qz = new double[ 3 ];
-
-		final double[] c000 = new double[] { 0, 0, 0 };
-		final double[] c100 = new double[] { screenImage.dimension( 0 ), 0, 0 };
-		final double[] c010 = new double[] { 0, screenImage.dimension( 1 ), 0 };
-		final double[] c110 = new double[] { screenImage.dimension( 0 ), screenImage.dimension( 1 ), 0 };
-
-		reducedAffineCopy.apply( p000, q000 );
-		reducedAffineCopy.apply( p100, q100 );
-		reducedAffineCopy.apply( p010, q010 );
-		reducedAffineCopy.apply( p110, q110 );
-		reducedAffineCopy.apply( p001, q001 );
-		reducedAffineCopy.apply( p101, q101 );
-		reducedAffineCopy.apply( p011, q011 );
-		reducedAffineCopy.apply( p111, q111 );
-
-		reducedAffineCopy.apply( px, qx );
-		reducedAffineCopy.apply( py, qy );
-		reducedAffineCopy.apply( pz, qz );
-
-		final GeneralPath box = new GeneralPath();
-		final GeneralPath boxBehind = new GeneralPath();
-
-		splitEdge( q000, q100, box, boxBehind, d2, w2, h2 );
-		splitEdge( q100, q110, box, boxBehind, d2, w2, h2 );
-		splitEdge( q110, q010, box, boxBehind, d2, w2, h2 );
-		splitEdge( q010, q000, box, boxBehind, d2, w2, h2 );
-
-		splitEdge( q001, q101, box, boxBehind, d2, w2, h2 );
-		splitEdge( q101, q111, box, boxBehind, d2, w2, h2 );
-		splitEdge( q111, q011, box, boxBehind, d2, w2, h2 );
-		splitEdge( q011, q001, box, boxBehind, d2, w2, h2 );
-
-		splitEdge( q000, q001, box, boxBehind, d2, w2, h2 );
-		splitEdge( q100, q101, box, boxBehind, d2, w2, h2 );
-		splitEdge( q110, q111, box, boxBehind, d2, w2, h2 );
-		splitEdge( q010, q011, box, boxBehind, d2, w2, h2 );
-
-		/* virtual slice canvas */
-		final GeneralPath canvas = new GeneralPath();
-		canvas.moveTo( perspectiveX( c000, d2, w2 ), perspectiveY( c000, d2, h2 ) );
-		canvas.lineTo( perspectiveX( c100, d2, w2 ), perspectiveY( c100, d2, h2 ) );
-		canvas.lineTo( perspectiveX( c110, d2, w2 ), perspectiveY( c110, d2, h2 ) );
-		canvas.lineTo( perspectiveX( c010, d2, w2 ), perspectiveY( c010, d2, h2 ) );
-		canvas.closePath();
-
-		final Image image = imp.getImage();
-		final Graphics2D graphics = ( Graphics2D ) image.getGraphics();
-		graphics.setRenderingHint( RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON );
-		graphics.setPaint( Color.MAGENTA );
-		graphics.draw( boxBehind );
-		graphics.setPaint( new Color( 0x80ffffff, true ) );
-		graphics.fill( canvas );
-		graphics.setPaint( Color.GREEN );
-		graphics.draw( box );
-		graphics.setPaint( Color.WHITE );
-		graphics.setFont( new Font( "SansSerif", Font.PLAIN, 8 ) );
-		graphics.drawString( "x", ( float ) perspectiveX( qx, d2, w2 ), ( float ) perspectiveY( qx, d2, h2 ) - 2 );
-		graphics.drawString( "y", ( float ) perspectiveX( qy, d2, w2 ), ( float ) perspectiveY( qy, d2, h2 ) - 2 );
-		graphics.drawString( "z", ( float ) perspectiveX( qz, d2, w2 ), ( float ) perspectiveY( qz, d2, h2 ) - 2 );
-
-		if ( !sources.isEmpty() )
-		{
-			graphics.setFont( new Font( "SansSerif", Font.PLAIN, 12 ) );
-			graphics.drawString( sources.get( currentSource ).name, ( int ) w2, 10 );
-		}
+		display.requestRepaint();
 	}
 }
