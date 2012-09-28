@@ -1,4 +1,4 @@
-package segmentation;
+package viewer;
 
 import java.awt.Font;
 import java.awt.Graphics;
