@@ -40,12 +40,18 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 		 */
 		final protected Converter< T, ARGBType > converter;
 
+		/**
+		 * transforms {@link #source} into the viewer coordinate system.
+		 */
+		final protected AffineTransform3D sourceTransform;
+
 		final protected String name;
 
-		public SourceAndConverter( final RandomAccessible< T > source, final Converter< T, ARGBType > converter, final String name )
+		public SourceAndConverter( final RandomAccessible< T > source, final Converter< T, ARGBType > converter, final AffineTransform3D sourceTransform, final String name )
 		{
 			this.source = source;
 			this.converter = converter;
+			this.sourceTransform = sourceTransform;
 			this.name = name;
 		}
 	}
@@ -112,21 +118,15 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 	 * @param currentSlice
 	 *            which slice to display initially.
 	 */
-	public Multi3DViewer( final int width, final int height, final Collection< SourceAndConverter< ? > > sources, final Interval sourceInterval, final AffineTransform3D sourceTransform )
+	public Multi3DViewer( final int width, final int height, final Collection< SourceAndConverter< ? > > sources, final Interval sourceInterval )
 	{
 		this.sources = new ArrayList< SourceAndConverter< ? > >( sources );
-		this.sourceTransform = sourceTransform;
+		this.sourceTransform = new AffineTransform3D();
 
 //		display = new ImagePlusInteractiveDisplay3D( width, height, sourceInterval, sourceTransform, this, this );
 		display = new SwingInteractiveDisplay3D( width, height, sourceInterval, sourceTransform, this, this );
 		display.addHandler( new SourceSwitcher() );
 		display.startPainter();
-	}
-
-	public void setSourceTransform( final AffineTransform3D transform )
-	{
-		sourceTransform.set( transform );
-		display.requestRepaint();
 	}
 
 	@Override
@@ -182,7 +182,10 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 	{
 		currentSource = sourceIndex < 0 ? 0 : ( sourceIndex >= sources.size() ? sources.size() - 1 : sourceIndex );
 		if ( currentSource >= 0 )
+		{
+			sourceTransform.set( sources.get( currentSource ).sourceTransform );
 			projector = createProjector( sources.get( currentSource ) );
+		}
 		display.requestRepaint();
 	}
 
