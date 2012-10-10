@@ -10,21 +10,26 @@ import java.util.Collection;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessible;
 import net.imglib2.converter.Converter;
+import net.imglib2.converter.Converters;
+import net.imglib2.converter.TypeIdentity;
 import net.imglib2.display.ARGBScreenImage;
+import net.imglib2.display.Projector;
 import net.imglib2.display.XYRandomAccessibleProjector;
-import net.imglib2.interpolation.Interpolant;
 import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory;
 import net.imglib2.realtransform.AffineGet;
 import net.imglib2.realtransform.AffineRandomAccessible;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.NumericType;
 import net.imglib2.ui.AbstractInteractiveDisplay3D;
 import net.imglib2.ui.ScreenImageRenderer;
 import net.imglib2.ui.TransformListener3D;
 import net.imglib2.ui.swing.SwingInteractiveDisplay3D;
+import net.imglib2.view.Views;
+import viewer.display.AccumulateARGB;
 
 public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 {
@@ -47,6 +52,13 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 
 		final protected String name;
 
+		/**
+		 * Transformation from {@link #source} to {@link #screenImage}. This is a
+		 * concatenation of {@link #sourceTransform} and the interactive
+		 * viewer {@link #viewerTransform transform}.
+		 */
+		final protected AffineTransform3D sourceToScreen = new AffineTransform3D();
+
 		public SourceAndConverter( final RandomAccessible< T > source, final Converter< T, ARGBType > converter, final AffineTransform3D sourceTransform, final String name )
 		{
 			this.source = source;
@@ -62,7 +74,7 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 	 * Currently active projector, used to re-paint the display. It maps the
 	 * {@link #source} data to {@link #screenImage}.
 	 */
-	protected XYRandomAccessibleProjector< ?, ARGBType > projector;
+	protected Projector< ?, ARGBType > projector;
 
 	/**
 	 * render target
@@ -79,13 +91,6 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 	 * Transformation set by the interactive viewer.
 	 */
 	final protected AffineTransform3D viewerTransform = new AffineTransform3D();
-
-	/**
-	 * Transformation from {@link #source} to {@link #screenImage}. This is a
-	 * concatenation of {@link #sourceTransform} and the interactive
-	 * viewer {@link #viewerTransform transform}.
-	 */
-	final protected AffineTransform3D sourceToScreen = new AffineTransform3D();
 
 	/**
 	 * Window used for displaying the rendered {@link #screenImage}.
@@ -141,9 +146,11 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 	{
 		synchronized( viewerTransform )
 		{
-			sourceToScreen.set( viewerTransform );
+			for ( final SourceAndConverter< ? > source : sources )
+				source.sourceToScreen.set( viewerTransform );
 		}
-		sourceToScreen.concatenate( sourceTransform );
+		for ( final SourceAndConverter< ? > source : sources )
+			source.sourceToScreen.concatenate( source.sourceTransform );
 		projector.map();
 	}
 
@@ -202,9 +209,37 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 			interpolatorFactory = new NLinearInterpolatorFactory< T >();
 			break;
 		}
-		final Interpolant< T, RandomAccessible< T > > interpolant = new Interpolant< T, RandomAccessible< T > >( source.source, interpolatorFactory );
-		final AffineRandomAccessible< T, AffineGet > mapping = new AffineRandomAccessible< T, AffineGet >( interpolant, sourceToScreen.inverse() );
+		final AffineRandomAccessible< T, AffineGet > mapping = RealViews.affine(
+				Views.interpolate( source.source, interpolatorFactory ),
+				source.sourceToScreen );
 		return new XYRandomAccessibleProjector< T, ARGBType >( mapping, screenImage, source.converter );
+	}
+
+	protected < T extends NumericType< T > > RandomAccessible< ARGBType > getConverted( final SourceAndConverter< T > source )
+	{
+		final InterpolatorFactory< T, RandomAccessible< T > > interpolatorFactory;
+		switch ( interpolation )
+		{
+		case 0:
+			interpolatorFactory = new NearestNeighborInterpolatorFactory< T >();
+			break;
+		case 1:
+		default:
+			interpolatorFactory = new NLinearInterpolatorFactory< T >();
+			break;
+		}
+		final AffineRandomAccessible< T, AffineGet > mapping = RealViews.affine(
+				Views.interpolate( source.source, interpolatorFactory ),
+				source.sourceToScreen );
+		return Converters.convert( mapping, source.converter, new ARGBType() );
+	}
+
+	protected XYRandomAccessibleProjector< ?, ARGBType > createCompositeProjector()
+	{
+		final ArrayList< RandomAccessible< ARGBType > > accessibles = new ArrayList< RandomAccessible< ARGBType > >( sources.size() );
+		for ( final SourceAndConverter< ? > source : sources )
+			accessibles.add( getConverted( source ) );
+		return new XYRandomAccessibleProjector< ARGBType, ARGBType >( new AccumulateARGB( accessibles ), screenImage, new TypeIdentity< ARGBType >() );
 	}
 
 	protected class SourceSwitcher implements KeyListener
@@ -218,6 +253,8 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 		{
 			if ( e.getKeyCode() == KeyEvent.VK_I )
 				toggleInterpolation();
+			if ( e.getKeyCode() == KeyEvent.VK_F )
+				toggleFuse();
 			else if ( e.getKeyCode() == KeyEvent.VK_1 )
 				setCurrentSource( 0 );
 			else if ( e.getKeyCode() == KeyEvent.VK_2 )
@@ -247,6 +284,18 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 		@Override
 		public void keyReleased( final KeyEvent e )
 		{}
+	}
+
+	protected boolean fuse = false;
+
+	protected void toggleFuse()
+	{
+		fuse = !fuse;
+		if ( fuse )
+			projector = createCompositeProjector();
+		else
+			projector = createProjector( sources.get( currentSource ) );
+		display.requestRepaint();
 	}
 
 	protected int interpolation = 0;
