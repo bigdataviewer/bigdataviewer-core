@@ -52,13 +52,6 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 
 		final protected String name;
 
-		/**
-		 * Transformation from {@link #source} to {@link #screenImage}. This is a
-		 * concatenation of {@link #sourceTransform} and the interactive
-		 * viewer {@link #viewerTransform transform}.
-		 */
-		final protected AffineTransform3D sourceToScreen = new AffineTransform3D();
-
 		public SourceAndConverter( final RandomAccessible< T > source, final Converter< T, ARGBType > converter, final AffineTransform3D sourceTransform, final String name )
 		{
 			this.source = source;
@@ -68,7 +61,48 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 		}
 	}
 
-	protected ArrayList< SourceAndConverter< ? > > sources;
+	/**
+	 * {@link SourceAndConverter} with some attached properties needed for rendering.
+	 */
+	protected static class SourceDisplay< T extends NumericType< T > > extends SourceAndConverter< T >
+	{
+		/**
+		 * Transformation from {@link #source} to {@link #screenImage}. This is a
+		 * concatenation of {@link #sourceTransform} and the interactive
+		 * viewer {@link #viewerTransform transform}.
+		 */
+		final protected AffineTransform3D sourceToScreen;
+
+		/**
+		 * whether this source is currently visible in {@link #screenImage}.
+		 */
+		private boolean isVisible;
+
+		public SourceDisplay( final SourceAndConverter< T > source )
+		{
+			super( source.source, source.converter, source.sourceTransform, source.name );
+			sourceToScreen = new AffineTransform3D();
+			isVisible = true;
+		}
+
+		public static < T extends NumericType< T > > SourceDisplay< T > create( final SourceAndConverter< T > source )
+		{
+			return new SourceDisplay< T >( source );
+		}
+
+		public boolean isVisible()
+		{
+			return isVisible;
+		}
+
+		public void setVisible( final boolean isVisible )
+		{
+			this.isVisible = isVisible;
+		}
+	}
+
+
+	protected ArrayList< SourceDisplay< ? > > sources;
 
 	/**
 	 * Currently active projector, used to re-paint the display. It maps the
@@ -84,6 +118,8 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 	/**
 	 * A transformation to apply to {@link #source} before applying the
 	 * interactive viewer {@link #viewerTransform transform}.
+	 *
+	 * TODO: remove this, once the BoxOverlay has been replaced
 	 */
 	final protected AffineTransform3D sourceTransform;
 
@@ -96,8 +132,6 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 	 * Window used for displaying the rendered {@link #screenImage}.
 	 */
 	final protected AbstractInteractiveDisplay3D display;
-
-	protected int currentSource = 0;
 
 	/**
 	 *
@@ -125,7 +159,9 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 	 */
 	public Multi3DViewer( final int width, final int height, final Collection< SourceAndConverter< ? > > sources, final Interval sourceInterval )
 	{
-		this.sources = new ArrayList< SourceAndConverter< ? > >( sources );
+		this.sources = new ArrayList< SourceDisplay< ? > >( sources.size() );
+		for ( final SourceAndConverter< ? > source : sources )
+			this.sources.add( SourceDisplay.create( source ) );
 		this.sourceTransform = new AffineTransform3D();
 
 //		display = new ImagePlusInteractiveDisplay3D( width, height, sourceInterval, sourceTransform, this, this );
@@ -138,7 +174,7 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 	public void screenImageChanged( final ARGBScreenImage screenImage )
 	{
 		this.screenImage = screenImage;
-		projector = createProjector( sources.get( currentSource ) );
+		projector = createProjector();
 	}
 
 	@Override
@@ -146,12 +182,13 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 	{
 		synchronized( viewerTransform )
 		{
-			for ( final SourceAndConverter< ? > source : sources )
+			for ( final SourceDisplay< ? > source : sources )
 				source.sourceToScreen.set( viewerTransform );
 		}
-		for ( final SourceAndConverter< ? > source : sources )
+		for ( final SourceDisplay< ? > source : sources )
 			source.sourceToScreen.concatenate( source.sourceTransform );
-		projector.map();
+		if( projector != null )
+			projector.map();
 	}
 
 	@Override
@@ -178,25 +215,41 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 	 */
 	public void addSource( final SourceAndConverter< ? > source )
 	{
-		sources.add( source );
+		sources.add( SourceDisplay.create( source ) );
 		setCurrentSource( sources.size() - 1 );
 	}
 
 	/**
-	 * Set the index of the source to display.
+	 * Returns a list of all currently active sources.
+	 * TODO: single source mode toggling
+	 * @return
 	 */
-	public void setCurrentSource( final int sourceIndex )
+	final ArrayList< SourceDisplay< ? > > getActiveSources()
 	{
-		currentSource = sourceIndex < 0 ? 0 : ( sourceIndex >= sources.size() ? sources.size() - 1 : sourceIndex );
-		if ( currentSource >= 0 )
-		{
-			sourceTransform.set( sources.get( currentSource ).sourceTransform );
-			projector = createProjector( sources.get( currentSource ) );
-		}
-		display.requestRepaint();
+		final ArrayList< SourceDisplay< ? > > activeSources = new ArrayList< SourceDisplay< ? > >();
+		if ( singleSourceMode && currentSource < sources.size() )
+			activeSources.add( sources.get( currentSource ) );
+		else
+			for ( final SourceDisplay< ? > source : sources )
+				if ( source.isVisible() )
+					activeSources.add( source );
+		return activeSources;
 	}
 
-	protected < T extends NumericType< T > > XYRandomAccessibleProjector< T, ARGBType > createProjector( final SourceAndConverter< T > source )
+	protected Projector< ARGBType, ARGBType > createEmptyProjector()
+	{
+		return new Projector< ARGBType, ARGBType >()
+		{
+			@Override
+			public void map()
+			{
+				for ( final ARGBType t : screenImage )
+					t.setZero();
+			}
+		};
+	}
+
+	protected < T extends NumericType< T > > XYRandomAccessibleProjector< T, ARGBType > createSingleSourceProjector( final SourceDisplay< T > source )
 	{
 		final InterpolatorFactory< T, RandomAccessible< T > > interpolatorFactory;
 		switch ( interpolation )
@@ -215,7 +268,7 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 		return new XYRandomAccessibleProjector< T, ARGBType >( mapping, screenImage, source.converter );
 	}
 
-	protected < T extends NumericType< T > > RandomAccessible< ARGBType > getConverted( final SourceAndConverter< T > source )
+	protected < T extends NumericType< T > > RandomAccessible< ARGBType > getConverted( final SourceDisplay< T > source )
 	{
 		final InterpolatorFactory< T, RandomAccessible< T > > interpolatorFactory;
 		switch ( interpolation )
@@ -234,12 +287,21 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 		return Converters.convert( mapping, source.converter, new ARGBType() );
 	}
 
-	protected XYRandomAccessibleProjector< ?, ARGBType > createCompositeProjector()
+	protected Projector< ?, ARGBType > createProjector()
 	{
-		final ArrayList< RandomAccessible< ARGBType > > accessibles = new ArrayList< RandomAccessible< ARGBType > >( sources.size() );
-		for ( final SourceAndConverter< ? > source : sources )
-			accessibles.add( getConverted( source ) );
-		return new XYRandomAccessibleProjector< ARGBType, ARGBType >( new AccumulateARGB( accessibles ), screenImage, new TypeIdentity< ARGBType >() );
+		final ArrayList< SourceDisplay< ? > > activeSources = getActiveSources();
+		if ( activeSources.isEmpty() )
+			return createEmptyProjector();
+		else if ( activeSources.size() == 1 )
+			return createSingleSourceProjector( activeSources.get( 0 ) );
+		else
+		{
+			final ArrayList< RandomAccessible< ARGBType > > accessibles = new ArrayList< RandomAccessible< ARGBType > >( sources.size() );
+			for ( final SourceDisplay< ? > source : sources )
+				if ( source.isVisible() )
+					accessibles.add( getConverted( source ) );
+			return new XYRandomAccessibleProjector< ARGBType, ARGBType >( new AccumulateARGB( accessibles ), screenImage, new TypeIdentity< ARGBType >() );
+		}
 	}
 
 	protected class SourceSwitcher implements KeyListener
@@ -251,51 +313,43 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 		@Override
 		public void keyPressed( final KeyEvent e )
 		{
+			final int modifiers = e.getModifiersEx();
+			final boolean toggle = ( modifiers & KeyEvent.SHIFT_DOWN_MASK ) != 0;
+
 			if ( e.getKeyCode() == KeyEvent.VK_I )
 				toggleInterpolation();
 			if ( e.getKeyCode() == KeyEvent.VK_F )
-				toggleFuse();
+				toggleSingleSourceMode();
 			else if ( e.getKeyCode() == KeyEvent.VK_1 )
-				setCurrentSource( 0 );
+				selectOrToggleSource( 0, toggle );
 			else if ( e.getKeyCode() == KeyEvent.VK_2 )
-				setCurrentSource( 1 );
+				selectOrToggleSource( 1, toggle );
 			else if ( e.getKeyCode() == KeyEvent.VK_3 )
-				setCurrentSource( 2 );
+				selectOrToggleSource( 2, toggle );
 			else if ( e.getKeyCode() == KeyEvent.VK_4 )
-				setCurrentSource( 3 );
+				selectOrToggleSource( 3, toggle );
 			else if ( e.getKeyCode() == KeyEvent.VK_5 )
-				setCurrentSource( 4 );
+				selectOrToggleSource( 4, toggle );
 			else if ( e.getKeyCode() == KeyEvent.VK_6 )
-				setCurrentSource( 5 );
+				selectOrToggleSource( 5, toggle );
 			else if ( e.getKeyCode() == KeyEvent.VK_7 )
-				setCurrentSource( 6 );
+				selectOrToggleSource( 6, toggle );
 			else if ( e.getKeyCode() == KeyEvent.VK_8 )
-				setCurrentSource( 7 );
+				selectOrToggleSource( 7, toggle );
 			else if ( e.getKeyCode() == KeyEvent.VK_9 )
-				setCurrentSource( 8 );
+				selectOrToggleSource( 8, toggle );
 			else if ( e.getKeyCode() == KeyEvent.VK_0 )
-				setCurrentSource( 9 );
-			else if ( e.getKeyCode() == KeyEvent.VK_B )
-				setCurrentSource( currentSource - 1 );
-			else if ( e.getKeyCode() == KeyEvent.VK_N )
-				setCurrentSource( currentSource + 1 );
+				selectOrToggleSource( 9, toggle );
+			// TODO:
+//			else if ( e.getKeyCode() == KeyEvent.VK_B )
+//				setCurrentSource( currentSource - 1, selectSingleSource );
+//			else if ( e.getKeyCode() == KeyEvent.VK_N )
+//				setCurrentSource( currentSource + 1, selectSingleSource );
 		}
 
 		@Override
 		public void keyReleased( final KeyEvent e )
 		{}
-	}
-
-	protected boolean fuse = false;
-
-	protected void toggleFuse()
-	{
-		fuse = !fuse;
-		if ( fuse )
-			projector = createCompositeProjector();
-		else
-			projector = createProjector( sources.get( currentSource ) );
-		display.requestRepaint();
 	}
 
 	protected int interpolation = 0;
@@ -304,10 +358,54 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 	{
 		++interpolation;
 		interpolation %= 2;
-		if ( currentSource >= sources.size() )
-			currentSource = sources.size() - 1;
-		if ( currentSource >= 0 )
-			projector = createProjector( sources.get( currentSource ) );
+		projector = createProjector();
 		display.requestRepaint();
+	}
+
+	protected boolean singleSourceMode = true;
+
+	public void toggleSingleSourceMode()
+	{
+		singleSourceMode = !singleSourceMode;
+		projector = createProjector();
+		display.requestRepaint();
+	}
+
+	protected int currentSource = 0;
+
+	public void toggleVisibility( final int sourceIndex )
+	{
+		if ( sourceIndex >= 0 && sourceIndex < sources.size() )
+		{
+			final SourceDisplay< ? > source = sources.get( sourceIndex );
+			source.setVisible( !source.isVisible() );
+			if ( !singleSourceMode )
+				projector = createProjector();
+			display.requestRepaint();
+		}
+	}
+
+	/**
+	 * Set the index of the source to display.
+	 */
+	// TODO: Toggle instead of simply activating...
+	public void setCurrentSource( final int sourceIndex )
+	{
+		if ( sourceIndex >= 0 && sourceIndex < sources.size() )
+		{
+			currentSource = sourceIndex;
+			final SourceDisplay< ? > source = sources.get( sourceIndex );
+			sourceTransform.set( source.sourceTransform ); // TODO: remove
+			projector = createProjector();
+			display.requestRepaint();
+		}
+	}
+
+	protected void selectOrToggleSource( final int sourceIndex, final boolean toggle )
+	{
+		if( toggle )
+			toggleVisibility( sourceIndex );
+		else
+			setCurrentSource( sourceIndex );
 	}
 }
