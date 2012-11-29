@@ -3,10 +3,17 @@ package viewer;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsDevice;
+import java.awt.GraphicsEnvironment;
+import java.awt.Transparency;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.image.ColorModel;
 import java.util.ArrayList;
 import java.util.Collection;
+
+import javax.swing.JFrame;
 
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessible;
@@ -25,10 +32,10 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.NumericType;
-import net.imglib2.ui.AbstractInteractiveDisplay3D;
 import net.imglib2.ui.ScreenImageRenderer;
 import net.imglib2.ui.TransformListener3D;
-import net.imglib2.ui.swing.SwingInteractiveDisplay3D;
+import net.imglib2.ui.jcomponent.InteractiveDisplay3DCanvas;
+import net.imglib2.ui.jcomponent.MappingThread;
 import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
 import viewer.display.AccumulateARGB;
@@ -149,9 +156,11 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 	final protected AffineTransform3D viewerTransform = new AffineTransform3D();
 
 	/**
-	 * Window used for displaying the rendered {@link #screenImage}.
+	 * Canvas used for displaying the rendered {@link #screenImage}.
 	 */
-	final protected AbstractInteractiveDisplay3D display;
+	final protected InteractiveDisplay3DCanvas display;
+
+	final protected JFrame frame;
 
 	/**
 	 *
@@ -184,14 +193,60 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 			this.sources.add( SourceDisplay.create( source ) );
 
 		box = new MultiBoxOverlay();
-//		boxInterval = Intervals.createMinSize( 10, 10, 80, 60 );
 		boxInterval = Intervals.createMinSize( 10, 10, 160, 120 );
-//		boxInterval = Intervals.createMinSize( 10, 10, 240, 180 );
 
-//		display = new ImagePlusInteractiveDisplay3D( width, height, this, this );
-		display = new SwingInteractiveDisplay3D( width, height, this, this );
-		display.addHandler( new SourceSwitcher() );
-		display.startPainter();
+		display = new InteractiveDisplay3DCanvas( width, height, this, this );
+
+		// This is how KeyBindings are added to the component directly:
+//		final int c = JComponent.WHEN_IN_FOCUSED_WINDOW;
+//		display.getInputMap( c ).put( KeyStroke.getKeyStroke( "1" ), "1" );
+//		display.getActionMap().put( "1", new AbstractAction()
+//		{
+//			@Override
+//			public void actionPerformed( final ActionEvent e )
+//			{
+//				selectOrToggleSource( 0, false );
+//			}
+//		} );
+//		display.getInputMap( c ).put( KeyStroke.getKeyStroke( "shift 1" ), "shift 1" );
+//		display.getActionMap().put( "shift 1", new AbstractAction()
+//		{
+//			@Override
+//			public void actionPerformed( final ActionEvent e )
+//			{
+//				selectOrToggleSource( 0, true );
+//			}
+//		} );
+
+		final MappingThread painterThread = new MappingThread();
+		painterThread.setPaintable( display );
+		display.setPainterThread( painterThread );
+
+		final GraphicsConfiguration gc = getSuitableGraphicsConfiguration( ARGBScreenImage.ARGB_COLOR_MODEL );
+		frame = new JFrame( "multi-angle viewer", gc );
+		frame.getRootPane().setDoubleBuffered( true );
+		frame.getContentPane().add( display );
+		frame.pack();
+		frame.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
+		frame.addKeyListener( display.getTransformEventHandler() );
+		frame.addKeyListener( new SourceSwitcher() );
+		frame.setVisible( true );
+
+		painterThread.start();
+	}
+
+	protected static GraphicsConfiguration getSuitableGraphicsConfiguration( final ColorModel colorModel )
+	{
+		final GraphicsDevice device = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
+		final GraphicsConfiguration defaultGc = device.getDefaultConfiguration();
+		if ( defaultGc.getColorModel( Transparency.TRANSLUCENT ).equals( colorModel ) )
+			return defaultGc;
+
+		for ( final GraphicsConfiguration gc : device.getConfigurations() )
+			if ( gc.getColorModel( Transparency.TRANSLUCENT ).equals( colorModel ) )
+				return gc;
+
+		return defaultGc;
 	}
 
 	@Override
