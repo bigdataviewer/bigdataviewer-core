@@ -132,14 +132,6 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 	protected ARGBScreenImage screenImage;
 
 	/**
-	 * A transformation to apply to {@link #source} before applying the
-	 * interactive viewer {@link #viewerTransform transform}.
-	 *
-	 * TODO: remove this, once the BoxOverlay has been replaced
-	 */
-	final protected AffineTransform3D sourceTransform = new AffineTransform3D();
-
-	/**
 	 * Navigation wire-frame cube.
 	 */
 	final protected MultiBoxOverlay box;
@@ -302,9 +294,9 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 	}
 
 	/**
-	 * Returns a list of all currently active sources.
-	 * TODO: single source mode toggling
-	 * @return
+	 * Returns a list of all currently active (visible) sources.
+	 *
+	 * @return list of all currently active sources.
 	 */
 	final ArrayList< SourceDisplay< ? > > getActiveSources()
 	{
@@ -476,7 +468,6 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 		{
 			currentSource = sourceIndex;
 			final SourceDisplay< ? > source = sources.get( sourceIndex );
-			sourceTransform.set( source.sourceTransform ); // TODO: remove
 			projector = createProjector();
 			display.requestRepaint();
 		}
