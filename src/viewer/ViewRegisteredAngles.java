@@ -43,11 +43,11 @@ public class ViewRegisteredAngles
 		if ( viewer == null )
 		{
 			final ArrayList< Multi3DViewer.SourceAndConverter< ? > > sources = new ArrayList< Multi3DViewer.SourceAndConverter< ? > >();
-			sources.add( new Multi3DViewer.SourceAndConverter< T >( source, converter, sourceTransform, name ) );
-			viewer = new Multi3DViewer( width, height, sources, img );
+			sources.add( new Multi3DViewer.SourceAndConverter< T >( source, img, converter, sourceTransform, name ) );
+			viewer = new Multi3DViewer( width, height, sources );
 		}
 		else
-			viewer.addSource( new Multi3DViewer.SourceAndConverter< T >( source, converter, sourceTransform, name ) );
+			viewer.addSource( new Multi3DViewer.SourceAndConverter< T >( source, img, converter, sourceTransform, name ) );
 	}
 
 	private ViewRegisteredAngles( final String viewRegistrationsFilename ) throws ParserConfigurationException, SAXException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException

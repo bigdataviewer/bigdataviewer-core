@@ -2,6 +2,7 @@ package viewer;
 
 import java.awt.Font;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.util.ArrayList;
@@ -28,6 +29,7 @@ import net.imglib2.ui.AbstractInteractiveDisplay3D;
 import net.imglib2.ui.ScreenImageRenderer;
 import net.imglib2.ui.TransformListener3D;
 import net.imglib2.ui.swing.SwingInteractiveDisplay3D;
+import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
 import viewer.display.AccumulateARGB;
 
@@ -46,15 +48,22 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 		final protected Converter< T, ARGBType > converter;
 
 		/**
+		 * The size of the {@link #source}. This is used for displaying the
+		 * navigation wire-frame cube.
+		 */
+		final protected Interval interval;
+
+		/**
 		 * transforms {@link #source} into the viewer coordinate system.
 		 */
 		final protected AffineTransform3D sourceTransform;
 
 		final protected String name;
 
-		public SourceAndConverter( final RandomAccessible< T > source, final Converter< T, ARGBType > converter, final AffineTransform3D sourceTransform, final String name )
+		public SourceAndConverter( final RandomAccessible< T > source, final Interval sourceInterval, final Converter< T, ARGBType > converter, final AffineTransform3D sourceTransform, final String name )
 		{
 			this.source = source;
+			this.interval = sourceInterval;
 			this.converter = converter;
 			this.sourceTransform = sourceTransform;
 			this.name = name;
@@ -64,7 +73,7 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 	/**
 	 * {@link SourceAndConverter} with some attached properties needed for rendering.
 	 */
-	protected static class SourceDisplay< T extends NumericType< T > > extends SourceAndConverter< T >
+	public static class SourceDisplay< T extends NumericType< T > > extends SourceAndConverter< T >
 	{
 		/**
 		 * Transformation from {@link #source} to {@link #screenImage}. This is a
@@ -80,7 +89,7 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 
 		public SourceDisplay( final SourceAndConverter< T > source )
 		{
-			super( source.source, source.converter, source.sourceTransform, source.name );
+			super( source.source, source.interval, source.converter, source.sourceTransform, source.name );
 			sourceToScreen = new AffineTransform3D();
 			isVisible = true;
 		}
@@ -121,7 +130,18 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 	 *
 	 * TODO: remove this, once the BoxOverlay has been replaced
 	 */
-	final protected AffineTransform3D sourceTransform;
+	final protected AffineTransform3D sourceTransform = new AffineTransform3D();
+
+	/**
+	 * Navigation wire-frame cube.
+	 */
+	final protected MultiBoxOverlay box;
+
+	/**
+	 * Screen interval in which to display navigation wire-frame cube.
+	 */
+	final protected Interval boxInterval;
+
 
 	/**
 	 * Transformation set by the interactive viewer.
@@ -157,15 +177,19 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 	 * @param currentSlice
 	 *            which slice to display initially.
 	 */
-	public Multi3DViewer( final int width, final int height, final Collection< SourceAndConverter< ? > > sources, final Interval sourceInterval )
+	public Multi3DViewer( final int width, final int height, final Collection< SourceAndConverter< ? > > sources )
 	{
 		this.sources = new ArrayList< SourceDisplay< ? > >( sources.size() );
 		for ( final SourceAndConverter< ? > source : sources )
 			this.sources.add( SourceDisplay.create( source ) );
-		this.sourceTransform = new AffineTransform3D();
 
-//		display = new ImagePlusInteractiveDisplay3D( width, height, sourceInterval, sourceTransform, this, this );
-		display = new SwingInteractiveDisplay3D( width, height, sourceInterval, sourceTransform, this, this );
+		box = new MultiBoxOverlay();
+//		boxInterval = Intervals.createMinSize( 10, 10, 80, 60 );
+		boxInterval = Intervals.createMinSize( 10, 10, 160, 120 );
+//		boxInterval = Intervals.createMinSize( 10, 10, 240, 180 );
+
+//		display = new ImagePlusInteractiveDisplay3D( width, height, this, this );
+		display = new SwingInteractiveDisplay3D( width, height, this, this );
 		display.addHandler( new SourceSwitcher() );
 		display.startPainter();
 	}
@@ -196,8 +220,11 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 	{
 		if ( !sources.isEmpty() )
 		{
+			box.paint( ( Graphics2D ) g, sources, singleSourceMode ? currentSource : -1, screenImage, boxInterval );
+
+			final SourceDisplay< ? > source = sources.get( currentSource );
 			g.setFont( new Font( "SansSerif", Font.PLAIN, 12 ) );
-			g.drawString( sources.get( currentSource ).name, ( int ) screenImage.dimension( 0 ) / 2, 10 );
+			g.drawString( source.name, ( int ) screenImage.dimension( 0 ) / 2, 10 );
 		}
 	}
 
@@ -388,7 +415,6 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 	/**
 	 * Set the index of the source to display.
 	 */
-	// TODO: Toggle instead of simply activating...
 	public void setCurrentSource( final int sourceIndex )
 	{
 		if ( sourceIndex >= 0 && sourceIndex < sources.size() )
