@@ -48,7 +48,7 @@ public class CreateCells
 		{
 			final SequenceViewsLoader loader = new SequenceViewsLoader( viewRegistrationsFilename );
 			final SequenceDescription seq = loader.getSequenceDescription();
-			final int numTimepoints = 50; // seq.numTimepoints();
+			final int numTimepoints = seq.numTimepoints();
 			final int numSetups = seq.numViewSetups();
 
 			// open HDF5 output file
@@ -58,7 +58,7 @@ public class CreateCells
 
 			// write image data for all views to the HDF5 file
 			final int n = 3;
-			final int[] cellDimensions =  new int[] { 50, 50, 5 };
+			final int[] cellDimensions =  new int[] { 32, 32, 4 };
 			final long[] dimensions = new long[ n ];
 			int globalmin = Integer.MAX_VALUE;
 			int globalmax = Integer.MIN_VALUE;
@@ -85,7 +85,7 @@ public class CreateCells
 
 					hdf5Writer.createGroup( getGroupPath( view ) );
 					final String path = getCellsPath( view );
-					hdf5Writer.createShortMDArray( path, reorder( dimensions ), reorder( cellDimensions ), HDF5IntStorageFeatures.INT_AUTO_SCALING_DEFLATE_UNSIGNED );
+					hdf5Writer.createShortMDArray( path, reorder( dimensions ), reorder( cellDimensions ), HDF5IntStorageFeatures.INT_AUTO_SCALING_UNSIGNED );
 
 					final long[] numCells = new long[ n ];
 					final int[] borderSize = new int[ n ];

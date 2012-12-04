@@ -11,17 +11,17 @@ import mpicbg.tracking.transform.AffineModel3D;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.display.RealARGBConverter;
 import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
 
 import org.xml.sax.SAXException;
 
 public class ViewRegisteredAngles
 {
-	class Source implements SpimAngleSource< FloatType >
+	class Source implements SpimAngleSource< UnsignedShortType >
 	{
 		int currentTimepoint;
 
-		RandomAccessibleInterval< FloatType > currentSource;
+		RandomAccessibleInterval< UnsignedShortType > currentSource;
 
 		final AffineTransform3D currentSourceTransform = new AffineTransform3D();
 
@@ -47,7 +47,7 @@ public class ViewRegisteredAngles
 				final AffineModel3D reg = view.getModel();
 				reg.toMatrix( tmp );
 				currentSourceTransform.set( tmp );
-				currentSource = seq.imgLoader.getImage( view );
+				currentSource = seq.imgLoader.getUnsignedShortImage( view );
 			}
 			else
 			{
@@ -63,7 +63,7 @@ public class ViewRegisteredAngles
 		}
 
 		@Override
-		public RandomAccessibleInterval< FloatType > getSource( final int t )
+		public RandomAccessibleInterval< UnsignedShortType > getSource( final int t )
 		{
 			if ( t != currentTimepoint )
 				loadTimepoint( t );
@@ -101,16 +101,16 @@ public class ViewRegisteredAngles
 		final int height = 300;
 
 		final ArrayList< SpimViewer.SourceAndConverter< ? > > sources = new ArrayList< SpimViewer.SourceAndConverter< ? > >();
-		final RealARGBConverter< FloatType > converter = new RealARGBConverter< FloatType >();
+		final RealARGBConverter< UnsignedShortType > converter = new RealARGBConverter< UnsignedShortType >( 0, 16384 );
 		for ( int setup = 0; setup < seq.numViewSetups(); ++setup )
-			sources.add( new SpimViewer.SourceAndConverter< FloatType >( new Source( setup, "angle " + setup ), converter ) );
+			sources.add( new SpimViewer.SourceAndConverter< UnsignedShortType >( new Source( setup, "angle " + setup ), converter ) );
 
-		viewer = new SpimViewer( width, height, sources, seq.numTimepoints() );
+		viewer = new SpimViewer( width, height, sources, 50 ); //seq.numTimepoints() );
 	}
 
 	public static void main( final String[] args )
 	{
-		final String fn = "/home/tobias/workspace/data/fast fly/111010_weber/e012-reg.xml";
+		final String fn = "/home/tobias/workspace/data/fast fly/111010_weber/e012-reg-hdf5.xml";
 		try
 		{
 			new ViewRegisteredAngles( fn );

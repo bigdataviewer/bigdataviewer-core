@@ -15,7 +15,7 @@ public class LoadCellImg
 {
 	public static void main( final String[] args )
 	{
-		final File hdf5CellsFile = new File( "/home/tobias/Desktop/cells.h5" );
+		final File hdf5CellsFile = new File( "/home/tobias/Desktop/e012-cells.h5" );
 		if ( ! hdf5CellsFile.exists() )
 			throw new RuntimeException( "cells file not found" );
 		final CellImg< UnsignedShortType, ShortArray, Hdf5Cell< ShortArray > > img = Hdf5CellImgFactory.createUnsignedShort( hdf5CellsFile );
