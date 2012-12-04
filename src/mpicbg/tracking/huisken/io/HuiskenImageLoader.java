@@ -13,6 +13,7 @@ import net.imglib2.img.ImgPlus;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.meta.Axes;
 import net.imglib2.meta.AxisType;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
 
 import org.w3c.dom.Document;
@@ -61,11 +62,67 @@ public class HuiskenImageLoader implements ImgLoader
 		return elem;
 	}
 
+
+	@Override
+	public ImgPlus< UnsignedShortType > getUnsignedShortImage( final View view )
+	{
+		ensureExpIsOpen();
+
+		final ViewSetup setup = view.getSetup();
+		final int channel = setup.getChannel();
+		final int illumination = setup.getIllumination();
+		final int angle = setup.getAngle();
+		final int timepoint = view.getTimepoint();
+
+		final ImagePlus imp = getImagePlus( view );
+		final Img< UnsignedShortType > img = ImageJFunctions.wrapShort( imp );
+
+		final String name = getBasename( timepoint, angle, channel, illumination );
+
+		final AxisType[] axes = new AxisType[] { Axes.X, Axes.Y, Axes.Z };
+
+		final float zStretching = ( float ) ( exp.pd / exp.pw );
+		final double[] calibration = new double[] { 1, 1, zStretching };
+
+		return new ImgPlus< UnsignedShortType >( img, name, axes, calibration );
+	}
+
 	@Override
 	public ImgPlus< FloatType > getImage( final View view )
 	{
 		ensureExpIsOpen();
 
+		final ViewSetup setup = view.getSetup();
+		final int channel = setup.getChannel();
+		final int illumination = setup.getIllumination();
+		final int angle = setup.getAngle();
+		final int timepoint = view.getTimepoint();
+
+		final ImagePlus imp = getImagePlus( view );
+		final Img< FloatType > img = ImageJFunctions.convertFloat( imp );
+		Normalize.normalize( img, new FloatType( 0 ), new FloatType( 1 ) ); // normalize the image to 0...1
+
+		final String name = getBasename( timepoint, angle, channel, illumination );
+
+		final AxisType[] axes = new AxisType[] { Axes.X, Axes.Y, Axes.Z };
+
+		final float zStretching = ( float ) ( exp.pd / exp.pw );
+		final double[] calibration = new double[] { 1, 1, zStretching };
+
+		return new ImgPlus< FloatType >( img, name, axes, calibration );
+	}
+
+	private synchronized void ensureExpIsOpen()
+	{
+		if ( exp == null )
+		{
+			exp = new SPIMExperiment( expFile.getAbsolutePath() );
+			hasAlternatingIllumination = exp.d < ( exp.planeEnd + 1 - exp.planeStart );
+		}
+	}
+
+	private ImagePlus getImagePlus( final View view )
+	{
 		final ViewSetup setup = view.getSetup();
 		final int channel = setup.getChannel();
 		final int illumination = setup.getIllumination();
@@ -88,35 +145,16 @@ public class HuiskenImageLoader implements ImgLoader
 		{
 			final int zStep = 2;
 			if ( illumination == 0 )
-				imp = exp.openNotProjected( s, timepoint, timepoint, r, angle, channel, zMin, zMax-1, zStep, f, f, yMin, yMax, xMin, xMax, SPIMExperiment.X, SPIMExperiment.Y, SPIMExperiment.Z, false );
+				imp = exp.openNotProjected( s, timepoint, timepoint, r, angle, channel, zMin, zMax - 1, zStep, f, f, yMin, yMax, xMin, xMax, SPIMExperiment.X, SPIMExperiment.Y, SPIMExperiment.Z, false );
 			else
-				imp = exp.openNotProjected( s, timepoint, timepoint, r, angle, channel, zMin+1, zMax, zStep, f, f, yMin, yMax, xMin, xMax, SPIMExperiment.X, SPIMExperiment.Y, SPIMExperiment.Z, false );
+				imp = exp.openNotProjected( s, timepoint, timepoint, r, angle, channel, zMin + 1, zMax, zStep, f, f, yMin, yMax, xMin, xMax, SPIMExperiment.X, SPIMExperiment.Y, SPIMExperiment.Z, false );
 		}
 		else
 		{
 			imp = exp.openNotProjected( s, timepoint, timepoint, r, angle, channel, zMin, zMax, f, f, yMin, yMax, xMin, xMax, SPIMExperiment.X, SPIMExperiment.Y, SPIMExperiment.Z, false );
 		}
 
-		final Img< FloatType > img = ImageJFunctions.convertFloat( imp );
-		Normalize.normalize( img, new FloatType( 0 ), new FloatType( 1 ) ); // normalize the image to 0...1
-
-		final String name = getBasename( timepoint, angle, channel, illumination );
-
-		final AxisType[] axes = new AxisType[] { Axes.X, Axes.Y, Axes.Z };
-
-		final float zStretching = ( float ) ( exp.pd / exp.pw );
-		final double[] calibration = new double[] { 1, 1, zStretching };
-
-		return new ImgPlus<FloatType>( img, name, axes, calibration );
-	}
-
-	private synchronized void ensureExpIsOpen()
-	{
-		if ( exp == null )
-		{
-			exp = new SPIMExperiment( expFile.getAbsolutePath() );
-			hasAlternatingIllumination = exp.d < ( exp.planeEnd + 1 - exp.planeStart );
-		}
+		return imp;
 	}
 
 	final static private String basenameFormatString = "t%05d-a%03d-c%03d-i%01d";

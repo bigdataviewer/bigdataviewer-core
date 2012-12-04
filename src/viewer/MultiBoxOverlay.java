@@ -6,11 +6,11 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
-import java.util.ArrayList;
+import java.util.List;
 
 import net.imglib2.Interval;
 import net.imglib2.realtransform.AffineTransform3D;
-import viewer.Multi3DViewer.SourceDisplay;
+import viewer.SpimViewer.SourceDisplay;
 
 /**
  *
@@ -41,6 +41,15 @@ public class MultiBoxOverlay
 
 	final private double[] origin = new double[ 3 ];
 
+	public interface IntervalAndTransform
+	{
+		public boolean isVisible();
+
+		public Interval getSourceInterval();
+
+		public AffineTransform3D getSourceToScreen();
+	}
+
 	/**
 	 * This paints the box overlay with perspective and scale set such that it
 	 * fits approximately into the specified screen area.
@@ -59,7 +68,7 @@ public class MultiBoxOverlay
 	 *            (approximate) area of the screen which to fill with the box
 	 *            visualisation.
 	 */
-	public void paint( final Graphics2D graphics, final ArrayList< SourceDisplay< ? > > sources, final int currentSource, final Interval targetInterval, final Interval boxScreen )
+	public < I extends IntervalAndTransform > void paint( final Graphics2D graphics, final List< I > sources, final int currentSource, final Interval targetInterval, final Interval boxScreen )
 	{
 //		assert ( sourceInterval.numDimensions() >= 3 );
 		assert ( targetInterval.numDimensions() >= 2 );
@@ -71,12 +80,12 @@ public class MultiBoxOverlay
 		final double screenBoxRatio = 0.75;
 
 		long maxSourceSize = 0;
-		for ( final SourceDisplay< ? > source : sources )
-			maxSourceSize = Math.max( maxSourceSize, Math.max( Math.max( source.interval.dimension( 0 ), source.interval.dimension( 1 ) ), source.interval.dimension( 2 ) ) );
+		for ( final IntervalAndTransform source : sources )
+			maxSourceSize = Math.max( maxSourceSize, Math.max( Math.max( source.getSourceInterval().dimension( 0 ), source.getSourceInterval().dimension( 1 ) ), source.getSourceInterval().dimension( 2 ) ) );
 		final long sourceSize = maxSourceSize;
 		final long targetSize = Math.max( targetInterval.dimension( 0 ), targetInterval.dimension( 1 ) );
 
-		final AffineTransform3D transform = sources.get( 0 ).sourceToScreen;
+		final AffineTransform3D transform = sources.get( 0 ).getSourceToScreen();
 		final double vx = transform.get( 0, 0 );
 		final double vy = transform.get( 1, 0 );
 		final double vz = transform.get( 2, 0 );
@@ -252,7 +261,7 @@ public class MultiBoxOverlay
 	 * @param transform
 	 *            transform from source to target.
 	 */
-	private void paint( final Graphics2D graphics, final ArrayList< SourceDisplay< ? > > sources, final int currentSource, final Interval targetInterval )
+	private < I extends IntervalAndTransform > void paint( final Graphics2D graphics, final List< I > sources, final int currentSource, final Interval targetInterval )
 	{
 		origin[ 0 ] = targetInterval.min( 0 ) + targetInterval.dimension( 0 ) / 2;
 		origin[ 1 ] = targetInterval.min( 1 ) + targetInterval.dimension( 1 ) / 2;
@@ -267,11 +276,11 @@ public class MultiBoxOverlay
 
 		for ( int i = 0; i < sources.size(); ++i )
 		{
-			final SourceDisplay< ? > source = sources.get( i );
+			final IntervalAndTransform source = sources.get( i );
 			if( currentSource == i || ( currentSource == -1 && source.isVisible() ) )
-				renderBox( source.interval, source.sourceToScreen, activeFront, activeBack );
+				renderBox( source.getSourceInterval(), source.getSourceToScreen(), activeFront, activeBack );
 			else
-				renderBox( source.interval, source.sourceToScreen, inactiveFront, inactiveBack );
+				renderBox( source.getSourceInterval(), source.getSourceToScreen(), inactiveFront, inactiveBack );
 		}
 
 		graphics.setRenderingHint( RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON );
@@ -286,22 +295,22 @@ public class MultiBoxOverlay
 		graphics.setPaint( activeFrontColor );
 		graphics.draw( activeFront );
 
-		final SourceDisplay< ? > source = sources.get( 0 );
-		final double sX0 = source.interval.min( 0 );
-		final double sY0 = source.interval.min( 1 );
-		final double sZ0 = source.interval.min( 2 );
+		final IntervalAndTransform source = sources.get( 0 );
+		final double sX0 = source.getSourceInterval().min( 0 );
+		final double sY0 = source.getSourceInterval().min( 1 );
+		final double sZ0 = source.getSourceInterval().min( 2 );
 
-		final double[] px = new double[] { sX0 + source.interval.dimension( 0 ) / 2, sY0, sZ0 };
-		final double[] py = new double[] { sX0, sY0 + source.interval.dimension( 1 ) / 2, sZ0 };
-		final double[] pz = new double[] { sX0, sY0, sZ0 + source.interval.dimension( 2 ) / 2 };
+		final double[] px = new double[] { sX0 + source.getSourceInterval().dimension( 0 ) / 2, sY0, sZ0 };
+		final double[] py = new double[] { sX0, sY0 + source.getSourceInterval().dimension( 1 ) / 2, sZ0 };
+		final double[] pz = new double[] { sX0, sY0, sZ0 + source.getSourceInterval().dimension( 2 ) / 2 };
 
 		final double[] qx = new double[ 3 ];
 		final double[] qy = new double[ 3 ];
 		final double[] qz = new double[ 3 ];
 
-		source.sourceToScreen.apply( px, qx );
-		source.sourceToScreen.apply( py, qy );
-		source.sourceToScreen.apply( pz, qz );
+		source.getSourceToScreen().apply( px, qx );
+		source.getSourceToScreen().apply( py, qy );
+		source.getSourceToScreen().apply( pz, qz );
 
 		graphics.setPaint( Color.WHITE );
 		graphics.setFont( new Font( "SansSerif", Font.PLAIN, 8 ) );

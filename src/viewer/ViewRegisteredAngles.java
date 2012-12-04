@@ -8,67 +8,104 @@ import javax.xml.parsers.ParserConfigurationException;
 import mpicbg.tracking.data.SequenceDescription;
 import mpicbg.tracking.data.View;
 import mpicbg.tracking.transform.AffineModel3D;
-import net.imglib2.ExtendedRandomAccessibleInterval;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.converter.Converter;
 import net.imglib2.display.RealARGBConverter;
-import net.imglib2.img.ImgPlus;
 import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.type.numeric.NumericType;
 import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.view.Views;
 
 import org.xml.sax.SAXException;
 
 public class ViewRegisteredAngles
 {
-	/**
-	 * Apply view registration transformations to the (local) detections for
-	 * each view to transform them to global coordinates.
-	 */
-	public static void viewRegisteredAngles( final String viewRegistrationsFilename ) throws ParserConfigurationException, SAXException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
+	class Source implements SpimAngleSource< FloatType >
 	{
-		new ViewRegisteredAngles( viewRegistrationsFilename );
-	}
+		int currentTimepoint;
 
-	private Multi3DViewer viewer = null;
+		RandomAccessibleInterval< FloatType > currentSource;
 
-	public < T extends NumericType< T > > void show3d( final RandomAccessibleInterval< T > img, final Converter< T, ARGBType > converter, final AffineTransform3D sourceTransform, final String name )
-	{
-		final int width = 400;
-		final int height = 300;
-		final T template = Views.iterable( img ).firstElement().copy();
-		final ExtendedRandomAccessibleInterval< T, RandomAccessibleInterval< T > > source = Views.extendValue( img, template );
-		if ( viewer == null )
+		final AffineTransform3D currentSourceTransform = new AffineTransform3D();
+
+		final int setup;
+
+		final String name;
+
+		Source( final int setup, final String name )
 		{
-			final ArrayList< Multi3DViewer.SourceAndConverter< ? > > sources = new ArrayList< Multi3DViewer.SourceAndConverter< ? > >();
-			sources.add( new Multi3DViewer.SourceAndConverter< T >( source, img, converter, sourceTransform, name ) );
-			viewer = new Multi3DViewer( width, height, sources );
+			this.setup = setup;
+			this.name = name;
+			loadTimepoint( 0 );
 		}
-		else
-			viewer.addSource( new Multi3DViewer.SourceAndConverter< T >( source, img, converter, sourceTransform, name ) );
+
+		final double[][] tmp = new double[3][4];
+
+		void loadTimepoint( final int timepoint )
+		{
+			currentTimepoint = timepoint;
+			if ( isPresent( timepoint ) )
+			{
+				final View view = loader.getView( timepoint, setup );
+				final AffineModel3D reg = view.getModel();
+				reg.toMatrix( tmp );
+				currentSourceTransform.set( tmp );
+				currentSource = seq.imgLoader.getImage( view );
+			}
+			else
+			{
+				currentSourceTransform.identity();
+				currentSource = null;
+			}
+		}
+
+		@Override
+		public boolean isPresent( final int t )
+		{
+			return t >= 0 && t < seq.numTimepoints();
+		}
+
+		@Override
+		public RandomAccessibleInterval< FloatType > getSource( final int t )
+		{
+			if ( t != currentTimepoint )
+				loadTimepoint( t );
+			return currentSource;
+		}
+
+		@Override
+		public AffineTransform3D getSourceTransform( final int t )
+		{
+			if ( t != currentTimepoint )
+				loadTimepoint( t );
+			return currentSourceTransform;
+		}
+
+		@Override
+		public String getName()
+		{
+			return name;
+		}
 	}
+
+	final SpimViewer viewer;
+
+	final SequenceViewsLoader loader;
+
+	final SequenceDescription seq;
 
 	private ViewRegisteredAngles( final String viewRegistrationsFilename ) throws ParserConfigurationException, SAXException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
 	{
-		final SequenceViewsLoader loader = new SequenceViewsLoader( viewRegistrationsFilename );
-		final SequenceDescription seq = loader.getSequenceDescription();
+		loader = new SequenceViewsLoader( viewRegistrationsFilename );
+		seq = loader.getSequenceDescription();
 
-		final double[][] data = new double[3][4];
 
-		final int timepoint = 0;
+		final int width = 400;
+		final int height = 300;
+
+		final ArrayList< SpimViewer.SourceAndConverter< ? > > sources = new ArrayList< SpimViewer.SourceAndConverter< ? > >();
+		final RealARGBConverter< FloatType > converter = new RealARGBConverter< FloatType >();
 		for ( int setup = 0; setup < seq.numViewSetups(); ++setup )
-		{
-			final View view = loader.getView( timepoint, setup );
-			final AffineModel3D reg = view.getModel();
-			final AffineTransform3D viewTransform = new AffineTransform3D();
-			reg.toMatrix( data );
-			viewTransform.set( data );
+			sources.add( new SpimViewer.SourceAndConverter< FloatType >( new Source( setup, "angle " + setup ), converter ) );
 
-			final ImgPlus< FloatType > img = seq.imgLoader.getImage( view );
-			show3d( img, new RealARGBConverter< FloatType >(), viewTransform, view.getBasename() );
-		}
+		viewer = new SpimViewer( width, height, sources, seq.numTimepoints() );
 	}
 
 	public static void main( final String[] args )
@@ -76,7 +113,7 @@ public class ViewRegisteredAngles
 		final String fn = "/home/tobias/workspace/data/fast fly/111010_weber/e012-reg.xml";
 		try
 		{
-			viewRegisteredAngles( fn );
+			new ViewRegisteredAngles( fn );
 		}
 		catch ( final Exception e )
 		{
