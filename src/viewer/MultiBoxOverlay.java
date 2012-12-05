@@ -10,7 +10,6 @@ import java.util.List;
 
 import net.imglib2.Interval;
 import net.imglib2.realtransform.AffineTransform3D;
-import viewer.SpimViewer.SourceDisplay;
 
 /**
  *
@@ -57,10 +56,7 @@ public class MultiBoxOverlay
 	 * @param graphics
 	 *            graphics context to paint to.
 	 * @param sources
-	 *            source intervals (3D boxes) to be is shown.
-	 * @param currentSource
-	 *            index of the currently active source or -1, in which case the
-	 *            {@link SourceDisplay#isVisible()} flags are used.
+	 *            source intervals (3D boxes) to be shown.
 	 * @param targetInterval
 	 *            target interval (2D box) into which a slice of sourceInterval
 	 *            is projected.
@@ -68,7 +64,7 @@ public class MultiBoxOverlay
 	 *            (approximate) area of the screen which to fill with the box
 	 *            visualisation.
 	 */
-	public < I extends IntervalAndTransform > void paint( final Graphics2D graphics, final List< I > sources, final int currentSource, final Interval targetInterval, final Interval boxScreen )
+	public < I extends IntervalAndTransform > void paint( final Graphics2D graphics, final List< I > sources, final Interval targetInterval, final Interval boxScreen )
 	{
 //		assert ( sourceInterval.numDimensions() >= 3 );
 		assert ( targetInterval.numDimensions() >= 2 );
@@ -107,7 +103,7 @@ public class MultiBoxOverlay
 		final AffineTransform translate = new AffineTransform( 1, 0, 0, 1, x, y );
 		translate.preConcatenate( t );
 		graphics.setTransform( translate );
-		paint( graphics, sources, currentSource, targetInterval );
+		paint( graphics, sources, targetInterval );
 		graphics.setTransform( t );
 	}
 
@@ -253,15 +249,13 @@ public class MultiBoxOverlay
 	 *
 	 * @param graphics
 	 *            graphics context to paint to.
-	 * @param sourceInterval
-	 *            source interval (3D box) that is shown.
+	 * @param sources
+	 *            source intervals (3D boxes) to be shown.
 	 * @param targetInterval
 	 *            target interval (2D box) into which a slice of sourceInterval
 	 *            is projected.
-	 * @param transform
-	 *            transform from source to target.
 	 */
-	private < I extends IntervalAndTransform > void paint( final Graphics2D graphics, final List< I > sources, final int currentSource, final Interval targetInterval )
+	private < I extends IntervalAndTransform > void paint( final Graphics2D graphics, final List< I > sources, final Interval targetInterval )
 	{
 		origin[ 0 ] = targetInterval.min( 0 ) + targetInterval.dimension( 0 ) / 2;
 		origin[ 1 ] = targetInterval.min( 1 ) + targetInterval.dimension( 1 ) / 2;
@@ -277,7 +271,7 @@ public class MultiBoxOverlay
 		for ( int i = 0; i < sources.size(); ++i )
 		{
 			final IntervalAndTransform source = sources.get( i );
-			if( currentSource == i || ( currentSource == -1 && source.isVisible() ) )
+			if( source.isVisible() )
 				renderBox( source.getSourceInterval(), source.getSourceToScreen(), activeFront, activeBack );
 			else
 				renderBox( source.getSourceInterval(), source.getSourceToScreen(), inactiveFront, inactiveBack );

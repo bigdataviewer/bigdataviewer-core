@@ -50,53 +50,6 @@ import viewer.display.AccumulateARGB;
 public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 {
 	/**
-	 * SPIM data source (for one angle) and a converter to ARGBType.
-	 */
-	public static class SourceAndConverter< T extends NumericType< T > > implements SpimAngleSource< T >
-	{
-		/**
-		 * provides image data for all timepoint of one view.
-		 */
-		final protected SpimAngleSource< T > source;
-
-		/**
-		 * converts {@link #source} type T to ARGBType for display
-		 */
-		final protected Converter< T, ARGBType > converter;
-
-		public SourceAndConverter( final SpimAngleSource< T > source, final Converter< T, ARGBType > converter )
-		{
-			this.source = source;
-			this.converter = converter;
-		}
-
-		@Override
-		public boolean isPresent( final int t )
-		{
-			return source.isPresent( t );
-		}
-
-		@Override
-		public RandomAccessibleInterval< T > getSource( final int t )
-		{
-			return source.getSource( t );
-		}
-
-		@Override
-		public AffineTransform3D getSourceTransform( final int t )
-		{
-			return source.getSourceTransform( t );
-		}
-
-		@Override
-		public String getName()
-		{
-			return source.getName();
-		}
-	}
-
-
-	/**
 	 * {@link SourceAndConverter} with some attached properties needed for rendering.
 	 */
 	protected class SourceDisplay< T extends NumericType< T > > extends SourceAndConverter< T > implements IntervalAndTransform
@@ -108,30 +61,32 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 		 */
 		final protected AffineTransform3D sourceToScreen;
 
-		/**
-		 * whether this source is currently visible in {@link #screenImage}.
-		 */
-		private boolean isVisible;
+		private boolean isActive;
 
 		public SourceDisplay( final SpimAngleSource< T > source, final Converter< T, ARGBType > converter )
 		{
 			super( source, converter );
 			sourceToScreen = new AffineTransform3D();
-			isVisible = true;
+			isActive = true;
 		}
 
-		// TODO: split isVisible() into isActive() (whether source is shown in
-		// fused mode) and isVisible() which is used for the BoxOverlay and
-		// describes whether the source is actually displayed currently.
+		/**
+		 * whether this source is currently visible in {@link #screenImage}.
+		 */
 		@Override
 		public boolean isVisible()
 		{
-			return isVisible;
+			return singleSourceMode ? ( currentSource < sources.size() && sources.get( currentSource ) == this ) : isActive;
 		}
 
-		public void setVisible( final boolean isVisible )
+		public boolean isActive()
 		{
-			this.isVisible = isVisible;
+			return isActive;
+		}
+
+		public void setActive( final boolean isActive )
+		{
+			this.isActive = isActive;
 		}
 
 		@Override
@@ -228,8 +183,6 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 			}
 		} );
 
-//		framesPerSecond.addChangeListener(this);
-
 		final GraphicsConfiguration gc = getSuitableGraphicsConfiguration( ARGBScreenImage.ARGB_COLOR_MODEL );
 		frame = new JFrame( "multi-angle viewer", gc );
 		frame.getRootPane().setDoubleBuffered( true );
@@ -290,7 +243,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 	{
 		if ( !sources.isEmpty() )
 		{
-			box.paint( ( Graphics2D ) g, sources, singleSourceMode ? currentSource : -1, screenImage, boxInterval );
+			box.paint( ( Graphics2D ) g, sources, screenImage, boxInterval );
 
 			final SourceDisplay< ? > source = sources.get( currentSource );
 			g.setFont( new Font( "SansSerif", Font.PLAIN, 12 ) );
@@ -322,12 +275,9 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 	protected ArrayList< SourceDisplay< ? > > getActiveSources()
 	{
 		final ArrayList< SourceDisplay< ? > > activeSources = new ArrayList< SourceDisplay< ? > >();
-		if ( singleSourceMode && currentSource < sources.size() )
-			activeSources.add( sources.get( currentSource ) );
-		else
-			for ( final SourceDisplay< ? > source : sources )
-				if ( source.isVisible() )
-					activeSources.add( source );
+		for ( final SourceDisplay< ? > source : sources )
+			if ( source.isVisible() )
+				activeSources.add( source );
 		return activeSources;
 	}
 
@@ -462,7 +412,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 		if ( sourceIndex >= 0 && sourceIndex < sources.size() )
 		{
 			final SourceDisplay< ? > source = sources.get( sourceIndex );
-			source.setVisible( !source.isVisible() );
+			source.setActive( !source.isActive() );
 			if ( !singleSourceMode )
 				projector = createProjector();
 			display.requestRepaint();

@@ -100,10 +100,10 @@ public class ViewRegisteredAngles
 		final int width = 400;
 		final int height = 300;
 
-		final ArrayList< SpimViewer.SourceAndConverter< ? > > sources = new ArrayList< SpimViewer.SourceAndConverter< ? > >();
+		final ArrayList< SourceAndConverter< ? > > sources = new ArrayList< SourceAndConverter< ? > >();
 		final RealARGBConverter< UnsignedShortType > converter = new RealARGBConverter< UnsignedShortType >( 0, 16384 );
 		for ( int setup = 0; setup < seq.numViewSetups(); ++setup )
-			sources.add( new SpimViewer.SourceAndConverter< UnsignedShortType >( new Source( setup, "angle " + setup ), converter ) );
+			sources.add( new SourceAndConverter< UnsignedShortType >( new Source( setup, "angle " + setup ), converter ) );
 
 		viewer = new SpimViewer( width, height, sources, 50 ); //seq.numTimepoints() );
 	}
