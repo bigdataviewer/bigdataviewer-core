@@ -30,11 +30,11 @@ public interface SpimAngleSource< T >
 
 	/**
 	 * Get the transform from the {@link #getSource(long) source} at timepoint t
-	 * into the viewer coordinate system.
+	 * into the global coordinate system.
 	 *
 	 * @param t
 	 *            timepoint index
-	 * @return transforms source into the viewer coordinate system.
+	 * @return transforms source into the global coordinate system.
 	 */
 	public AffineTransform3D getSourceTransform( int t );
 

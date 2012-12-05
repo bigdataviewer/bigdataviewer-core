@@ -238,7 +238,7 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 	}
 
 	@Override
-	public void screenImageChanged( final ARGBScreenImage screenImage )
+	public void screenImageChanged( final ARGBScreenImage screenImage, final double xScale, final double yScale )
 	{
 		this.screenImage = screenImage;
 		projector = createProjector();

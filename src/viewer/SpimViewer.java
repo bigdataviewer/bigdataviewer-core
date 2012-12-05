@@ -55,9 +55,19 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 	protected class SourceDisplay< T extends NumericType< T > > extends SourceAndConverter< T > implements IntervalAndTransform
 	{
 		/**
-		 * Transformation from {@link #source} to {@link #screenImage}. This is a
-		 * concatenation of {@link SpimAngleSource#getSourceTransform(long) source transform} and the interactive
-		 * viewer {@link #viewerTransform transform}.
+		 * Transformation from {@link #source} to viewer (scaled
+		 * {@link #screenImage}) . This is a concatenation of
+		 * {@link SpimAngleSource#getSourceTransform(long) source transform} and
+		 * the {@link #viewerTransform interactive viewer transform}.
+		 */
+		final protected AffineTransform3D sourceToViewer;
+
+		/**
+		 * Transformation from {@link #source} to {@link #screenImage}. This is
+		 * a concatenation of {@link SpimAngleSource#getSourceTransform(long)
+		 * source transform}, the {@link #viewerTransform interactive viewer
+		 * transform}, and the {@link #screenScaleTransform viewer-to-screen
+		 * transform}
 		 */
 		final protected AffineTransform3D sourceToScreen;
 
@@ -66,6 +76,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 		public SourceDisplay( final SpimAngleSource< T > source, final Converter< T, ARGBType > converter )
 		{
 			super( source, converter );
+			sourceToViewer = new AffineTransform3D();
 			sourceToScreen = new AffineTransform3D();
 			isActive = true;
 		}
@@ -98,7 +109,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 		@Override
 		public AffineTransform3D getSourceToScreen()
 		{
-			return sourceToScreen;
+			return sourceToViewer;
 		}
 	}
 
@@ -125,6 +136,10 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 	 */
 	final protected Interval boxInterval;
 
+	/**
+	 * scaled screenImage interval for {@link #box} rendering
+	 */
+	protected Interval virtualScreenInterval;
 
 	/**
 	 * Transformation set by the interactive viewer.
@@ -183,12 +198,25 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 			}
 		} );
 
+		final JSlider sliderScale = new JSlider( JSlider.HORIZONTAL, 1, 4, 1 );
+		sliderScale.addKeyListener( display.getTransformEventHandler() );
+		sliderScale.addKeyListener( sourceSwitcher );
+		sliderScale.addChangeListener( new ChangeListener() {
+			@Override
+			public void stateChanged( final ChangeEvent e )
+			{
+				if ( e.getSource().equals( sliderScale ) )
+					display.SWITCH_RESOLUTION_TEST( sliderScale.getValue() );
+			}
+		} );
+
 		final GraphicsConfiguration gc = getSuitableGraphicsConfiguration( ARGBScreenImage.ARGB_COLOR_MODEL );
 		frame = new JFrame( "multi-angle viewer", gc );
 		frame.getRootPane().setDoubleBuffered( true );
 		final Container content = frame.getContentPane();
 		content.add( display, BorderLayout.CENTER );
 		content.add( sliderTime, BorderLayout.SOUTH );
+		content.add( sliderScale, BorderLayout.NORTH );
 		frame.pack();
 		frame.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
 		frame.addKeyListener( display.getTransformEventHandler() );
@@ -217,11 +245,21 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 		return defaultGc;
 	}
 
+	/**
+	 * TODO
+	 * The transformation taking care of scale factor between screenimage and component.
+	 */
+	final protected AffineTransform3D screenScaleTransform = new AffineTransform3D();
+
 	@Override
-	public void screenImageChanged( final ARGBScreenImage screenImage )
+	public void screenImageChanged( final ARGBScreenImage screenImage, final double xScale, final double yScale )
 	{
 		this.screenImage = screenImage;
 		projector = createProjector();
+		screenScaleTransform.set( xScale, 0, 0 );
+		screenScaleTransform.set( yScale, 1, 1 );
+
+		virtualScreenInterval = Intervals.createMinSize( 0, 0, ( long ) ( screenImage.dimension( 0 ) / xScale ), ( long ) ( screenImage.dimension( 1 ) / yScale ) );
 	}
 
 	@Override
@@ -230,10 +268,14 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 		synchronized( viewerTransform )
 		{
 			for ( final SourceDisplay< ? > source : sources )
-				source.sourceToScreen.set( viewerTransform );
+				source.sourceToViewer.set( viewerTransform );
 		}
 		for ( final SourceDisplay< ? > source : sources )
-			source.sourceToScreen.concatenate( source.getSourceTransform( currentTimepoint ) );
+		{
+			source.sourceToViewer.concatenate( source.getSourceTransform( currentTimepoint ) );
+			source.sourceToScreen.set( screenScaleTransform );
+			source.sourceToScreen.concatenate( source.sourceToViewer );
+		}
 		if( projector != null )
 			projector.map();
 	}
@@ -243,11 +285,11 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 	{
 		if ( !sources.isEmpty() )
 		{
-			box.paint( ( Graphics2D ) g, sources, screenImage, boxInterval );
+			box.paint( ( Graphics2D ) g, sources, virtualScreenInterval, boxInterval );
 
 			final SourceDisplay< ? > source = sources.get( currentSource );
 			g.setFont( new Font( "SansSerif", Font.PLAIN, 12 ) );
-			g.drawString( source.getName(), ( int ) screenImage.dimension( 0 ) / 2, 10 );
+			g.drawString( source.getName(), ( int ) g.getClipBounds().getWidth() / 2, 10 );
 		}
 	}
 
