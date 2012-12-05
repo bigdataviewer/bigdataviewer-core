@@ -24,9 +24,11 @@ public interface SpimAngleSource< T >
 	 *
 	 * @param t
 	 *            timepoint index
+	 * @param level
+	 * 			  mip level
 	 * @return the {@link RandomAccessibleInterval stack}.
 	 */
-	public RandomAccessibleInterval< T > getSource( int t );
+	public RandomAccessibleInterval< T > getSource( int t, int level );
 
 	/**
 	 * Get the transform from the {@link #getSource(long) source} at timepoint t
@@ -34,9 +36,11 @@ public interface SpimAngleSource< T >
 	 *
 	 * @param t
 	 *            timepoint index
+	 * @param level
+	 * 			  mip level
 	 * @return transforms source into the global coordinate system.
 	 */
-	public AffineTransform3D getSourceTransform( int t );
+	public AffineTransform3D getSourceTransform( int t, int level );
 
 	public String getName();
 }

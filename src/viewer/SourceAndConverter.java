@@ -34,15 +34,15 @@ public class SourceAndConverter< T extends NumericType< T > > implements SpimAng
 	}
 
 	@Override
-	public RandomAccessibleInterval< T > getSource( final int t )
+	public RandomAccessibleInterval< T > getSource( final int t, final int level )
 	{
-		return source.getSource( t );
+		return source.getSource( t, level );
 	}
 
 	@Override
-	public AffineTransform3D getSourceTransform( final int t )
+	public AffineTransform3D getSourceTransform( final int t, final int level )
 	{
-		return source.getSourceTransform( t );
+		return source.getSourceTransform( t, level );
 	}
 
 	@Override

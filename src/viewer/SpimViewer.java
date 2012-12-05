@@ -46,6 +46,7 @@ import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
 import viewer.MultiBoxOverlay.IntervalAndTransform;
 import viewer.display.AccumulateARGB;
+import viewer.hdf5.MipMapDefinition;
 
 public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 {
@@ -103,7 +104,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 		@Override
 		public Interval getSourceInterval()
 		{
-			return getSource( currentTimepoint );
+			return getSource( currentTimepoint, currentLevel );
 		}
 
 		@Override
@@ -159,6 +160,8 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 
 	protected int currentTimepoint = 0;
 
+	protected int currentLevel = 0;
+
 	/**
 	 *
 	 * @param width
@@ -198,7 +201,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 			}
 		} );
 
-		final JSlider sliderScale = new JSlider( JSlider.HORIZONTAL, 1, 4, 1 );
+		final JSlider sliderScale = new JSlider( JSlider.HORIZONTAL, 1, 8, 1 );
 		sliderScale.addKeyListener( display.getTransformEventHandler() );
 		sliderScale.addKeyListener( sourceSwitcher );
 		sliderScale.addChangeListener( new ChangeListener() {
@@ -210,6 +213,18 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 			}
 		} );
 
+		final JSlider sliderMipmap = new JSlider( JSlider.VERTICAL, 0, MipMapDefinition.numLevels - 1, 0 );
+		sliderMipmap.addKeyListener( display.getTransformEventHandler() );
+		sliderMipmap.addKeyListener( sourceSwitcher );
+		sliderMipmap.addChangeListener( new ChangeListener() {
+			@Override
+			public void stateChanged( final ChangeEvent e )
+			{
+				if ( e.getSource().equals( sliderMipmap ) )
+					updateMipMapLevel( sliderMipmap.getValue() );
+			}
+		} );
+
 		final GraphicsConfiguration gc = getSuitableGraphicsConfiguration( ARGBScreenImage.ARGB_COLOR_MODEL );
 		frame = new JFrame( "multi-angle viewer", gc );
 		frame.getRootPane().setDoubleBuffered( true );
@@ -217,6 +232,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 		content.add( display, BorderLayout.CENTER );
 		content.add( sliderTime, BorderLayout.SOUTH );
 		content.add( sliderScale, BorderLayout.NORTH );
+		content.add( sliderMipmap, BorderLayout.EAST );
 		frame.pack();
 		frame.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
 		frame.addKeyListener( display.getTransformEventHandler() );
@@ -258,6 +274,8 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 		projector = createProjector();
 		screenScaleTransform.set( xScale, 0, 0 );
 		screenScaleTransform.set( yScale, 1, 1 );
+		screenScaleTransform.set( 0.5 * xScale - 0.5, 0, 3 );
+		screenScaleTransform.set( 0.5 * yScale - 0.5, 1, 3 );
 
 		virtualScreenInterval = Intervals.createMinSize( 0, 0, ( long ) ( screenImage.dimension( 0 ) / xScale ), ( long ) ( screenImage.dimension( 1 ) / yScale ) );
 	}
@@ -272,7 +290,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 		}
 		for ( final SourceDisplay< ? > source : sources )
 		{
-			source.sourceToViewer.concatenate( source.getSourceTransform( currentTimepoint ) );
+			source.sourceToViewer.concatenate( source.getSourceTransform( currentTimepoint, currentLevel ) );
 			source.sourceToScreen.set( screenScaleTransform );
 			source.sourceToScreen.concatenate( source.sourceToViewer );
 		}
@@ -309,6 +327,15 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 		display.requestRepaint();
 	}
 
+	// TODO: automatic mipmap switching
+	public void updateMipMapLevel( final int level )
+	{
+		System.out.println( "mip map level " + level );
+		currentLevel = level;
+		projector = createProjector();
+		display.requestRepaint();
+	}
+
 	/**
 	 * Returns a list of all currently active (visible) sources.
 	 *
@@ -338,7 +365,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 
 	protected < T extends NumericType< T > > AffineRandomAccessible< T, AffineGet > getTransformedSource( final SourceDisplay< T > source )
 	{
-		final RandomAccessibleInterval< T > img = source.getSource( currentTimepoint );
+		final RandomAccessibleInterval< T > img = source.getSource( currentTimepoint, currentLevel );
 		final T template = Views.iterable( img ).firstElement().copy();
 		template.setZero();
 		final InterpolatorFactory< T, RandomAccessible< T > > interpolatorFactory;

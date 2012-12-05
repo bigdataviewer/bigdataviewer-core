@@ -15,11 +15,16 @@ import net.imglib2.type.numeric.integer.UnsignedShortType;
 
 import org.xml.sax.SAXException;
 
+import viewer.hdf5.Hdf5ImageLoader;
+import viewer.hdf5.MipMapDefinition;
+
 public class ViewRegisteredAngles
 {
 	class Source implements SpimAngleSource< UnsignedShortType >
 	{
 		int currentTimepoint;
+
+		int currentLevel;
 
 		RandomAccessibleInterval< UnsignedShortType > currentSource;
 
@@ -33,21 +38,30 @@ public class ViewRegisteredAngles
 		{
 			this.setup = setup;
 			this.name = name;
-			loadTimepoint( 0 );
+			loadTimepoint( 0, 0 );
 		}
 
 		final double[][] tmp = new double[3][4];
 
-		void loadTimepoint( final int timepoint )
+		final AffineTransform3D mipmapTransform = new AffineTransform3D();
+
+		void loadTimepoint( final int timepoint, final int level )
 		{
 			currentTimepoint = timepoint;
+			currentLevel = level;
 			if ( isPresent( timepoint ) )
 			{
 				final View view = loader.getView( timepoint, setup );
 				final AffineModel3D reg = view.getModel();
 				reg.toMatrix( tmp );
 				currentSourceTransform.set( tmp );
-				currentSource = seq.imgLoader.getUnsignedShortImage( view );
+				for ( int d = 0; d < 3; ++d )
+				{
+					mipmapTransform.set( MipMapDefinition.resolutions[ currentLevel ][ d ], d, d );
+					mipmapTransform.set( 0.5 * ( MipMapDefinition.resolutions[ currentLevel ][ d ] - 1 ), d, 3 );
+				}
+				currentSourceTransform.concatenate( mipmapTransform );
+				currentSource = imgLoader.getUnsignedShortImage( view, currentLevel );
 			}
 			else
 			{
@@ -63,18 +77,18 @@ public class ViewRegisteredAngles
 		}
 
 		@Override
-		public RandomAccessibleInterval< UnsignedShortType > getSource( final int t )
+		public synchronized RandomAccessibleInterval< UnsignedShortType > getSource( final int t, final int level )
 		{
-			if ( t != currentTimepoint )
-				loadTimepoint( t );
+			if ( t != currentTimepoint || level != currentLevel )
+				loadTimepoint( t, level );
 			return currentSource;
 		}
 
 		@Override
-		public AffineTransform3D getSourceTransform( final int t )
+		public synchronized AffineTransform3D getSourceTransform( final int t, final int level )
 		{
-			if ( t != currentTimepoint )
-				loadTimepoint( t );
+			if ( t != currentTimepoint || level != currentLevel )
+				loadTimepoint( t, level );
 			return currentSourceTransform;
 		}
 
@@ -91,11 +105,13 @@ public class ViewRegisteredAngles
 
 	final SequenceDescription seq;
 
+	final Hdf5ImageLoader imgLoader;
+
 	private ViewRegisteredAngles( final String viewRegistrationsFilename ) throws ParserConfigurationException, SAXException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
 	{
 		loader = new SequenceViewsLoader( viewRegistrationsFilename );
 		seq = loader.getSequenceDescription();
-
+		imgLoader = ( Hdf5ImageLoader ) seq.imgLoader;
 
 		final int width = 400;
 		final int height = 300;
@@ -105,7 +121,7 @@ public class ViewRegisteredAngles
 		for ( int setup = 0; setup < seq.numViewSetups(); ++setup )
 			sources.add( new SourceAndConverter< UnsignedShortType >( new Source( setup, "angle " + setup ), converter ) );
 
-		viewer = new SpimViewer( width, height, sources, 50 ); //seq.numTimepoints() );
+		viewer = new SpimViewer( width, height, sources, 100 ); //seq.numTimepoints() );
 	}
 
 	public static void main( final String[] args )

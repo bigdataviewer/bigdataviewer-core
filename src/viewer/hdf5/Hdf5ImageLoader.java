@@ -38,40 +38,22 @@ public class Hdf5ImageLoader implements ImgLoader
 	public ImgPlus< FloatType > getImage( final View view )
 	{
 		throw new UnsupportedOperationException( "currently not used" );
-
-		/*
-		if ( hdf5Reader == null )
-			throw new RuntimeException( "no hdf5 file open" );
-
-		synchronized ( hdf5Reader )
-		{
-			final String cellsPath = CreateCells.getCellsPath( view );
-			System.out.println( "loading " + cellsPath );
-			final HDF5DataSetInformation info = hdf5Reader.getDataSetInformation( cellsPath );
-			final long[] dimensions = reorder( info.getDimensions() );
-			final int[] cellDimensions = reorder( info.tryGetChunkSizes() );
-
-			final CellLoader< FloatArray > loader = new FloatCellLoader( hdf5Reader, cellsPath );
-			final Hdf5ImgCells< FloatArray > cells = new Hdf5ImgCells< FloatArray >( loader, 1, dimensions, cellDimensions );
-			final CellImgFactory< FloatType > factory = null;
-			final CellImg< FloatType, FloatArray, Hdf5Cell< FloatArray > > img = new CellImg< FloatType, FloatArray, Hdf5Cell< FloatArray > >( factory, cells );
-			final FloatType linkedType = new FloatType( img );
-			img.setLinkedType( linkedType );
-
-			return new ImgPlus< FloatType >( img );
-		}
-		*/
 	}
 
 	@Override
 	public ImgPlus< UnsignedShortType > getUnsignedShortImage( final View view )
+	{
+		return getUnsignedShortImage( view, 0 );
+	}
+
+	public ImgPlus< UnsignedShortType > getUnsignedShortImage( final View view, final int level )
 	{
 		if ( hdf5Reader == null )
 			throw new RuntimeException( "no hdf5 file open" );
 
 		synchronized ( hdf5Reader )
 		{
-			final String cellsPath = CreateCells.getCellsPath( view );
+			final String cellsPath = CreateCells.getCellsPath( view, level );
 			System.out.println( "loading " + cellsPath );
 			final HDF5DataSetInformation info = hdf5Reader.getDataSetInformation( cellsPath );
 			final long[] dimensions = reorder( info.getDimensions() );
@@ -87,5 +69,4 @@ public class Hdf5ImageLoader implements ImgLoader
 			return new ImgPlus< UnsignedShortType >( img );
 		}
 	}
-
 }
