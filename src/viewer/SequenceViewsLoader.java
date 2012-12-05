@@ -15,6 +15,12 @@ import mpicbg.tracking.data.ViewRegistrations;
 
 import org.xml.sax.SAXException;
 
+/**
+ * Loads ViewRegistrations and SequenceDescription from XML files.
+ * Provides all {@link View views}, see {@link #getView(int, int)}.
+ *
+ * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ */
 public class SequenceViewsLoader
 {
 	final private SequenceDescription seq;
