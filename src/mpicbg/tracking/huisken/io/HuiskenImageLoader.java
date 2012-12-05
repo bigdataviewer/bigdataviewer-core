@@ -4,9 +4,9 @@ import ij.ImagePlus;
 
 import java.io.File;
 
-import mpicbg.tracking.data.ImgLoader;
 import mpicbg.tracking.data.View;
 import mpicbg.tracking.data.ViewSetup;
+import mpicbg.tracking.data.io.ImgLoader;
 import net.imglib2.algorithm.stats.Normalize;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgPlus;

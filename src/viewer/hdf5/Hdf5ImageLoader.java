@@ -4,8 +4,8 @@ import static viewer.hdf5.Reorder.reorder;
 
 import java.io.File;
 
-import mpicbg.tracking.data.ImgLoader;
 import mpicbg.tracking.data.View;
+import mpicbg.tracking.data.io.ImgLoader;
 import net.imglib2.img.ImgPlus;
 import net.imglib2.img.basictypeaccess.array.ShortArray;
 import net.imglib2.img.cell.CellImg;

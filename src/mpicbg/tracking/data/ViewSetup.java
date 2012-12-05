@@ -1,5 +1,7 @@
 package mpicbg.tracking.data;
 
+import mpicbg.tracking.data.io.XmlHelpers;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 

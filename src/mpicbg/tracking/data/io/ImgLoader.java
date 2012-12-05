@@ -1,5 +1,6 @@
-package mpicbg.tracking.data;
+package mpicbg.tracking.data.io;
 
+import mpicbg.tracking.data.View;
 import net.imglib2.img.ImgPlus;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
