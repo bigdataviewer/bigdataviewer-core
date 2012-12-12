@@ -1,6 +1,6 @@
 package viewer.hdf5;
 
-import static viewer.hdf5.Reorder.reorder;
+import static viewer.hdf5.Util.reorder;
 
 import java.io.File;
 
@@ -25,19 +25,6 @@ import ch.systemsx.cisd.hdf5.IHDF5Writer;
 
 public class CreateCells
 {
-	final static private String groupFormatString = "t%05d/s%02d/%d";
-	final static private String cellsFormatString = "%s/cells";
-
-	public static String getGroupPath( final View view, final int level )
-	{
-		return String.format( groupFormatString, view.getTimepointIndex(), view.getSetupIndex(), level );
-	}
-
-	public static String getCellsPath( final View view, final int level )
-	{
-		return String.format( cellsFormatString, getGroupPath( view, level ) );
-	}
-
 	public static void main( final String[] args )
 	{
 		final String viewRegistrationsFilename = "/home/tobias/workspace/data/fast fly/111010_weber/e012-reg.xml";
@@ -46,7 +33,7 @@ public class CreateCells
 		{
 			final SequenceViewsLoader loader = new SequenceViewsLoader( viewRegistrationsFilename );
 			final SequenceDescription seq = loader.getSequenceDescription();
-			final int numTimepoints = 100; // seq.numTimepoints();
+			final int numTimepoints = seq.numTimepoints();
 			final int numSetups = seq.numViewSetups();
 
 			// open HDF5 output file
@@ -82,8 +69,8 @@ public class CreateCells
 						}
 
 						final int[] cellDimensions = MipMapDefinition.subdivisions[ level ];
-						hdf5Writer.createGroup( getGroupPath( view, level ) );
-						final String path = getCellsPath( view, level );
+						hdf5Writer.createGroup( Util.getGroupPath( view, level ) );
+						final String path = Util.getCellsPath( view, level );
 						hdf5Writer.createShortMDArray( path, reorder( dimensions ), reorder( cellDimensions ), HDF5IntStorageFeatures.INT_AUTO_SCALING_UNSIGNED );
 
 						final long[] numCells = new long[ n ];

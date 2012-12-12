@@ -1,7 +1,33 @@
 package viewer.hdf5;
 
-public class Reorder
+import mpicbg.tracking.data.View;
+
+public class Util
 {
+	final static private String groupFormatString = "t%05d/s%02d/%d";
+
+	final static private String cellsFormatString = "%s/cells";
+
+	public static String getGroupPath( final int timepoint, final int setup, final int level )
+	{
+		return String.format( groupFormatString, timepoint, setup, level );
+	}
+
+	public static String getGroupPath( final View view, final int level )
+	{
+		return String.format( groupFormatString, view.getTimepointIndex(), view.getSetupIndex(), level );
+	}
+
+	public static String getCellsPath( final int timepoint, final int setup, final int level )
+	{
+		return String.format( cellsFormatString, getGroupPath( timepoint, setup, level ) );
+	}
+
+	public static String getCellsPath( final View view, final int level )
+	{
+		return String.format( cellsFormatString, getGroupPath( view, level ) );
+	}
+
 	/**
 	 * Reorder long array representing column-major coordinate (imglib2) to
 	 * row-major (hdf5). Permuted in is stored in out and out is returned.

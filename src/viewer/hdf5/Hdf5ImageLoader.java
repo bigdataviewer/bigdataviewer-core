@@ -1,6 +1,6 @@
 package viewer.hdf5;
 
-import static viewer.hdf5.Reorder.reorder;
+import static viewer.hdf5.Util.reorder;
 
 import java.io.File;
 
@@ -16,9 +16,9 @@ import net.imglib2.type.numeric.real.FloatType;
 import org.w3c.dom.Element;
 
 import viewer.hdf5.img.Hdf5Cell;
-import viewer.hdf5.img.Hdf5Cell.CellLoader;
+import viewer.hdf5.img.Hdf5GlobalCellCache;
 import viewer.hdf5.img.Hdf5ImgCells;
-import viewer.hdf5.img.ShortCellLoader;
+import viewer.hdf5.img.ShortArrayLoader;
 import ch.systemsx.cisd.hdf5.HDF5DataSetInformation;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
@@ -27,11 +27,14 @@ public class Hdf5ImageLoader implements ImgLoader
 {
 	IHDF5Reader hdf5Reader = null;
 
+	Hdf5GlobalCellCache< ShortArray > cache = null;
+
 	@Override
 	public void init( final Element elem )
 	{
 		final String path = elem.getElementsByTagName( "hdf5" ).item( 0 ).getTextContent();
 		hdf5Reader = HDF5Factory.openForReading( new File( path ) );
+		cache = new Hdf5GlobalCellCache< ShortArray >( new ShortArrayLoader( hdf5Reader ) );
 	}
 
 	@Override
@@ -53,14 +56,14 @@ public class Hdf5ImageLoader implements ImgLoader
 
 		synchronized ( hdf5Reader )
 		{
-			final String cellsPath = CreateCells.getCellsPath( view, level );
-			System.out.println( "loading " + cellsPath );
+			final String cellsPath = Util.getCellsPath( view, level );
+//			System.out.println( "loading " + cellsPath );
 			final HDF5DataSetInformation info = hdf5Reader.getDataSetInformation( cellsPath );
 			final long[] dimensions = reorder( info.getDimensions() );
 			final int[] cellDimensions = reorder( info.tryGetChunkSizes() );
 
-			final CellLoader< ShortArray > loader = new ShortCellLoader( hdf5Reader, cellsPath );
-			final Hdf5ImgCells< ShortArray > cells = new Hdf5ImgCells< ShortArray >( loader, 1, dimensions, cellDimensions );
+			final Hdf5GlobalCellCache< ShortArray >.Hdf5CellCache c = cache.new Hdf5CellCache( view.getTimepointIndex(), view.getSetupIndex(), level );
+			final Hdf5ImgCells< ShortArray > cells = new Hdf5ImgCells< ShortArray >( c, 1, dimensions, cellDimensions );
 			final CellImgFactory< UnsignedShortType > factory = null;
 			final CellImg< UnsignedShortType, ShortArray, Hdf5Cell< ShortArray > > img = new CellImg< UnsignedShortType, ShortArray, Hdf5Cell< ShortArray > >( factory, cells );
 			final UnsignedShortType linkedType = new UnsignedShortType( img );

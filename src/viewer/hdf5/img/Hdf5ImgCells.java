@@ -1,41 +1,72 @@
 package viewer.hdf5.img;
 
-import java.lang.ref.WeakReference;
-import java.util.HashMap;
-
 import net.imglib2.img.Img;
 import net.imglib2.img.cell.AbstractCells;
 import net.imglib2.img.list.AbstractListImg;
 import net.imglib2.util.IntervalIndexer;
-import viewer.hdf5.img.Hdf5Cell.CellLoader;
 
-public class Hdf5ImgCells< A > extends AbstractCells< A, Hdf5Cell< A >, Hdf5ImgCells< A >.Hdf5Cache >
+public class Hdf5ImgCells< A > extends AbstractCells< A, Hdf5Cell< A >, Hdf5ImgCells< A >.CachedCells >
 {
-	protected final Hdf5Cache cells;
+	public static interface CellCache< A >
+	{
+		/**
+		 * Get the cell at a specified index.
+		 *
+		 * @return cell at index or null if the cell is not in the cache.
+		 */
+		public Hdf5Cell< A > get( final int index );
 
-	public Hdf5ImgCells( final CellLoader< A > creator, final int entitiesPerPixel, final long[] dimensions, final int[] cellDimensions )
+		/**
+		 * Load a cell into memory and put it into the cache at the specified index.
+		 *
+		 * @param index
+		 * 			  cell is stored at this index in the cache.
+		 * @param cellDims
+		 *            dimensions of the cell.
+		 * @param cellMin
+		 *            offset of the cell in image coordinates.
+		 * @return cell at index
+		 */
+		public Hdf5Cell< A > load( final int index, final int[] cellDims, final long[] cellMin );
+
+	}
+
+	protected final CachedCells cells;
+
+	protected final CellCache< A > cache;
+
+	public Hdf5ImgCells( final CellCache< A > cache, final int entitiesPerPixel, final long[] dimensions, final int[] cellDimensions )
 	{
 		super( entitiesPerPixel, dimensions, cellDimensions );
-		cells = new Hdf5Cache( creator, numCells );
+		this.cache = cache;
+		cells = new CachedCells( numCells );
 	}
 
 	@Override
-	protected Hdf5Cache cells()
+	protected CachedCells cells()
 	{
 		return cells;
 	}
 
-	public class Hdf5Cache extends AbstractListImg< Hdf5Cell< A > >
+	public class CachedCells extends AbstractListImg< Hdf5Cell< A > >
 	{
-		protected final CellLoader< A > creator;
-
-		protected final HashMap< Integer, WeakReference< Hdf5Cell< A > > > cache;
-
-		protected Hdf5Cache( final CellLoader< A > creator, final long[] dim )
+		protected CachedCells( final long[] dim )
 		{
 			super( dim );
-			this.creator = creator;
-			cache = new HashMap< Integer, WeakReference< Hdf5Cell< A > > >();
+		}
+
+		@Override
+		protected Hdf5Cell< A > get( final int index )
+		{
+			final Hdf5Cell< A > cell = cache.get( index );
+			if ( cell != null )
+				return cell;
+			final long[] cellGridPosition = new long[ n ];
+			final long[] cellMin = new long[ n ];
+			final int[] cellDims  = new int[ n ];
+			IntervalIndexer.indexToPosition( index, dim, cellGridPosition );
+			getCellDimensions( cellGridPosition, cellMin, cellDims );
+			return cache.load( index, cellDims, cellMin );
 		}
 
 		@Override
@@ -45,27 +76,7 @@ public class Hdf5ImgCells< A > extends AbstractCells< A, Hdf5Cell< A >, Hdf5ImgC
 		}
 
 		@Override
-		protected Hdf5Cell< A > getPixel( final int index )
-		{
-			if( cache.containsKey( index ) )
-			{
-				final WeakReference< Hdf5Cell< A > > ref = cache.get( index );
-				final Hdf5Cell< A > cell = ref.get();
-				if ( cell != null )
-					return cell;
-			}
-			final long[] cellGridPosition = new long[ n ];
-			final long[] cellMin = new long[ n ];
-			final int[] cellDims  = new int[ n ];
-			IntervalIndexer.indexToPosition( index, dim, cellGridPosition );
-			getCellDimensions( cellGridPosition, cellMin, cellDims );
-			final Hdf5Cell< A > cell = new Hdf5Cell< A >( creator, cellDims, cellMin, entitiesPerPixel );
-			cache.put( index, new WeakReference< Hdf5Cell< A > >( cell ) );
-			return cell;
-		}
-
-		@Override
-		protected void setPixel( final int index, final Hdf5Cell< A > value )
+		protected void set( final int index, final Hdf5Cell< A > value )
 		{
 			throw new UnsupportedOperationException( "Not supported" );
 		}
