@@ -398,11 +398,6 @@ public class Multi3DViewer implements ScreenImageRenderer, TransformListener3D
 				selectOrToggleSource( 8, toggle );
 			else if ( e.getKeyCode() == KeyEvent.VK_0 )
 				selectOrToggleSource( 9, toggle );
-			// TODO:
-//			else if ( e.getKeyCode() == KeyEvent.VK_B )
-//				setCurrentSource( currentSource - 1, selectSingleSource );
-//			else if ( e.getKeyCode() == KeyEvent.VK_N )
-//				setCurrentSource( currentSource + 1, selectSingleSource );
 		}
 
 		@Override
