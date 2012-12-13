@@ -27,8 +27,6 @@ import net.imglib2.converter.Converter;
 import net.imglib2.converter.Converters;
 import net.imglib2.converter.TypeIdentity;
 import net.imglib2.display.ARGBScreenImage;
-import net.imglib2.display.Projector;
-import net.imglib2.display.XYRandomAccessibleProjector;
 import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory;
@@ -36,6 +34,7 @@ import net.imglib2.realtransform.AffineGet;
 import net.imglib2.realtransform.AffineRandomAccessible;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.realtransform.RealViews;
+import net.imglib2.sampler.special.ConstantRandomAccessible;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.NumericType;
 import net.imglib2.ui.ScreenImageRenderer;
@@ -46,7 +45,9 @@ import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
 import viewer.MultiBoxOverlay.IntervalAndTransform;
 import viewer.display.AccumulateARGB;
+import viewer.display.InterruptibleRenderer;
 import viewer.hdf5.MipMapDefinition;
+import viewer.hdf5.img.Hdf5GlobalCellCache;
 
 public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 {
@@ -114,13 +115,23 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 		}
 	}
 
-	protected ArrayList< SourceDisplay< ? > > sources;
+	final protected ArrayList< SourceDisplay< ? > > sources;
+
+	final protected Hdf5GlobalCellCache< ? > cache;
 
 	/**
 	 * Currently active projector, used to re-paint the display. It maps the
 	 * {@link #source} data to {@link #screenImage}.
 	 */
-	protected Projector< ?, ARGBType > projector;
+	protected InterruptibleRenderer< ?, ARGBType > projector;
+
+//	/**
+//	 * Current combined source, used to re-paint the display. The combined
+//	 * source consists of all active sources, transformed to screen coordinates,
+//	 * converted to {@link ARGBType}, and blended into a single
+//	 * {@link RandomAccessible}.
+//	 */
+//	protected RandomAccessible< ARGBType > screenSource;
 
 	/**
 	 * render target
@@ -171,12 +182,14 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 	 * @param sources
 	 *            the {@link SourceAndConverter sources} to display
 	 */
-	public SpimViewer( final int width, final int height, final Collection< SourceAndConverter< ? > > sources, final int numTimePoints )
+	public SpimViewer( final int width, final int height, final Collection< SourceAndConverter< ? > > sources, final int numTimePoints, final Hdf5GlobalCellCache< ? > cache )
 	{
 		this.sources = new ArrayList< SourceDisplay< ? > >( sources.size() );
 		for ( final SourceAndConverter< ? > source : sources )
 			this.sources.add( createSourceAndDisplay( source ) );
 		this.numTimePoints = numTimePoints;
+		this.cache = cache;
+		projector = createProjector();
 
 		box = new MultiBoxOverlay();
 		boxInterval = Intervals.createMinSize( 10, 10, 160, 120 );
@@ -271,7 +284,6 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 	public void screenImageChanged( final ARGBScreenImage screenImage, final double xScale, final double yScale )
 	{
 		this.screenImage = screenImage;
-		projector = createProjector();
 		screenScaleTransform.set( xScale, 0, 0 );
 		screenScaleTransform.set( yScale, 1, 1 );
 		screenScaleTransform.set( 0.5 * xScale - 0.5, 0, 3 );
@@ -295,7 +307,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 			source.sourceToScreen.concatenate( source.sourceToViewer );
 		}
 		if( projector != null )
-			projector.map();
+			projector.map( screenImage );
 	}
 
 	@Override
@@ -350,23 +362,23 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 		return activeSources;
 	}
 
-	protected Projector< ARGBType, ARGBType > createEmptyProjector()
-	{
-		return new Projector< ARGBType, ARGBType >()
-		{
-			@Override
-			public void map()
-			{
-				for ( final ARGBType t : screenImage )
-					t.setZero();
-			}
-		};
-	}
+//	protected Projector< ARGBType, ARGBType > createEmptyProjector()
+//	{
+//		return new Projector< ARGBType, ARGBType >()
+//		{
+//			@Override
+//			public void map()
+//			{
+//				for ( final ARGBType t : screenImage )
+//					t.setZero();
+//			}
+//		};
+//	}
 
 	protected < T extends NumericType< T > > AffineRandomAccessible< T, AffineGet > getTransformedSource( final SourceDisplay< T > source )
 	{
 		final RandomAccessibleInterval< T > img = source.getSource( currentTimepoint, currentLevel );
-		final T template = Views.iterable( img ).firstElement().copy();
+		final T template = source.getType().createVariable();
 		template.setZero();
 		final InterpolatorFactory< T, RandomAccessible< T > > interpolatorFactory;
 		switch ( interpolation )
@@ -390,25 +402,24 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 		return Converters.convert( getTransformedSource( source ), source.converter, new ARGBType() );
 	}
 
-	protected < T extends NumericType< T > > XYRandomAccessibleProjector< T, ARGBType > createSingleSourceProjector( final SourceDisplay< T > source )
+	protected < T extends NumericType< T > > InterruptibleRenderer< T, ARGBType > createSingleSourceProjector( final SourceDisplay< T > source )
 	{
-		return new XYRandomAccessibleProjector< T, ARGBType >( getTransformedSource( source ), screenImage, source.converter );
+		return new InterruptibleRenderer< T, ARGBType >( getTransformedSource( source ), source.converter, cache );
 	}
 
-	protected Projector< ?, ARGBType > createProjector()
+	protected InterruptibleRenderer< ?, ARGBType > createProjector()
 	{
 		final ArrayList< SourceDisplay< ? > > activeSources = getActiveSources();
 		if ( activeSources.isEmpty() )
-			return createEmptyProjector();
+			return new InterruptibleRenderer< ARGBType, ARGBType >( new ConstantRandomAccessible< ARGBType >( new ARGBType(), 2 ), new TypeIdentity< ARGBType >(), cache );
 		else if ( activeSources.size() == 1 )
 			return createSingleSourceProjector( activeSources.get( 0 ) );
 		else
 		{
 			final ArrayList< RandomAccessible< ARGBType > > accessibles = new ArrayList< RandomAccessible< ARGBType > >( sources.size() );
-			for ( final SourceDisplay< ? > source : sources )
-				if ( source.isVisible() )
-					accessibles.add( getConvertedTransformedSource( source ) );
-			return new XYRandomAccessibleProjector< ARGBType, ARGBType >( new AccumulateARGB( accessibles ), screenImage, new TypeIdentity< ARGBType >() );
+			for ( final SourceDisplay< ? > source : activeSources )
+				accessibles.add( getConvertedTransformedSource( source ) );
+			return new InterruptibleRenderer< ARGBType, ARGBType >( new AccumulateARGB( accessibles ), new TypeIdentity< ARGBType >(), cache );
 		}
 	}
 

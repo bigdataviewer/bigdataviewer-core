@@ -50,4 +50,10 @@ public class SourceAndConverter< T extends NumericType< T > > implements SpimAng
 	{
 		return source.getName();
 	}
+
+	@Override
+	public T getType()
+	{
+		return source.getType();
+	}
 }

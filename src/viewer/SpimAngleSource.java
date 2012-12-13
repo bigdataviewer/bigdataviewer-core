@@ -42,5 +42,7 @@ public interface SpimAngleSource< T >
 	 */
 	public AffineTransform3D getSourceTransform( int t, int level );
 
+	public T getType();
+
 	public String getName();
 }

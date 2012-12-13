@@ -17,6 +17,7 @@ import org.xml.sax.SAXException;
 
 import viewer.hdf5.Hdf5ImageLoader;
 import viewer.hdf5.MipMapDefinition;
+import viewer.hdf5.Util;
 
 public class ViewRegisteredAngles
 {
@@ -97,6 +98,12 @@ public class ViewRegisteredAngles
 		{
 			return name;
 		}
+
+		@Override
+		public UnsignedShortType getType()
+		{
+			return new UnsignedShortType();
+		}
 	}
 
 	final SpimViewer viewer;
@@ -121,12 +128,13 @@ public class ViewRegisteredAngles
 		for ( int setup = 0; setup < seq.numViewSetups(); ++setup )
 			sources.add( new SourceAndConverter< UnsignedShortType >( new Source( setup, "angle " + setup ), converter ) );
 
-		viewer = new SpimViewer( width, height, sources, seq.numTimepoints() );
+		viewer = new SpimViewer( width, height, sources, seq.numTimepoints(), imgLoader.getCache() );
 	}
 
 	public static void main( final String[] args )
 	{
 		final String fn = "/home/tobias/workspace/data/fast fly/111010_weber/e012-reg-hdf5.xml";
+		Util.timer = new Util.Timer();
 		try
 		{
 			new ViewRegisteredAngles( fn );

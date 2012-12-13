@@ -3,6 +3,7 @@ package viewer.hdf5.img;
 import java.lang.ref.SoftReference;
 import java.util.HashMap;
 
+import viewer.hdf5.Util;
 import viewer.hdf5.img.Hdf5ImgCells.CellCache;
 
 public class Hdf5GlobalCellCache< A >
@@ -121,11 +122,17 @@ public class Hdf5GlobalCellCache< A >
 		}
 
 		@Override
-		public Hdf5Cell< A > load( final int index, final int[] cellDims, final long[] cellMin )
+		public synchronized Hdf5Cell< A > load( final int index, final int[] cellDims, final long[] cellMin )
 		{
+			Util.timer.startIO();
 			final Hdf5Cell< A > cell = new Hdf5Cell< A >( cellDims, cellMin, loader.loadArray( timepoint, setup, level, cellDims, cellMin ) );
 			final Key k = new Key( timepoint, setup, level, index );
 			softReferenceCache.put( k, new SoftReference< Entry >( new Entry( k, cell ) ) );
+			Util.timer.stopIO();
+			int c = 2;
+			for ( final int l : cellDims )
+				c *= l;
+			Util.timer.addIoBytes( c );
 			return cell;
 		}
 	}

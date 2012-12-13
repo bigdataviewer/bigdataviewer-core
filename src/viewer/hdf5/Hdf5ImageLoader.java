@@ -72,4 +72,9 @@ public class Hdf5ImageLoader implements ImgLoader
 			return new ImgPlus< UnsignedShortType >( img );
 		}
 	}
+
+	public Hdf5GlobalCellCache< ShortArray > getCache()
+	{
+		return cache;
+	}
 }
