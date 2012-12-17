@@ -1,5 +1,7 @@
 package viewer.display;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import net.imglib2.AbstractInterval;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
@@ -30,8 +32,10 @@ public class InterruptibleRenderer< A, B > extends AbstractInterval
 		lastFrameIoTime = -1;
 	}
 
-	public void map( final RandomAccessibleInterval< B > target )
+	public boolean map( final RandomAccessibleInterval< B > target )
 	{
+		interrupted.set( false );
+
 		min[ 0 ] = target.min( 0 );
 		min[ 1 ] = target.min( 1 );
 		max[ 0 ] = target.max( 0 );
@@ -50,8 +54,12 @@ public class InterruptibleRenderer< A, B > extends AbstractInterval
 		targetRandomAccess.setPosition( min[ 1 ], 1 );
 		Util.timer = new Util.Timer();
 		Util.timer.start();
+		boolean wasInterrupted = false;
 		for ( int y = 0; y < height; ++y )
 		{
+			wasInterrupted = interrupted.get();
+			if ( wasInterrupted )
+				break;
 			for ( int x = 0; x < width; ++x )
 			{
 				converter.convert( sourceRandomAccess.get(), targetRandomAccess.get() );
@@ -64,12 +72,23 @@ public class InterruptibleRenderer< A, B > extends AbstractInterval
 			targetRandomAccess.fwd( 1 );
 		}
 		Util.timer.stop();
+		if ( wasInterrupted )
+			System.out.println( "rendering was interrupted." );
 		lastFrameIoTime = Util.timer.getIoTime();
 		lastFrameRenderTime = Util.timer.getTotalTime() - lastFrameIoTime;
 		System.out.println( Util.timer.getTotalTime()/1000000 + " ms  (io = " + lastFrameIoTime/1000000 + " ms,  render = " + lastFrameRenderTime/1000000 + " ms)" );
-		final double bytesPerSecond = 1000000.0 * ( ( double ) Util.timer.getIoBytes() / lastFrameIoTime );
+		final double bytesPerSecond = 1000.0 * 1000000.0 * ( ( double ) Util.timer.getIoBytes() / lastFrameIoTime ) / 1024.0;
 		if ( ! Double.isNaN( bytesPerSecond ) )
-			System.out.println( String.format( "%.2f bytes per second", bytesPerSecond ) );
+			System.out.println( String.format( "%.0f kB/s", bytesPerSecond ) );
+
+		return ! wasInterrupted;
+	}
+
+	protected AtomicBoolean interrupted = new AtomicBoolean();
+
+	public void cancel()
+	{
+		interrupted.set( true );
 	}
 
 	public long getLastFrameRenderTime()

@@ -128,12 +128,12 @@ public class ViewRegisteredAngles
 		for ( int setup = 0; setup < seq.numViewSetups(); ++setup )
 			sources.add( new SourceAndConverter< UnsignedShortType >( new Source( setup, "angle " + setup ), converter ) );
 
-		viewer = new SpimViewer( width, height, sources, seq.numTimepoints(), imgLoader.getCache() );
+		viewer = new SpimViewer( width, height, sources, 100 /* seq.numTimepoints() */, imgLoader.getCache() );
 	}
 
 	public static void main( final String[] args )
 	{
-		final String fn = "/home/tobias/workspace/data/fast fly/111010_weber/e012-reg-hdf5.xml";
+		final String fn = "/home/tobias/workspace/data/fast fly/111010_weber/e012-reg-hdf5-mipmap2.xml";
 		Util.timer = new Util.Timer();
 		try
 		{

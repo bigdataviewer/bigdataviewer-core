@@ -37,10 +37,7 @@ import net.imglib2.realtransform.RealViews;
 import net.imglib2.sampler.special.ConstantRandomAccessible;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.NumericType;
-import net.imglib2.ui.ScreenImageRenderer;
 import net.imglib2.ui.TransformListener3D;
-import net.imglib2.ui.jcomponent.InteractiveDisplay3DCanvas;
-import net.imglib2.ui.jcomponent.MappingThread;
 import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
 import viewer.MultiBoxOverlay.IntervalAndTransform;
@@ -293,7 +290,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 	}
 
 	@Override
-	public void drawScreenImage()
+	public boolean drawScreenImage()
 	{
 		synchronized( viewerTransform )
 		{
@@ -307,7 +304,15 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 			source.sourceToScreen.concatenate( source.sourceToViewer );
 		}
 		if( projector != null )
-			projector.map( screenImage );
+			return projector.map( screenImage );
+		else
+			return false;
+	}
+
+	@Override
+	public void cancelDrawing()
+	{
+		projector.cancel();
 	}
 
 	@Override
@@ -361,19 +366,6 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 				activeSources.add( source );
 		return activeSources;
 	}
-
-//	protected Projector< ARGBType, ARGBType > createEmptyProjector()
-//	{
-//		return new Projector< ARGBType, ARGBType >()
-//		{
-//			@Override
-//			public void map()
-//			{
-//				for ( final ARGBType t : screenImage )
-//					t.setZero();
-//			}
-//		};
-//	}
 
 	protected < T extends NumericType< T > > AffineRandomAccessible< T, AffineGet > getTransformedSource( final SourceDisplay< T > source )
 	{
