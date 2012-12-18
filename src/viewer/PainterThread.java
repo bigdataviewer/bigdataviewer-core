@@ -3,15 +3,25 @@ package viewer;
 /**
  * Thread to repaint display.
  */
-final public class MappingThread extends Thread
+final public class PainterThread extends Thread
 {
-	private boolean pleaseRepaint = true;
-
-	private Paintable paintable;
-
-	public MappingThread()
+	public static interface Paintable
 	{
-		this.setName( "MappingThread" );
+		/**
+		 * This is called by the painter thread to repaint the display.
+		 */
+		public void paint();
+	}
+
+	private final Paintable paintable;
+
+	private boolean pleaseRepaint;
+
+	public PainterThread( final Paintable paintable )
+	{
+		this.paintable = paintable;
+		this.pleaseRepaint = false;
+		this.setName( "PainterThread" );
 	}
 
 	@Override
@@ -43,17 +53,12 @@ final public class MappingThread extends Thread
 	/**
 	 * request repaint.
 	 */
-	public void repaint()
+	public void requestRepaint()
 	{
 		synchronized ( this )
 		{
 			pleaseRepaint = true;
 			notify();
 		}
-	}
-
-	public void setPaintable( final Paintable paintable )
-	{
-		this.paintable = paintable;
 	}
 }

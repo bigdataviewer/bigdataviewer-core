@@ -11,7 +11,13 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Transparency;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
+import java.awt.image.DataBuffer;
+import java.awt.image.DirectColorModel;
+import java.awt.image.Raster;
+import java.awt.image.SampleModel;
+import java.awt.image.WritableRaster;
 import java.util.ArrayList;
 import java.util.Collection;
 
@@ -39,14 +45,14 @@ import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.NumericType;
 import net.imglib2.ui.TransformListener3D;
 import net.imglib2.util.Intervals;
+import net.imglib2.util.Util;
 import net.imglib2.view.Views;
 import viewer.MultiBoxOverlay.IntervalAndTransform;
 import viewer.display.AccumulateARGB;
 import viewer.display.InterruptibleRenderer;
 import viewer.hdf5.MipMapDefinition;
-import viewer.hdf5.img.Hdf5GlobalCellCache;
 
-public class SpimViewer implements ScreenImageRenderer, TransformListener3D
+public class SpimViewer implements ScreenImageRenderer, TransformListener3D, PainterThread.Paintable
 {
 	/**
 	 * {@link SourceAndConverter} with some attached properties needed for rendering.
@@ -80,15 +86,6 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 			isActive = true;
 		}
 
-		/**
-		 * whether this source is currently visible in {@link #screenImage}.
-		 */
-		@Override
-		public boolean isVisible()
-		{
-			return singleSourceMode ? ( currentSource < sources.size() && sources.get( currentSource ) == this ) : isActive;
-		}
-
 		public boolean isActive()
 		{
 			return isActive;
@@ -99,10 +96,19 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 			this.isActive = isActive;
 		}
 
+		/**
+		 * whether this source is currently visible in {@link #screenImage}.
+		 */
+		@Override
+		public boolean isVisible()
+		{
+			return singleSourceMode ? ( currentSource < sources.size() && sources.get( currentSource ) == this ) : isActive;
+		}
+
 		@Override
 		public Interval getSourceInterval()
 		{
-			return getSource( currentTimepoint, currentLevel );
+			return getSource( currentTimepoint, currentMipMapLevel );
 		}
 
 		@Override
@@ -114,24 +120,14 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 
 	final protected ArrayList< SourceDisplay< ? > > sources;
 
-	final protected Hdf5GlobalCellCache< ? > cache;
-
 	/**
 	 * Currently active projector, used to re-paint the display. It maps the
 	 * {@link #source} data to {@link #screenImage}.
 	 */
 	protected InterruptibleRenderer< ?, ARGBType > projector;
 
-//	/**
-//	 * Current combined source, used to re-paint the display. The combined
-//	 * source consists of all active sources, transformed to screen coordinates,
-//	 * converted to {@link ARGBType}, and blended into a single
-//	 * {@link RandomAccessible}.
-//	 */
-//	protected RandomAccessible< ARGBType > screenSource;
-
 	/**
-	 * render target
+	 * Used to render the image for on-screen display.
 	 */
 	protected ARGBScreenImage screenImage;
 
@@ -153,22 +149,83 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 	/**
 	 * Transformation set by the interactive viewer.
 	 */
-	final protected AffineTransform3D viewerTransform = new AffineTransform3D();
+	final protected AffineTransform3D viewerTransform;
+
+	/**
+	 * The scale transformation from viewer to {@link #screenImage}.
+	 */
+	final protected AffineTransform3D screenScaleTransform;
 
 	/**
 	 * Canvas used for displaying the rendered {@link #screenImage}.
 	 */
 	final protected InteractiveDisplay3DCanvas display;
 
+	/**
+	 * Thread that triggers repainting of the display.
+	 */
+	final protected PainterThread painterThread;
+
 	final protected JFrame frame;
 
 	final protected JSlider sliderTime;
 
+	/**
+	 * number of available timepoints.
+	 */
 	final protected int numTimePoints;
 
+
+
+
+	/**
+	 * which timepoint is currently shown.
+	 */
 	protected int currentTimepoint = 0;
 
-	protected int currentLevel = 0;
+	/**
+	 * which mipmap level is currently shown.
+	 */
+	protected int currentMipMapLevel = 0;
+
+	/**
+	 * TODO
+	 */
+	final protected double[] screenScales = new double[] { 1, 0.75, 0.5, 0.25, 0.125, 0.0625 };
+//	final protected double[] screenScales = new double[] { 1, 0.0625 };
+
+	protected int maxScreenScaleIndex = screenScales.length - 1;
+
+	/**
+	 * TODO
+	 */
+	protected int currentScreenScaleIndex = maxScreenScaleIndex;
+
+	/**
+	 * Interpolation methods.
+	 */
+	static enum Interpolation
+	{
+		NEARESTNEIGHBOR,
+		NLINEAR
+	}
+
+	/**
+	 * Which interpolation method is currently used to render the display.
+	 */
+	protected Interpolation interpolation = Interpolation.NEARESTNEIGHBOR;
+
+	/**
+	 * Whether single-source mode is currently used. In "single-source" mode,
+	 * only source (SPIM angle) is shown. Otherwise, in "fused" mode, all active
+	 * sources are blended.
+	 */
+	protected boolean singleSourceMode = true;
+
+	/**
+	 * in single-source mode: index of the source that is currently shown.
+	 */
+	protected int currentSource = 0;
 
 	/**
 	 *
@@ -179,23 +236,21 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 	 * @param sources
 	 *            the {@link SourceAndConverter sources} to display
 	 */
-	public SpimViewer( final int width, final int height, final Collection< SourceAndConverter< ? > > sources, final int numTimePoints, final Hdf5GlobalCellCache< ? > cache )
+	public SpimViewer( final int width, final int height, final Collection< SourceAndConverter< ? > > sources, final int numTimePoints)
 	{
 		this.sources = new ArrayList< SourceDisplay< ? > >( sources.size() );
 		for ( final SourceAndConverter< ? > source : sources )
-			this.sources.add( createSourceAndDisplay( source ) );
+			this.sources.add( createSourceDisplay( source ) );
 		this.numTimePoints = numTimePoints;
-		this.cache = cache;
-		projector = createProjector();
+		projector = null;
+		painterThread = new PainterThread( this );
+		viewerTransform = new AffineTransform3D();
+		screenScaleTransform = new AffineTransform3D();
 
 		box = new MultiBoxOverlay();
 		boxInterval = Intervals.createMinSize( 10, 10, 160, 120 );
 
 		display = new InteractiveDisplay3DCanvas( width, height, this, this );
-
-		final MappingThread painterThread = new MappingThread();
-		painterThread.setPaintable( display );
-		display.setPainterThread( painterThread );
 
 		final SourceSwitcher sourceSwitcher = new SourceSwitcher();
 
@@ -208,18 +263,6 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 			{
 				if ( e.getSource().equals( sliderTime ) )
 					updateTimepoint( sliderTime.getValue() );
-			}
-		} );
-
-		final JSlider sliderScale = new JSlider( JSlider.HORIZONTAL, 1, 8, 1 );
-		sliderScale.addKeyListener( display.getTransformEventHandler() );
-		sliderScale.addKeyListener( sourceSwitcher );
-		sliderScale.addChangeListener( new ChangeListener() {
-			@Override
-			public void stateChanged( final ChangeEvent e )
-			{
-				if ( e.getSource().equals( sliderScale ) )
-					display.SWITCH_RESOLUTION_TEST( sliderScale.getValue() );
 			}
 		} );
 
@@ -241,7 +284,6 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 		final Container content = frame.getContentPane();
 		content.add( display, BorderLayout.CENTER );
 		content.add( sliderTime, BorderLayout.SOUTH );
-		content.add( sliderScale, BorderLayout.NORTH );
 		content.add( sliderMipmap, BorderLayout.EAST );
 		frame.pack();
 		frame.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
@@ -252,11 +294,21 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 		painterThread.start();
 	}
 
-	protected < T extends NumericType< T > > SourceDisplay< T > createSourceAndDisplay( final SourceAndConverter< T > soc )
+	/**
+	 * TODO helper
+	 * @param soc
+	 * @return
+	 */
+	protected < T extends NumericType< T > > SourceDisplay< T > createSourceDisplay( final SourceAndConverter< T > soc )
 	{
 		return new SourceDisplay< T >( soc.source, soc.converter );
 	}
 
+	/**
+	 * TODO helper
+	 * @param colorModel
+	 * @return
+	 */
 	protected static GraphicsConfiguration getSuitableGraphicsConfiguration( final ColorModel colorModel )
 	{
 		final GraphicsDevice device = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
@@ -272,26 +324,69 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 	}
 
 	/**
-	 * TODO
-	 * The transformation taking care of scale factor between screenimage and component.
+	 * TODO helper
+	 * Whether to discard the {@link #screenImage} alpha components when drawing.
 	 */
-	final protected AffineTransform3D screenScaleTransform = new AffineTransform3D();
+	static final protected boolean discardAlpha = true;
 
-	@Override
-	public void screenImageChanged( final ARGBScreenImage screenImage, final double xScale, final double yScale )
+	/**
+	 * TODO helper
+	 */
+	static final protected ColorModel RGB_COLOR_MODEL = new DirectColorModel(24, 0xff0000, 0xff00, 0xff);
+
+	/**
+	 * TODO helper
+	 * @param screenImage
+	 * @return
+	 */
+	static final protected  BufferedImage getBufferedImage( final ARGBScreenImage screenImage )
 	{
-		this.screenImage = screenImage;
-		screenScaleTransform.set( xScale, 0, 0 );
-		screenScaleTransform.set( yScale, 1, 1 );
-		screenScaleTransform.set( 0.5 * xScale - 0.5, 0, 3 );
-		screenScaleTransform.set( 0.5 * yScale - 0.5, 1, 3 );
-
-		virtualScreenInterval = Intervals.createMinSize( 0, 0, ( long ) ( screenImage.dimension( 0 ) / xScale ), ( long ) ( screenImage.dimension( 1 ) / yScale ) );
+		if ( discardAlpha )
+		{
+			final BufferedImage si = screenImage.image();
+			final SampleModel sampleModel = RGB_COLOR_MODEL.createCompatibleWritableRaster( 1, 1 ).getSampleModel().createCompatibleSampleModel( si.getWidth(), si.getHeight() );
+			final DataBuffer dataBuffer = si.getRaster().getDataBuffer();
+			final WritableRaster rgbRaster = Raster.createWritableRaster( sampleModel, dataBuffer, null );
+			return new BufferedImage( RGB_COLOR_MODEL, rgbRaster, false, null );
+		}
+		else
+			return screenImage.image();
 	}
 
+
+	protected ARGBScreenImage[] screenImages = null;
+	protected AffineTransform3D[] screenScaleTransforms = null;
+
+
 	@Override
-	public boolean drawScreenImage()
+	public void paint()
 	{
+		final int componentW = display.getWidth();
+		final int componentH = display.getHeight();
+		if ( screenImages == null || screenImages[ 0 ].dimension( 0 ) != componentW || screenImages[ 0 ].dimension( 1 ) != componentH )
+		{
+			screenImages = new ARGBScreenImage[ screenScales.length ];
+			screenScaleTransforms = new AffineTransform3D[ screenScales.length ];
+			for ( int i = 0; i < screenScales.length; ++i )
+			{
+				final double screenToViewerScale = screenScales[ i ];
+				final int w = ( int ) ( screenToViewerScale * componentW );
+				final int h = ( int ) ( screenToViewerScale * componentH );
+				screenImages[ i ] = new ARGBScreenImage( w, h );
+				final AffineTransform3D scale = new AffineTransform3D();
+				final double xScale = ( double ) w / componentW;
+				final double yScale = ( double ) h / componentH;
+				scale.set( xScale, 0, 0 );
+				scale.set( yScale, 1, 1 );
+				scale.set( 0.5 * xScale - 0.5, 0, 3 );
+				scale.set( 0.5 * yScale - 0.5, 1, 3 );
+				screenScaleTransforms[ i ] = scale;
+			}
+			virtualScreenInterval = Intervals.createMinSize( 0, 0, componentW, componentH );
+		}
+		screenImage = screenImages[ currentScreenScaleIndex ];
+		screenScaleTransform.set( screenScaleTransforms[ currentScreenScaleIndex ] );
+
 		synchronized( viewerTransform )
 		{
 			for ( final SourceDisplay< ? > source : sources )
@@ -299,20 +394,78 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 		}
 		for ( final SourceDisplay< ? > source : sources )
 		{
-			source.sourceToViewer.concatenate( source.getSourceTransform( currentTimepoint, currentLevel ) );
+			source.sourceToViewer.concatenate( source.getSourceTransform( currentTimepoint, currentMipMapLevel ) );
 			source.sourceToScreen.set( screenScaleTransform );
 			source.sourceToScreen.concatenate( source.sourceToViewer );
 		}
-		if( projector != null )
-			return projector.map( screenImage );
-		else
-			return false;
+		final InterruptibleRenderer< ?, ARGBType > p = createProjector();
+		projector = p;
+		if( p.map( screenImage ) )
+		{
+			final long rendertime = p.getLastFrameRenderTime() / 1000000;
+			if ( currentScreenScaleIndex == maxScreenScaleIndex )
+			{
+				if ( rendertime > 50 && maxScreenScaleIndex < screenScales.length - 1 )
+					maxScreenScaleIndex++;
+				else if ( rendertime < 30 && maxScreenScaleIndex > 0 )
+					maxScreenScaleIndex--;
+			}
+			System.out.println( "rendertime = " + rendertime );
+			System.out.println( "maxScreenScaleIndex = " + maxScreenScaleIndex );
+			display.TMPsetBufferedImage( getBufferedImage( screenImage ) );
+			System.out.println( "scale = " + currentScreenScaleIndex + "   mipmap = " + currentMipMapLevel );
+			if ( currentScreenScaleIndex > 0 || currentMipMapLevel > 0 )
+			{
+				final double s = TMPGETSOURCERESOLUTION();
+				if ( s > 0.5 && currentMipMapLevel > 0 )
+					updateMipMapLevel( currentMipMapLevel - 1 );
+				else if ( currentScreenScaleIndex > 0 )
+					requestRepaint( currentScreenScaleIndex - 1 );
+				else
+					updateMipMapLevel( currentMipMapLevel - 1 );
+			}
+		}
+		display.repaint();
 	}
 
-	@Override
-	public void cancelDrawing()
+	/**
+	 * Request a repaint of the display from the painter thread. The painter
+	 * thread will trigger a {@link #paint()} as soon as possible (that is,
+	 * immediately or after the currently running {@link #paint()} has
+	 * completed).
+	 */
+	public synchronized void requestRepaint( final int screenScaleIndex )
 	{
-		projector.cancel();
+		if( currentScreenScaleIndex < maxScreenScaleIndex && projector != null )
+			projector.cancel();
+		currentScreenScaleIndex = screenScaleIndex;
+		painterThread.requestRepaint();
+	}
+
+	double TMPGETSOURCERESOLUTION()
+	{
+		double pixelSize = Double.MAX_VALUE;
+		for ( final SourceDisplay< ? > source : sources )
+		{
+			if ( source.isVisible() )
+			{
+				final AffineTransform3D t = source.sourceToScreen;
+				final double[] zero = new double[] { 0, 0, 0 };
+				final double[] one = new double[] { 1, 1, 1 };
+				final double[] tzero = new double[ 3 ];
+				final double[] tone = new double[ 3 ];
+				final double[] diff = new double[ 3 ];
+				t.apply( zero, tzero );
+				t.apply( one, tone );
+				for ( int d = 0; d < 3; ++d )
+					diff[ d ] = Math.abs( tone[ d ] - tzero[ d ] );
+				System.out.println( "(sourceToScreen) diff = " + Util.printCoordinates( diff ) );
+				final double s = Math.min( diff[ 0 ], diff[ 1 ] );
+				if ( s < pixelSize )
+					pixelSize = s;
+			}
+		}
+		return pixelSize;
 	}
 
 	@Override
@@ -325,6 +478,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 			final SourceDisplay< ? > source = sources.get( currentSource );
 			g.setFont( new Font( "SansSerif", Font.PLAIN, 12 ) );
 			g.drawString( source.getName(), ( int ) g.getClipBounds().getWidth() / 2, 10 );
+			g.drawString( String.format( "t = %d", currentTimepoint ), ( int ) g.getClipBounds().getWidth() - 50, 10 );
 		}
 	}
 
@@ -335,50 +489,57 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 		{
 			viewerTransform.set( transform );
 		}
+		requestRepaint( maxScreenScaleIndex );
 	}
 
 	protected void updateTimepoint( final int timepoint )
 	{
-		currentTimepoint = timepoint;
-		projector = createProjector();
-		display.requestRepaint();
+		if ( currentTimepoint != timepoint )
+		{
+			currentTimepoint = timepoint;
+			currentMipMapLevel = MipMapDefinition.numLevels - 1;
+			requestRepaint( maxScreenScaleIndex );
+		}
 	}
 
-	// TODO: automatic mipmap switching
 	public void updateMipMapLevel( final int level )
 	{
 		System.out.println( "mip map level " + level );
-		currentLevel = level;
-		projector = createProjector();
-		display.requestRepaint();
+		currentMipMapLevel = level;
+		requestRepaint( currentScreenScaleIndex );
 	}
 
 	/**
-	 * Returns a list of all currently active (visible) sources.
+	 * Returns a list of all currently visible sources.
 	 *
-	 * @return list of all currently active sources.
+	 * @return list of all currently visible sources.
 	 */
-	protected ArrayList< SourceDisplay< ? > > getActiveSources()
+	protected ArrayList< SourceDisplay< ? > > getVisibleSources()
 	{
-		final ArrayList< SourceDisplay< ? > > activeSources = new ArrayList< SourceDisplay< ? > >();
+		final ArrayList< SourceDisplay< ? > > visibleSources = new ArrayList< SourceDisplay< ? > >();
 		for ( final SourceDisplay< ? > source : sources )
 			if ( source.isVisible() )
-				activeSources.add( source );
-		return activeSources;
+				visibleSources.add( source );
+		return visibleSources;
 	}
 
+	/**
+	 * TODO helper
+	 * @param source
+	 * @return
+	 */
 	protected < T extends NumericType< T > > AffineRandomAccessible< T, AffineGet > getTransformedSource( final SourceDisplay< T > source )
 	{
-		final RandomAccessibleInterval< T > img = source.getSource( currentTimepoint, currentLevel );
+		final RandomAccessibleInterval< T > img = source.getSource( currentTimepoint, currentMipMapLevel );
 		final T template = source.getType().createVariable();
 		template.setZero();
 		final InterpolatorFactory< T, RandomAccessible< T > > interpolatorFactory;
 		switch ( interpolation )
 		{
-		case 0:
+		case NEARESTNEIGHBOR:
 			interpolatorFactory = new NearestNeighborInterpolatorFactory< T >();
 			break;
-		case 1:
+		case NLINEAR:
 		default:
 			interpolatorFactory = new NLinearInterpolatorFactory< T >();
 			break;
@@ -389,30 +550,84 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 		return mapping;
 	}
 
+	/**
+	 * TODO helper
+	 * @param source
+	 * @return
+	 */
 	protected < T extends NumericType< T > > RandomAccessible< ARGBType > getConvertedTransformedSource( final SourceDisplay< T > source )
 	{
 		return Converters.convert( getTransformedSource( source ), source.converter, new ARGBType() );
 	}
 
+	/**
+	 * TODO helper
+	 * @param source
+	 * @return
+	 */
 	protected < T extends NumericType< T > > InterruptibleRenderer< T, ARGBType > createSingleSourceProjector( final SourceDisplay< T > source )
 	{
-		return new InterruptibleRenderer< T, ARGBType >( getTransformedSource( source ), source.converter, cache );
+		return new InterruptibleRenderer< T, ARGBType >( getTransformedSource( source ), source.converter );
 	}
 
 	protected InterruptibleRenderer< ?, ARGBType > createProjector()
 	{
-		final ArrayList< SourceDisplay< ? > > activeSources = getActiveSources();
-		if ( activeSources.isEmpty() )
-			return new InterruptibleRenderer< ARGBType, ARGBType >( new ConstantRandomAccessible< ARGBType >( new ARGBType(), 2 ), new TypeIdentity< ARGBType >(), cache );
-		else if ( activeSources.size() == 1 )
-			return createSingleSourceProjector( activeSources.get( 0 ) );
+		final ArrayList< SourceDisplay< ? > > visibleSources = getVisibleSources();
+		if ( visibleSources.isEmpty() )
+			return new InterruptibleRenderer< ARGBType, ARGBType >( new ConstantRandomAccessible< ARGBType >( new ARGBType(), 2 ), new TypeIdentity< ARGBType >() );
+		else if ( visibleSources.size() == 1 )
+			return createSingleSourceProjector( visibleSources.get( 0 ) );
 		else
 		{
 			final ArrayList< RandomAccessible< ARGBType > > accessibles = new ArrayList< RandomAccessible< ARGBType > >( sources.size() );
-			for ( final SourceDisplay< ? > source : activeSources )
+			for ( final SourceDisplay< ? > source : visibleSources )
 				accessibles.add( getConvertedTransformedSource( source ) );
-			return new InterruptibleRenderer< ARGBType, ARGBType >( new AccumulateARGB( accessibles ), new TypeIdentity< ARGBType >(), cache );
+			return new InterruptibleRenderer< ARGBType, ARGBType >( new AccumulateARGB( accessibles ), new TypeIdentity< ARGBType >() );
 		}
+	}
+
+	protected void toggleInterpolation()
+	{
+		if ( interpolation == Interpolation.NEARESTNEIGHBOR )
+			interpolation = Interpolation.NLINEAR;
+		else interpolation = Interpolation.NEARESTNEIGHBOR;
+		requestRepaint( maxScreenScaleIndex );
+	}
+
+	public void toggleSingleSourceMode()
+	{
+		singleSourceMode = !singleSourceMode;
+		requestRepaint( maxScreenScaleIndex );
+	}
+
+	public void toggleVisibility( final int sourceIndex )
+	{
+		if ( sourceIndex >= 0 && sourceIndex < sources.size() )
+		{
+			final SourceDisplay< ? > source = sources.get( sourceIndex );
+			source.setActive( !source.isActive() );
+			requestRepaint( maxScreenScaleIndex );
+		}
+	}
+
+	/**
+	 * Set the index of the source to display.
+	 */
+	public void setCurrentSource( final int sourceIndex )
+	{
+		if ( sourceIndex >= 0 && sourceIndex < sources.size() )
+		{
+			currentSource = sourceIndex;
+			requestRepaint( maxScreenScaleIndex );
+		}
+	}
+
+	protected void selectOrToggleSource( final int sourceIndex, final boolean toggle )
+	{
+		if( toggle )
+			toggleVisibility( sourceIndex );
+		else
+			setCurrentSource( sourceIndex );
 	}
 
 	protected class SourceSwitcher implements KeyListener
@@ -456,59 +671,5 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D
 		@Override
 		public void keyReleased( final KeyEvent e )
 		{}
-	}
-
-	protected int interpolation = 0;
-
-	protected void toggleInterpolation()
-	{
-		++interpolation;
-		interpolation %= 2;
-		projector = createProjector();
-		display.requestRepaint();
-	}
-
-	protected boolean singleSourceMode = true;
-
-	public void toggleSingleSourceMode()
-	{
-		singleSourceMode = !singleSourceMode;
-		projector = createProjector();
-		display.requestRepaint();
-	}
-
-	protected int currentSource = 0;
-
-	public void toggleVisibility( final int sourceIndex )
-	{
-		if ( sourceIndex >= 0 && sourceIndex < sources.size() )
-		{
-			final SourceDisplay< ? > source = sources.get( sourceIndex );
-			source.setActive( !source.isActive() );
-			if ( !singleSourceMode )
-				projector = createProjector();
-			display.requestRepaint();
-		}
-	}
-
-	/**
-	 * Set the index of the source to display.
-	 */
-	public void setCurrentSource( final int sourceIndex )
-	{
-		if ( sourceIndex >= 0 && sourceIndex < sources.size() )
-		{
-			currentSource = sourceIndex;
-			projector = createProjector();
-			display.requestRepaint();
-		}
-	}
-
-	protected void selectOrToggleSource( final int sourceIndex, final boolean toggle )
-	{
-		if( toggle )
-			toggleVisibility( sourceIndex );
-		else
-			setCurrentSource( sourceIndex );
 	}
 }

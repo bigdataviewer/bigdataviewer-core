@@ -8,7 +8,6 @@ import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.converter.Converter;
 import viewer.hdf5.Util;
-import viewer.hdf5.img.Hdf5GlobalCellCache;
 
 public class InterruptibleRenderer< A, B > extends AbstractInterval
 {
@@ -16,18 +15,15 @@ public class InterruptibleRenderer< A, B > extends AbstractInterval
 
 	final protected Converter< A, B > converter;
 
-	Hdf5GlobalCellCache< ? > cache;
-
 	protected long lastFrameRenderTime;
 
 	protected long lastFrameIoTime;
 
-	public InterruptibleRenderer( final RandomAccessible< A > source, final Converter< A, B > converter, final Hdf5GlobalCellCache< ? > cache )
+	public InterruptibleRenderer( final RandomAccessible< A > source, final Converter< A, B > converter )
 	{
 		super( new long[ source.numDimensions() ] );
 		this.source = source;
 		this.converter = converter;
-		this.cache = cache;
 		lastFrameRenderTime = -1;
 		lastFrameIoTime = -1;
 	}

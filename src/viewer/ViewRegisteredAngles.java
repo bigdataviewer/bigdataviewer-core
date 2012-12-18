@@ -128,7 +128,7 @@ public class ViewRegisteredAngles
 		for ( int setup = 0; setup < seq.numViewSetups(); ++setup )
 			sources.add( new SourceAndConverter< UnsignedShortType >( new Source( setup, "angle " + setup ), converter ) );
 
-		viewer = new SpimViewer( width, height, sources, 100 /* seq.numTimepoints() */, imgLoader.getCache() );
+		viewer = new SpimViewer( width, height, sources, 100 /* seq.numTimepoints() */ );
 	}
 
 	public static void main( final String[] args )
