@@ -91,7 +91,12 @@ public class SpimViewerCanvas extends JComponent
 		addHandler( handler );
 	}
 
-	public synchronized void TMPsetBufferedImage( final BufferedImage bufferedImage )
+	/**
+	 * The {@link BufferedImage} that is to be drawn on the canvas.
+	 *
+	 * @param bufferedImage image to draw.
+	 */
+	public synchronized void setBufferedImage( final BufferedImage bufferedImage )
 	{
 		this.bufferedImage = bufferedImage;
 	}

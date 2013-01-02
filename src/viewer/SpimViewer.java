@@ -57,7 +57,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		final protected AffineTransform3D sourceToScreen;
 
 		/**
-		 * Whether the source is active in (visible in fused mode).
+		 * Whether the source is active (visible in fused mode).
 		 */
 		protected boolean isActive;
 
@@ -297,10 +297,6 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	 * Check whether the size of the display component was changed and
 	 * recreate {@link #screenImages}, {@link #screenScaleTransforms}, and {@link #virtualScreenInterval} accordingly.
 	 */
-	// TODO: synchronize on
-	// screenImages
-	// screenScaleTransforms
-	// virtualScreenInterval
 	protected synchronized void checkResize()
 	{
 		final int componentW = display.getWidth();
@@ -366,7 +362,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 
 		if( p.map( screenImage ) )
 		{
-			display.TMPsetBufferedImage( bufferedImage );
+			display.setBufferedImage( bufferedImage );
 			synchronized( this )
 			{
 				final long rendertime = p.getLastFrameRenderTime() / 1000000;
