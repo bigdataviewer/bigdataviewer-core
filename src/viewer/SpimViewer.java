@@ -265,25 +265,12 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 			}
 		} );
 
-		final JSlider sliderMipmap = new JSlider( JSlider.VERTICAL, 0, MipMapDefinition.numLevels - 1, 0 );
-		sliderMipmap.addKeyListener( display.getTransformEventHandler() );
-		sliderMipmap.addKeyListener( sourceSwitcher );
-		sliderMipmap.addChangeListener( new ChangeListener() {
-			@Override
-			public void stateChanged( final ChangeEvent e )
-			{
-				if ( e.getSource().equals( sliderMipmap ) )
-					updateMipMapLevel( sliderMipmap.getValue() );
-			}
-		} );
-
 		final GraphicsConfiguration gc = GuiHelpers.getSuitableGraphicsConfiguration( ARGBScreenImage.ARGB_COLOR_MODEL );
 		frame = new JFrame( "multi-angle viewer", gc );
 		frame.getRootPane().setDoubleBuffered( true );
 		final Container content = frame.getContentPane();
 		content.add( display, BorderLayout.CENTER );
 		content.add( sliderTime, BorderLayout.SOUTH );
-		content.add( sliderMipmap, BorderLayout.EAST );
 		frame.pack();
 		frame.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
 		frame.addKeyListener( display.getTransformEventHandler() );
