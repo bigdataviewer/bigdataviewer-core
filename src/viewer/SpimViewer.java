@@ -45,7 +45,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	/**
 	 * SpimSource with some attached state needed for rendering.
 	 */
-	protected class SourceDisplay< T extends NumericType< T > > extends SourceAndConverter< T >
+	protected static class SourceDisplay< T extends NumericType< T > > extends SourceAndConverter< T >
 	{
 		/**
 		 * Current transformation from {@link #source} to {@link #screenImage}. This is
@@ -77,16 +77,18 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		{
 			this.isActive = isActive;
 		}
+	}
 
-		/**
-		 * Is this source currently visible in {@link #screenImage}.
-		 *
-		 * @return true, if the source is currently visible.
-		 */
-		public boolean isVisible()
-		{
-			return singleSourceMode ? ( currentSource < sources.size() && sources.get( currentSource ) == this ) : isActive;
-		}
+	/**
+	 * Is the source currently visible in {@link #screenImage}. A source is
+	 * visible if it is active in fused-mode or it is the current source in
+	 * single-source-mode.
+	 *
+	 * @return true, if the source is currently visible.
+	 */
+	public boolean isSourceVisible( final SourceDisplay< ? > source )
+	{
+		return singleSourceMode ? ( currentSource < sources.size() && sources.get( currentSource ) == source ) : source.isActive();
 	}
 
 	/**
@@ -342,7 +344,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 			sourceToViewer.concatenate( source.getSpimSource().getSourceTransform( currentTimepoint, 0 ) );
 			boxsource.setSourceToViewer( sourceToViewer );
 			boxsource.setSourceInterval( source.getSpimSource().getSource( currentTimepoint, 0 ) );
-			boxsource.setVisible( source.isVisible() );
+			boxsource.setVisible( isSourceVisible( source ) );
 		}
 	}
 
@@ -416,7 +418,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		double pixelSize = Double.MAX_VALUE;
 		for ( final SourceDisplay< ? > source : sources )
 		{
-			if ( source.isVisible() )
+			if ( isSourceVisible( source ) )
 			{
 				sourceToScreen.set( viewerTransform );
 				sourceToScreen.concatenate( source.getSpimSource().getSourceTransform( currentTimepoint, mipmapIndex ) );
@@ -495,7 +497,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	{
 		final ArrayList< SourceDisplay< ? > > visibleSources = new ArrayList< SourceDisplay< ? > >();
 		for ( final SourceDisplay< ? > source : sources )
-			if ( source.isVisible() )
+			if ( isSourceVisible( source ) )
 				visibleSources.add( source );
 		return visibleSources;
 	}
