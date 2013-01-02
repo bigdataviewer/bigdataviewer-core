@@ -21,7 +21,7 @@ import viewer.hdf5.Util;
 
 public class ViewRegisteredAngles
 {
-	class Source implements SpimAngleSource< UnsignedShortType >
+	class Source implements SpimSource< UnsignedShortType >
 	{
 		int currentTimepoint;
 

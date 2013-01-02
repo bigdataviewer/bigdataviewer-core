@@ -8,7 +8,7 @@ import net.imglib2.realtransform.AffineTransform3D;
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
-public interface SpimAngleSource< T >
+public interface SpimSource< T >
 {
 	/**
 	 * Is there a stack at timepoint t?
@@ -42,6 +42,10 @@ public interface SpimAngleSource< T >
 	 */
 	public AffineTransform3D getSourceTransform( int t, int level );
 
+	/**
+	 * Get an instance of the pixel type.
+	 * @return instance of pixel type.
+	 */
 	public T getType();
 
 	public String getName();

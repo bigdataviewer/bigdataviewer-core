@@ -46,7 +46,7 @@ public class MultiBoxOverlay
 
 		public Interval getSourceInterval();
 
-		public AffineTransform3D getSourceToScreen();
+		public AffineTransform3D getSourceToViewer();
 	}
 
 	/**
@@ -81,7 +81,7 @@ public class MultiBoxOverlay
 		final long sourceSize = maxSourceSize;
 		final long targetSize = Math.max( targetInterval.dimension( 0 ), targetInterval.dimension( 1 ) );
 
-		final AffineTransform3D transform = sources.get( 0 ).getSourceToScreen();
+		final AffineTransform3D transform = sources.get( 0 ).getSourceToViewer();
 		final double vx = transform.get( 0, 0 );
 		final double vy = transform.get( 1, 0 );
 		final double vz = transform.get( 2, 0 );
@@ -272,9 +272,9 @@ public class MultiBoxOverlay
 		{
 			final IntervalAndTransform source = sources.get( i );
 			if( source.isVisible() )
-				renderBox( source.getSourceInterval(), source.getSourceToScreen(), activeFront, activeBack );
+				renderBox( source.getSourceInterval(), source.getSourceToViewer(), activeFront, activeBack );
 			else
-				renderBox( source.getSourceInterval(), source.getSourceToScreen(), inactiveFront, inactiveBack );
+				renderBox( source.getSourceInterval(), source.getSourceToViewer(), inactiveFront, inactiveBack );
 		}
 
 		graphics.setRenderingHint( RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON );
@@ -302,9 +302,9 @@ public class MultiBoxOverlay
 		final double[] qy = new double[ 3 ];
 		final double[] qz = new double[ 3 ];
 
-		source.getSourceToScreen().apply( px, qx );
-		source.getSourceToScreen().apply( py, qy );
-		source.getSourceToScreen().apply( pz, qz );
+		source.getSourceToViewer().apply( px, qx );
+		source.getSourceToViewer().apply( py, qy );
+		source.getSourceToViewer().apply( pz, qz );
 
 		graphics.setPaint( Color.WHITE );
 		graphics.setFont( new Font( "SansSerif", Font.PLAIN, 8 ) );
