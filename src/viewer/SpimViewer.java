@@ -48,15 +48,6 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	protected class SourceDisplay< T extends NumericType< T > > extends SourceAndConverter< T >
 	{
 		/**
-		 * Current transformation from {@link #source} to viewer (scaled
-		 * {@link #screenImage}) . This is a concatenation of
-		 * {@link SpimSource#getSourceTransform(long) source transform} and
-		 * the {@link #viewerTransform interactive viewer transform}.
-		 */
-// 		TODO remove
-//		final protected AffineTransform3D sourceToViewer;
-
-		/**
 		 * Current transformation from {@link #source} to {@link #screenImage}. This is
 		 * a concatenation of {@link SpimSource#getSourceTransform(long)
 		 * source transform}, the {@link #viewerTransform interactive viewer
@@ -73,8 +64,6 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		public SourceDisplay( final SpimSource< T > spimSource, final Converter< T, ARGBType > converter )
 		{
 			super( spimSource, converter );
-//	 		TODO remove
-//			sourceToViewer = new AffineTransform3D();
 			sourceToScreen = new AffineTransform3D();
 			isActive = true;
 		}
