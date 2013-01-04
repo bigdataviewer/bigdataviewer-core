@@ -25,4 +25,9 @@ public class ShortArrayLoader implements Hdf5ArrayLoader< ShortArray >
 			return new ShortArray( array.getAsFlatArray() );
 		}
 	}
+
+	@Override
+	public int getBytesPerElement() {
+		return 2;
+	}
 }

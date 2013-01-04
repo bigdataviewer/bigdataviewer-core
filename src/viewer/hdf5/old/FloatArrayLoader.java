@@ -26,4 +26,9 @@ public class FloatArrayLoader implements Hdf5ArrayLoader< FloatArray >
 			return new FloatArray( array.getAsFlatArray() );
 		}
 	}
+
+	@Override
+	public int getBytesPerElement() {
+		return 4;
+	}
 }

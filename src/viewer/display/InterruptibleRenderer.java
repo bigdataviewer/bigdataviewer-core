@@ -7,7 +7,8 @@ import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.converter.Converter;
-import viewer.hdf5.Util;
+import viewer.hdf5.img.Hdf5GlobalCellCache;
+import viewer.util.StopWatch;
 
 public class InterruptibleRenderer< A, B > extends AbstractInterval
 {
@@ -15,22 +16,26 @@ public class InterruptibleRenderer< A, B > extends AbstractInterval
 
 	final protected Converter< A, B > converter;
 
-	protected long lastFrameRenderTime;
+	protected long lastFrameRenderNanoTime;
 
-	protected long lastFrameIoTime;
+	protected long lastFrameIoNanoTime;
 
 	public InterruptibleRenderer( final RandomAccessible< A > source, final Converter< A, B > converter )
 	{
 		super( new long[ source.numDimensions() ] );
 		this.source = source;
 		this.converter = converter;
-		lastFrameRenderTime = -1;
-		lastFrameIoTime = -1;
+		lastFrameRenderNanoTime = -1;
+		lastFrameIoNanoTime = -1;
 	}
 
 	public boolean map( final RandomAccessibleInterval< B > target )
 	{
 		interrupted.set( false );
+		final StopWatch stopWatch = new StopWatch();
+		final long startTimeTotal = stopWatch.nanoTime();
+		final long startTimeIo = Hdf5GlobalCellCache.getThreadIoNanoTime();
+		final long startIoBytes = Hdf5GlobalCellCache.getThreadIoBytes();
 
 		min[ 0 ] = target.min( 0 );
 		min[ 1 ] = target.min( 1 );
@@ -48,8 +53,6 @@ public class InterruptibleRenderer< A, B > extends AbstractInterval
 		sourceRandomAccess.setPosition( min );
 		targetRandomAccess.setPosition( min[ 0 ], 0 );
 		targetRandomAccess.setPosition( min[ 1 ], 1 );
-		Util.timer = new Util.Timer();
-		Util.timer.start();
 		boolean wasInterrupted = false;
 		for ( int y = 0; y < height; ++y )
 		{
@@ -67,13 +70,17 @@ public class InterruptibleRenderer< A, B > extends AbstractInterval
 			sourceRandomAccess.fwd( 1 );
 			targetRandomAccess.fwd( 1 );
 		}
-		Util.timer.stop();
+
+		stopWatch.stop();
+		final long numIoBytes = Hdf5GlobalCellCache.getThreadIoBytes() - startIoBytes;
+		final long lastFrameTime = stopWatch.nanoTime() - startTimeTotal;
+		lastFrameIoNanoTime = Hdf5GlobalCellCache.getThreadIoNanoTime() - startTimeIo;
+		lastFrameRenderNanoTime = lastFrameTime - lastFrameIoNanoTime;
+
 		if ( wasInterrupted )
 			System.out.println( "rendering was interrupted." );
-		lastFrameIoTime = Util.timer.getIoTime();
-		lastFrameRenderTime = Util.timer.getTotalTime() - lastFrameIoTime;
-		System.out.println( Util.timer.getTotalTime()/1000000 + " ms  (io = " + lastFrameIoTime/1000000 + " ms,  render = " + lastFrameRenderTime/1000000 + " ms)" );
-		final double bytesPerSecond = 1000.0 * 1000000.0 * ( ( double ) Util.timer.getIoBytes() / lastFrameIoTime ) / 1024.0;
+		System.out.println( lastFrameTime/1000000 + " ms  (io = " + lastFrameIoNanoTime/1000000 + " ms,  render = " + lastFrameRenderNanoTime/1000000 + " ms)" );
+		final double bytesPerSecond = 1000.0 * 1000000.0 * ( ( double ) numIoBytes / lastFrameIoNanoTime ) / 1024.0;
 		if ( ! Double.isNaN( bytesPerSecond ) )
 			System.out.println( String.format( "%.0f kB/s", bytesPerSecond ) );
 
@@ -87,13 +94,14 @@ public class InterruptibleRenderer< A, B > extends AbstractInterval
 		interrupted.set( true );
 	}
 
-	public long getLastFrameRenderTime()
+	public long getLastFrameRenderNanoTime()
 	{
-		return lastFrameRenderTime;
+		return lastFrameRenderNanoTime;
 	}
 
-	public long getLastFrameIoTime()
+	// TODO: remove?
+	public long getLastFrameIoNanoTime()
 	{
-		return lastFrameIoTime;
+		return lastFrameIoNanoTime;
 	}
 }

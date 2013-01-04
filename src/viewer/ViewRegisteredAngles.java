@@ -17,7 +17,6 @@ import org.xml.sax.SAXException;
 
 import viewer.hdf5.Hdf5ImageLoader;
 import viewer.hdf5.MipMapDefinition;
-import viewer.hdf5.Util;
 
 public class ViewRegisteredAngles
 {
@@ -134,7 +133,6 @@ public class ViewRegisteredAngles
 	public static void main( final String[] args )
 	{
 		final String fn = "/home/tobias/workspace/data/fast fly/111010_weber/e012-reg-hdf5-mipmap2.xml";
-		Util.timer = new Util.Timer();
 		try
 		{
 			new ViewRegisteredAngles( fn );

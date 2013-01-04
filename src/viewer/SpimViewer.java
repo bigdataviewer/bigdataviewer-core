@@ -352,7 +352,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 			display.setBufferedImage( bufferedImage );
 			synchronized( this )
 			{
-				final long rendertime = p.getLastFrameRenderTime() / 1000000;
+				final long rendertime = p.getLastFrameRenderNanoTime() / 1000000;
 				if ( currentScreenScaleIndex == maxScreenScaleIndex )
 				{
 					if ( rendertime > 50 && maxScreenScaleIndex < screenScales.length - 1 )
