@@ -15,7 +15,6 @@ import java.awt.image.BufferedImage;
 import javax.swing.JComponent;
 
 import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.ui.TransformEventHandler3D;
 import net.imglib2.ui.TransformListener3D;
 
 public class SpimViewerCanvas extends JComponent
