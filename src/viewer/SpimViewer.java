@@ -113,13 +113,24 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	protected ARGBScreenImage[] screenImages = null;
 
 	/**
-	 * TODO
+	 * {@link BufferedImage}s wrapping the data in the {@link #screenImages}.
 	 */
 	protected BufferedImage[] bufferedImages = null;
 
 	/**
+	 * Scale factors from the {@link #display viewer canvas} to the
+	 * {@link #screenImages}.
+	 *
+	 * A scale factor of 1 means 1 pixel in the screen image is displayed as 1
+	 * pixel on the canvas, a scale factor of 0.5 means 1 pixel in the screen
+	 * image is displayed as 2 pixel on the canvas, etc.
+	 */
+	final protected double[] screenScales = new double[] { 1, 0.75, 0.5, 0.25, 0.125, 0.0625 };
+
+	/**
 	 * The scale transformation from viewer to {@link #screenImages screen
-	 * image}. One per screen resolution.
+	 * image}. Each transformations corresponds to a {@link #screenScales screen
+	 * scale}.
 	 */
 	protected AffineTransform3D[] screenScaleTransforms = null;
 
@@ -149,7 +160,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	final protected AffineTransform3D viewerTransform;
 
 	/**
-	 * Canvas used for displaying the rendered {@link #screenImage}.
+	 * Canvas used for displaying the rendered {@link #screenImages screen image}.
 	 */
 	final protected SpimViewerCanvas display;
 
@@ -183,9 +194,6 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	/**
 	 * TODO
 	 */
-	final protected double[] screenScales = new double[] { 1, 0.75, 0.5, 0.25, 0.125, 0.0625 };
-//	final protected double[] screenScales = new double[] { 1, 0.0625 };
-
 	protected int maxScreenScaleIndex = screenScales.length - 1;
 
 	/**
