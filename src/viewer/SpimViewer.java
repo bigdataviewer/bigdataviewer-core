@@ -192,6 +192,16 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	protected int currentMipMapLevel = 0;
 
 	/**
+	 * If the rendering time (in nanoseconds) for the (currently) highest scaled
+	 * screen image is above this threshold, increase the
+	 * {@link #maxScreenScaleIndex index} of the highest screen scale to use.
+	 * Similarly, if the rendering time for the (currently) second-highest
+	 * scaled screen image is below this threshold, decrease the
+	 * {@link #maxScreenScaleIndex index} of the highest screen scale to use.
+	 */
+	final long targetRenderNanos = 20 * 1000000;
+
+	/**
 	 * TODO
 	 */
 	protected int maxScreenScaleIndex = screenScales.length - 1;
@@ -360,17 +370,21 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 			display.setBufferedImage( bufferedImage );
 			synchronized( this )
 			{
-				final long rendertime = p.getLastFrameRenderNanoTime() / 1000000;
+				final long rendertime = p.getLastFrameRenderNanoTime();
 				if ( currentScreenScaleIndex == maxScreenScaleIndex )
 				{
-					if ( rendertime > 50 && maxScreenScaleIndex < screenScales.length - 1 )
+					if ( rendertime > targetRenderNanos && maxScreenScaleIndex < screenScales.length - 1 )
 						maxScreenScaleIndex++;
-					else if ( rendertime < 30 && maxScreenScaleIndex > 0 )
+				}
+				else if ( currentScreenScaleIndex == maxScreenScaleIndex - 1 )
+				{
+					if ( rendertime < targetRenderNanos && maxScreenScaleIndex > 0 )
 						maxScreenScaleIndex--;
 				}
-				System.out.println( "rendertime = " + rendertime );
-				System.out.println( "maxScreenScaleIndex = " + maxScreenScaleIndex );
+				System.out.println( "rendertime = " + rendertime / 1000000 );
+				System.out.println( "maxScreenScaleIndex = " + maxScreenScaleIndex + "  (" + screenImages[ maxScreenScaleIndex ].dimension( 0 ) + " x " + screenImages[ maxScreenScaleIndex ].dimension( 1 ) + ")" );
 				System.out.println( "scale = " + currentScreenScaleIndex + "   mipmap = " + currentMipMapLevel );
+
 				if ( currentScreenScaleIndex > 0 || currentMipMapLevel > 0 )
 				{
 					final double s = TMPGETSOURCERESOLUTION( currentScreenScaleIndex, currentMipMapLevel );
