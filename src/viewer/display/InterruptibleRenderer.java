@@ -33,6 +33,7 @@ public class InterruptibleRenderer< A, B > extends AbstractInterval
 	{
 		interrupted.set( false );
 		final StopWatch stopWatch = new StopWatch();
+		stopWatch.start();
 		final long startTimeTotal = stopWatch.nanoTime();
 		final long startTimeIo = Hdf5GlobalCellCache.getThreadIoNanoTime();
 		final long startIoBytes = Hdf5GlobalCellCache.getThreadIoBytes();
@@ -71,7 +72,6 @@ public class InterruptibleRenderer< A, B > extends AbstractInterval
 			targetRandomAccess.fwd( 1 );
 		}
 
-		stopWatch.stop();
 		final long numIoBytes = Hdf5GlobalCellCache.getThreadIoBytes() - startIoBytes;
 		final long lastFrameTime = stopWatch.nanoTime() - startTimeTotal;
 		lastFrameIoNanoTime = Hdf5GlobalCellCache.getThreadIoNanoTime() - startTimeIo;
