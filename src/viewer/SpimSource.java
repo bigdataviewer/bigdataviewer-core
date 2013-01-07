@@ -25,7 +25,7 @@ public interface SpimSource< T >
 	 * @param t
 	 *            timepoint index
 	 * @param level
-	 * 			  mip level
+	 * 			  mipmap level
 	 * @return the {@link RandomAccessibleInterval stack}.
 	 */
 	public RandomAccessibleInterval< T > getSource( int t, int level );
@@ -37,7 +37,7 @@ public interface SpimSource< T >
 	 * @param t
 	 *            timepoint index
 	 * @param level
-	 * 			  mip level
+	 * 			  mipmap level
 	 * @return transforms source into the global coordinate system.
 	 */
 	public AffineTransform3D getSourceTransform( int t, int level );

@@ -29,6 +29,9 @@ public class CreateCells
 	{
 		final String viewRegistrationsFilename = "/home/tobias/workspace/data/fast fly/111010_weber/e012-reg.xml";
 		final File hdf5CellsFile = new File( "/home/tobias/Desktop/e012-cells.h5" );
+		final int[][] resolutions = MipMapDefinition.resolutions;
+		final int[][] subdivisions = MipMapDefinition.subdivisions;
+		final int numLevels = resolutions.length;
 		try
 		{
 			final SequenceViewsLoader loader = new SequenceViewsLoader( viewRegistrationsFilename );
@@ -41,6 +44,17 @@ public class CreateCells
 				hdf5CellsFile.delete();
 			final IHDF5Writer hdf5Writer = HDF5Factory.open( hdf5CellsFile );
 
+			// write Mipmap descriptions
+			final double[][] dres = new double[ resolutions.length ][];
+			for ( int l = 0; l < resolutions.length; ++l )
+			{
+				dres[ l ] = new double[ resolutions[ l ].length ];
+				for ( int d = 0; d < resolutions[ l ].length; ++d )
+					dres[ l ][ d ] = resolutions[ l ][ d ];
+			}
+			hdf5Writer.writeDoubleMatrix( "resolutions", dres );
+			hdf5Writer.writeIntMatrix( "subdivisions", subdivisions );
+
 			// write image data for all views to the HDF5 file
 			final int n = 3;
 			final long[] dimensions = new long[ n ];
@@ -52,7 +66,7 @@ public class CreateCells
 					final View view = loader.getView( timepoint, setup );
 					final ImgPlus< UnsignedShortType > img = seq.imgLoader.getUnsignedShortImage( view );
 
-					for ( int level = 0; level < MipMapDefinition.numLevels; ++level )
+					for ( int level = 0; level < numLevels; ++level )
 					{
 						img.dimensions( dimensions );
 						final RandomAccessible< UnsignedShortType > source;
@@ -60,7 +74,7 @@ public class CreateCells
 							source = img;
 						else
 						{
-							final int[] factor = MipMapDefinition.resolutions[ level ];
+							final int[] factor = resolutions[ level ];
 							for ( int d = 0; d < n; ++d )
 								dimensions[ d ] /= factor[ d ];
 							final Img< UnsignedShortType > downsampled = ArrayImgs.unsignedShorts( dimensions );
@@ -68,7 +82,7 @@ public class CreateCells
 							source = downsampled;
 						}
 
-						final int[] cellDimensions = MipMapDefinition.subdivisions[ level ];
+						final int[] cellDimensions = subdivisions[ level ];
 						hdf5Writer.createGroup( Util.getGroupPath( view, level ) );
 						final String path = Util.getCellsPath( view, level );
 						hdf5Writer.createShortMDArray( path, reorder( dimensions ), reorder( cellDimensions ), HDF5IntStorageFeatures.INT_AUTO_SCALING_UNSIGNED );

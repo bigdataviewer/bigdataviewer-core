@@ -30,6 +30,8 @@ public class Hdf5ImageLoader implements ImgLoader
 
 	Hdf5GlobalCellCache< ShortArray > cache = null;
 
+	double[][] mipmapResolutions = null;
+
 	@Override
 	public void init( final Element elem, final File basePath )
 	{
@@ -43,6 +45,7 @@ public class Hdf5ImageLoader implements ImgLoader
 			throw new RuntimeException( e );
 		}
 		hdf5Reader = HDF5Factory.openForReading( new File( path ) );
+		mipmapResolutions = hdf5Reader.readDoubleMatrix( "resolutions" );
 		cache = new Hdf5GlobalCellCache< ShortArray >( new ShortArrayLoader( hdf5Reader ) );
 	}
 
@@ -85,5 +88,10 @@ public class Hdf5ImageLoader implements ImgLoader
 	public Hdf5GlobalCellCache< ShortArray > getCache()
 	{
 		return cache;
+	}
+
+	public double[][] getMipmapResolutions()
+	{
+		return mipmapResolutions;
 	}
 }

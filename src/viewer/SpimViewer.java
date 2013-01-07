@@ -38,7 +38,6 @@ import net.imglib2.util.LinAlgHelpers;
 import net.imglib2.view.Views;
 import viewer.display.AccumulateARGB;
 import viewer.display.InterruptibleRenderer;
-import viewer.hdf5.MipMapDefinition;
 
 public class SpimViewer implements ScreenImageRenderer, TransformListener3D, PainterThread.Paintable
 {
@@ -178,6 +177,11 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	 */
 	final protected int numTimePoints;
 
+	/**
+	 * index of coarsest mipmap level.
+	 */
+	final protected int maxMipmapLevel;
+
 
 
 
@@ -251,12 +255,13 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	 * @param sources
 	 *            the {@link SourceAndConverter sources} to display
 	 */
-	public SpimViewer( final int width, final int height, final Collection< SourceAndConverter< ? > > sources, final int numTimePoints)
+	public SpimViewer( final int width, final int height, final Collection< SourceAndConverter< ? > > sources, final int numTimePoints, final int numMipmapLevels )
 	{
 		this.sources = new ArrayList< SourceDisplay< ? > >( sources.size() );
 		for ( final SourceAndConverter< ? > source : sources )
 			this.sources.add( createSourceDisplay( source ) );
 		this.numTimePoints = numTimePoints;
+		this.maxMipmapLevel = numMipmapLevels - 1;
 		projector = null;
 		painterThread = new PainterThread( this );
 		viewerTransform = new AffineTransform3D();
@@ -421,7 +426,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	{
 		synchronized( this )
 		{
-			if( ( currentScreenScaleIndex < maxScreenScaleIndex || currentMipmapLevel < MipMapDefinition.numLevels - 1 ) && projector != null )
+			if( ( currentScreenScaleIndex < maxScreenScaleIndex || currentMipmapLevel < maxMipmapLevel ) && projector != null )
 				projector.cancel();
 			requestedScreenScaleIndex = screenScaleIndex;
 		}
@@ -485,8 +490,8 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	 */
 	protected int getBestMipMapLevel( final int scaleIndex )
 	{
-		int targetLevel = MipMapDefinition.numLevels - 1;
-		for ( int level = MipMapDefinition.numLevels - 1; level >= 0; level-- )
+		int targetLevel = maxMipmapLevel;
+		for ( int level = maxMipmapLevel; level >= 0; level-- )
 		{
 			final double r = getSourceResolution( currentScreenScaleIndex, level );
 			if ( r >= 1.0 )
@@ -523,7 +528,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	{
 		// TODO: if there are performance issues, consider synchronizing on viewerTransform rather than this.
 		viewerTransform.set( transform );
-		currentMipmapLevel = MipMapDefinition.numLevels - 1;
+		currentMipmapLevel = maxMipmapLevel;
 		requestRepaint( maxScreenScaleIndex );
 	}
 
@@ -532,7 +537,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		if ( currentTimepoint != timepoint )
 		{
 			currentTimepoint = timepoint;
-			currentMipmapLevel = MipMapDefinition.numLevels - 1;
+			currentMipmapLevel = maxMipmapLevel;
 			requestRepaint( maxScreenScaleIndex );
 		}
 	}

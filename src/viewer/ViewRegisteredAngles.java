@@ -16,7 +16,6 @@ import net.imglib2.type.numeric.integer.UnsignedShortType;
 import org.xml.sax.SAXException;
 
 import viewer.hdf5.Hdf5ImageLoader;
-import viewer.hdf5.MipMapDefinition;
 
 public class ViewRegisteredAngles
 {
@@ -55,10 +54,11 @@ public class ViewRegisteredAngles
 				final AffineModel3D reg = view.getModel();
 				reg.toMatrix( tmp );
 				currentSourceTransform.set( tmp );
+				final double[] resolution = imgLoader.getMipmapResolutions()[ currentLevel ];
 				for ( int d = 0; d < 3; ++d )
 				{
-					mipmapTransform.set( MipMapDefinition.resolutions[ currentLevel ][ d ], d, d );
-					mipmapTransform.set( 0.5 * ( MipMapDefinition.resolutions[ currentLevel ][ d ] - 1 ), d, 3 );
+					mipmapTransform.set( resolution[ d ], d, d );
+					mipmapTransform.set( 0.5 * ( resolution[ d ] - 1 ), d, 3 );
 				}
 				currentSourceTransform.concatenate( mipmapTransform );
 				currentSource = imgLoader.getUnsignedShortImage( view, currentLevel );
@@ -127,7 +127,8 @@ public class ViewRegisteredAngles
 		for ( int setup = 0; setup < seq.numViewSetups(); ++setup )
 			sources.add( new SourceAndConverter< UnsignedShortType >( new Source( setup, "angle " + setup ), converter ) );
 
-		viewer = new SpimViewer( width, height, sources, 100 /* seq.numTimepoints() */ );
+		final int numMipmapLevels = imgLoader.getMipmapResolutions().length;
+		viewer = new SpimViewer( width, height, sources, 100 /* seq.numTimepoints() */, numMipmapLevels );
 	}
 
 	public static void main( final String[] args )
