@@ -1,5 +1,6 @@
 package mpicbg.tracking.huisken.io;
 
+import static mpicbg.tracking.data.io.XmlHelpers.loadPath;
 import ij.ImagePlus;
 
 import java.io.File;
@@ -36,17 +37,25 @@ public class HuiskenImageLoader implements ImgLoader
 	}
 
 	@Override
-	public void init( final Element elem )
+	public void init( final Element elem, final File basePath )
 	{
-		final String path = elem.getElementsByTagName( "path" ).item( 0 ).getTextContent();
+		String path;
+		try
+		{
+			path = loadPath( elem, "path", basePath ).toString();
+		}
+		catch ( final Exception e )
+		{
+			throw new RuntimeException( e );
+		}
 		expFile = new File( path );
 		exp = null;
 	}
 
-	public static HuiskenImageLoader fromXml( final Element elem )
+	public static HuiskenImageLoader fromXml( final Element elem, final File basePath )
 	{
 		final HuiskenImageLoader loader = new HuiskenImageLoader();
-		loader.init( elem );
+		loader.init( elem, basePath );
 		return loader;
 	}
 

@@ -1,5 +1,6 @@
 package viewer.hdf5;
 
+import static mpicbg.tracking.data.io.XmlHelpers.loadPath;
 import static viewer.hdf5.Util.reorder;
 
 import java.io.File;
@@ -30,9 +31,17 @@ public class Hdf5ImageLoader implements ImgLoader
 	Hdf5GlobalCellCache< ShortArray > cache = null;
 
 	@Override
-	public void init( final Element elem )
+	public void init( final Element elem, final File basePath )
 	{
-		final String path = elem.getElementsByTagName( "hdf5" ).item( 0 ).getTextContent();
+		String path;
+		try
+		{
+			path = loadPath( elem, "hdf5", basePath ).toString();
+		}
+		catch ( final Exception e )
+		{
+			throw new RuntimeException( e );
+		}
 		hdf5Reader = HDF5Factory.openForReading( new File( path ) );
 		cache = new Hdf5GlobalCellCache< ShortArray >( new ShortArrayLoader( hdf5Reader ) );
 	}

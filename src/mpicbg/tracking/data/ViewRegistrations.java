@@ -1,5 +1,8 @@
 package mpicbg.tracking.data;
 
+import static mpicbg.tracking.data.io.XmlHelpers.loadPath;
+
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 
@@ -30,14 +33,14 @@ public class ViewRegistrations
 	/**
 	 * Load ViewRegistrations from an XML file.
 	 */
-	public static ViewRegistrations load( final String xmlFilename ) throws ParserConfigurationException, SAXException, IOException
+	public static ViewRegistrations load( final String xmlFilename ) throws ParserConfigurationException, SAXException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
 	{
 		final DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
 		final DocumentBuilder db = dbf.newDocumentBuilder();
 		final Document dom = db.parse( xmlFilename );
 		final Element root = dom.getDocumentElement();
 
-		final String seqname = root.getElementsByTagName( "SequenceDescriptionName" ).item( 0 ).getTextContent();
+		final String seqname = loadPath( root, "SequenceDescriptionName", new File( xmlFilename ).getParentFile() ).toString();
 		final int reftp = Integer.parseInt( root.getElementsByTagName( "ReferenceTimepoint" ).item( 0 ).getTextContent() );
 		final ArrayList< ViewRegistration > regs = new ArrayList< ViewRegistration >();
 		final NodeList nodes = root.getElementsByTagName( "ViewRegistration" );

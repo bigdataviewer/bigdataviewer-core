@@ -1,5 +1,7 @@
 package mpicbg.tracking.data.io;
 
+import java.io.File;
+
 import mpicbg.tracking.data.View;
 import net.imglib2.img.ImgPlus;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
@@ -12,7 +14,7 @@ public interface ImgLoader
 	/**
 	 * initialize the loader from a "ImageLoader" DOM element.
 	 */
-	public void init( final Element elem );
+	public void init( final Element elem, final File basePath );
 
 	/**
 	 * Get {@link FloatType} image normalized to range [0,1].

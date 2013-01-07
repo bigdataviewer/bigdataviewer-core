@@ -1,5 +1,7 @@
 package mpicbg.tracking.data;
 
+import static mpicbg.tracking.data.io.XmlHelpers.loadPath;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -106,38 +108,20 @@ public class SequenceDescription
 
 		final ViewSetup[] setups = loadViewSetups( root );
 		final int[] timepoints = loadTimepoints( root );
-		final ImgLoader loader = createImageLoader ? loadImgLoader( root ) : null;
-		final File detectionsDir = loadPath( root, "DetectionsPath", "detections" );
-		final File matchesDir = loadPath( root, "MatchesPath", "matches" );
+		final File basePath = loadPath( root, "BasePath", ".", new File( xmlFilename ).getParentFile() );
+		final ImgLoader loader = createImageLoader ? loadImgLoader( root, basePath ) : null;
+		final File detectionsDir = loadPath( root, "DetectionsPath", "detections", basePath );
+		final File matchesDir = loadPath( root, "MatchesPath", "matches", basePath );
 
 		return new SequenceDescription( setups, timepoints, loader, detectionsDir, matchesDir );
 	}
 
-	private static ImgLoader loadImgLoader( final Element sequenceDescription ) throws InstantiationException, IllegalAccessException, ClassNotFoundException
+	private static ImgLoader loadImgLoader( final Element sequenceDescription, final File basePath ) throws InstantiationException, IllegalAccessException, ClassNotFoundException
 	{
 		final Element elem = ( Element ) sequenceDescription.getElementsByTagName( "ImageLoader" ).item( 0 );
 		final ImgLoader imgLoader = ( ImgLoader ) Class.forName( elem.getAttribute( "class" ) ).newInstance();
-		imgLoader.init( elem );
+		imgLoader.init( elem, basePath );
 		return imgLoader;
-	}
-
-	private static File loadPath( final Element sequenceDescription, final String name, final String defaultRelativePath ) throws InstantiationException, IllegalAccessException, ClassNotFoundException
-	{
-		final NodeList nb = sequenceDescription.getElementsByTagName( "BasePath" );
-		final String basePath = nb.getLength() > 0 ? nb.item( 0 ).getTextContent() : null;
-
-		final NodeList nd = sequenceDescription.getElementsByTagName( name );
-		final String detectionsPath = nd.getLength() > 0 ? nd.item( 0 ).getTextContent() : defaultRelativePath;
-		final boolean isRelative = nd.getLength() > 0 ? ( ( Element ) nd.item( 0 ) ).getAttribute( "type" ).equals( "relative" ) : true;
-		if ( isRelative )
-		{
-			if ( basePath == null )
-				return null;
-			else
-				return new File( new File( basePath ) + "/" + detectionsPath );
-		}
-		else
-			return new File( detectionsPath );
 	}
 
 	private static int[] loadTimepoints( final Element sequenceDescription )
