@@ -77,12 +77,13 @@ public class InterruptibleRenderer< A, B > extends AbstractInterval
 		lastFrameIoNanoTime = Hdf5GlobalCellCache.getThreadIoNanoTime() - startTimeIo;
 		lastFrameRenderNanoTime = lastFrameTime - lastFrameIoNanoTime;
 
-		if ( wasInterrupted )
-			System.out.println( "rendering was interrupted." );
-		System.out.println( lastFrameTime/1000000 + " ms  (io = " + lastFrameIoNanoTime/1000000 + " ms,  render = " + lastFrameRenderNanoTime/1000000 + " ms)" );
-		final double bytesPerSecond = 1000.0 * 1000000.0 * ( ( double ) numIoBytes / lastFrameIoNanoTime ) / 1024.0;
-		if ( ! Double.isNaN( bytesPerSecond ) )
-			System.out.println( String.format( "%.0f kB/s", bytesPerSecond ) );
+//		if ( wasInterrupted )
+//			System.out.println( "rendering was interrupted." );
+//		System.out.println( String.format( "rendering:%4d ms   io:%4d ms   (total:%4d ms)", lastFrameRenderNanoTime / 1000000, lastFrameIoNanoTime / 1000000, lastFrameTime / 1000000 ) );
+//		System.out.println( lastFrameTime/1000000 + " ms  (io = " + lastFrameIoNanoTime/1000000 + " ms,  render = " + lastFrameRenderNanoTime/1000000 + " ms)" );
+//		final double bytesPerSecond = 1000.0 * 1000000.0 * ( ( double ) numIoBytes / lastFrameIoNanoTime ) / 1024.0;
+//		if ( ! Double.isNaN( bytesPerSecond ) )
+//			System.out.println( String.format( "%.0f kB/s", bytesPerSecond ) );
 
 		return ! wasInterrupted;
 	}
@@ -91,6 +92,7 @@ public class InterruptibleRenderer< A, B > extends AbstractInterval
 
 	public void cancel()
 	{
+//		System.out.println( "interrupting..." );
 		interrupted.set( true );
 	}
 

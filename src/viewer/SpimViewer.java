@@ -34,7 +34,7 @@ import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.NumericType;
 import net.imglib2.ui.TransformListener3D;
 import net.imglib2.util.Intervals;
-import net.imglib2.util.Util;
+import net.imglib2.util.LinAlgHelpers;
 import net.imglib2.view.Views;
 import viewer.display.AccumulateARGB;
 import viewer.display.InterruptibleRenderer;
@@ -125,7 +125,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	 * pixel on the canvas, a scale factor of 0.5 means 1 pixel in the screen
 	 * image is displayed as 2 pixel on the canvas, etc.
 	 */
-	final protected double[] screenScales = new double[] { 1, 0.75, 0.5, 0.25, 0.125, 0.0625 };
+	final protected double[] screenScales = new double[] { 1, 0.75, 0.5, 0.25, 0.125 }; //, 0.0625 };
 
 	/**
 	 * The scale transformation from viewer to {@link #screenImages screen
@@ -189,7 +189,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	/**
 	 * which mipmap level is currently shown.
 	 */
-	protected int currentMipMapLevel = 0;
+	protected int currentMipmapLevel = 0;
 
 	/**
 	 * If the rendering time (in nanoseconds) for the (currently) highest scaled
@@ -199,7 +199,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	 * scaled screen image is below this threshold, decrease the
 	 * {@link #maxScreenScaleIndex index} of the highest screen scale to use.
 	 */
-	final long targetRenderNanos = 20 * 1000000;
+	final long targetRenderNanos = 30 * 1000000;
 
 	/**
 	 * TODO
@@ -349,11 +349,22 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		}
 	}
 
+	long lastFrameIoNanoTime = 1;
+
 	@Override
 	public void paint()
 	{
 		checkResize();
 		updateBoxSources();
+
+		final int targetMipmapLevel;
+		synchronized( this )
+		{
+			currentScreenScaleIndex = requestedScreenScaleIndex;
+			targetMipmapLevel = getBestMipMapLevel( currentScreenScaleIndex );
+			if ( targetMipmapLevel > currentMipmapLevel || lastFrameIoNanoTime == 0 )
+				currentMipmapLevel = targetMipmapLevel;
+		}
 
 		final InterruptibleRenderer< ?, ARGBType > p = createProjector();
 		final ARGBScreenImage screenImage;
@@ -368,9 +379,10 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		if( p.map( screenImage ) )
 		{
 			display.setBufferedImage( bufferedImage );
+			final long rendertime = p.getLastFrameRenderNanoTime();
+			final long iotime = p.getLastFrameIoNanoTime();
 			synchronized( this )
 			{
-				final long rendertime = p.getLastFrameRenderNanoTime();
 				if ( currentScreenScaleIndex == maxScreenScaleIndex )
 				{
 					if ( rendertime > targetRenderNanos && maxScreenScaleIndex < screenScales.length - 1 )
@@ -381,20 +393,19 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 					if ( rendertime < targetRenderNanos && maxScreenScaleIndex > 0 )
 						maxScreenScaleIndex--;
 				}
-				System.out.println( "rendertime = " + rendertime / 1000000 );
-				System.out.println( "maxScreenScaleIndex = " + maxScreenScaleIndex + "  (" + screenImages[ maxScreenScaleIndex ].dimension( 0 ) + " x " + screenImages[ maxScreenScaleIndex ].dimension( 1 ) + ")" );
-				System.out.println( "scale = " + currentScreenScaleIndex + "   mipmap = " + currentMipMapLevel );
+//				System.out.println( "maxScreenScaleIndex = " + maxScreenScaleIndex + "  (" + screenImages[ maxScreenScaleIndex ].dimension( 0 ) + " x " + screenImages[ maxScreenScaleIndex ].dimension( 1 ) + ")" );
+//				System.out.println( String.format( "rendering:%4d ms   io:%4d ms   (total:%4d ms)", rendertime / 1000000, iotime / 1000000, (rendertime + iotime) / 1000000 ) );
+//				System.out.println( "scale = " + currentScreenScaleIndex + "   mipmap = " + currentMipMapLevel );
 
-				if ( currentScreenScaleIndex > 0 || currentMipMapLevel > 0 )
+				lastFrameIoNanoTime = iotime;
+
+				if ( targetMipmapLevel < currentMipmapLevel )
 				{
-					final double s = TMPGETSOURCERESOLUTION( currentScreenScaleIndex, currentMipMapLevel );
-					if ( s > 0.5 && currentMipMapLevel > 0 )
-						updateMipMapLevel( currentMipMapLevel - 1 );
-					else if ( currentScreenScaleIndex > 0 )
-						requestRepaint( currentScreenScaleIndex - 1 );
-					else
-						updateMipMapLevel( currentMipMapLevel - 1 );
+					currentMipmapLevel--;
+					requestRepaint( currentScreenScaleIndex );
 				}
+				else if ( currentScreenScaleIndex > 0 )
+					requestRepaint( currentScreenScaleIndex - 1 );
 			}
 		}
 		display.repaint();
@@ -410,17 +421,31 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	{
 		synchronized( this )
 		{
-			if( currentScreenScaleIndex < maxScreenScaleIndex && projector != null )
+			if( ( currentScreenScaleIndex < maxScreenScaleIndex || currentMipmapLevel < MipMapDefinition.numLevels - 1 ) && projector != null )
 				projector.cancel();
 			requestedScreenScaleIndex = screenScaleIndex;
 		}
 		painterThread.requestRepaint();
 	}
 
-	double TMPGETSOURCERESOLUTION( final int scaleIndex, final int mipmapIndex )
+	/**
+	 * TODO: fix doc
+	 * Compute the maximum "pixel size" at the given screen scale and mipmap
+	 * level. For every source, take a source voxel (0,0,0)-(1,1,1) at the given
+	 * mipmap level and transform it to the screen image at the given screen
+	 * scale. Take the maximum of the screen extends of the transformed voxel in
+	 * any dimension. Do this for every source and take the maximum.
+	 *
+	 * @param scaleIndex
+	 *            screen scale
+	 * @param mipmapIndex
+	 *            mipmap level
+	 * @return pixel size
+	 */
+	protected double getSourceResolution( final int scaleIndex, final int mipmapIndex )
 	{
 		final AffineTransform3D sourceToScreen = new AffineTransform3D();
-		double pixelSize = Double.MAX_VALUE;
+		double pixelSize = 0;
 		for ( final SourceDisplay< ? > source : sources )
 		{
 			if ( isSourceVisible( source ) )
@@ -429,22 +454,47 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 				sourceToScreen.concatenate( source.getSpimSource().getSourceTransform( currentTimepoint, mipmapIndex ) );
 				sourceToScreen.preConcatenate( screenScaleTransforms[ scaleIndex ] );
 				final double[] zero = new double[] { 0, 0, 0 };
-				final double[] one = new double[] { 1, 1, 1 };
 				final double[] tzero = new double[ 3 ];
+				final double[] one = new double[ 3 ];
 				final double[] tone = new double[ 3 ];
-				final double[] diff = new double[ 3 ];
+				final double[] diff = new double[ 2 ];
 				sourceToScreen.apply( zero, tzero );
-				sourceToScreen.apply( one, tone );
-				for ( int d = 0; d < 3; ++d )
-					diff[ d ] = Math.abs( tone[ d ] - tzero[ d ] );
-				System.out.println( "(sourceToScreen) diff = " + Util.printCoordinates( diff ) );
-				final double s = Math.min( diff[ 0 ], diff[ 1 ] );
-				if ( s < pixelSize )
-					pixelSize = s;
+				for ( int i = 0; i < 3; ++i )
+				{
+					for ( int d = 0; d < 3; ++d )
+						one[ d ] = d == i ? 1 : 0;
+					sourceToScreen.apply( one, tone );
+					LinAlgHelpers.subtract( tone, tzero, tone );
+					diff[0] = tone[0];
+					diff[1] = tone[1];
+					final double l = LinAlgHelpers.length( diff );
+					if ( l > pixelSize )
+						pixelSize = l;
+				}
 			}
 		}
 		return pixelSize;
 	}
+
+	/**
+	 * Get the mipmap level that best matches the given screen scale.
+	 *
+	 * @param scaleIndex
+	 *            screen scale
+	 * @return mipmap level
+	 */
+	protected int getBestMipMapLevel( final int scaleIndex )
+	{
+		int targetLevel = MipMapDefinition.numLevels - 1;
+		for ( int level = MipMapDefinition.numLevels - 1; level >= 0; level-- )
+		{
+			final double r = getSourceResolution( currentScreenScaleIndex, level );
+			if ( r >= 1.0 )
+				targetLevel = level;
+		}
+		return targetLevel;
+	}
+
 
 	@Override
 	public void drawOverlays( final Graphics g )
@@ -473,6 +523,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	{
 		// TODO: if there are performance issues, consider synchronizing on viewerTransform rather than this.
 		viewerTransform.set( transform );
+		currentMipmapLevel = MipMapDefinition.numLevels - 1;
 		requestRepaint( maxScreenScaleIndex );
 	}
 
@@ -481,16 +532,9 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		if ( currentTimepoint != timepoint )
 		{
 			currentTimepoint = timepoint;
-			currentMipMapLevel = MipMapDefinition.numLevels - 1;
+			currentMipmapLevel = MipMapDefinition.numLevels - 1;
 			requestRepaint( maxScreenScaleIndex );
 		}
-	}
-
-	public synchronized void updateMipMapLevel( final int level )
-	{
-		System.out.println( "mip map level " + level );
-		currentMipMapLevel = level;
-		requestRepaint( currentScreenScaleIndex );
 	}
 
 	/**
@@ -514,7 +558,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	 */
 	protected synchronized < T extends NumericType< T > > RandomAccessible< T > getTransformedSource( final SourceDisplay< T > source )
 	{
-		final RandomAccessibleInterval< T > img = source.getSpimSource().getSource( currentTimepoint, currentMipMapLevel );
+		final RandomAccessibleInterval< T > img = source.getSpimSource().getSource( currentTimepoint, currentMipmapLevel );
 		final T template = source.getSpimSource().getType().createVariable();
 		template.setZero();
 		final InterpolatorFactory< T, RandomAccessible< T > > interpolatorFactory;
@@ -556,14 +600,12 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 
 	protected synchronized InterruptibleRenderer< ?, ARGBType > createProjector()
 	{
-		currentScreenScaleIndex = requestedScreenScaleIndex;
-
 		final AffineTransform3D screenScaleTransform = screenScaleTransforms[ currentScreenScaleIndex ];
 		final AffineTransform3D sourceToViewer = new AffineTransform3D();
 		for ( final SourceDisplay< ? > source : sources )
 		{
 			sourceToViewer.set( viewerTransform );
-			sourceToViewer.concatenate( source.getSpimSource().getSourceTransform( currentTimepoint, currentMipMapLevel ) );
+			sourceToViewer.concatenate( source.getSpimSource().getSourceTransform( currentTimepoint, currentMipmapLevel ) );
 			source.sourceToScreen.set( screenScaleTransform );
 			source.sourceToScreen.concatenate( sourceToViewer );
 		}
