@@ -24,11 +24,14 @@ public class GuiHelpers
 	{
 		final GraphicsDevice device = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
 		final GraphicsConfiguration defaultGc = device.getDefaultConfiguration();
-		if ( defaultGc.getColorModel( Transparency.TRANSLUCENT ).equals( colorModel ) )
+
+		final int transparency = colorModel.getTransparency();
+
+		if ( defaultGc.getColorModel( transparency ).equals( colorModel ) )
 			return defaultGc;
 
 		for ( final GraphicsConfiguration gc : device.getConfigurations() )
-			if ( gc.getColorModel( Transparency.TRANSLUCENT ).equals( colorModel ) )
+			if ( gc.getColorModel( transparency ).equals( colorModel ) )
 				return gc;
 
 		return defaultGc;
@@ -48,15 +51,15 @@ public class GuiHelpers
 	 */
 	static final BufferedImage getBufferedImage( final ARGBScreenImage screenImage )
 	{
-		if ( discardAlpha )
+		final BufferedImage si = screenImage.image();
+		if ( discardAlpha && ( si.getTransparency() != Transparency.OPAQUE ) )
 		{
-			final BufferedImage si = screenImage.image();
 			final SampleModel sampleModel = RGB_COLOR_MODEL.createCompatibleWritableRaster( 1, 1 ).getSampleModel().createCompatibleSampleModel( si.getWidth(), si.getHeight() );
 			final DataBuffer dataBuffer = si.getRaster().getDataBuffer();
 			final WritableRaster rgbRaster = Raster.createWritableRaster( sampleModel, dataBuffer, null );
 			return new BufferedImage( RGB_COLOR_MODEL, rgbRaster, false, null );
 		}
 		else
-			return screenImage.image();
+			return si;
 	}
 }

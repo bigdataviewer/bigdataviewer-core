@@ -2,8 +2,6 @@ package viewer;
 
 import java.awt.Dimension;
 import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.RenderingHints;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.KeyListener;
@@ -129,7 +127,7 @@ public class SpimViewerCanvas extends JComponent
 		}
 		if ( bi != null )
 		{
-			( (Graphics2D ) g).setRenderingHint( RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR );
+//			( (Graphics2D ) g).setRenderingHint( RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR );
 //			final int biw = bi.getWidth();
 //			final int bih = bi.getHeight();
 //			final int w = getWidth();

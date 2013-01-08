@@ -271,6 +271,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		boxSources = new ArrayList< IntervalAndTransform >( sources.size() );
 		for ( int i = 0; i < sources.size(); ++i )
 			boxSources.add( new IntervalAndTransform() );
+		virtualScreenInterval = Intervals.createMinSize( 0, 0, width, height );
 
 		display = new SpimViewerCanvas( width, height, this, this );
 
@@ -288,7 +289,8 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 			}
 		} );
 
-		final GraphicsConfiguration gc = GuiHelpers.getSuitableGraphicsConfiguration( ARGBScreenImage.ARGB_COLOR_MODEL );
+//		final GraphicsConfiguration gc = GuiHelpers.getSuitableGraphicsConfiguration( ARGBScreenImage.ARGB_COLOR_MODEL );
+		final GraphicsConfiguration gc = GuiHelpers.getSuitableGraphicsConfiguration( GuiHelpers.RGB_COLOR_MODEL );
 		frame = new JFrame( "multi-angle viewer", gc );
 		frame.getRootPane().setDoubleBuffered( true );
 		final Container content = frame.getContentPane();
@@ -400,7 +402,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 				}
 //				System.out.println( "maxScreenScaleIndex = " + maxScreenScaleIndex + "  (" + screenImages[ maxScreenScaleIndex ].dimension( 0 ) + " x " + screenImages[ maxScreenScaleIndex ].dimension( 1 ) + ")" );
 //				System.out.println( String.format( "rendering:%4d ms   io:%4d ms   (total:%4d ms)", rendertime / 1000000, iotime / 1000000, (rendertime + iotime) / 1000000 ) );
-//				System.out.println( "scale = " + currentScreenScaleIndex + "   mipmap = " + currentMipMapLevel );
+//				System.out.println( "scale = " + currentScreenScaleIndex + "   mipmap = " + currentMipmapLevel );
 
 				lastFrameIoNanoTime = iotime;
 
