@@ -1,4 +1,4 @@
-package viewer.hdf5;
+package creator;
 
 import static viewer.hdf5.Util.reorder;
 
@@ -14,10 +14,11 @@ import net.imglib2.img.ImgPlus;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.ShortArray;
+import net.imglib2.img.cell.CellImg;
 import net.imglib2.iterator.LocalizingZeroMinIntervalIterator;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.view.Views;
-import viewer.SequenceViewsLoader;
+import viewer.hdf5.Util;
 import ch.systemsx.cisd.base.mdarray.MDShortArray;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.HDF5IntStorageFeatures;
@@ -25,24 +26,66 @@ import ch.systemsx.cisd.hdf5.IHDF5Writer;
 
 public class CreateCells
 {
+	public static class MipMapDefinition
+	{
+	//  mipmap def 1
+//		public static final int[][] resolutions = { { 1, 1, 1 }, { 2, 2, 1 }, { 4, 4, 1 } };
+//		public static final int[][] subdivisions = { { 32, 32, 4 }, { 32, 32, 4 }, { 16, 16, 4 } };
+
+	//  mipmap def 2
+		public static final int[][] resolutions = { { 1, 1, 1 }, { 2, 2, 1 }, { 4, 4, 2 } };
+		public static final int[][] subdivisions = { { 32, 32, 4 }, { 16, 16, 8 }, { 8, 8, 8 } };
+	}
+
+
 	public static void main( final String[] args )
 	{
-		final String viewRegistrationsFilename = "/home/tobias/workspace/data/fast fly/111010_weber/e012-reg.xml";
-		final File hdf5CellsFile = new File( "/home/tobias/Desktop/e012-cells.h5" );
+		final File seqFile = new File( "/Users/tobias/workspace/data/fast fly/111010_weber/e012-seq.xml" );
+		final File hdf5File = new File( "/Users/tobias/Desktop/e012-cells.h5" );
 		final int[][] resolutions = MipMapDefinition.resolutions;
 		final int[][] subdivisions = MipMapDefinition.subdivisions;
-		final int numLevels = resolutions.length;
+
+		createHdf5File( seqFile, hdf5File, resolutions, subdivisions );
+	}
+
+	/**
+	 * Create a hdf5 file containing image data from all views and all
+	 * timepoints in a chunked, mipmaped representation. Every image is stored
+	 * in multiple resolutions. The resolutions are described as int[] arrays
+	 * defining multiple of original pixel size in every dimension. For example
+	 * {1,1,1} is the original resolution, {4,4,2} is downsampled by factor 4 in
+	 * X and Y and factor 2 in Z. Each resolution of the image is stored as a
+	 * chunked three-dimensional array (each chunk corresponds to one cell of a
+	 * {@link CellImg} when the data is loaded). The chunk sizes are defined by
+	 * the subdivisions parameter which is an array of int[], one per
+	 * resolution. Each int[] array describes the X,Y,Z chunk size for one
+	 * resolution.
+	 *
+	 * @param seqFile
+	 *            XML sequence description to be read and converted to hdf5.
+	 *            (This contains number of setups and timepoints and an image
+	 *            loader).
+	 * @param hdf5File
+	 *            hdf5 to which the image data is written
+	 * @param resolutions
+	 *            each int[] element of the array describes one resolution level
+	 * @param subdivisions
+	 */
+	public static void createHdf5File( final File seqFile, final File hdf5File, final int[][] resolutions, final int[][] subdivisions )
+	{
 		try
 		{
-			final SequenceViewsLoader loader = new SequenceViewsLoader( viewRegistrationsFilename );
-			final SequenceDescription seq = loader.getSequenceDescription();
+//			final SequenceViewsLoader loader = new SequenceViewsLoader( viewRegistrationsFilename );
+//			final SequenceDescription seq = loader.getSequenceDescription();
+			final SequenceDescription seq = SequenceDescription.load( seqFile.getAbsolutePath(), true );
 			final int numTimepoints = seq.numTimepoints();
 			final int numSetups = seq.numViewSetups();
+			final int numLevels = resolutions.length;
 
 			// open HDF5 output file
-			if ( hdf5CellsFile.exists() )
-				hdf5CellsFile.delete();
-			final IHDF5Writer hdf5Writer = HDF5Factory.open( hdf5CellsFile );
+			if ( hdf5File.exists() )
+				hdf5File.delete();
+			final IHDF5Writer hdf5Writer = HDF5Factory.open( hdf5File );
 
 			// write Mipmap descriptions
 			final double[][] dres = new double[ resolutions.length ][];
@@ -63,18 +106,19 @@ public class CreateCells
 				System.out.println( String.format( "proccessing timepoint %d / %d", timepoint, numTimepoints ) );
 				for ( int setup = 0; setup < numSetups; ++setup )
 				{
-					final View view = loader.getView( timepoint, setup );
+//					final View view = loader.getView( timepoint, setup );
+					final View view = new View( seq, timepoint, setup, null );
 					final ImgPlus< UnsignedShortType > img = seq.imgLoader.getUnsignedShortImage( view );
 
 					for ( int level = 0; level < numLevels; ++level )
 					{
 						img.dimensions( dimensions );
 						final RandomAccessible< UnsignedShortType > source;
-						if ( level == 0 )
+						final int[] factor = resolutions[ level ];
+						if ( factor[0] == 1 && factor[1] == 1 && factor[2] == 1 )
 							source = img;
 						else
 						{
-							final int[] factor = resolutions[ level ];
 							for ( int d = 0; d < n; ++d )
 								dimensions[ d ] /= factor[ d ];
 							final Img< UnsignedShortType > downsampled = ArrayImgs.unsignedShorts( dimensions );

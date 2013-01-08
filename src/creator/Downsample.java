@@ -1,4 +1,4 @@
-package viewer.hdf5;
+package creator;
 
 import net.imglib2.Cursor;
 import net.imglib2.FinalInterval;
