@@ -8,6 +8,8 @@ import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -18,8 +20,10 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import net.imglib2.Interval;
+import net.imglib2.Positionable;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.RealPoint;
 import net.imglib2.converter.Converter;
 import net.imglib2.converter.Converters;
 import net.imglib2.converter.TypeIdentity;
@@ -172,6 +176,8 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 
 	final protected JSlider sliderTime;
 
+	final protected MouseCoordinateListener mouseCoordinates;
+
 	/**
 	 * number of available timepoints.
 	 */
@@ -274,6 +280,8 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		virtualScreenInterval = Intervals.createMinSize( 0, 0, width, height );
 
 		display = new SpimViewerCanvas( width, height, this, this );
+		mouseCoordinates = new MouseCoordinateListener() ;
+		display.addHandler( mouseCoordinates );
 
 		final SourceSwitcher sourceSwitcher = new SourceSwitcher();
 
@@ -401,8 +409,8 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 						maxScreenScaleIndex--;
 				}
 //				System.out.println( "maxScreenScaleIndex = " + maxScreenScaleIndex + "  (" + screenImages[ maxScreenScaleIndex ].dimension( 0 ) + " x " + screenImages[ maxScreenScaleIndex ].dimension( 1 ) + ")" );
-//				System.out.println( String.format( "rendering:%4d ms   io:%4d ms   (total:%4d ms)", rendertime / 1000000, iotime / 1000000, (rendertime + iotime) / 1000000 ) );
-//				System.out.println( "scale = " + currentScreenScaleIndex + "   mipmap = " + currentMipmapLevel );
+				System.out.println( String.format( "rendering:%4d ms   io:%4d ms   (total:%4d ms)", rendertime / 1000000, iotime / 1000000, (rendertime + iotime) / 1000000 ) );
+				System.out.println( "scale = " + currentScreenScaleIndex + "   mipmap = " + currentMipmapLevel );
 
 				lastFrameIoNanoTime = iotime;
 
@@ -428,7 +436,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	{
 		synchronized( this )
 		{
-			if( ( currentScreenScaleIndex < maxScreenScaleIndex || currentMipmapLevel < maxMipmapLevel ) && projector != null )
+			if( ( currentScreenScaleIndex < maxScreenScaleIndex || ( currentScreenScaleIndex == maxScreenScaleIndex ) && currentMipmapLevel < maxMipmapLevel ) && projector != null )
 				projector.cancel();
 			requestedScreenScaleIndex = screenScaleIndex;
 		}
@@ -519,9 +527,16 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 				timepointString = String.format( "t = %d", currentTimepoint );
 			}
 
-			g.setFont( new Font( "SansSerif", Font.PLAIN, 12 ) );
-			g.drawString( sourceName, ( int ) g.getClipBounds().getWidth() / 2, 10 );
-			g.drawString( timepointString, ( int ) g.getClipBounds().getWidth() - 50, 10 );
+			final RealPoint lPos = new RealPoint( 3 );
+			final RealPoint gPos = new RealPoint( 3 );
+			mouseCoordinates.getMouseCoordinated( lPos );
+			viewerTransform.applyInverse( gPos, lPos );
+			final String mousePosGlobalString = String.format( "(%6.1f,%6.1f,%6.1f)", gPos.getDoublePosition( 0 ), gPos.getDoublePosition( 1 ), gPos.getDoublePosition( 2 ) );
+
+			g.setFont( new Font( "Monospaced", Font.PLAIN, 12 ) );
+			g.drawString( sourceName, ( int ) g.getClipBounds().getWidth() / 2, 12 );
+			g.drawString( timepointString, ( int ) g.getClipBounds().getWidth() - 170, 12 );
+			g.drawString( mousePosGlobalString, ( int ) g.getClipBounds().getWidth() - 170, 25 );
 		}
 	}
 
@@ -538,6 +553,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	{
 		if ( currentTimepoint != timepoint )
 		{
+			System.out.println( "updateTimepoint (" + timepoint + ")" );
 			currentTimepoint = timepoint;
 			currentMipmapLevel = maxMipmapLevel;
 			requestRepaint( maxScreenScaleIndex );
@@ -716,5 +732,34 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		@Override
 		public void keyReleased( final KeyEvent e )
 		{}
+	}
+
+	protected class MouseCoordinateListener implements MouseMotionListener
+	{
+		private int x;
+
+		private int y;
+
+		public synchronized void getMouseCoordinated( final Positionable p )
+		{
+			p.setPosition( x, 0 );
+			p.setPosition( y, 1 );
+		}
+
+		@Override
+		public synchronized void mouseDragged( final MouseEvent e )
+		{
+			x = e.getX();
+			y = e.getY();
+		}
+
+		@Override
+		public synchronized void mouseMoved( final MouseEvent e )
+		{
+			x = e.getX();
+			y = e.getY();
+			display.repaint();
+		}
+
 	}
 }
