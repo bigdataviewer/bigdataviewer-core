@@ -211,6 +211,8 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	 */
 	final long targetRenderNanos = 30 * 1000000;
 
+	final long targetIoNanos = 10 * 1000000;
+
 	/**
 	 * TODO
 	 */
@@ -225,6 +227,11 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	 * TODO
 	 */
 	protected int requestedScreenScaleIndex = maxScreenScaleIndex;
+
+	/**
+	 * TODO
+	 */
+	protected int requestedMipmapLevel;
 
 	/**
 	 * Interpolation methods.
@@ -267,7 +274,8 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		for ( final SourceAndConverter< ? > source : sources )
 			this.sources.add( createSourceDisplay( source ) );
 		this.numTimePoints = numTimePoints;
-		this.maxMipmapLevel = numMipmapLevels - 1;
+		maxMipmapLevel = numMipmapLevels - 1;
+		requestedMipmapLevel = maxMipmapLevel;
 		projector = null;
 		painterThread = new PainterThread( this );
 		viewerTransform = new AffineTransform3D();
@@ -282,6 +290,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		display = new SpimViewerCanvas( width, height, this, this );
 		mouseCoordinates = new MouseCoordinateListener() ;
 		display.addHandler( mouseCoordinates );
+//		display.setFocusable( true );
 
 		final SourceSwitcher sourceSwitcher = new SourceSwitcher();
 
@@ -364,7 +373,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		}
 	}
 
-	long lastFrameIoNanoTime = 1;
+	int goodIoFrames = 0;
 
 	@Override
 	public void paint()
@@ -376,8 +385,9 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		synchronized( this )
 		{
 			currentScreenScaleIndex = requestedScreenScaleIndex;
+			currentMipmapLevel = requestedMipmapLevel;
 			targetMipmapLevel = getBestMipMapLevel( currentScreenScaleIndex );
-			if ( targetMipmapLevel > currentMipmapLevel || lastFrameIoNanoTime == 0 )
+			if ( targetMipmapLevel > currentMipmapLevel || goodIoFrames > 5 )
 				currentMipmapLevel = targetMipmapLevel;
 		}
 
@@ -395,7 +405,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		{
 			display.setBufferedImage( bufferedImage );
 			final long rendertime = p.getLastFrameRenderNanoTime();
-			final long iotime = p.getLastFrameIoNanoTime();
+//			final long iotime = p.getLastFrameIoNanoTime();
 			synchronized( this )
 			{
 				if ( currentScreenScaleIndex == maxScreenScaleIndex )
@@ -409,20 +419,20 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 						maxScreenScaleIndex--;
 				}
 //				System.out.println( "maxScreenScaleIndex = " + maxScreenScaleIndex + "  (" + screenImages[ maxScreenScaleIndex ].dimension( 0 ) + " x " + screenImages[ maxScreenScaleIndex ].dimension( 1 ) + ")" );
-				System.out.println( String.format( "rendering:%4d ms   io:%4d ms   (total:%4d ms)", rendertime / 1000000, iotime / 1000000, (rendertime + iotime) / 1000000 ) );
-				System.out.println( "scale = " + currentScreenScaleIndex + "   mipmap = " + currentMipmapLevel );
-
-				lastFrameIoNanoTime = iotime;
+//				System.out.println( String.format( "rendering:%4d ms   io:%4d ms   (total:%4d ms)", rendertime / 1000000, iotime / 1000000, (rendertime + iotime) / 1000000 ) );
+//				System.out.println( "scale = " + currentScreenScaleIndex + "   mipmap = " + currentMipmapLevel );
 
 				if ( targetMipmapLevel < currentMipmapLevel )
-				{
-					currentMipmapLevel--;
-					requestRepaint( currentScreenScaleIndex );
-				}
+					requestRepaint( currentScreenScaleIndex, currentMipmapLevel - 1 );
 				else if ( currentScreenScaleIndex > 0 )
-					requestRepaint( currentScreenScaleIndex - 1 );
+					requestRepaint( currentScreenScaleIndex - 1, currentMipmapLevel );
 			}
 		}
+		if ( p.getLastFrameIoNanoTime() <= targetIoNanos )
+			goodIoFrames++;
+		else
+			goodIoFrames = 0;
+		System.out.println( "goodIoFrames = " + goodIoFrames );
 		display.repaint();
 	}
 
@@ -432,13 +442,14 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	 * immediately or after the currently running {@link #paint()} has
 	 * completed).
 	 */
-	public void requestRepaint( final int screenScaleIndex )
+	public void requestRepaint( final int screenScaleIndex, final int mipmapLevel )
 	{
 		synchronized( this )
 		{
 			if( ( currentScreenScaleIndex < maxScreenScaleIndex || ( currentScreenScaleIndex == maxScreenScaleIndex ) && currentMipmapLevel < maxMipmapLevel ) && projector != null )
 				projector.cancel();
 			requestedScreenScaleIndex = screenScaleIndex;
+			requestedMipmapLevel = mipmapLevel;
 		}
 		painterThread.requestRepaint();
 	}
@@ -545,18 +556,15 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	{
 		// TODO: if there are performance issues, consider synchronizing on viewerTransform rather than this.
 		viewerTransform.set( transform );
-		currentMipmapLevel = maxMipmapLevel;
-		requestRepaint( maxScreenScaleIndex );
+		requestRepaint( maxScreenScaleIndex, maxMipmapLevel );
 	}
 
 	protected synchronized void updateTimepoint( final int timepoint )
 	{
 		if ( currentTimepoint != timepoint )
 		{
-			System.out.println( "updateTimepoint (" + timepoint + ")" );
 			currentTimepoint = timepoint;
-			currentMipmapLevel = maxMipmapLevel;
-			requestRepaint( maxScreenScaleIndex );
+			requestRepaint( maxScreenScaleIndex, maxMipmapLevel );
 		}
 	}
 
@@ -652,13 +660,13 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		if ( interpolation == Interpolation.NEARESTNEIGHBOR )
 			interpolation = Interpolation.NLINEAR;
 		else interpolation = Interpolation.NEARESTNEIGHBOR;
-		requestRepaint( maxScreenScaleIndex );
+		requestRepaint( maxScreenScaleIndex, currentMipmapLevel );
 	}
 
 	public synchronized void toggleSingleSourceMode()
 	{
 		singleSourceMode = !singleSourceMode;
-		requestRepaint( maxScreenScaleIndex );
+		requestRepaint( maxScreenScaleIndex, currentMipmapLevel );
 	}
 
 	public synchronized void toggleVisibility( final int sourceIndex )
@@ -667,7 +675,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		{
 			final SourceDisplay< ? > source = sources.get( sourceIndex );
 			source.setActive( !source.isActive() );
-			requestRepaint( maxScreenScaleIndex );
+			requestRepaint( maxScreenScaleIndex, currentMipmapLevel );
 		}
 	}
 
@@ -679,7 +687,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		if ( sourceIndex >= 0 && sourceIndex < sources.size() )
 		{
 			currentSource = sourceIndex;
-			requestRepaint( maxScreenScaleIndex );
+			requestRepaint( maxScreenScaleIndex, currentMipmapLevel );
 		}
 	}
 
