@@ -13,7 +13,6 @@ import viewer.hdf5.img.Hdf5Cell;
 import viewer.hdf5.img.Hdf5GlobalCellCache;
 import viewer.hdf5.img.Hdf5ImgCells;
 import viewer.hdf5.img.ShortArrayLoader;
-import viewer.hdf5.img.Hdf5GlobalCellCache.Hdf5CellCache;
 import ch.systemsx.cisd.hdf5.HDF5DataSetInformation;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
@@ -30,7 +29,10 @@ public class Hdf5CellImgFactory
 		final long[] dimensions = reorder( info.getDimensions() );
 		final int[] cellDimensions = reorder( info.tryGetChunkSizes() );
 
-		final Hdf5GlobalCellCache< ShortArray > cache = new Hdf5GlobalCellCache< ShortArray >( new ShortArrayLoader( hdf5Reader ) );
+		final int numTimepoints = hdf5Reader.readInt( "numTimepoints" );
+		final int numSetups = hdf5Reader.readInt( "numSetups" );
+		final int numLevels = hdf5Reader.readDoubleMatrix( "resolutions" ).length;
+		final Hdf5GlobalCellCache< ShortArray > cache = new Hdf5GlobalCellCache< ShortArray >( new ShortArrayLoader( hdf5Reader ), numTimepoints, numSetups, numLevels );
 		final Hdf5GlobalCellCache< ShortArray >.Hdf5CellCache c = cache.new Hdf5CellCache( timepoint, setup, level );
 		final Hdf5ImgCells< ShortArray > cells = new Hdf5ImgCells< ShortArray >( c, 1, dimensions, cellDimensions );
 		final CellImgFactory< UnsignedShortType > factory = null;

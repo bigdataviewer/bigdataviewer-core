@@ -8,14 +8,11 @@ import viewer.util.StopWatch;
 
 public class Hdf5GlobalCellCache< A >
 {
-	// TODO: initialize this from the hdf file
-	final int numTimepoints = 10;
+	final int numTimepoints ;
 
-	// TODO: initialize this from the hdf file
-	final int numSetups = 3;
+	final int numSetups;
 
-	// TODO: initialize this from the hdf file
-	final int numLevels = 3;
+	final int numLevels;
 
 	class Key
 	{
@@ -88,9 +85,12 @@ public class Hdf5GlobalCellCache< A >
 
 	final protected Hdf5ArrayLoader< A > loader;
 
-	public Hdf5GlobalCellCache( final Hdf5ArrayLoader< A > loader )
+	public Hdf5GlobalCellCache( final Hdf5ArrayLoader< A > loader, final int numTimepoints, final int numSetups, final int numLevels )
 	{
 		this.loader = loader;
+		this.numTimepoints = numTimepoints;
+		this.numSetups = numSetups;
+		this.numLevels = numLevels;
 	}
 
 	public Hdf5Cell< A > getGlobalIfCached( final int timepoint, final int setup, final int level, final int index )

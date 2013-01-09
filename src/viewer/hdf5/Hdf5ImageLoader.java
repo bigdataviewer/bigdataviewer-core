@@ -46,7 +46,10 @@ public class Hdf5ImageLoader implements ImgLoader
 		}
 		hdf5Reader = HDF5Factory.openForReading( new File( path ) );
 		mipmapResolutions = hdf5Reader.readDoubleMatrix( "resolutions" );
-		cache = new Hdf5GlobalCellCache< ShortArray >( new ShortArrayLoader( hdf5Reader ) );
+		final int numTimepoints = hdf5Reader.readInt( "numTimepoints" );
+		final int numSetups = hdf5Reader.readInt( "numSetups" );
+		final int numLevels = mipmapResolutions.length;
+		cache = new Hdf5GlobalCellCache< ShortArray >( new ShortArrayLoader( hdf5Reader ), numTimepoints, numSetups, numLevels );
 	}
 
 	@Override

@@ -98,6 +98,10 @@ public class CreateCells
 			hdf5Writer.writeDoubleMatrix( "resolutions", dres );
 			hdf5Writer.writeIntMatrix( "subdivisions", subdivisions );
 
+			// write number of timepoints and setups
+			hdf5Writer.writeInt( "numTimepoints", numTimepoints );
+			hdf5Writer.writeInt( "numSetups", numSetups );
+
 			// write image data for all views to the HDF5 file
 			final int n = 3;
 			final long[] dimensions = new long[ n ];
