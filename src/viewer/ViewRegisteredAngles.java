@@ -23,50 +23,59 @@ public class ViewRegisteredAngles
 	{
 		int currentTimepoint;
 
-		int currentLevel;
+		RandomAccessibleInterval< UnsignedShortType >[] currentSources;
 
-		RandomAccessibleInterval< UnsignedShortType > currentSource;
-
-		final AffineTransform3D currentSourceTransform = new AffineTransform3D();
+		final AffineTransform3D[] currentSourceTransforms;
 
 		final int setup;
 
 		final String name;
 
+		@SuppressWarnings( "unchecked" )
 		Source( final int setup, final String name )
 		{
 			this.setup = setup;
 			this.name = name;
-			loadTimepoint( 0, 0 );
+			final int levels = imgLoader.numMipmapLevels();
+			currentSources = new RandomAccessibleInterval[ levels ];
+			currentSourceTransforms = new AffineTransform3D[ levels ];
+			for ( int level = 0; level < levels; level++ )
+				currentSourceTransforms[ level ] = new AffineTransform3D();
+			loadTimepoint( 0 );
 		}
 
 		final double[][] tmp = new double[3][4];
 
 		final AffineTransform3D mipmapTransform = new AffineTransform3D();
 
-		void loadTimepoint( final int timepoint, final int level )
+		void loadTimepoint( final int timepoint )
 		{
 			currentTimepoint = timepoint;
-			currentLevel = level;
 			if ( isPresent( timepoint ) )
 			{
 				final View view = loader.getView( timepoint, setup );
 				final AffineModel3D reg = view.getModel();
 				reg.toMatrix( tmp );
-				currentSourceTransform.set( tmp );
-				final double[] resolution = imgLoader.getMipmapResolutions()[ currentLevel ];
-				for ( int d = 0; d < 3; ++d )
+				for ( int level = 0; level < currentSources.length; level++ )
 				{
-					mipmapTransform.set( resolution[ d ], d, d );
-					mipmapTransform.set( 0.5 * ( resolution[ d ] - 1 ), d, 3 );
+					final double[] resolution = imgLoader.getMipmapResolutions()[ level ];
+					for ( int d = 0; d < 3; ++d )
+					{
+						mipmapTransform.set( resolution[ d ], d, d );
+						mipmapTransform.set( 0.5 * ( resolution[ d ] - 1 ), d, 3 );
+					}
+					currentSourceTransforms[ level ].set( tmp );
+					currentSourceTransforms[ level ].concatenate( mipmapTransform );
+					currentSources[ level ] = imgLoader.getUnsignedShortImage( view, level );
 				}
-				currentSourceTransform.concatenate( mipmapTransform );
-				currentSource = imgLoader.getUnsignedShortImage( view, currentLevel );
 			}
 			else
 			{
-				currentSourceTransform.identity();
-				currentSource = null;
+				for ( int level = 0; level < currentSources.length; level++ )
+				{
+					currentSourceTransforms[ level ].identity();
+					currentSources[ level ] = null;
+				}
 			}
 		}
 
@@ -79,17 +88,17 @@ public class ViewRegisteredAngles
 		@Override
 		public synchronized RandomAccessibleInterval< UnsignedShortType > getSource( final int t, final int level )
 		{
-			if ( t != currentTimepoint || level != currentLevel )
-				loadTimepoint( t, level );
-			return currentSource;
+			if ( t != currentTimepoint )
+				loadTimepoint( t );
+			return currentSources[ level ];
 		}
 
 		@Override
 		public synchronized AffineTransform3D getSourceTransform( final int t, final int level )
 		{
-			if ( t != currentTimepoint || level != currentLevel )
-				loadTimepoint( t, level );
-			return currentSourceTransform;
+			if ( t != currentTimepoint )
+				loadTimepoint( t );
+			return currentSourceTransforms[ level ];
 		}
 
 		@Override
@@ -133,7 +142,7 @@ public class ViewRegisteredAngles
 
 	public static void main( final String[] args )
 	{
-		final String fn = "/home/tobias/workspace/data/fast fly/111010_weber/e012-reg-hdf5-mipmap2.xml";
+		final String fn = "/Users/tobias/workspace/data/fast fly/111010_weber/e012-reg-hdf5-mipmap2.xml";
 		try
 		{
 			new ViewRegisteredAngles( fn );

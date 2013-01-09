@@ -94,4 +94,9 @@ public class Hdf5ImageLoader implements ImgLoader
 	{
 		return mipmapResolutions;
 	}
+
+	public int numMipmapLevels()
+	{
+		return mipmapResolutions.length;
+	}
 }
