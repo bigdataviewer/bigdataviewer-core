@@ -21,6 +21,9 @@ public class ViewRegistrations
 
 	final public String sequenceDescriptionName;
 
+	/**
+	 * the id (not index!) of the reference timepoint.
+	 */
 	final public int referenceTimePoint;
 
 	public ViewRegistrations( final ArrayList< ViewRegistration > registrations, final String sequenceDescriptionName, final int referenceTimePoint )
