@@ -288,14 +288,15 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		virtualScreenInterval = Intervals.createMinSize( 0, 0, width, height );
 
 		display = new SpimViewerCanvas( width, height, this, this );
+
 		mouseCoordinates = new MouseCoordinateListener() ;
 		display.addHandler( mouseCoordinates );
-//		display.setFocusable( true );
 
 		final SourceSwitcher sourceSwitcher = new SourceSwitcher();
+		display.addKeyListener( sourceSwitcher );
 
 		sliderTime = new JSlider( JSlider.HORIZONTAL, 0, numTimePoints - 1, 0 );
-		sliderTime.addKeyListener( display.getTransformEventHandler() );
+//		sliderTime.addKeyListener( display.getTransformEventHandler() );
 		sliderTime.addKeyListener( sourceSwitcher );
 		sliderTime.addChangeListener( new ChangeListener() {
 			@Override
@@ -315,7 +316,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		content.add( sliderTime, BorderLayout.SOUTH );
 		frame.pack();
 		frame.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
-		frame.addKeyListener( display.getTransformEventHandler() );
+//		frame.addKeyListener( display.getTransformEventHandler() );
 		frame.addKeyListener( sourceSwitcher );
 		frame.setVisible( true );
 
@@ -432,7 +433,21 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 			goodIoFrames++;
 		else
 			goodIoFrames = 0;
-		System.out.println( "goodIoFrames = " + goodIoFrames );
+//		System.out.println( "goodIoFrames = " + goodIoFrames );
+
+		synchronized( this )
+		{
+			if ( currentAnimator != null )
+			{
+				final TransformEventHandler3D handler = display.getTransformEventHandler();
+				final AffineTransform3D transform = currentAnimator.getCurrent();
+				handler.setTransform( transform );
+				transformChanged( transform );
+				if ( currentAnimator.isComplete() )
+					currentAnimator = null;
+			}
+		}
+
 		display.repaint();
 	}
 
@@ -446,7 +461,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	{
 		synchronized( this )
 		{
-			if( ( currentScreenScaleIndex < maxScreenScaleIndex || ( currentScreenScaleIndex == maxScreenScaleIndex ) && currentMipmapLevel < maxMipmapLevel ) && projector != null )
+			if( ( currentScreenScaleIndex < maxScreenScaleIndex || requestedMipmapLevel < maxMipmapLevel ) && projector != null )
 				projector.cancel();
 			requestedScreenScaleIndex = screenScaleIndex;
 			requestedMipmapLevel = mipmapLevel;
@@ -540,7 +555,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 
 			final RealPoint lPos = new RealPoint( 3 );
 			final RealPoint gPos = new RealPoint( 3 );
-			mouseCoordinates.getMouseCoordinated( lPos );
+			mouseCoordinates.getMouseCoordinates( lPos );
 			viewerTransform.applyInverse( gPos, lPos );
 			final String mousePosGlobalString = String.format( "(%6.1f,%6.1f,%6.1f)", gPos.getDoublePosition( 0 ), gPos.getDoublePosition( 1 ), gPos.getDoublePosition( 2 ) );
 
@@ -554,9 +569,50 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	@Override
 	public synchronized void transformChanged( final AffineTransform3D transform )
 	{
-		// TODO: if there are performance issues, consider synchronizing on viewerTransform rather than this.
 		viewerTransform.set( transform );
 		requestRepaint( maxScreenScaleIndex, maxMipmapLevel );
+	}
+
+	RotationAnimator currentAnimator = null;
+
+	static enum AlignPlane
+	{
+		XY,
+		ZY,
+		XZ
+	}
+
+	private final static double c = Math.cos( Math.PI / 4 );
+	private final static double[] qAlignXY = new double[] { 1,  0,  0, 0 };
+	private final static double[] qAlignZY = new double[] { c,  0, -c, 0 };
+	private final static double[] qAlignXZ = new double[] { c,  c,  0, 0 };
+
+	protected synchronized void align( final AlignPlane plane )
+	{
+		final SourceDisplay< ? > source = sources.get( currentSource );
+		final AffineTransform3D sourceTransform = source.getSpimSource().getSourceTransform( currentTimepoint, currentMipmapLevel );
+
+		final double[] qSource = new double[ 4 ];
+		RotationAnimator.extractRotationAnisotropic( sourceTransform, qSource );
+
+		final double[] qTmpSource;
+		if ( plane == AlignPlane.XY )
+			qTmpSource = qSource;
+		else
+		{
+			qTmpSource = new double[4];
+			if ( plane == AlignPlane.ZY )
+				LinAlgHelpers.quaternionMultiply( qSource, qAlignZY, qTmpSource );
+			else // if ( plane == AlignPlane.XZ )
+				LinAlgHelpers.quaternionMultiply( qSource, qAlignXZ, qTmpSource );
+		}
+
+		final double[] qTarget = new double[ 4 ];
+		LinAlgHelpers.quaternionInvert( qTmpSource, qTarget );
+
+		final AffineTransform3D transform = display.getTransformEventHandler().getTransform();
+		currentAnimator = new RotationAnimator( transform, mouseCoordinates.getX(), mouseCoordinates.getY(), qTarget, 300 );
+		transformChanged( transform );
 	}
 
 	protected synchronized void updateTimepoint( final int timepoint )
@@ -700,33 +756,41 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		@Override
 		public void keyPressed( final KeyEvent e )
 		{
+			final int keyCode = e.getKeyCode();
 			final int modifiers = e.getModifiersEx();
 			final boolean toggle = ( modifiers & KeyEvent.SHIFT_DOWN_MASK ) != 0;
+			final boolean align = toggle;
 
-			if ( e.getKeyCode() == KeyEvent.VK_I )
+			if ( keyCode == KeyEvent.VK_I )
 				toggleInterpolation();
-			if ( e.getKeyCode() == KeyEvent.VK_F )
+			else if ( keyCode == KeyEvent.VK_F )
 				toggleSingleSourceMode();
-			else if ( e.getKeyCode() == KeyEvent.VK_1 )
+			else if ( keyCode == KeyEvent.VK_1 )
 				selectOrToggleSource( 0, toggle );
-			else if ( e.getKeyCode() == KeyEvent.VK_2 )
+			else if ( keyCode == KeyEvent.VK_2 )
 				selectOrToggleSource( 1, toggle );
-			else if ( e.getKeyCode() == KeyEvent.VK_3 )
+			else if ( keyCode == KeyEvent.VK_3 )
 				selectOrToggleSource( 2, toggle );
-			else if ( e.getKeyCode() == KeyEvent.VK_4 )
+			else if ( keyCode == KeyEvent.VK_4 )
 				selectOrToggleSource( 3, toggle );
-			else if ( e.getKeyCode() == KeyEvent.VK_5 )
+			else if ( keyCode == KeyEvent.VK_5 )
 				selectOrToggleSource( 4, toggle );
-			else if ( e.getKeyCode() == KeyEvent.VK_6 )
+			else if ( keyCode == KeyEvent.VK_6 )
 				selectOrToggleSource( 5, toggle );
-			else if ( e.getKeyCode() == KeyEvent.VK_7 )
+			else if ( keyCode == KeyEvent.VK_7 )
 				selectOrToggleSource( 6, toggle );
-			else if ( e.getKeyCode() == KeyEvent.VK_8 )
+			else if ( keyCode == KeyEvent.VK_8 )
 				selectOrToggleSource( 7, toggle );
-			else if ( e.getKeyCode() == KeyEvent.VK_9 )
+			else if ( keyCode == KeyEvent.VK_9 )
 				selectOrToggleSource( 8, toggle );
-			else if ( e.getKeyCode() == KeyEvent.VK_0 )
+			else if ( keyCode == KeyEvent.VK_0 )
 				selectOrToggleSource( 9, toggle );
+			else if ( keyCode == KeyEvent.VK_Z && align )
+				align( AlignPlane.XY );
+			else if ( keyCode == KeyEvent.VK_X && align )
+				align( AlignPlane.ZY );
+			else if ( keyCode == KeyEvent.VK_Y && align )
+				align( AlignPlane.XZ );
 		}
 
 		protected void selectOrToggleSource( final int sourceIndex, final boolean toggle )
@@ -748,7 +812,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 
 		private int y;
 
-		public synchronized void getMouseCoordinated( final Positionable p )
+		public synchronized void getMouseCoordinates( final Positionable p )
 		{
 			p.setPosition( x, 0 );
 			p.setPosition( y, 1 );
@@ -769,5 +833,14 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 			display.repaint();
 		}
 
+		public synchronized int getX()
+		{
+			return x;
+		}
+
+		public synchronized int getY()
+		{
+			return y;
+		}
 	}
 }

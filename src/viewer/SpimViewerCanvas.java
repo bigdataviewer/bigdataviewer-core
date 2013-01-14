@@ -1,10 +1,12 @@
 package viewer;
 
+import java.awt.AWTEvent;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.KeyListener;
+import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelListener;
@@ -40,6 +42,7 @@ public class SpimViewerCanvas extends JComponent
 	{
 		super();
 		setPreferredSize( new Dimension( width, height ) );
+		setFocusable( true );
 
 		this.bufferedImage = null;
 		this.renderer = renderer;
@@ -77,9 +80,39 @@ public class SpimViewerCanvas extends JComponent
 				handler.setTransform( tmp );
 				handler.setWindowCenter( w / 2, h / 2 );
 				renderTransformListener.transformChanged( tmp );
+				enableEvents( AWTEvent.MOUSE_MOTION_EVENT_MASK );
 
 				oldW = w;
 				oldH = h;
+			}
+		} );
+
+		addMouseListener( new MouseListener()
+		{
+			@Override
+			public void mouseReleased( final MouseEvent e )
+			{
+			}
+
+			@Override
+			public void mousePressed( final MouseEvent e )
+			{
+				requestFocusInWindow();
+			}
+
+			@Override
+			public void mouseExited( final MouseEvent e )
+			{
+			}
+
+			@Override
+			public void mouseEntered( final MouseEvent e )
+			{
+			}
+
+			@Override
+			public void mouseClicked( final MouseEvent e )
+			{
 			}
 		} );
 
@@ -135,8 +168,9 @@ public class SpimViewerCanvas extends JComponent
 //			final boolean b = g.drawImage( bi, 0, 0, w, h, null );
 //			System.out.println( String.format( "%d, %d, %d, %d, %b", biw, bih, w, h, b ) );
 			g.drawImage( bi, 0, 0, getWidth(), getHeight(), null );
+			renderer.drawOverlays( g );
 		}
-		renderer.drawOverlays( g );
+//		renderer.drawOverlays( g );
 	}
 
 	public TransformEventHandler3D getTransformEventHandler()

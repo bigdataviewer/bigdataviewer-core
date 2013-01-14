@@ -267,49 +267,50 @@ public class TransformEventHandler3D implements MouseListener, MouseMotionListen
 	{
 		synchronized ( affine )
 		{
-			if ( e.getKeyCode() == KeyEvent.VK_X )
+			final int keyCode = e.getKeyCode();
+			if ( keyCode == KeyEvent.VK_X )
 			{
 				axis = 0;
 			}
-			else if ( e.getKeyCode() == KeyEvent.VK_Y )
+			else if (keyCode == KeyEvent.VK_Y )
 			{
 				axis = 1;
 			}
-			else if ( e.getKeyCode() == KeyEvent.VK_Z )
+			else if ( keyCode == KeyEvent.VK_Z )
 			{
 				axis = 2;
 			}
 			else
 			{
 				final double v = keyModfiedSpeed( e.getModifiersEx() );
-				if ( e.getKeyCode() == KeyEvent.VK_LEFT )
+				if ( keyCode == KeyEvent.VK_LEFT )
 				{
 					rotate( axis, step * v );
 					update();
 				}
-				else if ( e.getKeyCode() == KeyEvent.VK_RIGHT )
+				else if ( keyCode == KeyEvent.VK_RIGHT )
 				{
 					rotate( axis, step * -v );
 					update();
 				}
-				if ( e.getKeyCode() == KeyEvent.VK_UP )
+				if ( keyCode == KeyEvent.VK_UP )
 				{
 					final double dScale = 1.0 + 0.1 * v;
 					scale( dScale, centerX, centerY );
 					update();
 				}
-				else if ( e.getKeyCode() == KeyEvent.VK_DOWN )
+				else if ( keyCode == KeyEvent.VK_DOWN )
 				{
 					final double dScale = 1.0 + 0.1 * v;
 					scale( 1.0 / dScale, centerX, centerY );
 					update();
 				}
-				else if ( e.getKeyCode() == KeyEvent.VK_COMMA )
+				else if ( keyCode == KeyEvent.VK_COMMA )
 				{
 					affine.set( affine.get( 2, 3 ) + v, 2, 3 );
 					update();
 				}
-				else if ( e.getKeyCode() == KeyEvent.VK_PERIOD )
+				else if ( keyCode == KeyEvent.VK_PERIOD )
 				{
 					affine.set( affine.get( 2, 3 ) - v, 2, 3 );
 					update();
