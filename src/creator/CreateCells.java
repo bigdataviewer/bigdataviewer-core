@@ -40,8 +40,10 @@ public class CreateCells
 
 	public static void main( final String[] args )
 	{
-		final File seqFile = new File( "/Users/tobias/workspace/data/fast fly/111010_weber/e012-seq.xml" );
-		final File hdf5File = new File( "/Users/tobias/Desktop/e012-cells.h5" );
+//		final File seqFile = new File( "/Users/tobias/workspace/data/fast fly/111010_weber/e012-seq.xml" );
+//		final File hdf5File = new File( "/Users/tobias/Desktop/e012-cells.h5" );
+		final File seqFile = new File( "/Users/tobias/Desktop/celegans/celegans-desc.xml" );
+		final File hdf5File = new File( "/Users/tobias/Desktop/celegans/celegans-cells.h5" );
 		final int[][] resolutions = MipMapDefinition.resolutions;
 		final int[][] subdivisions = MipMapDefinition.subdivisions;
 
