@@ -133,7 +133,7 @@ public class CreateCells
 						final int[] cellDimensions = subdivisions[ level ];
 						hdf5Writer.createGroup( Util.getGroupPath( view, level ) );
 						final String path = Util.getCellsPath( view, level );
-						hdf5Writer.createShortMDArray( path, reorder( dimensions ), reorder( cellDimensions ), HDF5IntStorageFeatures.INT_AUTO_SCALING_UNSIGNED );
+						hdf5Writer.createShortMDArray( path, reorder( dimensions ), reorder( cellDimensions ), HDF5IntStorageFeatures.INT_AUTO_SCALING );
 
 						final long[] numCells = new long[ n ];
 						final int[] borderSize = new int[ n ];
