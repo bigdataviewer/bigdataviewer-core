@@ -24,6 +24,7 @@ import net.imglib2.Positionable;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealPoint;
+import net.imglib2.RealPositionable;
 import net.imglib2.converter.Converter;
 import net.imglib2.converter.Converters;
 import net.imglib2.converter.TypeIdentity;
@@ -40,7 +41,7 @@ import net.imglib2.ui.TransformListener3D;
 import net.imglib2.util.Intervals;
 import net.imglib2.util.LinAlgHelpers;
 import net.imglib2.view.Views;
-import viewer.display.AccumulateARGB;
+import viewer.display.BlendARGB;
 import viewer.display.InterruptibleRenderer;
 
 public class SpimViewer implements ScreenImageRenderer, TransformListener3D, PainterThread.Paintable
@@ -128,7 +129,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	 * pixel on the canvas, a scale factor of 0.5 means 1 pixel in the screen
 	 * image is displayed as 2 pixel on the canvas, etc.
 	 */
-	final protected double[] screenScales = new double[] { 1, 0.75, 0.5, 0.25, 0.125 }; //, 0.0625 };
+	final protected double[] screenScales = new double[] { 1, 0.5, 0.25, 0.125 }; //, 0.0625 };
 
 	/**
 	 * The scale transformation from viewer to {@link #screenImages screen
@@ -201,6 +202,8 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	 */
 	protected int currentMipmapLevel = 0;
 
+	protected int currentAlpha = 128;
+
 	/**
 	 * If the rendering time (in nanoseconds) for the (currently) highest scaled
 	 * screen image is above this threshold, increase the
@@ -252,7 +255,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	 * only source (SPIM angle) is shown. Otherwise, in "fused" mode, all active
 	 * sources are blended.
 	 */
-	protected boolean singleSourceMode = true;
+	protected boolean singleSourceMode = false;
 
 	/**
 	 * in single-source mode: index of the source that is currently shown.
@@ -295,6 +298,17 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		final SourceSwitcher sourceSwitcher = new SourceSwitcher();
 		display.addKeyListener( sourceSwitcher );
 
+		final JSlider sliderAlpha = new JSlider( JSlider.VERTICAL, 0, 254, 128 );
+		sliderAlpha.addKeyListener( sourceSwitcher );
+		sliderAlpha.addChangeListener( new ChangeListener() {
+			@Override
+			public void stateChanged( final ChangeEvent e )
+			{
+				if ( e.getSource().equals( sliderAlpha ) )
+					updateAlpha( sliderAlpha.getValue() );
+			}
+		} );
+
 		sliderTime = new JSlider( JSlider.HORIZONTAL, 0, numTimePoints - 1, 0 );
 //		sliderTime.addKeyListener( display.getTransformEventHandler() );
 		sliderTime.addKeyListener( sourceSwitcher );
@@ -313,7 +327,8 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		frame.getRootPane().setDoubleBuffered( true );
 		final Container content = frame.getContentPane();
 		content.add( display, BorderLayout.CENTER );
-		content.add( sliderTime, BorderLayout.SOUTH );
+//		content.add( sliderTime, BorderLayout.SOUTH );
+		content.add( sliderAlpha, BorderLayout.EAST );
 		frame.pack();
 		frame.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
 //		frame.addKeyListener( display.getTransformEventHandler() );
@@ -321,6 +336,21 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		frame.setVisible( true );
 
 		painterThread.start();
+	}
+
+	public void addHandler( final Object handler )
+	{
+		display.addHandler( handler );
+		if ( KeyListener.class.isInstance( handler ) )
+			frame.addKeyListener( ( KeyListener ) handler );
+	}
+
+	public void getGlobalMouseCoordinates( final RealPositionable gPos )
+	{
+		assert gPos.numDimensions() == 3;
+		final RealPoint lPos = new RealPoint( 3 );
+		mouseCoordinates.getMouseCoordinates( lPos );
+		viewerTransform.applyInverse( gPos, lPos );
 	}
 
 	/**
@@ -406,7 +436,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		{
 			display.setBufferedImage( bufferedImage );
 			final long rendertime = p.getLastFrameRenderNanoTime();
-//			final long iotime = p.getLastFrameIoNanoTime();
+			final long iotime = p.getLastFrameIoNanoTime();
 			synchronized( this )
 			{
 				if ( currentScreenScaleIndex == maxScreenScaleIndex )
@@ -420,8 +450,8 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 						maxScreenScaleIndex--;
 				}
 //				System.out.println( "maxScreenScaleIndex = " + maxScreenScaleIndex + "  (" + screenImages[ maxScreenScaleIndex ].dimension( 0 ) + " x " + screenImages[ maxScreenScaleIndex ].dimension( 1 ) + ")" );
-//				System.out.println( String.format( "rendering:%4d ms   io:%4d ms   (total:%4d ms)", rendertime / 1000000, iotime / 1000000, (rendertime + iotime) / 1000000 ) );
-//				System.out.println( "scale = " + currentScreenScaleIndex + "   mipmap = " + currentMipmapLevel );
+				System.out.println( String.format( "rendering:%4d ms   io:%4d ms   (total:%4d ms)", rendertime / 1000000, iotime / 1000000, (rendertime + iotime) / 1000000 ) );
+				System.out.println( "scale = " + currentScreenScaleIndex + "   mipmap = " + currentMipmapLevel );
 
 				if ( targetMipmapLevel < currentMipmapLevel )
 					requestRepaint( currentScreenScaleIndex, currentMipmapLevel - 1 );
@@ -449,6 +479,11 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		}
 
 		display.repaint();
+	}
+
+	public void requestRepaint()
+	{
+		requestRepaint( maxScreenScaleIndex, maxMipmapLevel );
 	}
 
 	/**
@@ -553,10 +588,8 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 				timepointString = String.format( "t = %d", currentTimepoint );
 			}
 
-			final RealPoint lPos = new RealPoint( 3 );
 			final RealPoint gPos = new RealPoint( 3 );
-			mouseCoordinates.getMouseCoordinates( lPos );
-			viewerTransform.applyInverse( gPos, lPos );
+			getGlobalMouseCoordinates( gPos );
 			final String mousePosGlobalString = String.format( "(%6.1f,%6.1f,%6.1f)", gPos.getDoublePosition( 0 ), gPos.getDoublePosition( 1 ), gPos.getDoublePosition( 2 ) );
 
 			g.setFont( new Font( "Monospaced", Font.PLAIN, 12 ) );
@@ -583,7 +616,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	}
 
 	private final static double c = Math.cos( Math.PI / 4 );
-	private final static double[] qAlignXY = new double[] { 1,  0,  0, 0 };
+//	private final static double[] qAlignXY = new double[] { 1,  0,  0, 0 };
 	private final static double[] qAlignZY = new double[] { c,  0, -c, 0 };
 	private final static double[] qAlignXZ = new double[] { c,  c,  0, 0 };
 
@@ -620,6 +653,20 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		if ( currentTimepoint != timepoint )
 		{
 			currentTimepoint = timepoint;
+			requestRepaint( maxScreenScaleIndex, maxMipmapLevel );
+		}
+	}
+
+	public synchronized int getCurrentAlpha()
+	{
+		return currentAlpha;
+	}
+
+	protected synchronized void updateAlpha( final int alpha )
+	{
+		if ( currentAlpha != alpha )
+		{
+			currentAlpha = alpha;
 			requestRepaint( maxScreenScaleIndex, maxMipmapLevel );
 		}
 	}
@@ -707,7 +754,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 			final ArrayList< RandomAccessible< ARGBType > > accessibles = new ArrayList< RandomAccessible< ARGBType > >( sources.size() );
 			for ( final SourceDisplay< ? > source : visibleSources )
 				accessibles.add( getConvertedTransformedSource( source ) );
-			return new InterruptibleRenderer< ARGBType, ARGBType >( new AccumulateARGB( accessibles ), new TypeIdentity< ARGBType >() );
+			return new InterruptibleRenderer< ARGBType, ARGBType >( new BlendARGB( accessibles ), new TypeIdentity< ARGBType >() );
 		}
 	}
 
@@ -789,7 +836,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 				align( AlignPlane.XY );
 			else if ( keyCode == KeyEvent.VK_X && align )
 				align( AlignPlane.ZY );
-			else if ( keyCode == KeyEvent.VK_Y && align )
+			else if ( ( keyCode == KeyEvent.VK_Y || keyCode == KeyEvent.VK_A ) && align )
 				align( AlignPlane.XZ );
 		}
 
