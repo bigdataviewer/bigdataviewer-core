@@ -28,13 +28,9 @@ public class CreateCells
 {
 	public static class MipMapDefinition
 	{
-	//  mipmap def 1
-//		public static final int[][] resolutions = { { 1, 1, 1 }, { 2, 2, 1 }, { 4, 4, 1 } };
-//		public static final int[][] subdivisions = { { 32, 32, 4 }, { 32, 32, 4 }, { 16, 16, 4 } };
-
-	//  mipmap def 2
-		public static final int[][] resolutions = { { 1, 1, 1 }, { 2, 2, 1 }, { 4, 4, 2 } };
-		public static final int[][] subdivisions = { { 32, 32, 4 }, { 16, 16, 8 }, { 8, 8, 8 } };
+	//  mipmap def
+		public static final int[][] resolutions = { { 1, 1, 1 }, { 2, 2, 2 }, { 4, 4, 4 } };
+		public static final int[][] subdivisions = { { 32, 32, 32 }, { 16, 16, 16 }, { 8, 8, 8 } };
 	}
 
 
