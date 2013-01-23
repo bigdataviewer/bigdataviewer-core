@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 
 import javax.swing.JFrame;
+import javax.swing.JMenuBar;
 import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -321,6 +322,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 			}
 		} );
 
+
 //		final GraphicsConfiguration gc = GuiHelpers.getSuitableGraphicsConfiguration( ARGBScreenImage.ARGB_COLOR_MODEL );
 		final GraphicsConfiguration gc = GuiHelpers.getSuitableGraphicsConfiguration( GuiHelpers.RGB_COLOR_MODEL );
 		frame = new JFrame( "multi-angle viewer", gc );
@@ -336,6 +338,13 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		frame.setVisible( true );
 
 		painterThread.start();
+	}
+
+
+	public void setJMenuBar( final JMenuBar menubar )
+	{
+		frame.setJMenuBar( menubar );
+		frame.pack();
 	}
 
 	public void addHandler( final Object handler )
@@ -436,7 +445,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		{
 			display.setBufferedImage( bufferedImage );
 			final long rendertime = p.getLastFrameRenderNanoTime();
-			final long iotime = p.getLastFrameIoNanoTime();
+//			final long iotime = p.getLastFrameIoNanoTime();
 			synchronized( this )
 			{
 				if ( currentScreenScaleIndex == maxScreenScaleIndex )
@@ -450,8 +459,8 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 						maxScreenScaleIndex--;
 				}
 //				System.out.println( "maxScreenScaleIndex = " + maxScreenScaleIndex + "  (" + screenImages[ maxScreenScaleIndex ].dimension( 0 ) + " x " + screenImages[ maxScreenScaleIndex ].dimension( 1 ) + ")" );
-				System.out.println( String.format( "rendering:%4d ms   io:%4d ms   (total:%4d ms)", rendertime / 1000000, iotime / 1000000, (rendertime + iotime) / 1000000 ) );
-				System.out.println( "scale = " + currentScreenScaleIndex + "   mipmap = " + currentMipmapLevel );
+//				System.out.println( String.format( "rendering:%4d ms   io:%4d ms   (total:%4d ms)", rendertime / 1000000, iotime / 1000000, (rendertime + iotime) / 1000000 ) );
+//				System.out.println( "scale = " + currentScreenScaleIndex + "   mipmap = " + currentMipmapLevel );
 
 				if ( targetMipmapLevel < currentMipmapLevel )
 					requestRepaint( currentScreenScaleIndex, currentMipmapLevel - 1 );

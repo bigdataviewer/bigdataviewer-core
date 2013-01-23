@@ -1,17 +1,28 @@
 package viewer;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
+import javax.swing.JFileChooser;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.filechooser.FileFilter;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
 import mpicbg.tracking.data.SequenceDescription;
 import mpicbg.tracking.data.View;
+import mpicbg.tracking.data.io.XmlHelpers;
 import mpicbg.tracking.transform.AffineModel3D;
 import net.imglib2.Dimensions;
 import net.imglib2.RandomAccess;
@@ -34,6 +45,9 @@ import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
 import viewer.display.LabelingTypeARGBConverter;
@@ -85,7 +99,7 @@ public class CountCells
 		}
 	}
 
-	int nextCellId = 1;
+	int nextCellId = 0;
 
 	final int minRadius = 3;
 
@@ -93,7 +107,7 @@ public class CountCells
 
 	HashMap< Integer, Cell > cells = new HashMap< Integer, Cell >();
 
-	void addCellAt( final RealLocalizable p )
+	synchronized void addCellAt( final RealLocalizable p )
 	{
 		final int cellId = nextCellId;
 		++nextCellId;
@@ -104,7 +118,7 @@ public class CountCells
 		viewer.requestRepaint();
 	}
 
-	void removeCellsAt( final RealLocalizable p )
+	synchronized void removeCellsAt( final RealLocalizable p )
 	{
 		final RandomAccess< LabelingType< Integer > > a = overlay.currentSource.randomAccess();
 		new Round<>( a ).setPosition( p );
@@ -117,7 +131,7 @@ public class CountCells
 		viewer.requestRepaint();
 	}
 
-	void modifiyCellRadiusAt( final RealPoint p, final int diff )
+	synchronized void modifiyCellRadiusAt( final RealPoint p, final int diff )
 	{
 		final RandomAccess< LabelingType< Integer > > a = overlay.currentSource.randomAccess();
 		new Round<>( a ).setPosition( p );
@@ -372,6 +386,8 @@ public class CountCells
 
 	final Overlay overlay;
 
+	final JFileChooser fileChooser;
+
 	private CountCells( final String viewRegistrationsFilename ) throws ParserConfigurationException, SAXException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
 	{
 		loader = new SequenceViewsLoader( viewRegistrationsFilename );
@@ -392,6 +408,124 @@ public class CountCells
 		final int numMipmapLevels = imgLoader.getMipmapResolutions().length;
 		viewer = new SpimViewer( width, height, sources, seq.numTimepoints(), numMipmapLevels );
 		viewer.addHandler( new Keys() );
+
+		final JMenuBar menubar = new JMenuBar();
+		final JMenu menu = new JMenu("File");
+		menubar.add( menu );
+		final JMenuItem menuItemLoadAnnotations = new JMenuItem("Load annotations...");
+		menuItemLoadAnnotations.addActionListener( new ActionListener()
+		{
+			@Override
+			public void actionPerformed( final ActionEvent e )
+			{
+				loadAnnotations();
+			}
+		} );
+		menu.add( menuItemLoadAnnotations );
+		final JMenuItem menuItemSaveAnnotations = new JMenuItem("Save annotations...");
+		menuItemSaveAnnotations.addActionListener( new ActionListener()
+		{
+			@Override
+			public void actionPerformed( final ActionEvent e )
+			{
+				saveAnnotations();
+			}
+		} );
+		menu.add( menuItemSaveAnnotations );
+		viewer.setJMenuBar( menubar );
+
+		fileChooser = new JFileChooser();
+		fileChooser.setFileFilter( new FileFilter()
+		{
+			@Override
+			public String getDescription()
+			{
+				return "xml files";
+			}
+
+			@Override
+			public boolean accept( final File f )
+			{
+				if ( f.isDirectory() )
+					return true;
+				if ( f.isFile() )
+				{
+			        final String s = f.getName();
+			        final int i = s.lastIndexOf('.');
+			        if (i > 0 &&  i < s.length() - 1) {
+			            final String ext = s.substring(i+1).toLowerCase();
+			            return ext.equals( "xml" );
+			        }
+				}
+				return false;
+			}
+		} );
+	}
+
+	protected synchronized void saveAnnotations()
+	{
+		final int returnVal = fileChooser.showSaveDialog( null );
+		if ( returnVal == JFileChooser.APPROVE_OPTION )
+		{
+			final File file = fileChooser.getSelectedFile();
+			System.out.println( "saving annotions to " + file );
+
+			Document doc;
+			try
+			{
+				doc = XmlHelpers.newXmlDocument();
+				final Element cellsElem = doc.createElement( "cells" );
+				doc.appendChild( cellsElem );
+				for ( final Cell cell : cells.values() )
+					cellsElem.appendChild( Cell.toXml( doc, cell ) );
+				XmlHelpers.writeXmlDocument( doc, file );
+				System.out.println( "done" );
+			}
+			catch ( final Exception e )
+			{
+				e.printStackTrace();
+			}
+		}
+	}
+
+	protected synchronized void loadAnnotations()
+	{
+		final int returnVal = fileChooser.showOpenDialog( null );
+		if ( returnVal == JFileChooser.APPROVE_OPTION )
+		{
+			final File file = fileChooser.getSelectedFile();
+			System.out.println( "loading annotions from " + file );
+
+			for ( final Cell cell : cells.values() )
+				removeLabelHyperSphere( cell.getPosition(), cell.getRadius(), new Integer( cell.getId() ) );
+			cells.clear();
+			nextCellId = 0;
+
+			try
+			{
+				final DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+				final DocumentBuilder db = dbf.newDocumentBuilder();
+				final Document dom = db.parse( file );
+				final Element root = dom.getDocumentElement();
+				final NodeList nodes = root.getElementsByTagName( "sphere" );
+				for ( int i = 0; i < nodes.getLength(); ++i )
+				{
+					final Cell cell = Cell.fromXml( ( Element ) nodes.item( i ) );
+					cells.put( cell.getId(), cell );
+					addLabelHyperSphere( cell.getPosition(), cell.getRadius(), cell.getId() );
+					if ( cell.getId() >= nextCellId )
+						nextCellId = cell.getId() + 1;
+				}
+				overlay.updateColorTable();
+				viewer.requestRepaint();
+				System.out.println( "done" );
+			}
+			catch ( final Exception e )
+			{
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
 	}
 
 	public static void main( final String[] args )
@@ -399,6 +533,7 @@ public class CountCells
 		final String fn = "/Users/tobias/Desktop/celegans/celegans-reg.xml";
 		try
 		{
+			System.setProperty("apple.laf.useScreenMenuBar", "true");
 			new CountCells( fn );
 		}
 		catch ( final Exception e )
