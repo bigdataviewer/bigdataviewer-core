@@ -53,13 +53,19 @@ public class CountCells
 		public void keyPressed( final KeyEvent e )
 		{
 			final int keyCode = e.getKeyCode();
-//			final int modifiers = e.getModifiersEx();
+			final int modifiers = e.getModifiersEx();
+			final boolean remove = ( modifiers & KeyEvent.SHIFT_DOWN_MASK ) != 0;
+
 			if ( keyCode == KeyEvent.VK_C )
 			{
 				final RealPoint p = new RealPoint( 3 );
 				viewer.getGlobalMouseCoordinates( p );
-				addCell( p );
+				if ( remove )
+					removeCellsAt( p );
+				else
+					addCellAt( p );
 			}
+
 		}
 
 		@Override
@@ -68,18 +74,46 @@ public class CountCells
 		}
 	}
 
-	static int nextCellId = 1;
+	int nextCellId = 1;
 
-	void addCell( final RealLocalizable p )
+	HashMap< Integer, Cell > cells = new HashMap< Integer, Cell >();
+
+	void removeCellsAt( final RealLocalizable p )
+	{
+		final RandomAccess< LabelingType< Integer > > a = overlay.currentSource.randomAccess();
+		new Round<>( a ).setPosition( p );
+		for ( final Integer label : a.get().getLabeling() )
+		{
+			final Cell cell = cells.get( label );
+			cells.remove( label );
+			final Integer cellId = new Integer( cell.getId() );
+			final HyperSphereShape sphere = new HyperSphereShape( cell.getSize() );
+			final RandomAccess< Neighborhood< LabelingType< Integer > > > na = sphere.neighborhoodsRandomAccessible( overlay.currentSource ).randomAccess( /* TODO provide bounding box interval */ );
+			new Round<>( na ).setPosition( cell.getPosition() );
+			for ( final LabelingType< Integer > t : na.get() )
+			{
+				final ArrayList< Integer > labels = new ArrayList< Integer >( t.getLabeling() );
+				labels.remove( cellId );
+				t.setLabeling( labels );
+			}
+		}
+
+		overlay.updateColorTable();
+		viewer.requestRepaint();
+	}
+
+	void addCellAt( final RealLocalizable p )
 	{
 		final int cellId = nextCellId;
 		System.out.println("adding cell (" + cellId + ") at " + Util.printCoordinates( p ) );
 		++nextCellId;
 		final int radius = 10;
+		cells.put( cellId, new Cell( cellId, p, radius ) );
+
 		final HyperSphereShape sphere = new HyperSphereShape( radius );
-		final RandomAccess< Neighborhood< LabelingType< Integer > > > a = sphere.neighborhoodsRandomAccessible( overlay.currentSource ).randomAccess( /* TODO provide bounding box interval */ );
-		new Round<>( a ).setPosition( p );
-		for ( final LabelingType< Integer > t : a.get() )
+		final RandomAccess< Neighborhood< LabelingType< Integer > > > na = sphere.neighborhoodsRandomAccessible( overlay.currentSource ).randomAccess( /* TODO provide bounding box interval */ );
+		new Round<>( na ).setPosition( p );
+		for ( final LabelingType< Integer > t : na.get() )
 		{
 //			t.setLabel( cellId );
 			final ArrayList< Integer > labels = new ArrayList< Integer >( t.getLabeling() );
@@ -87,7 +121,7 @@ public class CountCells
 			t.setLabeling( labels );
 		}
 
-//		System.out.println("cell added" );
+		System.out.println("cell added [id = " + cellId + "]" );
 		overlay.updateColorTable();
 		viewer.requestRepaint();
 	}
