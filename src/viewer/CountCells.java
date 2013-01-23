@@ -33,7 +33,6 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.util.Util;
 
 import org.xml.sax.SAXException;
 
@@ -65,6 +64,18 @@ public class CountCells
 				else
 					addCellAt( p );
 			}
+			else if ( keyCode == KeyEvent.VK_S )
+			{
+				final RealPoint p = new RealPoint( 3 );
+				viewer.getGlobalMouseCoordinates( p );
+				modifiyCellRadiusAt( p, -1 );
+			}
+			else if ( keyCode == KeyEvent.VK_D )
+			{
+				final RealPoint p = new RealPoint( 3 );
+				viewer.getGlobalMouseCoordinates( p );
+				modifiyCellRadiusAt( p, 1 );
+			}
 
 		}
 
@@ -76,7 +87,22 @@ public class CountCells
 
 	int nextCellId = 1;
 
+	final int minRadius = 3;
+
+	int defaultRadius = 10;
+
 	HashMap< Integer, Cell > cells = new HashMap< Integer, Cell >();
+
+	void addCellAt( final RealLocalizable p )
+	{
+		final int cellId = nextCellId;
+		++nextCellId;
+		final int radius = defaultRadius;
+		cells.put( cellId, new Cell( cellId, p, radius ) );
+		addLabelHyperSphere( p, radius, cellId );
+		overlay.updateColorTable();
+		viewer.requestRepaint();
+	}
 
 	void removeCellsAt( final RealLocalizable p )
 	{
@@ -84,46 +110,59 @@ public class CountCells
 		new Round<>( a ).setPosition( p );
 		for ( final Integer label : a.get().getLabeling() )
 		{
-			final Cell cell = cells.get( label );
-			cells.remove( label );
-			final Integer cellId = new Integer( cell.getId() );
-			final HyperSphereShape sphere = new HyperSphereShape( cell.getSize() );
-			final RandomAccess< Neighborhood< LabelingType< Integer > > > na = sphere.neighborhoodsRandomAccessible( overlay.currentSource ).randomAccess( /* TODO provide bounding box interval */ );
-			new Round<>( na ).setPosition( cell.getPosition() );
-			for ( final LabelingType< Integer > t : na.get() )
-			{
-				final ArrayList< Integer > labels = new ArrayList< Integer >( t.getLabeling() );
-				labels.remove( cellId );
-				t.setLabeling( labels );
-			}
+			final Cell cell = cells.remove( label );
+			removeLabelHyperSphere( cell.getPosition(), cell.getRadius(), label );
 		}
-
 		overlay.updateColorTable();
 		viewer.requestRepaint();
 	}
 
-	void addCellAt( final RealLocalizable p )
+	void modifiyCellRadiusAt( final RealPoint p, final int diff )
 	{
-		final int cellId = nextCellId;
-		System.out.println("adding cell (" + cellId + ") at " + Util.printCoordinates( p ) );
-		++nextCellId;
-		final int radius = 10;
-		cells.put( cellId, new Cell( cellId, p, radius ) );
-
-		final HyperSphereShape sphere = new HyperSphereShape( radius );
-		final RandomAccess< Neighborhood< LabelingType< Integer > > > na = sphere.neighborhoodsRandomAccessible( overlay.currentSource ).randomAccess( /* TODO provide bounding box interval */ );
-		new Round<>( na ).setPosition( p );
-		for ( final LabelingType< Integer > t : na.get() )
+		final RandomAccess< LabelingType< Integer > > a = overlay.currentSource.randomAccess();
+		new Round<>( a ).setPosition( p );
+		for ( final Integer label : a.get().getLabeling() )
 		{
-//			t.setLabel( cellId );
-			final ArrayList< Integer > labels = new ArrayList< Integer >( t.getLabeling() );
-			labels.add( cellId );
-			t.setLabeling( labels );
+			final Cell cell = cells.get( label );
+			final RealLocalizable pos = cell.getPosition();
+			final int oldRadius = cell.getRadius();
+			final int newRadius = oldRadius + diff;
+			if ( newRadius >= minRadius )
+			{
+				removeLabelHyperSphere( pos, oldRadius, label );
+				addLabelHyperSphere( pos, newRadius, label );
+				cell.setRadius( newRadius );
+				defaultRadius = newRadius;
+			}
 		}
-
-		System.out.println("cell added [id = " + cellId + "]" );
 		overlay.updateColorTable();
 		viewer.requestRepaint();
+	}
+
+	private void addLabelHyperSphere( final RealLocalizable center, final int radius, final Integer label )
+	{
+		final HyperSphereShape sphere = new HyperSphereShape( radius );
+		final RandomAccess< Neighborhood< LabelingType< Integer > > > na = sphere.neighborhoodsRandomAccessible( overlay.currentSource ).randomAccess( /* TODO provide bounding box interval */ );
+		new Round<>( na ).setPosition( center );
+		for ( final LabelingType< Integer > t : na.get() )
+		{
+			final ArrayList< Integer > labels = new ArrayList< Integer >( t.getLabeling() );
+			labels.add( label );
+			t.setLabeling( labels );
+		}
+	}
+
+	private void removeLabelHyperSphere( final RealLocalizable center, final int radius, final Integer label )
+	{
+		final HyperSphereShape sphere = new HyperSphereShape( radius );
+		final RandomAccess< Neighborhood< LabelingType< Integer > > > na = sphere.neighborhoodsRandomAccessible( overlay.currentSource ).randomAccess( /* TODO provide bounding box interval */ );
+		new Round<>( na ).setPosition( center );
+		for ( final LabelingType< Integer > t : na.get() )
+		{
+			final ArrayList< Integer > labels = new ArrayList< Integer >( t.getLabeling() );
+			labels.remove( label );
+			t.setLabeling( labels );
+		}
 	}
 
 	class Overlay implements SpimSource< ARGBType >

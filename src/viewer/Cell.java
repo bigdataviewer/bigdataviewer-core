@@ -8,7 +8,7 @@ class Cell
 {
 	private final int id;
 
-	private int size;
+	private int radius;
 
 	private final RealPoint position;
 
@@ -16,23 +16,23 @@ class Cell
 	{
 		this.id = id;
 		this.position = new RealPoint( position );
-		this.size = size;
+		this.radius = size;
 	}
 
 	@Override
 	public String toString()
 	{
-		return "cell( " + id + ", " + Util.printCoordinates( position ) + ", " + size + " )";
+		return "cell( " + id + ", " + Util.printCoordinates( position ) + ", " + radius + " )";
 	}
 
-	public int getSize()
+	public int getRadius()
 	{
-		return size;
+		return radius;
 	}
 
-	public void setSize( final int size )
+	public void setRadius( final int radius )
 	{
-		this.size = size;
+		this.radius = radius;
 	}
 
 	public int getId()
