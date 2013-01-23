@@ -2,12 +2,44 @@ package mpicbg.tracking.data.io;
 
 import java.io.File;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.TransformerFactoryConfigurationError;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NodeList;
 
 public class XmlHelpers
 {
+	public static Document newXmlDocument() throws ParserConfigurationException
+	{
+		final DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
+		final DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
+		return docBuilder.newDocument();
+	}
+
+	public static void writeXmlDocument( final Document doc, final String xmlFilename ) throws TransformerFactoryConfigurationError, TransformerException
+	{
+		writeXmlDocument( doc, new File( xmlFilename ) );
+	}
+
+	public static void writeXmlDocument( final Document doc, final File xmlFile ) throws TransformerFactoryConfigurationError, TransformerException
+	{
+		final Transformer transformer = TransformerFactory.newInstance().newTransformer();
+		transformer.setOutputProperty( OutputKeys.INDENT, "yes" );
+		transformer.setOutputProperty( OutputKeys.ENCODING, "UTF-8" );
+		transformer.setOutputProperty( "{http://xml.apache.org/xslt}indent-amount", "4" );
+		transformer.transform( new DOMSource( doc ), new StreamResult( xmlFile ) );
+	}
+
 	public static Element intElement( final Document doc, final String name, final int value )
 	{
 		final Element e = doc.createElement( name );
