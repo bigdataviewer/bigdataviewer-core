@@ -1,13 +1,13 @@
-package mpicbg.tracking.huisken.io;
+package mpicbg.spimviewer.huisken.io;
 
-import static mpicbg.tracking.data.io.XmlHelpers.loadPath;
+import static mpicbg.spim.data.XmlHelpers.loadPath;
 import ij.ImagePlus;
 
 import java.io.File;
 
-import mpicbg.tracking.data.View;
-import mpicbg.tracking.data.ViewSetup;
-import mpicbg.tracking.data.io.ImgLoader;
+import mpicbg.spim.data.ImgLoader;
+import mpicbg.spim.data.View;
+import mpicbg.spim.data.ViewSetup;
 import net.imglib2.algorithm.stats.Normalize;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgPlus;

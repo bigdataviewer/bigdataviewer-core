@@ -4,8 +4,8 @@ import static viewer.hdf5.Util.reorder;
 
 import java.io.File;
 
-import mpicbg.tracking.data.SequenceDescription;
-import mpicbg.tracking.data.View;
+import mpicbg.spim.data.SequenceDescription;
+import mpicbg.spim.data.View;
 import net.imglib2.Cursor;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessible;

@@ -1,6 +1,6 @@
 package viewer.hdf5;
 
-import mpicbg.tracking.data.View;
+import mpicbg.spim.data.View;
 
 public class Util
 {

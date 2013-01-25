@@ -5,9 +5,8 @@ import java.util.ArrayList;
 
 import javax.xml.parsers.ParserConfigurationException;
 
-import mpicbg.tracking.data.SequenceDescription;
-import mpicbg.tracking.data.View;
-import mpicbg.tracking.transform.AffineModel3D;
+import mpicbg.spim.data.SequenceDescription;
+import mpicbg.spim.data.View;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.display.RealARGBConverter;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -44,8 +43,6 @@ public class ViewRegisteredAngles
 			loadTimepoint( 0 );
 		}
 
-		final double[][] tmp = new double[3][4];
-
 		final AffineTransform3D mipmapTransform = new AffineTransform3D();
 
 		void loadTimepoint( final int timepoint )
@@ -54,8 +51,7 @@ public class ViewRegisteredAngles
 			if ( isPresent( timepoint ) )
 			{
 				final View view = loader.getView( timepoint, setup );
-				final AffineModel3D reg = view.getModel();
-				reg.toMatrix( tmp );
+				final AffineTransform3D reg = view.getModel();
 				for ( int level = 0; level < currentSources.length; level++ )
 				{
 					final double[] resolution = imgLoader.getMipmapResolutions()[ level ];
@@ -64,7 +60,7 @@ public class ViewRegisteredAngles
 						mipmapTransform.set( resolution[ d ], d, d );
 						mipmapTransform.set( 0.5 * ( resolution[ d ] - 1 ), d, 3 );
 					}
-					currentSourceTransforms[ level ].set( tmp );
+					currentSourceTransforms[ level ].set( reg );
 					currentSourceTransforms[ level ].concatenate( mipmapTransform );
 					currentSources[ level ] = imgLoader.getUnsignedShortImage( view, level );
 				}
@@ -122,9 +118,9 @@ public class ViewRegisteredAngles
 
 	final Hdf5ImageLoader imgLoader;
 
-	private ViewRegisteredAngles( final String viewRegistrationsFilename ) throws ParserConfigurationException, SAXException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
+	private ViewRegisteredAngles( final String xmlFilename ) throws ParserConfigurationException, SAXException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
 	{
-		loader = new SequenceViewsLoader( viewRegistrationsFilename );
+		loader = new SequenceViewsLoader( xmlFilename );
 		seq = loader.getSequenceDescription();
 		imgLoader = ( Hdf5ImageLoader ) seq.imgLoader;
 
@@ -142,7 +138,7 @@ public class ViewRegisteredAngles
 
 	public static void main( final String[] args )
 	{
-		final String fn = "/Users/tobias/workspace/data/fast fly/111010_weber/e012-reg-hdf5-mipmap2.xml";
+		final String fn = "/Users/tobias/workspace/data/fast fly/111010_weber/combined.xml";
 		try
 		{
 			new ViewRegisteredAngles( fn );

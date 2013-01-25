@@ -1,4 +1,4 @@
-package mpicbg.tracking.data.io;
+package mpicbg.spim.data;
 
 import java.io.File;
 
@@ -12,6 +12,8 @@ import javax.xml.transform.TransformerFactory;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 import javax.xml.transform.dom.DOMSource;
 import javax.xml.transform.stream.StreamResult;
+
+import net.imglib2.realtransform.AffineTransform3D;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -95,4 +97,32 @@ public class XmlHelpers
 			return new File( path );
 	}
 
+	public static Element affineTransform3DElement( final Document doc, final String name, final AffineTransform3D value )
+	{
+		final Element e = doc.createElement( name );
+		final double[] v = value.getRowPackedCopy();
+		final String text =
+				v[0] + " " + v[1] + " " + v[2] + " " + v[3] + " " +
+				v[4] + " " + v[5] + " " + v[6] + " " + v[7] + " " +
+				v[8] + " " + v[9] + " " + v[10] + " " + v[11];
+		e.appendChild( doc.createTextNode( text ) );
+		return e;
+	}
+
+	public static AffineTransform3D loadAffineTransform3D( final Element elem )
+	{
+		final String data = elem.getTextContent();
+		final String[] fields = data.split( "\\s+" );
+		if ( fields.length == 12 )
+		{
+			final double[] values = new double[ 12 ];
+			for ( int i = 0; i < 12; ++i )
+				values[ i ] = Double.parseDouble( fields[ i ] );
+			final AffineTransform3D a = new AffineTransform3D();
+			a.set( values );
+			return a;
+		}
+		else
+			throw new NumberFormatException( "Inappropriate parameters for " + AffineTransform3D.class.getCanonicalName() );
+	}
 }

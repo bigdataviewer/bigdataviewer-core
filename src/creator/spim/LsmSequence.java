@@ -8,15 +8,15 @@ import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 
+import mpicbg.spim.data.ViewRegistration;
+import mpicbg.spim.data.ViewSetup;
+import mpicbg.spim.data.XmlHelpers;
 import mpicbg.spim.io.ConfigurationParserException;
 import mpicbg.spim.io.SPIMConfiguration;
 import mpicbg.spim.registration.ViewDataBeads;
 import mpicbg.spim.registration.ViewStructure;
 import mpicbg.spim.registration.bead.BeadRegistration;
-import mpicbg.tracking.data.ViewRegistration;
-import mpicbg.tracking.data.ViewSetup;
-import mpicbg.tracking.data.io.XmlHelpers;
-import mpicbg.tracking.transform.AffineModel3D;
+import net.imglib2.realtransform.AffineTransform3D;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -152,8 +152,10 @@ public class LsmSequence
 				final int angle = viewDataBeads.getAcqusitionAngle();
 				final int illumination = viewDataBeads.getIllumination();
 				final int channel = viewDataBeads.getChannel();
-				final AffineModel3D model = new AffineModel3D();
-				model.set( ( mpicbg.models.AffineModel3D ) viewDataBeads.getTile().getModel() );
+				final AffineTransform3D model = new AffineTransform3D();
+				final double[] tmp = new double[ 12 ];
+				( ( mpicbg.models.AffineModel3D ) viewDataBeads.getTile().getModel() ).toArray( tmp );
+				model.set( tmp );
 
 				System.out.println( "creating view: timepoint = " + conf.timepoints[ i ] + " | angle = " + angle + " | illumination = " + illumination );
 
@@ -203,7 +205,7 @@ public class LsmSequence
 
 		// add ViewSetups
 		for ( final ViewSetup setup : setups )
-			sequence.appendChild( ViewSetup.toXml( doc, setup ) );
+			sequence.appendChild( setup.toXml( doc ) );
 
 		addTimepoints( doc, sequence );
 
@@ -244,7 +246,7 @@ public class LsmSequence
 
 		// add ViewSetups
 		for ( final ViewRegistration reg : regs )
-			registrations.appendChild( ViewRegistration.toXml( doc, reg ) );
+			registrations.appendChild( reg.toXml( doc ) );
 
 		XmlHelpers.writeXmlDocument( doc, xmlFilename );
 	}

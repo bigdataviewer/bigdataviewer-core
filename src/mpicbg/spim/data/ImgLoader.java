@@ -1,8 +1,7 @@
-package mpicbg.tracking.data.io;
+package mpicbg.spim.data;
 
 import java.io.File;
 
-import mpicbg.tracking.data.View;
 import net.imglib2.img.ImgPlus;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;

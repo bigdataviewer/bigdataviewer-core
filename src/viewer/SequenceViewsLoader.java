@@ -1,22 +1,27 @@
 package viewer;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import mpicbg.tracking.data.SequenceDescription;
-import mpicbg.tracking.data.View;
-import mpicbg.tracking.data.ViewRegistration;
-import mpicbg.tracking.data.ViewRegistrations;
+import mpicbg.spim.data.SequenceDescription;
+import mpicbg.spim.data.View;
+import mpicbg.spim.data.ViewRegistration;
+import mpicbg.spim.data.ViewRegistrations;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 /**
- * Loads ViewRegistrations and SequenceDescription from XML files.
+ * Loads SequenceDescription and ViewRegistrations from XML file.
  * Provides all {@link View views}, see {@link #getView(int, int)}.
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
@@ -27,12 +32,16 @@ public class SequenceViewsLoader
 
 	final private ArrayList< View > views;
 
-	public SequenceViewsLoader( final String viewRegistrationsFilename ) throws ParserConfigurationException, SAXException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
+	public SequenceViewsLoader( final String xmlFilename ) throws ParserConfigurationException, SAXException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
 	{
-		final ViewRegistrations regs = ViewRegistrations.load( viewRegistrationsFilename );
-		seq = SequenceDescription.load( regs.sequenceDescriptionName, true );
+		final DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+		final DocumentBuilder db = dbf.newDocumentBuilder();
+		final Document dom = db.parse( xmlFilename );
+		final Element root = dom.getDocumentElement();
+
+		seq = new SequenceDescription( root, new File( xmlFilename ).getParentFile(), true );
 		views = new ArrayList< View >();
-		createViews( regs );
+		createViews( new ViewRegistrations( root ) );
 	}
 
 	public SequenceDescription getSequenceDescription()
