@@ -133,7 +133,7 @@ public class ViewRegisteredAngles
 			sources.add( new SourceAndConverter< UnsignedShortType >( new Source( setup, "angle " + setup ), converter ) );
 
 		final int numMipmapLevels = imgLoader.getMipmapResolutions().length;
-		viewer = new SpimViewer( width, height, sources, 100 /* seq.numTimepoints() */, numMipmapLevels );
+		viewer = new SpimViewer( width, height, sources, seq.numTimepoints(), numMipmapLevels );
 	}
 
 	public static void main( final String[] args )

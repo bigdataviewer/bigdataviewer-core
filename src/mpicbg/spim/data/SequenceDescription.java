@@ -102,6 +102,17 @@ public class SequenceDescription
 		return setups.length;
 	}
 
+	/**
+	 * Get the base path of the sequence. Relative paths in the XML sequence
+	 * description are interpreted with respect to this.
+	 *
+	 * @return the base path of the sequence
+	 */
+	public synchronized File getBasePath()
+	{
+		return basePath;
+	}
+
 	protected static ImgLoader createImgLoaderFromXml( final Element sequenceDescription, final File basePath ) throws InstantiationException, IllegalAccessException, ClassNotFoundException
 	{
 		final Element elem = ( Element ) sequenceDescription.getElementsByTagName( "ImageLoader" ).item( 0 );
