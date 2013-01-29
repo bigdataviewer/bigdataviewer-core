@@ -6,6 +6,7 @@ import net.imglib2.img.ImgPlus;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
 
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 public interface ImgLoader
@@ -14,6 +15,11 @@ public interface ImgLoader
 	 * initialize the loader from a "ImageLoader" DOM element.
 	 */
 	public void init( final Element elem, final File basePath );
+
+	/**
+	 * create a "ImageLoader" DOM element for this loader.
+	 */
+	public Element toXml( final Document doc, final File basePath );
 
 	/**
 	 * Get {@link FloatType} image normalized to range [0,1].

@@ -1,4 +1,4 @@
-package mpicbg.spimviewer.huisken.io;
+package creator.spim.imgloader;
 
 import static mpicbg.spim.data.XmlHelpers.loadPath;
 import ij.ImagePlus;
@@ -8,6 +8,7 @@ import java.io.File;
 import mpicbg.spim.data.ImgLoader;
 import mpicbg.spim.data.View;
 import mpicbg.spim.data.ViewSetup;
+import mpicbg.spim.data.XmlHelpers;
 import net.imglib2.algorithm.stats.Normalize;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgPlus;
@@ -52,25 +53,21 @@ public class HuiskenImageLoader implements ImgLoader
 		exp = null;
 	}
 
+	@Override
+	public Element toXml( final Document doc, final File basePath )
+	{
+		final Element elem = doc.createElement( "ImageLoader" );
+		elem.setAttribute( "class", getClass().getCanonicalName() );
+		elem.appendChild( XmlHelpers.pathElement( doc, "path", expFile, basePath ) );
+		return elem;
+	}
+
 	public static HuiskenImageLoader fromXml( final Element elem, final File basePath )
 	{
 		final HuiskenImageLoader loader = new HuiskenImageLoader();
 		loader.init( elem, basePath );
 		return loader;
 	}
-
-	public static Element toXml( final Document doc, final HuiskenImageLoader loader )
-	{
-		final Element elem = doc.createElement( "ImageLoader" );
-		elem.setAttribute( "class", HuiskenImageLoader.class.getCanonicalName() );
-
-		final Element path = doc.createElement( "path" );
-		path.appendChild( doc.createTextNode( loader.expFile.getAbsolutePath() ) );
-		elem.appendChild( path );
-
-		return elem;
-	}
-
 
 	@Override
 	public ImgPlus< UnsignedShortType > getUnsignedShortImage( final View view )

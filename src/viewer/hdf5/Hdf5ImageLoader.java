@@ -7,6 +7,7 @@ import java.io.File;
 
 import mpicbg.spim.data.ImgLoader;
 import mpicbg.spim.data.View;
+import mpicbg.spim.data.XmlHelpers;
 import net.imglib2.img.ImgPlus;
 import net.imglib2.img.basictypeaccess.array.ShortArray;
 import net.imglib2.img.cell.CellImg;
@@ -14,6 +15,7 @@ import net.imglib2.img.cell.CellImgFactory;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
 
+import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import viewer.hdf5.img.Hdf5Cell;
@@ -26,11 +28,37 @@ import ch.systemsx.cisd.hdf5.IHDF5Reader;
 
 public class Hdf5ImageLoader implements ImgLoader
 {
-	IHDF5Reader hdf5Reader = null;
+	File hdf5File;
 
-	Hdf5GlobalCellCache< ShortArray > cache = null;
+	IHDF5Reader hdf5Reader;
 
-	double[][] mipmapResolutions = null;
+	Hdf5GlobalCellCache< ShortArray > cache;
+
+	double[][] mipmapResolutions;
+
+	public Hdf5ImageLoader()
+	{
+		hdf5File = null;
+		hdf5Reader = null;
+		cache = null;
+		mipmapResolutions = null;
+	}
+
+	public Hdf5ImageLoader( final File hdf5File )
+	{
+		this.hdf5File = hdf5File;
+		open();
+	}
+
+	private void open()
+	{
+		hdf5Reader = HDF5Factory.openForReading( hdf5File );
+		mipmapResolutions = hdf5Reader.readDoubleMatrix( "resolutions" );
+		final int numTimepoints = hdf5Reader.readInt( "numTimepoints" );
+		final int numSetups = hdf5Reader.readInt( "numSetups" );
+		final int numLevels = mipmapResolutions.length;
+		cache = new Hdf5GlobalCellCache< ShortArray >( new ShortArrayLoader( hdf5Reader ), numTimepoints, numSetups, numLevels );
+	}
 
 	@Override
 	public void init( final Element elem, final File basePath )
@@ -44,12 +72,17 @@ public class Hdf5ImageLoader implements ImgLoader
 		{
 			throw new RuntimeException( e );
 		}
-		hdf5Reader = HDF5Factory.openForReading( new File( path ) );
-		mipmapResolutions = hdf5Reader.readDoubleMatrix( "resolutions" );
-		final int numTimepoints = hdf5Reader.readInt( "numTimepoints" );
-		final int numSetups = hdf5Reader.readInt( "numSetups" );
-		final int numLevels = mipmapResolutions.length;
-		cache = new Hdf5GlobalCellCache< ShortArray >( new ShortArrayLoader( hdf5Reader ), numTimepoints, numSetups, numLevels );
+		hdf5File = new File( path );
+		open();
+	}
+
+	@Override
+	public Element toXml( final Document doc, final File basePath )
+	{
+		final Element elem = doc.createElement( "ImageLoader" );
+		elem.setAttribute( "class", getClass().getCanonicalName() );
+		elem.appendChild( XmlHelpers.pathElement( doc, "hdf5", hdf5File, basePath ) );
+		return elem;
 	}
 
 	@Override
