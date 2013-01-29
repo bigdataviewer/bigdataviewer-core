@@ -97,6 +97,49 @@ public class XmlHelpers
 			return new File( path );
 	}
 
+	/**
+	 * @param basePath if null put the absolute path, otherwise relative to this
+	 */
+	public static Element pathElement( final Document doc, final String name, final File path, final File basePath )
+	{
+		final Element e = doc.createElement( name );
+
+		if ( basePath == null )
+			e.appendChild( doc.createTextNode( path.getAbsolutePath() ) );
+		else
+		{
+			e.setAttribute( "type", "relative" );
+			e.appendChild( doc.createTextNode( getRelativePath( path, basePath ).getName() ) );
+		}
+
+		return e;
+	}
+
+	public static File getRelativePath( final File file, final File relativeToThis )
+	{
+		return getRelativePath( file, relativeToThis, "" );
+	}
+
+	private static File getRelativePath( final File file, final File relativeToThis, final String relativeInitial )
+	{
+		File parent = file;
+		String relative = null;
+		while( parent != null )
+		{
+			if ( parent.equals( relativeToThis ) )
+			{
+				return new File( relativeInitial + ( relative == null ? "." : relative ) );
+			}
+			relative = parent.getName() + ( relative == null ? "" : "/" + relative );
+			parent = parent.getParentFile();
+		}
+		final File toParent = relativeToThis.getParentFile();
+		if ( toParent == null )
+			return null;
+		else
+			return getRelativePath( file, toParent, "../" + relativeInitial );
+	}
+
 	public static Element affineTransform3DElement( final Document doc, final String name, final AffineTransform3D value )
 	{
 		final Element e = doc.createElement( name );
