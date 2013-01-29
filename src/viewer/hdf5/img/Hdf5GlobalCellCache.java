@@ -8,7 +8,7 @@ import viewer.util.StopWatch;
 
 public class Hdf5GlobalCellCache< A >
 {
-	final int numTimepoints ;
+	final int numTimepoints;
 
 	final int numSetups;
 
