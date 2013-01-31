@@ -24,6 +24,7 @@ import net.imglib2.Positionable;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealPoint;
+import net.imglib2.RealPositionable;
 import net.imglib2.converter.Converter;
 import net.imglib2.converter.Converters;
 import net.imglib2.converter.TypeIdentity;
@@ -323,6 +324,21 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		painterThread.start();
 	}
 
+	public void addHandler( final Object handler )
+	{
+		display.addHandler( handler );
+		if ( KeyListener.class.isInstance( handler ) )
+			frame.addKeyListener( ( KeyListener ) handler );
+	}
+
+	public void getGlobalMouseCoordinates( final RealPositionable gPos )
+	{
+		assert gPos.numDimensions() == 3;
+		final RealPoint lPos = new RealPoint( 3 );
+		mouseCoordinates.getMouseCoordinates( lPos );
+		viewerTransform.applyInverse( gPos, lPos );
+	}
+
 	/**
 	 * Check whether the size of the display component was changed and
 	 * recreate {@link #screenImages}, {@link #screenScaleTransforms}, and {@link #virtualScreenInterval} accordingly.
@@ -451,6 +467,11 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		display.repaint();
 	}
 
+	public void requestRepaint()
+	{
+		requestRepaint( maxScreenScaleIndex, maxMipmapLevel );
+	}
+
 	/**
 	 * Request a repaint of the display from the painter thread. The painter
 	 * thread will trigger a {@link #paint()} as soon as possible (that is,
@@ -553,10 +574,8 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 				timepointString = String.format( "t = %d", currentTimepoint );
 			}
 
-			final RealPoint lPos = new RealPoint( 3 );
 			final RealPoint gPos = new RealPoint( 3 );
-			mouseCoordinates.getMouseCoordinates( lPos );
-			viewerTransform.applyInverse( gPos, lPos );
+			getGlobalMouseCoordinates( gPos );
 			final String mousePosGlobalString = String.format( "(%6.1f,%6.1f,%6.1f)", gPos.getDoublePosition( 0 ), gPos.getDoublePosition( 1 ), gPos.getDoublePosition( 2 ) );
 
 			g.setFont( new Font( "Monospaced", Font.PLAIN, 12 ) );
@@ -789,7 +808,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 				align( AlignPlane.XY );
 			else if ( keyCode == KeyEvent.VK_X && align )
 				align( AlignPlane.ZY );
-			else if ( keyCode == KeyEvent.VK_Y && align )
+			else if ( ( keyCode == KeyEvent.VK_Y || keyCode == KeyEvent.VK_A ) && align )
 				align( AlignPlane.XZ );
 		}
 
