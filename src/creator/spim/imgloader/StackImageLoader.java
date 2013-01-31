@@ -1,5 +1,7 @@
 package creator.spim.imgloader;
 
+import ij.ImagePlus;
+
 import java.io.File;
 import java.util.List;
 
@@ -7,6 +9,7 @@ import mpicbg.spim.data.ImgLoader;
 import mpicbg.spim.data.View;
 import net.imglib2.img.ImgPlus;
 import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.io.ImgIOException;
 import net.imglib2.io.ImgOpener;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
@@ -27,10 +30,13 @@ public class StackImageLoader implements ImgLoader
 
 	private final int numViewSetups;
 
-	public StackImageLoader( final List< String > filenames, final int numViewSetups )
+	private final boolean useImageJOpener;
+
+	public StackImageLoader( final List< String > filenames, final int numViewSetups, final boolean useImageJOpener )
 	{
 		this.filenames = filenames;
 		this.numViewSetups = numViewSetups;
+		this.useImageJOpener = useImageJOpener;
 		opener = new ImgOpener();
 		factory = new ArrayImgFactory< UnsignedShortType >();
 		type = new UnsignedShortType();
@@ -61,15 +67,20 @@ public class StackImageLoader implements ImgLoader
 		final int timepoint = view.getTimepointIndex();
 		final int index = timepoint * numViewSetups + setup;
 		final String fn = filenames.get( index );
-		ImgPlus< UnsignedShortType > img;
-		try
+		if ( useImageJOpener )
 		{
-			img = opener.openImg( fn, factory, type );
+			return new ImgPlus< UnsignedShortType >( ImageJFunctions.wrapShort( new ImagePlus( fn ) ) );
 		}
-		catch ( final ImgIOException e )
+		else
 		{
-			throw new RuntimeException( e );
+			try
+			{
+				return opener.openImg( fn, factory, type );
+			}
+			catch ( final ImgIOException e )
+			{
+				throw new RuntimeException( e );
+			}
 		}
-		return img;
 	}
 }

@@ -64,7 +64,7 @@ public class SpimSequence
 				filenames[ timepoint * numSetups + setup ] = viewDataBeads.getFileName();
 			}
 		}
-		return new StackImageLoader( Arrays.asList( filenames ), numSetups );
+		return new StackImageLoader( Arrays.asList( filenames ), numSetups, true );
 	}
 
 	/**
