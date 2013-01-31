@@ -52,8 +52,11 @@ public class CreateCells
 //		public static final int[][] subdivisions = { { 32, 32, 4 }, { 32, 32, 4 }, { 16, 16, 4 } };
 
 	//  mipmap def 2
-		public static final int[][] resolutions = { { 1, 1, 1 }, { 2, 2, 1 }, { 4, 4, 2 } };
-		public static final int[][] subdivisions = { { 32, 32, 4 }, { 16, 16, 8 }, { 8, 8, 8 } };
+//		public static final int[][] resolutions = { { 1, 1, 1 }, { 2, 2, 1 }, { 4, 4, 2 } };
+//		public static final int[][] subdivisions = { { 32, 32, 4 }, { 16, 16, 8 }, { 8, 8, 8 } };
+
+		public static final int[][] resolutions = { { 1, 1, 1 }, { 2, 2, 2 }, { 4, 4, 4 } };
+		public static final int[][] subdivisions = { { 32, 32, 32 }, { 16, 16, 16 }, { 8, 8, 8 } };
 	}
 
 
@@ -196,12 +199,15 @@ public class CreateCells
 			System.out.println( String.format( "proccessing timepoint %d / %d", timepoint, numTimepoints ) );
 			for ( int setup = 0; setup < numSetups; ++setup )
 			{
+				System.out.println( String.format( "proccessing setup %d / %d", setup, numSetups ) );
 				// final View view = loader.getView( timepoint, setup );
 				final View view = new View( seq, timepoint, setup, null );
+				System.out.println( "loading image" );
 				final ImgPlus< UnsignedShortType > img = seq.imgLoader.getUnsignedShortImage( view );
 
 				for ( int level = 0; level < numLevels; ++level )
 				{
+					System.out.println( "writing level " + level );
 					img.dimensions( dimensions );
 					final RandomAccessible< UnsignedShortType > source;
 					final int[] factor = resolutions[ level ];
