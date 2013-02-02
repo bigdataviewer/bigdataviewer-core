@@ -10,6 +10,8 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -316,7 +318,15 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		content.add( display, BorderLayout.CENTER );
 		content.add( sliderTime, BorderLayout.SOUTH );
 		frame.pack();
-		frame.setDefaultCloseOperation( JFrame.EXIT_ON_CLOSE );
+		frame.setDefaultCloseOperation( JFrame.DISPOSE_ON_CLOSE );
+		frame.addWindowListener( new WindowAdapter()
+		{
+			@Override
+			public void windowClosing( final WindowEvent e )
+			{
+				painterThread.interrupt();
+			}
+		} );
 //		frame.addKeyListener( display.getTransformEventHandler() );
 		frame.addKeyListener( sourceSwitcher );
 		frame.setVisible( true );

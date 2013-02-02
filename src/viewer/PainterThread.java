@@ -45,7 +45,9 @@ final public class PainterThread extends Thread
 						wait();
 				}
 				catch ( final InterruptedException e )
-				{}
+				{
+					break;
+				}
 			}
 		}
 	}
