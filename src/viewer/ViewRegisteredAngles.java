@@ -175,8 +175,8 @@ public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
 		imgLoader = ( Hdf5ImageLoader ) seq.imgLoader;
 		displayRanges = new ArrayList< AbstractLinearRange >();
 
-		final int width = 400;
-		final int height = 300;
+		final int width = 800;
+		final int height = 600;
 
 		final ArrayList< SourceAndConverter< ? > > sources = new ArrayList< SourceAndConverter< ? > >();
 		final RealARGBConverter< UnsignedShortType > converter = new RealARGBConverter< UnsignedShortType >( 0, 65535 );

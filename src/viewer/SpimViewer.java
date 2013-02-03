@@ -605,6 +605,8 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 				else
 					display.repaint();
 			}
+			if ( box.isHighlightInProgress() )
+				display.repaint();
 		}
 	}
 
@@ -774,7 +776,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	{
 		singleSourceMode = !singleSourceMode;
 		animatedOverlay = new TextOverlayAnimator( singleSourceMode ? "single-source mode" : "fused mode", indicatorTime );
-		requestRepaint( maxScreenScaleIndex, currentMipmapLevel );
+		requestRepaint( maxScreenScaleIndex, maxMipmapLevel );
 	}
 
 	public synchronized void toggleVisibility( final int sourceIndex )
@@ -783,7 +785,11 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		{
 			final SourceDisplay< ? > source = sources.get( sourceIndex );
 			source.setActive( !source.isActive() );
-			requestRepaint( maxScreenScaleIndex, currentMipmapLevel );
+			box.highlight( sourceIndex );
+			if ( ! singleSourceMode )
+				requestRepaint( maxScreenScaleIndex, maxMipmapLevel );
+			else
+				display.repaint();
 		}
 	}
 
@@ -795,7 +801,11 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		if ( sourceIndex >= 0 && sourceIndex < sources.size() )
 		{
 			currentSource = sourceIndex;
-			requestRepaint( maxScreenScaleIndex, currentMipmapLevel );
+			box.highlight( sourceIndex );
+			if ( singleSourceMode )
+				requestRepaint( maxScreenScaleIndex, maxMipmapLevel );
+			else
+				display.repaint();
 		}
 	}
 

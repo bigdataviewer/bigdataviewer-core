@@ -255,6 +255,25 @@ public class MultiBoxOverlay
 	}
 
 
+	private volatile boolean highlightInProgress;
+
+	public boolean isHighlightInProgress()
+	{
+		return highlightInProgress;
+	}
+
+	private int highlightIndex = -1;
+
+	private long highlighStartTime = -1;
+
+	private final int highlightDuration = 300;
+
+	public void highlight( final int sourceIndex )
+	{
+		highlightIndex = sourceIndex;
+		highlighStartTime = -1;
+	}
+
 	/**
 	 *
 	 * @param graphics
@@ -277,14 +296,60 @@ public class MultiBoxOverlay
 		final GeneralPath activeBack = new GeneralPath();
 		final GeneralPath inactiveFront = new GeneralPath();
 		final GeneralPath inactiveBack = new GeneralPath();
+		final GeneralPath highlightFront = new GeneralPath();
+		final GeneralPath highlightBack = new GeneralPath();
+
+		boolean highlight = false;
+		Color highlightFrontColor = null;
+		Color highlightBackColor = null;
 
 		for ( int i = 0; i < sources.size(); ++i )
 		{
 			final IntervalAndTransform source = sources.get( i );
-			if( source.isVisible() )
-				renderBox( source.getSourceInterval(), source.getSourceToViewer(), activeFront, activeBack );
+			if ( highlightIndex == i )
+			{
+				highlight = true;
+				if ( highlighStartTime == -1 )
+					highlighStartTime = System.currentTimeMillis();
+				double t = ( System.currentTimeMillis() - highlighStartTime ) / ( double ) highlightDuration;
+				if ( t >= 1 )
+				{
+					highlightInProgress = false;
+					highlightIndex = -1;
+					highlighStartTime = -1;
+					t = 1;
+				}
+				else
+					highlightInProgress = true;
+
+				final float alpha;
+				final double fadeInTime = 0.2;
+				final double fadeOutTime = 0.5;
+				if ( t <= fadeInTime )
+					alpha = ( float ) Math.sin( ( Math.PI / 2 ) * t / fadeInTime );
+				else if ( t >= 1.0 - fadeOutTime )
+					alpha = ( float ) Math.sin( ( Math.PI / 2 ) * ( 1.0 - t ) / ( fadeOutTime ) );
+				else
+					alpha = 1;
+				Color c = source.isVisible() ? activeFrontColor : inactiveFrontColor;
+				int r = ( int ) ( alpha * 255 + ( 1 - alpha ) * c.getRed() );
+				int g = ( int ) ( alpha * 255 + ( 1 - alpha ) * c.getGreen() );
+				int b = ( int ) ( alpha * 255 + ( 1 - alpha ) * c.getBlue() );
+				highlightFrontColor = new Color( r, g, b );
+				c = source.isVisible() ? activeBackColor : inactiveBackColor;
+				r = ( int ) ( alpha * 255 + ( 1 - alpha ) * c.getRed() );
+				g = ( int ) ( alpha * 255 + ( 1 - alpha ) * c.getGreen() );
+				b = ( int ) ( alpha * 255 + ( 1 - alpha ) * c.getBlue() );
+				highlightBackColor = new Color( r, g, b );
+				renderBox( source.getSourceInterval(), source.getSourceToViewer(), highlightFront, highlightBack );
+			}
 			else
-				renderBox( source.getSourceInterval(), source.getSourceToViewer(), inactiveFront, inactiveBack );
+			{
+				if( source.isVisible() )
+					renderBox( source.getSourceInterval(), source.getSourceToViewer(), activeFront, activeBack );
+				else
+					renderBox( source.getSourceInterval(), source.getSourceToViewer(), inactiveFront, inactiveBack );
+			}
 		}
 
 		graphics.setRenderingHint( RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON );
@@ -292,12 +357,22 @@ public class MultiBoxOverlay
 		graphics.draw( inactiveBack );
 		graphics.setPaint( activeBackColor );
 		graphics.draw( activeBack );
+		if ( highlight )
+		{
+			graphics.setPaint( highlightBackColor );
+			graphics.draw( highlightBack );
+		}
 		graphics.setPaint( canvasColor );
 		graphics.fill( canvas );
 		graphics.setPaint( inactiveFrontColor );
 		graphics.draw( inactiveFront );
 		graphics.setPaint( activeFrontColor );
 		graphics.draw( activeFront );
+		if ( highlight )
+		{
+			graphics.setPaint( highlightFrontColor );
+			graphics.draw( highlightFront );
+		}
 
 		final IntervalAndTransform source = sources.get( 0 );
 		final double sX0 = source.getSourceInterval().min( 0 );
