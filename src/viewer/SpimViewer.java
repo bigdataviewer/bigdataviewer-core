@@ -43,6 +43,7 @@ import net.imglib2.ui.TransformListener3D;
 import net.imglib2.util.Intervals;
 import net.imglib2.util.LinAlgHelpers;
 import net.imglib2.view.Views;
+import viewer.TextOverlayAnimator.TextPosition;
 import viewer.display.AccumulateARGB;
 import viewer.display.InterruptibleRenderer;
 
@@ -332,6 +333,8 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		frame.setVisible( true );
 
 		painterThread.start();
+
+		animatedOverlay = new TextOverlayAnimator( "Press <F1> for help.", 3000, TextPosition.CENTER );
 	}
 
 	public void addHandler( final Object handler )
@@ -567,6 +570,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		return targetLevel;
 	}
 
+	TextOverlayAnimator animatedOverlay = null;
 
 	@Override
 	public void drawOverlays( final Graphics g )
@@ -592,6 +596,15 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 			g.drawString( sourceName, ( int ) g.getClipBounds().getWidth() / 2, 12 );
 			g.drawString( timepointString, ( int ) g.getClipBounds().getWidth() - 170, 12 );
 			g.drawString( mousePosGlobalString, ( int ) g.getClipBounds().getWidth() - 170, 25 );
+
+			if ( animatedOverlay != null )
+			{
+				animatedOverlay.paint( ( Graphics2D ) g );
+				if ( animatedOverlay.isComplete() )
+					animatedOverlay = null;
+				else
+					display.repaint();
+			}
 		}
 	}
 
@@ -740,17 +753,27 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		}
 	}
 
+	final int indicatorTime = 800;
+
 	protected synchronized void toggleInterpolation()
 	{
 		if ( interpolation == Interpolation.NEARESTNEIGHBOR )
+		{
 			interpolation = Interpolation.NLINEAR;
-		else interpolation = Interpolation.NEARESTNEIGHBOR;
+			animatedOverlay = new TextOverlayAnimator( "tri-linear interpolation", indicatorTime );
+		}
+		else
+		{
+			interpolation = Interpolation.NEARESTNEIGHBOR;
+			animatedOverlay = new TextOverlayAnimator( "nearest-neighbor interpolation", indicatorTime );
+		}
 		requestRepaint( maxScreenScaleIndex, currentMipmapLevel );
 	}
 
 	public synchronized void toggleSingleSourceMode()
 	{
 		singleSourceMode = !singleSourceMode;
+		animatedOverlay = new TextOverlayAnimator( singleSourceMode ? "single-source mode" : "fused mode", indicatorTime );
 		requestRepaint( maxScreenScaleIndex, currentMipmapLevel );
 	}
 

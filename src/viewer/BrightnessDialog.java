@@ -4,14 +4,22 @@ import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Container;
 import java.awt.Frame;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.ActionMap;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.InputMap;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.JSpinner;
+import javax.swing.KeyStroke;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -30,7 +38,7 @@ public class BrightnessDialog extends JDialog
 		this.listener = listener;
 	}
 
-	public BrightnessDialog( final Frame owner )
+	public BrightnessDialog( final Frame owner, final KeyStroke hideKeyStroke )
 	{
 		super( owner, "display range", false );
 		listener = null;
@@ -81,6 +89,26 @@ public class BrightnessDialog extends JDialog
 		} );
 
 		content.add( sliders, BorderLayout.NORTH );
+
+		if ( hideKeyStroke != null )
+		{
+			final ActionMap am = getRootPane().getActionMap();
+			final InputMap im = getRootPane().getInputMap( JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT );
+			final Object hideKey = new Object();
+			final Action hideAction = new AbstractAction()
+			{
+				private static final long serialVersionUID = -110094795301286228L;
+
+				@Override
+				public void actionPerformed( final ActionEvent e )
+				{
+					setVisible( false );
+				}
+			};
+			im.put( hideKeyStroke, hideKey );
+			im.put( KeyStroke.getKeyStroke( KeyEvent.VK_ESCAPE, 0 ), hideKey );
+			am.put( hideKey, hideAction );
+		}
 
 		pack();
 		setDefaultCloseOperation( JDialog.HIDE_ON_CLOSE );
@@ -144,11 +172,6 @@ public class BrightnessDialog extends JDialog
 		}
 
 		private static final long serialVersionUID = -833454714700639442L;
-	}
-
-	public static void main( final String[] args )
-	{
-		new BrightnessDialog( ( Frame ) null ).setVisible( true );
 	}
 
 	private static final long serialVersionUID = -4010513274385814205L;

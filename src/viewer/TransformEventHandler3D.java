@@ -241,8 +241,9 @@ public class TransformEventHandler3D implements MouseListener, MouseMotionListen
 			final int modifiers = e.getModifiersEx();
 			final double v = keyModfiedSpeed( modifiers );
 			final int s = e.getWheelRotation();
-			if ( ( modifiers & KeyEvent.CTRL_DOWN_MASK ) != 0 &&
-			     ( modifiers & KeyEvent.SHIFT_DOWN_MASK ) != 0 )
+			if ( ( ( modifiers & KeyEvent.CTRL_DOWN_MASK ) != 0 &&
+			       ( modifiers & KeyEvent.SHIFT_DOWN_MASK ) != 0 )
+			     || ( modifiers & KeyEvent.META_DOWN_MASK ) != 0 )
 			{
 				final double f = getMouseScaleFactor();
 				final double dScale = 1.0 + 0.05;

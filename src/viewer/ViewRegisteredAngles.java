@@ -5,6 +5,7 @@ import java.awt.event.KeyListener;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import javax.swing.KeyStroke;
 import javax.xml.parsers.ParserConfigurationException;
 
 import mpicbg.spim.data.SequenceDescription;
@@ -21,6 +22,8 @@ import viewer.hdf5.Hdf5ImageLoader;
 
 public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
 {
+	final int brightnessDialogKey = KeyEvent.VK_S;
+
 	class Keys implements KeyListener
 	{
 
@@ -34,9 +37,13 @@ public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
 		{
 			final int keyCode = e.getKeyCode();
 			// final int modifiers = e.getModifiersEx();
-			if ( keyCode == KeyEvent.VK_S )
+			if ( keyCode == brightnessDialogKey )
 			{
-				brightnessDialog.setVisible( true );
+				brightnessDialog.setVisible( ! brightnessDialog.isVisible() );
+			}
+			else if ( keyCode == KeyEvent.VK_F1 )
+			{
+				new HelpFrame();
 			}
 		}
 
@@ -179,9 +186,10 @@ public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
 
 		final int numMipmapLevels = imgLoader.getMipmapResolutions().length;
 		viewer = new SpimViewer( width, height, sources, seq.numTimepoints(), numMipmapLevels );
-		brightnessDialog = new BrightnessDialog( viewer.frame );
+		brightnessDialog = new BrightnessDialog( viewer.frame, KeyStroke.getKeyStroke( brightnessDialogKey, 0 ) );
 		brightnessDialog.setListener( this );
-		viewer.addHandler( new Keys() );
+		final Keys keys = new Keys();
+		viewer.addHandler( keys );
 	}
 
 	public static void view( final String filename ) throws InstantiationException, IllegalAccessException, ClassNotFoundException, ParserConfigurationException, SAXException, IOException
