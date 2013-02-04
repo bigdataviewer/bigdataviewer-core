@@ -143,7 +143,7 @@ public class BrightnessDialog extends JDialog
 				@Override
 				public void stateChanged( final ChangeEvent e )
 				{
-					slider.setValue( ( int ) spinner.getValue() );
+					slider.setValue( ( ( Integer ) spinner.getValue() ).intValue() );
 				}
 			} );
 
