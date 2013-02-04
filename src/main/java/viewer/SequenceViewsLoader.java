@@ -39,7 +39,8 @@ public class SequenceViewsLoader
 		final Document dom = db.parse( xmlFilename );
 		final Element root = dom.getDocumentElement();
 
-		seq = new SequenceDescription( root, new File( xmlFilename ).getParentFile(), true );
+		final File baseDirectory = new File( xmlFilename ).getParentFile();
+		seq = new SequenceDescription( root, baseDirectory != null ? baseDirectory : new File("."), true );
 		views = new ArrayList< View >();
 		createViews( new ViewRegistrations( root ) );
 	}
