@@ -20,6 +20,16 @@ public class InterruptibleRenderer< A, B > extends AbstractInterval
 
 	protected long lastFrameIoNanoTime;
 
+	protected long ioTimeOutNanos;
+
+	protected Runnable ioTimeOutRunnable;
+
+	public void setIoTimeOut( final long nanos, final Runnable runnable )
+	{
+		ioTimeOutNanos = nanos;
+		ioTimeOutRunnable = runnable;
+	}
+
 	public InterruptibleRenderer( final RandomAccessible< A > source, final Converter< A, B > converter )
 	{
 		super( new long[ source.numDimensions() ] );
@@ -27,6 +37,7 @@ public class InterruptibleRenderer< A, B > extends AbstractInterval
 		this.converter = converter;
 		lastFrameRenderNanoTime = -1;
 		lastFrameIoNanoTime = -1;
+		ioTimeOutNanos = -1;
 	}
 
 	public boolean map( final RandomAccessibleInterval< B > target )
@@ -60,6 +71,16 @@ public class InterruptibleRenderer< A, B > extends AbstractInterval
 			wasInterrupted = interrupted.get();
 			if ( wasInterrupted )
 				break;
+			if ( ioTimeOutNanos > 0 )
+			{
+				lastFrameIoNanoTime = Hdf5GlobalCellCache.getThreadIoNanoTime() - startTimeIo;
+				if ( lastFrameIoNanoTime > ioTimeOutNanos )
+				{
+					ioTimeOutRunnable.run();
+					wasInterrupted = true;
+					break;
+				}
+			}
 			for ( int x = 0; x < width; ++x )
 			{
 				converter.convert( sourceRandomAccess.get(), targetRandomAccess.get() );

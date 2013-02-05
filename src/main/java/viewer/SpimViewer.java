@@ -215,7 +215,15 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	 */
 	final long targetRenderNanos = 30 * 1000000;
 
+	/**
+	 * TODO
+	 */
 	final long targetIoNanos = 10 * 1000000;
+
+	/**
+	 * TODO
+	 */
+	final int badIoFrameBlockFrames = 5;
 
 	/**
 	 * TODO
@@ -403,7 +411,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		}
 	}
 
-	int goodIoFrames = 0;
+	volatile int goodIoFrames = 0;
 
 	@Override
 	public void paint()
@@ -411,17 +419,37 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 		checkResize();
 		updateBoxSources();
 
+		boolean setIoTimeLimit = false;
 		final int targetMipmapLevel;
 		synchronized( this )
 		{
 			currentScreenScaleIndex = requestedScreenScaleIndex;
 			currentMipmapLevel = requestedMipmapLevel;
 			targetMipmapLevel = getBestMipMapLevel( currentScreenScaleIndex );
-			if ( targetMipmapLevel > currentMipmapLevel || goodIoFrames > 5 )
+			if ( targetMipmapLevel > currentMipmapLevel )
+			{
 				currentMipmapLevel = targetMipmapLevel;
+			}
+			else if ( targetMipmapLevel < currentMipmapLevel && goodIoFrames > badIoFrameBlockFrames )
+			{
+				currentMipmapLevel = targetMipmapLevel;
+				setIoTimeLimit = true;
+			}
 		}
 
 		final InterruptibleRenderer< ?, ARGBType > p = createProjector();
+		if( setIoTimeLimit )
+		{
+			p.setIoTimeOut( targetIoNanos, new Runnable()
+			{
+				@Override
+				public void run()
+				{
+					goodIoFrames = 0;
+					requestRepaint();
+				}
+			} );
+		}
 		final ARGBScreenImage screenImage;
 		final BufferedImage bufferedImage;
 		synchronized( this )
