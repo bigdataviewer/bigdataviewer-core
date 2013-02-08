@@ -39,6 +39,7 @@ import net.imglib2.realtransform.RealViews;
 import net.imglib2.sampler.special.ConstantRandomAccessible;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.NumericType;
+import net.imglib2.ui.TransformEventHandler3D;
 import net.imglib2.ui.TransformListener3D;
 import net.imglib2.util.Intervals;
 import net.imglib2.util.LinAlgHelpers;
