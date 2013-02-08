@@ -6,6 +6,7 @@ import java.awt.Graphics;
 import java.awt.event.ComponentEvent;
 import java.awt.event.ComponentListener;
 import java.awt.event.KeyListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
@@ -87,32 +88,12 @@ public class SpimViewerCanvas extends JComponent
 			}
 		} );
 
-		addMouseListener( new MouseListener()
+		addMouseListener( new MouseAdapter()
 		{
-			@Override
-			public void mouseReleased( final MouseEvent e )
-			{
-			}
-
 			@Override
 			public void mousePressed( final MouseEvent e )
 			{
 				requestFocusInWindow();
-			}
-
-			@Override
-			public void mouseExited( final MouseEvent e )
-			{
-			}
-
-			@Override
-			public void mouseEntered( final MouseEvent e )
-			{
-			}
-
-			@Override
-			public void mouseClicked( final MouseEvent e )
-			{
 			}
 		} );
 

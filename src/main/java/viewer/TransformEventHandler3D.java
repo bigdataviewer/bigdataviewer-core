@@ -1,17 +1,15 @@
 package viewer;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelEvent;
-import java.awt.event.MouseWheelListener;
 
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.ui.TransformListener3D;
 
 
-public class TransformEventHandler3D implements MouseListener, MouseMotionListener, MouseWheelListener, KeyListener
+public class TransformEventHandler3D extends MouseAdapter implements KeyListener
 {
 	/**
 	 * Current source to screen transform.
@@ -256,6 +254,7 @@ public class TransformEventHandler3D implements MouseListener, MouseMotionListen
 			// translate in Z
 			{
 				final double dZ = v * -s;
+				// TODO (optionally) correct for zoom
 				affine.set( affine.get( 2, 3 ) - dZ, 2, 3 );
 			}
 
@@ -319,21 +318,6 @@ public class TransformEventHandler3D implements MouseListener, MouseMotionListen
 			}
 		}
 	}
-
-	@Override
-	public void mouseMoved( final MouseEvent e ) {}
-
-	@Override
-	public void mouseClicked( final MouseEvent e ) {}
-
-	@Override
-	public void mouseReleased( final MouseEvent e ) {}
-
-	@Override
-	public void mouseEntered( final MouseEvent e ) {}
-
-	@Override
-	public void mouseExited( final MouseEvent e ) {}
 
 	@Override
 	public void keyTyped( final KeyEvent e ) {}
