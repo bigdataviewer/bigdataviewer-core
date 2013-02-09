@@ -1,8 +1,8 @@
-package viewer;
+package net.imglib.ui;
 
 import java.awt.Graphics;
 
-public interface ScreenImageRenderer
+public interface OverlayRenderer
 {
 	/**
 	 * Render overlays.

@@ -1,4 +1,4 @@
-package viewer;
+package net.imglib.ui.component;
 
 import java.awt.AWTEvent;
 import java.awt.Dimension;
@@ -15,11 +15,12 @@ import java.awt.image.BufferedImage;
 
 import javax.swing.JComponent;
 
+import net.imglib.ui.OverlayRenderer;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.ui.TransformEventHandler3D;
 import net.imglib2.ui.TransformListener3D;
 
-public class SpimViewerCanvas extends JComponent
+public class InteractiveDisplay3DCanvas extends JComponent
 {
 	private static final long serialVersionUID = 6187867732580868714L;
 
@@ -28,7 +29,7 @@ public class SpimViewerCanvas extends JComponent
 	 */
 	final protected TransformEventHandler3D handler;
 
-	final protected ScreenImageRenderer renderer;
+	final protected OverlayRenderer renderer;
 
 	final protected TransformListener3D renderTransformListener;
 
@@ -40,7 +41,7 @@ public class SpimViewerCanvas extends JComponent
 	 */
 	protected BufferedImage bufferedImage;
 
-	public SpimViewerCanvas( final int width, final int height, final ScreenImageRenderer renderer, final TransformListener3D renderTransformListener )
+	public InteractiveDisplay3DCanvas( final int width, final int height, final OverlayRenderer renderer, final TransformListener3D renderTransformListener )
 	{
 		super();
 		setPreferredSize( new Dimension( width, height ) );
@@ -143,16 +144,9 @@ public class SpimViewerCanvas extends JComponent
 		if ( bi != null )
 		{
 //			( (Graphics2D ) g).setRenderingHint( RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR );
-//			final int biw = bi.getWidth();
-//			final int bih = bi.getHeight();
-//			final int w = getWidth();
-//			final int h = getHeight();
-//			final boolean b = g.drawImage( bi, 0, 0, w, h, null );
-//			System.out.println( String.format( "%d, %d, %d, %d, %b", biw, bih, w, h, b ) );
 			g.drawImage( bi, 0, 0, getWidth(), getHeight(), null );
 			renderer.drawOverlays( g );
 		}
-//		renderer.drawOverlays( g );
 	}
 
 	public TransformEventHandler3D getTransformEventHandler()

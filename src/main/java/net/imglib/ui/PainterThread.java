@@ -1,4 +1,4 @@
-package viewer;
+package net.imglib.ui;
 
 /**
  * Thread to repaint display.
@@ -53,7 +53,8 @@ final public class PainterThread extends Thread
 	}
 
 	/**
-	 * request repaint.
+	 * Request repaint. This will trigger a call to {@link Paintable#paint()}
+	 * from the {@link PainterThread}.
 	 */
 	public void requestRepaint()
 	{

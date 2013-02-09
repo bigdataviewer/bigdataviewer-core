@@ -21,6 +21,9 @@ import javax.swing.JSlider;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import net.imglib.ui.OverlayRenderer;
+import net.imglib.ui.PainterThread;
+import net.imglib.ui.component.InteractiveDisplay3DCanvas;
 import net.imglib2.Interval;
 import net.imglib2.Positionable;
 import net.imglib2.RandomAccessible;
@@ -48,7 +51,7 @@ import viewer.TextOverlayAnimator.TextPosition;
 import viewer.display.AccumulateARGB;
 import viewer.display.InterruptibleRenderer;
 
-public class SpimViewer implements ScreenImageRenderer, TransformListener3D, PainterThread.Paintable
+public class SpimViewer implements OverlayRenderer, TransformListener3D, PainterThread.Paintable
 {
 	/**
 	 * SpimSource with some attached state needed for rendering.
@@ -170,7 +173,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 	/**
 	 * Canvas used for displaying the rendered {@link #screenImages screen image}.
 	 */
-	final protected SpimViewerCanvas display;
+	final protected InteractiveDisplay3DCanvas display;
 
 	/**
 	 * Thread that triggers repainting of the display.
@@ -300,7 +303,7 @@ public class SpimViewer implements ScreenImageRenderer, TransformListener3D, Pai
 			boxSources.add( new IntervalAndTransform() );
 		virtualScreenInterval = Intervals.createMinSize( 0, 0, width, height );
 
-		display = new SpimViewerCanvas( width, height, this, this );
+		display = new InteractiveDisplay3DCanvas( width, height, this, this );
 
 		mouseCoordinates = new MouseCoordinateListener() ;
 		display.addHandler( mouseCoordinates );
