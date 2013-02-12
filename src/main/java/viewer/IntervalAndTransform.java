@@ -1,5 +1,6 @@
 package viewer;
 
+import viewer.util.ModifiableInterval;
 import net.imglib2.Interval;
 import net.imglib2.realtransform.AffineTransform3D;
 

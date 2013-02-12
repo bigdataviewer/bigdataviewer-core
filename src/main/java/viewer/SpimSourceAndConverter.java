@@ -7,7 +7,7 @@ import net.imglib2.type.numeric.NumericType;
 /**
  * SPIM data source (for one angle) and a converter to ARGBType.
  */
-public class SourceAndConverter< T extends NumericType< T > >
+public class SpimSourceAndConverter< T extends NumericType< T > >
 {
 	/**
 	 * provides image data for all timepoints of one view.
@@ -19,7 +19,7 @@ public class SourceAndConverter< T extends NumericType< T > >
 	 */
 	final protected Converter< T, ARGBType > converter;
 
-	public SourceAndConverter( final SpimSource< T > spimSource, final Converter< T, ARGBType > converter )
+	public SpimSourceAndConverter( final SpimSource< T > spimSource, final Converter< T, ARGBType > converter )
 	{
 		this.spimSource = spimSource;
 		this.converter = converter;

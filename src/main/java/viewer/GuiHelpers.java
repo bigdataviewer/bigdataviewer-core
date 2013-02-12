@@ -45,7 +45,6 @@ public class GuiHelpers
 	static final ColorModel RGB_COLOR_MODEL = new DirectColorModel(24, 0xff0000, 0xff00, 0xff);
 
 	/**
-	 * TODO helper
 	 * @param screenImage
 	 * @return
 	 */

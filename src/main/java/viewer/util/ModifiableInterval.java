@@ -1,4 +1,4 @@
-package viewer;
+package viewer.util;
 
 import net.imglib2.AbstractInterval;
 import net.imglib2.Interval;

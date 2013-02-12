@@ -10,15 +10,22 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.View;
+import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.RealRandomAccessible;
 import net.imglib2.display.AbstractLinearRange;
 import net.imglib2.display.RealARGBConverter;
+import net.imglib2.interpolation.InterpolatorFactory;
+import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
+import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.view.Views;
 
 import org.xml.sax.SAXException;
 
 import viewer.hdf5.Hdf5ImageLoader;
+import viewer.refactor.Interpolation;
 
 public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
 {
@@ -59,11 +66,21 @@ public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
 
 		RandomAccessibleInterval< UnsignedShortType >[] currentSources;
 
+		RealRandomAccessible< UnsignedShortType >[][] currentInterpolatedSources;
+
 		final AffineTransform3D[] currentSourceTransforms;
 
 		final int setup;
 
 		final String name;
+
+		final protected static int numInterpolationMethods = 2;
+
+		final protected static int iNearestNeighborMethod = 0;
+
+		final protected static int iNLinearMethod = 1;
+
+		final protected InterpolatorFactory< UnsignedShortType, RandomAccessible< UnsignedShortType > >[] interpolatorFactories;
 
 		@SuppressWarnings( "unchecked" )
 		Source( final int setup, final String name )
@@ -72,9 +89,13 @@ public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
 			this.name = name;
 			final int levels = imgLoader.numMipmapLevels();
 			currentSources = new RandomAccessibleInterval[ levels ];
+			currentInterpolatedSources = new RealRandomAccessible[ levels ][ 2 ];
 			currentSourceTransforms = new AffineTransform3D[ levels ];
 			for ( int level = 0; level < levels; level++ )
 				currentSourceTransforms[ level ] = new AffineTransform3D();
+			interpolatorFactories = new InterpolatorFactory[ numInterpolationMethods ];
+			interpolatorFactories[ iNearestNeighborMethod ] = new NearestNeighborInterpolatorFactory< UnsignedShortType >();
+			interpolatorFactories[ iNLinearMethod ] = new NLinearInterpolatorFactory< UnsignedShortType >();
 			loadTimepoint( 0 );
 		}
 
@@ -85,6 +106,8 @@ public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
 			currentTimepoint = timepoint;
 			if ( isPresent( timepoint ) )
 			{
+				final UnsignedShortType zero = new UnsignedShortType();
+				zero.setZero();
 				final View view = loader.getView( timepoint, setup );
 				final AffineTransform3D reg = view.getModel();
 				for ( int level = 0; level < currentSources.length; level++ )
@@ -98,6 +121,8 @@ public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
 					currentSourceTransforms[ level ].set( reg );
 					currentSourceTransforms[ level ].concatenate( mipmapTransform );
 					currentSources[ level ] = imgLoader.getUnsignedShortImage( view, level );
+					for ( int method = 0; method < numInterpolationMethods; ++method )
+						currentInterpolatedSources[ level ][ method ] = Views.interpolate( Views.extendValue( currentSources[ level ], zero ), interpolatorFactories[ method ] );
 				}
 			}
 			else
@@ -106,6 +131,8 @@ public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
 				{
 					currentSourceTransforms[ level ].identity();
 					currentSources[ level ] = null;
+					for ( int method = 0; method < numInterpolationMethods; ++method )
+						currentInterpolatedSources[ level ][ method ] = null;
 				}
 			}
 		}
@@ -122,6 +149,15 @@ public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
 			if ( t != currentTimepoint )
 				loadTimepoint( t );
 			return currentSources[ level ];
+		}
+
+
+		@Override
+		public RealRandomAccessible< UnsignedShortType > getInterpolatedSource( final int t, final int level, final Interpolation method )
+		{
+			if ( t != currentTimepoint )
+				loadTimepoint( t );
+			return currentInterpolatedSources[ level ][ method == Interpolation.NLINEAR ? iNLinearMethod : iNearestNeighborMethod ];
 		}
 
 		@Override
@@ -178,11 +214,11 @@ public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
 		final int width = 800;
 		final int height = 600;
 
-		final ArrayList< SourceAndConverter< ? > > sources = new ArrayList< SourceAndConverter< ? > >();
+		final ArrayList< SpimSourceAndConverter< ? > > sources = new ArrayList< SpimSourceAndConverter< ? > >();
 		final RealARGBConverter< UnsignedShortType > converter = new RealARGBConverter< UnsignedShortType >( 0, 65535 );
 		displayRanges.add( converter );
 		for ( int setup = 0; setup < seq.numViewSetups(); ++setup )
-			sources.add( new SourceAndConverter< UnsignedShortType >( new Source( setup, "angle " + setup ), converter ) );
+			sources.add( new SpimSourceAndConverter< UnsignedShortType >( new Source( setup, "angle " + setup ), converter ) );
 
 		final int numMipmapLevels = imgLoader.getMipmapResolutions().length;
 		viewer = new SpimViewer( width, height, sources, seq.numTimepoints(), numMipmapLevels );
