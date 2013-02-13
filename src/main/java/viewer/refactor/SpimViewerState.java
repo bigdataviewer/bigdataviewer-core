@@ -322,7 +322,7 @@ public class SpimViewerState
 
 		int targetLevel = numMipmapLevels - 1;
 		for ( int level = numMipmapLevels - 2; level >= 0; level-- )
-			if ( getSourceResolution( screenScaleTransform, level ) >= 1.0 )
+			if ( getSourceResolution( screenTransform, level ) >= 1.0 )
 				targetLevel = level;
 			else
 				break;
