@@ -1,4 +1,4 @@
-package viewer.refactor;
+package viewer.refactor.overlay;
 
 import java.awt.Graphics2D;
 import java.util.ArrayList;
@@ -7,8 +7,8 @@ import java.util.List;
 import net.imglib2.Interval;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.Intervals;
-import viewer.IntervalAndTransform;
-import viewer.MultiBoxOverlay;
+import viewer.refactor.SpimSourceState;
+import viewer.refactor.SpimViewerState;
 
 public class MultiBoxOverlayRenderer
 {
@@ -64,9 +64,12 @@ public class MultiBoxOverlayRenderer
 	 * pixels are rendered. (In the box overlay it is shown as a filled grey
 	 * rectangle.)
 	 */
-	public synchronized void setVirtualScreenSize( final int screenWidth, final int screenHeight )
+	public synchronized void updateVirtualScreenSize( final int screenWidth, final int screenHeight )
 	{
-		virtualScreenInterval = Intervals.createMinSize( 0, 0, screenWidth, screenHeight );
+		final long oldW = virtualScreenInterval.dimension( 0 );
+		final long oldH = virtualScreenInterval.dimension( 1 );
+		if ( screenWidth != oldW || screenHeight != oldH )
+			virtualScreenInterval = Intervals.createMinSize( 0, 0, screenWidth, screenHeight );
 	}
 
 	/**

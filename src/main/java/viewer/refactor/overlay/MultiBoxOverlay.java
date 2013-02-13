@@ -1,4 +1,4 @@
-package viewer;
+package viewer.refactor.overlay;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -12,6 +12,9 @@ import net.imglib2.Interval;
 import net.imglib2.realtransform.AffineTransform3D;
 
 /**
+ * Paint an overlay showing multiple transformed boxes (interval + transform).
+ * Boxes represent sources that are shown in the viewer. Boxes are different
+ * colors depending whether the sources are visible.
  *
  * @author Stephan Saalfeld
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>

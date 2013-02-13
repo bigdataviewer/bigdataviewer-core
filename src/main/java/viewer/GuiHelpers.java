@@ -48,7 +48,7 @@ public class GuiHelpers
 	 * @param screenImage
 	 * @return
 	 */
-	static final BufferedImage getBufferedImage( final ARGBScreenImage screenImage )
+	public static final BufferedImage getBufferedImage( final ARGBScreenImage screenImage )
 	{
 		final BufferedImage si = screenImage.image();
 		if ( discardAlpha && ( si.getTransparency() != Transparency.OPAQUE ) )

@@ -22,10 +22,9 @@ public class SpimViewerState
 	final protected int numTimePoints;
 
 	/**
-	 * index of coarsest mipmap level.
-	 * TODO: --> numMipmapLevels
+	 * number of available mipmap levels.
 	 */
-	final protected int maxMipmapLevel;
+	final protected int numMipmapLevels;
 
 
 
@@ -80,7 +79,7 @@ public class SpimViewerState
 		for ( final SpimSourceAndConverter< ? > source : sources )
 			this.sources.add( SpimSourceState.create( source ) );
 		this.numTimePoints = numTimePoints;
-		maxMipmapLevel = numMipmapLevels - 1;
+		this.numMipmapLevels = numMipmapLevels;
 
 		// viewer state
 		viewerTransform = new AffineTransform3D();
@@ -321,8 +320,8 @@ public class SpimViewerState
 		getViewerTransform( screenTransform );
 		screenTransform.preConcatenate( screenScaleTransform );
 
-		int targetLevel = maxMipmapLevel;
-		for ( int level = maxMipmapLevel - 1; level >= 0; level-- )
+		int targetLevel = numMipmapLevels - 1;
+		for ( int level = numMipmapLevels - 2; level >= 0; level-- )
 			if ( getSourceResolution( screenScaleTransform, level ) >= 1.0 )
 				targetLevel = level;
 			else
