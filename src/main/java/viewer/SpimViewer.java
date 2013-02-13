@@ -6,23 +6,33 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
-import java.awt.event.KeyAdapter;
+import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.ArrayList;
 import java.util.Collection;
 
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.ActionMap;
+import javax.swing.InputMap;
+import javax.swing.JComponent;
 import javax.swing.JFrame;
+import javax.swing.JRootPane;
 import javax.swing.JSlider;
+import javax.swing.KeyStroke;
+import javax.swing.RootPaneContainer;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import net.imglib.ui.OverlayRenderer;
 import net.imglib.ui.PainterThread;
 import net.imglib.ui.component.InteractiveDisplay3DCanvas;
+import net.imglib2.Pair;
 import net.imglib2.Positionable;
 import net.imglib2.RealPoint;
 import net.imglib2.RealPositionable;
@@ -30,6 +40,7 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.ui.TransformEventHandler3D;
 import net.imglib2.ui.TransformListener3D;
 import net.imglib2.util.LinAlgHelpers;
+import net.imglib2.util.ValuePair;
 import viewer.TextOverlayAnimator.TextPosition;
 import viewer.refactor.Interpolation;
 import viewer.refactor.MultiResolutionRenderer;
@@ -69,6 +80,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 
 	final protected MouseCoordinateListener mouseCoordinates;
 
+	final protected ArrayList< Pair< KeyStroke, Action > > keysActions;
 
 	/**
 	 *
@@ -139,6 +151,10 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 //		frame.addKeyListener( display.getTransformEventHandler() );
 //		frame.addKeyListener( sourceSwitcher );
 		frame.setVisible( true );
+
+		keysActions = new ArrayList< Pair< KeyStroke, Action > >();
+		createKeyActions();
+		installKeyActions( frame );
 
 		painterThread.start();
 
@@ -333,54 +349,134 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 		}
 	}
 
-	protected class SourceSwitcher extends KeyAdapter
+	/**
+	 * Create Keystrokes and corresponding Actions.
+	 *
+	 * @return list of KeyStroke-Action-pairs.
+	 */
+	protected void createKeyActions()
 	{
-		@Override
-		public void keyPressed( final KeyEvent e )
+		KeyStroke key = KeyStroke.getKeyStroke( KeyEvent.VK_I, 0 );
+		Action action = new AbstractAction( "toogle interpolation" )
 		{
-			final int keyCode = e.getKeyCode();
-			final int modifiers = e.getModifiersEx();
-			final boolean toggle = ( modifiers & KeyEvent.SHIFT_DOWN_MASK ) != 0;
-			final boolean align = toggle;
-
-			if ( keyCode == KeyEvent.VK_I )
+			@Override
+			public void actionPerformed( final ActionEvent e )
+			{
 				toggleInterpolation();
-			else if ( keyCode == KeyEvent.VK_F )
+			}
+
+			private static final long serialVersionUID = 1L;
+		};
+		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
+
+		key = KeyStroke.getKeyStroke( KeyEvent.VK_F, 0 );
+		action = new AbstractAction( "toogle display mode" )
+		{
+			@Override
+			public void actionPerformed( final ActionEvent e )
+			{
 				toggleSingleSourceMode();
-			else if ( keyCode == KeyEvent.VK_1 )
-				selectOrToggleSource( 0, toggle );
-			else if ( keyCode == KeyEvent.VK_2 )
-				selectOrToggleSource( 1, toggle );
-			else if ( keyCode == KeyEvent.VK_3 )
-				selectOrToggleSource( 2, toggle );
-			else if ( keyCode == KeyEvent.VK_4 )
-				selectOrToggleSource( 3, toggle );
-			else if ( keyCode == KeyEvent.VK_5 )
-				selectOrToggleSource( 4, toggle );
-			else if ( keyCode == KeyEvent.VK_6 )
-				selectOrToggleSource( 5, toggle );
-			else if ( keyCode == KeyEvent.VK_7 )
-				selectOrToggleSource( 6, toggle );
-			else if ( keyCode == KeyEvent.VK_8 )
-				selectOrToggleSource( 7, toggle );
-			else if ( keyCode == KeyEvent.VK_9 )
-				selectOrToggleSource( 8, toggle );
-			else if ( keyCode == KeyEvent.VK_0 )
-				selectOrToggleSource( 9, toggle );
-			else if ( keyCode == KeyEvent.VK_Z && align )
-				align( AlignPlane.XY );
-			else if ( keyCode == KeyEvent.VK_X && align )
-				align( AlignPlane.ZY );
-			else if ( ( keyCode == KeyEvent.VK_Y || keyCode == KeyEvent.VK_A ) && align )
-				align( AlignPlane.XZ );
+			}
+
+			private static final long serialVersionUID = 1L;
+		};
+		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
+
+		final int[] numkeys = new int[] { KeyEvent.VK_1, KeyEvent.VK_2, KeyEvent.VK_3, KeyEvent.VK_4, KeyEvent.VK_5, KeyEvent.VK_6, KeyEvent.VK_7, KeyEvent.VK_8, KeyEvent.VK_9, KeyEvent.VK_0 };
+
+		for ( int i = 0; i < numkeys.length; ++i )
+		{
+			final int index = i;
+
+			key = KeyStroke.getKeyStroke( numkeys[ i ], 0 );
+			action = new AbstractAction( "set current source " + i )
+			{
+				@Override
+				public void actionPerformed( final ActionEvent e )
+				{
+					setCurrentSource( index );
+				}
+
+				private static final long serialVersionUID = 1L;
+			};
+			keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
+
+			key = KeyStroke.getKeyStroke( numkeys[ i ], KeyEvent.SHIFT_DOWN_MASK );
+			action = new AbstractAction( "toggle source visibility " + i )
+			{
+				@Override
+				public void actionPerformed( final ActionEvent e )
+				{
+					toggleVisibility( index );
+				}
+
+				private static final long serialVersionUID = 1L;
+			};
+			keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
 		}
 
-		protected void selectOrToggleSource( final int sourceIndex, final boolean toggle )
+		key = KeyStroke.getKeyStroke( KeyEvent.VK_Z, KeyEvent.SHIFT_DOWN_MASK );
+		action = new AbstractAction( "align XY plane" )
 		{
-			if( toggle )
-				toggleVisibility( sourceIndex );
-			else
-				setCurrentSource( sourceIndex );
+			@Override
+			public void actionPerformed( final ActionEvent e )
+			{
+				align( AlignPlane.XY );
+			}
+
+			private static final long serialVersionUID = 1L;
+		};
+		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
+
+		key = KeyStroke.getKeyStroke( KeyEvent.VK_X, KeyEvent.SHIFT_DOWN_MASK );
+		action = new AbstractAction( "align ZY plane" )
+		{
+			@Override
+			public void actionPerformed( final ActionEvent e )
+			{
+				align( AlignPlane.ZY );
+			}
+
+			private static final long serialVersionUID = 1L;
+		};
+		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
+
+		key = KeyStroke.getKeyStroke( KeyEvent.VK_Y, KeyEvent.SHIFT_DOWN_MASK );
+		action = new AbstractAction( "align XZ plane" )
+		{
+			@Override
+			public void actionPerformed( final ActionEvent e )
+			{
+				align( AlignPlane.XZ );
+			}
+
+			private static final long serialVersionUID = 1L;
+		};
+		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
+		key = KeyStroke.getKeyStroke( KeyEvent.VK_A, KeyEvent.SHIFT_DOWN_MASK );
+		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
+	}
+
+	public void addKeyAction( final KeyStroke keystroke, final Action action )
+	{
+		keysActions.add( new ValuePair< KeyStroke, Action >( keystroke, action ) );
+		installKeyActions( frame );
+	}
+
+	/**
+	 * Add Keystrokes and corresponding Actions from {@link #keysActions} to a container.
+	 */
+	public void installKeyActions( final RootPaneContainer container )
+	{
+		final JRootPane rootpane = container.getRootPane();
+		final ActionMap am = rootpane.getActionMap();
+		final InputMap im = rootpane.getInputMap( JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT );
+		for ( final Pair< KeyStroke, Action > keyAction : keysActions )
+		{
+			final KeyStroke key = keyAction.getA();
+			final Action action = keyAction.getB();
+			im.put( key, action.getValue( Action.NAME ) );
+			am.put( action.getValue( Action.NAME ), action );
 		}
 	}
 

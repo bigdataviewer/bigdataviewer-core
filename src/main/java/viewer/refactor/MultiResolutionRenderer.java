@@ -195,8 +195,6 @@ public class MultiResolutionRenderer
 				scale.set( 0.5 * yScale - 0.5, 1, 3 );
 				screenScaleTransforms[ i ] = scale;
 			}
-//			TODO
-//			multiBoxOverlayRenderer.setVirtualScreenSize( componentW, componentH );
 		}
 	}
 
@@ -305,6 +303,7 @@ public class MultiResolutionRenderer
 //				System.out.println( "maxScreenScaleIndex = " + maxScreenScaleIndex + "  (" + screenImages[ maxScreenScaleIndex ].dimension( 0 ) + " x " + screenImages[ maxScreenScaleIndex ].dimension( 1 ) + ")" );
 //				System.out.println( String.format( "rendering:%4d ms   io:%4d ms   (total:%4d ms)", rendertime / 1000000, iotime / 1000000, ( rendertime + iotime ) / 1000000 ) );
 //				System.out.println( "scale = " + currentScreenScaleIndex + "   mipmap = " + currentMipmapLevel );
+//				System.out.println( "     target mipmap = " + targetMipmapLevel );
 
 				if ( targetMipmapLevel < currentMipmapLevel )
 					requestRepaint( currentScreenScaleIndex, currentMipmapLevel - 1 );

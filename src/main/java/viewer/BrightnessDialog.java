@@ -38,7 +38,7 @@ public class BrightnessDialog extends JDialog
 		this.listener = listener;
 	}
 
-	public BrightnessDialog( final Frame owner, final KeyStroke hideKeyStroke )
+	public BrightnessDialog( final Frame owner )
 	{
 		super( owner, "display range", false );
 		listener = null;
@@ -90,25 +90,21 @@ public class BrightnessDialog extends JDialog
 
 		content.add( sliders, BorderLayout.NORTH );
 
-		if ( hideKeyStroke != null )
+		final ActionMap am = getRootPane().getActionMap();
+		final InputMap im = getRootPane().getInputMap( JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT );
+		final Object hideKey = new Object();
+		final Action hideAction = new AbstractAction()
 		{
-			final ActionMap am = getRootPane().getActionMap();
-			final InputMap im = getRootPane().getInputMap( JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT );
-			final Object hideKey = new Object();
-			final Action hideAction = new AbstractAction()
-			{
-				private static final long serialVersionUID = -110094795301286228L;
+			private static final long serialVersionUID = -110094795301286228L;
 
-				@Override
-				public void actionPerformed( final ActionEvent e )
-				{
-					setVisible( false );
-				}
-			};
-			im.put( hideKeyStroke, hideKey );
-			im.put( KeyStroke.getKeyStroke( KeyEvent.VK_ESCAPE, 0 ), hideKey );
-			am.put( hideKey, hideAction );
-		}
+			@Override
+			public void actionPerformed( final ActionEvent e )
+			{
+				setVisible( false );
+			}
+		};
+		im.put( KeyStroke.getKeyStroke( KeyEvent.VK_ESCAPE, 0 ), hideKey );
+		am.put( hideKey, hideAction );
 
 		pack();
 		setDefaultCloseOperation( JDialog.HIDE_ON_CLOSE );
