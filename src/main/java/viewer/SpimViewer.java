@@ -6,6 +6,7 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
+import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
@@ -13,7 +14,6 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.Collection;
-import java.util.List;
 
 import javax.swing.JFrame;
 import javax.swing.JSlider;
@@ -36,6 +36,7 @@ import viewer.refactor.MultiResolutionRenderer;
 import viewer.refactor.SpimSourceState;
 import viewer.refactor.SpimViewerState;
 import viewer.refactor.overlay.MultiBoxOverlayRenderer;
+import viewer.refactor.overlay.SourceInfoOverlayRenderer;
 
 public class SpimViewer implements OverlayRenderer, TransformListener3D, PainterThread.Paintable
 {
@@ -44,6 +45,8 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 	protected MultiResolutionRenderer imageRenderer;
 
 	protected MultiBoxOverlayRenderer multiBoxOverlayRenderer;
+
+	protected SourceInfoOverlayRenderer sourceInfoOverlayRenderer;
 
 	/**
 	 * Transformation set by the interactive viewer.
@@ -82,16 +85,17 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 	 */
 	public SpimViewer( final int width, final int height, final Collection< SpimSourceAndConverter< ? > > sources, final int numTimePoints, final int numMipmapLevels )
 	{
-		state = new viewer.refactor.SpimViewerState( sources, numTimePoints, numMipmapLevels );
+		state = new SpimViewerState( sources, numTimePoints, numMipmapLevels );
 		if ( ! sources.isEmpty() )
 			state.setCurrentSource( 0 );
 		multiBoxOverlayRenderer = new MultiBoxOverlayRenderer( width, height );
+		sourceInfoOverlayRenderer = new SourceInfoOverlayRenderer();
 
 		painterThread = new PainterThread( this );
 		viewerTransform = new AffineTransform3D();
 		display = new InteractiveDisplay3DCanvas( width, height, this, this );
 
-		final double[] screenScales = new double[] { 1, 0.75, 0.5, 0.25, 0.125 }; //, 0.0625 };
+		final double[] screenScales = new double[] { 1, 0.75, 0.5, 0.25, 0.125 };
 		final long targetRenderNanos = 30 * 1000000;
 		final long targetIoNanos = 10 * 1000000;
 		final int badIoFrameBlockFrames = 5;
@@ -100,12 +104,12 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 		mouseCoordinates = new MouseCoordinateListener() ;
 		display.addHandler( mouseCoordinates );
 
-		final SourceSwitcher sourceSwitcher = new SourceSwitcher();
-		display.addKeyListener( sourceSwitcher );
+//		final SourceSwitcher sourceSwitcher = new SourceSwitcher();
+//		display.addKeyListener( sourceSwitcher );
 
 		sliderTime = new JSlider( JSlider.HORIZONTAL, 0, numTimePoints - 1, 0 );
 //		sliderTime.addKeyListener( display.getTransformEventHandler() );
-		sliderTime.addKeyListener( sourceSwitcher );
+//		sliderTime.addKeyListener( sourceSwitcher );
 		sliderTime.addChangeListener( new ChangeListener() {
 			@Override
 			public void stateChanged( final ChangeEvent e )
@@ -133,7 +137,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 			}
 		} );
 //		frame.addKeyListener( display.getTransformEventHandler() );
-		frame.addKeyListener( sourceSwitcher );
+//		frame.addKeyListener( sourceSwitcher );
 		frame.setVisible( true );
 
 		painterThread.start();
@@ -159,8 +163,6 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 	@Override
 	public void paint()
 	{
-		multiBoxOverlayRenderer.setViewerState( state );
-
 		imageRenderer.paint( state );
 
 		synchronized( this )
@@ -190,41 +192,30 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 	@Override
 	public void drawOverlays( final Graphics g )
 	{
+		multiBoxOverlayRenderer.setViewerState( state );
 		multiBoxOverlayRenderer.updateVirtualScreenSize( display.getWidth(), display.getHeight() );
 		multiBoxOverlayRenderer.paint( ( Graphics2D ) g );
 
-		final List< SpimSourceState< ? > > sources = state.getSources();
-		if ( ! sources.isEmpty() )
+		sourceInfoOverlayRenderer.setViewerState( state );
+		sourceInfoOverlayRenderer.paint( ( Graphics2D ) g );
+
+		final RealPoint gPos = new RealPoint( 3 );
+		getGlobalMouseCoordinates( gPos );
+		final String mousePosGlobalString = String.format( "(%6.1f,%6.1f,%6.1f)", gPos.getDoublePosition( 0 ), gPos.getDoublePosition( 1 ), gPos.getDoublePosition( 2 ) );
+
+		g.setFont( new Font( "Monospaced", Font.PLAIN, 12 ) );
+		g.drawString( mousePosGlobalString, ( int ) g.getClipBounds().getWidth() - 170, 25 );
+
+		if ( animatedOverlay != null )
 		{
-			final String sourceName;
-			final String timepointString;
-			synchronized( this )
-			{
-				final SpimSourceState< ? > source = sources.get( state.getCurrentSource() );
-				sourceName = source.getSpimSource().getName();
-				timepointString = String.format( "t = %d", state.getCurrentTimepoint() );
-			}
-
-			final RealPoint gPos = new RealPoint( 3 );
-			getGlobalMouseCoordinates( gPos );
-			final String mousePosGlobalString = String.format( "(%6.1f,%6.1f,%6.1f)", gPos.getDoublePosition( 0 ), gPos.getDoublePosition( 1 ), gPos.getDoublePosition( 2 ) );
-
-			g.setFont( new Font( "Monospaced", Font.PLAIN, 12 ) );
-			g.drawString( sourceName, ( int ) g.getClipBounds().getWidth() / 2, 12 );
-			g.drawString( timepointString, ( int ) g.getClipBounds().getWidth() - 170, 12 );
-			g.drawString( mousePosGlobalString, ( int ) g.getClipBounds().getWidth() - 170, 25 );
-
-			if ( animatedOverlay != null )
-			{
-				animatedOverlay.paint( ( Graphics2D ) g );
-				if ( animatedOverlay.isComplete() )
-					animatedOverlay = null;
-				else
-					display.repaint();
-			}
-			if ( multiBoxOverlayRenderer.isHighlightInProgress() )
+			animatedOverlay.paint( ( Graphics2D ) g );
+			if ( animatedOverlay.isComplete() )
+				animatedOverlay = null;
+			else
 				display.repaint();
 		}
+		if ( multiBoxOverlayRenderer.isHighlightInProgress() )
+			display.repaint();
 	}
 
 	@Override
@@ -301,9 +292,6 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 			state.setInterpolation( Interpolation.NEARESTNEIGHBOR );
 			animatedOverlay = new TextOverlayAnimator( "nearest-neighbor interpolation", indicatorTime );
 		}
-//		TODO:
-//		requestRepaint( maxScreenScaleIndex, currentMipmapLevel );
-//                                           ------------------
 		requestRepaint();
 	}
 
@@ -345,12 +333,8 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 		}
 	}
 
-	protected class SourceSwitcher implements KeyListener
+	protected class SourceSwitcher extends KeyAdapter
 	{
-		@Override
-		public void keyTyped( final KeyEvent e )
-		{}
-
 		@Override
 		public void keyPressed( final KeyEvent e )
 		{
@@ -398,10 +382,6 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 			else
 				setCurrentSource( sourceIndex );
 		}
-
-		@Override
-		public void keyReleased( final KeyEvent e )
-		{}
 	}
 
 	protected class MouseCoordinateListener implements MouseMotionListener

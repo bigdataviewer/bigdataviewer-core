@@ -10,6 +10,12 @@ import net.imglib2.util.Intervals;
 import viewer.refactor.SpimSourceState;
 import viewer.refactor.SpimViewerState;
 
+/**
+ * Render multibox overlay corresponding to a {@link SpimViewerState} into a
+ * {@link Graphics2D}.
+ *
+ * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ */
 public class MultiBoxOverlayRenderer
 {
 	/**
