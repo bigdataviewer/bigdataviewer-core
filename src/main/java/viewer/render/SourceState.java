@@ -1,18 +1,16 @@
-package viewer.refactor;
+package viewer.render;
 
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.NumericType;
-import viewer.SpimSource;
-import viewer.SpimSourceAndConverter;
 
 /**
- * SpimSource with some attached state needed for rendering.
+ * Source with some attached state needed for rendering.
  */
-public class SpimSourceState< T extends NumericType< T > > extends SpimSourceAndConverter< T >
+public class SourceState< T extends NumericType< T > > extends SourceAndConverter< T >
 {
 	/**
 	 * Current transformation from {@link #source} to screen. This is
-	 * a concatenation of {@link SpimSource#getSourceTransform(long)
+	 * a concatenation of {@link Source#getSourceTransform(long)
 	 * source transform}, the interactive viewer
 	 * transform, and the viewer-to-screen transform.
 	 *
@@ -31,7 +29,7 @@ public class SpimSourceState< T extends NumericType< T > > extends SpimSourceAnd
 	 */
 	protected boolean isCurrent;
 
-	public SpimSourceState( final SpimSourceAndConverter< T > soc )
+	public SourceState( final SourceAndConverter< T > soc )
 	{
 		super( soc.getSpimSource(), soc.getConverter() );
 		sourceToScreen = new AffineTransform3D();
@@ -91,11 +89,11 @@ public class SpimSourceState< T extends NumericType< T > > extends SpimSourceAnd
 	}
 
 	/**
-	 * Create a {@link SpimSourceState} from a {@link SpimSourceAndConverter}.
+	 * Create a {@link SourceState} from a {@link SourceAndConverter}.
 	 */
-	public static < T extends NumericType< T > > SpimSourceState< T > create( final SpimSourceAndConverter< T > soc )
+	public static < T extends NumericType< T > > SourceState< T > create( final SourceAndConverter< T > soc )
 	{
-		return new SpimSourceState< T >( soc );
+		return new SourceState< T >( soc );
 	}
 }
 

@@ -1,14 +1,14 @@
-package viewer.refactor.overlay;
+package viewer.render.overlay;
 
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.util.List;
 
-import viewer.refactor.SpimSourceState;
-import viewer.refactor.SpimViewerState;
+import viewer.render.SourceState;
+import viewer.render.ViewerState;
 
 /**
- * Render current source name and current timepoint of a {@link SpimViewerState}
+ * Render current source name and current timepoint of a {@link ViewerState}
  * into a {@link Graphics2D}.
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
@@ -29,14 +29,14 @@ public class SourceInfoOverlayRenderer
 	/**
 	 * Update data to show in the overlay.
 	 */
-	public synchronized void setViewerState( final SpimViewerState state )
+	public synchronized void setViewerState( final ViewerState state )
 	{
 		synchronized ( state )
 		{
-			final List< SpimSourceState< ? > > sources = state.getSources();
+			final List< SourceState< ? > > sources = state.getSources();
 			if ( ! sources.isEmpty() )
 			{
-				final SpimSourceState< ? > source = sources.get( state.getCurrentSource() );
+				final SourceState< ? > source = sources.get( state.getCurrentSource() );
 				sourceName = source.getSpimSource().getName();
 				timepointString = String.format( "t = %d", state.getCurrentTimepoint() );
 			}

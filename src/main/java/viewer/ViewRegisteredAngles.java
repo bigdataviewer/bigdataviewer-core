@@ -17,6 +17,7 @@ import net.imglib2.type.numeric.integer.UnsignedShortType;
 import org.xml.sax.SAXException;
 
 import viewer.hdf5.Hdf5ImageLoader;
+import viewer.render.SourceAndConverter;
 
 public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
 {
@@ -64,9 +65,9 @@ public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
 		final RealARGBConverter< UnsignedShortType > converter = new RealARGBConverter< UnsignedShortType >( 0, 65535 );
 		displayRanges.add( converter );
 
-		final ArrayList< SpimSourceAndConverter< ? > > sources = new ArrayList< SpimSourceAndConverter< ? > >();
+		final ArrayList< SourceAndConverter< ? > > sources = new ArrayList< SourceAndConverter< ? > >();
 		for ( int setup = 0; setup < seq.numViewSetups(); ++setup )
-			sources.add( new SpimSourceAndConverter< UnsignedShortType >( new Source( loader, setup, "angle " + seq.setups[ setup ].getAngle() ), converter ) );
+			sources.add( new SourceAndConverter< UnsignedShortType >( new SpimSource( loader, setup, "angle " + seq.setups[ setup ].getAngle() ), converter ) );
 
 		final int numMipmapLevels = imgLoader.getMipmapResolutions().length;
 		viewer = new SpimViewer( width, height, sources, seq.numTimepoints(), numMipmapLevels );

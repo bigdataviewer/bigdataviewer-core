@@ -11,7 +11,7 @@ public class TextOverlayAnimator
 {
 	protected final Font font;
 
-	protected final String text; // = "Press <F1> for help.";
+	protected final String text;
 
 	protected final double fadeInTime;
 

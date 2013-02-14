@@ -1,6 +1,6 @@
-package viewer.refactor;
+package viewer.render;
 
-import static viewer.refactor.Interpolation.NEARESTNEIGHBOR;
+import static viewer.render.Interpolation.NEARESTNEIGHBOR;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -9,12 +9,10 @@ import java.util.List;
 
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.LinAlgHelpers;
-import viewer.SpimSource;
-import viewer.SpimSourceAndConverter;
 
-public class SpimViewerState
+public class ViewerState
 {
-	final protected ArrayList< SpimSourceState< ? > > sources;
+	final protected ArrayList< SourceState< ? > > sources;
 
 	/**
 	 * number of available timepoints.
@@ -25,14 +23,6 @@ public class SpimViewerState
 	 * number of available mipmap levels.
 	 */
 	final protected int numMipmapLevels;
-
-
-
-	/*
-	 * Renderer state:
-	 *
-	 * which sources to show, which interpolation method to use, etc.
-	 */
 
 	/**
 	 * Transformation set by the interactive viewer. Transforms from global
@@ -63,33 +53,29 @@ public class SpimViewerState
 	 */
 	protected int currentTimepoint;
 
-
 	/**
 	 *
 	 * @param sources
-	 *            the {@link SpimSourceAndConverter sources} to display.
+	 *            the {@link SourceAndConverter sources} to display.
 	 * @param numTimePoints
 	 *            number of available timepoints.
 	 * @param numMipmapLevels
 	 *            number of available mipmap levels.
 	 */
-	public SpimViewerState( final Collection< SpimSourceAndConverter< ? > > sources, final int numTimePoints, final int numMipmapLevels )
+	public ViewerState( final Collection< SourceAndConverter< ? > > sources, final int numTimePoints, final int numMipmapLevels )
 	{
-		this.sources = new ArrayList< SpimSourceState< ? > >( sources.size() );
-		for ( final SpimSourceAndConverter< ? > source : sources )
-			this.sources.add( SpimSourceState.create( source ) );
+		this.sources = new ArrayList< SourceState< ? > >( sources.size() );
+		for ( final SourceAndConverter< ? > source : sources )
+			this.sources.add( SourceState.create( source ) );
 		this.numTimePoints = numTimePoints;
 		this.numMipmapLevels = numMipmapLevels;
 
-		// viewer state
 		viewerTransform = new AffineTransform3D();
 		interpolation = NEARESTNEIGHBOR;
 		singleSourceMode = true;
 		currentSource = 0;
 		currentTimepoint = 0;
 	}
-
-
 
 	/*
 	 * Renderer state.
@@ -209,7 +195,7 @@ public class SpimViewerState
 	 *
 	 * @return list of all sources.
 	 */
-	public synchronized List< SpimSourceState< ? > > getSources()
+	public synchronized List< SourceState< ? > > getSources()
 	{
 		return Collections.unmodifiableList( sources );
 	}
@@ -229,15 +215,14 @@ public class SpimViewerState
 	 *
 	 * @return list of all currently visible sources.
 	 */
-	protected synchronized ArrayList< SpimSourceState< ? > > getVisibleSources()
+	protected synchronized ArrayList< SourceState< ? > > getVisibleSources()
 	{
-		final ArrayList< SpimSourceState< ? > > visibleSources = new ArrayList< SpimSourceState< ? > >();
-		for ( final SpimSourceState< ? > source : sources )
+		final ArrayList< SourceState< ? > > visibleSources = new ArrayList< SourceState< ? > >();
+		for ( final SourceState< ? > source : sources )
 			if ( source.isVisible( singleSourceMode ) )
 				visibleSources.add( source );
 		return visibleSources;
 	}
-
 
 	/*
 	 * Utility methods.
@@ -258,7 +243,7 @@ public class SpimViewerState
 	 *            mipmap level
 	 * @return pixel size
 	 */
-	public static double getVoxelScreenSize( final SpimSource< ? > source, final AffineTransform3D screenTransform, final int timepoint, final int mipmapIndex )
+	public static double getVoxelScreenSize( final Source< ? > source, final AffineTransform3D screenTransform, final int timepoint, final int mipmapIndex )
 	{
 		double pixelSize = 0;
 		final AffineTransform3D sourceToScreen = new AffineTransform3D();
@@ -301,7 +286,7 @@ public class SpimViewerState
 	protected double getSourceResolution( final AffineTransform3D screenTransform, final int mipmapIndex )
 	{
 		double pixelSize = 0;
-		for ( final SpimSourceState< ? > source : sources )
+		for ( final SourceState< ? > source : sources )
 			if ( source.isVisible( singleSourceMode ) )
 				pixelSize = Math.max( pixelSize, getVoxelScreenSize( source.getSpimSource(), screenTransform, currentTimepoint, mipmapIndex ) );
 		return pixelSize;

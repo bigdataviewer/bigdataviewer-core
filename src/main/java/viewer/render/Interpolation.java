@@ -1,4 +1,4 @@
-package viewer.refactor;
+package viewer.render;
 
 /**
  * Interpolation methods.

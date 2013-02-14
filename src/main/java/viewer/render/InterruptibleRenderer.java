@@ -1,4 +1,4 @@
-package viewer.display;
+package viewer.render;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 

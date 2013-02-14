@@ -1,14 +1,22 @@
-package viewer.refactor;
+package viewer.render;
 
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
 
 import net.imglib.ui.PainterThread;
 import net.imglib.ui.component.InteractiveDisplay3DCanvas;
+import net.imglib2.RandomAccessible;
+import net.imglib2.RealRandomAccessible;
+import net.imglib2.converter.Converters;
+import net.imglib2.converter.TypeIdentity;
 import net.imglib2.display.ARGBScreenImage;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.realtransform.RealViews;
+import net.imglib2.sampler.special.ConstantRandomAccessible;
 import net.imglib2.type.numeric.ARGBType;
+import net.imglib2.type.numeric.NumericType;
 import viewer.GuiHelpers;
-import viewer.display.InterruptibleRenderer;
+import viewer.display.AccumulateARGB;
 
 public class MultiResolutionRenderer
 {
@@ -202,7 +210,7 @@ public class MultiResolutionRenderer
 	 * Render image at the {@link #requestedScreenScaleIndex requested screen
 	 * scale} and the {@link #requestedMipmapLevel requested mipmap level}.
 	 */
-	public boolean paint( final SpimViewerState state )
+	public boolean paint( final ViewerState state )
 	{
 		checkResize();
 
@@ -260,7 +268,7 @@ public class MultiResolutionRenderer
 				currentMipmapLevel = requestedMipmapLevel;
 			}
 
-			p = ScreenImageRenderer.createProjector( state, currentScreenScaleTransform, currentMipmapLevel );
+			p = createProjector( state, currentScreenScaleTransform, currentMipmapLevel );
 			if ( setIoTimeLimit )
 			{
 				p.setIoTimeOut( targetIoNanos, new Runnable()
@@ -342,5 +350,59 @@ public class MultiResolutionRenderer
 		requestedScreenScaleIndex = screenScaleIndex;
 		requestedMipmapLevel = mipmapLevel;
 		painterThread.requestRepaint();
+	}
+
+	/**
+	 *
+	 * @param screenImage
+	 * 			  render target.
+	 * @param screenScaleTransform
+	 *            screen scale, transforms screen coordinates to viewer coordinates.
+	 * @param mipmapIndex
+	 *            mipmap level.
+	 */
+	public static InterruptibleRenderer< ?, ARGBType > createProjector( final ViewerState viewerState, final AffineTransform3D screenScaleTransform, final int mipmapIndex )
+	{
+		synchronized( viewerState )
+		{
+			final ArrayList< SourceState< ? > > visibleSources = viewerState.getVisibleSources();
+			if ( visibleSources.isEmpty() )
+				return new InterruptibleRenderer< ARGBType, ARGBType >( new ConstantRandomAccessible< ARGBType >( argbtype, 2 ), new TypeIdentity< ARGBType >() );
+			else if ( visibleSources.size() == 1 )
+				return createSingleSourceProjector( viewerState, visibleSources.get( 0 ), screenScaleTransform, mipmapIndex );
+			else
+			{
+				final ArrayList< RandomAccessible< ARGBType > > accessibles = new ArrayList< RandomAccessible< ARGBType > >( visibleSources.size() );
+				for ( final SourceState< ? > source : visibleSources )
+					accessibles.add( getConvertedTransformedSource( viewerState, source, screenScaleTransform, mipmapIndex ) );
+				return new InterruptibleRenderer< ARGBType, ARGBType >( new AccumulateARGB( accessibles ), new TypeIdentity< ARGBType >() );
+			}
+		}
+	}
+
+	private final static ARGBType argbtype = new ARGBType();
+
+	private static < T extends NumericType< T > > RandomAccessible< T > getTransformedSource( final ViewerState viewerState, final Source< T > source, final AffineTransform3D screenScaleTransform, final int mipmapIndex )
+	{
+		final int timepoint = viewerState.getCurrentTimepoint();
+		final Interpolation interpolation = viewerState.getInterpolation();
+		final RealRandomAccessible< T > img = source.getInterpolatedSource( timepoint, mipmapIndex, interpolation );
+
+		final AffineTransform3D sourceToScreen = new AffineTransform3D();
+		viewerState.getViewerTransform( sourceToScreen );
+		sourceToScreen.concatenate( source.getSourceTransform( timepoint, mipmapIndex ) );
+		sourceToScreen.preConcatenate( screenScaleTransform );
+
+		return RealViews.constantAffine( img, sourceToScreen );
+	}
+
+	private static < T extends NumericType< T > > RandomAccessible< ARGBType > getConvertedTransformedSource( final ViewerState viewerState, final SourceState< T > source, final AffineTransform3D screenScaleTransform, final int mipmapIndex )
+	{
+		return Converters.convert( getTransformedSource( viewerState, source.getSpimSource(), screenScaleTransform, mipmapIndex ), source.getConverter(), argbtype );
+	}
+
+	private static < T extends NumericType< T > > InterruptibleRenderer< T, ARGBType > createSingleSourceProjector( final ViewerState viewerState, final SourceState< T > source, final AffineTransform3D screenScaleTransform, final int mipmapIndex )
+	{
+		return new InterruptibleRenderer< T, ARGBType >( getTransformedSource( viewerState, source.getSpimSource(), screenScaleTransform, mipmapIndex ), source.getConverter() );
 	}
 }

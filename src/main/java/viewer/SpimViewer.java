@@ -42,16 +42,17 @@ import net.imglib2.ui.TransformListener3D;
 import net.imglib2.util.LinAlgHelpers;
 import net.imglib2.util.ValuePair;
 import viewer.TextOverlayAnimator.TextPosition;
-import viewer.refactor.Interpolation;
-import viewer.refactor.MultiResolutionRenderer;
-import viewer.refactor.SpimSourceState;
-import viewer.refactor.SpimViewerState;
-import viewer.refactor.overlay.MultiBoxOverlayRenderer;
-import viewer.refactor.overlay.SourceInfoOverlayRenderer;
+import viewer.render.Interpolation;
+import viewer.render.MultiResolutionRenderer;
+import viewer.render.SourceAndConverter;
+import viewer.render.SourceState;
+import viewer.render.ViewerState;
+import viewer.render.overlay.MultiBoxOverlayRenderer;
+import viewer.render.overlay.SourceInfoOverlayRenderer;
 
 public class SpimViewer implements OverlayRenderer, TransformListener3D, PainterThread.Paintable
 {
-	protected SpimViewerState state;
+	protected ViewerState state;
 
 	protected MultiResolutionRenderer imageRenderer;
 
@@ -89,15 +90,15 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 	 * @param height
 	 *            height of the display window.
 	 * @param sources
-	 *            the {@link SpimSourceAndConverter sources} to display.
+	 *            the {@link SourceAndConverter sources} to display.
 	 * @param numTimePoints
 	 *            number of available timepoints.
 	 * @param numMipmapLevels
 	 *            number of available mipmap levels.
 	 */
-	public SpimViewer( final int width, final int height, final Collection< SpimSourceAndConverter< ? > > sources, final int numTimePoints, final int numMipmapLevels )
+	public SpimViewer( final int width, final int height, final Collection< SourceAndConverter< ? > > sources, final int numTimePoints, final int numMipmapLevels )
 	{
-		state = new SpimViewerState( sources, numTimePoints, numMipmapLevels );
+		state = new ViewerState( sources, numTimePoints, numMipmapLevels );
 		if ( ! sources.isEmpty() )
 			state.setCurrentSource( 0 );
 		multiBoxOverlayRenderer = new MultiBoxOverlayRenderer( width, height );
@@ -116,12 +117,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 		mouseCoordinates = new MouseCoordinateListener() ;
 		display.addHandler( mouseCoordinates );
 
-//		final SourceSwitcher sourceSwitcher = new SourceSwitcher();
-//		display.addKeyListener( sourceSwitcher );
-
 		sliderTime = new JSlider( JSlider.HORIZONTAL, 0, numTimePoints - 1, 0 );
-//		sliderTime.addKeyListener( display.getTransformEventHandler() );
-//		sliderTime.addKeyListener( sourceSwitcher );
 		sliderTime.addChangeListener( new ChangeListener() {
 			@Override
 			public void stateChanged( final ChangeEvent e )
@@ -148,8 +144,6 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 				painterThread.interrupt();
 			}
 		} );
-//		frame.addKeyListener( display.getTransformEventHandler() );
-//		frame.addKeyListener( sourceSwitcher );
 		frame.setVisible( true );
 
 		keysActions = new ArrayList< Pair< KeyStroke, Action > >();
@@ -258,7 +252,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 
 	protected synchronized void align( final AlignPlane plane )
 	{
-		final SpimSourceState< ? > source = state.getSources().get( state.getCurrentSource() );
+		final SourceState< ? > source = state.getSources().get( state.getCurrentSource() );
 		final AffineTransform3D sourceTransform = source.getSpimSource().getSourceTransform( state.getCurrentTimepoint(), 0 );
 
 		final double[] qSource = new double[ 4 ];
@@ -323,7 +317,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 	{
 		if ( sourceIndex >= 0 && sourceIndex < state.numSources() )
 		{
-			final SpimSourceState< ? > source = state.getSources().get( sourceIndex );
+			final SourceState< ? > source = state.getSources().get( sourceIndex );
 			source.setActive( !source.isActive() );
 			multiBoxOverlayRenderer.highlight( sourceIndex );
 			if ( ! state.isSingleSourceMode() )

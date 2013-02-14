@@ -1,4 +1,4 @@
-package viewer.refactor.overlay;
+package viewer.render.overlay;
 
 import viewer.util.ModifiableInterval;
 import net.imglib2.Interval;

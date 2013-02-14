@@ -1,4 +1,4 @@
-package viewer.refactor.overlay;
+package viewer.render.overlay;
 
 import java.awt.Graphics2D;
 import java.util.ArrayList;
@@ -7,11 +7,11 @@ import java.util.List;
 import net.imglib2.Interval;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.Intervals;
-import viewer.refactor.SpimSourceState;
-import viewer.refactor.SpimViewerState;
+import viewer.render.SourceState;
+import viewer.render.ViewerState;
 
 /**
- * Render multibox overlay corresponding to a {@link SpimViewerState} into a
+ * Render multibox overlay corresponding to a {@link ViewerState} into a
  * {@link Graphics2D}.
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
@@ -90,11 +90,11 @@ public class MultiBoxOverlayRenderer
 	/**
 	 * Update data to show in the box overlay.
 	 */
-	public synchronized void setViewerState( final SpimViewerState viewerState )
+	public synchronized void setViewerState( final ViewerState viewerState )
 	{
 		synchronized ( viewerState )
 		{
-			final List< SpimSourceState< ? > > sources = viewerState.getSources();
+			final List< SourceState< ? > > sources = viewerState.getSources();
 			final int timepoint = viewerState.getCurrentTimepoint();
 			final boolean singleSourceMode = viewerState.isSingleSourceMode();
 
@@ -110,7 +110,7 @@ public class MultiBoxOverlayRenderer
 			final AffineTransform3D sourceToViewer = new AffineTransform3D();
 			for ( int i = 0; i < numSources; ++i )
 			{
-				final SpimSourceState< ? > source = sources.get( i );
+				final SourceState< ? > source = sources.get( i );
 				final IntervalAndTransform boxsource = boxSources.get( i );
 				viewerState.getViewerTransform( sourceToViewer );
 				sourceToViewer.concatenate( source.getSpimSource().getSourceTransform( timepoint, 0 ) );
