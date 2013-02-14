@@ -455,6 +455,36 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
 		key = KeyStroke.getKeyStroke( KeyEvent.VK_A, KeyEvent.SHIFT_DOWN_MASK );
 		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
+
+		key = KeyStroke.getKeyStroke( KeyEvent.VK_CLOSE_BRACKET, 0, false );
+		action = new AbstractAction( "next timepoint" )
+		{
+			@Override
+			public void actionPerformed( final ActionEvent e )
+			{
+				sliderTime.setValue( sliderTime.getValue() + 1 );
+			}
+
+			private static final long serialVersionUID = 1L;
+		};
+		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
+		key = KeyStroke.getKeyStroke( KeyEvent.VK_M, 0 );
+		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
+
+		key = KeyStroke.getKeyStroke( KeyEvent.VK_OPEN_BRACKET, 0, false );
+		action = new AbstractAction( "previous timepoint" )
+		{
+			@Override
+			public void actionPerformed( final ActionEvent e )
+			{
+				sliderTime.setValue( sliderTime.getValue() - 1 );
+			}
+
+			private static final long serialVersionUID = 1L;
+		};
+		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
+		key = KeyStroke.getKeyStroke( KeyEvent.VK_N, 0 );
+		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
 	}
 
 	public void addKeyAction( final KeyStroke keystroke, final Action action )
