@@ -7,7 +7,9 @@ import java.awt.font.FontRenderContext;
 import java.awt.font.TextLayout;
 import java.awt.geom.Rectangle2D;
 
-public class TextOverlayAnimator
+import viewer.util.AbstractAnimator;
+
+public class TextOverlayAnimator extends AbstractAnimator
 {
 	protected final Font font;
 
@@ -16,12 +18,6 @@ public class TextOverlayAnimator
 	protected final double fadeInTime;
 
 	protected final double fadeOutTime;
-
-	protected final long duration;
-
-	protected long startTime;
-
-	protected boolean complete;
 
 	static enum TextPosition
 	{
@@ -48,23 +44,18 @@ public class TextOverlayAnimator
 
 	public TextOverlayAnimator( final String text, final long duration, final TextPosition position, final double fadeInTime, final double fadeOutTime, final Font font )
 	{
+		super( duration );
 		this.text = text;
 		this.font = font;
 		this.fadeInTime = fadeInTime;
 		this.fadeOutTime = fadeOutTime;
-		this.duration = duration;
 		this.position = position;
-		startTime = -1;
-		complete = false;
 	}
 
-	public boolean isComplete()
+	public void paint( final Graphics2D g, final long time )
 	{
-		return complete;
-	}
+		setTime( time );
 
-	public void paint( final Graphics2D g )
-	{
 		final FontRenderContext frc = g.getFontRenderContext();
 		final TextLayout layout = new TextLayout( text, font, frc );
 		final Rectangle2D bounds = layout.getBounds();
@@ -80,7 +71,7 @@ public class TextOverlayAnimator
 			y = ( float ) ( g.getClipBounds().getHeight() - bounds.getHeight() ) / 2;
 		}
 
-		final double t = getT();
+		final double t = ratioComplete();
 		final float alpha;
 		if ( t <= fadeInTime )
 			alpha = ( float ) Math.sin( ( Math.PI / 2 ) * t / fadeInTime );
@@ -91,18 +82,5 @@ public class TextOverlayAnimator
 
 		g.setColor( new Color( 1f, 1f, 1f, alpha ) );
 		layout.draw( g, x, y );
-	}
-
-	protected double getT()
-	{
-		if ( startTime == -1 )
-			startTime = System.currentTimeMillis();
-		double t = ( System.currentTimeMillis() - startTime ) / ( double ) duration;
-		if ( t >= 1 )
-		{
-			complete = true;
-			t = 1;
-		}
-		return t;
 	}
 }

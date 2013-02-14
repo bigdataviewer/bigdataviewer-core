@@ -180,7 +180,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 			if ( currentAnimator != null )
 			{
 				final TransformEventHandler3D handler = display.getTransformEventHandler();
-				final AffineTransform3D transform = currentAnimator.getCurrent();
+				final AffineTransform3D transform = currentAnimator.getCurrent( System.currentTimeMillis() );
 				handler.setTransform( transform );
 				transformChanged( transform );
 				if ( currentAnimator.isComplete() )
@@ -218,7 +218,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 
 		if ( animatedOverlay != null )
 		{
-			animatedOverlay.paint( ( Graphics2D ) g );
+			animatedOverlay.paint( ( Graphics2D ) g, System.currentTimeMillis() );
 			if ( animatedOverlay.isComplete() )
 				animatedOverlay = null;
 			else
@@ -275,6 +275,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 
 		final AffineTransform3D transform = display.getTransformEventHandler().getTransform();
 		currentAnimator = new RotationAnimator( transform, mouseCoordinates.getX(), mouseCoordinates.getY(), qTarget, 300 );
+		currentAnimator.setTime( System.currentTimeMillis() );
 		transformChanged( transform );
 	}
 

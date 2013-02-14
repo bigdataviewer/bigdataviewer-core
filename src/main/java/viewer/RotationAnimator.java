@@ -1,9 +1,10 @@
 package viewer;
 
+import viewer.util.AbstractAnimator;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.LinAlgHelpers;
 
-class RotationAnimator
+class RotationAnimator extends AbstractAnimator
 {
 	private final AffineTransform3D transformStart;
 
@@ -11,14 +12,10 @@ class RotationAnimator
 
 	private final double cX, cY;
 
-	private final long startTime;
-
-	private final long duration;
-
-	private boolean complete;
-
 	public RotationAnimator( final AffineTransform3D transformStart, final double viewerCenterX, final double viewerCenterY, final double[] targetOrientation, final long duration )
 	{
+		super( duration );
+
 		this.transformStart = transformStart;
 		cX = viewerCenterX;
 		cY = viewerCenterY;
@@ -34,26 +31,12 @@ class RotationAnimator
 		if ( qAddEnd[ 0 ] < 0 )
 			for ( int i = 0; i < 4; ++i )
 				qAddEnd[ i ] = -qAddEnd[ i ];
-
-		startTime = System.currentTimeMillis();
-		this.duration = duration;
-		complete = false;
 	}
 
-	public boolean isComplete()
+	public AffineTransform3D getCurrent( final long time )
 	{
-		return complete;
-	}
-
-	public AffineTransform3D getCurrent()
-	{
-		double t = ( System.currentTimeMillis() - startTime ) / ( double ) duration;
-		if ( t >= 1 )
-		{
-			complete = true;
-			t = 1;
-		}
-		return get( t );
+		setTime( time );
+		return get( ratioComplete() );
 	}
 
 	public static void extractRotation( final AffineTransform3D transform, final double[] q )
