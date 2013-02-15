@@ -2,6 +2,7 @@ package viewer.render;
 
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.List;
 
 import net.imglib.ui.PainterThread;
 import net.imglib.ui.component.InteractiveDisplay3DCanvas;
@@ -80,7 +81,7 @@ public class MultiResolutionRenderer
 	/**
 	 * The index of the coarsest mipmap level.
 	 */
-	final protected int maxMipmapLevel;
+	protected int[] maxMipmapLevel;
 
 	/**
 	 * The index of the (coarsest) screen scale with which to start rendering.
@@ -100,7 +101,7 @@ public class MultiResolutionRenderer
 	/**
 	 * The mipmap level which should be rendered next.
 	 */
-	protected int requestedMipmapLevel;
+	protected int[] requestedMipmapLevel;
 
 	/**
 	 * Whether the current rendering operation may be cancelled (to start a
@@ -135,8 +136,6 @@ public class MultiResolutionRenderer
 	 *            the screen image is displayed as 1 pixel on the canvas, a
 	 *            scale factor of 0.5 means 1 pixel in the screen image is
 	 *            displayed as 2 pixel on the canvas, etc.
-	 * @param numMipmapLevels
-	 *            number of available mipmap levels.
 	 * @param targetRenderNanos
 	 *            Target rendering time in nanoseconds. The rendering time for
 	 *            the coarsest rendered scale should be below this threshold.
@@ -150,7 +149,7 @@ public class MultiResolutionRenderer
 	 *            to render at the optimal mipmap level (instead of the coarsest
 	 *            first).
 	 */
-	public MultiResolutionRenderer( final InteractiveDisplay3DCanvas display, final PainterThread painterThread, final double[] screenScales, final int numMipmapLevels, final long targetRenderNanos, final long targetIoNanos, final int badIoFrameBlockFrames )
+	public MultiResolutionRenderer( final InteractiveDisplay3DCanvas display, final PainterThread painterThread, final double[] screenScales, final long targetRenderNanos, final long targetIoNanos, final int badIoFrameBlockFrames )
 	{
 		this.display = display;
 		this.painterThread = painterThread;
@@ -160,21 +159,24 @@ public class MultiResolutionRenderer
 		bufferedImages = new BufferedImage[ screenScales.length ];
 		screenScaleTransforms = new AffineTransform3D[ screenScales.length ];
 
-		maxMipmapLevel = numMipmapLevels - 1;
+		maxMipmapLevel = new int[ 0 ];
+//		maxMipmapLevel = new int[ numMipmapLevels.length ];
+//		for ( int i = 0; i < maxMipmapLevel.length; ++i )
+//			maxMipmapLevel[ i ] = numMipmapLevels[ i ] - 1;
 		this.targetRenderNanos = targetRenderNanos;
 		this.targetIoNanos = targetIoNanos;
 		this.badIoFrameBlockFrames = badIoFrameBlockFrames;
 
 		maxScreenScaleIndex = screenScales.length - 1;
 		requestedScreenScaleIndex = maxScreenScaleIndex;
-		requestedMipmapLevel = maxMipmapLevel;
+		requestedMipmapLevel = maxMipmapLevel.clone();
 		renderingMayBeCancelled = true;
 		goodIoFrames = 0;
 	}
 
-	public MultiResolutionRenderer( final InteractiveDisplay3DCanvas display, final PainterThread painterThread, final double[] screenScales, final int numMipmapLevels )
+	public MultiResolutionRenderer( final InteractiveDisplay3DCanvas display, final PainterThread painterThread, final double[] screenScales )
 	{
-		this( display, painterThread, screenScales, numMipmapLevels, 30 * 1000000, 10 * 1000000, 5 );
+		this( display, painterThread, screenScales, 30 * 1000000, 10 * 1000000, 5 );
 	}
 
 	/**
@@ -207,12 +209,32 @@ public class MultiResolutionRenderer
 	}
 
 	/**
+	 * Check whether the number of sources in the state has
+	 * changed and recreate mipmap arrays if necessary.
+	 */
+	protected synchronized void checkNumSourcesChanged( final ViewerState state )
+	{
+		final int numSources = state.numSources();
+		if ( numSources != maxMipmapLevel.length )
+		{
+			final List< SourceState< ? >> sources = state.getSources();
+			maxMipmapLevel = new int[ numSources ];
+			for ( int i = 0; i < maxMipmapLevel.length; ++i )
+				maxMipmapLevel[ i ] = sources.get( i ).getSpimSource().getNumMipmapLevels() - 1;
+			requestedMipmapLevel = maxMipmapLevel.clone();
+		}
+	}
+
+	/**
 	 * Render image at the {@link #requestedScreenScaleIndex requested screen
 	 * scale} and the {@link #requestedMipmapLevel requested mipmap level}.
 	 */
 	public boolean paint( final ViewerState state )
 	{
 		checkResize();
+		checkNumSourcesChanged( state );
+
+		final int numSources = state.numSources();
 
 		// the screen scale at which we will be rendering
 		final int currentScreenScaleIndex;
@@ -227,10 +249,10 @@ public class MultiResolutionRenderer
 		final BufferedImage bufferedImage;
 
 		// the mipmap level at which we will be rendering
-		final int currentMipmapLevel;
+		final int[] currentMipmapLevel = new int[ numSources ];
 
 		// the mipmap level that would best suit the current screen scale
-		final int targetMipmapLevel;
+		final int[] targetMipmapLevel = new int[ numSources ];
 
 		// the projector that paints to the screenImage.
 		final InterruptibleRenderer< ?, ARGBType > p;
@@ -239,33 +261,38 @@ public class MultiResolutionRenderer
 		{
 			// Rendering may be cancelled unless we are rendering at coarsest
 			// screen scale and coarsest mipmap level.
-			renderingMayBeCancelled = ( requestedScreenScaleIndex < maxScreenScaleIndex ) || ( requestedMipmapLevel < maxMipmapLevel );
+			renderingMayBeCancelled = ( requestedScreenScaleIndex < maxScreenScaleIndex );
+			for ( int i = 0; ( ! renderingMayBeCancelled ) && ( i < numSources ); ++i )
+				renderingMayBeCancelled = requestedMipmapLevel[ i ] < maxMipmapLevel[ i ];
 
 			boolean setIoTimeLimit = false;
 			currentScreenScaleIndex = requestedScreenScaleIndex;
 			currentScreenScaleTransform = screenScaleTransforms[ currentScreenScaleIndex ];
-			targetMipmapLevel = state.getBestMipMapLevel( currentScreenScaleTransform );
-			if ( targetMipmapLevel > requestedMipmapLevel )
+			for ( int i = 0; i < numSources; ++i )
 			{
-				// A coarser mipmap level than the requested is better suited to
-				// the current screen scale. Use that one.
-				currentMipmapLevel = targetMipmapLevel;
-			}
-			else if ( targetMipmapLevel < requestedMipmapLevel && goodIoFrames > badIoFrameBlockFrames )
-			{
-				// More than badIoFrameBlockFrames frames have been rendered
-				// without hitting the io time limit. We assume that enough
-				// image data is cached to render at the best suited mipmap
-				// level.
-				currentMipmapLevel = targetMipmapLevel;
-				// However, if it turns out that we hit the io time limit on
-				// this one, we will cancel and repaint at a coarser level
-				setIoTimeLimit = true;
-			}
-			else
-			{
-				// The requested mipmap level is optimal. Use it.
-				currentMipmapLevel = requestedMipmapLevel;
+				targetMipmapLevel[ i ] = state.getBestMipMapLevel( currentScreenScaleTransform, i );
+				if ( targetMipmapLevel[ i ] > requestedMipmapLevel[ i ] )
+				{
+					// A coarser mipmap level than the requested is better suited to
+					// the current screen scale. Use that one.
+					currentMipmapLevel[ i ] = targetMipmapLevel[ i ];
+				}
+				else if ( targetMipmapLevel[ i ] < requestedMipmapLevel[ i ] && goodIoFrames > badIoFrameBlockFrames )
+				{
+					// More than badIoFrameBlockFrames frames have been rendered
+					// without hitting the io time limit. We assume that enough
+					// image data is cached to render at the best suited mipmap
+					// level.
+					currentMipmapLevel[ i ] = targetMipmapLevel[ i ];
+					// However, if it turns out that we hit the io time limit on
+					// this one, we will cancel and repaint at a coarser level
+					setIoTimeLimit = true;
+				}
+				else
+				{
+					// The requested mipmap level is optimal. Use it.
+					currentMipmapLevel[ i ] = requestedMipmapLevel[ i ];
+				}
 			}
 
 			p = createProjector( state, currentScreenScaleTransform, currentMipmapLevel );
@@ -310,11 +337,18 @@ public class MultiResolutionRenderer
 				}
 //				System.out.println( "maxScreenScaleIndex = " + maxScreenScaleIndex + "  (" + screenImages[ maxScreenScaleIndex ].dimension( 0 ) + " x " + screenImages[ maxScreenScaleIndex ].dimension( 1 ) + ")" );
 //				System.out.println( String.format( "rendering:%4d ms   io:%4d ms   (total:%4d ms)", rendertime / 1000000, iotime / 1000000, ( rendertime + iotime ) / 1000000 ) );
-//				System.out.println( "scale = " + currentScreenScaleIndex + "   mipmap = " + currentMipmapLevel );
-//				System.out.println( "     target mipmap = " + targetMipmapLevel );
+//				System.out.println( "scale = " + currentScreenScaleIndex + "   mipmap = " + Util.printCoordinates( currentMipmapLevel ) );
+//				System.out.println( "     target mipmap = " + Util.printCoordinates( targetMipmapLevel ) );
 
-				if ( targetMipmapLevel < currentMipmapLevel )
-					requestRepaint( currentScreenScaleIndex, currentMipmapLevel - 1 );
+				boolean refineMipmap = false;
+				for ( int i = 0; i < numSources; ++i )
+					if ( targetMipmapLevel[ i ] < currentMipmapLevel[ i ] )
+					{
+						currentMipmapLevel[ i ] -= 1;
+						refineMipmap = true;
+					}
+				if ( refineMipmap )
+					requestRepaint( currentScreenScaleIndex, currentMipmapLevel );
 				else if ( currentScreenScaleIndex > 0 )
 					requestRepaint( currentScreenScaleIndex - 1, currentMipmapLevel );
 			}
@@ -343,12 +377,13 @@ public class MultiResolutionRenderer
 	 * immediately or after the currently running {@link #paint()} has
 	 * completed).
 	 */
-	public synchronized void requestRepaint( final int screenScaleIndex, final int mipmapLevel )
+	public synchronized void requestRepaint( final int screenScaleIndex, final int[] mipmapLevel )
 	{
 		if ( renderingMayBeCancelled && projector != null )
 			projector.cancel();
 		requestedScreenScaleIndex = screenScaleIndex;
-		requestedMipmapLevel = mipmapLevel;
+		for ( int i = 0; i < requestedMipmapLevel.length; ++i )
+			requestedMipmapLevel[ i ] = mipmapLevel[ i ];
 		painterThread.requestRepaint();
 	}
 
@@ -361,20 +396,24 @@ public class MultiResolutionRenderer
 	 * @param mipmapIndex
 	 *            mipmap level.
 	 */
-	public static InterruptibleRenderer< ?, ARGBType > createProjector( final ViewerState viewerState, final AffineTransform3D screenScaleTransform, final int mipmapIndex )
+	public static InterruptibleRenderer< ?, ARGBType > createProjector( final ViewerState viewerState, final AffineTransform3D screenScaleTransform, final int[] mipmapIndex )
 	{
 		synchronized( viewerState )
 		{
-			final ArrayList< SourceState< ? > > visibleSources = viewerState.getVisibleSources();
-			if ( visibleSources.isEmpty() )
+			final List< SourceState< ? > > sources = viewerState.getSources();
+			final ArrayList< Integer > visibleSourceIndices = viewerState.getVisibleSourceIndices();
+			if ( visibleSourceIndices.isEmpty() )
 				return new InterruptibleRenderer< ARGBType, ARGBType >( new ConstantRandomAccessible< ARGBType >( argbtype, 2 ), new TypeIdentity< ARGBType >() );
-			else if ( visibleSources.size() == 1 )
-				return createSingleSourceProjector( viewerState, visibleSources.get( 0 ), screenScaleTransform, mipmapIndex );
+			else if ( visibleSourceIndices.size() == 1 )
+			{
+				final int i = visibleSourceIndices.get( 0 );
+				return createSingleSourceProjector( viewerState, sources.get( i ), screenScaleTransform, mipmapIndex[ i ] );
+			}
 			else
 			{
-				final ArrayList< RandomAccessible< ARGBType > > accessibles = new ArrayList< RandomAccessible< ARGBType > >( visibleSources.size() );
-				for ( final SourceState< ? > source : visibleSources )
-					accessibles.add( getConvertedTransformedSource( viewerState, source, screenScaleTransform, mipmapIndex ) );
+				final ArrayList< RandomAccessible< ARGBType > > accessibles = new ArrayList< RandomAccessible< ARGBType > >( visibleSourceIndices.size() );
+				for ( final int i : visibleSourceIndices )
+					accessibles.add( getConvertedTransformedSource( viewerState, sources.get( i ), screenScaleTransform, mipmapIndex[ i ] ) );
 				return new InterruptibleRenderer< ARGBType, ARGBType >( new AccumulateARGB( accessibles ), new TypeIdentity< ARGBType >() );
 			}
 		}

@@ -8,7 +8,6 @@ import java.util.Collections;
 import java.util.List;
 
 import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.util.LinAlgHelpers;
 
 public class ViewerState
 {
@@ -18,11 +17,6 @@ public class ViewerState
 	 * number of available timepoints.
 	 */
 	final protected int numTimePoints;
-
-	/**
-	 * number of available mipmap levels.
-	 */
-	final protected int numMipmapLevels;
 
 	/**
 	 * Transformation set by the interactive viewer. Transforms from global
@@ -59,16 +53,13 @@ public class ViewerState
 	 *            the {@link SourceAndConverter sources} to display.
 	 * @param numTimePoints
 	 *            number of available timepoints.
-	 * @param numMipmapLevels
-	 *            number of available mipmap levels.
 	 */
-	public ViewerState( final Collection< SourceAndConverter< ? > > sources, final int numTimePoints, final int numMipmapLevels )
+	public ViewerState( final Collection< SourceAndConverter< ? > > sources, final int numTimePoints )
 	{
 		this.sources = new ArrayList< SourceState< ? > >( sources.size() );
 		for ( final SourceAndConverter< ? > source : sources )
 			this.sources.add( SourceState.create( source ) );
 		this.numTimePoints = numTimePoints;
-		this.numMipmapLevels = numMipmapLevels;
 
 		viewerTransform = new AffineTransform3D();
 		interpolation = NEARESTNEIGHBOR;
@@ -224,93 +215,48 @@ public class ViewerState
 		return visibleSources;
 	}
 
+	/**
+	 * Returns a list of the indices of all currently visible sources.
+	 *
+	 * @return indices of all currently visible sources.
+	 */
+	protected synchronized ArrayList< Integer > getVisibleSourceIndices()
+	{
+		final ArrayList< Integer > visibleSources = new ArrayList< Integer >();
+		for ( int i = 0; i < sources.size(); ++i )
+			if ( sources.get( i ).isVisible( singleSourceMode ) )
+				visibleSources.add( i );
+		return visibleSources;
+	}
+
 	/*
 	 * Utility methods.
 	 */
 
 	/**
-	 * Compute the projected voxel size at the given screen transform and mipmap
-	 * level. Take a source voxel (0,0,0)-(1,1,1) at the given mipmap level and
-	 * transform it to the screen image at the given screen scale. Take the
-	 * maximum of the screen extends of the transformed projected voxel edges.
-	 *
-	 * @param source
-	 * @param screenTransform
-	 *            transforms screen coordinates to global coordinates.
-	 * @param timepoint
-	 *            for which timepoint to query the source
-	 * @param mipmapIndex
-	 *            mipmap level
-	 * @return pixel size
-	 */
-	public static double getVoxelScreenSize( final Source< ? > source, final AffineTransform3D screenTransform, final int timepoint, final int mipmapIndex )
-	{
-		double pixelSize = 0;
-		final AffineTransform3D sourceToScreen = new AffineTransform3D();
-		sourceToScreen.set( screenTransform );
-		sourceToScreen.concatenate( source.getSourceTransform( timepoint, mipmapIndex ) );
-		final double[] zero = new double[] { 0, 0, 0 };
-		final double[] tzero = new double[ 3 ];
-		final double[] one = new double[ 3 ];
-		final double[] tone = new double[ 3 ];
-		final double[] diff = new double[ 2 ];
-		sourceToScreen.apply( zero, tzero );
-		for ( int i = 0; i < 3; ++i )
-		{
-			for ( int d = 0; d < 3; ++d )
-				one[ d ] = d == i ? 1 : 0;
-			sourceToScreen.apply( one, tone );
-			LinAlgHelpers.subtract( tone, tzero, tone );
-			diff[0] = tone[0];
-			diff[1] = tone[1];
-			final double l = LinAlgHelpers.length( diff );
-			if ( l > pixelSize )
-				pixelSize = l;
-		}
-		return pixelSize;
-	}
-
-	/**
-	 * Compute the maximum "pixel size" at the given screen transform and mipmap
-	 * level. For every source, take a source voxel (0,0,0)-(1,1,1) at the given
-	 * mipmap level and transform it to the screen image at the given screen
-	 * scale. Take the maximum of the screen extends of the transformed projected voxel.
-	 * Do this for all visible sources and take the maximum.
-	 *
-	 * @param screenTransform
-	 *            transforms screen coordinates to global coordinates.
-	 * @param mipmapIndex
-	 *            mipmap level
-	 * @return pixel size
-	 */
-	protected double getSourceResolution( final AffineTransform3D screenTransform, final int mipmapIndex )
-	{
-		double pixelSize = 0;
-		for ( final SourceState< ? > source : sources )
-			if ( source.isVisible( singleSourceMode ) )
-				pixelSize = Math.max( pixelSize, getVoxelScreenSize( source.getSpimSource(), screenTransform, currentTimepoint, mipmapIndex ) );
-		return pixelSize;
-	}
-
-	/**
-	 * Get the mipmap level that best matches the given screen scale for all visible sources.
+	 * Get the mipmap level that best matches the given screen scale for the given source.
+	 * If the source is invisible, returns the coarsest mipmap level.
 	 *
 	 * @param screenScaleTransform
 	 *            screen scale, transforms screen coordinates to viewer coordinates.
 	 * @return mipmap level
 	 */
-	public synchronized int getBestMipMapLevel( final AffineTransform3D screenScaleTransform )
+	public synchronized int getBestMipMapLevel( final AffineTransform3D screenScaleTransform, final int sourceIndex )
 	{
 		final AffineTransform3D screenTransform = new AffineTransform3D();
 		getViewerTransform( screenTransform );
 		screenTransform.preConcatenate( screenScaleTransform );
 
-		int targetLevel = numMipmapLevels - 1;
-		for ( int level = numMipmapLevels - 2; level >= 0; level-- )
-			if ( getSourceResolution( screenTransform, level ) >= 1.0 )
-				targetLevel = level;
-			else
-				break;
+		final SourceState< ? > source = sources.get( sourceIndex );
+		int targetLevel = source.getSpimSource().getNumMipmapLevels() - 1;
+		if ( source.isVisible( singleSourceMode ) )
+		{
+			for ( int level = targetLevel - 1; level >= 0; level-- )
+				if ( source.getVoxelScreenSize( screenTransform, currentTimepoint, level ) >= 1.0 )
+					targetLevel = level;
+				else
+					break;
+		}
 		return targetLevel;
 	}
 }

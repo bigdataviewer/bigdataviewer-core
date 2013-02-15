@@ -64,4 +64,6 @@ public interface Source< T >
 	public T getType();
 
 	public String getName();
+
+	public int getNumMipmapLevels();
 }

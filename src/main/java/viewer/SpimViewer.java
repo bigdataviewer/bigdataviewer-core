@@ -96,9 +96,9 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 	 * @param numMipmapLevels
 	 *            number of available mipmap levels.
 	 */
-	public SpimViewer( final int width, final int height, final Collection< SourceAndConverter< ? > > sources, final int numTimePoints, final int numMipmapLevels )
+	public SpimViewer( final int width, final int height, final Collection< SourceAndConverter< ? > > sources, final int numTimePoints)
 	{
-		state = new ViewerState( sources, numTimePoints, numMipmapLevels );
+		state = new ViewerState( sources, numTimePoints );
 		if ( ! sources.isEmpty() )
 			state.setCurrentSource( 0 );
 		multiBoxOverlayRenderer = new MultiBoxOverlayRenderer( width, height );
@@ -112,7 +112,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 		final long targetRenderNanos = 30 * 1000000;
 		final long targetIoNanos = 10 * 1000000;
 		final int badIoFrameBlockFrames = 5;
-		imageRenderer = new MultiResolutionRenderer( display, painterThread, screenScales, numMipmapLevels, targetRenderNanos, targetIoNanos, badIoFrameBlockFrames );
+		imageRenderer = new MultiResolutionRenderer( display, painterThread, screenScales, targetRenderNanos, targetIoNanos, badIoFrameBlockFrames );
 
 		mouseCoordinates = new MouseCoordinateListener() ;
 		display.addHandler( mouseCoordinates );

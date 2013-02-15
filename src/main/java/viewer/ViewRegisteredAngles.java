@@ -69,8 +69,7 @@ public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
 		for ( int setup = 0; setup < seq.numViewSetups(); ++setup )
 			sources.add( new SourceAndConverter< UnsignedShortType >( new SpimSource( loader, setup, "angle " + seq.setups[ setup ].getAngle() ), converter ) );
 
-		final int numMipmapLevels = imgLoader.getMipmapResolutions().length;
-		viewer = new SpimViewer( width, height, sources, seq.numTimepoints(), numMipmapLevels );
+		viewer = new SpimViewer( width, height, sources, seq.numTimepoints() );
 
 		viewer.addKeyAction( brightnessKeystroke, new AbstractAction( "brightness settings" )
 		{

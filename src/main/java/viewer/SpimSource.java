@@ -35,6 +35,8 @@ class SpimSource implements Source< UnsignedShortType >
 
 	final int numTimepoints;
 
+	final int numMipmapLevels;
+
 	final protected static int numInterpolationMethods = 2;
 
 	final protected static int iNearestNeighborMethod = 0;
@@ -52,11 +54,11 @@ class SpimSource implements Source< UnsignedShortType >
 		final SequenceDescription seq = loader.getSequenceDescription();
 		imgLoader = ( Hdf5ImageLoader ) seq.imgLoader;
 		numTimepoints = seq.numTimepoints();
-		final int levels = imgLoader.numMipmapLevels();
-		currentSources = new RandomAccessibleInterval[ levels ];
-		currentInterpolatedSources = new RealRandomAccessible[ levels ][ 2 ];
-		currentSourceTransforms = new AffineTransform3D[ levels ];
-		for ( int level = 0; level < levels; level++ )
+		numMipmapLevels = imgLoader.numMipmapLevels();
+		currentSources = new RandomAccessibleInterval[ numMipmapLevels ];
+		currentInterpolatedSources = new RealRandomAccessible[ numMipmapLevels ][ 2 ];
+		currentSourceTransforms = new AffineTransform3D[ numMipmapLevels ];
+		for ( int level = 0; level < numMipmapLevels; level++ )
 			currentSourceTransforms[ level ] = new AffineTransform3D();
 		interpolatorFactories = new InterpolatorFactory[ numInterpolationMethods ];
 		interpolatorFactories[ iNearestNeighborMethod ] = new NearestNeighborInterpolatorFactory< UnsignedShortType >();
@@ -141,5 +143,11 @@ class SpimSource implements Source< UnsignedShortType >
 	public UnsignedShortType getType()
 	{
 		return new UnsignedShortType();
+	}
+
+	@Override
+	public int getNumMipmapLevels()
+	{
+		return numMipmapLevels;
 	}
 }
