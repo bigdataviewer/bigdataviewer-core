@@ -112,7 +112,9 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 		final long targetRenderNanos = 30 * 1000000;
 		final long targetIoNanos = 10 * 1000000;
 		final int badIoFrameBlockFrames = 5;
-		imageRenderer = new MultiResolutionRenderer( display, painterThread, screenScales, targetRenderNanos, targetIoNanos, badIoFrameBlockFrames );
+		final boolean doubleBuffered = true;
+		final int numRenderingThreads = 3;
+		imageRenderer = new MultiResolutionRenderer( display, painterThread, screenScales, targetRenderNanos, targetIoNanos, badIoFrameBlockFrames, doubleBuffered, numRenderingThreads );
 
 		mouseCoordinates = new MouseCoordinateListener() ;
 		display.addHandler( mouseCoordinates );

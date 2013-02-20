@@ -36,14 +36,22 @@ public class MultiResolutionRenderer
 	protected InterruptibleRenderer< ?, ARGBType > projector;
 
 	/**
-	 * Used to render the image for display. One image per screen resolution.
+	 * Whether double buffering is used.
 	 */
-	protected ARGBScreenImage[] screenImages;
+	final protected boolean doubleBuffered;
+
+	/**
+	 * Used to render the image for display. Two images per screen resolution
+	 * if double buffering is enabled. First index is screen scale, second index is
+	 * double-buffer.
+	 */
+	protected ARGBScreenImage[][] screenImages;
 
 	/**
 	 * {@link BufferedImage}s wrapping the data in the {@link #screenImages}.
+	 * First index is screen scale, second index is double-buffer.
 	 */
-	protected BufferedImage[] bufferedImages;
+	protected BufferedImage[][] bufferedImages;
 
 	/**
 	 * Scale factors from the {@link #display viewer canvas} to the
@@ -125,6 +133,11 @@ public class MultiResolutionRenderer
 	protected int goodIoFrames;
 
 	/**
+	 * How many threads to use for rendering.
+	 */
+	final protected int numRenderingThreads;
+
+	/**
 	 * @param display
 	 *            The canvas that will display the images we render.
 	 * @param painterThread
@@ -148,15 +161,20 @@ public class MultiResolutionRenderer
 	 *            "bad io frame" then we assume that enough image data is cached
 	 *            to render at the optimal mipmap level (instead of the coarsest
 	 *            first).
+	 * @param doubleBuffered
+	 *            Whether to use double buffered rendering.
+	 * @param numRenderingThreads
+	 *            How many threads to use for rendering.
 	 */
-	public MultiResolutionRenderer( final InteractiveDisplay3DCanvas display, final PainterThread painterThread, final double[] screenScales, final long targetRenderNanos, final long targetIoNanos, final int badIoFrameBlockFrames )
+	public MultiResolutionRenderer( final InteractiveDisplay3DCanvas display, final PainterThread painterThread, final double[] screenScales, final long targetRenderNanos, final long targetIoNanos, final int badIoFrameBlockFrames, final boolean doubleBuffered, final int numRenderingThreads )
 	{
 		this.display = display;
 		this.painterThread = painterThread;
 		projector = null;
 		this.screenScales = screenScales.clone();
-		screenImages = new ARGBScreenImage[ screenScales.length ];
-		bufferedImages = new BufferedImage[ screenScales.length ];
+		this.doubleBuffered = doubleBuffered;
+		screenImages = new ARGBScreenImage[ screenScales.length ][ 2 ];
+		bufferedImages = new BufferedImage[ screenScales.length ][ 2 ];
 		screenScaleTransforms = new AffineTransform3D[ screenScales.length ];
 
 		maxMipmapLevel = new int[ 0 ];
@@ -172,11 +190,12 @@ public class MultiResolutionRenderer
 		requestedMipmapLevel = maxMipmapLevel.clone();
 		renderingMayBeCancelled = true;
 		goodIoFrames = 0;
+		this.numRenderingThreads = numRenderingThreads;
 	}
 
 	public MultiResolutionRenderer( final InteractiveDisplay3DCanvas display, final PainterThread painterThread, final double[] screenScales )
 	{
-		this( display, painterThread, screenScales, 30 * 1000000, 10 * 1000000, 5 );
+		this( display, painterThread, screenScales, 30 * 1000000, 10 * 1000000, 5, true, 3 );
 	}
 
 	/**
@@ -187,15 +206,18 @@ public class MultiResolutionRenderer
 	{
 		final int componentW = display.getWidth();
 		final int componentH = display.getHeight();
-		if ( screenImages[ 0 ] == null || screenImages[ 0 ].dimension( 0 ) * screenScales[ 0 ] != componentW || screenImages[ 0 ].dimension( 1 )  * screenScales[ 0 ] != componentH )
+		if ( screenImages[ 0 ][ 0 ] == null || screenImages[ 0 ][ 0 ].dimension( 0 ) * screenScales[ 0 ] != componentW || screenImages[ 0 ][ 0 ].dimension( 1 )  * screenScales[ 0 ] != componentH )
 		{
 			for ( int i = 0; i < screenScales.length; ++i )
 			{
 				final double screenToViewerScale = screenScales[ i ];
 				final int w = ( int ) ( screenToViewerScale * componentW );
 				final int h = ( int ) ( screenToViewerScale * componentH );
-				screenImages[ i ] = new ARGBScreenImage( w, h );
-				bufferedImages[ i ] = GuiHelpers.getBufferedImage( screenImages[ i ] );
+				for ( int b = 0; b < ( doubleBuffered ? 2 : 1 ); ++b )
+				{
+					screenImages[ i ][ b ] = new ARGBScreenImage( w, h );
+					bufferedImages[ i ][ b ] = GuiHelpers.getBufferedImage( screenImages[ i ][ b ] );
+				}
 				final AffineTransform3D scale = new AffineTransform3D();
 				final double xScale = ( double ) w / componentW;
 				final double yScale = ( double ) h / componentH;
@@ -309,13 +331,13 @@ public class MultiResolutionRenderer
 				} );
 			}
 
-			screenImage = screenImages[ currentScreenScaleIndex ];
-			bufferedImage = bufferedImages[ currentScreenScaleIndex ];
+			screenImage = screenImages[ currentScreenScaleIndex ][ 0 ];
+			bufferedImage = bufferedImages[ currentScreenScaleIndex ][ 0 ];
 			projector = p;
 		}
 
 		// try rendering
-		final boolean success = p.map( screenImage );
+		final boolean success = p.map( screenImage, numRenderingThreads );
 		final long rendertime = p.getLastFrameRenderNanoTime();
 		final long iotime = p.getLastFrameIoNanoTime();
 
@@ -325,6 +347,15 @@ public class MultiResolutionRenderer
 			if ( success )
 			{
 				display.setBufferedImage( bufferedImage );
+
+				if ( doubleBuffered )
+				{
+					screenImages[ currentScreenScaleIndex ][ 0 ] = screenImages[ currentScreenScaleIndex ][ 1 ];
+					screenImages[ currentScreenScaleIndex ][ 1 ] = screenImage;
+					bufferedImages[ currentScreenScaleIndex ][ 0 ] = bufferedImages[ currentScreenScaleIndex ][ 1 ];
+					bufferedImages[ currentScreenScaleIndex ][ 1 ] = bufferedImage;
+				}
+
 				if ( currentScreenScaleIndex == maxScreenScaleIndex )
 				{
 					if ( rendertime > targetRenderNanos && maxScreenScaleIndex < screenScales.length - 1 )

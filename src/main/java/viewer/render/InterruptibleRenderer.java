@@ -43,12 +43,7 @@ public class InterruptibleRenderer< A, B > extends AbstractInterval
 		ioTimeOutNanos = -1;
 	}
 
-	public boolean map( final RandomAccessibleInterval< B > target )
-	{
-		return mapMultithreaded( target, 8 );
-	}
-
-	public boolean mapMultithreaded( final RandomAccessibleInterval< B > target, final int numThreads )
+	public boolean map( final RandomAccessibleInterval< B > target, final int numThreads )
 	{
 		interrupted.set( false );
 
@@ -82,22 +77,30 @@ public class InterruptibleRenderer< A, B > extends AbstractInterval
 		final int height = ( int ) target.dimension( 1 );
 
 		final ExecutorService ex = Executors.newFixedThreadPool( numThreads );
-		final int numTasks = numThreads > 1 ? numThreads * 4 : 1;
+		final int numTasks;
+		if ( numThreads > 1 )
+		{
+			numTasks = Math.max( numThreads * 10, height );
+		}
+		else
+			numTasks = 1;
+		final double taskHeight = ( double ) height / numTasks;
 		for ( int taskNum = 0; taskNum < numTasks; ++taskNum )
 		{
-			final RandomAccess< A > sourceRandomAccess = source.randomAccess( this );
-			final RandomAccess< B > targetRandomAccess = target.randomAccess( target );
-
-			final double h = ( double ) height / numTasks;
-			final long myMinY = min[ 1 ] + ( int ) ( taskNum * h );
-			final long nextMinY = min[ 1 ] + ( (taskNum == numTasks - 1 ) ? height : ( int ) ( taskNum * h + h ) );
-			final long myHeight = nextMinY - myMinY;
+			final long myMinY = min[ 1 ] + ( int ) ( taskNum * taskHeight );
+			final long myHeight = ( (taskNum == numTasks - 1 ) ? height : ( int ) ( ( taskNum + 1 ) * taskHeight ) ) - myMinY - min[ 1 ];
 
 			final Runnable r = new Runnable()
 			{
 				@Override
 				public void run()
 				{
+					if ( interrupted.get() )
+						return;
+
+					final RandomAccess< A > sourceRandomAccess = source.randomAccess( InterruptibleRenderer.this );
+					final RandomAccess< B > targetRandomAccess = target.randomAccess( target );
+
 					sourceRandomAccess.setPosition( min );
 					sourceRandomAccess.setPosition( myMinY, 1 );
 					targetRandomAccess.setPosition( min[ 0 ], 0 );
