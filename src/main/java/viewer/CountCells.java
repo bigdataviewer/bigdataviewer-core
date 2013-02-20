@@ -49,6 +49,8 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.util.Intervals;
+import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
 import org.w3c.dom.Document;
@@ -163,26 +165,36 @@ public class CountCells implements BrightnessDialog.MinMaxListener
 	private void addLabelHyperSphere( final RealLocalizable center, final int radius, final Integer label )
 	{
 		final HyperSphereShape sphere = new HyperSphereShape( radius );
-		final RandomAccess< Neighborhood< LabelingType< Integer > > > na = sphere.neighborhoodsRandomAccessible( overlay.currentSource ).randomAccess( /* TODO provide bounding box interval */ );
-		new Round<RandomAccess< Neighborhood< LabelingType< Integer >>>>( na ).setPosition( center );
+		final IntervalView< LabelingType< Integer >> ext = Views.interval( Views.extendValue( overlay.currentSource, new LabelingType< Integer >() ), Intervals.expand( overlay.currentSource, radius ) );
+		final RandomAccess< Neighborhood< LabelingType< Integer > > > na = sphere.neighborhoodsRandomAccessible( ext ).randomAccess( /* TODO provide bounding box interval */ );
+		new Round< RandomAccess< Neighborhood< LabelingType< Integer > > > >( na ).setPosition( center );
 		for ( final LabelingType< Integer > t : na.get() )
 		{
-			final ArrayList< Integer > labels = new ArrayList< Integer >( t.getLabeling() );
-			labels.add( label );
-			t.setLabeling( labels );
+			final List< Integer > l = t.getLabeling();
+			if ( ! l.contains( label ) )
+			{
+				final ArrayList< Integer > labels = new ArrayList< Integer >( t.getLabeling() );
+				labels.add( label );
+				t.setLabeling( labels );
+			}
 		}
 	}
 
 	private void removeLabelHyperSphere( final RealLocalizable center, final int radius, final Integer label )
 	{
 		final HyperSphereShape sphere = new HyperSphereShape( radius );
-		final RandomAccess< Neighborhood< LabelingType< Integer > > > na = sphere.neighborhoodsRandomAccessible( overlay.currentSource ).randomAccess( /* TODO provide bounding box interval */ );
-		new Round<RandomAccess< Neighborhood< LabelingType< Integer >>>>( na ).setPosition( center );
+		final IntervalView< LabelingType< Integer >> ext = Views.interval( Views.extendValue( overlay.currentSource, new LabelingType< Integer >() ), Intervals.expand( overlay.currentSource, radius ) );
+		final RandomAccess< Neighborhood< LabelingType< Integer > > > na = sphere.neighborhoodsRandomAccessible( ext ).randomAccess( /* TODO provide bounding box interval */ );
+		new Round< RandomAccess< Neighborhood< LabelingType< Integer > > > >( na ).setPosition( center );
 		for ( final LabelingType< Integer > t : na.get() )
 		{
-			final ArrayList< Integer > labels = new ArrayList< Integer >( t.getLabeling() );
-			labels.remove( label );
-			t.setLabeling( labels );
+			final List< Integer > l = t.getLabeling();
+			if ( l.contains( label ) )
+			{
+				final ArrayList< Integer > labels = new ArrayList< Integer >( t.getLabeling() );
+				labels.remove( label );
+				t.setLabeling( labels );
+			}
 		}
 	}
 
