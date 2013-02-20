@@ -22,6 +22,7 @@ import javax.swing.ActionMap;
 import javax.swing.InputMap;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
+import javax.swing.JMenuBar;
 import javax.swing.JRootPane;
 import javax.swing.JSlider;
 import javax.swing.KeyStroke;
@@ -79,9 +80,13 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 
 	final protected JSlider sliderTime;
 
+	final protected JSlider sliderAlpha;
+
 	final protected MouseCoordinateListener mouseCoordinates;
 
 	final protected ArrayList< Pair< KeyStroke, Action > > keysActions;
+
+	protected volatile int currentAlpha = 128;
 
 	/**
 	 *
@@ -129,13 +134,25 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 			}
 		} );
 
+		sliderAlpha = new JSlider( JSlider.VERTICAL, 0, 254, 128 );
+		sliderAlpha.addChangeListener( new ChangeListener() {
+			@Override
+			public void stateChanged( final ChangeEvent e )
+			{
+				if ( e.getSource().equals( sliderAlpha ) )
+					updateAlpha( sliderAlpha.getValue() );
+			}
+		} );
+
 //		final GraphicsConfiguration gc = GuiHelpers.getSuitableGraphicsConfiguration( ARGBScreenImage.ARGB_COLOR_MODEL );
 		final GraphicsConfiguration gc = GuiHelpers.getSuitableGraphicsConfiguration( GuiHelpers.RGB_COLOR_MODEL );
 		frame = new JFrame( "multi-angle viewer", gc );
 		frame.getRootPane().setDoubleBuffered( true );
 		final Container content = frame.getContentPane();
 		content.add( display, BorderLayout.CENTER );
-		content.add( sliderTime, BorderLayout.SOUTH );
+		if ( numTimePoints > 1 )
+			content.add( sliderTime, BorderLayout.SOUTH );
+		content.add( sliderAlpha, BorderLayout.EAST );
 		frame.pack();
 		frame.setDefaultCloseOperation( JFrame.DISPOSE_ON_CLOSE );
 		frame.addWindowListener( new WindowAdapter()
@@ -155,6 +172,12 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 		painterThread.start();
 
 		animatedOverlay = new TextOverlayAnimator( "Press <F1> for help.", 3000, TextPosition.CENTER );
+	}
+
+	public void setJMenuBar( final JMenuBar menubar )
+	{
+		frame.setJMenuBar( menubar );
+		frame.pack();
 	}
 
 	public void addHandler( final Object handler )
@@ -343,6 +366,20 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 				requestRepaint();
 			else
 				display.repaint();
+		}
+	}
+
+	public int getCurrentAlpha()
+	{
+		return currentAlpha;
+	}
+
+	public synchronized void updateAlpha( final int alpha )
+	{
+		if ( currentAlpha != alpha )
+		{
+			currentAlpha = alpha;
+			requestRepaint();
 		}
 	}
 

@@ -17,7 +17,7 @@ import net.imglib2.sampler.special.ConstantRandomAccessible;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.NumericType;
 import viewer.GuiHelpers;
-import viewer.display.AccumulateARGB;
+import viewer.display.BlendARGB;
 
 public class MultiResolutionRenderer
 {
@@ -322,11 +322,13 @@ public class MultiResolutionRenderer
 			{
 				p.setIoTimeOut( targetIoNanos, new Runnable()
 				{
+					final int scale = requestedScreenScaleIndex;
+					final int[] mipmap = requestedMipmapLevel.clone();
 					@Override
 					public void run()
 					{
 						goodIoFrames = 0;
-						requestRepaint();
+						requestRepaint( scale, mipmap );
 					}
 				} );
 			}
@@ -445,7 +447,7 @@ public class MultiResolutionRenderer
 				final ArrayList< RandomAccessible< ARGBType > > accessibles = new ArrayList< RandomAccessible< ARGBType > >( visibleSourceIndices.size() );
 				for ( final int i : visibleSourceIndices )
 					accessibles.add( getConvertedTransformedSource( viewerState, sources.get( i ), screenScaleTransform, mipmapIndex[ i ] ) );
-				return new InterruptibleRenderer< ARGBType, ARGBType >( new AccumulateARGB( accessibles ), new TypeIdentity< ARGBType >() );
+				return new InterruptibleRenderer< ARGBType, ARGBType >( new BlendARGB( accessibles ), new TypeIdentity< ARGBType >() );
 			}
 		}
 	}

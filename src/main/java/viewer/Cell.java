@@ -1,22 +1,12 @@
 package viewer;
 
-import java.io.IOException;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactoryConfigurationError;
-
-import mpicbg.tracking.data.io.XmlHelpers;
+import mpicbg.spim.data.XmlHelpers;
 import net.imglib2.RealLocalizable;
 import net.imglib2.RealPoint;
 import net.imglib2.util.Util;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
 
 class Cell
 {
@@ -88,23 +78,5 @@ class Cell
 		elem.appendChild( XmlHelpers.intElement( doc, "radius", cell.getRadius() ) );
 
 		return elem;
-	}
-
-	public static void main( final String[] args ) throws ParserConfigurationException, TransformerFactoryConfigurationError, TransformerException, SAXException, IOException
-	{
-		final Cell cell = new Cell( 12, new RealPoint( 100.0, 200.0, 300.12312 ), 8 );
-		final Document doc = XmlHelpers.newXmlDocument();
-		final Element cells = doc.createElement( "cells" );
-		doc.appendChild( cells );
-		cells.appendChild( Cell.toXml( doc, cell ) );
-		XmlHelpers.writeXmlDocument( doc, "/Users/tobias/Desktop/celltest.xml" );
-
-		final DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-		final DocumentBuilder db = dbf.newDocumentBuilder();
-		final Document dom = db.parse( "/Users/tobias/Desktop/celltest.xml" );
-		final Element root = dom.getDocumentElement();
-		final NodeList nodes = root.getElementsByTagName( "sphere" );
-		for ( int i = 0; i < nodes.getLength(); ++i )
-			System.out.println( Cell.fromXml( ( Element ) nodes.item( i ) ) );
 	}
 }
