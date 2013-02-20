@@ -112,10 +112,18 @@ public class Hdf5GlobalCellCache< A >
 
 		private long ioBytes;
 
+		private boolean timeoutSet;
+
+		private long timeout;
+
+		private Runnable timeoutCallback;
+
 		public IoStatistics()
 		{
 			stopWatch = new StopWatch();
 			ioBytes = 0;
+			timeout = -1;
+			timeoutCallback = null;
 		}
 
 		public long getIoBytes()
@@ -127,38 +135,88 @@ public class Hdf5GlobalCellCache< A >
 		{
 			return stopWatch.nanoTime();
 		}
+
+		public void setIoNanoTimeout( final long t, final Runnable callback )
+		{
+			timeoutSet = true;
+			timeout = t;
+			timeoutCallback = callback;
+		}
+
+		public void clearIoNanoTimeout()
+		{
+			timeoutSet = false;
+		}
+
+		public boolean timeoutReached()
+		{
+			return timeoutSet && ( timeout < getIoNanoTime() );
+		}
+
+		public void timeoutCallback()
+		{
+			if ( timeoutCallback != null )
+			{
+				timeoutCallback.run();
+				timeoutCallback = null;
+			}
+		}
 	}
 
-	final static ConcurrentHashMap< Long, IoStatistics > perThreadIoStatistics = new ConcurrentHashMap< Long, IoStatistics >();
+	final static ConcurrentHashMap< ThreadGroup, IoStatistics > perThreadGroupIoStatistics = new ConcurrentHashMap< ThreadGroup, IoStatistics >();
 
-	final static IoStatistics getThreadIoStatistics()
+	final static IoStatistics getThreadGroupIoStatistics()
 	{
-		final long threadId = Thread.currentThread().getId();
-		IoStatistics statistics = perThreadIoStatistics.get( threadId );
+		final ThreadGroup threadGroup = Thread.currentThread().getThreadGroup();
+		IoStatistics statistics = perThreadGroupIoStatistics.get( threadGroup );
 		if ( statistics == null )
 		{
 			statistics = new IoStatistics();
-			perThreadIoStatistics.put( threadId, statistics );
+			perThreadGroupIoStatistics.put( threadGroup, statistics );
 		}
 		return statistics;
 	}
 
-	public static long getThreadIoNanoTime()
+	public static void setThreadGroupIoNanoTimeout( final long t, final Runnable callback )
 	{
-		return getThreadIoStatistics().getIoNanoTime();
+		getThreadGroupIoStatistics().setIoNanoTimeout( t, callback );
 	}
 
-	public static long getThreadIoBytes()
+	public static void clearThreadGroupIoNanoTimeout()
 	{
-		return getThreadIoStatistics().getIoBytes();
+		getThreadGroupIoStatistics().clearIoNanoTimeout();
 	}
 
-	public Hdf5Cell< A > loadGlobal( final int[] cellDims, final long[] cellMin, final int timepoint, final int setup, final int level, final int index )
+	public static long getThreadGroupIoNanoTime()
 	{
-		final IoStatistics statistics = getThreadIoStatistics();
+		return getThreadGroupIoStatistics().getIoNanoTime();
+	}
+
+	public static long getThreadGroupIoBytes()
+	{
+		return getThreadGroupIoStatistics().getIoBytes();
+	}
+
+	public synchronized Hdf5Cell< A > loadGlobal( final int[] cellDims, final long[] cellMin, final int timepoint, final int setup, final int level, final int index )
+	{
+		final Key k = new Key( timepoint, setup, level, index );
+		final SoftReference< Entry > ref = softReferenceCache.get( k );
+		if ( ref != null )
+		{
+			final Entry entry = ref.get();
+			if ( entry != null )
+				return entry.data;
+		}
+
+		final IoStatistics statistics = getThreadGroupIoStatistics();
+		if ( statistics.timeoutReached() )
+		{
+			statistics.timeoutCallback();
+			return new Hdf5Cell< A >( cellDims, cellMin, loader.emptyArray( cellDims ) );
+		}
+
 		statistics.stopWatch.start();
 		final Hdf5Cell< A > cell = new Hdf5Cell< A >( cellDims, cellMin, loader.loadArray( timepoint, setup, level, cellDims, cellMin ) );
-		final Key k = new Key( timepoint, setup, level, index );
 		softReferenceCache.put( k, new SoftReference< Entry >( new Entry( k, cell ) ) );
 		statistics.stopWatch.stop();
 

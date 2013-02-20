@@ -16,7 +16,6 @@ import net.imglib2.type.numeric.integer.UnsignedShortType;
 
 import org.xml.sax.SAXException;
 
-import viewer.hdf5.Hdf5ImageLoader;
 import viewer.render.SourceAndConverter;
 
 public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
@@ -59,7 +58,6 @@ public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
 
 		final SequenceViewsLoader loader = new SequenceViewsLoader( xmlFilename );
 		final SequenceDescription seq = loader.getSequenceDescription();
-		final Hdf5ImageLoader imgLoader = ( Hdf5ImageLoader ) seq.imgLoader;
 
 		displayRanges = new ArrayList< AbstractLinearRange >();
 		final RealARGBConverter< UnsignedShortType > converter = new RealARGBConverter< UnsignedShortType >( 0, 65535 );
@@ -105,8 +103,9 @@ public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
 
 	public static void main( final String[] args )
 	{
-		final String fn = "/Users/tobias/workspace/data/fast fly/111010_weber/combined.xml";
-//		final String fn = "/Users/tobias/Desktop/openspim-deconvolved.xml";
+//		final String fn = "/Users/tobias/workspace/data/fast fly/111010_weber/combined.xml";
+//		final String fn = "/Users/tobias/Desktop/openspim.xml";
+		final String fn = "/Users/tobias/Desktop/e012/test5.xml";
 		try
 		{
 			new ViewRegisteredAngles( fn );

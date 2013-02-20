@@ -108,7 +108,7 @@ public class MultiResolutionRenderer
 	 * new one). Rendering may be cancelled unless we are rendering at
 	 * coarsest screen scale and coarsest mipmap level.
 	 */
-	protected boolean renderingMayBeCancelled;
+	protected volatile boolean renderingMayBeCancelled;
 
 	/**
 	 * If more frames than this have been rendered without hitting the

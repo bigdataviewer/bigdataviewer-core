@@ -27,6 +27,15 @@ public class ShortArrayLoader implements Hdf5ArrayLoader< ShortArray >
 	}
 
 	@Override
+	public ShortArray emptyArray( final int[] dimensions )
+	{
+		int numEntities = 1;
+		for ( int i = 0; i < dimensions.length; ++i )
+			numEntities *= dimensions[ i ];
+		return new ShortArray( numEntities );
+	}
+
+	@Override
 	public int getBytesPerElement() {
 		return 2;
 	}

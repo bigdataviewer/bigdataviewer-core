@@ -28,6 +28,15 @@ public class FloatArrayLoader implements Hdf5ArrayLoader< FloatArray >
 	}
 
 	@Override
+	public FloatArray emptyArray( final int[] dimensions )
+	{
+		int numEntities = 1;
+		for ( int i = 0; i < dimensions.length; ++i )
+			numEntities *= dimensions[ i ];
+		return new FloatArray( numEntities );
+	}
+
+	@Override
 	public int getBytesPerElement() {
 		return 4;
 	}
