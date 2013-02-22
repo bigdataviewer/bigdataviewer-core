@@ -542,12 +542,19 @@ public class CountCells implements BrightnessDialog.MinMaxListener
 
 		brightnessDialog = new BrightnessDialog( viewer.frame );
 		viewer.installKeyActions( brightnessDialog );
+		viewer.toggleSingleSourceMode();
 		brightnessDialog.setListener( this );
 	}
 
 	public static void main( final String[] args )
 	{
-		final String fn = "/Users/tobias/Desktop/celegans/celegans.xml";
+		/*
+		 * c - set point 
+		 * shift+c - delete point
+		 * d - increase cell size
+		 * s - decrease cell size
+		 */
+		final String fn = "/Users/preibischs/Documents/Microscopy/SPIM/bessel spim nov 2012/2012-11-20/celegans.xml";
 		try
 		{
 			System.setProperty("apple.laf.useScreenMenuBar", "true");
