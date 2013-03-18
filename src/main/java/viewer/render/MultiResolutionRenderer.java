@@ -366,7 +366,7 @@ public class MultiResolutionRenderer
 					if ( rendertime < targetRenderNanos && maxScreenScaleIndex > 0 )
 						maxScreenScaleIndex--;
 				}
-//				System.out.println( "maxScreenScaleIndex = " + maxScreenScaleIndex + "  (" + screenImages[ maxScreenScaleIndex ].dimension( 0 ) + " x " + screenImages[ maxScreenScaleIndex ].dimension( 1 ) + ")" );
+//				System.out.println( "maxScreenScaleIndex = " + maxScreenScaleIndex + "  (" + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 0 ) + " x " + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 1 ) + ")" );
 //				System.out.println( String.format( "rendering:%4d ms   io:%4d ms   (total:%4d ms)", rendertime / 1000000, iotime / 1000000, ( rendertime + iotime ) / 1000000 ) );
 //				System.out.println( "scale = " + currentScreenScaleIndex + "   mipmap = " + Util.printCoordinates( currentMipmapLevel ) );
 //				System.out.println( "     target mipmap = " + Util.printCoordinates( targetMipmapLevel ) );

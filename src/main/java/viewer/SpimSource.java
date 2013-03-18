@@ -15,7 +15,7 @@ import viewer.hdf5.Hdf5ImageLoader;
 import viewer.render.Interpolation;
 import viewer.render.Source;
 
-class SpimSource implements Source< UnsignedShortType >
+public class SpimSource implements Source< UnsignedShortType >
 {
 	int currentTimepoint;
 
@@ -46,7 +46,7 @@ class SpimSource implements Source< UnsignedShortType >
 	final protected InterpolatorFactory< UnsignedShortType, RandomAccessible< UnsignedShortType > >[] interpolatorFactories;
 
 	@SuppressWarnings( "unchecked" )
-	SpimSource( final SequenceViewsLoader loader, final int setup, final String name )
+	public SpimSource( final SequenceViewsLoader loader, final int setup, final String name )
 	{
 		this.setup = setup;
 		this.name = name;

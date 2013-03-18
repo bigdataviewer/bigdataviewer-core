@@ -220,7 +220,7 @@ public class ViewerState
 	 *
 	 * @return indices of all currently visible sources.
 	 */
-	protected synchronized ArrayList< Integer > getVisibleSourceIndices()
+	public synchronized ArrayList< Integer > getVisibleSourceIndices()
 	{
 		final ArrayList< Integer > visibleSources = new ArrayList< Integer >();
 		for ( int i = 0; i < sources.size(); ++i )
