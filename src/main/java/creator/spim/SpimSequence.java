@@ -23,14 +23,18 @@ public class SpimSequence
 
 	private final ViewRegistrations viewRegistrations;
 
-	public SpimSequence( final String inputDirectory, final String inputFilePattern, final String angles, final String timepoints, final int referenceTimePoint, final boolean overrideImageZStretching, final double zStretching ) throws ConfigurationParserException
+	public SpimSequence( final SPIMConfiguration conf )
 	{
-		final SPIMConfiguration conf = initExperimentConfiguration( inputDirectory, inputFilePattern, angles, timepoints, referenceTimePoint, overrideImageZStretching, zStretching );
 		final ArrayList< ViewSetup > setups = createViewSetups( conf );
 		final StackImageLoader imgLoader = createImageLoader( conf, setups );
 
 		viewRegistrations = createViewRegistrations( conf, setups );
-		sequenceDescription = new SequenceDescription( setups.toArray( new ViewSetup[ 0 ] ), conf.timepoints, new File( inputDirectory ), imgLoader );
+		sequenceDescription = new SequenceDescription( setups.toArray( new ViewSetup[ 0 ] ), conf.timepoints, new File( conf.inputdirectory ), imgLoader );
+	}
+
+	public SpimSequence( final String inputDirectory, final String inputFilePattern, final String angles, final String timepoints, final int referenceTimePoint, final boolean overrideImageZStretching, final double zStretching ) throws ConfigurationParserException
+	{
+		this( initExperimentConfiguration( inputDirectory, inputFilePattern, angles, timepoints, referenceTimePoint, overrideImageZStretching, zStretching ) );
 	}
 
 	public SequenceDescription getSequenceDescription()
@@ -64,7 +68,8 @@ public class SpimSequence
 				filenames[ timepoint * numSetups + setup ] = viewDataBeads.getFileName();
 			}
 		}
-		return new StackImageLoader( Arrays.asList( filenames ), numSetups, true );
+		final boolean useImageJOpener = conf.inputFilePattern.endsWith( ".tif" );
+		return new StackImageLoader( Arrays.asList( filenames ), numSetups, useImageJOpener );
 	}
 
 	/**
@@ -130,7 +135,7 @@ public class SpimSequence
 		// registrations, instantiate the View objects for Tracking
 		for ( int i = 0; i < conf.timepoints.length; ++i )
 		{
-			System.out.println( "(" + new Date( System.currentTimeMillis() ) + "): Loading timepoint " + conf.timepoints[ i ] );
+//			System.out.println( "(" + new Date( System.currentTimeMillis() ) + "): Loading timepoint " + conf.timepoints[ i ] );
 
 			final ViewStructure viewStructure = ViewStructure.initViewStructure( conf, i, new mpicbg.models.AffineModel3D(), "ViewStructure Timepoint " + conf.timepoints[ i ], conf.debugLevelInt );
 
@@ -151,7 +156,7 @@ public class SpimSequence
 				( ( mpicbg.models.AffineModel3D ) viewDataBeads.getTile().getModel() ).toMatrix( tmp );
 				model.set( tmp );
 
-				System.out.println( "creating view: timepoint = " + conf.timepoints[ i ] + " | angle = " + angle + " | illumination = " + illumination );
+//				System.out.println( "creating view: timepoint = " + conf.timepoints[ i ] + " | angle = " + angle + " | illumination = " + illumination );
 
 				// get corresponding setup id
 				final int setup = getSetupIndex( setups, angle, illumination, channel );
