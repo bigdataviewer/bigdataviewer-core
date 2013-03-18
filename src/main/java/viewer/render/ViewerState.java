@@ -252,10 +252,13 @@ public class ViewerState
 		if ( source.isVisible( singleSourceMode ) )
 		{
 			for ( int level = targetLevel - 1; level >= 0; level-- )
-				if ( source.getVoxelScreenSize( screenTransform, currentTimepoint, level ) >= 1.0 )
+			{
+//				System.out.println( "source.getVoxelScreenSize( level = " + level + " ) = " + source.getVoxelScreenSize( screenTransform, currentTimepoint, level ) );
+				if ( source.getVoxelScreenSize( screenTransform, currentTimepoint, level ) >= 0.99 /*1.0*/ )
 					targetLevel = level;
 				else
 					break;
+			}
 		}
 		return targetLevel;
 	}
