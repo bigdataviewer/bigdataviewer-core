@@ -142,6 +142,16 @@ public class CreateCells
 		WriteSequenceToXml.writeSequenceToXml( sequenceDescription, viewRegistrations, seqFile.getAbsolutePath() );
 	}
 
+	public static interface ProgressListener
+	{
+		public void updateProgress( int numCompletedTasks, int numTasks );
+	}
+
+	public static void createHdf5File( final SequenceDescription seq, final File hdf5File, final int[][] resolutions, final int[][] subdivisions )
+	{
+		createHdf5File( seq, hdf5File, resolutions, subdivisions, null );
+	}
+
 	/**
 	 * Create a hdf5 file containing image data from all views and all
 	 * timepoints in a chunked, mipmaped representation. Every image is stored
@@ -165,11 +175,19 @@ public class CreateCells
 	 *            each int[] element of the array describes one resolution level
 	 * @param subdivisions
 	 */
-	public static void createHdf5File( final SequenceDescription seq, final File hdf5File, final int[][] resolutions, final int[][] subdivisions )
+	public static void createHdf5File( final SequenceDescription seq, final File hdf5File, final int[][] resolutions, final int[][] subdivisions, final ProgressListener progressListener )
 	{
 		final int numTimepoints = seq.numTimepoints();
 		final int numSetups = seq.numViewSetups();
 		final int numLevels = resolutions.length;
+
+		// for progressListener
+		// (numLevels + 1) is for writing each of the levels plus reading the source image
+		// final + 1 is for writing resolutions etc.
+		final int numTasks = numTimepoints * numSetups * ( numLevels + 1 ) + 1;
+		int numCompletedTasks = 0;
+		if ( progressListener != null )
+			progressListener.updateProgress( numCompletedTasks++, numTasks );
 
 		// open HDF5 output file
 		if ( hdf5File.exists() )
@@ -191,19 +209,24 @@ public class CreateCells
 		hdf5Writer.writeInt( "numTimepoints", numTimepoints );
 		hdf5Writer.writeInt( "numSetups", numSetups );
 
+		if ( progressListener != null )
+			progressListener.updateProgress( numCompletedTasks++, numTasks );
+
 		// write image data for all views to the HDF5 file
 		final int n = 3;
 		final long[] dimensions = new long[ n ];
 		for ( int timepoint = 0; timepoint < numTimepoints; ++timepoint )
 		{
-			System.out.println( String.format( "proccessing timepoint %d / %d", timepoint, numTimepoints ) );
+			System.out.println( String.format( "proccessing timepoint %d / %d", timepoint + 1, numTimepoints ) );
 			for ( int setup = 0; setup < numSetups; ++setup )
 			{
-				System.out.println( String.format( "proccessing setup %d / %d", setup, numSetups ) );
+				System.out.println( String.format( "proccessing setup %d / %d", setup + 1, numSetups ) );
 				// final View view = loader.getView( timepoint, setup );
 				final View view = new View( seq, timepoint, setup, null );
 				System.out.println( "loading image" );
 				final ImgPlus< UnsignedShortType > img = seq.imgLoader.getUnsignedShortImage( view );
+				if ( progressListener != null )
+					progressListener.updateProgress( numCompletedTasks++, numTasks );
 
 				for ( int level = 0; level < numLevels; ++level )
 				{
@@ -263,6 +286,8 @@ public class CreateCells
 						final MDShortArray array = new MDShortArray( ( ( ShortArray ) cell.update( null ) ).getCurrentStorageArray(), currentCellDimRM );
 						hdf5Writer.writeShortMDArrayBlockWithOffset( path, array, currentCellMinRM );
 					}
+					if ( progressListener != null )
+						progressListener.updateProgress( numCompletedTasks++, numTasks );
 				}
 			}
 		}
