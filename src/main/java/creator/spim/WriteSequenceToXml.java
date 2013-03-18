@@ -1,5 +1,7 @@
 package creator.spim;
 
+import java.io.File;
+
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
 import javax.xml.transform.TransformerFactoryConfigurationError;
@@ -19,18 +21,18 @@ public class WriteSequenceToXml
 	{
 		System.out.println( "writing sequence description to " + xmlFilename );
 		final Document doc = XmlHelpers.newXmlDocument();
-		final Element root = sequenceDescriptionToXml( doc, sequence );
+		final Element root = sequenceDescriptionToXml( doc, sequence, new File( xmlFilename ).getParentFile() );
 		root.appendChild( viewRegistrationsToXml( doc, registrations ) );
 		doc.appendChild( root );
 		XmlHelpers.writeXmlDocument( doc, xmlFilename );
 	}
 
-	public static Element sequenceDescriptionToXml( final Document doc, final SequenceDescription sequence )
+	public static Element sequenceDescriptionToXml( final Document doc, final SequenceDescription sequence, final File xmlFileDirectory )
 	{
 		final Element elem = doc.createElement( "SequenceDescription" );
 
 		// add BasePath
-		elem.appendChild( XmlHelpers.textElement( doc, "BasePath", sequence.getBasePath().getPath() ) );
+		elem.appendChild( XmlHelpers.pathElement( doc, "BasePath", sequence.getBasePath(), xmlFileDirectory ) );
 
 		// add ImageLoader
 		elem.appendChild( sequence.imgLoader.toXml( doc, sequence.getBasePath() ) );
