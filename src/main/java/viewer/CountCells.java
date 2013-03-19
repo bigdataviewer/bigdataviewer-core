@@ -284,6 +284,8 @@ public class CountCells implements BrightnessDialog.MinMaxListener
 
 		final protected InterpolatorFactory< ARGBType, RandomAccessible< ARGBType > >[] interpolatorFactories;
 
+		final AffineTransform3D sourceTransform = new AffineTransform3D();
+
 		@SuppressWarnings( "unchecked" )
 		public Overlay( final SpimSource imgSource )
 
@@ -333,8 +335,15 @@ public class CountCells implements BrightnessDialog.MinMaxListener
 			if ( isPresent( timepoint ) )
 			{
 				final Dimensions sourceDimensions = imgSource.getSource( timepoint, 0 );
+
+				// TODO: fix this HORRIBLE hack that deals with z-scaling...
+				final AffineTransform3D sourceTransform = imgSource.getSourceTransform( timepoint, 0 );
+				final long[] dim = new long[ sourceDimensions.numDimensions() ];
+				sourceDimensions.dimensions( dim );
+				dim[ 2 ] *= sourceTransform.get( 2, 2 );
+
 				final ArrayImgFactory< IntType > factory = new ArrayImgFactory< IntType >();
-				final Img< IntType > img = factory.create( sourceDimensions, new IntType() );
+				final Img< IntType > img = factory.create( dim, new IntType() );
 				final NativeImgLabeling< Integer, IntType > labeling = new NativeImgLabeling< Integer, IntType >( img );
 				currentSource = labeling;
 				updateColorTable();
@@ -346,7 +355,7 @@ public class CountCells implements BrightnessDialog.MinMaxListener
 		@Override
 		public AffineTransform3D getSourceTransform( final int t, final int level )
 		{
-			return imgSource.getSourceTransform( t, 0 );
+			return sourceTransform;
 		}
 
 		@Override
@@ -407,6 +416,8 @@ public class CountCells implements BrightnessDialog.MinMaxListener
 
 		final SpimSource source = new SpimSource( loader, 0, "image" );
 		sources.add( new SourceAndConverter< UnsignedShortType >( source, converter ) );
+//		for ( int setup = 1; setup < seq.numViewSetups(); ++setup )
+//			sources.add( new SourceAndConverter< UnsignedShortType >( new SpimSource( loader, setup, "channel " + setup + 1 ), converter ) );
 		overlay = new Overlay( source );
 		sources.add( new SourceAndConverter< ARGBType >( overlay, new TypeIdentity< ARGBType >() ) );
 		overlay.getSource( 0, 0 );
@@ -547,7 +558,7 @@ public class CountCells implements BrightnessDialog.MinMaxListener
 
 	public static void main( final String[] args )
 	{
-		final String fn = "/Users/tobias/Desktop/celegans/celegans.xml";
+		final String fn = "/Users/tobias/Desktop/worm2-fused.xml";
 		try
 		{
 			System.setProperty("apple.laf.useScreenMenuBar", "true");
