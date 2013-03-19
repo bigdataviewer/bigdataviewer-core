@@ -37,7 +37,7 @@ import net.imglib2.converter.TypeIdentity;
 import net.imglib2.display.AbstractLinearRange;
 import net.imglib2.display.RealARGBConverter;
 import net.imglib2.img.Img;
-import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.img.sparse.NtreeImgFactory;
 import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory;
@@ -342,7 +342,7 @@ public class CountCells implements BrightnessDialog.MinMaxListener
 				sourceDimensions.dimensions( dim );
 				dim[ 2 ] *= sourceTransform.get( 2, 2 );
 
-				final ArrayImgFactory< IntType > factory = new ArrayImgFactory< IntType >();
+				final NtreeImgFactory< IntType > factory = new NtreeImgFactory< IntType >();
 				final Img< IntType > img = factory.create( dim, new IntType() );
 				final NativeImgLabeling< Integer, IntType > labeling = new NativeImgLabeling< Integer, IntType >( img );
 				currentSource = labeling;
@@ -416,8 +416,8 @@ public class CountCells implements BrightnessDialog.MinMaxListener
 
 		final SpimSource source = new SpimSource( loader, 0, "image" );
 		sources.add( new SourceAndConverter< UnsignedShortType >( source, converter ) );
-//		for ( int setup = 1; setup < seq.numViewSetups(); ++setup )
-//			sources.add( new SourceAndConverter< UnsignedShortType >( new SpimSource( loader, setup, "channel " + setup + 1 ), converter ) );
+		for ( int setup = 1; setup < seq.numViewSetups(); ++setup )
+			sources.add( new SourceAndConverter< UnsignedShortType >( new SpimSource( loader, setup, "channel " + setup + 1 ), converter ) );
 		overlay = new Overlay( source );
 		sources.add( new SourceAndConverter< ARGBType >( overlay, new TypeIdentity< ARGBType >() ) );
 		overlay.getSource( 0, 0 );
