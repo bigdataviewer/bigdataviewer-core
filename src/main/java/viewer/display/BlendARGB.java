@@ -17,17 +17,24 @@ public class BlendARGB extends Accumulate< ARGBType >
 	protected void accumulate( final RandomAccess< ARGBType >[] accesses, final ARGBType target )
 	{
 		int rSum = 0, gSum = 0, bSum = 0;
-		for ( final RandomAccess< ARGBType > access : accesses )
+		for ( int i = 0; i < accesses.length; ++i )
 		{
-			final int value = access.get().get();
-			final int a = ARGBType.alpha( value );
+			final int value = accesses[ i ].get().get();
 			final int r = ARGBType.red( value );
 			final int g = ARGBType.green( value );
 			final int b = ARGBType.blue( value );
-			rSum = ( (255 - a) * rSum + a * r ) / 255;
-			gSum = ( (255 - a) * gSum + a * g ) / 255;
-			bSum = ( (255 - a) * bSum + a * b ) / 255;
+			rSum += r;
+			gSum += g;
+			bSum += b;
 		}
+		final int value = accesses[ accesses.length - 1 ].get().get();
+		final int a = ARGBType.alpha( value );
+		final int r = ARGBType.red( value );
+		final int g = ARGBType.green( value );
+		final int b = ARGBType.blue( value );
+		rSum = ( ( 255 - a ) * rSum + a * r ) / 255;
+		gSum = ( ( 255 - a ) * gSum + a * g ) / 255;
+		bSum = ( ( 255 - a ) * bSum + a * b ) / 255;
 		if ( rSum > 255 )
 			rSum = 255;
 		if ( gSum > 255 )

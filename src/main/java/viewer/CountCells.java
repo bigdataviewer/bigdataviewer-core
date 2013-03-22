@@ -37,7 +37,7 @@ import net.imglib2.converter.TypeIdentity;
 import net.imglib2.display.AbstractLinearRange;
 import net.imglib2.display.RealARGBConverter;
 import net.imglib2.img.Img;
-import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.img.sparse.NtreeImgFactory;
 import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory;
@@ -284,6 +284,8 @@ public class CountCells implements BrightnessDialog.MinMaxListener
 
 		final protected InterpolatorFactory< ARGBType, RandomAccessible< ARGBType > >[] interpolatorFactories;
 
+		final AffineTransform3D sourceTransform = new AffineTransform3D();
+
 		@SuppressWarnings( "unchecked" )
 		public Overlay( final SpimSource imgSource )
 
@@ -333,8 +335,15 @@ public class CountCells implements BrightnessDialog.MinMaxListener
 			if ( isPresent( timepoint ) )
 			{
 				final Dimensions sourceDimensions = imgSource.getSource( timepoint, 0 );
-				final ArrayImgFactory< IntType > factory = new ArrayImgFactory< IntType >();
-				final Img< IntType > img = factory.create( sourceDimensions, new IntType() );
+
+				// TODO: fix this HORRIBLE hack that deals with z-scaling...
+				final AffineTransform3D sourceTransform = imgSource.getSourceTransform( timepoint, 0 );
+				final long[] dim = new long[ sourceDimensions.numDimensions() ];
+				sourceDimensions.dimensions( dim );
+				dim[ 2 ] *= sourceTransform.get( 2, 2 );
+
+				final NtreeImgFactory< IntType > factory = new NtreeImgFactory< IntType >();
+				final Img< IntType > img = factory.create( dim, new IntType() );
 				final NativeImgLabeling< Integer, IntType > labeling = new NativeImgLabeling< Integer, IntType >( img );
 				currentSource = labeling;
 				updateColorTable();
@@ -346,7 +355,7 @@ public class CountCells implements BrightnessDialog.MinMaxListener
 		@Override
 		public AffineTransform3D getSourceTransform( final int t, final int level )
 		{
-			return imgSource.getSourceTransform( t, 0 );
+			return sourceTransform;
 		}
 
 		@Override
@@ -407,6 +416,8 @@ public class CountCells implements BrightnessDialog.MinMaxListener
 
 		final SpimSource source = new SpimSource( loader, 0, "image" );
 		sources.add( new SourceAndConverter< UnsignedShortType >( source, converter ) );
+		for ( int setup = 1; setup < seq.numViewSetups(); ++setup )
+			sources.add( new SourceAndConverter< UnsignedShortType >( new SpimSource( loader, setup, "channel " + setup + 1 ), converter ) );
 		overlay = new Overlay( source );
 		sources.add( new SourceAndConverter< ARGBType >( overlay, new TypeIdentity< ARGBType >() ) );
 		overlay.getSource( 0, 0 );
@@ -555,6 +566,7 @@ public class CountCells implements BrightnessDialog.MinMaxListener
 		 * s - decrease cell size
 		 */
 		final String fn = "/Users/preibischs/Documents/Microscopy/SPIM/bessel spim nov 2012/2012-11-20/celegans.xml";
+		//final String fn = "/Users/tobias/Desktop/worm2-fused.xml";
 		try
 		{
 			System.setProperty("apple.laf.useScreenMenuBar", "true");
