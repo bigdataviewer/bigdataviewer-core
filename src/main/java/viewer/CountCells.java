@@ -560,12 +560,14 @@ public class CountCells implements BrightnessDialog.MinMaxListener
 	public static void main( final String[] args )
 	{
 		/*
+		 * public RandomAccessibleInterval< T > getSource( int t, int level );
+		 * 
 		 * c - set point 
 		 * shift+c - delete point
 		 * d - increase cell size
 		 * s - decrease cell size
 		 */
-		final String fn = "/Users/preibischs/Documents/Microscopy/SPIM/bessel spim nov 2012/2012-11-20/celegans.xml";
+		final String fn = "/Users/preibischs/Documents/Microscopy/HDF5/celegans.xml";
 		//final String fn = "/Users/tobias/Desktop/worm2-fused.xml";
 		try
 		{
