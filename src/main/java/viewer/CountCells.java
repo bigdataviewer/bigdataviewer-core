@@ -562,13 +562,14 @@ public class CountCells implements BrightnessDialog.MinMaxListener
 		/*
 		 * public RandomAccessibleInterval< T > getSource( int t, int level );
 		 * 
+		 * F1 - help
 		 * c - set point 
-		 * shift+c - delete point
-		 * d - increase cell size
-		 * s - decrease cell size
+		 * shift+c - delete point (mouse has to be pointed on the cell)
+		 * d - increase cell size (mouse has to be pointed on the cell)
+		 * s - decrease cell size (mouse has to be pointed on the cell)
 		 */
-		final String fn = "/Users/preibischs/Documents/Microscopy/HDF5/celegans.xml";
-		//final String fn = "/Users/tobias/Desktop/worm2-fused.xml";
+		//final String fn = "/Users/preibischs/Documents/Microscopy/HDF5/celegans.xml";
+		final String fn = "/Users/preibischs/Documents/Microscopy/HDF5/worm2-fused.xml";
 		try
 		{
 			System.setProperty("apple.laf.useScreenMenuBar", "true");
