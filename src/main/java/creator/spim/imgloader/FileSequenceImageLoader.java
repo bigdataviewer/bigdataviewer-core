@@ -7,12 +7,17 @@ import java.io.File;
 import mpicbg.spim.data.ImgLoader;
 import mpicbg.spim.data.View;
 import net.imglib2.Cursor;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.converter.Converters;
+import net.imglib2.display.RealFloatConverter;
 import net.imglib2.display.RealUnsignedShortConverter;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgPlus;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.display.imagej.ImageJFunctions;
+import net.imglib2.io.ImgIOException;
+import net.imglib2.io.ImgOpener;
+import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
@@ -71,17 +76,60 @@ public class FileSequenceImageLoader implements ImgLoader
 		return null;
 	}
 
+	static interface SliceLoader
+	{
+		public RandomAccessibleInterval< FloatType > load( String fn );
+	}
+
+	static class FloatArrayImgLoader implements SliceLoader
+	{
+		final ImgOpener o = new ImgOpener();
+		final ArrayImgFactory< FloatType > fFactory = new ArrayImgFactory< FloatType >();
+		final FloatType fType = new FloatType();
+
+		@Override
+		public Img< FloatType > load( final String fn )
+		{
+			Img< FloatType > slice = null;
+			try
+			{
+				slice = o.openImg( fn, fFactory, fType );
+			}
+			catch ( final ImgIOException e )
+			{
+				e.printStackTrace();
+			}
+			return slice;
+		}
+	}
+
+	static class FloatImagePlusLoader implements SliceLoader
+	{
+		@Override
+		public Img< FloatType > load( final String fn )
+		{
+			return ImageJFunctions.wrapFloat( new ImagePlus( fn ) );
+		}
+	}
+
+	static class ByteImagePlusLoader implements SliceLoader
+	{
+		@Override
+		public RandomAccessibleInterval< FloatType > load( final String fn )
+		{
+			final RandomAccessibleInterval< UnsignedByteType > img = ImageJFunctions.wrapByte( new ImagePlus( fn ) );
+			return Converters.convert( img, new RealFloatConverter< UnsignedByteType >(), new FloatType() );
+		}
+	}
+
 	@Override
 	public ImgPlus< UnsignedShortType > getUnsignedShortImage( final View view )
 	{
-//		final ImgOpener o = new ImgOpener();
-//		final ArrayImgFactory< FloatType > fFactory = new ArrayImgFactory< FloatType >();
-//		final FloatType fType = new FloatType();
-		final int timepoint = view.getTimepoint();
+		final SliceLoader slices = new ByteImagePlusLoader();
+
 		int z = 0;
-		String fn = path + "/" + String.format( pattern, timepoint, z );
-//		Img< FloatType > slice = o.openImg( fn, fFactory, fType );
-		Img< FloatType > slice = ImageJFunctions.wrapFloat( new ImagePlus( fn ) );
+		String fn = path + "/" + String.format( pattern, z + 41 );
+		RandomAccessibleInterval< FloatType > slice = slices.load( fn );
 
 		final long[] dimensions = new long[ 3 ];
 		dimensions[ 0 ] = slice.dimension( 0 );
@@ -98,9 +146,8 @@ public class FileSequenceImageLoader implements ImgLoader
 			System.out.print( z + " " );
 			if ( ( z + 1 ) % 20 == 0 )
 				System.out.println();
-			fn = path + "/" + String.format( pattern, timepoint, z );
-			// slice = o.openImg( fn, fFactory, fType );
-			slice = ImageJFunctions.wrapFloat( new ImagePlus( fn ) );
+			fn = path + "/" + String.format( pattern, z + 41 );
+			slice = slices.load( fn );
 
 			final Cursor< UnsignedShortType > d = Views.flatIterable( Views.hyperSlice( img, 2, z ) ).cursor();
 			for ( final UnsignedShortType t : Converters.convert( Views.flatIterable( slice ), converter, new UnsignedShortType() ) )
