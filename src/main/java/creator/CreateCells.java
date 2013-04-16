@@ -1,6 +1,7 @@
 package creator;
 
 import static viewer.hdf5.Util.reorder;
+import ij.ImagePlus;
 
 import java.io.File;
 import java.io.IOException;
@@ -20,17 +21,24 @@ import mpicbg.spim.io.ConfigurationParserException;
 import net.imglib2.Cursor;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessible;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.converter.Converters;
+import net.imglib2.display.RealUnsignedShortConverter;
 import net.imglib2.img.Img;
-import net.imglib2.img.ImgPlus;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.ShortArray;
 import net.imglib2.img.cell.CellImg;
+import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.iterator.LocalizingZeroMinIntervalIterator;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
 import org.xml.sax.SAXException;
 
 import viewer.hdf5.Hdf5ImageLoader;
@@ -52,15 +60,112 @@ public class CreateCells
 //		public static final int[][] subdivisions = { { 32, 32, 4 }, { 32, 32, 4 }, { 16, 16, 4 } };
 
 	//  mipmap def 2
-//		public static final int[][] resolutions = { { 1, 1, 1 }, { 2, 2, 1 }, { 4, 4, 2 } };
-//		public static final int[][] subdivisions = { { 32, 32, 4 }, { 16, 16, 8 }, { 8, 8, 8 } };
-
-		public static final int[][] resolutions = { { 1, 1, 1 }, { 2, 2, 2 }, { 4, 4, 4 } };
-		public static final int[][] subdivisions = { { 32, 32, 32 }, { 16, 16, 16 }, { 8, 8, 8 } };
+		public static final int[][] resolutions = { { 1, 1, 1 }, { 2, 2, 1 }, { 4, 4, 2 } };
+		public static final int[][] subdivisions = { { 32, 32, 4 }, { 16, 16, 8 }, { 8, 8, 8 } };
 	}
 
-
 	public static void main( final String[] args ) throws InstantiationException, IllegalAccessException, ClassNotFoundException, ParserConfigurationException, SAXException, IOException, ConfigurationParserException, TransformerFactoryConfigurationError, TransformerException
+	{
+		// Steffis
+		final String[] filepaths = new String[] { "/Users/tobias/Desktop/l1-reconstructed.tif" };
+		final double min = 0;
+		final double max = 255;
+
+		final ImgLoader sequenceLoader = new ImgLoader() {
+
+			@Override
+			public void init( final Element elem, final File basePath )
+			{
+			}
+
+			@Override
+			public Element toXml( final Document doc, final File basePath )
+			{
+				return null;
+			}
+
+			@Override
+			public RandomAccessibleInterval< FloatType > getImage( final View view )
+			{
+				return null;
+			}
+
+			@Override
+			public RandomAccessibleInterval< UnsignedShortType > getUnsignedShortImage( final View view )
+			{
+				final String fn = filepaths[ view.getSetupIndex() ];
+				final RandomAccessibleInterval< UnsignedByteType > img = ImageJFunctions.wrapByte( new ImagePlus( fn ) );
+				return Converters.convert( img, new RealUnsignedShortConverter< UnsignedByteType >( 0, 255 ), new UnsignedShortType() );
+			}
+		};
+
+		final ViewSetup[] setups = new ViewSetup[] { new ViewSetup( 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 ) };
+		final int[] timepoints = new int[] { 0 };
+		final File basePath = new File( filepaths[ 0 ] ).getParentFile();
+		final SequenceDescription desc = new SequenceDescription( setups, timepoints, basePath, sequenceLoader );
+
+		final File seqFile = new File( "/Users/tobias/Desktop/l1-reconstructed.xml" );
+		final File hdf5File = new File( "/Users/tobias/Desktop/l1-reconstructed.h5" );
+
+		final int[][] resolutions = MipMapDefinition.resolutions;
+		final int[][] subdivisions = MipMapDefinition.subdivisions;
+
+		createHdf5File( desc, hdf5File, resolutions, subdivisions );
+
+		final Hdf5ImageLoader loader = new Hdf5ImageLoader( hdf5File );
+		final SequenceDescription sequenceDescription = new SequenceDescription( desc.setups, desc.timepoints, seqFile.getParentFile(), loader );
+		final ArrayList< ViewRegistration > registrations = new ArrayList< ViewRegistration >();
+		final AffineTransform3D transform = new AffineTransform3D();
+		transform.set(
+				1, 0, 0, 0,
+				0, 1, 0, 0,
+				0, 0, 1, 0 );
+		registrations.add( new ViewRegistration( 0, 0, transform ) );
+//		registrations.add( new ViewRegistration( 0, 1, transform ) );
+		final ViewRegistrations viewRegistrations = new ViewRegistrations( registrations, 0 );
+		WriteSequenceToXml.writeSequenceToXml( sequenceDescription, viewRegistrations, seqFile.getAbsolutePath() );
+	}
+
+	public static void main4( final String[] args ) throws InstantiationException, IllegalAccessException, ClassNotFoundException, ParserConfigurationException, SAXException, IOException, ConfigurationParserException, TransformerFactoryConfigurationError, TransformerException
+	{
+//		public static final int[][] resolutions = { { 1, 1, 1 }, { 2, 2, 2 }, { 4, 4, 4 }, { 8, 8, 8 } };
+//		public static final int[][] subdivisions = { { 32, 32, 32 }, { 16, 16, 16 }, { 8, 8, 8 }, { 8, 8, 8 } };
+		// fibsem
+		final String filepath = "/Users/tobias/Downloads/rat-striatum-fib/";
+		final String filepattern = "FIBSLICE%04d.tif";
+		final int numSlices = 460;
+		final double min = 0;
+		final double max = 255;
+
+		final ImgLoader sequenceLoader = new FileSequenceImageLoader( filepath, filepattern, numSlices, min, max );
+
+		final ViewSetup[] setups = new ViewSetup[] { new ViewSetup( 0, 0, 0, 0, 0, 0, 0, 5, 5, 9 ) };
+		final int[] timepoints = new int[] { 0 };
+		final File basePath = new File( filepath );
+		final SequenceDescription desc = new SequenceDescription( setups, timepoints, basePath, sequenceLoader );
+
+		final File seqFile = new File( "/Users/tobias/Desktop/fibsem.xml" );
+		final File hdf5File = new File( "/Users/tobias/Desktop/fibsem.h5" );
+
+		final int[][] resolutions = MipMapDefinition.resolutions;
+		final int[][] subdivisions = MipMapDefinition.subdivisions;
+
+		createHdf5File( desc, hdf5File, resolutions, subdivisions );
+
+		final Hdf5ImageLoader loader = new Hdf5ImageLoader( hdf5File );
+		final SequenceDescription sequenceDescription = new SequenceDescription( desc.setups, desc.timepoints, seqFile.getParentFile(), loader );
+		final ArrayList< ViewRegistration > registrations = new ArrayList< ViewRegistration >();
+		final AffineTransform3D transform = new AffineTransform3D();
+		transform.set(
+				1, 0, 0,       0,
+				0, 1, 0,       0,
+				0, 0, 9.0/5.0, 0 );
+		registrations.add( new ViewRegistration( 0, 0, transform ) );
+		final ViewRegistrations viewRegistrations = new ViewRegistrations( registrations, 0 );
+		WriteSequenceToXml.writeSequenceToXml( sequenceDescription, viewRegistrations, seqFile.getAbsolutePath() );
+	}
+
+	public static void main3( final String[] args ) throws InstantiationException, IllegalAccessException, ClassNotFoundException, ParserConfigurationException, SAXException, IOException, ConfigurationParserException, TransformerFactoryConfigurationError, TransformerException
 	{
 		// openspim deconvolved dataset
 		final String inputDirectory = "/Users/tobias/workspace/data/openspim/";
@@ -224,7 +329,7 @@ public class CreateCells
 				// final View view = loader.getView( timepoint, setup );
 				final View view = new View( seq, timepoint, setup, null );
 				System.out.println( "loading image" );
-				final ImgPlus< UnsignedShortType > img = seq.imgLoader.getUnsignedShortImage( view );
+				final RandomAccessibleInterval< UnsignedShortType > img = seq.imgLoader.getUnsignedShortImage( view );
 				if ( progressListener != null )
 					progressListener.updateProgress( numCompletedTasks++, numTasks );
 
