@@ -1,4 +1,4 @@
-package creator;
+package creator.ij;
 
 import ij.ImagePlus;
 

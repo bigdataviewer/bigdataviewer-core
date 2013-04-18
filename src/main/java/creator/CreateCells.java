@@ -47,9 +47,8 @@ import ch.systemsx.cisd.base.mdarray.MDShortArray;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.HDF5IntStorageFeatures;
 import ch.systemsx.cisd.hdf5.IHDF5Writer;
+import creator.old.FileSequenceImageLoader;
 import creator.spim.SpimSequence;
-import creator.spim.WriteSequenceToXml;
-import creator.spim.imgloader.FileSequenceImageLoader;
 
 public class CreateCells
 {

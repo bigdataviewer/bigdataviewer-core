@@ -1,4 +1,4 @@
-package creator.spim;
+package creator;
 
 import java.io.File;
 

@@ -1,4 +1,4 @@
-package creator.spim.imgloader;
+package creator.old;
 
 import ij.ImagePlus;
 
