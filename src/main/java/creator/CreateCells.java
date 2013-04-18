@@ -257,6 +257,11 @@ public class CreateCells
 		createHdf5File( seq, hdf5File, resolutions, subdivisions, null );
 	}
 
+	public static void createHdf5File( final SequenceDescription seq, final File hdf5File, final int[][] resolutions, final int[][] subdivisions, final ProgressListener progressListener )
+	{
+		createHdf5File( seq.numTimepoints(), seq.numViewSetups(), seq.imgLoader, resolutions, subdivisions, hdf5File, progressListener );
+	}
+
 	/**
 	 * Create a hdf5 file containing image data from all views and all
 	 * timepoints in a chunked, mipmaped representation. Every image is stored
@@ -277,13 +282,21 @@ public class CreateCells
 	 * @param hdf5File
 	 *            hdf5 to which the image data is written
 	 * @param resolutions
-	 *            each int[] element of the array describes one resolution level
+	 *            each int[] element of the array describes one resolution level.
 	 * @param subdivisions
+	 *
+	 *
+	 * TODO:
+	 * @param numTimepoints
+	 * @param numSetups
+	 * @param imgLoader
+	 * @param resolutions
+	 * @param subdivisions
+	 * @param hdf5File
+	 * @param progressListener
 	 */
-	public static void createHdf5File( final SequenceDescription seq, final File hdf5File, final int[][] resolutions, final int[][] subdivisions, final ProgressListener progressListener )
+	public static void createHdf5File( final int numTimepoints, final int numSetups, final ImgLoader imgLoader, final int[][] resolutions, final int[][] subdivisions, final File hdf5File, final ProgressListener progressListener )
 	{
-		final int numTimepoints = seq.numTimepoints();
-		final int numSetups = seq.numViewSetups();
 		final int numLevels = resolutions.length;
 
 		// for progressListener
@@ -327,9 +340,9 @@ public class CreateCells
 			{
 				System.out.println( String.format( "proccessing setup %d / %d", setup + 1, numSetups ) );
 				// final View view = loader.getView( timepoint, setup );
-				final View view = new View( seq, timepoint, setup, null );
+				final View view = new View( null, timepoint, setup, null );
 				System.out.println( "loading image" );
-				final RandomAccessibleInterval< UnsignedShortType > img = seq.imgLoader.getUnsignedShortImage( view );
+				final RandomAccessibleInterval< UnsignedShortType > img = imgLoader.getUnsignedShortImage( view );
 				if ( progressListener != null )
 					progressListener.updateProgress( numCompletedTasks++, numTasks );
 
