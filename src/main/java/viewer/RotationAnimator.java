@@ -1,10 +1,10 @@
 package viewer;
 
-import viewer.util.AbstractAnimator;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.LinAlgHelpers;
+import viewer.util.AbstractTransformAnimator;
 
-class RotationAnimator extends AbstractAnimator
+class RotationAnimator extends AbstractTransformAnimator
 {
 	private final AffineTransform3D transformStart;
 

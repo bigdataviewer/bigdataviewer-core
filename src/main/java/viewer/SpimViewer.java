@@ -49,7 +49,7 @@ import viewer.render.SourceState;
 import viewer.render.ViewerState;
 import viewer.render.overlay.MultiBoxOverlayRenderer;
 import viewer.render.overlay.SourceInfoOverlayRenderer;
-import viewer.util.AbstractAnimator;
+import viewer.util.AbstractTransformAnimator;
 
 public class SpimViewer implements OverlayRenderer, TransformListener3D, PainterThread.Paintable
 {
@@ -83,8 +83,8 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 	final protected MouseCoordinateListener mouseCoordinates;
 
 	final protected ArrayList< Pair< KeyStroke, Action > > keysActions;
-	
-	protected AbstractAnimator currentAnimator = null;
+
+	protected AbstractTransformAnimator currentAnimator = null;
 
 
 	/**
