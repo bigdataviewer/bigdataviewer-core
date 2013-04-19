@@ -7,6 +7,8 @@ import java.awt.font.FontRenderContext;
 import java.awt.font.TextLayout;
 import java.awt.geom.Rectangle2D;
 
+import net.imglib2.realtransform.AffineTransform3D;
+
 import viewer.util.AbstractAnimator;
 
 public class TextOverlayAnimator extends AbstractAnimator
@@ -82,5 +84,13 @@ public class TextOverlayAnimator extends AbstractAnimator
 
 		g.setColor( new Color( 1f, 1f, 1f, alpha ) );
 		layout.draw( g, x, y );
+	}
+
+	/**
+	 * Unused.
+	 */
+	@Override
+	protected AffineTransform3D get(double t) {
+		return null;
 	}
 }

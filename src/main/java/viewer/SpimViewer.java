@@ -49,6 +49,7 @@ import viewer.render.SourceState;
 import viewer.render.ViewerState;
 import viewer.render.overlay.MultiBoxOverlayRenderer;
 import viewer.render.overlay.SourceInfoOverlayRenderer;
+import viewer.util.AbstractAnimator;
 
 public class SpimViewer implements OverlayRenderer, TransformListener3D, PainterThread.Paintable
 {
@@ -82,6 +83,9 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 	final protected MouseCoordinateListener mouseCoordinates;
 
 	final protected ArrayList< Pair< KeyStroke, Action > > keysActions;
+	
+	protected AbstractAnimator currentAnimator = null;
+
 
 	/**
 	 *
@@ -238,7 +242,6 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 		requestRepaint();
 	}
 
-	RotationAnimator currentAnimator = null;
 
 	static enum AlignPlane
 	{

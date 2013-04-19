@@ -33,12 +33,6 @@ class RotationAnimator extends AbstractAnimator
 				qAddEnd[ i ] = -qAddEnd[ i ];
 	}
 
-	public AffineTransform3D getCurrent( final long time )
-	{
-		setTime( time );
-		return get( ratioComplete() );
-	}
-
 	public static void extractRotation( final AffineTransform3D transform, final double[] q )
 	{
 		final double[][] m = new double[ 3 ][ 4 ];
@@ -75,10 +69,8 @@ class RotationAnimator extends AbstractAnimator
 		LinAlgHelpers.quaternionFromR( m, q );
 	}
 
-	/**
-	 * @param t from 0 to 1
-	 */
-	private AffineTransform3D get( final double t )
+	@Override
+	protected AffineTransform3D get( final double t )
 	{
 		final AffineTransform3D transform = new AffineTransform3D();
 		transform.set( transformStart );
