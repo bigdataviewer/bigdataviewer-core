@@ -86,6 +86,8 @@ public class SingleImageTest implements PlugIn
 		final int w = imp.getWidth();
 		final int h = imp.getHeight();
 		final int d = imp.getNSlices();
+		final int numTimepoints = imp.getNFrames();
+		final int numSetups = imp.getNChannels();
 
 		// create SourceTransform from the images calibration
 		final AffineTransform3D sourceTransform = new AffineTransform3D();
@@ -104,15 +106,21 @@ public class SingleImageTest implements PlugIn
 				IJ.showProgress( numCompletedTasks, numTasks + 1 );
 			}
 		};
-		CreateCells.createHdf5File( 1, 1, imgLoader, resolutions, subdivisions, hdf5File, progressListener );
+		CreateCells.createHdf5File( numTimepoints, numSetups, imgLoader, resolutions, subdivisions, hdf5File, progressListener );
 
 		// write xml sequence description
-		final ViewSetup[] setups = new ViewSetup[] { new ViewSetup( 0, 0, 0, 0, w, h, d, pw, ph, pd ) };
-		final int[] timepoints = new int[] { 0 };
+		final ViewSetup[] setups = new ViewSetup[ numSetups ];
+		for ( int s = 0; s < numSetups; ++s )
+			setups[ s ] = new ViewSetup( s, 0, 0, s, w, h, d, pw, ph, pd );
+		final int[] timepoints = new int[ numTimepoints ];
+		for ( int t = 0; t < numTimepoints; ++t )
+			timepoints[ t ] = t;
 		final Hdf5ImageLoader hdf5Loader = new Hdf5ImageLoader( hdf5File );
 		final SequenceDescription sequenceDescription = new SequenceDescription( setups, timepoints, seqFile.getParentFile(), hdf5Loader );
 		final ArrayList< ViewRegistration > registrations = new ArrayList< ViewRegistration >();
-		registrations.add( new ViewRegistration( 0, 0, sourceTransform ) );
+		for ( int t = 0; t < numTimepoints; ++t )
+			for ( int s = 0; s < numSetups; ++s )
+				registrations.add( new ViewRegistration( t, s, sourceTransform ) );
 		final ViewRegistrations viewRegistrations = new ViewRegistrations( registrations, 0 );
 		try
 		{

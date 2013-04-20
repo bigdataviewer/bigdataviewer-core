@@ -15,6 +15,7 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.view.Views;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
@@ -65,10 +66,19 @@ public class ImagePlusImgLoader< T extends RealType< T > > implements ImgLoader
 
 	protected final double impMax;
 
+	protected final boolean isMultiChannel;
+
+	protected final int channelDim;
+
+	protected final boolean isMultiFrame;
+
+	protected final int frameDim;
+
 	protected ImagePlusImgLoader( final ImagePlus imp, final RandomAccessibleInterval< T > wrappedImp, final T type, final MinMaxOption minMaxOption, final double min, final double max )
 	{
 		this.imp = imp;
 		this.wrappedImp = wrappedImp;
+
 		if ( minMaxOption == MinMaxOption.COMPUTE )
 		{
 			final T minT = type.createVariable();
@@ -76,16 +86,37 @@ public class ImagePlusImgLoader< T extends RealType< T > > implements ImgLoader
 			ComputeMinMax.computeMinMax( wrappedImp, minT, maxT );
 			impMin = minT.getRealDouble();
 			impMax = maxT.getRealDouble();
+			System.out.println( "COMPUTE" );
+			System.out.println( impMin + "  " + impMax );
 		}
 		else if ( minMaxOption == MinMaxOption.TAKE_FROM_IMAGEPROCESSOR )
 		{
-			this.impMin = imp.getDisplayRangeMin();
-			this.impMax = imp.getDisplayRangeMax();
+			impMin = imp.getDisplayRangeMin();
+			impMax = imp.getDisplayRangeMax();
+			System.out.println( "TAKE_FROM_IMAGEPROCESSOR" );
+			System.out.println( impMin + "  " + impMax );
 		}
 		else
 		{
-			this.impMin = min;
-			this.impMax = max;
+			impMin = min;
+			impMax = max;
+			System.out.println( "SET" );
+			System.out.println( impMin + "  " + impMax );
+		}
+
+		if ( imp.getNDimensions() <= 3 )
+		{
+			isMultiChannel = false;
+			channelDim = 0;
+			isMultiFrame = false;
+			frameDim = 0;
+		}
+		else
+		{
+			isMultiChannel = imp.getNChannels() > 1;
+			channelDim = isMultiChannel ? 2 : 0;
+			isMultiFrame = imp.getNFrames() > 1;
+			frameDim = isMultiFrame ? ( isMultiChannel ? 4 : 3 ) : 0;
 		}
 	}
 
@@ -118,6 +149,17 @@ public class ImagePlusImgLoader< T extends RealType< T > > implements ImgLoader
 	@Override
 	public RandomAccessibleInterval< UnsignedShortType > getUnsignedShortImage( final View view )
 	{
-		return Converters.convert( wrappedImp, new RealUnsignedShortConverter< T >( impMin, impMax ), new UnsignedShortType() );
+		RandomAccessibleInterval< T > img = wrappedImp;
+		if ( isMultiFrame )
+		{
+			final int frame = view.getTimepointIndex();
+			img = Views.hyperSlice( img, frameDim, frame );
+		}
+		if ( isMultiChannel )
+		{
+			final int channel = view.getSetupIndex();
+			img = Views.hyperSlice( img, channelDim, channel );
+		}
+		return Converters.convert( img, new RealUnsignedShortConverter< T >( impMin, impMax ), new UnsignedShortType() );
 	}
 }
