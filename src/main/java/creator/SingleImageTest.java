@@ -4,8 +4,14 @@ import fiji.util.gui.GenericDialogPlus;
 import ij.IJ;
 import ij.ImagePlus;
 import ij.WindowManager;
+import ij.gui.DialogListener;
+import ij.gui.GenericDialog;
 import ij.plugin.PlugIn;
 
+import java.awt.AWTEvent;
+import java.awt.Choice;
+import java.awt.TextField;
+import java.awt.event.ItemEvent;
 import java.io.File;
 import java.util.ArrayList;
 
@@ -63,6 +69,8 @@ public class SingleImageTest implements PlugIn
 
 		// show dialog to get output paths, resolutions, subdivisions, min-max option
 		final Parameters params = getParameters( imp.getDisplayRangeMin(), imp.getDisplayRangeMax() );
+		if ( params == null )
+			return;
 
 		// create ImgLoader wrapping the image
 		final ImgLoader imgLoader;
@@ -193,14 +201,36 @@ public class SingleImageTest implements PlugIn
 			gd.addMessage( "" );
 			final String[] minMaxChoices = new String[] { "Use ImageJ's current min/max setting", "Compute min/max of the (hyper-)stack", "Use values specified below" };
 			gd.addChoice( "Value range", minMaxChoices, minMaxChoices[ lastMinMaxChoice ] );
+			final Choice cMinMaxChoices = (Choice) gd.getChoices().lastElement();
 			gd.addNumericField( "Min", lastMin, 0 );
+			final TextField tfMin = (TextField) gd.getNumericFields().lastElement();
 			gd.addNumericField( "Max", lastMax, 0 );
+			final TextField tfMax = (TextField) gd.getNumericFields().lastElement();
 			gd.addMessage( "" );
 			PluginHelper.addSaveAsFileField( gd, "Export path", lastExportPath, 25 );
 
 //			gd.addMessage( "" );
 //			gd.addMessage( "This Plugin is developed by Tobias Pietzsch (pietzsch@mpi-cbg.de)\n" );
 //			Bead_Registration.addHyperLinkListener( ( MultiLineLabel ) gd.getMessage(), "mailto:pietzsch@mpi-cbg.de" );
+
+			gd.addDialogListener( new DialogListener()
+			{
+				@Override
+				public boolean dialogItemChanged( final GenericDialog dialog, final AWTEvent e )
+				{
+					if ( e instanceof ItemEvent && e.getID() == ItemEvent.ITEM_STATE_CHANGED && e.getSource() == cMinMaxChoices )
+					{
+						final boolean enable = cMinMaxChoices.getSelectedIndex() == 2;
+						tfMin.setEnabled( enable );
+						tfMax.setEnabled( enable );
+					}
+					return true;
+				}
+			} );
+
+			final boolean enable = lastMinMaxChoice == 2;
+			tfMin.setEnabled( enable );
+			tfMax.setEnabled( enable );
 
 			gd.showDialog();
 			if ( gd.wasCanceled() )
