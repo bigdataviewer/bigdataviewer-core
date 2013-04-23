@@ -37,6 +37,12 @@ public class HuiskenImageLoader implements ImgLoader
 		exp = null;
 	}
 
+	public HuiskenImageLoader( final File file )
+	{
+		expFile = file;
+		exp = null;
+	}
+
 	@Override
 	public void init( final Element elem, final File basePath )
 	{

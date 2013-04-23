@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 
+import mpicbg.spim.data.ImgLoader;
 import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.ViewRegistration;
 import mpicbg.spim.data.ViewRegistrations;
@@ -15,6 +16,7 @@ import mpicbg.spim.registration.ViewDataBeads;
 import mpicbg.spim.registration.ViewStructure;
 import mpicbg.spim.registration.bead.BeadRegistration;
 import net.imglib2.realtransform.AffineTransform3D;
+import creator.spim.imgloader.HuiskenImageLoader;
 import creator.spim.imgloader.StackImageLoader;
 
 public class SpimSequence
@@ -26,7 +28,7 @@ public class SpimSequence
 	public SpimSequence( final SPIMConfiguration conf )
 	{
 		final ArrayList< ViewSetup > setups = createViewSetups( conf );
-		final StackImageLoader imgLoader = createImageLoader( conf, setups );
+		final ImgLoader imgLoader = createImageLoader( conf, setups );
 
 		viewRegistrations = createViewRegistrations( conf, setups );
 		sequenceDescription = new SequenceDescription( setups.toArray( new ViewSetup[ 0 ] ), conf.timepoints, new File( conf.inputdirectory ), imgLoader );
@@ -47,7 +49,7 @@ public class SpimSequence
 		return viewRegistrations;
 	}
 
-	protected static StackImageLoader createImageLoader( final SPIMConfiguration conf, final ArrayList< ViewSetup > setups )
+	protected static ImgLoader createImageLoader( final SPIMConfiguration conf, final ArrayList< ViewSetup > setups )
 	{
 		final int numTimepoints = conf.timepoints.length;
 		final int numSetups = setups.size();
@@ -68,8 +70,16 @@ public class SpimSequence
 				filenames[ timepoint * numSetups + setup ] = viewDataBeads.getFileName();
 			}
 		}
-		final boolean useImageJOpener = conf.inputFilePattern.endsWith( ".tif" );
-		return new StackImageLoader( Arrays.asList( filenames ), numSetups, useImageJOpener );
+		if ( conf.isHuiskenFormat() )
+		{
+			final String exp = conf.inputdirectory.endsWith( "/" ) ? conf.inputdirectory.substring( 0, conf.inputdirectory.length() - 1 ) : conf.inputdirectory;
+			return new HuiskenImageLoader( new File( exp + ".xml" ) );
+		}
+		else
+		{
+			final boolean useImageJOpener = conf.inputFilePattern.endsWith( ".tif" );
+			return new StackImageLoader( Arrays.asList( filenames ), numSetups, useImageJOpener );
+		}
 	}
 
 	/**
@@ -143,7 +153,10 @@ public class SpimSequence
 			{
 				// load time-point registration (to map into the global
 				// coordinate system)
-				viewDataBeads.loadRegistrationTimePoint( conf.referenceTimePoint );
+				if ( conf.timeLapseRegistration )
+					viewDataBeads.loadRegistrationTimePoint( conf.referenceTimePoint );
+				else
+					viewDataBeads.loadRegistration();
 
 				// apply the z-scaling to the transformation
 				BeadRegistration.concatenateAxialScaling( viewDataBeads, viewStructure.getDebugLevel() );
