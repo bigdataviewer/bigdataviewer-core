@@ -19,13 +19,13 @@ import net.imglib2.realtransform.AffineTransform3D;
 import creator.spim.imgloader.HuiskenImageLoader;
 import creator.spim.imgloader.StackImageLoader;
 
-public class SpimSequence
+public class SpimRegistrationSequence
 {
 	private final SequenceDescription sequenceDescription;
 
 	private final ViewRegistrations viewRegistrations;
 
-	public SpimSequence( final SPIMConfiguration conf )
+	public SpimRegistrationSequence( final SPIMConfiguration conf )
 	{
 		final ArrayList< ViewSetup > setups = createViewSetups( conf );
 		final ImgLoader imgLoader = createImageLoader( conf, setups );
@@ -34,7 +34,7 @@ public class SpimSequence
 		sequenceDescription = new SequenceDescription( setups.toArray( new ViewSetup[ 0 ] ), conf.timepoints, new File( conf.inputdirectory ), imgLoader );
 	}
 
-	public SpimSequence( final String inputDirectory, final String inputFilePattern, final String angles, final String timepoints, final int referenceTimePoint, final boolean overrideImageZStretching, final double zStretching ) throws ConfigurationParserException
+	public SpimRegistrationSequence( final String inputDirectory, final String inputFilePattern, final String angles, final String timepoints, final int referenceTimePoint, final boolean overrideImageZStretching, final double zStretching ) throws ConfigurationParserException
 	{
 		this( initExperimentConfiguration( inputDirectory, inputFilePattern, angles, timepoints, referenceTimePoint, overrideImageZStretching, zStretching ) );
 	}
@@ -217,7 +217,7 @@ public class SpimSequence
 		final double zStretching = 9.30232558139535;
 
 		try {
-			final SpimSequence lsmseq = new SpimSequence( inputDirectory, inputFilePattern, angles, timepoints, referenceTimePoint, overrideImageZStretching, zStretching );
+			final SpimRegistrationSequence lsmseq = new SpimRegistrationSequence( inputDirectory, inputFilePattern, angles, timepoints, referenceTimePoint, overrideImageZStretching, zStretching );
 		}
 		catch ( final ConfigurationParserException e )
 		{

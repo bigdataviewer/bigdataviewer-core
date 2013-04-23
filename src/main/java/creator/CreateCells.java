@@ -40,7 +40,7 @@ import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.HDF5IntStorageFeatures;
 import ch.systemsx.cisd.hdf5.IHDF5Writer;
 import creator.old.FileSequenceImageLoader;
-import creator.spim.SpimSequence;
+import creator.spim.SpimRegistrationSequence;
 
 public class CreateCells
 {
@@ -72,7 +72,7 @@ public class CreateCells
 		final double min = 0;
 		final double max = 2;
 
-		final SpimSequence lsmseq = new SpimSequence( inputDirectory, inputFilePattern, angles, timepoints, referenceTimePoint, overrideImageZStretching, zStretching );
+		final SpimRegistrationSequence lsmseq = new SpimRegistrationSequence( inputDirectory, inputFilePattern, angles, timepoints, referenceTimePoint, overrideImageZStretching, zStretching );
 		final SequenceDescription lsmdesc = lsmseq.getSequenceDescription();
 
 		final ImgLoader sequenceLoader = new FileSequenceImageLoader( filepath, filepattern, numSlices, min, max );

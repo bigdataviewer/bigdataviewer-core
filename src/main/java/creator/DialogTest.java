@@ -28,7 +28,7 @@ import mpicbg.spim.registration.ViewStructure;
 import spimopener.SPIMExperiment;
 import viewer.hdf5.Hdf5ImageLoader;
 import creator.CreateCells.ProgressListener;
-import creator.spim.SpimSequence;
+import creator.spim.SpimRegistrationSequence;
 
 public class DialogTest implements PlugIn
 {
@@ -41,7 +41,7 @@ public class DialogTest implements PlugIn
 		if ( params == null )
 			return;
 
-		final SpimSequence sequence = new SpimSequence( params.conf );
+		final SpimRegistrationSequence sequence = new SpimRegistrationSequence( params.conf );
 		final SequenceDescription desc = sequence.getSequenceDescription();
 		CreateCells.createHdf5File( desc, params.perSetupResolutions, params.perSetupSubdivisions, params.hdf5File, new ProgressListener()
 		{
@@ -391,6 +391,7 @@ public class DialogTest implements PlugIn
 		final String defaultCellSizes = "{64,64,16}, {32,32,16}, {8,8,8}";
 
 		final ViewStructure viewStructure = ViewStructure.initViewStructure( conf, 0, new mpicbg.models.AffineModel3D(), "ViewStructure Timepoint " + conf.timepoints[ 0 ], conf.debugLevelInt );
+//		Checkbox cbUseForAll = null;
 		for ( final ViewDataBeads viewDataBeads : viewStructure.getViews() )
 		{
 			final int angle = viewDataBeads.getAcqusitionAngle();
@@ -401,6 +402,11 @@ public class DialogTest implements PlugIn
 			gd2.addMessage( "Mip-map for angle " + angle + ", channel " + channel + ", illumination direction " + illumination );
 			gd2.addStringField( "Subsampling factors", defaultMipmapResolutions, 25 );
 			gd2.addStringField( "Hdf5 chunk sizes", defaultCellSizes, 25 );
+//			if ( cbUseForAll == null )
+//			{
+//				gd2.addCheckbox( "use for all views", true );
+//				cbUseForAll = (Checkbox) gd2.getCheckboxes().lastElement();
+//			}
 		}
 
 		gd2.addMessage( "" );
