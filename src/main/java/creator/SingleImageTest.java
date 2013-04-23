@@ -175,11 +175,11 @@ public class SingleImageTest implements PlugIn
 
 	static String lastChunkSizes = "{32,32,4}, {16,16,8}, {8,8,8}";
 
-	static int lastMinMaxChoice = 0;
+	static int lastMinMaxChoice = 2;
 
 	static double lastMin = 0;
 
-	static double lastMax = 0;
+	static double lastMax = 65535;
 
 	static String lastExportPath = "./export.xml";
 
