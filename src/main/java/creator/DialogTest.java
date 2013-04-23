@@ -43,7 +43,7 @@ public class DialogTest implements PlugIn
 
 		final SpimSequence sequence = new SpimSequence( params.conf );
 		final SequenceDescription desc = sequence.getSequenceDescription();
-		CreateCells.createHdf5File( desc, params.hdf5File, params.perSetupResolutions.get( 0 ), params.perSetupSubdivisions.get( 0 ), new ProgressListener()
+		CreateCells.createHdf5File( desc, params.perSetupResolutions, params.perSetupSubdivisions, params.hdf5File, new ProgressListener()
 		{
 			@Override
 			public void updateProgress( final int numCompletedTasks, final int numTasks )
@@ -52,7 +52,7 @@ public class DialogTest implements PlugIn
 			}
 		} );
 
-		final Hdf5ImageLoader loader = new Hdf5ImageLoader( params.hdf5File );
+		final Hdf5ImageLoader loader = new Hdf5ImageLoader( params.hdf5File, false );
 		final SequenceDescription sequenceDescription = new SequenceDescription( desc.setups, desc.timepoints, params.seqFile.getParentFile(), loader );
 		final ViewRegistrations viewRegistrations = sequence.getViewRegistrations();
 		try
@@ -458,11 +458,8 @@ public class DialogTest implements PlugIn
 			conf.registrationAssignmentForFusion[ c ] = registrationAssignment[ c ][ 1 ];
 		}
 
-		if ( tp >= 0 )
-		{
-			conf.timeLapseRegistration = true;
-			conf.referenceTimePoint = tp;
-		}
+		conf.timeLapseRegistration = ( tp >= 0 );
+		conf.referenceTimePoint = tp;
 
 		IOFunctions.println( "tp " + tp );
 

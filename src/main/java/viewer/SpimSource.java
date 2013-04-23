@@ -54,7 +54,7 @@ public class SpimSource implements Source< UnsignedShortType >
 		final SequenceDescription seq = loader.getSequenceDescription();
 		imgLoader = ( Hdf5ImageLoader ) seq.imgLoader;
 		numTimepoints = seq.numTimepoints();
-		numMipmapLevels = imgLoader.numMipmapLevels();
+		numMipmapLevels = imgLoader.numMipmapLevels( setup );
 		currentSources = new RandomAccessibleInterval[ numMipmapLevels ];
 		currentInterpolatedSources = new RealRandomAccessible[ numMipmapLevels ][ 2 ];
 		currentSourceTransforms = new AffineTransform3D[ numMipmapLevels ];
@@ -78,7 +78,7 @@ public class SpimSource implements Source< UnsignedShortType >
 			final AffineTransform3D mipmapTransform = new AffineTransform3D();
 			for ( int level = 0; level < currentSources.length; level++ )
 			{
-				final double[] resolution = imgLoader.getMipmapResolutions()[ level ];
+				final double[] resolution = imgLoader.getMipmapResolutions( setup )[ level ];
 				for ( int d = 0; d < 3; ++d )
 				{
 					mipmapTransform.set( resolution[ d ], d, d );
