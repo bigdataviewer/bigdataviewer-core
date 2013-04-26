@@ -8,6 +8,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
+import java.net.URL;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -24,7 +25,19 @@ public class HelpFrame
 {
 	private static JFrame frame = null;
 
+	/**
+	 * Instantiates and displays a JFrame that lists the help file for the SPIM viewer UI.   
+	 */
 	public HelpFrame()
+	{
+		this( HelpFrame.class.getResource( "Help.html" ) );
+	}
+	
+	/**
+	 * Instantiates and displays a JFrame that lists the content of a html file
+	 * specified by its {@link URL}.   
+	 */
+	public HelpFrame(URL helpFile)
 	{
 		if ( frame != null )
 			frame.toFront();
@@ -33,7 +46,7 @@ public class HelpFrame
 			try
 			{
 				frame = new JFrame( "Help" );
-				final JEditorPane editorPane = new JEditorPane( new HelpFrame().getClass().getResource( "Help.html" ) );
+				final JEditorPane editorPane = new JEditorPane( helpFile );
 				editorPane.setEditable( false );
 				editorPane.setBorder( BorderFactory.createEmptyBorder( 10, 0, 10, 10 ) );
 
