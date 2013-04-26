@@ -21,7 +21,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 /**
- * This {@link ImgLoader} implementations returns a wrapped, converted
+ * This {@link ImgLoader} implementation returns a wrapped, converted
  * {@link ImagePlus}. It is used for exporting {@link ImagePlus} to hdf5. Only
  * the {@link #getUnsignedShortImage(View)} method is implemented because this
  * is the only method required for exporting to hdf5.
@@ -126,6 +126,7 @@ public class ImagePlusImgLoader< T extends RealType< T > > implements ImgLoader
 	@Override
 	public void init( final Element elem, final File basePath )
 	{
+		throw new UnsupportedOperationException( "not implemented" );
 	}
 
 	/**
@@ -134,7 +135,7 @@ public class ImagePlusImgLoader< T extends RealType< T > > implements ImgLoader
 	@Override
 	public Element toXml( final Document doc, final File basePath )
 	{
-		return null;
+		throw new UnsupportedOperationException( "not implemented" );
 	}
 
 	/**
@@ -143,7 +144,7 @@ public class ImagePlusImgLoader< T extends RealType< T > > implements ImgLoader
 	@Override
 	public RandomAccessibleInterval< FloatType > getImage( final View view )
 	{
-		return null;
+		throw new UnsupportedOperationException( "not implemented" );
 	}
 
 	@Override
