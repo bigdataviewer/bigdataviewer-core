@@ -114,12 +114,12 @@ public class SingleImageTest implements PlugIn
 				IJ.showProgress( numCompletedTasks, numTasks + 1 );
 			}
 		};
-		final ViewSetup[] setups = new ViewSetup[ numSetups ];
+		final ArrayList< ViewSetup > setups = new ArrayList< ViewSetup >( numSetups );
 		for ( int s = 0; s < numSetups; ++s )
-			setups[ s ] = new ViewSetup( s, 0, 0, s, w, h, d, pw, ph, pd );
-		final int[] timepoints = new int[ numTimepoints ];
+			setups.add( new ViewSetup( s, 0, 0, s, w, h, d, pw, ph, pd ) );
+		final ArrayList< Integer > timepoints = new ArrayList< Integer >( numTimepoints );
 		for ( int t = 0; t < numTimepoints; ++t )
-			timepoints[ t ] = t;
+			timepoints.add( t );
 		CreateCells.createHdf5File( new SequenceDescription( setups, timepoints, null, imgLoader ), resolutions, subdivisions, hdf5File, progressListener );
 
 		// write xml sequence description

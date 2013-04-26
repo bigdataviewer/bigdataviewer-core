@@ -5,6 +5,8 @@ import static viewer.hdf5.Util.reorder;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -77,7 +79,7 @@ public class CreateCells
 
 		final ImgLoader sequenceLoader = new FileSequenceImageLoader( filepath, filepattern, numSlices, min, max );
 
-		final ViewSetup[] setups = new ViewSetup[] { new ViewSetup( 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 ) };
+		final List< ViewSetup > setups = Arrays.asList( new ViewSetup( 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 ) );
 		final SequenceDescription desc = new SequenceDescription( setups, lsmdesc.timepoints, lsmdesc.getBasePath(), sequenceLoader );
 
 		final File seqFile = new File( "/Users/tobias/Desktop/openspim-deconvolved.xml" );

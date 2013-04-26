@@ -16,6 +16,7 @@ import mpicbg.spim.registration.ViewDataBeads;
 import mpicbg.spim.registration.ViewStructure;
 import mpicbg.spim.registration.bead.BeadRegistration;
 import net.imglib2.realtransform.AffineTransform3D;
+import spimopener.SPIMExperiment;
 import creator.spim.imgloader.HuiskenImageLoader;
 import creator.spim.imgloader.StackImageLoader;
 
@@ -31,7 +32,12 @@ public class SpimRegistrationSequence
 		final ImgLoader imgLoader = createImageLoader( conf, setups );
 
 		viewRegistrations = createViewRegistrations( conf, setups );
-		sequenceDescription = new SequenceDescription( setups.toArray( new ViewSetup[ 0 ] ), conf.timepoints, new File( conf.inputdirectory ), imgLoader );
+		sequenceDescription = new SequenceDescription( setups, makeList( conf.timepoints ), new File( conf.inputdirectory ), imgLoader );
+	}
+
+	public SpimRegistrationSequence( final String huiskenExperimentXmlFile, final String angles, final String timepoints, final int referenceTimePoint ) throws ConfigurationParserException
+	{
+		this( initExperimentConfiguration( huiskenExperimentXmlFile, "", angles, timepoints, referenceTimePoint, false, 0 ) );
 	}
 
 	public SpimRegistrationSequence( final String inputDirectory, final String inputFilePattern, final String angles, final String timepoints, final int referenceTimePoint, final boolean overrideImageZStretching, final double zStretching ) throws ConfigurationParserException
@@ -95,7 +101,17 @@ public class SpimRegistrationSequence
 		conf.channelsToFuse = "";
 		conf.anglePattern = angles;
 
-		conf.inputdirectory = inputDirectory;
+		final File f = new File( inputDirectory );
+		if ( f.exists() && f.isFile() && f.getName().endsWith( ".xml" ) )
+		{
+			conf.spimExperiment = new SPIMExperiment( f.getAbsolutePath() );
+			conf.inputdirectory = f.getAbsolutePath().substring( 0, f.getAbsolutePath().length() - 4 );
+		}
+		else
+		{
+			conf.inputdirectory = inputDirectory;
+		}
+
 		conf.inputFilePattern = inputFilePattern;
 
 		if ( referenceTimePoint >= 0 )
@@ -105,7 +121,6 @@ public class SpimRegistrationSequence
 		// check the directory string
 		conf.inputdirectory = conf.inputdirectory.replace( '\\', '/' );
 		conf.inputdirectory = conf.inputdirectory.replaceAll( "//", "/" );
-
 		conf.outputdirectory = conf.inputdirectory + "output/";
 		conf.registrationFiledirectory = conf.inputdirectory + "registration/";
 
@@ -180,6 +195,14 @@ public class SpimRegistrationSequence
 		}
 
 		return new ViewRegistrations( regs, conf.referenceTimePoint );
+	}
+
+	protected static ArrayList< Integer > makeList( final int[] ints )
+	{
+		final ArrayList< Integer > list = new ArrayList< Integer >( ints.length );
+		for ( final int i : ints )
+			list.add( i );
+		return list;
 	}
 
 	/**
