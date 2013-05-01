@@ -20,7 +20,7 @@ public class GuiHelpers
 	 * @param colorModel
 	 * @return
 	 */
-	static final GraphicsConfiguration getSuitableGraphicsConfiguration( final ColorModel colorModel )
+	public static final GraphicsConfiguration getSuitableGraphicsConfiguration( final ColorModel colorModel )
 	{
 		final GraphicsDevice device = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice();
 		final GraphicsConfiguration defaultGc = device.getDefaultConfiguration();
@@ -42,7 +42,7 @@ public class GuiHelpers
 	 */
 	static final boolean discardAlpha = true;
 
-	static final ColorModel RGB_COLOR_MODEL = new DirectColorModel(24, 0xff0000, 0xff00, 0xff);
+	public static final ColorModel RGB_COLOR_MODEL = new DirectColorModel(24, 0xff0000, 0xff00, 0xff);
 
 	/**
 	 * @param screenImage
