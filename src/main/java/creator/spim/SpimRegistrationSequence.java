@@ -105,7 +105,7 @@ public class SpimRegistrationSequence
 		if ( f.exists() && f.isFile() && f.getName().endsWith( ".xml" ) )
 		{
 			conf.spimExperiment = new SPIMExperiment( f.getAbsolutePath() );
-			conf.inputdirectory = f.getAbsolutePath().substring( 0, f.getAbsolutePath().length() - 4 );
+			conf.inputdirectory = f.getAbsolutePath().substring( 0, f.getAbsolutePath().length() - 4 ) + "/";
 		}
 		else
 		{
@@ -121,13 +121,20 @@ public class SpimRegistrationSequence
 		// check the directory string
 		conf.inputdirectory = conf.inputdirectory.replace( '\\', '/' );
 		conf.inputdirectory = conf.inputdirectory.replaceAll( "//", "/" );
+		conf.inputdirectory = conf.inputdirectory.trim();
+		if (conf.inputdirectory.length() > 0 && !conf.inputdirectory.endsWith("/"))
+			conf.inputdirectory = conf.inputdirectory + "/";
+
 		conf.outputdirectory = conf.inputdirectory + "output/";
 		conf.registrationFiledirectory = conf.inputdirectory + "registration/";
 
 		conf.overrideImageZStretching = overrideImageZStretching;
 		conf.zStretching = zStretching;
 
-		conf.getFileNames();
+		if ( conf.isHuiskenFormat() )
+			conf.getFilenamesHuisken();
+		else
+			conf.getFileNames();
 
 		return conf;
 	}
