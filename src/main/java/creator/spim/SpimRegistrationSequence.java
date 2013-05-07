@@ -5,16 +5,21 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 
+import javax.vecmath.Point3f;
+
 import mpicbg.spim.data.ImgLoader;
 import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.ViewRegistration;
 import mpicbg.spim.data.ViewRegistrations;
 import mpicbg.spim.data.ViewSetup;
+import mpicbg.spim.fusion.SPIMImageFusion;
 import mpicbg.spim.io.ConfigurationParserException;
 import mpicbg.spim.io.SPIMConfiguration;
 import mpicbg.spim.registration.ViewDataBeads;
 import mpicbg.spim.registration.ViewStructure;
 import mpicbg.spim.registration.bead.BeadRegistration;
+import net.imglib2.FinalRealInterval;
+import net.imglib2.RealInterval;
 import net.imglib2.realtransform.AffineTransform3D;
 import spimopener.SPIMExperiment;
 import creator.spim.imgloader.HuiskenImageLoader;
@@ -26,8 +31,11 @@ public class SpimRegistrationSequence
 
 	private final ViewRegistrations viewRegistrations;
 
+	private final SPIMConfiguration conf;
+
 	public SpimRegistrationSequence( final SPIMConfiguration conf )
 	{
+		this.conf = conf;
 		final ArrayList< ViewSetup > setups = createViewSetups( conf );
 		final ImgLoader imgLoader = createImageLoader( conf, setups );
 
@@ -157,6 +165,71 @@ public class SpimRegistrationSequence
 					setups.add( new ViewSetup( setup_id++, conf.angles[ angleIndex ], conf.illuminations[ illuminationIndex ], conf.channels[ channelIndex ], width, height, depth, pixelWidth, pixelHeight, pixelDepth ) );
 				}
 		return setups;
+	}
+
+	public AffineTransform3D getFusionTransform( final int cropOffsetX, final int cropOffsetY, final int cropOffsetZ, final int scale )
+	{
+		conf.cropOffsetX = cropOffsetX;
+		conf.cropOffsetY = cropOffsetY;
+		conf.cropOffsetZ = cropOffsetZ;
+		conf.scale = scale;
+		final RealInterval interval = getFusionBoundingBox( conf );
+		final double tx = interval.realMin( 0 );
+		final double ty = interval.realMin( 1 );
+		final double tz = interval.realMin( 2 );
+		final double s = 1.0 / scale;
+		System.out.println( "tx = " + tx + " ty = " + ty + " tz = " + tz + " scale = " + scale );
+		final AffineTransform3D transform = new AffineTransform3D();
+		transform.set( s, 0, 0, tx, 0, s, 0, ty, 0, 0, s, tz );
+		return transform;
+	}
+
+	protected static RealInterval getFusionBoundingBox( final SPIMConfiguration conf )
+	{
+			final Point3f min = new Point3f();
+			final Point3f max = new Point3f();
+			final Point3f size = new Point3f();
+
+			@SuppressWarnings( "unchecked" )
+			final ViewStructure reference = ViewStructure.initViewStructure( conf, conf.getTimePointIndex( conf.referenceTimePoint ), conf.getModel(), "Reference ViewStructure Timepoint " + conf.referenceTimePoint, conf.debugLevelInt );
+			for ( final ViewDataBeads viewDataBeads : reference.getViews() )
+			{
+				// coordinate system)
+				if ( conf.timeLapseRegistration )
+					viewDataBeads.loadRegistrationTimePoint( conf.referenceTimePoint );
+				else
+					viewDataBeads.loadRegistration();
+
+				// apply the z-scaling to the transformation
+				BeadRegistration.concatenateAxialScaling( viewDataBeads, reference.getDebugLevel() );
+			}
+			SPIMImageFusion.computeImageSize( reference.getViews(), min, max, size, conf.scale, conf.cropSizeX, conf.cropSizeY, conf.cropSizeZ, reference.getDebugLevel() );
+
+			final int scale = conf.scale;
+			final int cropOffsetX = conf.cropOffsetX/scale;
+			final int cropOffsetY = conf.cropOffsetY/scale;
+			final int cropOffsetZ = conf.cropOffsetZ/scale;
+			final int imgW;
+			final int imgH;
+			final int imgD;
+
+			if (conf.cropSizeX == 0)
+				imgW = (Math.round((float)Math.ceil(size.x)) + 1)/scale;
+			else
+				imgW = conf.cropSizeX/scale;
+
+			if (conf.cropSizeY == 0)
+				imgH = (Math.round((float)Math.ceil(size.y)) + 1)/scale;
+			else
+				imgH = conf.cropSizeY/scale;
+
+			if (conf.cropSizeZ == 0)
+				imgD = (Math.round((float)Math.ceil(size.z)) + 1)/scale;
+			else
+				imgD = conf.cropSizeZ/scale;
+
+			// TODO: this should be a RealInterval
+			return FinalRealInterval.createMinSize( ( int ) min.x + cropOffsetX, (int ) min.y + cropOffsetY, ( int ) min.z + cropOffsetZ, imgW, imgH, imgD );
 	}
 
 	protected static ViewRegistrations createViewRegistrations( final SPIMConfiguration conf, final ArrayList< ViewSetup > setups )
