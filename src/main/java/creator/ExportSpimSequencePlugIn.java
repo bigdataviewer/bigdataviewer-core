@@ -27,10 +27,10 @@ import mpicbg.spim.registration.ViewDataBeads;
 import mpicbg.spim.registration.ViewStructure;
 import spimopener.SPIMExperiment;
 import viewer.hdf5.Hdf5ImageLoader;
-import creator.CreateCells.ProgressListener;
+import creator.WriteSequenceToHdf5.ProgressListener;
 import creator.spim.SpimRegistrationSequence;
 
-public class DialogTest implements PlugIn
+public class ExportSpimSequencePlugIn implements PlugIn
 {
 	@Override
 	public void run( final String arg0 )
@@ -43,7 +43,7 @@ public class DialogTest implements PlugIn
 
 		final SpimRegistrationSequence sequence = new SpimRegistrationSequence( params.conf );
 		final SequenceDescription desc = sequence.getSequenceDescription();
-		CreateCells.createHdf5File( desc, params.perSetupResolutions, params.perSetupSubdivisions, params.hdf5File, new ProgressListener()
+		WriteSequenceToHdf5.createHdf5File( desc, params.perSetupResolutions, params.perSetupSubdivisions, params.hdf5File, new ProgressListener()
 		{
 			@Override
 			public void updateProgress( final int numCompletedTasks, final int numTasks )
@@ -580,7 +580,7 @@ public class DialogTest implements PlugIn
 	public static void main(final String[] args)
 	{
 		// set the plugins.dir property to make the plugin appear in the Plugins menu
-		final Class<?> clazz = DialogTest.class;
+		final Class<?> clazz = ExportSpimSequencePlugIn.class;
 		final String url = clazz.getResource("/" + clazz.getName().replace('.', '/') + ".class").toString();
 		final String pluginsDir = url.substring(5, url.length() - clazz.getName().length() - 6);
 		System.setProperty("plugins.dir", pluginsDir);

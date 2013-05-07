@@ -22,7 +22,7 @@ import mpicbg.spim.data.ViewRegistrations;
 import mpicbg.spim.data.ViewSetup;
 import net.imglib2.realtransform.AffineTransform3D;
 import viewer.hdf5.Hdf5ImageLoader;
-import creator.CreateCells.ProgressListener;
+import creator.WriteSequenceToHdf5.ProgressListener;
 import creator.ij.ImagePlusImgLoader;
 import creator.ij.ImagePlusImgLoader.MinMaxOption;
 
@@ -31,7 +31,7 @@ import creator.ij.ImagePlusImgLoader.MinMaxOption;
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
-public class SingleImageTest implements PlugIn
+public class ExportImagePlusPlugIn implements PlugIn
 {
 	@Override
 	public void run( final String arg )
@@ -120,7 +120,7 @@ public class SingleImageTest implements PlugIn
 		final ArrayList< Integer > timepoints = new ArrayList< Integer >( numTimepoints );
 		for ( int t = 0; t < numTimepoints; ++t )
 			timepoints.add( t );
-		CreateCells.createHdf5File( new SequenceDescription( setups, timepoints, null, imgLoader ), resolutions, subdivisions, hdf5File, progressListener );
+		WriteSequenceToHdf5.createHdf5File( new SequenceDescription( setups, timepoints, null, imgLoader ), resolutions, subdivisions, hdf5File, progressListener );
 
 		// write xml sequence description
 		final Hdf5ImageLoader hdf5Loader = new Hdf5ImageLoader( hdf5File );
