@@ -3,22 +3,11 @@ package creator;
 import static viewer.hdf5.Util.reorder;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactoryConfigurationError;
 
 import mpicbg.spim.data.ImgLoader;
 import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.View;
-import mpicbg.spim.data.ViewRegistration;
-import mpicbg.spim.data.ViewRegistrations;
-import mpicbg.spim.data.ViewSetup;
-import mpicbg.spim.io.ConfigurationParserException;
 import net.imglib2.Cursor;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessible;
@@ -29,22 +18,15 @@ import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.ShortArray;
 import net.imglib2.img.cell.CellImg;
 import net.imglib2.iterator.LocalizingZeroMinIntervalIterator;
-import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.view.Views;
-
-import org.xml.sax.SAXException;
-
-import viewer.hdf5.Hdf5ImageLoader;
 import viewer.hdf5.Util;
 import ch.systemsx.cisd.base.mdarray.MDShortArray;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.HDF5IntStorageFeatures;
 import ch.systemsx.cisd.hdf5.IHDF5Writer;
-import creator.old.FileSequenceImageLoader;
-import creator.spim.SpimRegistrationSequence;
 
-public class CreateCells
+public class WriteSequenceToHdf5
 {
 	public static class MipMapDefinition
 	{
@@ -55,49 +37,6 @@ public class CreateCells
 	//  mipmap def 2
 		public static final int[][] resolutions = { { 1, 1, 1 }, { 2, 2, 1 }, { 4, 4, 2 } };
 		public static final int[][] subdivisions = { { 32, 32, 4 }, { 16, 16, 8 }, { 8, 8, 8 } };
-	}
-
-	public static void main( final String[] args ) throws InstantiationException, IllegalAccessException, ClassNotFoundException, ParserConfigurationException, SAXException, IOException, ConfigurationParserException, TransformerFactoryConfigurationError, TransformerException
-	{
-		// openspim deconvolved dataset
-		final String inputDirectory = "/Users/tobias/workspace/data/openspim/";
-		final String inputFilePattern = "spim_TL{tt}_Angle{a}.tif";
-		final String angles = "0-4";
-		final String timepoints = "0-2";
-		final int referenceTimePoint = 100;
-		final boolean overrideImageZStretching = true;
-		final double zStretching = 9.30232558139535;
-
-		final String filepath = inputDirectory + "/output/";
-		final String filepattern = "DC(l=0.0060)_t%d_ch0_%03d.tif";
-		final int numSlices = 465;
-		final double min = 0;
-		final double max = 2;
-
-		final SpimRegistrationSequence lsmseq = new SpimRegistrationSequence( inputDirectory, inputFilePattern, angles, timepoints, referenceTimePoint, overrideImageZStretching, zStretching );
-		final SequenceDescription lsmdesc = lsmseq.getSequenceDescription();
-
-		final ImgLoader sequenceLoader = new FileSequenceImageLoader( filepath, filepattern, numSlices, min, max );
-
-		final List< ViewSetup > setups = Arrays.asList( new ViewSetup( 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 ) );
-		final SequenceDescription desc = new SequenceDescription( setups, lsmdesc.timepoints, lsmdesc.getBasePath(), sequenceLoader );
-
-		final File seqFile = new File( "/Users/tobias/Desktop/openspim-deconvolved.xml" );
-		final File hdf5File = new File( "/Users/tobias/Desktop/openspim-deconvolved.h5" );
-
-		final int[][] resolutions = MipMapDefinition.resolutions;
-		final int[][] subdivisions = MipMapDefinition.subdivisions;
-
-		createHdf5File( desc, resolutions, subdivisions, hdf5File );
-
-		final Hdf5ImageLoader loader = new Hdf5ImageLoader( hdf5File );
-		final SequenceDescription sequenceDescription = new SequenceDescription( desc.setups, desc.timepoints, seqFile.getParentFile(), loader );
-		final ArrayList< ViewRegistration > registrations = new ArrayList< ViewRegistration >();
-		final AffineTransform3D transform = new AffineTransform3D();
-		for ( int timepoint = 0; timepoint < desc.numTimepoints(); ++timepoint )
-			registrations.add( new ViewRegistration( timepoint, 0, transform ) );
-		final ViewRegistrations viewRegistrations = new ViewRegistrations( registrations, 0 );
-		WriteSequenceToXml.writeSequenceToXml( sequenceDescription, viewRegistrations, seqFile.getAbsolutePath() );
 	}
 
 	public static interface ProgressListener
