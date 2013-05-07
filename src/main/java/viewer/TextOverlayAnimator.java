@@ -19,7 +19,7 @@ public class TextOverlayAnimator extends AbstractAnimator
 
 	protected final double fadeOutTime;
 
-	static enum TextPosition
+	public static enum TextPosition
 	{
 		CENTER,
 		BOTTOM_RIGHT
