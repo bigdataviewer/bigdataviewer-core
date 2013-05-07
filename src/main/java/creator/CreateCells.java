@@ -5,6 +5,8 @@ import static viewer.hdf5.Util.reorder;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -20,8 +22,8 @@ import mpicbg.spim.io.ConfigurationParserException;
 import net.imglib2.Cursor;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessible;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.Img;
-import net.imglib2.img.ImgPlus;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.ShortArray;
@@ -39,9 +41,8 @@ import ch.systemsx.cisd.base.mdarray.MDShortArray;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.HDF5IntStorageFeatures;
 import ch.systemsx.cisd.hdf5.IHDF5Writer;
-import creator.spim.SpimSequence;
-import creator.spim.WriteSequenceToXml;
-import creator.spim.imgloader.FileSequenceImageLoader;
+import creator.old.FileSequenceImageLoader;
+import creator.spim.SpimRegistrationSequence;
 
 public class CreateCells
 {
@@ -52,13 +53,9 @@ public class CreateCells
 //		public static final int[][] subdivisions = { { 32, 32, 4 }, { 32, 32, 4 }, { 16, 16, 4 } };
 
 	//  mipmap def 2
-//		public static final int[][] resolutions = { { 1, 1, 1 }, { 2, 2, 1 }, { 4, 4, 2 } };
-//		public static final int[][] subdivisions = { { 32, 32, 4 }, { 16, 16, 8 }, { 8, 8, 8 } };
-
-		public static final int[][] resolutions = { { 1, 1, 1 }, { 2, 2, 2 }, { 4, 4, 4 } };
-		public static final int[][] subdivisions = { { 32, 32, 32 }, { 16, 16, 16 }, { 8, 8, 8 } };
+		public static final int[][] resolutions = { { 1, 1, 1 }, { 2, 2, 1 }, { 4, 4, 2 } };
+		public static final int[][] subdivisions = { { 32, 32, 4 }, { 16, 16, 8 }, { 8, 8, 8 } };
 	}
-
 
 	public static void main( final String[] args ) throws InstantiationException, IllegalAccessException, ClassNotFoundException, ParserConfigurationException, SAXException, IOException, ConfigurationParserException, TransformerFactoryConfigurationError, TransformerException
 	{
@@ -77,12 +74,12 @@ public class CreateCells
 		final double min = 0;
 		final double max = 2;
 
-		final SpimSequence lsmseq = new SpimSequence( inputDirectory, inputFilePattern, angles, timepoints, referenceTimePoint, overrideImageZStretching, zStretching );
+		final SpimRegistrationSequence lsmseq = new SpimRegistrationSequence( inputDirectory, inputFilePattern, angles, timepoints, referenceTimePoint, overrideImageZStretching, zStretching );
 		final SequenceDescription lsmdesc = lsmseq.getSequenceDescription();
 
 		final ImgLoader sequenceLoader = new FileSequenceImageLoader( filepath, filepattern, numSlices, min, max );
 
-		final ViewSetup[] setups = new ViewSetup[] { new ViewSetup( 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 ) };
+		final List< ViewSetup > setups = Arrays.asList( new ViewSetup( 0, 0, 0, 0, 0, 0, 0, 1, 1, 1 ) );
 		final SequenceDescription desc = new SequenceDescription( setups, lsmdesc.timepoints, lsmdesc.getBasePath(), sequenceLoader );
 
 		final File seqFile = new File( "/Users/tobias/Desktop/openspim-deconvolved.xml" );
@@ -91,7 +88,7 @@ public class CreateCells
 		final int[][] resolutions = MipMapDefinition.resolutions;
 		final int[][] subdivisions = MipMapDefinition.subdivisions;
 
-		createHdf5File( desc, hdf5File, resolutions, subdivisions );
+		createHdf5File( desc, resolutions, subdivisions, hdf5File );
 
 		final Hdf5ImageLoader loader = new Hdf5ImageLoader( hdf5File );
 		final SequenceDescription sequenceDescription = new SequenceDescription( desc.setups, desc.timepoints, seqFile.getParentFile(), loader );
@@ -103,53 +100,27 @@ public class CreateCells
 		WriteSequenceToXml.writeSequenceToXml( sequenceDescription, viewRegistrations, seqFile.getAbsolutePath() );
 	}
 
-	public static void main2( final String[] args ) throws InstantiationException, IllegalAccessException, ClassNotFoundException, ParserConfigurationException, SAXException, IOException, ConfigurationParserException, TransformerFactoryConfigurationError, TransformerException
-	{
-		// parhyale dataset
-//		final String inputDirectory = "/Users/tobias/workspace/data/parhyale/";
-//		final String inputFilePattern = "spim_TL{tt}_Angle{aaa}.lsm";
-//		final String angles = "150,190,230";
-//		final String timepoints = "71-90";
-//		final int referenceTimePoint = 269;
-//		final boolean overrideImageZStretching = true;
-//		final double zStretching = 5.46448087431694;
-//
-//		final File seqFile = new File( "/Users/tobias/Desktop/parhyale.xml" );
-//		final File hdf5File = new File( "/Users/tobias/Desktop/parhyale.h5" );
-
-		// openspim dataset
-		final String inputDirectory = "/Users/tobias/workspace/data/openspim/";
-		final String inputFilePattern = "spim_TL{tt}_Angle{a}.tif";
-		final String angles = "0-4";
-		final String timepoints = "0-2";
-		final int referenceTimePoint = 100;
-		final boolean overrideImageZStretching = true;
-		final double zStretching = 9.30232558139535;
-
-		final File seqFile = new File( "/Users/tobias/Desktop/openspim.xml" );
-		final File hdf5File = new File( "/Users/tobias/Desktop/openspim.h5" );
-
-		final int[][] resolutions = MipMapDefinition.resolutions;
-		final int[][] subdivisions = MipMapDefinition.subdivisions;
-
-		final SpimSequence lsmseq = new SpimSequence( inputDirectory, inputFilePattern, angles, timepoints, referenceTimePoint, overrideImageZStretching, zStretching );
-		final SequenceDescription desc = lsmseq.getSequenceDescription();
-		createHdf5File( desc, hdf5File, resolutions, subdivisions );
-
-		final Hdf5ImageLoader loader = new Hdf5ImageLoader( hdf5File );
-		final SequenceDescription sequenceDescription = new SequenceDescription( desc.setups, desc.timepoints, seqFile.getParentFile(), loader );
-		final ViewRegistrations viewRegistrations = lsmseq.getViewRegistrations();
-		WriteSequenceToXml.writeSequenceToXml( sequenceDescription, viewRegistrations, seqFile.getAbsolutePath() );
-	}
-
 	public static interface ProgressListener
 	{
 		public void updateProgress( int numCompletedTasks, int numTasks );
 	}
 
-	public static void createHdf5File( final SequenceDescription seq, final File hdf5File, final int[][] resolutions, final int[][] subdivisions )
+	public static void createHdf5File( final SequenceDescription seq, final int[][] resolutions, final int[][] subdivisions, final File hdf5File )
 	{
-		createHdf5File( seq, hdf5File, resolutions, subdivisions, null );
+		createHdf5File( seq, resolutions, subdivisions, hdf5File, null );
+	}
+
+	public static void createHdf5File( final SequenceDescription seq, final int[][] resolutions, final int[][] subdivisions, final File hdf5File, final ProgressListener progressListener )
+	{
+		final int numSetups = seq.numViewSetups();
+		final ArrayList< int[][] > perSetupResolutions = new ArrayList< int[][] >();
+		final ArrayList< int[][] > perSetupSubdivisions = new ArrayList< int[][] >();
+		for ( int setup = 0; setup < numSetups; ++setup )
+		{
+			perSetupResolutions.add( resolutions );
+			perSetupSubdivisions.add( subdivisions );
+		}
+		createHdf5File( seq, perSetupResolutions, perSetupSubdivisions, hdf5File, progressListener );
 	}
 
 	/**
@@ -172,19 +143,37 @@ public class CreateCells
 	 * @param hdf5File
 	 *            hdf5 to which the image data is written
 	 * @param resolutions
-	 *            each int[] element of the array describes one resolution level
+	 *            each int[] element of the array describes one resolution level.
 	 * @param subdivisions
+	 *
+	 *
+	 * TODO:
+	 * @param numTimepoints
+	 * @param numSetups
+	 * @param imgLoader
+	 * @param resolutions
+	 * @param subdivisions
+	 * @param hdf5File
+	 * @param progressListener
 	 */
-	public static void createHdf5File( final SequenceDescription seq, final File hdf5File, final int[][] resolutions, final int[][] subdivisions, final ProgressListener progressListener )
+	public static void createHdf5File( final SequenceDescription seq, final ArrayList< int[][] > perSetupResolutions, final ArrayList< int[][] > perSetupSubdivisions, final File hdf5File, final ProgressListener progressListener )
 	{
 		final int numTimepoints = seq.numTimepoints();
 		final int numSetups = seq.numViewSetups();
-		final int numLevels = resolutions.length;
+		final ImgLoader imgLoader = seq.imgLoader;
+
+		assert( perSetupResolutions.size() == numSetups );
+		assert( perSetupSubdivisions.size() == numSetups );
 
 		// for progressListener
+		// initial 1 is for writing resolutions etc.
 		// (numLevels + 1) is for writing each of the levels plus reading the source image
-		// final + 1 is for writing resolutions etc.
-		final int numTasks = numTimepoints * numSetups * ( numLevels + 1 ) + 1;
+		int numTasks = 1;
+		for ( int setup = 0; setup < numSetups; ++setup )
+		{
+			final int numLevels = perSetupResolutions.get( setup ).length;
+			numTasks += numTimepoints * ( numLevels + 1 );
+		}
 		int numCompletedTasks = 0;
 		if ( progressListener != null )
 			progressListener.updateProgress( numCompletedTasks++, numTasks );
@@ -195,15 +184,20 @@ public class CreateCells
 		final IHDF5Writer hdf5Writer = HDF5Factory.open( hdf5File );
 
 		// write Mipmap descriptions
-		final double[][] dres = new double[ resolutions.length ][];
-		for ( int l = 0; l < resolutions.length; ++l )
+		for ( int setup = 0; setup < numSetups; ++setup )
 		{
-			dres[ l ] = new double[ resolutions[ l ].length ];
-			for ( int d = 0; d < resolutions[ l ].length; ++d )
-				dres[ l ][ d ] = resolutions[ l ][ d ];
+			final int[][] resolutions = perSetupResolutions.get( setup );
+			final int[][] subdivisions = perSetupSubdivisions.get( setup );
+			final double[][] dres = new double[ resolutions.length ][];
+			for ( int l = 0; l < resolutions.length; ++l )
+			{
+				dres[ l ] = new double[ resolutions[ l ].length ];
+				for ( int d = 0; d < resolutions[ l ].length; ++d )
+					dres[ l ][ d ] = resolutions[ l ][ d ];
+			}
+			hdf5Writer.writeDoubleMatrix( Util.getResolutionsPath( setup ), dres );
+			hdf5Writer.writeIntMatrix( Util.getSubdivisionsPath( setup ), subdivisions );
 		}
-		hdf5Writer.writeDoubleMatrix( "resolutions", dres );
-		hdf5Writer.writeIntMatrix( "subdivisions", subdivisions );
 
 		// write number of timepoints and setups
 		hdf5Writer.writeInt( "numTimepoints", numTimepoints );
@@ -220,11 +214,14 @@ public class CreateCells
 			System.out.println( String.format( "proccessing timepoint %d / %d", timepoint + 1, numTimepoints ) );
 			for ( int setup = 0; setup < numSetups; ++setup )
 			{
+				final int[][] resolutions = perSetupResolutions.get( setup );
+				final int[][] subdivisions = perSetupSubdivisions.get( setup );
+				final int numLevels = resolutions.length;
+
 				System.out.println( String.format( "proccessing setup %d / %d", setup + 1, numSetups ) );
-				// final View view = loader.getView( timepoint, setup );
 				final View view = new View( seq, timepoint, setup, null );
 				System.out.println( "loading image" );
-				final ImgPlus< UnsignedShortType > img = seq.imgLoader.getUnsignedShortImage( view );
+				final RandomAccessibleInterval< UnsignedShortType > img = imgLoader.getUnsignedShortImage( view );
 				if ( progressListener != null )
 					progressListener.updateProgress( numCompletedTasks++, numTasks );
 

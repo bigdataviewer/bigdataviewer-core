@@ -70,6 +70,11 @@
 			<version>2.0.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>
+			<groupId>loci</groupId>
+			<artifactId>bio-formats</artifactId>
+			<version>4.5-SNAPSHOT</version>
+		</dependency>
+		<dependency>
 			<groupId>cisd</groupId>
 			<artifactId>jhdf5</artifactId>
 			<version>12.02.3</version>

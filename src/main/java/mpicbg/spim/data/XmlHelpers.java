@@ -1,6 +1,7 @@
 package mpicbg.spim.data;
 
 import java.io.File;
+import java.io.IOException;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -117,7 +118,15 @@ public class XmlHelpers
 
 	public static File getRelativePath( final File file, final File relativeToThis )
 	{
-		return getRelativePath( file, relativeToThis, "" );
+		try
+		{
+			return getRelativePath( file.getCanonicalFile(), relativeToThis.getCanonicalFile(), "" );
+		}
+		catch ( final IOException e )
+		{
+			e.printStackTrace();
+			return null;
+		}
 	}
 
 	private static File getRelativePath( final File file, final File relativeToThis, final String relativeInitial )

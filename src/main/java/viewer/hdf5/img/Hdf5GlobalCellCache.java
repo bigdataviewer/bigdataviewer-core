@@ -12,7 +12,7 @@ public class Hdf5GlobalCellCache< A >
 
 	final int numSetups;
 
-	final int numLevels;
+	final int maxNumLevels;
 
 	class Key
 	{
@@ -31,7 +31,7 @@ public class Hdf5GlobalCellCache< A >
 			this.level = level;
 			this.index = index;
 
-			final long value = ( ( index * numLevels + level ) * numSetups + setup ) * numTimepoints + timepoint;
+			final long value = ( ( index * maxNumLevels + level ) * numSetups + setup ) * numTimepoints + timepoint;
 			hashcode = ( int ) ( value ^ ( value >>> 32 ) );
 		}
 
@@ -85,12 +85,12 @@ public class Hdf5GlobalCellCache< A >
 
 	final protected Hdf5ArrayLoader< A > loader;
 
-	public Hdf5GlobalCellCache( final Hdf5ArrayLoader< A > loader, final int numTimepoints, final int numSetups, final int numLevels )
+	public Hdf5GlobalCellCache( final Hdf5ArrayLoader< A > loader, final int numTimepoints, final int numSetups, final int maxNumLevels )
 	{
 		this.loader = loader;
 		this.numTimepoints = numTimepoints;
 		this.numSetups = numSetups;
-		this.numLevels = numLevels;
+		this.maxNumLevels = maxNumLevels;
 	}
 
 	public Hdf5Cell< A > getGlobalIfCached( final int timepoint, final int setup, final int level, final int index )

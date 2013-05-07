@@ -1,9 +1,11 @@
 package viewer.hdf5;
 
 import static mpicbg.spim.data.XmlHelpers.loadPath;
+import static viewer.hdf5.Util.getResolutionsPath;
 import static viewer.hdf5.Util.reorder;
 
 import java.io.File;
+import java.util.ArrayList;
 
 import mpicbg.spim.data.ImgLoader;
 import mpicbg.spim.data.View;
@@ -34,30 +36,45 @@ public class Hdf5ImageLoader implements ImgLoader
 
 	Hdf5GlobalCellCache< ShortArray > cache;
 
-	double[][] mipmapResolutions;
+	ArrayList< double[][] > perSetupMipmapResolutions;
 
 	public Hdf5ImageLoader()
 	{
 		hdf5File = null;
 		hdf5Reader = null;
 		cache = null;
-		mipmapResolutions = null;
+		perSetupMipmapResolutions = new ArrayList< double[][] >();
 	}
 
 	public Hdf5ImageLoader( final File hdf5File )
 	{
+		this( hdf5File, true );
+	}
+
+	public Hdf5ImageLoader( final File hdf5File, final boolean doOpen )
+	{
 		this.hdf5File = hdf5File;
-		open();
+		if ( doOpen )
+			open();
 	}
 
 	private void open()
 	{
 		hdf5Reader = HDF5Factory.openForReading( hdf5File );
-		mipmapResolutions = hdf5Reader.readDoubleMatrix( "resolutions" );
 		final int numTimepoints = hdf5Reader.readInt( "numTimepoints" );
 		final int numSetups = hdf5Reader.readInt( "numSetups" );
-		final int numLevels = mipmapResolutions.length;
-		cache = new Hdf5GlobalCellCache< ShortArray >( new ShortArrayLoader( hdf5Reader ), numTimepoints, numSetups, numLevels );
+
+		int maxNumLevels = 0;
+		perSetupMipmapResolutions = new ArrayList< double[][] >();
+		for ( int setup = 0; setup < numSetups; ++setup )
+		{
+			final double [][] mipmapResolutions = hdf5Reader.readDoubleMatrix( getResolutionsPath( setup ) );
+			perSetupMipmapResolutions.add( mipmapResolutions );
+			if ( mipmapResolutions.length > maxNumLevels )
+				maxNumLevels = mipmapResolutions.length;
+		}
+
+		cache = new Hdf5GlobalCellCache< ShortArray >( new ShortArrayLoader( hdf5Reader ), numTimepoints, numSetups, maxNumLevels );
 	}
 
 	@Override
@@ -126,13 +143,13 @@ public class Hdf5ImageLoader implements ImgLoader
 		return cache;
 	}
 
-	public double[][] getMipmapResolutions()
+	public double[][] getMipmapResolutions( final int setup )
 	{
-		return mipmapResolutions;
+		return perSetupMipmapResolutions.get( setup );
 	}
 
-	public int numMipmapLevels()
+	public int numMipmapLevels( final int setup )
 	{
-		return mipmapResolutions.length;
+		return getMipmapResolutions( setup ).length;
 	}
 }

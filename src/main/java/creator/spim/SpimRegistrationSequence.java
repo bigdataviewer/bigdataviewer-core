@@ -5,6 +5,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
 
+import mpicbg.spim.data.ImgLoader;
 import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.ViewRegistration;
 import mpicbg.spim.data.ViewRegistrations;
@@ -15,24 +16,31 @@ import mpicbg.spim.registration.ViewDataBeads;
 import mpicbg.spim.registration.ViewStructure;
 import mpicbg.spim.registration.bead.BeadRegistration;
 import net.imglib2.realtransform.AffineTransform3D;
+import spimopener.SPIMExperiment;
+import creator.spim.imgloader.HuiskenImageLoader;
 import creator.spim.imgloader.StackImageLoader;
 
-public class SpimSequence
+public class SpimRegistrationSequence
 {
 	private final SequenceDescription sequenceDescription;
 
 	private final ViewRegistrations viewRegistrations;
 
-	public SpimSequence( final SPIMConfiguration conf )
+	public SpimRegistrationSequence( final SPIMConfiguration conf )
 	{
 		final ArrayList< ViewSetup > setups = createViewSetups( conf );
-		final StackImageLoader imgLoader = createImageLoader( conf, setups );
+		final ImgLoader imgLoader = createImageLoader( conf, setups );
 
 		viewRegistrations = createViewRegistrations( conf, setups );
-		sequenceDescription = new SequenceDescription( setups.toArray( new ViewSetup[ 0 ] ), conf.timepoints, new File( conf.inputdirectory ), imgLoader );
+		sequenceDescription = new SequenceDescription( setups, makeList( conf.timepoints ), new File( conf.inputdirectory ), imgLoader );
 	}
 
-	public SpimSequence( final String inputDirectory, final String inputFilePattern, final String angles, final String timepoints, final int referenceTimePoint, final boolean overrideImageZStretching, final double zStretching ) throws ConfigurationParserException
+	public SpimRegistrationSequence( final String huiskenExperimentXmlFile, final String angles, final String timepoints, final int referenceTimePoint ) throws ConfigurationParserException
+	{
+		this( initExperimentConfiguration( huiskenExperimentXmlFile, "", angles, timepoints, referenceTimePoint, false, 0 ) );
+	}
+
+	public SpimRegistrationSequence( final String inputDirectory, final String inputFilePattern, final String angles, final String timepoints, final int referenceTimePoint, final boolean overrideImageZStretching, final double zStretching ) throws ConfigurationParserException
 	{
 		this( initExperimentConfiguration( inputDirectory, inputFilePattern, angles, timepoints, referenceTimePoint, overrideImageZStretching, zStretching ) );
 	}
@@ -47,7 +55,7 @@ public class SpimSequence
 		return viewRegistrations;
 	}
 
-	protected static StackImageLoader createImageLoader( final SPIMConfiguration conf, final ArrayList< ViewSetup > setups )
+	protected static ImgLoader createImageLoader( final SPIMConfiguration conf, final ArrayList< ViewSetup > setups )
 	{
 		final int numTimepoints = conf.timepoints.length;
 		final int numSetups = setups.size();
@@ -68,8 +76,16 @@ public class SpimSequence
 				filenames[ timepoint * numSetups + setup ] = viewDataBeads.getFileName();
 			}
 		}
-		final boolean useImageJOpener = conf.inputFilePattern.endsWith( ".tif" );
-		return new StackImageLoader( Arrays.asList( filenames ), numSetups, useImageJOpener );
+		if ( conf.isHuiskenFormat() )
+		{
+			final String exp = conf.inputdirectory.endsWith( "/" ) ? conf.inputdirectory.substring( 0, conf.inputdirectory.length() - 1 ) : conf.inputdirectory;
+			return new HuiskenImageLoader( new File( exp + ".xml" ) );
+		}
+		else
+		{
+			final boolean useImageJOpener = conf.inputFilePattern.endsWith( ".tif" );
+			return new StackImageLoader( Arrays.asList( filenames ), numSetups, useImageJOpener );
+		}
 	}
 
 	/**
@@ -85,7 +101,17 @@ public class SpimSequence
 		conf.channelsToFuse = "";
 		conf.anglePattern = angles;
 
-		conf.inputdirectory = inputDirectory;
+		final File f = new File( inputDirectory );
+		if ( f.exists() && f.isFile() && f.getName().endsWith( ".xml" ) )
+		{
+			conf.spimExperiment = new SPIMExperiment( f.getAbsolutePath() );
+			conf.inputdirectory = f.getAbsolutePath().substring( 0, f.getAbsolutePath().length() - 4 );
+		}
+		else
+		{
+			conf.inputdirectory = inputDirectory;
+		}
+
 		conf.inputFilePattern = inputFilePattern;
 
 		if ( referenceTimePoint >= 0 )
@@ -95,7 +121,6 @@ public class SpimSequence
 		// check the directory string
 		conf.inputdirectory = conf.inputdirectory.replace( '\\', '/' );
 		conf.inputdirectory = conf.inputdirectory.replaceAll( "//", "/" );
-
 		conf.outputdirectory = conf.inputdirectory + "output/";
 		conf.registrationFiledirectory = conf.inputdirectory + "registration/";
 
@@ -143,7 +168,10 @@ public class SpimSequence
 			{
 				// load time-point registration (to map into the global
 				// coordinate system)
-				viewDataBeads.loadRegistrationTimePoint( conf.referenceTimePoint );
+				if ( conf.timeLapseRegistration )
+					viewDataBeads.loadRegistrationTimePoint( conf.referenceTimePoint );
+				else
+					viewDataBeads.loadRegistration();
 
 				// apply the z-scaling to the transformation
 				BeadRegistration.concatenateAxialScaling( viewDataBeads, viewStructure.getDebugLevel() );
@@ -167,6 +195,14 @@ public class SpimSequence
 		}
 
 		return new ViewRegistrations( regs, conf.referenceTimePoint );
+	}
+
+	protected static ArrayList< Integer > makeList( final int[] ints )
+	{
+		final ArrayList< Integer > list = new ArrayList< Integer >( ints.length );
+		for ( final int i : ints )
+			list.add( i );
+		return list;
 	}
 
 	/**
@@ -204,7 +240,7 @@ public class SpimSequence
 		final double zStretching = 9.30232558139535;
 
 		try {
-			final SpimSequence lsmseq = new SpimSequence( inputDirectory, inputFilePattern, angles, timepoints, referenceTimePoint, overrideImageZStretching, zStretching );
+			final SpimRegistrationSequence lsmseq = new SpimRegistrationSequence( inputDirectory, inputFilePattern, angles, timepoints, referenceTimePoint, overrideImageZStretching, zStretching );
 		}
 		catch ( final ConfigurationParserException e )
 		{
