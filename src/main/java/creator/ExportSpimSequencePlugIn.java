@@ -43,7 +43,7 @@ public class ExportSpimSequencePlugIn implements PlugIn
 
 		final SpimRegistrationSequence sequence = new SpimRegistrationSequence( params.conf );
 		final SequenceDescription desc = sequence.getSequenceDescription();
-		WriteSequenceToHdf5.createHdf5File( desc, params.perSetupResolutions, params.perSetupSubdivisions, params.hdf5File, new ProgressListener()
+		WriteSequenceToHdf5.writeHdf5File( desc, params.perSetupResolutions, params.perSetupSubdivisions, params.hdf5File, new ProgressListener()
 		{
 			@Override
 			public void updateProgress( final int numCompletedTasks, final int numTasks )
@@ -52,7 +52,7 @@ public class ExportSpimSequencePlugIn implements PlugIn
 			}
 		} );
 
-		final Hdf5ImageLoader loader = new Hdf5ImageLoader( params.hdf5File, false );
+		final Hdf5ImageLoader loader = new Hdf5ImageLoader( params.hdf5File, null, false );
 		final SequenceDescription sequenceDescription = new SequenceDescription( desc.setups, desc.timepoints, params.seqFile.getParentFile(), loader );
 		final ViewRegistrations viewRegistrations = sequence.getViewRegistrations();
 		try

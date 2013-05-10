@@ -25,6 +25,7 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
 import viewer.hdf5.Hdf5ImageLoader;
+import viewer.hdf5.Partition;
 import creator.spim.SpimRegistrationSequence;
 import creator.spim.imgloader.FusionImageLoader;
 
@@ -162,7 +163,7 @@ public class Scripting
 	{
 		final String huiskenExperimentXmlFile = "/Users/pietzsch/workspace/data/fast fly/111010_weber/e012.xml";
 		final String angles = "0,120,240";
-		final String timepoints = "1-3";
+		final String timepoints = "1-10";
 		final int referenceTimePoint = 50;
 
 		final String filepath = "/Users/pietzsch/workspace/data/fast fly/111010_weber/e012/output/";
@@ -198,12 +199,44 @@ public class Scripting
 		for ( final ViewSetup setup : fusiondesc.setups )
 			collector.add( fusiondesc, setup, fusionregs, fusionresolutions, fusionsubdivisions );
 
-		final File seqFile = new File( "/Users/pietzsch/Desktop/data/everything.xml" );
-		final File hdf5File = new File( "/Users/pietzsch/Desktop/data/everything.h5" );
+		final File seqFile = new File( "/Users/pietzsch/Desktop/data/everything2.xml" );
+		final File hdf5File = new File( "/Users/pietzsch/Desktop/data/everything2.h5" );
 
-//		CreateCells.createHdf5File( collector.createSequenceDescription( null ), collector.getPerSetupResolutions(), collector.getPerSetupSubdivisions(), hdf5File, null );
 
-		final Hdf5ImageLoader loader = new Hdf5ImageLoader( hdf5File, false );
+		// splitting ...
+		final String partitionFormatString = "/Users/pietzsch/Desktop/data/everything2-%02d-%02d.h5";
+		final int timepointsPerPartition = 3;
+		final ArrayList< Integer > timepointSplits = new ArrayList< Integer >();
+		for ( int timepoint = 0; timepoint < spimdesc.numTimepoints(); timepoint += timepointsPerPartition )
+			timepointSplits.add( timepoint );
+		timepointSplits.add( spimdesc.numTimepoints() );
+
+		final ArrayList< Integer > setupSplits = new ArrayList< Integer >( Arrays.asList( 0, 3, 4 ) );
+
+		final ArrayList< Partition > partitions = new ArrayList< Partition >();
+		final int timepointOffset = 0;
+		final int setupOffset = 0;
+		for ( int i = 0; i < timepointSplits.size() - 1; ++i )
+		{
+			final int timepointStart = timepointSplits.get( i );
+			final int timepointLength = timepointSplits.get( i + 1 ) - timepointStart;
+			for ( int j = 0; j < setupSplits.size() - 1; ++j )
+			{
+				final int setupStart = setupSplits.get( j );
+				final int setupLength = setupSplits.get( j + 1 ) - setupStart;
+				final String path = String.format( partitionFormatString, i, j );
+				partitions.add( new Partition( path, timepointOffset, timepointStart, timepointLength, setupOffset, setupStart, setupLength ) );
+			}
+		}
+
+		final SequenceDescription collectorSeq = collector.createSequenceDescription( null );
+		for ( final Partition partition : partitions )
+			WriteSequenceToHdf5.writeHdf5PartitionFile( collectorSeq, collector.getPerSetupResolutions(), collector.getPerSetupSubdivisions(), partition, null );
+		WriteSequenceToHdf5.writeHdf5PartitionLinkFile( collectorSeq, collector.getPerSetupResolutions(), collector.getPerSetupSubdivisions(), partitions, hdf5File );
+
+//		WriteSequenceToHdf5.createHdf5File( collectorSeq, collector.getPerSetupResolutions(), collector.getPerSetupSubdivisions(), hdf5File, null );
+
+		final Hdf5ImageLoader loader = new Hdf5ImageLoader( hdf5File, partitions, false );
 		final SequenceDescription sequenceDescription = new SequenceDescription( collector.setups, collector.timepoints, seqFile.getParentFile(), loader );
 		WriteSequenceToXml.writeSequenceToXml( sequenceDescription, collector.createViewRegistrations(), seqFile.getAbsolutePath() );
 	}

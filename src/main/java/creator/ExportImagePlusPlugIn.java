@@ -120,10 +120,10 @@ public class ExportImagePlusPlugIn implements PlugIn
 		final ArrayList< Integer > timepoints = new ArrayList< Integer >( numTimepoints );
 		for ( int t = 0; t < numTimepoints; ++t )
 			timepoints.add( t );
-		WriteSequenceToHdf5.createHdf5File( new SequenceDescription( setups, timepoints, null, imgLoader ), resolutions, subdivisions, hdf5File, progressListener );
+		WriteSequenceToHdf5.writeHdf5File( new SequenceDescription( setups, timepoints, null, imgLoader ), resolutions, subdivisions, hdf5File, progressListener );
 
 		// write xml sequence description
-		final Hdf5ImageLoader hdf5Loader = new Hdf5ImageLoader( hdf5File );
+		final Hdf5ImageLoader hdf5Loader = new Hdf5ImageLoader( hdf5File, null );
 		final SequenceDescription sequenceDescription = new SequenceDescription( setups, timepoints, seqFile.getParentFile(), hdf5Loader );
 		final ArrayList< ViewRegistration > registrations = new ArrayList< ViewRegistration >();
 		for ( int t = 0; t < numTimepoints; ++t )
