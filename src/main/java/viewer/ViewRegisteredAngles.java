@@ -65,7 +65,7 @@ public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
 
 		final ArrayList< SourceAndConverter< ? > > sources = new ArrayList< SourceAndConverter< ? > >();
 		for ( int setup = 0; setup < seq.numViewSetups(); ++setup )
-			sources.add( new SourceAndConverter< UnsignedShortType >( new SpimSource( loader, setup, "angle " + seq.setups[ setup ].getAngle() ), converter ) );
+			sources.add( new SourceAndConverter< UnsignedShortType >( new SpimSource( loader, setup, "angle " + seq.setups.get( setup ).getAngle() ), converter ) );
 
 		viewer = new SpimViewer( width, height, sources, seq.numTimepoints() );
 
@@ -105,7 +105,7 @@ public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
 	{
 //		final String fn = "/Users/tobias/workspace/data/fast fly/111010_weber/combined.xml";
 //		final String fn = "/Users/tobias/Desktop/openspim.xml";
-		final String fn = "/Users/tobias/Desktop/e012/test5.xml";
+		final String fn = "/Users/pietzsch/Desktop/data/fibsem.xml";
 		try
 		{
 			new ViewRegisteredAngles( fn );

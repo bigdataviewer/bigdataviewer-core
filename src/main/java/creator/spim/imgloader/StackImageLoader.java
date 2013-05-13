@@ -18,6 +18,19 @@ import net.imglib2.type.numeric.real.FloatType;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 
+/**
+ * This {@link ImgLoader} loads images that represent a 3D stack in a single
+ * file, for example in tif, lsm, or czi format. It is constructed with a list
+ * of image filenames and the number of setups (e.g. angles). Then, to laod the
+ * image for a given {@link View}, its index in the filename list is computed as
+ * <code>view.getSetupIndex() + numViewSetups * view.getTimepointIndex()</code>.
+ *
+ * This {@link ImgLoader} is used for exporting spim sequences to hdf5. Only the
+ * {@link #getUnsignedShortImage(View)} method is implemented because this is
+ * the only method required for exporting to hdf5.
+ *
+ * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ */
 public class StackImageLoader implements ImgLoader
 {
 	private final ImgOpener opener;
@@ -42,18 +55,27 @@ public class StackImageLoader implements ImgLoader
 		type = new UnsignedShortType();
 	}
 
+	/**
+	 * not implemented.
+	 */
 	@Override
 	public void init( final Element elem, final File basePath )
 	{
 		throw new UnsupportedOperationException( "not implemented" );
 	}
 
+	/**
+	 * not implemented.
+	 */
 	@Override
 	public Element toXml( final Document doc, final File basePath )
 	{
 		throw new UnsupportedOperationException( "not implemented" );
 	}
 
+	/**
+	 * not implemented.
+	 */
 	@Override
 	public ImgPlus< FloatType > getImage( final View view )
 	{

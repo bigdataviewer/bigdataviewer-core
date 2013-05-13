@@ -1,9 +1,11 @@
 package viewer.hdf5;
 
 import static mpicbg.spim.data.XmlHelpers.loadPath;
+import static viewer.hdf5.Util.getResolutionsPath;
 import static viewer.hdf5.Util.reorder;
 
 import java.io.File;
+import java.util.ArrayList;
 
 import mpicbg.spim.data.ImgLoader;
 import mpicbg.spim.data.View;
@@ -17,6 +19,7 @@ import net.imglib2.type.numeric.real.FloatType;
 
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NodeList;
 
 import viewer.hdf5.img.Hdf5Cell;
 import viewer.hdf5.img.Hdf5GlobalCellCache;
@@ -34,30 +37,62 @@ public class Hdf5ImageLoader implements ImgLoader
 
 	Hdf5GlobalCellCache< ShortArray > cache;
 
-	double[][] mipmapResolutions;
+	final ArrayList< double[][] > perSetupMipmapResolutions;
+
+	/**
+	 * List of partitions if the dataset is split across several files
+	 */
+	private final ArrayList< Partition > partitions;
 
 	public Hdf5ImageLoader()
+	{
+		this( null );
+	}
+
+	public Hdf5ImageLoader( final ArrayList< Partition > hdf5Partitions )
 	{
 		hdf5File = null;
 		hdf5Reader = null;
 		cache = null;
-		mipmapResolutions = null;
+		perSetupMipmapResolutions = new ArrayList< double[][] >();
+		partitions = new ArrayList< Partition >();
+		if ( hdf5Partitions != null )
+			partitions.addAll( hdf5Partitions );
 	}
 
-	public Hdf5ImageLoader( final File hdf5File )
+	public Hdf5ImageLoader( final File hdf5File, final ArrayList< Partition > hdf5Partitions )
+	{
+		this( hdf5File, hdf5Partitions, true );
+	}
+
+	public Hdf5ImageLoader( final File hdf5File, final ArrayList< Partition > hdf5Partitions, final boolean doOpen )
 	{
 		this.hdf5File = hdf5File;
-		open();
+		perSetupMipmapResolutions = new ArrayList< double[][] >();
+		partitions = new ArrayList< Partition >();
+		if ( hdf5Partitions != null )
+			partitions.addAll( hdf5Partitions );
+		if ( doOpen )
+			open();
 	}
 
 	private void open()
 	{
 		hdf5Reader = HDF5Factory.openForReading( hdf5File );
-		mipmapResolutions = hdf5Reader.readDoubleMatrix( "resolutions" );
 		final int numTimepoints = hdf5Reader.readInt( "numTimepoints" );
 		final int numSetups = hdf5Reader.readInt( "numSetups" );
-		final int numLevels = mipmapResolutions.length;
-		cache = new Hdf5GlobalCellCache< ShortArray >( new ShortArrayLoader( hdf5Reader ), numTimepoints, numSetups, numLevels );
+
+		int maxNumLevels = 0;
+		perSetupMipmapResolutions.clear();
+		for ( int setup = 0; setup < numSetups; ++setup )
+		{
+			final double [][] mipmapResolutions = hdf5Reader.readDoubleMatrix( getResolutionsPath( setup ) );
+			perSetupMipmapResolutions.add( mipmapResolutions );
+			if ( mipmapResolutions.length > maxNumLevels )
+				maxNumLevels = mipmapResolutions.length;
+		}
+
+		cache = new Hdf5GlobalCellCache< ShortArray >( new ShortArrayLoader( hdf5Reader ), numTimepoints, numSetups, maxNumLevels );
 	}
 
 	@Override
@@ -67,6 +102,10 @@ public class Hdf5ImageLoader implements ImgLoader
 		try
 		{
 			path = loadPath( elem, "hdf5", basePath ).toString();
+			partitions.clear();
+			final NodeList nodes = elem.getElementsByTagName( "partition" );
+			for ( int i = 0; i < nodes.getLength(); ++i )
+				partitions.add( new Partition( ( Element ) nodes.item( i ), basePath ) );
 		}
 		catch ( final Exception e )
 		{
@@ -82,7 +121,19 @@ public class Hdf5ImageLoader implements ImgLoader
 		final Element elem = doc.createElement( "ImageLoader" );
 		elem.setAttribute( "class", getClass().getCanonicalName() );
 		elem.appendChild( XmlHelpers.pathElement( doc, "hdf5", hdf5File, basePath ) );
+		for ( final Partition partition : partitions )
+			elem.appendChild( partition.toXml( doc, basePath ) );
 		return elem;
+	}
+
+	public File getHdf5File()
+	{
+		return hdf5File;
+	}
+
+	public ArrayList< Partition > getPartitions()
+	{
+		return partitions;
 	}
 
 	@Override
@@ -126,13 +177,13 @@ public class Hdf5ImageLoader implements ImgLoader
 		return cache;
 	}
 
-	public double[][] getMipmapResolutions()
+	public double[][] getMipmapResolutions( final int setup )
 	{
-		return mipmapResolutions;
+		return perSetupMipmapResolutions.get( setup );
 	}
 
-	public int numMipmapLevels()
+	public int numMipmapLevels( final int setup )
 	{
-		return mipmapResolutions.length;
+		return getMipmapResolutions( setup ).length;
 	}
 }

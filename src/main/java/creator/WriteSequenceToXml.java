@@ -1,6 +1,7 @@
-package creator.spim;
+package creator;
 
 import java.io.File;
+import java.util.ArrayList;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerException;
@@ -69,18 +70,18 @@ public class WriteSequenceToXml
 	 */
 	protected static Element timepointsToXml( final Document doc, final SequenceDescription sequence )
 	{
-		final int[] timepoints = sequence.timepoints;
-		if ( timepoints.length == 0 )
+		final ArrayList< Integer > timepoints = sequence.timepoints;
+		if ( timepoints.size() == 0 )
 			throw new IllegalArgumentException( "sequence must have at least one timepoint" );
 
 		// find first and last timepoint
-		int first = timepoints[ 0 ];
-		int last = timepoints[ 0 ];
-		for ( int i = 0; i < timepoints.length; ++i )
-			if ( timepoints[ i ] < first )
-				first = timepoints[ i ];
-			else if ( timepoints[ i ] > last )
-				last = timepoints[ i ];
+		int first = timepoints.get( 0 );
+		int last = first;
+		for ( final int t : timepoints )
+			if ( t < first )
+				first = t;
+			else if ( t > last )
+				last = t;
 
 		// check whether all intermediate timepoints are present
 		boolean nonContiguousTimepoints = false;

@@ -23,6 +23,13 @@ import org.w3c.dom.Element;
 
 import spimopener.SPIMExperiment;
 
+/**
+ * This {@link ImgLoader} implementation uses Benjamin Schmid's
+ * <a href="http://fiji.sc/javadoc/spimopener/package-summary.html">spimopener</a>
+ * to load images in Jan Husiken's format.
+ *
+ * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ */
 public class HuiskenImageLoader implements ImgLoader
 {
 	private File expFile;
@@ -34,6 +41,12 @@ public class HuiskenImageLoader implements ImgLoader
 	public HuiskenImageLoader()
 	{
 		expFile = null;
+		exp = null;
+	}
+
+	public HuiskenImageLoader( final File file )
+	{
+		expFile = file;
 		exp = null;
 	}
 
