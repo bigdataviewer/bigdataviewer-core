@@ -532,7 +532,8 @@ public class Scripting
 
 		public void writePartition( final int index )
 		{
-			WriteSequenceToHdf5.writeHdf5PartitionFile( seq, perSetupResolutions, perSetupSubdivisions, partitions.get( index ), null );
+			if ( index >= 0 && index < partitions.size() )
+				WriteSequenceToHdf5.writeHdf5PartitionFile( seq, perSetupResolutions, perSetupSubdivisions, partitions.get( index ), null );
 		}
 
 		public void writeXmlAndLinks() throws TransformerFactoryConfigurationError, TransformerException, ParserConfigurationException
