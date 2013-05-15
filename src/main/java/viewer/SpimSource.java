@@ -11,7 +11,6 @@ import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.view.Views;
-import viewer.hdf5.Hdf5ImageLoader;
 import viewer.render.Interpolation;
 import viewer.render.Source;
 
@@ -31,7 +30,7 @@ public class SpimSource implements Source< UnsignedShortType >
 
 	final SequenceViewsLoader sequenceViews;
 
-	final Hdf5ImageLoader imgLoader;
+	final ViewerImgLoader imgLoader;
 
 	final int numTimepoints;
 
@@ -52,7 +51,7 @@ public class SpimSource implements Source< UnsignedShortType >
 		this.name = name;
 		this.sequenceViews = loader;
 		final SequenceDescription seq = loader.getSequenceDescription();
-		imgLoader = ( Hdf5ImageLoader ) seq.imgLoader;
+		imgLoader = ( ViewerImgLoader ) seq.imgLoader;
 		numTimepoints = seq.numTimepoints();
 		numMipmapLevels = imgLoader.numMipmapLevels( setup );
 		currentSources = new RandomAccessibleInterval[ numMipmapLevels ];
