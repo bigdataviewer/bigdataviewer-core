@@ -265,14 +265,23 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 
 		final double[] qTmpSource;
 		if ( plane == AlignPlane.XY )
+		{
+			RotationAnimator.extractApproximateRotationAffine( sourceTransform, qSource, 2 );
 			qTmpSource = qSource;
+		}
 		else
 		{
 			qTmpSource = new double[4];
 			if ( plane == AlignPlane.ZY )
+			{
+				RotationAnimator.extractApproximateRotationAffine( sourceTransform, qSource, 0 );
 				LinAlgHelpers.quaternionMultiply( qSource, qAlignZY, qTmpSource );
+			}
 			else // if ( plane == AlignPlane.XZ )
+			{
+				RotationAnimator.extractApproximateRotationAffine( sourceTransform, qSource, 1 );
 				LinAlgHelpers.quaternionMultiply( qSource, qAlignXZ, qTmpSource );
+			}
 		}
 
 		final double[] qTarget = new double[ 4 ];
