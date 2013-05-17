@@ -21,9 +21,25 @@ public class SourceState< T extends NumericType< T > > extends SourceAndConverte
 
 	public SourceState( final SourceAndConverter< T > soc )
 	{
-		super( soc.getSpimSource(), soc.getConverter() );
+		super( soc );
 		isActive = true;
 		isCurrent = false;
+	}
+
+	/**
+	 * copy constructor
+	 * @param s
+	 */
+	protected SourceState( final SourceState< T > s )
+	{
+		super( s );
+		isActive = s.isActive;
+		isCurrent = s.isCurrent;
+	}
+
+	public SourceState< T > copy()
+	{
+		return new SourceState< T >( this );
 	}
 
 	/**

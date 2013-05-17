@@ -68,6 +68,29 @@ public class ViewerState
 		currentTimepoint = 0;
 	}
 
+	/**
+	 * copy constructor
+	 * @param s
+	 */
+	protected ViewerState( final ViewerState s )
+	{
+		sources = new ArrayList< SourceState< ? > >( s.sources.size() );
+		for ( final SourceState< ? > source : s.sources )
+			this.sources.add( source.copy() );
+		numTimePoints = s.numTimePoints;
+		viewerTransform = s.viewerTransform.copy();
+		interpolation = s.interpolation;
+		singleSourceMode = s.singleSourceMode;
+		currentSource = s.currentSource;
+		currentTimepoint = s.currentTimepoint;
+	}
+
+	public ViewerState copy()
+	{
+		return new ViewerState( this );
+	}
+
+
 	/*
 	 * Renderer state.
 	 * (which sources to show, which interpolation method to use, etc.)

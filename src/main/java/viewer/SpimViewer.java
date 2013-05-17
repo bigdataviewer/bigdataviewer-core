@@ -359,6 +359,25 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 	}
 
 	/**
+	 * Set the viewer transform.
+	 */
+	public synchronized void setCurrentViewerTransform( final AffineTransform3D viewerTransform )
+	{
+		display.getTransformEventHandler().setTransform( viewerTransform );
+		transformChanged( viewerTransform );
+	}
+
+	/**
+	 * Get a copy of the current {@link ViewerState}.
+	 *
+	 * @return a copy of the current {@link ViewerState}.
+	 */
+	public synchronized ViewerState getState()
+	{
+		return state.copy();
+	}
+
+	/**
 	 * Create Keystrokes and corresponding Actions.
 	 *
 	 * @return list of KeyStroke-Action-pairs.
