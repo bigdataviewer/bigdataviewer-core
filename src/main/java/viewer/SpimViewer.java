@@ -50,6 +50,7 @@ import viewer.render.SourceState;
 import viewer.render.ViewerState;
 import viewer.render.overlay.MultiBoxOverlayRenderer;
 import viewer.render.overlay.SourceInfoOverlayRenderer;
+import viewer.util.AbstractTransformAnimator;
 
 public class SpimViewer implements OverlayRenderer, TransformListener3D, PainterThread.Paintable
 {
@@ -85,6 +86,8 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 	final protected MouseCoordinateListener mouseCoordinates;
 
 	final protected ArrayList< Pair< KeyStroke, Action > > keysActions;
+
+	protected AbstractTransformAnimator currentAnimator = null;
 
 	protected volatile int currentAlpha = 128;
 
@@ -261,7 +264,6 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 		requestRepaint();
 	}
 
-	RotationAnimator currentAnimator = null;
 
 	static enum AlignPlane
 	{
@@ -285,14 +287,23 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 
 		final double[] qTmpSource;
 		if ( plane == AlignPlane.XY )
+		{
+			RotationAnimator.extractApproximateRotationAffine( sourceTransform, qSource, 2 );
 			qTmpSource = qSource;
+		}
 		else
 		{
 			qTmpSource = new double[4];
 			if ( plane == AlignPlane.ZY )
+			{
+				RotationAnimator.extractApproximateRotationAffine( sourceTransform, qSource, 0 );
 				LinAlgHelpers.quaternionMultiply( qSource, qAlignZY, qTmpSource );
+			}
 			else // if ( plane == AlignPlane.XZ )
+			{
+				RotationAnimator.extractApproximateRotationAffine( sourceTransform, qSource, 1 );
 				LinAlgHelpers.quaternionMultiply( qSource, qAlignXZ, qTmpSource );
+			}
 		}
 
 		final double[] qTarget = new double[ 4 ];
@@ -381,6 +392,25 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 			currentAlpha = alpha;
 			requestRepaint();
 		}
+	}
+
+	/**
+	 * Set the viewer transform.
+	 */
+	public synchronized void setCurrentViewerTransform( final AffineTransform3D viewerTransform )
+	{
+		display.getTransformEventHandler().setTransform( viewerTransform );
+		transformChanged( viewerTransform );
+	}
+
+	/**
+	 * Get a copy of the current {@link ViewerState}.
+	 *
+	 * @return a copy of the current {@link ViewerState}.
+	 */
+	public synchronized ViewerState getState()
+	{
+		return state.copy();
 	}
 
 	/**

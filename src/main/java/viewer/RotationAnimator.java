@@ -1,10 +1,10 @@
 package viewer;
 
-import viewer.util.AbstractAnimator;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.LinAlgHelpers;
+import viewer.util.AbstractTransformAnimator;
 
-class RotationAnimator extends AbstractAnimator
+class RotationAnimator extends AbstractTransformAnimator
 {
 	private final AffineTransform3D transformStart;
 
@@ -33,12 +33,6 @@ class RotationAnimator extends AbstractAnimator
 				qAddEnd[ i ] = -qAddEnd[ i ];
 	}
 
-	public AffineTransform3D getCurrent( final long time )
-	{
-		setTime( time );
-		return get( ratioComplete() );
-	}
-
 	public static void extractRotation( final AffineTransform3D transform, final double[] q )
 	{
 		final double[][] m = new double[ 3 ][ 4 ];
@@ -62,23 +56,68 @@ class RotationAnimator extends AbstractAnimator
 		transform.toMatrix( m );
 
 		// unscale transformed unit axes to get rid of z scaling
-		for ( int r = 0; r < 3; ++r )
+		for ( int c = 0; c < 3; ++c )
 		{
 			double sqSum = 0;
-			for ( int c = 0; c < 3; ++c )
-				sqSum += m[ c ][ r ]  *m[ c ][ r ];
+			for ( int r = 0; r < 3; ++r )
+				sqSum += m[ r ][ c ] * m[ r ][ c ];
 			final double s = 1.0 / Math.sqrt( sqSum );
-			for ( int c = 0; c < 3; ++c )
-				m[ c ][ r ] *= s;
+			for ( int r = 0; r < 3; ++r )
+				m[ r ][ c ] *= s;
 		}
 
 		LinAlgHelpers.quaternionFromR( m, q );
 	}
 
-	/**
-	 * @param t from 0 to 1
-	 */
-	private AffineTransform3D get( final double t )
+	public static void extractApproximateRotationAffine( final AffineTransform3D transform, final double[] q, final int coerceAffineDimension )
+	{
+		final double[][] m = new double[ 3 ][ 4 ];
+		transform.toMatrix( m );
+
+		// unscale transformed unit axes to get rid of z scaling
+		for ( int c = 0; c < 3; ++c )
+		{
+			double sqSum = 0;
+			for ( int r = 0; r < 3; ++r )
+				sqSum += m[ r ][ c ] * m[ r ][ c ];
+			final double s = 1.0 / Math.sqrt( sqSum );
+			for ( int r = 0; r < 3; ++r )
+				m[ r ][ c ] *= s;
+		}
+
+		// coerce to rotation matrix
+		final double[] x = new double[ 3 ];
+		final double[] y = new double[ 3 ];
+		final double[] z = new double[ 3 ];
+		LinAlgHelpers.getCol( 0, m, x );
+		LinAlgHelpers.getCol( 1, m, y );
+		LinAlgHelpers.getCol( 2, m, z );
+		switch ( coerceAffineDimension )
+		{
+		case 0:
+			LinAlgHelpers.cross( y, z, x );
+			LinAlgHelpers.normalize( x );
+			LinAlgHelpers.cross( x, y, z );
+			break;
+		case 1:
+			LinAlgHelpers.cross( z, x, y );
+			LinAlgHelpers.normalize( y );
+			LinAlgHelpers.cross( y, z, x );
+			break;
+		case 2:
+			LinAlgHelpers.cross( x, y, z );
+			LinAlgHelpers.normalize( z );
+			LinAlgHelpers.cross( z, x, y );
+		}
+		LinAlgHelpers.setCol( 0, x, m );
+		LinAlgHelpers.setCol( 1, y, m );
+		LinAlgHelpers.setCol( 2, z, m );
+
+		LinAlgHelpers.quaternionFromR( m, q );
+	}
+
+	@Override
+	protected AffineTransform3D get( final double t )
 	{
 		final AffineTransform3D transform = new AffineTransform3D();
 		transform.set( transformStart );

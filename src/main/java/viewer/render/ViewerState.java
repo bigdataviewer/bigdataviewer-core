@@ -68,6 +68,29 @@ public class ViewerState
 		currentTimepoint = 0;
 	}
 
+	/**
+	 * copy constructor
+	 * @param s
+	 */
+	protected ViewerState( final ViewerState s )
+	{
+		sources = new ArrayList< SourceState< ? > >( s.sources.size() );
+		for ( final SourceState< ? > source : s.sources )
+			this.sources.add( source.copy() );
+		numTimePoints = s.numTimePoints;
+		viewerTransform = s.viewerTransform.copy();
+		interpolation = s.interpolation;
+		singleSourceMode = s.singleSourceMode;
+		currentSource = s.currentSource;
+		currentTimepoint = s.currentTimepoint;
+	}
+
+	public ViewerState copy()
+	{
+		return new ViewerState( this );
+	}
+
+
 	/*
 	 * Renderer state.
 	 * (which sources to show, which interpolation method to use, etc.)
@@ -220,7 +243,7 @@ public class ViewerState
 	 *
 	 * @return indices of all currently visible sources.
 	 */
-	protected synchronized ArrayList< Integer > getVisibleSourceIndices()
+	public synchronized ArrayList< Integer > getVisibleSourceIndices()
 	{
 		final ArrayList< Integer > visibleSources = new ArrayList< Integer >();
 		for ( int i = 0; i < sources.size(); ++i )
@@ -252,10 +275,13 @@ public class ViewerState
 		if ( source.isVisible( singleSourceMode ) )
 		{
 			for ( int level = targetLevel - 1; level >= 0; level-- )
-				if ( source.getVoxelScreenSize( screenTransform, currentTimepoint, level ) >= 1.0 )
+			{
+//				System.out.println( "source.getVoxelScreenSize( level = " + level + " ) = " + source.getVoxelScreenSize( screenTransform, currentTimepoint, level ) );
+				if ( source.getVoxelScreenSize( screenTransform, currentTimepoint, level ) >= 0.99 /*1.0*/ )
 					targetLevel = level;
 				else
 					break;
+			}
 		}
 		return targetLevel;
 	}

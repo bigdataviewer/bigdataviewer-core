@@ -11,11 +11,10 @@ import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.view.Views;
-import viewer.hdf5.Hdf5ImageLoader;
 import viewer.render.Interpolation;
 import viewer.render.Source;
 
-class SpimSource implements Source< UnsignedShortType >
+public class SpimSource implements Source< UnsignedShortType >
 {
 	int currentTimepoint;
 
@@ -31,7 +30,7 @@ class SpimSource implements Source< UnsignedShortType >
 
 	final SequenceViewsLoader sequenceViews;
 
-	final Hdf5ImageLoader imgLoader;
+	final ViewerImgLoader imgLoader;
 
 	final int numTimepoints;
 
@@ -46,15 +45,15 @@ class SpimSource implements Source< UnsignedShortType >
 	final protected InterpolatorFactory< UnsignedShortType, RandomAccessible< UnsignedShortType > >[] interpolatorFactories;
 
 	@SuppressWarnings( "unchecked" )
-	SpimSource( final SequenceViewsLoader loader, final int setup, final String name )
+	public SpimSource( final SequenceViewsLoader loader, final int setup, final String name )
 	{
 		this.setup = setup;
 		this.name = name;
 		this.sequenceViews = loader;
 		final SequenceDescription seq = loader.getSequenceDescription();
-		imgLoader = ( Hdf5ImageLoader ) seq.imgLoader;
+		imgLoader = ( ViewerImgLoader ) seq.imgLoader;
 		numTimepoints = seq.numTimepoints();
-		numMipmapLevels = imgLoader.numMipmapLevels();
+		numMipmapLevels = imgLoader.numMipmapLevels( setup );
 		currentSources = new RandomAccessibleInterval[ numMipmapLevels ];
 		currentInterpolatedSources = new RealRandomAccessible[ numMipmapLevels ][ 2 ];
 		currentSourceTransforms = new AffineTransform3D[ numMipmapLevels ];
@@ -78,7 +77,7 @@ class SpimSource implements Source< UnsignedShortType >
 			final AffineTransform3D mipmapTransform = new AffineTransform3D();
 			for ( int level = 0; level < currentSources.length; level++ )
 			{
-				final double[] resolution = imgLoader.getMipmapResolutions()[ level ];
+				final double[] resolution = imgLoader.getMipmapResolutions( setup )[ level ];
 				for ( int d = 0; d < 3; ++d )
 				{
 					mipmapTransform.set( resolution[ d ], d, d );

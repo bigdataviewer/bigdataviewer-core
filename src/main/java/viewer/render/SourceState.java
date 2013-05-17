@@ -10,17 +10,6 @@ import net.imglib2.util.LinAlgHelpers;
 public class SourceState< T extends NumericType< T > > extends SourceAndConverter< T >
 {
 	/**
-	 * Current transformation from {@link #source} to screen. This is
-	 * a concatenation of {@link Source#getSourceTransform(long)
-	 * source transform}, the interactive viewer
-	 * transform, and the viewer-to-screen transform.
-	 *
-	 * TODO: remove?
-	 */
-	@Deprecated
-	final protected AffineTransform3D sourceToScreen;
-
-	/**
 	 * Whether the source is active (visible in fused mode).
 	 */
 	protected boolean isActive;
@@ -32,10 +21,25 @@ public class SourceState< T extends NumericType< T > > extends SourceAndConverte
 
 	public SourceState( final SourceAndConverter< T > soc )
 	{
-		super( soc.getSpimSource(), soc.getConverter() );
-		sourceToScreen = new AffineTransform3D();
+		super( soc );
 		isActive = true;
 		isCurrent = false;
+	}
+
+	/**
+	 * copy constructor
+	 * @param s
+	 */
+	protected SourceState( final SourceState< T > s )
+	{
+		super( s );
+		isActive = s.isActive;
+		isCurrent = s.isCurrent;
+	}
+
+	public SourceState< T > copy()
+	{
+		return new SourceState< T >( this );
 	}
 
 	/**

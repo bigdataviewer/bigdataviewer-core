@@ -8,6 +8,10 @@ public class Util
 
 	final static private String cellsFormatString = "%s/cells";
 
+	final static private String resolutionsFormatString = "s%02d/resolutions";
+
+	final static private String subdivisionsFormatString = "s%02d/subdivisions";
+
 	public static String getGroupPath( final int timepoint, final int setup, final int level )
 	{
 		return String.format( groupFormatString, timepoint, setup, level );
@@ -26,6 +30,16 @@ public class Util
 	public static String getCellsPath( final View view, final int level )
 	{
 		return String.format( cellsFormatString, getGroupPath( view, level ) );
+	}
+
+	public static String getResolutionsPath( final int setup )
+	{
+		return String.format( resolutionsFormatString, setup );
+	}
+
+	public static String getSubdivisionsPath( final int setup )
+	{
+		return String.format( subdivisionsFormatString, setup );
 	}
 
 	/**

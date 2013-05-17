@@ -26,7 +26,7 @@ import javax.swing.event.ChangeListener;
 
 public class BrightnessDialog extends JDialog
 {
-	public interface MinMaxListener
+	public static interface MinMaxListener
 	{
 		public void setMinMax( final int min, final int max );
 	}
@@ -38,6 +38,10 @@ public class BrightnessDialog extends JDialog
 		this.listener = listener;
 	}
 
+	private final SliderPanel minPanel;
+
+	private final SliderPanel maxPanel;
+
 	public BrightnessDialog( final Frame owner )
 	{
 		super( owner, "display range", false );
@@ -47,10 +51,10 @@ public class BrightnessDialog extends JDialog
 		final JPanel sliders = new JPanel();
 		sliders.setLayout( new BoxLayout( sliders, BoxLayout.PAGE_AXIS ) );
 
-		final SliderPanel minPanel = new SliderPanel( "min", 0, 65534, 0, 1 );
+		minPanel = new SliderPanel( "min", 0, 65534, 0, 1 );
 		minPanel.setBorder( BorderFactory.createEmptyBorder( 0, 10, 10, 10 ) );
 		sliders.add( minPanel );
-		final SliderPanel maxPanel = new SliderPanel( "max", 1, 65535, 65535, 1 );
+		maxPanel = new SliderPanel( "max", 1, 65535, 65535, 1 );
 		maxPanel.setBorder( BorderFactory.createEmptyBorder( 0, 10, 10, 10 ) );
 		sliders.add( maxPanel );
 
@@ -108,6 +112,12 @@ public class BrightnessDialog extends JDialog
 
 		pack();
 		setDefaultCloseOperation( JDialog.HIDE_ON_CLOSE );
+	}
+
+	public void setMinMax( final int min, final int max )
+	{
+		minPanel.setValue( min );
+		maxPanel.setValue( max );
 	}
 
 	static class SliderPanel extends JPanel
