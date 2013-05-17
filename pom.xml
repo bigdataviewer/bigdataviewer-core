@@ -104,20 +104,6 @@
 	</developers>
 
 	<repositories>
-		<!-- "local" repository -->
-		<repository>
-			<id>jhdf5</id>
-			<name>jhdf5</name>
-			<releases>
-				<enabled>true</enabled>
-				<checksumPolicy>ignore</checksumPolicy>
-			</releases>
-			<snapshots>
-				<enabled>false</enabled>
-			</snapshots>
-			<url>file://${project.basedir}/jhdf5</url>
-		</repository>
-
 		<!-- NB: for project parent -->
 		<repository>
 			<id>imagej.releases</id>
