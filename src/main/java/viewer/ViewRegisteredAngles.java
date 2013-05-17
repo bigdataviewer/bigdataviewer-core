@@ -158,9 +158,6 @@ public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
 		final double[] pScreen = new double[ 3 ];
 		sourceTransform.apply( pSource, pGlobal );
 		viewerTransform.apply( pGlobal, pScreen );
-		System.out.println( LinAlgHelpers.toString( pSource ));
-		System.out.println( LinAlgHelpers.toString( pGlobal ));
-		System.out.println( LinAlgHelpers.toString( pScreen ));
 		final double scaleX = cX / pScreen[ 0 ];
 		final double scaleY = cY / pScreen[ 1 ];
 		final double scale = Math.min( scaleX, scaleY );
