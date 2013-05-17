@@ -8,6 +8,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.IOException;
+import java.net.URL;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -30,10 +31,16 @@ public class HelpFrame
 			frame.toFront();
 		else
 		{
+			final URL url = getClass().getResource( "/viewer/Help.html" );
+			if ( url == null )
+			{
+				System.err.println( "problem laoding url " + url );
+				return;
+			}
 			try
 			{
 				frame = new JFrame( "Help" );
-				final JEditorPane editorPane = new JEditorPane( new HelpFrame().getClass().getResource( "Help.html" ) );
+				final JEditorPane editorPane = new JEditorPane( url );
 				editorPane.setEditable( false );
 				editorPane.setBorder( BorderFactory.createEmptyBorder( 10, 0, 10, 10 ) );
 

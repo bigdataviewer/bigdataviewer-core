@@ -3,7 +3,6 @@ package viewer.hdf5.img;
 import static viewer.hdf5.Util.getCellsPath;
 import static viewer.hdf5.Util.reorder;
 import net.imglib2.img.basictypeaccess.array.ShortArray;
-import viewer.hdf5.Util;
 import ch.systemsx.cisd.base.mdarray.MDShortArray;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
 
@@ -21,7 +20,7 @@ public class ShortArrayLoader implements Hdf5ArrayLoader< ShortArray >
 	{
 		synchronized( hdf5Reader )
 		{
-			final MDShortArray array = hdf5Reader.readShortMDArrayBlockWithOffset( getCellsPath( timepoint, setup, level ), reorder( dimensions ), Util.reorder( min ) );
+			final MDShortArray array = hdf5Reader.readShortMDArrayBlockWithOffset( getCellsPath( timepoint, setup, level ), reorder( dimensions ), reorder( min ) );
 			return new ShortArray( array.getAsFlatArray() );
 		}
 	}

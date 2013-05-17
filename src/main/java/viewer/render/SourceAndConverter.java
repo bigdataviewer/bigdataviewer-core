@@ -26,6 +26,16 @@ public class SourceAndConverter< T extends NumericType< T > >
 	}
 
 	/**
+	 * copy constructor
+	 * @param soc
+	 */
+	protected SourceAndConverter( final SourceAndConverter< T > soc )
+	{
+		this.spimSource = soc.spimSource;
+		this.converter = soc.converter;
+	}
+
+	/**
 	 * Get the {@link Source} (provides image data for all timepoints of one
 	 * angle).
 	 */

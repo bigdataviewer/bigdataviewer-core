@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 import javax.xml.parsers.ParserConfigurationException;
 
@@ -22,16 +23,14 @@ public class SequenceDescription
 	/**
 	 * timepoint id for every timepoint index.
 	 */
-	final public int[] timepoints;
+	final public ArrayList< Integer > timepoints;
 	// TODO: make protected and use getter
-	// TODO: make ArrayList< Integer > ?
 
 	/**
 	 * angle and illumination setup for every view-setup index.
 	 */
-	final public ViewSetup[] setups;
+	final public ArrayList< ViewSetup > setups;
 	// TODO: make protected and use getter
-	// TODO: make ArrayList< ViewSetup >
 
 	/**
 	 * Relative paths in the XML sequence description are interpreted with respect to this.
@@ -44,10 +43,10 @@ public class SequenceDescription
 	final public ImgLoader imgLoader;
 	// TODO: make protected and use getter
 
-	public SequenceDescription( final ViewSetup[] setups, final int[] timepoints, final File basePath, final ImgLoader imgLoader )
+	public SequenceDescription( final List< ViewSetup > setups, final List< Integer > timepoints, final File basePath, final ImgLoader imgLoader )
 	{
-		this.timepoints = timepoints;
-		this.setups = setups;
+		this.timepoints = new ArrayList< Integer >( timepoints );
+		this.setups = new ArrayList< ViewSetup >( setups );
 		this.basePath = basePath;
 		this.imgLoader = imgLoader;
 	}
@@ -89,7 +88,7 @@ public class SequenceDescription
 	 */
 	final public int numTimepoints()
 	{
-		return timepoints.length;
+		return timepoints.size();
 	}
 
 	/**
@@ -99,7 +98,7 @@ public class SequenceDescription
 	 */
 	final public int numViewSetups()
 	{
-		return setups.length;
+		return setups.size();
 	}
 
 	/**
@@ -121,7 +120,7 @@ public class SequenceDescription
 		return imgLoader;
 	}
 
-	protected static int[] createTimepointsFromXml( final Element sequenceDescription )
+	protected static ArrayList< Integer > createTimepointsFromXml( final Element sequenceDescription )
 	{
 		final Element timepoints = ( Element ) sequenceDescription.getElementsByTagName( "Timepoints" ).item( 0 );
 		final String type = timepoints.getAttribute( "type" );
@@ -129,19 +128,18 @@ public class SequenceDescription
 		{
 			final int first = Integer.parseInt( timepoints.getElementsByTagName( "first" ).item( 0 ).getTextContent() );
 			final int last = Integer.parseInt( timepoints.getElementsByTagName( "last" ).item( 0 ).getTextContent() );
-			final int[] tp = new int[ last - first + 1 ];
-			for ( int t = first, i = 0; t <= last; ++t, ++i )
-				tp[ i ] = t;
+			final ArrayList< Integer > tp = new ArrayList< Integer >();
+			for ( int t = first; t <= last; ++t )
+				tp.add( t );
 			return tp;
 		}
 		else
 		{
-			System.err.println( "unknown <Timepoints> type" );
-			return new int[ 0 ];
+			throw new RuntimeException( "unknown <Timepoints> type: " + type );
 		}
 	}
 
-	protected static ViewSetup[] createViewSetupsFromXml( final Element sequenceDescription )
+	protected static ArrayList< ViewSetup > createViewSetupsFromXml( final Element sequenceDescription )
 	{
 		final ArrayList< ViewSetup > setups = new ArrayList< ViewSetup >();
 
@@ -151,6 +149,6 @@ public class SequenceDescription
 
 		// sort by ViewSetup.id
 		Collections.sort( setups );
-		return setups.toArray( new ViewSetup[ 0 ] );
+		return setups;
 	}
 }

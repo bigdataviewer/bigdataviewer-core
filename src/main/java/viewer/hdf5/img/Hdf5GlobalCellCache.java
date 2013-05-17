@@ -3,8 +3,8 @@ package viewer.hdf5.img;
 import java.lang.ref.SoftReference;
 import java.util.concurrent.ConcurrentHashMap;
 
+import viewer.hdf5.img.CacheIoTiming.IoStatistics;
 import viewer.hdf5.img.Hdf5ImgCells.CellCache;
-import viewer.util.StopWatch;
 
 public class Hdf5GlobalCellCache< A >
 {
@@ -12,7 +12,7 @@ public class Hdf5GlobalCellCache< A >
 
 	final int numSetups;
 
-	final int numLevels;
+	final int maxNumLevels;
 
 	class Key
 	{
@@ -31,7 +31,7 @@ public class Hdf5GlobalCellCache< A >
 			this.level = level;
 			this.index = index;
 
-			final long value = ( ( index * numLevels + level ) * numSetups + setup ) * numTimepoints + timepoint;
+			final long value = ( ( index * maxNumLevels + level ) * numSetups + setup ) * numTimepoints + timepoint;
 			hashcode = ( int ) ( value ^ ( value >>> 32 ) );
 		}
 
@@ -85,12 +85,12 @@ public class Hdf5GlobalCellCache< A >
 
 	final protected Hdf5ArrayLoader< A > loader;
 
-	public Hdf5GlobalCellCache( final Hdf5ArrayLoader< A > loader, final int numTimepoints, final int numSetups, final int numLevels )
+	public Hdf5GlobalCellCache( final Hdf5ArrayLoader< A > loader, final int numTimepoints, final int numSetups, final int maxNumLevels )
 	{
 		this.loader = loader;
 		this.numTimepoints = numTimepoints;
 		this.numSetups = numSetups;
-		this.numLevels = numLevels;
+		this.maxNumLevels = maxNumLevels;
 	}
 
 	public Hdf5Cell< A > getGlobalIfCached( final int timepoint, final int setup, final int level, final int index )
@@ -106,97 +106,6 @@ public class Hdf5GlobalCellCache< A >
 		return null;
 	}
 
-	static class IoStatistics
-	{
-		final private StopWatch stopWatch;
-
-		private long ioBytes;
-
-		private boolean timeoutSet;
-
-		private long timeout;
-
-		private Runnable timeoutCallback;
-
-		public IoStatistics()
-		{
-			stopWatch = new StopWatch();
-			ioBytes = 0;
-			timeout = -1;
-			timeoutCallback = null;
-		}
-
-		public long getIoBytes()
-		{
-			return ioBytes;
-		}
-
-		public long getIoNanoTime()
-		{
-			return stopWatch.nanoTime();
-		}
-
-		public void setIoNanoTimeout( final long t, final Runnable callback )
-		{
-			timeoutSet = true;
-			timeout = t;
-			timeoutCallback = callback;
-		}
-
-		public void clearIoNanoTimeout()
-		{
-			timeoutSet = false;
-		}
-
-		public boolean timeoutReached()
-		{
-			return timeoutSet && ( timeout < getIoNanoTime() );
-		}
-
-		public void timeoutCallback()
-		{
-			if ( timeoutCallback != null )
-			{
-				timeoutCallback.run();
-				timeoutCallback = null;
-			}
-		}
-	}
-
-	final static ConcurrentHashMap< ThreadGroup, IoStatistics > perThreadGroupIoStatistics = new ConcurrentHashMap< ThreadGroup, IoStatistics >();
-
-	final static IoStatistics getThreadGroupIoStatistics()
-	{
-		final ThreadGroup threadGroup = Thread.currentThread().getThreadGroup();
-		IoStatistics statistics = perThreadGroupIoStatistics.get( threadGroup );
-		if ( statistics == null )
-		{
-			statistics = new IoStatistics();
-			perThreadGroupIoStatistics.put( threadGroup, statistics );
-		}
-		return statistics;
-	}
-
-	public static void setThreadGroupIoNanoTimeout( final long t, final Runnable callback )
-	{
-		getThreadGroupIoStatistics().setIoNanoTimeout( t, callback );
-	}
-
-	public static void clearThreadGroupIoNanoTimeout()
-	{
-		getThreadGroupIoStatistics().clearIoNanoTimeout();
-	}
-
-	public static long getThreadGroupIoNanoTime()
-	{
-		return getThreadGroupIoStatistics().getIoNanoTime();
-	}
-
-	public static long getThreadGroupIoBytes()
-	{
-		return getThreadGroupIoStatistics().getIoBytes();
-	}
-
 	public synchronized Hdf5Cell< A > loadGlobal( final int[] cellDims, final long[] cellMin, final int timepoint, final int setup, final int level, final int index )
 	{
 		final Key k = new Key( timepoint, setup, level, index );
@@ -208,22 +117,22 @@ public class Hdf5GlobalCellCache< A >
 				return entry.data;
 		}
 
-		final IoStatistics statistics = getThreadGroupIoStatistics();
+		final IoStatistics statistics = CacheIoTiming.getThreadGroupIoStatistics();
 		if ( statistics.timeoutReached() )
 		{
 			statistics.timeoutCallback();
 			return new Hdf5Cell< A >( cellDims, cellMin, loader.emptyArray( cellDims ) );
 		}
 
-		statistics.stopWatch.start();
+		statistics.start();
 		final Hdf5Cell< A > cell = new Hdf5Cell< A >( cellDims, cellMin, loader.loadArray( timepoint, setup, level, cellDims, cellMin ) );
 		softReferenceCache.put( k, new SoftReference< Entry >( new Entry( k, cell ) ) );
-		statistics.stopWatch.stop();
+		statistics.stop();
 
 		int c = loader.getBytesPerElement();
 		for ( final int l : cellDims )
 			c *= l;
-		statistics.ioBytes += c;
+		statistics.incIoBytes( c );
 
 		return cell;
 	}
