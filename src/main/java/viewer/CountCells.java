@@ -1,5 +1,7 @@
 package viewer;
 
+import ij.ImageJ;
+
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -23,6 +25,7 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.XmlHelpers;
+import net.imglib2.Cursor;
 import net.imglib2.Dimensions;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
@@ -37,6 +40,8 @@ import net.imglib2.converter.TypeIdentity;
 import net.imglib2.display.AbstractLinearRange;
 import net.imglib2.display.RealARGBConverter;
 import net.imglib2.img.Img;
+import net.imglib2.img.array.ArrayImgFactory;
+import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.img.sparse.NtreeImgFactory;
 import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
@@ -74,6 +79,10 @@ public class CountCells implements BrightnessDialog.MinMaxListener
 	final KeyStroke removeCellKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_C, KeyEvent.SHIFT_DOWN_MASK );
 
 	final KeyStroke increaseCellRadius = KeyStroke.getKeyStroke( KeyEvent.VK_D, 0 );
+
+	final KeyStroke statusOfCounting = KeyStroke.getKeyStroke( KeyEvent.VK_I, 0 );
+
+	final KeyStroke exportSegmentation = KeyStroke.getKeyStroke( KeyEvent.VK_E, 0 );
 
 	final KeyStroke decreaseCellRadius = KeyStroke.getKeyStroke( KeyEvent.VK_S, 0 );
 
@@ -498,7 +507,79 @@ public class CountCells implements BrightnessDialog.MinMaxListener
 			private static final long serialVersionUID = 1L;
 		} );
 
+		viewer.addKeyAction( statusOfCounting, new AbstractAction( "status of counting" )
+		{
+			@Override
+			public void actionPerformed( final ActionEvent arg0 )
+			{
+				System.out.println( "number of cells: " + cells.size() );
+			}
 
+			private static final long serialVersionUID = 1L;
+		} );
+		
+		viewer.addKeyAction( exportSegmentation, new AbstractAction( "export segmentation" )
+		{
+			@Override
+			public void actionPerformed( final ActionEvent arg0 )
+			{
+				System.out.println( "number of cells: " + cells.size() );
+				
+				long[] dim = new long[ overlay.currentSource.numDimensions() ];
+				
+				for ( int d = 0; d < overlay.currentSource.numDimensions(); ++d )
+				{
+					System.out.println( overlay.currentSource.dimension( d ) + " " );
+					dim[ d ] = overlay.currentSource.dimension( d );
+				}
+				
+				new ImageJ();
+				
+				ArrayImgFactory< ARGBType > factory = new ArrayImgFactory<ARGBType>();
+				Img< ARGBType > img = factory.create( dim, new ARGBType() );
+				
+				RandomAccess< ARGBType > r = img.randomAccess();
+				Cursor<LabelingType<Integer>> c = overlay.currentSource.localizingCursor();
+				HashMap<Integer, Integer> map = new HashMap<Integer, Integer>();
+				Random rnd = new Random();
+				
+				while ( c.hasNext() )
+				{
+					c.fwd();
+					r.setPosition( c );
+					
+					List< Integer > labels = c.get().getLabeling(); 
+					
+					if ( labels != null && labels.size() > 0 )
+					{
+						final int label = labels.get( 0 );
+						
+						if ( map.get( label ) == null )
+						{
+							int r1 = rnd.nextInt( 127 ) + 128;
+							int g1 = rnd.nextInt( 127 ) + 128;
+							int b1 = rnd.nextInt( 127 ) + 128;
+							
+							int rgb = ARGBType.rgba( r1, g1, b1, 0 );
+
+							r.get().set( rgb );
+							
+							map.put( label, rgb );
+						}
+						else
+						{
+							r.get().set( map.get( label ) );
+						}
+					}
+				}
+				
+				ImageJFunctions.show( img );
+			}
+
+			private static final long serialVersionUID = 1L;
+		} );
+
+		
 		final JMenuBar menubar = new JMenuBar();
 		final JMenu menu = new JMenu("File");
 		menubar.add( menu );
@@ -567,8 +648,10 @@ public class CountCells implements BrightnessDialog.MinMaxListener
 		 * shift+c - delete point (mouse has to be pointed on the cell)
 		 * d - increase cell size (mouse has to be pointed on the cell)
 		 * s - decrease cell size (mouse has to be pointed on the cell)
+		 * i - print the number of cells currently segmented
 		 */
 		//final String fn = "/Users/preibischs/Documents/Microscopy/HDF5/celegans.xml";
+		//final String fn = "/Users/preibischs/Documents/Microscopy/HDF5/l1-reconstructed.xml";
 		final String fn = "/Users/preibischs/Documents/Microscopy/HDF5/worm2-fused.xml";
 		try
 		{
