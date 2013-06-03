@@ -10,7 +10,8 @@ import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.converter.Converter;
-import viewer.hdf5.img.Hdf5GlobalCellCache;
+import viewer.hdf5.img.CacheIoTiming;
+import viewer.hdf5.img.CacheIoTiming.IoStatistics;
 import viewer.util.StopWatch;
 
 public class InterruptibleRenderer< A, B > extends AbstractInterval
@@ -50,11 +51,13 @@ public class InterruptibleRenderer< A, B > extends AbstractInterval
 		final StopWatch stopWatch = new StopWatch();
 		stopWatch.start();
 		final long startTimeTotal = stopWatch.nanoTime();
-		final long startTimeIo = Hdf5GlobalCellCache.getThreadGroupIoNanoTime();
-//		final long startIoBytes = Hdf5GlobalCellCache.getThreadIoBytes();
+		final IoStatistics iostat = CacheIoTiming.getThreadGroupIoStatistics();
+		final long startTimeIo = iostat.getIoNanoTime();
+		final long startTimeIoCumulative = iostat.getCumulativeIoNanoTime();
+		final long startIoBytes = iostat.getIoBytes();
 
 		if ( ioTimeOutNanos > 0 )
-			Hdf5GlobalCellCache.setThreadGroupIoNanoTimeout( startTimeIo + ioTimeOutNanos, new Runnable()
+			CacheIoTiming.setThreadGroupIoNanoTimeout( startTimeIo + ioTimeOutNanos, new Runnable()
 			{
 				@Override
 				public void run()
@@ -64,7 +67,7 @@ public class InterruptibleRenderer< A, B > extends AbstractInterval
 				}
 			} );
 		else
-			Hdf5GlobalCellCache.clearThreadGroupIoNanoTimeout();
+			CacheIoTiming.clearThreadGroupIoNanoTimeout();
 
 		min[ 0 ] = target.min( 0 );
 		min[ 1 ] = target.min( 1 );
@@ -134,10 +137,10 @@ public class InterruptibleRenderer< A, B > extends AbstractInterval
 			e.printStackTrace();
 		}
 
-//		final long numIoBytes = Hdf5GlobalCellCache.getThreadIoBytes() - startIoBytes;
+		final long numIoBytes = iostat.getIoBytes() - startIoBytes;
 		final long lastFrameTime = stopWatch.nanoTime() - startTimeTotal;
-		lastFrameIoNanoTime = Hdf5GlobalCellCache.getThreadGroupIoNanoTime() - startTimeIo;
-		lastFrameRenderNanoTime = lastFrameTime - lastFrameIoNanoTime;
+		lastFrameIoNanoTime = iostat.getIoNanoTime() - startTimeIo;
+		lastFrameRenderNanoTime = lastFrameTime - ( iostat.getCumulativeIoNanoTime() - startTimeIoCumulative ) / numThreads;
 
 //		if ( wasInterrupted )
 //			System.out.println( "rendering was interrupted." );
@@ -156,7 +159,7 @@ public class InterruptibleRenderer< A, B > extends AbstractInterval
 	{
 //		System.out.println( "interrupting..." );
 		interrupted.set( true );
-		Hdf5GlobalCellCache.setThreadGroupIoNanoTimeout( Hdf5GlobalCellCache.getThreadGroupIoNanoTime(), null );
+		CacheIoTiming.setThreadGroupIoNanoTimeout( CacheIoTiming.getThreadGroupIoNanoTime(), null );
 	}
 
 	public long getLastFrameRenderNanoTime()

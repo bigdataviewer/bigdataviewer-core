@@ -30,7 +30,7 @@ public class View extends ViewRegistration implements Comparable< View >
 	 */
 	public ViewSetup getSetup()
 	{
-		return sequenceDescription.setups[ setup ];
+		return sequenceDescription.setups.get( setup );
 	}
 
 	/**
@@ -40,7 +40,7 @@ public class View extends ViewRegistration implements Comparable< View >
 	 */
 	public int getTimepoint()
 	{
-		return sequenceDescription.timepoints[ timepoint ];
+		return sequenceDescription.timepoints.get( timepoint );
 	}
 
 	final static protected String basenameFormatString = "t%05d-a%03d-c%03d-i%01d";

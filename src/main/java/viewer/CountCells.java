@@ -409,7 +409,7 @@ public class CountCells implements BrightnessDialog.MinMaxListener
 		}
 	}
 
-	private CountCells( final String xmlFilename ) throws ParserConfigurationException, SAXException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
+	public CountCells( final String xmlFilename ) throws ParserConfigurationException, SAXException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
 	{
 		final int width = 800;
 		final int height = 600;
