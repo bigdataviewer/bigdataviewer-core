@@ -1,6 +1,8 @@
 package mpicbg.spim.data;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -29,18 +31,18 @@ public class XmlHelpers
 		return docBuilder.newDocument();
 	}
 
-	public static void writeXmlDocument( final Document doc, final String xmlFilename ) throws TransformerFactoryConfigurationError, TransformerException
+	public static void writeXmlDocument( final Document doc, final String xmlFilename ) throws TransformerFactoryConfigurationError, TransformerException, FileNotFoundException
 	{
 		writeXmlDocument( doc, new File( xmlFilename ) );
 	}
 
-	public static void writeXmlDocument( final Document doc, final File xmlFile ) throws TransformerFactoryConfigurationError, TransformerException
+	public static void writeXmlDocument( final Document doc, final File xmlFile ) throws TransformerFactoryConfigurationError, TransformerException, FileNotFoundException
 	{
 		final Transformer transformer = TransformerFactory.newInstance().newTransformer();
 		transformer.setOutputProperty( OutputKeys.INDENT, "yes" );
 		transformer.setOutputProperty( OutputKeys.ENCODING, "UTF-8" );
 		transformer.setOutputProperty( "{http://xml.apache.org/xslt}indent-amount", "4" );
-		transformer.transform( new DOMSource( doc ), new StreamResult( xmlFile ) );
+		transformer.transform( new DOMSource( doc ), new StreamResult( new FileOutputStream( xmlFile ) ) );
 	}
 
 	public static Element intElement( final Document doc, final String name, final int value )

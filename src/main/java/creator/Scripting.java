@@ -1,6 +1,7 @@
 package creator;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -536,7 +537,7 @@ public class Scripting
 				WriteSequenceToHdf5.writeHdf5PartitionFile( seq, perSetupResolutions, perSetupSubdivisions, partitions.get( index ), null );
 		}
 
-		public void writeXmlAndLinks() throws TransformerFactoryConfigurationError, TransformerException, ParserConfigurationException
+		public void writeXmlAndLinks() throws TransformerFactoryConfigurationError, TransformerException, ParserConfigurationException, FileNotFoundException
 		{
 			WriteSequenceToHdf5.writeHdf5PartitionLinkFile( seq, perSetupResolutions, perSetupSubdivisions, partitions, hdf5File );
 			final Hdf5ImageLoader loader = new Hdf5ImageLoader( hdf5File, partitions, false );
@@ -545,7 +546,7 @@ public class Scripting
 		}
 	}
 
-	public static void main( final String[] args ) throws ConfigurationParserException, TransformerFactoryConfigurationError, TransformerException, ParserConfigurationException
+	public static void main( final String[] args ) throws ConfigurationParserException, TransformerFactoryConfigurationError, TransformerException, ParserConfigurationException, FileNotFoundException
 	{
 
 		final String huiskenExperimentXmlFile = "/Users/pietzsch/workspace/data/fast fly/111010_weber/e012.xml";

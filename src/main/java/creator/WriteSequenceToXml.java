@@ -1,6 +1,7 @@
 package creator;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -18,7 +19,7 @@ import org.w3c.dom.Element;
 
 public class WriteSequenceToXml
 {
-	public static void writeSequenceToXml( final SequenceDescription sequence, final ViewRegistrations registrations, final String xmlFilename ) throws TransformerFactoryConfigurationError, TransformerException, ParserConfigurationException
+	public static void writeSequenceToXml( final SequenceDescription sequence, final ViewRegistrations registrations, final String xmlFilename ) throws TransformerFactoryConfigurationError, TransformerException, ParserConfigurationException, FileNotFoundException
 	{
 		System.out.println( "writing sequence description to " + xmlFilename );
 		final Document doc = XmlHelpers.newXmlDocument();
