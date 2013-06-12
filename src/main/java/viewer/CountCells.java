@@ -652,7 +652,8 @@ public class CountCells implements BrightnessDialog.MinMaxListener
 		 */
 		//final String fn = "/Users/preibischs/Documents/Microscopy/HDF5/celegans.xml";
 		//final String fn = "/Users/preibischs/Documents/Microscopy/HDF5/l1-reconstructed.xml";
-		final String fn = "/Users/preibischs/Documents/Microscopy/HDF5/worm2-fused.xml";
+		//final String fn = "/Users/preibischs/Documents/Microscopy/HDF5/worm2-fused.xml";
+		final String fn = "/Users/preibischs/Documents/Microscopy/HDF5/worm7/export.xml";
 		try
 		{
 			System.setProperty("apple.laf.useScreenMenuBar", "true");
