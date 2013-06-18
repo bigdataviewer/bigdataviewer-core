@@ -18,6 +18,7 @@ import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.NumericType;
 import viewer.GuiHelpers;
 import viewer.display.BlendARGB;
+import viewer.display.CombineColorsARGB;
 
 public class MultiResolutionRenderer
 {
@@ -437,6 +438,13 @@ public class MultiResolutionRenderer
 			final ArrayList< Integer > visibleSourceIndices = viewerState.getVisibleSourceIndices();
 			if ( visibleSourceIndices.isEmpty() )
 				return new InterruptibleRenderer< ARGBType, ARGBType >( new ConstantRandomAccessible< ARGBType >( argbtype, 2 ), new TypeIdentity< ARGBType >() );
+			else if ( viewerState.isColorMode() )
+			{
+				final ArrayList< RandomAccessible< ARGBType > > accessibles = new ArrayList< RandomAccessible< ARGBType > >( visibleSourceIndices.size() );
+				for ( final int i : visibleSourceIndices )
+					accessibles.add( getConvertedTransformedSource( viewerState, sources.get( i ), screenScaleTransform, mipmapIndex[ i ] ) );
+				return new InterruptibleRenderer< ARGBType, ARGBType >( new CombineColorsARGB( accessibles, viewerState.getColorsVisibleSources() ), new TypeIdentity< ARGBType >() );
+			}
 			else if ( visibleSourceIndices.size() == 1 )
 			{
 				final int i = visibleSourceIndices.get( 0 );
