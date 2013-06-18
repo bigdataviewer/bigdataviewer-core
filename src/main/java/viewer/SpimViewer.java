@@ -346,7 +346,17 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 	{
 		final boolean singleSourceMode = ! state.isSingleSourceMode();
 		state.setSingleSourceMode( singleSourceMode );
-		animatedOverlay = new TextOverlayAnimator( singleSourceMode ? "single-source mode" : "fused mode", indicatorTime );
+		final String colorMode = state.isColorMode() ? " (color mode)" : " (monochrome mode)";
+		animatedOverlay = new TextOverlayAnimator( singleSourceMode ? "single-source mode"+colorMode : "fused mode"+colorMode, indicatorTime );
+		requestRepaint();
+	}
+
+	public synchronized void toggleColorMode()
+	{
+		final boolean colorMode = ! state.isColorMode();
+		state.setColorMode( colorMode );
+		final String viewMode = state.isSingleSourceMode() ? " (single-source mode)" : " (fused mode)";
+		animatedOverlay = new TextOverlayAnimator( colorMode ? "color mode"+viewMode : "monochrome mode"+viewMode, indicatorTime );
 		requestRepaint();
 	}
 
@@ -440,6 +450,19 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 			public void actionPerformed( final ActionEvent e )
 			{
 				toggleSingleSourceMode();
+			}
+
+			private static final long serialVersionUID = 1L;
+		};
+		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
+
+		key = KeyStroke.getKeyStroke( KeyEvent.VK_G, 0 );
+		action = new AbstractAction( "toogle color mode" )
+		{
+			@Override
+			public void actionPerformed( final ActionEvent e )
+			{
+				toggleColorMode();
 			}
 
 			private static final long serialVersionUID = 1L;

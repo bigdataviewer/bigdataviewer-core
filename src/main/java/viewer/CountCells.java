@@ -2,6 +2,7 @@ package viewer;
 
 import ij.ImageJ;
 
+import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -13,7 +14,9 @@ import java.util.List;
 import java.util.Random;
 
 import javax.swing.AbstractAction;
+import javax.swing.JColorChooser;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
@@ -67,9 +70,12 @@ import viewer.display.LabelingTypeARGBConverter;
 import viewer.render.Interpolation;
 import viewer.render.Source;
 import viewer.render.SourceAndConverter;
+import viewer.render.ViewerState;
 
 public class CountCells implements BrightnessDialog.MinMaxListener
 {
+	final KeyStroke colorKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_H, 0 );
+
 	final KeyStroke brightnessKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_S, KeyEvent.SHIFT_DOWN_MASK );
 
 	final KeyStroke helpKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_F1, 0 );
@@ -96,6 +102,12 @@ public class CountCells implements BrightnessDialog.MinMaxListener
 
 	final JFileChooser fileChooser;
 
+	public void showColorDialog( final int s, final ARGBType type )
+	{
+		Color color = JColorChooser.showDialog( null, "Pick color for source " + s, new Color( type.get() ) );
+		type.set( color.getRGB() );
+	}
+	
 	public void toggleBrightnessDialog()
 	{
 		brightnessDialog.setVisible( ! brightnessDialog.isVisible() );
@@ -432,6 +444,24 @@ public class CountCells implements BrightnessDialog.MinMaxListener
 		overlay.getSource( 0, 0 );
 
 		viewer = new SpimViewer( width, height, sources, seq.numTimepoints() );
+		
+		// last source is an overlay, we make it white by default
+		final ARGBType color = viewer.getState().getColors().get( sources.size() - 1 );
+		color.set( ARGBType.rgba( 255, 255, 255, 255 ) );
+
+		viewer.addKeyAction( colorKeystroke, new AbstractAction( "set color for current channel" )
+		{
+			@Override
+			public void actionPerformed( final ActionEvent arg0 )
+			{
+				final ViewerState state = viewer.getState(); 
+				final int s = state.getCurrentSource();				
+				showColorDialog( s, state.getColors().get( s ) );
+				viewer.requestRepaint();
+			}
+
+			private static final long serialVersionUID = 1L;
+		} );
 
 		viewer.addKeyAction( brightnessKeystroke, new AbstractAction( "brightness settings" )
 		{
@@ -653,7 +683,7 @@ public class CountCells implements BrightnessDialog.MinMaxListener
 		//final String fn = "/Users/preibischs/Documents/Microscopy/HDF5/celegans.xml";
 		//final String fn = "/Users/preibischs/Documents/Microscopy/HDF5/l1-reconstructed.xml";
 		//final String fn = "/Users/preibischs/Documents/Microscopy/HDF5/worm2-fused.xml";
-		final String fn = "/Users/preibischs/Documents/Microscopy/HDF5/worm7/export.xml";
+		final String fn = "/Users/preibischs/Documents/Microscopy/HDF5/worm7/worm7_4views.xml";
 		try
 		{
 			System.setProperty("apple.laf.useScreenMenuBar", "true");

@@ -8,6 +8,7 @@ import java.util.Collections;
 import java.util.List;
 
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.numeric.ARGBType;
 
 public class ViewerState
 {
@@ -36,6 +37,17 @@ public class ViewerState
 	 */
 	protected boolean singleSourceMode;
 
+	/**
+	 * If the display is in mode <em>fused-mode</em>, then the <em>color-mode</em>
+	 * can be additionally activated that allows to assign colors to different channels
+	 */
+	protected boolean colorMode;
+
+	/**
+	 * Defines the colors for each source
+	 */
+	protected ArrayList< ARGBType > colors;
+	
 	/**
 	 * The index of the current source.
 	 * (In single-source mode only the current source is shown.)
@@ -66,6 +78,12 @@ public class ViewerState
 		singleSourceMode = true;
 		currentSource = 0;
 		currentTimepoint = 0;
+
+		this.colors = new ArrayList<ARGBType>( sources.size() );
+		for ( int s = 0; s < sources.size(); ++s )
+			this.colors.add( new ARGBType( ARGBType.rgba( s%3 == 0 ? 255 : 0, s%3 == 1 ? 255 : 0, s%3 == 2 ? 255 : 0, 255 ) ) );
+					
+		colorMode = false;
 	}
 
 	/**
@@ -83,6 +101,11 @@ public class ViewerState
 		singleSourceMode = s.singleSourceMode;
 		currentSource = s.currentSource;
 		currentTimepoint = s.currentTimepoint;
+
+		this.colors = new ArrayList<ARGBType>( sources.size() );
+		for ( final ARGBType type : s.colors )
+			this.colors.add( type );
+		this.colorMode = s.colorMode;
 	}
 
 	public ViewerState copy()
@@ -170,6 +193,44 @@ public class ViewerState
 	}
 
 	/**
+	 * Is the display mode <em>color</em>?
+	 *
+	 * @return whether the display mode is <em>color-mode</em>.
+	 */
+	public synchronized boolean isColorMode()
+	{
+		return colorMode;
+	}
+	
+	/**
+	 * Return the list of all colors
+	 * 
+	 * @return - ArrayList< ARGBType > 
+	 */
+	public synchronized ArrayList< ARGBType > getColors()
+	{
+		return colors;
+	}
+
+	/**
+	 * Returns a list of colors of all currently visible sources.
+	 *
+	 * @return list of colors of all currently visible sources.
+	 */
+	protected synchronized ArrayList< ARGBType > getColorsVisibleSources()
+	{
+		final ArrayList< ARGBType > visibleColorsSources = new ArrayList< ARGBType >();
+		
+		for ( int s = 0; s < sources.size(); ++s )
+		{
+			final SourceState< ? > source = sources.get( s );
+			if ( source.isVisible( singleSourceMode ) )
+				visibleColorsSources.add( colors.get( s ) );
+		}
+		return visibleColorsSources;
+	}
+
+	/**
 	 * Set the display mode to <em>single-source</em> (true) or <em>fused</em>
 	 * (false). In <em>single-source</em> mode, only the current source (SPIM
 	 * angle) is shown. In <em>fused</em> mode, all active sources are blended.
@@ -181,6 +242,18 @@ public class ViewerState
 	public synchronized void setSingleSourceMode( final boolean singleSourceMode )
 	{
 		this.singleSourceMode = singleSourceMode;
+	}
+
+	/**
+	 * Set the display mode to <em>color-mode</em>
+	 *
+	 * @param colorMode
+	 *            If true, set <em>color-mode</em> true. If false, set
+	 *            <em>color-mode</em> to false.
+	 */
+	public synchronized void setColorMode( final boolean colorMode )
+	{
+		this.colorMode = colorMode;
 	}
 
 	/**
