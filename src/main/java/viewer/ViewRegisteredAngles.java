@@ -24,6 +24,7 @@ import net.imglib2.view.Views;
 
 import org.xml.sax.SAXException;
 
+import viewer.NewBrightnessDialog.ConverterSetup;
 import viewer.render.Source;
 import viewer.render.SourceAndConverter;
 import viewer.render.SourceState;
@@ -71,12 +72,45 @@ public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
 		final SequenceDescription seq = loader.getSequenceDescription();
 
 		displayRanges = new ArrayList< AbstractLinearRange >();
-		final RealARGBConverter< UnsignedShortType > converter = new RealARGBConverter< UnsignedShortType >( 0, 65535 );
-		displayRanges.add( converter );
+
+		final ArrayList< ConverterSetup > converterSetups = new ArrayList< ConverterSetup >();
 
 		final ArrayList< SourceAndConverter< ? > > sources = new ArrayList< SourceAndConverter< ? > >();
 		for ( int setup = 0; setup < seq.numViewSetups(); ++setup )
+		{
+			final RealARGBConverter< UnsignedShortType > converter = new RealARGBConverter< UnsignedShortType >( 0, 65535 );
 			sources.add( new SourceAndConverter< UnsignedShortType >( new SpimSource( loader, setup, "angle " + seq.setups.get( setup ).getAngle() ), converter ) );
+			displayRanges.add( converter );
+			final int id = setup;
+			converterSetups.add( new ConverterSetup()
+			{
+				@Override
+				public void setDisplayRange( final int min, final int max )
+				{
+					converter.setMin( min );
+					converter.setMax( max );
+					viewer.requestRepaint();
+				}
+
+				@Override
+				public int getSetupId()
+				{
+					return id;
+				}
+
+				@Override
+				public int getDisplayRangeMin()
+				{
+					return ( int ) converter.getMin();
+				}
+
+				@Override
+				public int getDisplayRangeMax()
+				{
+					return ( int ) converter.getMax();
+				}
+			} );
+		}
 
 		viewer = new SpimViewer( width, height, sources, seq.numTimepoints() );
 
@@ -106,8 +140,11 @@ public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
 		viewer.installKeyActions( brightnessDialog );
 		brightnessDialog.setListener( this );
 
+		final NewBrightnessDialog nbd = new NewBrightnessDialog( viewer.frame, converterSetups );
+		nbd.setVisible( true );
+
 		initTransform( width, height );
-		initBrightness( 0.001, 0.999 );
+//		initBrightness( 0.001, 0.999 );
 	}
 
 	void initTransform( final int viewerWidth, final int viewerHeight )
