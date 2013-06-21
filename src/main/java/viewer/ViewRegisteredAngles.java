@@ -16,7 +16,6 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.algorithm.histogram.DiscreteFrequencyDistribution;
 import net.imglib2.algorithm.histogram.Histogram1d;
 import net.imglib2.algorithm.histogram.Real1dBinMapper;
-import net.imglib2.display.AbstractLinearRange;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
@@ -26,13 +25,15 @@ import net.imglib2.view.Views;
 import org.xml.sax.SAXException;
 
 import viewer.gui.brightness.ConverterSetup;
+import viewer.gui.brightness.MinMaxGroup;
 import viewer.gui.brightness.NewBrightnessDialog;
+import viewer.gui.brightness.SetupAssignments;
 import viewer.render.Source;
 import viewer.render.SourceAndConverter;
 import viewer.render.SourceState;
 import viewer.render.ViewerState;
 
-public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
+public class ViewRegisteredAngles
 {
 	final KeyStroke brightnessKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_S, 0 );
 
@@ -40,9 +41,9 @@ public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
 
 	final SpimViewer viewer;
 
-	final ArrayList< AbstractLinearRange > displayRanges;
+	final SetupAssignments setupAssignments;
 
-	final BrightnessDialog brightnessDialog;
+	final NewBrightnessDialog brightnessDialog;
 
 	public void toggleBrightnessDialog()
 	{
@@ -54,17 +55,6 @@ public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
 		new HelpFrame();
 	}
 
-	@Override
-	public void setMinMax( final int min, final int max )
-	{
-		for ( final AbstractLinearRange r : displayRanges )
-		{
-			r.setMin( min );
-			r.setMax( max );
-		}
-		viewer.requestRepaint();
-	}
-
 	private ViewRegisteredAngles( final String xmlFilename ) throws ParserConfigurationException, SAXException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
 	{
 		final int width = 800;
@@ -73,18 +63,13 @@ public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
 		final SequenceViewsLoader loader = new SequenceViewsLoader( xmlFilename );
 		final SequenceDescription seq = loader.getSequenceDescription();
 
-		displayRanges = new ArrayList< AbstractLinearRange >();
-
 		final ArrayList< ConverterSetup > converterSetups = new ArrayList< ConverterSetup >();
-
 		final ArrayList< SourceAndConverter< ? > > sources = new ArrayList< SourceAndConverter< ? > >();
 		for ( int setup = 0; setup < seq.numViewSetups(); ++setup )
 		{
-//			final RealARGBConverter< UnsignedShortType > converter = new RealARGBConverter< UnsignedShortType >( 0, 65535 );
 			final RealARGBColorConverter< UnsignedShortType > converter = new RealARGBColorConverter< UnsignedShortType >( 0, 65535 );
 			converter.setColor( new ARGBType( ARGBType.rgba( 255, 255, 255, 255 ) ) );
 			sources.add( new SourceAndConverter< UnsignedShortType >( new SpimSource( loader, setup, "angle " + seq.setups.get( setup ).getAngle() ), converter ) );
-			displayRanges.add( converter );
 			final int id = setup;
 			converterSetups.add( new ConverterSetup()
 			{
@@ -153,15 +138,15 @@ public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
 			private static final long serialVersionUID = 1L;
 		} );
 
-		brightnessDialog = new BrightnessDialog( viewer.frame );
+		setupAssignments = new SetupAssignments( converterSetups, 0, 65535 );
+		final MinMaxGroup group = setupAssignments.getMinMaxGroups().get( 0 );
+		for ( final ConverterSetup setup : setupAssignments.getConverterSetups() )
+			setupAssignments.moveSetupToGroup( setup, group );
+		brightnessDialog = new NewBrightnessDialog( viewer.frame, setupAssignments );
 		viewer.installKeyActions( brightnessDialog );
-		brightnessDialog.setListener( this );
-
-		final NewBrightnessDialog nbd = new NewBrightnessDialog( viewer.frame, converterSetups );
-		nbd.setVisible( true );
 
 		initTransform( width, height );
-//		initBrightness( 0.001, 0.999 );
+		initBrightness( 0.001, 0.999 );
 	}
 
 	void initTransform( final int viewerWidth, final int viewerHeight )
@@ -249,7 +234,9 @@ public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
 			cumulative += dfd.relativeFrequency( bin );
 		}
 		final int max = i * 65535 / numBins;
-		brightnessDialog.setMinMax( min, max );
+		final MinMaxGroup minmax = setupAssignments.getMinMaxGroups().get( 0 );
+		minmax.getMinBoundedValue().setCurrentValue( min );
+		minmax.getMaxBoundedValue().setCurrentValue( max );
 	}
 
 	public static void view( final String filename ) throws InstantiationException, IllegalAccessException, ClassNotFoundException, ParserConfigurationException, SAXException, IOException

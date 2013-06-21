@@ -38,16 +38,16 @@ import net.imglib2.type.numeric.ARGBType;
 
 public class NewBrightnessDialog extends JDialog
 {
-	public NewBrightnessDialog( final Frame owner, final ArrayList< ConverterSetup > converterSetups )
+	public NewBrightnessDialog( final Frame owner, final SetupAssignments setupAssignments )
 	{
 		super( owner, "display range", false );
 
 		final Container content = getContentPane();
 
-		final SetupAssignments assignments = new SetupAssignments( converterSetups, 0, 65535 );
-		final MinMaxPanels minMaxPanels = new MinMaxPanels( assignments, this );
+		final MinMaxPanels minMaxPanels = new MinMaxPanels( setupAssignments, this );
+		final ColorsPanel colorsPanel = new ColorsPanel( setupAssignments );
 		content.add( minMaxPanels, BorderLayout.NORTH );
-		content.add( new ColorsPanel( assignments ), BorderLayout.SOUTH );
+		content.add( colorsPanel, BorderLayout.SOUTH );
 
 		final ActionMap am = getRootPane().getActionMap();
 		final InputMap im = getRootPane().getInputMap( JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT );
@@ -64,6 +64,16 @@ public class NewBrightnessDialog extends JDialog
 		};
 		im.put( KeyStroke.getKeyStroke( KeyEvent.VK_ESCAPE, 0 ), hideKey );
 		am.put( hideKey, hideAction );
+
+		setupAssignments.setUpdateListener( new SetupAssignments.UpdateListener()
+		{
+			@Override
+			public void update()
+			{
+				colorsPanel.update();
+				minMaxPanels.update();
+			}
+		} );
 
 		pack();
 		setDefaultCloseOperation( JDialog.HIDE_ON_CLOSE );
@@ -105,22 +115,18 @@ public class NewBrightnessDialog extends JDialog
 		}
 	}
 
-	private static Color getColor( final ConverterSetup setup )
+	public static class ColorsPanel extends JPanel implements SetupAssignments.UpdateListener
 	{
-		final int value = setup.getColor().get();
-		return new Color( value );
-	}
+		private final SetupAssignments setupAssignments;
 
-	private static void setColor( final ConverterSetup setup, final Color color )
-	{
-		setup.setColor( new ARGBType( color.getRGB() | 0xff000000 ) );
-	}
+		private final ArrayList< JButton > buttons;
 
-	public static class ColorsPanel extends JPanel
-	{
 		public ColorsPanel( final SetupAssignments assignments )
 		{
 			super();
+			this.setupAssignments = assignments;
+			buttons = new ArrayList< JButton >();
+
 			setLayout( new BoxLayout( this, BoxLayout.LINE_AXIS ) );
 			setBorder( BorderFactory.createEmptyBorder( 2, 2, 2, 2 ) );
 
@@ -152,9 +158,31 @@ public class NewBrightnessDialog extends JDialog
 						d.setVisible( true );
 					}
 				} );
+				buttons.add( button );
 				add( button );
 			}
 		}
+
+		@Override
+		public void update()
+		{
+			int i = 0;
+			for ( final ConverterSetup setup : setupAssignments.getConverterSetups() )
+				buttons.get( i++ ).setIcon( new ColorIcon( getColor( setup ) ) );
+		}
+
+		private static Color getColor( final ConverterSetup setup )
+		{
+			final int value = setup.getColor().get();
+			return new Color( value );
+		}
+
+		private static void setColor( final ConverterSetup setup, final Color color )
+		{
+			setup.setColor( new ARGBType( color.getRGB() | 0xff000000 ) );
+		}
+
+		private static final long serialVersionUID = 6408468837346789676L;
 	}
 
 	public static class MinMaxPanels extends JPanel implements SetupAssignments.UpdateListener
@@ -176,7 +204,7 @@ public class NewBrightnessDialog extends JDialog
 			minMaxPanels = new ArrayList< MinMaxPanel >();
 			for ( final MinMaxGroup group : setupAssignments.getMinMaxGroups() )
 			{
-				final MinMaxPanel panel = new MinMaxPanel( group, setupAssignments, dialog, this );
+				final MinMaxPanel panel = new MinMaxPanel( group, setupAssignments, this );
 				minMaxPanels.add( panel );
 				add( panel );
 			}
@@ -185,7 +213,6 @@ public class NewBrightnessDialog extends JDialog
 				panel.update();
 
 			this.dialog = dialog;
-			assignments.setUpdateListener( this );
 		}
 
 		@Override
@@ -207,7 +234,7 @@ A:			for ( final MinMaxGroup group : setupAssignments.getMinMaxGroups() )
 				for ( final MinMaxPanel panel : minMaxPanels )
 					if ( panel.minMaxGroup == group )
 						continue A;
-				final MinMaxPanel panel = new MinMaxPanel( group, setupAssignments, dialog, this );
+				final MinMaxPanel panel = new MinMaxPanel( group, setupAssignments, this );
 				minMaxPanels.add( panel );
 				add( panel );
 				panel.update();
@@ -227,6 +254,7 @@ A:			for ( final MinMaxGroup group : setupAssignments.getMinMaxGroups() )
 				panel.storeSliderSize();
 				panel.showAdvanced( isShowingAdvanced );
 			}
+			dialog.pack();
 		}
 
 		private static final long serialVersionUID = 6538962298579455010L;
@@ -249,7 +277,7 @@ A:			for ( final MinMaxGroup group : setupAssignments.getMinMaxGroups() )
 
 		private boolean isShowingAdvanced;
 
-		public MinMaxPanel( final MinMaxGroup group, final SetupAssignments assignments, final JDialog dialog, final MinMaxPanels minMaxPanels )
+		public MinMaxPanel( final MinMaxGroup group, final SetupAssignments assignments, final MinMaxPanels minMaxPanels )
 		{
 			super();
 			minMaxGroup = group;
@@ -354,7 +382,6 @@ A:			for ( final MinMaxGroup group : setupAssignments.getMinMaxGroups() )
 				public void actionPerformed( final ActionEvent e )
 				{
 					minMaxPanels.showAdvanced( ! isShowingAdvanced );
-					dialog.pack();
 				}
 			} );
 			boxesPanel.add( advancedButton );
