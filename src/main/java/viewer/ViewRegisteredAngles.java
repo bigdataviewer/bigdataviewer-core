@@ -24,7 +24,8 @@ import net.imglib2.view.Views;
 
 import org.xml.sax.SAXException;
 
-import viewer.NewBrightnessDialog.ConverterSetup;
+import viewer.gui.brightness.ConverterSetup;
+import viewer.gui.brightness.NewBrightnessDialog;
 import viewer.render.Source;
 import viewer.render.SourceAndConverter;
 import viewer.render.SourceState;
