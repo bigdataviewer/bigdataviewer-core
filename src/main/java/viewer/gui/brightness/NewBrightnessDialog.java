@@ -1,9 +1,14 @@
 package viewer.gui.brightness;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
 import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Frame;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -14,17 +19,22 @@ import javax.swing.Action;
 import javax.swing.ActionMap;
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
+import javax.swing.Icon;
 import javax.swing.InputMap;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JColorChooser;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.KeyStroke;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
+
+import net.imglib2.type.numeric.ARGBType;
 
 public class NewBrightnessDialog extends JDialog
 {
@@ -37,6 +47,7 @@ public class NewBrightnessDialog extends JDialog
 		final SetupAssignments assignments = new SetupAssignments( converterSetups, 0, 65535 );
 		final MinMaxPanels minMaxPanels = new MinMaxPanels( assignments, this );
 		content.add( minMaxPanels, BorderLayout.NORTH );
+		content.add( new ColorsPanel( assignments ), BorderLayout.SOUTH );
 
 		final ActionMap am = getRootPane().getActionMap();
 		final InputMap im = getRootPane().getInputMap( JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT );
@@ -56,6 +67,94 @@ public class NewBrightnessDialog extends JDialog
 
 		pack();
 		setDefaultCloseOperation( JDialog.HIDE_ON_CLOSE );
+	}
+
+	/**
+	 * Adapted from http://stackoverflow.com/a/3072979/230513
+	 */
+	private static class ColorIcon implements Icon
+	{
+		private final int size = 16;
+
+		private final Color color;
+
+		public ColorIcon( final Color color )
+		{
+			this.color = color;
+		}
+
+		@Override
+		public void paintIcon( final Component c, final Graphics g, final int x, final int y )
+		{
+			final Graphics2D g2d = ( Graphics2D ) g;
+			g2d.setRenderingHint( RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON );
+			g2d.setColor( color );
+			g2d.fillOval( x, y, size, size );
+		}
+
+		@Override
+		public int getIconWidth()
+		{
+			return size;
+		}
+
+		@Override
+		public int getIconHeight()
+		{
+			return size;
+		}
+	}
+
+	private static Color getColor( final ConverterSetup setup )
+	{
+		final int value = setup.getColor().get();
+		return new Color( value );
+	}
+
+	private static void setColor( final ConverterSetup setup, final Color color )
+	{
+		setup.setColor( new ARGBType( color.getRGB() | 0xff000000 ) );
+	}
+
+	public static class ColorsPanel extends JPanel
+	{
+		public ColorsPanel( final SetupAssignments assignments )
+		{
+			super();
+			setLayout( new BoxLayout( this, BoxLayout.LINE_AXIS ) );
+			setBorder( BorderFactory.createEmptyBorder( 2, 2, 2, 2 ) );
+
+			final JColorChooser colorChooser = new JColorChooser();
+
+			add( new JLabel( "set view colors:" ) );
+			for ( final ConverterSetup setup : assignments.getConverterSetups() )
+			{
+				final JButton button = new JButton( new ColorIcon( getColor( setup ) ) );
+				button.addActionListener( new ActionListener()
+				{
+					@Override
+					public void actionPerformed( final ActionEvent e )
+					{
+						colorChooser.setColor( getColor( setup ) );
+						final JDialog d = JColorChooser.createDialog( button, "Choose a color", true, colorChooser, new ActionListener()
+						{
+							@Override
+							public void actionPerformed( final ActionEvent arg0 )
+							{
+								final Color c = colorChooser.getColor();
+								if (c != null)
+								{
+									button.setIcon( new ColorIcon( c ) );
+									setColor( setup, c );
+								}
+							}
+						}, null );
+						d.setVisible( true );
+					}
+				} );
+				add( button );
+			}
+		}
 	}
 
 	public static class MinMaxPanels extends JPanel implements SetupAssignments.UpdateListener
@@ -147,6 +246,8 @@ A:			for ( final MinMaxGroup group : setupAssignments.getMinMaxGroups() )
 		private final Runnable showAdvanced;
 
 		private final Runnable hideAdvanced;
+
+		private boolean isShowingAdvanced;
 
 		public MinMaxPanel( final MinMaxGroup group, final SetupAssignments assignments, final JDialog dialog, final MinMaxPanels minMaxPanels )
 		{
@@ -244,13 +345,15 @@ A:			for ( final MinMaxGroup group : setupAssignments.getMinMaxGroups() )
 			spinnerRangeMax.setPreferredSize( ps );
 			spinnerRangeMax.setBorder( BorderFactory.createEmptyBorder( 0, 10, 10, 10 ) );
 
-			final JButton advancedButton = new JButton( ">" );
+			final JButton advancedButton = new JButton( ">>" );
+			advancedButton.setBorder( BorderFactory.createEmptyBorder( 0, 10, 0, 10 ) );
+			isShowingAdvanced = false;
 			advancedButton.addActionListener( new ActionListener()
 			{
 				@Override
 				public void actionPerformed( final ActionEvent e )
 				{
-					minMaxPanels.showAdvanced( advancedButton.getText().equals( ">" ) );
+					minMaxPanels.showAdvanced( ! isShowingAdvanced );
 					dialog.pack();
 				}
 			} );
@@ -263,7 +366,8 @@ A:			for ( final MinMaxGroup group : setupAssignments.getMinMaxGroups() )
 				{
 					advancedPanel.add( spinnerRangeMin );
 					advancedPanel.add( spinnerRangeMax );
-					advancedButton.setText( "<" );
+					advancedButton.setText( "<<" );
+					isShowingAdvanced = true;
 				}
 			};
 
@@ -274,12 +378,12 @@ A:			for ( final MinMaxGroup group : setupAssignments.getMinMaxGroups() )
 				{
 					advancedPanel.remove( spinnerRangeMin );
 					advancedPanel.remove( spinnerRangeMax );
-					advancedButton.setText( ">" );
+					advancedButton.setText( ">>" );
+					isShowingAdvanced = false;
 				}
 			};
 
 			final JPanel eastPanel = new JPanel();
-//			eastPanel.setLayout( new BorderLayout( 10, 10 ) );
 			eastPanel.setLayout( new BoxLayout( eastPanel, BoxLayout.LINE_AXIS ) );
 			eastPanel.add( boxesPanel, BorderLayout.CENTER );
 			eastPanel.add( advancedPanel, BorderLayout.EAST );

@@ -10,14 +10,15 @@ import javax.swing.KeyStroke;
 import javax.xml.parsers.ParserConfigurationException;
 
 import mpicbg.spim.data.SequenceDescription;
+import net.imglib.display.RealARGBColorConverter;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.algorithm.histogram.DiscreteFrequencyDistribution;
 import net.imglib2.algorithm.histogram.Histogram1d;
 import net.imglib2.algorithm.histogram.Real1dBinMapper;
 import net.imglib2.display.AbstractLinearRange;
-import net.imglib2.display.RealARGBConverter;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.util.LinAlgHelpers;
 import net.imglib2.view.Views;
@@ -79,7 +80,9 @@ public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
 		final ArrayList< SourceAndConverter< ? > > sources = new ArrayList< SourceAndConverter< ? > >();
 		for ( int setup = 0; setup < seq.numViewSetups(); ++setup )
 		{
-			final RealARGBConverter< UnsignedShortType > converter = new RealARGBConverter< UnsignedShortType >( 0, 65535 );
+//			final RealARGBConverter< UnsignedShortType > converter = new RealARGBConverter< UnsignedShortType >( 0, 65535 );
+			final RealARGBColorConverter< UnsignedShortType > converter = new RealARGBColorConverter< UnsignedShortType >( 0, 65535 );
+			converter.setColor( new ARGBType( ARGBType.rgba( 255, 255, 255, 255 ) ) );
 			sources.add( new SourceAndConverter< UnsignedShortType >( new SpimSource( loader, setup, "angle " + seq.setups.get( setup ).getAngle() ), converter ) );
 			displayRanges.add( converter );
 			final int id = setup;
@@ -90,6 +93,13 @@ public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
 				{
 					converter.setMin( min );
 					converter.setMax( max );
+					viewer.requestRepaint();
+				}
+
+				@Override
+				public void setColor( final ARGBType color )
+				{
+					converter.setColor( color );
 					viewer.requestRepaint();
 				}
 
@@ -109,6 +119,12 @@ public class ViewRegisteredAngles implements BrightnessDialog.MinMaxListener
 				public int getDisplayRangeMax()
 				{
 					return ( int ) converter.getMax();
+				}
+
+				@Override
+				public ARGBType getColor()
+				{
+					return converter.getColor();
 				}
 			} );
 		}
