@@ -2,7 +2,6 @@ package viewer.gui.brightness;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
-import java.awt.Dimension;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -54,9 +53,6 @@ public class SliderPanel extends JPanel implements BoundedValue.UpdateListener
 				model.setCurrentValue( value );
 			}
 		} );
-
-		final Dimension ps = spinner.getPreferredSize();
-		System.out.println( ps );
 
 		final JLabel label = new JLabel( name, JLabel.CENTER );
 		label.setAlignmentX( Component.CENTER_ALIGNMENT );
