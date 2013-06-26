@@ -56,9 +56,11 @@ public class CropDialog extends JDialog
 
 	private final JTextField pathTextField;
 
-	final JSpinner spinnerMinTimepoint;
+	private final JSpinner spinnerMinTimepoint;
 
-	final JSpinner spinnerMaxTimepoint;
+	private final JSpinner spinnerMaxTimepoint;
+
+	private final ThreadGroup croppingThreadGroup = new ThreadGroup( "cropping" );
 
 	@Override
 	public void setVisible( final boolean b )
@@ -207,14 +209,21 @@ public class CropDialog extends JDialog
 					final int minTimepointIndex = ( Integer ) spinnerMinTimepoint.getValue();
 					final int maxTimepointIndex = ( Integer ) spinnerMaxTimepoint.getValue();
 
-					try
+					new Thread( croppingThreadGroup, new Runnable()
 					{
-						cropGlobal( minTimepointIndex, maxTimepointIndex, hdf5File, seqFile );
-					}
-					catch ( final Exception ex )
-					{
-						ex.printStackTrace();
-					}
+						@Override
+						public void run()
+						{
+							try
+							{
+								cropGlobal( minTimepointIndex, maxTimepointIndex, hdf5File, seqFile );
+							}
+							catch ( final Exception ex )
+							{
+								ex.printStackTrace();
+							}
+						}
+					} ).start();
 				}
 			} );
 		}
@@ -239,6 +248,15 @@ public class CropDialog extends JDialog
 		setDefaultCloseOperation( JDialog.HIDE_ON_CLOSE );
 	}
 
+	/**
+	 * Note: Run this from it's own ThreadGroup such that the viewers rendering
+	 * timeouts wont interfere with the export .
+	 *
+	 * @param minTimepointIndex
+	 * @param maxTimepointIndex
+	 * @param hdf5File
+	 * @param xmlFile
+	 */
 	public void cropGlobal( final int minTimepointIndex, final int maxTimepointIndex, final File hdf5File, final File xmlFile ) throws FileNotFoundException, TransformerFactoryConfigurationError, TransformerException, ParserConfigurationException
 	{
 		final AffineTransform3D globalToCropTransform = new AffineTransform3D();
