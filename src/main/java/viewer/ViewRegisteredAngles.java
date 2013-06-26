@@ -192,7 +192,7 @@ public class ViewRegisteredAngles
 		viewerTransform.set( m );
 
 		// scale
-		final double[] pSource = new double[] { sX1, sY1, sZ };
+		final double[] pSource = new double[] { sX1 + 0.5, sY1 + 0.5, sZ };
 		final double[] pGlobal = new double[ 3 ];
 		final double[] pScreen = new double[ 3 ];
 		sourceTransform.apply( pSource, pGlobal );
