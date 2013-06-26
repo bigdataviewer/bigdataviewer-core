@@ -2,6 +2,7 @@ package viewer.hdf5;
 
 import static mpicbg.spim.data.XmlHelpers.loadPath;
 import static viewer.hdf5.Util.getResolutionsPath;
+import static viewer.hdf5.Util.getSubdivisionsPath;
 import static viewer.hdf5.Util.reorder;
 
 import java.io.File;
@@ -39,6 +40,8 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 
 	protected final ArrayList< double[][] > perSetupMipmapResolutions;
 
+	protected final ArrayList< int[][] > perSetupSubdivisions;
+
 	/**
 	 * List of partitions if the dataset is split across several files
 	 */
@@ -55,6 +58,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 		hdf5Reader = null;
 		cache = null;
 		perSetupMipmapResolutions = new ArrayList< double[][] >();
+		perSetupSubdivisions = new ArrayList< int[][] >();
 		partitions = new ArrayList< Partition >();
 		if ( hdf5Partitions != null )
 			partitions.addAll( hdf5Partitions );
@@ -69,6 +73,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 	{
 		this.hdf5File = hdf5File;
 		perSetupMipmapResolutions = new ArrayList< double[][] >();
+		perSetupSubdivisions = new ArrayList< int[][] >();
 		partitions = new ArrayList< Partition >();
 		if ( hdf5Partitions != null )
 			partitions.addAll( hdf5Partitions );
@@ -84,12 +89,16 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 
 		int maxNumLevels = 0;
 		perSetupMipmapResolutions.clear();
+		perSetupSubdivisions.clear();
 		for ( int setup = 0; setup < numSetups; ++setup )
 		{
 			final double [][] mipmapResolutions = hdf5Reader.readDoubleMatrix( getResolutionsPath( setup ) );
 			perSetupMipmapResolutions.add( mipmapResolutions );
 			if ( mipmapResolutions.length > maxNumLevels )
 				maxNumLevels = mipmapResolutions.length;
+
+			final int [][] subdivisions = hdf5Reader.readIntMatrix( getSubdivisionsPath( setup ) );
+			perSetupSubdivisions.add( subdivisions );
 		}
 
 		cache = new Hdf5GlobalCellCache< ShortArray >( new ShortArrayLoader( hdf5Reader ), numTimepoints, numSetups, maxNumLevels );
@@ -188,5 +197,10 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 	public int numMipmapLevels( final int setup )
 	{
 		return getMipmapResolutions( setup ).length;
+	}
+
+	public ArrayList< int[][] > getPerSetupSubdivisions()
+	{
+		return perSetupSubdivisions;
 	}
 }
