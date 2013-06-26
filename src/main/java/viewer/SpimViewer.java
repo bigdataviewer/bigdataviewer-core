@@ -378,6 +378,16 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 	}
 
 	/**
+	 * Get the viewer canvas.
+	 *
+	 * @return the viewer canvas.
+	 */
+	public InteractiveDisplay3DCanvas getDisplay()
+	{
+		return display;
+	}
+
+	/**
 	 * Create Keystrokes and corresponding Actions.
 	 *
 	 * @return list of KeyStroke-Action-pairs.
