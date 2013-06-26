@@ -21,7 +21,6 @@ import net.imglib2.type.numeric.NumericType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Intervals;
-import net.imglib2.util.Util;
 import net.imglib2.util.ValuePair;
 import net.imglib2.view.Views;
 
@@ -146,10 +145,7 @@ public class CropImgLoader implements ImgLoader
 				minsize[ d ] = cropBoundingBox.min( d ) + cropBoundingBox.dimension( d ) / 2;
 			Arrays.fill( minsize, n, n * 2, 1 );
 			sourceInterval = Intervals.createMinSize( minsize );
-			System.out.println( "empty" );
 		}
-		else
-			System.out.println( Util.printRealInterval( sourceInterval, "%.2f" ) );
 
 		croppedSourceImg = Views.zeroMin( Views.interval( Views.extendBorder( sourceImg ), sourceInterval ) );
 		croppedSourceTransform.set(
