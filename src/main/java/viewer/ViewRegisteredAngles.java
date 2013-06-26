@@ -24,6 +24,7 @@ import net.imglib2.view.Views;
 
 import org.xml.sax.SAXException;
 
+import viewer.crop.CropDialog;
 import viewer.gui.brightness.ConverterSetup;
 import viewer.gui.brightness.MinMaxGroup;
 import viewer.gui.brightness.NewBrightnessDialog;
@@ -39,11 +40,15 @@ public class ViewRegisteredAngles
 
 	final KeyStroke helpKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_F1, 0 );
 
+	final KeyStroke cropKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_F5, 0 );
+
 	final SpimViewer viewer;
 
 	final SetupAssignments setupAssignments;
 
 	final NewBrightnessDialog brightnessDialog;
+
+	final CropDialog cropDialog;
 
 	public void toggleBrightnessDialog()
 	{
@@ -53,6 +58,11 @@ public class ViewRegisteredAngles
 	public void showHelp()
 	{
 		new HelpFrame();
+	}
+
+	public void crop()
+	{
+		cropDialog.setVisible( ! cropDialog.isVisible() );
 	}
 
 	private ViewRegisteredAngles( final String xmlFilename ) throws ParserConfigurationException, SAXException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
@@ -138,6 +148,24 @@ public class ViewRegisteredAngles
 			private static final long serialVersionUID = 1L;
 		} );
 
+		viewer.addKeyAction( cropKeystroke, new AbstractAction( "crop" )
+		{
+			@Override
+			public void actionPerformed( final ActionEvent arg0 )
+			{
+				try
+				{
+					crop();
+				}
+				catch ( final Exception e )
+				{
+					e.printStackTrace();
+				}
+			}
+
+			private static final long serialVersionUID = 1L;
+		} );
+
 		setupAssignments = new SetupAssignments( converterSetups, 0, 65535 );
 		final MinMaxGroup group = setupAssignments.getMinMaxGroups().get( 0 );
 		for ( final ConverterSetup setup : setupAssignments.getConverterSetups() )
@@ -145,8 +173,13 @@ public class ViewRegisteredAngles
 		brightnessDialog = new NewBrightnessDialog( viewer.frame, setupAssignments );
 		viewer.installKeyActions( brightnessDialog );
 
+		cropDialog = new CropDialog( viewer.frame, viewer, seq );
+		viewer.installKeyActions( cropDialog );
+
+
 		initTransform( width, height );
 		initBrightness( 0.001, 0.999 );
+
 	}
 
 	void initTransform( final int viewerWidth, final int viewerHeight )
