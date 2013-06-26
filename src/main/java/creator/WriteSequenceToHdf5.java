@@ -207,7 +207,7 @@ public class WriteSequenceToHdf5
 							dimensions[ d ] = Math.max( dimensions[ d ] / factor[ d ], 1 );
 
 						final Img< UnsignedShortType > downsampled = ArrayImgs.unsignedShorts( dimensions );
-						Downsample.downsample( img, downsampled, factor );
+						Downsample.downsample( Views.extendBorder( img ), downsampled, factor );
 						source = downsampled;
 					}
 
