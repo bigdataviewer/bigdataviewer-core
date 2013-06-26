@@ -32,7 +32,7 @@ public class Downsample
 		output.min( minRequiredInput );
 		output.max( maxRequiredInput );
 		for ( int d = 0; d < n; ++d )
-			maxRequiredInput[ d ] += dim[ d ];
+			maxRequiredInput[ d ] += factor[ d ] - 1;
 		final RandomAccessibleInterval< T > requiredInput = Views.interval(  input, new FinalInterval( minRequiredInput, maxRequiredInput ) );
 
 		final NeighborhoodsAccessible< T > neighborhoods = new NeighborhoodsAccessible< T >( requiredInput, spanInterval, f );
