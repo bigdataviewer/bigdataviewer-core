@@ -138,7 +138,7 @@ public class CropImgLoader implements ImgLoader
 		final RandomAccessibleInterval< T > croppedSourceImg;
 		final AffineTransform3D croppedSourceTransform = new AffineTransform3D();
 
-		if ( isEmpty( sourceInterval ) )
+		if ( Intervals.isEmpty( sourceInterval ) )
 		{
 			final long[] minsize = new long[ n * 2 ];
 			for ( int d = 0; d < n; ++d )
@@ -155,22 +155,6 @@ public class CropImgLoader implements ImgLoader
 		croppedSourceTransform.preConcatenate( sourceToGlobal );
 
 		return new ValuePair< RandomAccessibleInterval<T>, AffineTransform3D >( croppedSourceImg, croppedSourceTransform );
-	}
-
-	/**
-	 * Check whether the given interval is empty, that is, interval.max <
-	 * interval.min.
-	 *
-	 * @return true when the interval is empty, that is, interval.max <
-	 *         interval.min.
-	 */
-	public static boolean isEmpty( final Interval interval )
-	{
-		final int n = interval.numDimensions();
-		for ( int d = 0; d < n; ++d )
-			if (interval.min( d ) > interval.max( d ))
-				return true;
-		return false;
 	}
 
 	/**
