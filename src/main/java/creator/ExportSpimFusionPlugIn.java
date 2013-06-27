@@ -69,10 +69,12 @@ public class ExportSpimFusionPlugIn implements PlugIn
 
 		try
 		{
+			IJ.log( "starting export..." );
 			if ( params.appendToExistingFile && params.seqFile.exists() )
 				appendToExistingFile( params );
 			else
 				saveAsNewFile( params );
+			IJ.log( "done" );
 		}
 		catch ( final Exception e )
 		{
@@ -530,6 +532,7 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		gd2.addNumericField( "Crop_output_image_offset_y", Multi_View_Fusion.cropOffsetYStatic, 0 );
 		gd2.addNumericField( "Crop_output_image_offset_z", Multi_View_Fusion.cropOffsetZStatic, 0 );
 
+		gd2.addMessage( "" );
 		gd2.addNumericField( "min brightness value", minValueStatic, 0 );
 		gd2.addNumericField( "max brightness value", maxValueStatic, 0 );
 

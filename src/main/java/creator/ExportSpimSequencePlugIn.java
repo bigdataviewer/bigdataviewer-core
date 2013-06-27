@@ -41,6 +41,7 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		if ( params == null )
 			return;
 
+		IJ.log( "starting export..." );
 		final SpimRegistrationSequence sequence = new SpimRegistrationSequence( params.conf );
 		final SequenceDescription desc = sequence.getSequenceDescription();
 		WriteSequenceToHdf5.writeHdf5File( desc, params.perSetupResolutions, params.perSetupSubdivisions, params.hdf5File, new ProgressListener()
@@ -65,6 +66,7 @@ public class ExportSpimSequencePlugIn implements PlugIn
 			IOFunctions.printErr( "Failed to write xml file " + params.seqFile );
 			e.printStackTrace();
 		}
+		IJ.log( "done" );
 	}
 
 	public static String allChannels = "0, 1";
