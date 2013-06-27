@@ -77,8 +77,8 @@ public class SequenceViewsLoader
 		} );
 
 		final Iterator< ViewRegistration > ri = registrations.iterator();
-		for ( int ti = 0; ti < seq.timepoints.size(); ++ti )
-			for ( int si = 0; si < seq.setups.size(); ++si )
+		for ( int ti = 0; ti < seq.numTimepoints(); ++ti )
+			for ( int si = 0; si < seq.numViewSetups(); ++si )
 			{
 				final ViewRegistration reg = ri.next();
 				if ( reg.getTimepointIndex() == ti && reg.getSetupIndex() == si )
