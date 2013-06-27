@@ -193,14 +193,14 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 		return perSetupMipmapResolutions.get( setup );
 	}
 
+	public int[][] getSubdivisions( final int setup )
+	{
+		return perSetupSubdivisions.get( setup );
+	}
+
 	@Override
 	public int numMipmapLevels( final int setup )
 	{
 		return getMipmapResolutions( setup ).length;
-	}
-
-	public ArrayList< int[][] > getPerSetupSubdivisions()
-	{
-		return perSetupSubdivisions;
 	}
 }

@@ -43,7 +43,7 @@ public class SequenceDescription
 	final public ImgLoader imgLoader;
 	// TODO: make protected and use getter
 
-	public SequenceDescription( final List< ViewSetup > setups, final List< Integer > timepoints, final File basePath, final ImgLoader imgLoader )
+	public SequenceDescription( final List< ? extends ViewSetup > setups, final List< Integer > timepoints, final File basePath, final ImgLoader imgLoader )
 	{
 		this.timepoints = new ArrayList< Integer >( timepoints );
 		this.setups = new ArrayList< ViewSetup >( setups );

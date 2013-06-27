@@ -4,6 +4,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Date;
+import java.util.List;
 
 import javax.vecmath.Point3f;
 
@@ -167,31 +168,78 @@ public class SpimRegistrationSequence
 		return setups;
 	}
 
-	public AffineTransform3D getFusionTransform( final int cropOffsetX, final int cropOffsetY, final int cropOffsetZ, final int scale )
+	public List< AffineTransform3D > getFusionTransforms( final int cropOffsetX, final int cropOffsetY, final int cropOffsetZ, final int scale )
 	{
 		conf.cropOffsetX = cropOffsetX;
 		conf.cropOffsetY = cropOffsetY;
 		conf.cropOffsetZ = cropOffsetZ;
 		conf.scale = scale;
-		final RealInterval interval = getFusionBoundingBox( conf );
-		final double tx = interval.realMin( 0 );
-		final double ty = interval.realMin( 1 );
-		final double tz = interval.realMin( 2 );
-		final double s = 1.0 / scale;
-		System.out.println( "tx = " + tx + " ty = " + ty + " tz = " + tz + " scale = " + scale );
-		final AffineTransform3D transform = new AffineTransform3D();
-		transform.set( s, 0, 0, tx, 0, s, 0, ty, 0, 0, s, tz );
-		return transform;
+
+		final ArrayList< AffineTransform3D > transforms = new ArrayList< AffineTransform3D >();
+		if ( conf.timeLapseRegistration )
+		{
+			SPIMConfiguration refconf = conf;
+			if ( conf.getTimePointIndex( conf.referenceTimePoint ) < 0 )
+			{
+				try
+				{
+					final String inputdirectory;
+					if ( conf.isHuiskenFormat() )
+						inputdirectory = conf.inputdirectory.substring( 0, conf.inputdirectory.length() - 1 ) + ".xml";
+					else
+						inputdirectory = conf.inputdirectory;
+					refconf = initExperimentConfiguration( inputdirectory, conf.inputFilePattern, conf.anglePattern, "" + conf.referenceTimePoint, conf.referenceTimePoint, conf.overrideImageZStretching, conf.zStretching );
+					refconf.cropOffsetX = cropOffsetX;
+					refconf.cropOffsetY = cropOffsetY;
+					refconf.cropOffsetZ = cropOffsetZ;
+					refconf.scale = scale;
+				}
+				catch ( final ConfigurationParserException e )
+				{
+					e.printStackTrace();
+				}
+			}
+			final RealInterval interval = getFusionBoundingBox( refconf, 0 );
+			final double tx = interval.realMin( 0 );
+			final double ty = interval.realMin( 1 );
+			final double tz = interval.realMin( 2 );
+			final double s = scale;
+			System.out.println( "tx = " + tx + " ty = " + ty + " tz = " + tz + " scale = " + scale );
+			final AffineTransform3D transform = new AffineTransform3D();
+			transform.set( s, 0, 0, tx, 0, s, 0, ty, 0, 0, s, tz );
+			final int numTimepoints = sequenceDescription.numTimepoints();
+			for ( int i = 0; i < numTimepoints; ++i )
+				transforms.add( transform );
+		}
+		else
+		{
+			final int numTimepoints = sequenceDescription.numTimepoints();
+			for ( int i = 0; i < numTimepoints; ++i )
+			{
+				final RealInterval interval = getFusionBoundingBox( conf, i );
+				final double tx = interval.realMin( 0 );
+				final double ty = interval.realMin( 1 );
+				final double tz = interval.realMin( 2 );
+				final double s = scale;
+				System.out.println( "tx = " + tx + " ty = " + ty + " tz = " + tz + " scale = " + scale );
+				final AffineTransform3D transform = new AffineTransform3D();
+				transform.set( s, 0, 0, tx, 0, s, 0, ty, 0, 0, s, tz );
+				transforms.add( transform );
+			}
+		}
+		return transforms;
 	}
 
-	protected static RealInterval getFusionBoundingBox( final SPIMConfiguration conf )
+	protected static RealInterval getFusionBoundingBox( final SPIMConfiguration conf, final int timepointIndex )
 	{
 			final Point3f min = new Point3f();
 			final Point3f max = new Point3f();
 			final Point3f size = new Point3f();
 
+			final int tp = conf.timeLapseRegistration ? conf.getTimePointIndex( conf.referenceTimePoint ) : timepointIndex;
+
 			@SuppressWarnings( "unchecked" )
-			final ViewStructure reference = ViewStructure.initViewStructure( conf, conf.getTimePointIndex( conf.referenceTimePoint ), conf.getModel(), "Reference ViewStructure Timepoint " + conf.referenceTimePoint, conf.debugLevelInt );
+			final ViewStructure reference = ViewStructure.initViewStructure( conf, tp, conf.getModel(), "Reference ViewStructure Timepoint " + conf.referenceTimePoint, conf.debugLevelInt );
 			for ( final ViewDataBeads viewDataBeads : reference.getViews() )
 			{
 				// coordinate system)
@@ -206,9 +254,9 @@ public class SpimRegistrationSequence
 			SPIMImageFusion.computeImageSize( reference.getViews(), min, max, size, conf.scale, conf.cropSizeX, conf.cropSizeY, conf.cropSizeZ, reference.getDebugLevel() );
 
 			final int scale = conf.scale;
-			final int cropOffsetX = conf.cropOffsetX/scale;
-			final int cropOffsetY = conf.cropOffsetY/scale;
-			final int cropOffsetZ = conf.cropOffsetZ/scale;
+			final int cropOffsetX = conf.cropOffsetX;
+			final int cropOffsetY = conf.cropOffsetY;
+			final int cropOffsetZ = conf.cropOffsetZ;
 			final int imgW;
 			final int imgH;
 			final int imgD;
@@ -326,6 +374,11 @@ public class SpimRegistrationSequence
 		{
 			throw new RuntimeException( "Cannot parse input", e );
 		}
+	}
+
+	public SPIMConfiguration getConf()
+	{
+		return conf;
 	}
 }
 
