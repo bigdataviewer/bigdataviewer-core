@@ -43,6 +43,7 @@ import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.util.Intervals;
 import viewer.SpimViewer;
 import viewer.hdf5.Hdf5ImageLoader;
+import viewer.hdf5.Util;
 import viewer.render.Source;
 import viewer.render.SourceState;
 import creator.WriteSequenceToHdf5;
@@ -289,19 +290,12 @@ public class CropDialog extends JDialog
 
 		final Hdf5ImageLoader loader = ( Hdf5ImageLoader ) sequenceDescription.imgLoader;
 		final ArrayList< int[][] > perSetupResolutions = new ArrayList< int[][] >();
+		final ArrayList< int[][] > perSetupSubdivisions = new ArrayList< int[][] >();
 		for ( int setup = 0; setup < sequenceDescription.numViewSetups(); ++setup )
 		{
-			final double[][] resolutions = loader.getMipmapResolutions( setup );
-			final int[][] ires = new int[ resolutions.length ][];
-			for ( int l = 0; l < resolutions.length; ++l )
-			{
-				ires[ l ] = new int[ resolutions[ l ].length ];
-				for ( int i = 0; i < resolutions[ l ].length; ++i )
-					ires[ l ][ i ] = ( int ) resolutions[ l ][ i ];
-			}
-			perSetupResolutions.add( ires );
+			perSetupResolutions.add( Util.castToInts( loader.getMipmapResolutions( setup ) ) );
+			perSetupSubdivisions.add( loader.getSubdivisions( setup ) );
 		}
-		final ArrayList< int[][] > perSetupSubdivisions = loader.getPerSetupSubdivisions();
 
 		WriteSequenceToHdf5.writeHdf5File( seq, perSetupResolutions, perSetupSubdivisions, hdf5File, null );
 

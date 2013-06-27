@@ -103,4 +103,20 @@ public class Util
 	{
 		return reorder( in, new int[ in.length ] );
 	}
+
+	public static int[] castToInts( final double[] doubles )
+	{
+		final int[] ints = new int[ doubles.length ];
+		for ( int i = 0; i < doubles.length; ++i )
+			ints[ i ] = ( int ) doubles[ i ];
+		return ints;
+	}
+
+	public static int[][] castToInts( final double[][] doubles )
+	{
+		final int[][] ints = new int[ doubles.length ][];
+		for ( int l = 0; l < doubles.length; ++l )
+			ints[ l ] = castToInts( doubles[ l ] );
+		return ints;
+	}
 }
