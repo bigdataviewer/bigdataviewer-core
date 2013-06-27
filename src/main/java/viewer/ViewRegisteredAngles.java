@@ -40,6 +40,8 @@ public class ViewRegisteredAngles
 
 	final KeyStroke helpKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_F1, 0 );
 
+	final KeyStroke HelpKeystroke2 = KeyStroke.getKeyStroke( KeyEvent.VK_H, 0 );
+
 	final KeyStroke cropKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_F5, 0 );
 
 	final SpimViewer viewer;
@@ -137,7 +139,7 @@ public class ViewRegisteredAngles
 			private static final long serialVersionUID = 1L;
 		} );
 
-		viewer.addKeyAction( helpKeystroke, new AbstractAction( "help" )
+		final AbstractAction helpAction = new AbstractAction( "help" )
 		{
 			@Override
 			public void actionPerformed( final ActionEvent arg0 )
@@ -146,7 +148,9 @@ public class ViewRegisteredAngles
 			}
 
 			private static final long serialVersionUID = 1L;
-		} );
+		};
+		viewer.addKeyAction( helpKeystroke, helpAction );
+		viewer.addKeyAction( HelpKeystroke2, helpAction );
 
 		viewer.addKeyAction( cropKeystroke, new AbstractAction( "crop" )
 		{
