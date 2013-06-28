@@ -143,7 +143,7 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		WriteSequenceToXml.writeSequenceToXml( sequenceDescription, aggregateRegs, params.seqFile.getAbsolutePath() );
 	}
 
-	public void saveAsNewFile( final Parameters params ) throws FileNotFoundException, TransformerFactoryConfigurationError, TransformerException, ParserConfigurationException
+	public static void saveAsNewFile( final Parameters params ) throws FileNotFoundException, TransformerFactoryConfigurationError, TransformerException, ParserConfigurationException
 	{
 		final SpimRegistrationSequence spimseq = new SpimRegistrationSequence( params.conf );
 		final List< AffineTransform3D > fusionTransforms = spimseq.getFusionTransforms( params.cropOffsetX, params.cropOffsetY, params.cropOffsetZ, params.scale );
@@ -606,7 +606,7 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		final String fusionDirectory = gd2.getNextString();
 
 		// detect filename pattern
-		final Pair< String, Integer > pair = detectPatternAndNumSlices( new File ( fusionDirectory ) );
+		final Pair< String, Integer > pair = detectPatternAndNumSlices( new File ( fusionDirectory ), conf.timepoints[0] );
 		if ( pair == null )
 		{
 			IOFunctions.println( "Couldn't detect filename pattern" );
@@ -667,8 +667,17 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		return new Parameters( conf, resolutions, subdivisions, cropOffsetX, cropOffsetY, cropOffsetZ, scale, fusionDirectory, filenamePattern, numSlices, minValueStatic, maxValueStatic, seqFile, hdf5File, appendToExistingFile );
 	}
 
-	protected static Pair< String, Integer > detectPatternAndNumSlices( final File dir )
+	public static Pair< String, Integer > detectPatternAndNumSlices( final File dir, final int someTimepoint )
 	{
+		final File subdir = new File( dir.getAbsolutePath() + "/" + someTimepoint );
+		if ( subdir.isDirectory() )
+		{
+			final Pair< String, Integer > pair = detectPatternAndNumSlices( subdir, someTimepoint );
+			if ( pair == null )
+				return null;
+			return new ValuePair< String, Integer >( "%1$d/" + pair.getA(), pair.getB() );
+		}
+
 		String zeros = "";
 		for ( int digits = 1; digits < 5; ++digits )
 		{
@@ -690,7 +699,7 @@ public class ExportSpimFusionPlugIn implements PlugIn
 				if ( name.substring( tStart, tStart + 1 ).equals("l") )
 					tStart++;
 				final int tEnd = name.indexOf( "_", tStart );
-				final String pattern = name.substring( 0, tStart ) + "%d" + name.substring( tEnd, name.length() - 4 - digits ) + "%0" + digits + "d.tif";
+				final String pattern = name.substring( 0, tStart ) + "%1$d" + name.substring( tEnd, name.length() - 4 - digits ) + "%2$0" + digits + "d.tif";
 				IOFunctions.println( "detected pattern = " + pattern );
 
 				final String prefix = name.substring( 0, name.length() - 4 - digits );
