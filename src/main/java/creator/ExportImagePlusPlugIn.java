@@ -22,7 +22,6 @@ import mpicbg.spim.data.ViewRegistrations;
 import mpicbg.spim.data.ViewSetup;
 import net.imglib2.realtransform.AffineTransform3D;
 import viewer.hdf5.Hdf5ImageLoader;
-import creator.WriteSequenceToHdf5.ProgressListener;
 import creator.ij.ImagePlusImgLoader;
 import creator.ij.ImagePlusImgLoader.MinMaxOption;
 
@@ -36,7 +35,7 @@ public class ExportImagePlusPlugIn implements PlugIn
 	@Override
 	public void run( final String arg )
 	{
-		IJ.log( "Starting SpimViewer import." );
+		IJ.log( "starting export..." );
 
 		// get the current image
 		final ImagePlus imp = WindowManager.getCurrentImage();
@@ -106,14 +105,7 @@ public class ExportImagePlusPlugIn implements PlugIn
 		final File hdf5File = params.hdf5File;
 		final int[][] resolutions = params.resolutions;
 		final int[][] subdivisions = params.subdivisions;
-		final ProgressListener progressListener = new ProgressListener()
-		{
-			@Override
-			public void updateProgress( final int numCompletedTasks, final int numTasks )
-			{
-				IJ.showProgress( numCompletedTasks, numTasks + 1 );
-			}
-		};
+		final ProgressListener progressListener = new PluginHelper.ProgressListenerIJ( 0, 0.95 );
 		final ArrayList< ViewSetup > setups = new ArrayList< ViewSetup >( numSetups );
 		for ( int s = 0; s < numSetups; ++s )
 			setups.add( new ViewSetup( s, 0, 0, s, w, h, d, pw, ph, pd ) );
@@ -140,7 +132,7 @@ public class ExportImagePlusPlugIn implements PlugIn
 			throw new RuntimeException( e );
 		}
 
-		IJ.log( "SpimViewer import done." );
+		IJ.log( "done" );
 	}
 
 	protected static class Parameters

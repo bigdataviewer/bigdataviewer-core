@@ -25,6 +25,30 @@ public class Partition
 	protected final int setupStart;
 	protected final int setupLength;
 
+	/**
+	 * Create a new Partition description.
+	 *
+	 * @param path
+	 *            path to the hdf5 file for this partition
+	 * @param timepointOffset
+	 *            The timepoint <em>t</em> in the partition corresponds to
+	 *            timepoint <em>t + <code>timepointOffset</code></em> in the
+	 *            full sequence.
+	 * @param timepointStart
+	 *            The first timepoint <em>t</em> contained in this partition
+	 *            (relative to the offset, not the full sequence).
+	 * @param timepointLength
+	 *            How many timepoints are contained in this partition.
+	 * @param setupOffset
+	 *            The setup <em>s</em> in the partition corresponds to
+	 *            setup <em>s + <code>setupOffset</code></em> in the
+	 *            full sequence.
+	 * @param setupStart
+	 *            The first setup <em>s</em> contained in this partition
+	 *            (relative to the offset, not the full sequence).
+	 * @param setupLength
+	 *            How many setups are contained in this partition.
+	 */
 	public Partition( final String path, final int timepointOffset, final int timepointStart, final int timepointLength, final int setupOffset, final int setupStart, final int setupLength )
 	{
 		this.path = path;
@@ -37,7 +61,7 @@ public class Partition
 	}
 
 	/**
-	 * Load a Partition from an XML file.
+	 * Load a Partition description from an XML file.
 	 *
 	 * @param elem
 	 *            The "partition" DOM element.
@@ -73,36 +97,75 @@ public class Partition
 		return elem;
 	}
 
+	/**
+	 * Get the  path to the hdf5 file for this partition.
+	 *
+	 * @return path to the hdf5 file for this partition.
+	 */
 	public String getPath()
 	{
 		return path;
 	}
 
+	/**
+	 * Get the timepoint offset. The timepoint <em>t</em> in the partition
+	 * corresponds to timepoint <em>t + <code>offset</code></em> in the full
+	 * sequence.
+	 *
+	 * @return the timepoint offset.
+	 */
 	public int getTimepointOffset()
 	{
 		return timepointOffset;
 	}
 
+	/**
+	 * Get the index of the first timepoint <em>t</em> contained in this
+	 * partition (relative to the offset, not the full sequence).
+	 *
+	 * @return index of the first timepoint in this partition.
+	 */
 	public int getTimepointStart()
 	{
 		return timepointStart;
 	}
 
+	/**
+	 * Get the number of timepoints in this partition.
+	 * @return how many timepoints are contained in this partition.
+	 */
 	public int getTimepointLength()
 	{
 		return timepointLength;
 	}
 
+	/**
+	 * Get the setup offset. The setup <em>t</em> in the partition
+	 * corresponds to setup <em>t + <code>offset</code></em> in the full
+	 * sequence.
+	 *
+	 * @return the setup offset.
+	 */
 	public int getSetupOffset()
 	{
 		return setupOffset;
 	}
 
+	/**
+	 * Get the index of the first setup <em>t</em> contained in this
+	 * partition (relative to the offset, not the full sequence).
+	 *
+	 * @return index of the first setup in this partition.
+	 */
 	public int getSetupStart()
 	{
 		return setupStart;
 	}
 
+	/**
+	 * Get the number of setups in this partition.
+	 * @return how many setups are contained in this partition.
+	 */
 	public int getSetupLength()
 	{
 		return setupLength;

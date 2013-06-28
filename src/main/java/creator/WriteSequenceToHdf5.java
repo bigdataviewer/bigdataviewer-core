@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import mpicbg.spim.data.ImgLoader;
 import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.View;
+import mpicbg.spim.data.ViewSetup;
 import net.imglib2.Cursor;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessible;
@@ -28,24 +29,33 @@ import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.HDF5IntStorageFeatures;
 import ch.systemsx.cisd.hdf5.IHDF5Writer;
 
+/**
+ * Create a hdf5 files containing image data from all views and all timepoints
+ * in a chunked, mipmaped representation.
+ *
+ * Every image is stored in multiple resolutions. The resolutions are described
+ * as int[] arrays defining multiple of original pixel size in every dimension.
+ * For example {1,1,1} is the original resolution, {4,4,2} is downsampled by
+ * factor 4 in X and Y and factor 2 in Z. Each resolution of the image is stored
+ * as a chunked three-dimensional array (each chunk corresponds to one cell of a
+ * {@link CellImg} when the data is loaded). The chunk sizes are defined by the
+ * subdivisions parameter which is an array of int[], one per resolution. Each
+ * int[] array describes the X,Y,Z chunk size for one resolution. For instance
+ * {32,32,8} says that the (downsampled) image is dividex into 32x32x8 pixel
+ * blocks.
+ *
+ * For every mipmap level we have a (3D) int[] resolution array, so the full
+ * mipmap pyramid is specified by a nested int[][] array. Likewise, we have a
+ * (3D) int[] subdivions array for every mipmap level, so the full chunking of
+ * the full pyramid is specfied by a nested int[][] array.
+ *
+ * A data-set can be stored in a single hdf5 file or split across several hdf5
+ * "partitions" with one master hdf5 linking into the partitions.
+ *
+ * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ */
 public class WriteSequenceToHdf5
 {
-	public static class MipMapDefinition
-	{
-	//  mipmap def 1
-//		public static final int[][] resolutions = { { 1, 1, 1 }, { 2, 2, 1 }, { 4, 4, 1 } };
-//		public static final int[][] subdivisions = { { 32, 32, 4 }, { 32, 32, 4 }, { 16, 16, 4 } };
-
-	//  mipmap def 2
-		public static final int[][] resolutions = { { 1, 1, 1 }, { 2, 2, 1 }, { 4, 4, 2 } };
-		public static final int[][] subdivisions = { { 32, 32, 4 }, { 16, 16, 8 }, { 8, 8, 8 } };
-	}
-
-	public static interface ProgressListener
-	{
-		public void updateProgress( int numCompletedTasks, int numTasks );
-	}
-
 	public static void writeHdf5PartitionLinkFile( final SequenceDescription seq, final ArrayList< int[][] > perSetupResolutions, final ArrayList< int[][] > perSetupSubdivisions )
 	{
 		if ( ! ( seq.imgLoader instanceof Hdf5ImageLoader ) )
@@ -113,8 +123,37 @@ public class WriteSequenceToHdf5
 		hdf5Writer.close();
 	}
 
-	public static void writeHdf5PartitionFile( final SequenceDescription seq, final ArrayList< int[][] > perSetupResolutions, final ArrayList< int[][] > perSetupSubdivisions, final Partition partition, final ProgressListener progressListener )
+	/**
+	 * Create a hdf5 partition file containing image data for a subset of views
+	 * and timepoints in a chunked, mipmaped representation.
+	 *
+	 * Please note that the description of the <em>full</em> dataset must be
+	 * given in the <code>seq</code>, <code>perSetupResolutions</code>, and
+	 * <code>perSetupSubdivisions</code> parameters. Then only the part
+	 * described by <code>partition</code> will be written.
+	 *
+	 * @param seq
+	 *            description of the sequence to be stored as hdf5. (The
+	 *            {@link SequenceDescription} contains the number of setups and
+	 *            timepoints as well as an {@link ImgLoader} that provides the
+	 *            image data, Registration information is not needed here, that
+	 *            will go into the accompanying xml).
+	 * @param perSetupResolutions
+	 *            this list of nested arrays contains per {@link ViewSetup}, per
+	 *            mipmap level, the subsampling factors.
+	 * @param perSetupSubdivisions
+	 *            this list of nested arrays contains per {@link ViewSetup}, per
+	 *            mipmap level, the subdivision block sizes.
+	 * @param partition
+	 *            which part of the dataset to write, and to which file.
+	 * @param progressListener
+	 *            completion ratio and status output will be directed here.
+	 */
+	public static void writeHdf5PartitionFile( final SequenceDescription seq, final ArrayList< int[][] > perSetupResolutions, final ArrayList< int[][] > perSetupSubdivisions, final Partition partition, ProgressListener progressListener )
 	{
+		if ( progressListener == null )
+			progressListener = new PluginHelper.ProgressListenerSysOut();
+
 		final int timepointOffsetSeq = partition.getTimepointOffset() + partition.getTimepointStart();
 		final int timepointOffsetFile = partition.getTimepointStart();
 		final int numTimepoints = partition.getTimepointLength();
@@ -133,8 +172,7 @@ public class WriteSequenceToHdf5
 			numTasks += numTimepoints * ( numLevels + 1 );
 		}
 		int numCompletedTasks = 0;
-		if ( progressListener != null )
-			progressListener.updateProgress( numCompletedTasks++, numTasks );
+		progressListener.updateProgress( numCompletedTasks++, numTasks );
 
 		assert( perSetupResolutions.size() >= setupOffsetSeq + numSetups );
 		assert( perSetupSubdivisions.size() >= setupOffsetSeq + numSetups );
@@ -167,8 +205,7 @@ public class WriteSequenceToHdf5
 		hdf5Writer.writeInt( "numTimepoints", numTimepoints );
 		hdf5Writer.writeInt( "numSetups", numSetups );
 
-		if ( progressListener != null )
-			progressListener.updateProgress( numCompletedTasks++, numTasks );
+		progressListener.updateProgress( numCompletedTasks++, numTasks );
 
 		// write image data for all views to the HDF5 file
 		final int n = 3;
@@ -177,7 +214,7 @@ public class WriteSequenceToHdf5
 		{
 			final int timepointSeq = timepoint + timepointOffsetSeq;
 			final int timepointFile = timepoint + timepointOffsetFile;
-			System.out.println( String.format( "proccessing timepoint %d / %d", timepoint + 1, numTimepoints ) );
+			progressListener.println( String.format( "proccessing timepoint %d / %d", timepoint + 1, numTimepoints ) );
 			for ( int setup = 0; setup < numSetups; ++setup )
 			{
 				final int setupSeq = setup + setupOffsetSeq;
@@ -186,16 +223,15 @@ public class WriteSequenceToHdf5
 				final int[][] subdivisions = perSetupSubdivisions.get( setupSeq );
 				final int numLevels = resolutions.length;
 
-				System.out.println( String.format( "proccessing setup %d / %d", setup + 1, numSetups ) );
+				progressListener.println( String.format( "proccessing setup %d / %d", setup + 1, numSetups ) );
 				final View view = new View( seq, timepointSeq, setupSeq, null );
-				System.out.println( "loading image" );
+				progressListener.println( "loading image" );
 				final RandomAccessibleInterval< UnsignedShortType > img = imgLoader.getUnsignedShortImage( view );
-				if ( progressListener != null )
-					progressListener.updateProgress( numCompletedTasks++, numTasks );
+				progressListener.updateProgress( numCompletedTasks++, numTasks );
 
 				for ( int level = 0; level < numLevels; ++level )
 				{
-					System.out.println( "writing level " + level );
+					progressListener.println( "writing level " + level );
 					img.dimensions( dimensions );
 					final RandomAccessible< UnsignedShortType > source;
 					final int[] factor = resolutions[ level ];
@@ -252,14 +288,64 @@ public class WriteSequenceToHdf5
 						final MDShortArray array = new MDShortArray( ( ( ShortArray ) cell.update( null ) ).getCurrentStorageArray(), currentCellDimRM );
 						hdf5Writer.writeShortMDArrayBlockWithOffset( path, array, currentCellMinRM );
 					}
-					if ( progressListener != null )
-						progressListener.updateProgress( numCompletedTasks++, numTasks );
+					progressListener.updateProgress( numCompletedTasks++, numTasks );
 				}
 			}
 		}
 		hdf5Writer.close();
 	}
 
+	/**
+	 * Create a hdf5 file containing image data from all views and all
+	 * timepoints in a chunked, mipmaped representation.
+	 *
+	 * @param seq
+	 *            description of the sequence to be stored as hdf5. (The
+	 *            {@link SequenceDescription} contains the number of setups and
+	 *            timepoints as well as an {@link ImgLoader} that provides the
+	 *            image data, Registration information is not needed here, that
+	 *            will go into the accompanying xml).
+	 * @param perSetupResolutions
+	 *            this list of nested arrays contains per {@link ViewSetup}, per
+	 *            mipmap level, the subsampling factors.
+	 * @param perSetupSubdivisions
+	 *            this list of nested arrays contains per {@link ViewSetup}, per
+	 *            mipmap level, the subdivision block sizes.
+	 * @param hdf5File
+	 *            hdf5 file to which the image data is written.
+	 * @param progressListener
+	 *            completion ratio and status output will be directed here.
+	 */
+	public static void writeHdf5File( final SequenceDescription seq, final ArrayList< int[][] > perSetupResolutions, final ArrayList< int[][] > perSetupSubdivisions, final File hdf5File, final ProgressListener progressListener )
+	{
+		final Partition partition = new Partition( hdf5File.getPath(), 0, 0, seq.numTimepoints(), 0, 0, seq.numViewSetups() );
+		writeHdf5PartitionFile( seq, perSetupResolutions, perSetupSubdivisions, partition, progressListener );
+	}
+
+	/**
+	 * Create a hdf5 file containing image data from all views and all
+	 * timepoints in a chunked, mipmaped representation. This is the same as
+	 * {@link WriteSequenceToHdf5#writeHdf5File(SequenceDescription, ArrayList, ArrayList, File, ProgressListener)}
+	 * except that only one set of supsampling factors and and subdivision
+	 * blocksizes is given, which is used for all {@link ViewSetup views}.
+	 *
+	 * @param seq
+	 *            description of the sequence to be stored as hdf5. (The
+	 *            {@link SequenceDescription} contains the number of setups and
+	 *            timepoints as well as an {@link ImgLoader} that provides the
+	 *            image data, Registration information is not needed here, that
+	 *            will go into the accompanying xml).
+	 * @param resolutions
+	 *            this nested arrays contains per mipmap level, the subsampling
+	 *            factors.
+	 * @param subdivisions
+	 *            this nested arrays contains per mipmap level, the subdivision
+	 *            block sizes.
+	 * @param hdf5File
+	 *            hdf5 file to which the image data is written.
+	 * @param progressListener
+	 *            completion ratio and status output will be directed here.
+	 */
 	public static void writeHdf5File( final SequenceDescription seq, final int[][] resolutions, final int[][] subdivisions, final File hdf5File, final ProgressListener progressListener )
 	{
 		final int numSetups = seq.numViewSetups();
@@ -271,43 +357,5 @@ public class WriteSequenceToHdf5
 			perSetupSubdivisions.add( subdivisions );
 		}
 		writeHdf5File( seq, perSetupResolutions, perSetupSubdivisions, hdf5File, progressListener );
-	}
-
-	/**
-	 * Create a hdf5 file containing image data from all views and all
-	 * timepoints in a chunked, mipmaped representation. Every image is stored
-	 * in multiple resolutions. The resolutions are described as int[] arrays
-	 * defining multiple of original pixel size in every dimension. For example
-	 * {1,1,1} is the original resolution, {4,4,2} is downsampled by factor 4 in
-	 * X and Y and factor 2 in Z. Each resolution of the image is stored as a
-	 * chunked three-dimensional array (each chunk corresponds to one cell of a
-	 * {@link CellImg} when the data is loaded). The chunk sizes are defined by
-	 * the subdivisions parameter which is an array of int[], one per
-	 * resolution. Each int[] array describes the X,Y,Z chunk size for one
-	 * resolution.
-	 *
-	 * @param seqFile
-	 *            XML sequence description to be read and converted to hdf5.
-	 *            (This contains number of setups and timepoints and an image
-	 *            loader).
-	 * @param hdf5File
-	 *            hdf5 to which the image data is written
-	 * @param resolutions
-	 *            each int[] element of the array describes one resolution level.
-	 * @param subdivisions
-	 *
-	 *
-	 * TODO:
-	 *
-	 * @param seq
-	 * @param perSetupResolutions
-	 * @param perSetupSubdivisions
-	 * @param hdf5File
-	 * @param progressListener
-	 */
-	public static void writeHdf5File( final SequenceDescription seq, final ArrayList< int[][] > perSetupResolutions, final ArrayList< int[][] > perSetupSubdivisions, final File hdf5File, final ProgressListener progressListener )
-	{
-		final Partition partition = new Partition( hdf5File.getPath(), 0, 0, seq.numTimepoints(), 0, 0, seq.numViewSetups() );
-		writeHdf5PartitionFile( seq, perSetupResolutions, perSetupSubdivisions, partition, progressListener );
 	}
 }

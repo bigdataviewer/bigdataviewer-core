@@ -347,35 +347,6 @@ public class SpimRegistrationSequence
 		return -1;
 	}
 
-	public static void main( final String[] args )
-	{
-		// parhyale dataset
-//		final String inputDirectory = "/Users/tobias/workspace/data/parhyale/";
-//		final String inputFilePattern = "spim_TL{tt}_Angle{aaa}.lsm";
-//		final String angles = "150,190,230";
-//		final String timepoints = "71-90";
-//		final int referenceTimePoint = 269;
-//		final boolean overrideImageZStretching = true;
-//		final double zStretching = 5.46448087431694;
-
-		// openspim dataset
-		final String inputDirectory = "/Users/tobias/workspace/data/openspim/";
-		final String inputFilePattern = "spim_TL{tt}_Angle{a}.tif";
-		final String angles = "0-4";
-		final String timepoints = "0-2";
-		final int referenceTimePoint = 100;
-		final boolean overrideImageZStretching = true;
-		final double zStretching = 9.30232558139535;
-
-		try {
-			final SpimRegistrationSequence lsmseq = new SpimRegistrationSequence( inputDirectory, inputFilePattern, angles, timepoints, referenceTimePoint, overrideImageZStretching, zStretching );
-		}
-		catch ( final ConfigurationParserException e )
-		{
-			throw new RuntimeException( "Cannot parse input", e );
-		}
-	}
-
 	public SPIMConfiguration getConf()
 	{
 		return conf;

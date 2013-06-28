@@ -27,7 +27,6 @@ import mpicbg.spim.registration.ViewDataBeads;
 import mpicbg.spim.registration.ViewStructure;
 import spimopener.SPIMExperiment;
 import viewer.hdf5.Hdf5ImageLoader;
-import creator.WriteSequenceToHdf5.ProgressListener;
 import creator.spim.SpimRegistrationSequence;
 
 public class ExportSpimSequencePlugIn implements PlugIn
@@ -44,14 +43,7 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		IJ.log( "starting export..." );
 		final SpimRegistrationSequence sequence = new SpimRegistrationSequence( params.conf );
 		final SequenceDescription desc = sequence.getSequenceDescription();
-		WriteSequenceToHdf5.writeHdf5File( desc, params.perSetupResolutions, params.perSetupSubdivisions, params.hdf5File, new ProgressListener()
-		{
-			@Override
-			public void updateProgress( final int numCompletedTasks, final int numTasks )
-			{
-				IJ.showProgress( numCompletedTasks, numTasks + 1 );
-			}
-		} );
+		WriteSequenceToHdf5.writeHdf5File( desc, params.perSetupResolutions, params.perSetupSubdivisions, params.hdf5File, new PluginHelper.ProgressListenerIJ( 0, 0.95 ) );
 
 		final Hdf5ImageLoader loader = new Hdf5ImageLoader( params.hdf5File, null, false );
 		final SequenceDescription sequenceDescription = new SequenceDescription( desc.setups, desc.timepoints, params.seqFile.getParentFile(), loader );
@@ -63,7 +55,7 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		}
 		catch ( final Exception e )
 		{
-			IOFunctions.printErr( "Failed to write xml file " + params.seqFile );
+			IJ.error( "Failed to write xml file " + params.seqFile );
 			e.printStackTrace();
 		}
 		IJ.log( "done" );
