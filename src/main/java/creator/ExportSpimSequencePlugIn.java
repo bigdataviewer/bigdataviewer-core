@@ -23,7 +23,6 @@ import mpicbg.spim.io.ConfigurationParserException;
 import mpicbg.spim.io.IOFunctions;
 import mpicbg.spim.io.SPIMConfiguration;
 import mpicbg.spim.io.TextFileAccess;
-import mpicbg.spim.registration.ViewDataBeads;
 import mpicbg.spim.registration.ViewStructure;
 import spimopener.SPIMExperiment;
 import viewer.hdf5.Hdf5ImageLoader;
@@ -384,24 +383,11 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		final String defaultMipmapResolutions = "{1,1,1}, {2,2,1}, {4,4,2}";
 		final String defaultCellSizes = "{64,64,16}, {32,32,16}, {8,8,8}";
 
-		final ViewStructure viewStructure = ViewStructure.initViewStructure( conf, 0, new mpicbg.models.AffineModel3D(), "ViewStructure Timepoint " + conf.timepoints[ 0 ], conf.debugLevelInt );
-//		Checkbox cbUseForAll = null;
-		for ( final ViewDataBeads viewDataBeads : viewStructure.getViews() )
-		{
-			final int angle = viewDataBeads.getAcqusitionAngle();
-			final int illumination = viewDataBeads.getIllumination();
-			final int channel = viewDataBeads.getChannel();
+		gd2.addMessage( "Mip-map definition:" );
+		gd2.addStringField( "Subsampling factors", defaultMipmapResolutions, 25 );
+		gd2.addStringField( "Hdf5 chunk sizes", defaultCellSizes, 25 );
 
-			gd2.addMessage( "" );
-			gd2.addMessage( "Mip-map for angle " + angle + ", channel " + channel + ", illumination direction " + illumination );
-			gd2.addStringField( "Subsampling factors", defaultMipmapResolutions, 25 );
-			gd2.addStringField( "Hdf5 chunk sizes", defaultCellSizes, 25 );
-//			if ( cbUseForAll == null )
-//			{
-//				gd2.addCheckbox( "use for all views", true );
-//				cbUseForAll = (Checkbox) gd2.getCheckboxes().lastElement();
-//			}
-		}
+		final ViewStructure viewStructure = ViewStructure.initViewStructure( conf, 0, new mpicbg.models.AffineModel3D(), "ViewStructure Timepoint " + conf.timepoints[ 0 ], conf.debugLevelInt );
 
 		gd2.addMessage( "" );
 		PluginHelper.addSaveAsFileField( gd2, "Export path", conf.inputdirectory + "export.xml", 25 );
@@ -464,33 +450,32 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		IOFunctions.println( "tp " + tp );
 
 		// parse mipmap resolutions and cell sizes
+		final String subsampling = gd2.getNextString();
+		final String chunksizes = gd2.getNextString();
+		final int[][] resolutions = PluginHelper.parseResolutionsString( subsampling );
+		final int[][] subdivisions = PluginHelper.parseResolutionsString( chunksizes );
+		if ( resolutions.length == 0 )
+		{
+			IOFunctions.println( "Cannot parse subsampling factors " + subsampling );
+			return null;
+		}
+		if ( subdivisions.length == 0 )
+		{
+			IOFunctions.println( "Cannot parse hdf5 chunk sizes " + chunksizes );
+			return null;
+		}
+		else if ( resolutions.length != subdivisions.length )
+		{
+			IOFunctions.println( "subsampling factors and hdf5 chunk sizes must have the same number of elements" );
+			return null;
+		}
 		final ArrayList< int[][] > perSetupResolutions = new ArrayList< int[][] >();
 		final ArrayList< int[][] > perSetupSubdivisions = new ArrayList< int[][] >();
 		for ( int i = 0; i < viewStructure.getViews().size(); ++i )
 		{
-			final String subsampling = gd2.getNextString();
-			final String chunksizes = gd2.getNextString();
-			final int[][] resolutions = PluginHelper.parseResolutionsString( subsampling );
-			final int[][] subdivisions = PluginHelper.parseResolutionsString( chunksizes );
-			if ( resolutions.length == 0 )
-			{
-				IOFunctions.println( "Cannot parse subsampling factors " + subsampling );
-				return null;
-			}
-			if ( subdivisions.length == 0 )
-			{
-				IOFunctions.println( "Cannot parse hdf5 chunk sizes " + chunksizes );
-				return null;
-			}
-			else if ( resolutions.length != subdivisions.length )
-			{
-				IOFunctions.println( "subsampling factors and hdf5 chunk sizes must have the same number of elements" );
-				return null;
-			}
 			perSetupResolutions.add( resolutions );
 			perSetupSubdivisions.add( subdivisions );
 		}
-
 
 		String seqFilename = gd2.getNextString();
 		if ( ! seqFilename.endsWith( ".xml" ) )
