@@ -33,6 +33,7 @@ import viewer.render.Source;
 import viewer.render.SourceAndConverter;
 import viewer.render.SourceState;
 import viewer.render.ViewerState;
+import viewer.util.Affine3DHelpers;
 
 public class ViewRegisteredAngles
 {
@@ -212,7 +213,7 @@ public class ViewRegisteredAngles
 		// rotation
 		final double[] qSource = new double[ 4 ];
 		final double[] qViewer = new double[ 4 ];
-		RotationAnimator.extractApproximateRotationAffine( sourceTransform, qSource, 2 );
+		Affine3DHelpers.extractApproximateRotationAffine( sourceTransform, qSource, 2 );
 		LinAlgHelpers.quaternionInvert( qSource, qViewer );
 		LinAlgHelpers.quaternionToR( qViewer, m );
 

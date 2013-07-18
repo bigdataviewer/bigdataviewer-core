@@ -50,6 +50,7 @@ import viewer.render.ViewerState;
 import viewer.render.overlay.MultiBoxOverlayRenderer;
 import viewer.render.overlay.SourceInfoOverlayRenderer;
 import viewer.util.AbstractTransformAnimator;
+import viewer.util.Affine3DHelpers;
 
 public class SpimViewer implements OverlayRenderer, TransformListener3D, PainterThread.Paintable
 {
@@ -261,12 +262,12 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 		final AffineTransform3D sourceTransform = source.getSpimSource().getSourceTransform( state.getCurrentTimepoint(), 0 );
 
 		final double[] qSource = new double[ 4 ];
-		RotationAnimator.extractRotationAnisotropic( sourceTransform, qSource );
+		Affine3DHelpers.extractRotationAnisotropic( sourceTransform, qSource );
 
 		final double[] qTmpSource;
 		if ( plane == AlignPlane.XY )
 		{
-			RotationAnimator.extractApproximateRotationAffine( sourceTransform, qSource, 2 );
+			Affine3DHelpers.extractApproximateRotationAffine( sourceTransform, qSource, 2 );
 			qTmpSource = qSource;
 		}
 		else
@@ -274,12 +275,12 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 			qTmpSource = new double[4];
 			if ( plane == AlignPlane.ZY )
 			{
-				RotationAnimator.extractApproximateRotationAffine( sourceTransform, qSource, 0 );
+				Affine3DHelpers.extractApproximateRotationAffine( sourceTransform, qSource, 0 );
 				LinAlgHelpers.quaternionMultiply( qSource, qAlignZY, qTmpSource );
 			}
 			else // if ( plane == AlignPlane.XZ )
 			{
-				RotationAnimator.extractApproximateRotationAffine( sourceTransform, qSource, 1 );
+				Affine3DHelpers.extractApproximateRotationAffine( sourceTransform, qSource, 1 );
 				LinAlgHelpers.quaternionMultiply( qSource, qAlignXZ, qTmpSource );
 			}
 		}
