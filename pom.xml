@@ -85,6 +85,11 @@
 			<artifactId>jhdf5</artifactId>
 			<version>12.02.3</version>
 		</dependency>
+        <dependency>
+            <groupid>com.leapmotion.leap</groupid>
+            <artifactId>leapMotion</artifactId>
+            <version>1.0.0</version>
+        </dependency>
 	</dependencies>
 
 	<developers>
