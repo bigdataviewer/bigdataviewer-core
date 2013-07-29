@@ -12,6 +12,7 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.converter.Converter;
 import viewer.util.StopWatch;
 
+// TODO: shouldn't implement the Interval interface (don't extends AbstractInterval)
 public class SimpleInterruptibleRenderer< A, B > extends AbstractInterval
 {
 	final protected RandomAccessible< A > source;
