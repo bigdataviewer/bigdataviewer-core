@@ -2,18 +2,19 @@ package net.imglib.ui;
 
 import java.awt.image.BufferedImage;
 
-import net.imglib.ui.component.InteractiveDisplay2DCanvas;
+import net.imglib.ui.component.InteractiveDisplayCanvas;
+import net.imglib.ui.util.GuiUtil;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RealRandomAccessible;
+import net.imglib2.concatenate.Concatenable;
 import net.imglib2.display.ARGBScreenImage;
-import net.imglib2.realtransform.AffineTransform2D;
+import net.imglib2.realtransform.AffineGet;
 import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.numeric.ARGBType;
-import viewer.GuiHelpers;
 
-public class SimpleRenderer
+public class SimpleRenderer< A extends AffineGet & Concatenable< AffineGet > >
 {
-	final protected InteractiveDisplay2DCanvas display;
+	final protected InteractiveDisplayCanvas< ? > display;
 
 	/**
 	 * Thread that triggers repainting of the display.
@@ -60,7 +61,7 @@ public class SimpleRenderer
 	 * @param numRenderingThreads
 	 *            How many threads to use for rendering.
 	 */
-	public SimpleRenderer( final InteractiveDisplay2DCanvas display, final PainterThread painterThread, final boolean doubleBuffered, final int numRenderingThreads )
+	public SimpleRenderer( final InteractiveDisplayCanvas< ? > display, final PainterThread painterThread, final boolean doubleBuffered, final int numRenderingThreads )
 	{
 		this.display = display;
 		this.painterThread = painterThread;
@@ -97,12 +98,12 @@ public class SimpleRenderer
 			for ( int b = 0; b < ( doubleBuffered ? 2 : 1 ); ++b )
 			{
 				screenImages[ b ] = new ARGBScreenImage( componentW, componentH );
-				bufferedImages[ b ] = GuiHelpers.getBufferedImage( screenImages[ b ] );
+				bufferedImages[ b ] = GuiUtil.getBufferedImage( screenImages[ b ] );
 			}
 		}
 	}
 
-	public boolean paint( final SimpleSource< ? > source, final AffineTransform2D viewerTransform )
+	public boolean paint( final SimpleSource< ?, A > source, final A viewerTransform )
 	{
 		checkResize();
 
@@ -147,18 +148,19 @@ public class SimpleRenderer
 		return success;
 	}
 
-	protected < T > SimpleInterruptibleRenderer< T, ARGBType > createProjector( final SimpleSource< T > source, final AffineTransform2D viewerTransform )
+	protected < T, A extends AffineGet & Concatenable< AffineGet > > SimpleInterruptibleRenderer< T, ARGBType > createProjector( final SimpleSource< T, A > source, final A viewerTransform )
 	{
 		return new SimpleInterruptibleRenderer< T, ARGBType >( getTransformedSource( source, viewerTransform ), source.getConverter() );
 	}
 
-	protected static < T > RandomAccessible< T > getTransformedSource( final SimpleSource< T > source, final AffineTransform2D viewerTransform )
+	protected static < T, A extends AffineGet & Concatenable< AffineGet > > RandomAccessible< T > getTransformedSource( final SimpleSource< T, A > source, final A viewerTransform )
 	{
 		final RealRandomAccessible< T > img = source.getInterpolatedSource();
 
-		final AffineTransform2D sourceToScreen = new AffineTransform2D();
+		@SuppressWarnings( "unchecked" )
+		final A sourceToScreen = ( A ) ( viewerTransform.copy() );
 //		viewerState.getViewerTransform( sourceToScreen );
-		sourceToScreen.set( viewerTransform );
+//		sourceToScreen.set( viewerTransform );
 		sourceToScreen.concatenate( source.getSourceTransform() );
 
 		return RealViews.constantAffine( img, sourceToScreen );

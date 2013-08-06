@@ -17,11 +17,11 @@ public class SimpleInterruptibleRenderer< A, B > extends AbstractInterval
 {
 	final protected RandomAccessible< A > source;
 
-	final protected Converter< A, B > converter;
+	final protected Converter< ? super A, B > converter;
 
 	protected long lastFrameRenderNanoTime;
 
-	public SimpleInterruptibleRenderer( final RandomAccessible< A > source, final Converter< A, B > converter )
+	public SimpleInterruptibleRenderer( final RandomAccessible< A > source, final Converter< ? super A, B > converter )
 	{
 		super( new long[ source.numDimensions() ] );
 		this.source = source;
