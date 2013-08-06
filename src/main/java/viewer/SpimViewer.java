@@ -52,6 +52,14 @@ import viewer.render.overlay.SourceInfoOverlayRenderer;
 import viewer.util.AbstractTransformAnimator;
 import viewer.util.Affine3DHelpers;
 
+/**
+ * Leap Motion imports
+ */
+import com.leapmotion.leap.*;
+import com.leapmotion.leap.Listener;
+import com.leapmotion.leap.Gesture.State;
+
+
 public class SpimViewer implements OverlayRenderer, TransformListener3D, PainterThread.Paintable
 {
 	protected ViewerState state;
@@ -82,6 +90,10 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 	final protected JSlider sliderTime;
 
 	final protected MouseCoordinateListener mouseCoordinates;
+
+    final protected LeapMotionListener leapListener;
+
+    final protected Controller leapController;
 
 	final protected ArrayList< Pair< KeyStroke, Action > > keysActions;
 
@@ -124,6 +136,11 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 		mouseCoordinates = new MouseCoordinateListener() ;
 		display.addHandler( mouseCoordinates );
 
+        leapController = new Controller();
+        leapListener = new LeapMotionListener();
+
+        leapController.addListener(leapListener);
+
 		sliderTime = new JSlider( JSlider.HORIZONTAL, 0, numTimePoints - 1, 0 );
 		sliderTime.addChangeListener( new ChangeListener() {
 			@Override
@@ -149,6 +166,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 			public void windowClosing( final WindowEvent e )
 			{
 				painterThread.interrupt();
+                leapController.removeListener(leapListener);
 			}
 		} );
 		frame.setVisible( true );
@@ -586,4 +604,104 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 			return y;
 		}
 	}
+
+    protected class LeapMotionListener extends Listener
+    {
+        private boolean debug = true;
+        Frame previousLeapFrame = null;
+
+        protected void debugPrint(String text) {
+            if (this.debug) {
+                System.out.println("LeapMotionListener> " + text);
+            }
+        }
+        public void onInit(Controller controller) {
+            debugPrint("Initialized");
+        }
+
+        public void onConnect(Controller controller) {
+            debugPrint("LeapMotionListener: Connected");
+            controller.enableGesture(Gesture.Type.TYPE_SWIPE);
+            controller.enableGesture(Gesture.Type.TYPE_CIRCLE);
+            controller.enableGesture(Gesture.Type.TYPE_SCREEN_TAP);
+            controller.enableGesture(Gesture.Type.TYPE_KEY_TAP);
+        }
+
+        public void onDisconnect(Controller controller) {
+            //Note: not dispatched when running in a debugger.
+            debugPrint("Disconnected");
+        }
+
+        public void onExit(Controller controller) {
+            debugPrint("Exited");
+        }
+
+        public void onFrame(Controller controller) {
+            // Get the most recent frame and report some basic information
+            Frame frame = controller.frame();
+            /*debugPrint("Frame id: " + frame.id()
+                    + ", timestamp: " + frame.timestamp()
+                    + ", hands: " + frame.hands().count()
+                    + ", fingers: " + frame.fingers().count()
+                    + ", tools: " + frame.tools().count()
+                    + ", gestures " + frame.gestures().count());*/
+
+            if (!frame.hands().empty()) {
+                // Get the first hand
+                Hand hand = frame.hands().get(0);
+
+                // Check if the hand has any fingers
+                FingerList fingers = hand.fingers();
+                if (!fingers.empty()) {
+                    // Calculate the hand's average finger tip position
+                    Vector avgPos = Vector.zero();
+                    for (Finger finger : fingers) {
+                        avgPos = avgPos.plus(finger.tipPosition());
+                    }
+                    avgPos = avgPos.divide(fingers.count());
+                    //debugPrint("Hand has " + fingers.count()
+                    //        + " fingers, average finger tip position: " + avgPos);
+                }
+
+                // Get the hand's sphere radius and palm position
+                //debugPrint("Hand sphere radius: " + hand.sphereRadius()
+                //        + " mm, palm position: " + hand.palmPosition());
+
+                // Get the hand's normal vector and direction
+                Vector normal = hand.palmNormal();
+                Vector direction = hand.direction();
+
+                // Calculate the hand's pitch, roll, and yaw angles
+                /*debugPrint("Hand pitch: " + Math.toDegrees(direction.pitch()) + " degrees, "
+                        + "roll: " + Math.toDegrees(normal.roll()) + " degrees, "
+                        + "yaw: " + Math.toDegrees(direction.yaw()) + " degrees");*/
+
+                AffineTransform3D rotation = new AffineTransform3D();
+
+                Vector handTranslation = hand.translation(previousLeapFrame);
+                if(Math.abs(handTranslation.getX()) > 40.0 || Math.abs(handTranslation.getY()) > 40.0 || Math.abs(handTranslation.getZ()) > 40) {
+                    previousLeapFrame = null;
+                    return;
+                } else {
+                    double xAngle = handTranslation.getX() * Math.PI/180.0f;
+                    double yAngle = -handTranslation.getY() * Math.PI/180.0f;
+                    double totalRotation = Math.sqrt(xAngle*xAngle + yAngle*yAngle);
+                    rotation.rotate(0, xAngle/totalRotation);
+                    rotation.rotate(1, yAngle/totalRotation);
+                }
+
+                display.getTransformEventHandler().setTransform( rotation );
+                transformChanged( rotation );
+
+                //display.update();
+
+            }
+
+            if (!frame.hands().empty()) {
+                debugPrint("");
+            }
+            previousLeapFrame = frame;
+        }
+
+    }
 }
