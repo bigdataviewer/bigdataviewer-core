@@ -1,4 +1,4 @@
-package net.imglib.ui;
+package net.imglib2.ui;
 
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -12,8 +12,12 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.converter.Converter;
 import viewer.util.StopWatch;
 
-// TODO: shouldn't implement the Interval interface (don't extends AbstractInterval)
-public class SimpleInterruptibleRenderer< A, B > extends AbstractInterval
+/**
+ * TODO
+ *
+ * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ */
+public class InterruptibleProjector< A, B > extends AbstractInterval
 {
 	final protected RandomAccessible< A > source;
 
@@ -21,7 +25,7 @@ public class SimpleInterruptibleRenderer< A, B > extends AbstractInterval
 
 	protected long lastFrameRenderNanoTime;
 
-	public SimpleInterruptibleRenderer( final RandomAccessible< A > source, final Converter< ? super A, B > converter )
+	public InterruptibleProjector( final RandomAccessible< A > source, final Converter< ? super A, B > converter )
 	{
 		super( new long[ source.numDimensions() ] );
 		this.source = source;
@@ -35,7 +39,6 @@ public class SimpleInterruptibleRenderer< A, B > extends AbstractInterval
 
 		final StopWatch stopWatch = new StopWatch();
 		stopWatch.start();
-		final long startTimeTotal = stopWatch.nanoTime();
 
 		min[ 0 ] = target.min( 0 );
 		min[ 1 ] = target.min( 1 );
@@ -69,7 +72,7 @@ public class SimpleInterruptibleRenderer< A, B > extends AbstractInterval
 					if ( interrupted.get() )
 						return;
 
-					final RandomAccess< A > sourceRandomAccess = source.randomAccess( SimpleInterruptibleRenderer.this );
+					final RandomAccess< A > sourceRandomAccess = source.randomAccess( InterruptibleProjector.this );
 					final RandomAccess< B > targetRandomAccess = target.randomAccess( target );
 
 					sourceRandomAccess.setPosition( min );
@@ -79,7 +82,7 @@ public class SimpleInterruptibleRenderer< A, B > extends AbstractInterval
 					for ( int y = 0; y < myHeight; ++y )
 					{
 						if ( interrupted.get() )
-							break;
+							return;
 						for ( int x = 0; x < width; ++x )
 						{
 							converter.convert( sourceRandomAccess.get(), targetRandomAccess.get() );
@@ -98,14 +101,14 @@ public class SimpleInterruptibleRenderer< A, B > extends AbstractInterval
 		ex.shutdown();
 		try
 		{
-			ex.awaitTermination( 1000, TimeUnit.DAYS );
+			ex.awaitTermination( 1, TimeUnit.HOURS );
 		}
 		catch ( final InterruptedException e )
 		{
 			e.printStackTrace();
 		}
 
-		final long lastFrameRenderNanoTime = stopWatch.nanoTime() - startTimeTotal;
+		lastFrameRenderNanoTime = stopWatch.nanoTime();
 
 		return ! interrupted.get();
 	}
@@ -114,7 +117,6 @@ public class SimpleInterruptibleRenderer< A, B > extends AbstractInterval
 
 	public void cancel()
 	{
-//		System.out.println( "interrupting..." );
 		interrupted.set( true );
 	}
 

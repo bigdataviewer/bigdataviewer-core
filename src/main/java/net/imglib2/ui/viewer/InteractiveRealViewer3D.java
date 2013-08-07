@@ -1,13 +1,14 @@
-package net.imglib.ui;
+package net.imglib2.ui.viewer;
 
-import net.imglib.ui.overlay.BoxOverlayRenderer;
-import net.imglib.ui.util.FinalSource;
-import net.imglib.ui.util.GuiUtil;
 import net.imglib2.Interval;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.converter.Converter;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
+import net.imglib2.ui.AffineTransformType3D;
+import net.imglib2.ui.overlay.BoxOverlayRenderer;
+import net.imglib2.ui.util.FinalSource;
+import net.imglib2.ui.util.GuiUtil;
 
 /**
  * Interactive viewer for a 3D {@link RealRandomAccessible}.

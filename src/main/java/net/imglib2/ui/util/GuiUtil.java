@@ -1,4 +1,4 @@
-package net.imglib.ui.util;
+package net.imglib2.ui.util;
 
 import java.awt.Graphics;
 import java.awt.GraphicsConfiguration;

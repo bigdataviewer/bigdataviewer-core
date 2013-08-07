@@ -39,7 +39,6 @@ package interactive;
 
 import java.awt.Graphics;
 
-import net.imglib.ui.OverlayRenderer;
 import net.imglib2.display.ARGBScreenImage;
 import net.imglib2.display.ChannelARGBConverter;
 import net.imglib2.display.CompositeXYProjector;
@@ -48,6 +47,7 @@ import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.io.ImgIOException;
 import net.imglib2.io.ImgOpener;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
+import net.imglib2.ui.OverlayRenderer;
 
 /**
  * Overlay the ImgLib2 logo on the top-right corner of the output window.

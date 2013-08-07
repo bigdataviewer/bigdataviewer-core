@@ -1,4 +1,4 @@
-package net.imglib.ui;
+package net.imglib2.ui;
 
 public interface TransformListener< T >
 {

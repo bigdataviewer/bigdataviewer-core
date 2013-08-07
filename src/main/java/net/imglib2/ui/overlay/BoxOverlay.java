@@ -1,4 +1,4 @@
-package net.imglib.ui.overlay;
+package net.imglib2.ui.overlay;
 
 import java.awt.Color;
 import java.awt.Font;

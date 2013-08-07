@@ -37,12 +37,12 @@
 package interactive;
 
 import interactive.remote.catmaid.CATMAIDRandomAccessibleInterval;
-import net.imglib.ui.InteractiveViewer3D;
 import net.imglib2.RandomAccessible;
 import net.imglib2.converter.TypeIdentity;
 import net.imglib2.io.ImgIOException;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
+import net.imglib2.ui.viewer.InteractiveViewer3D;
 import net.imglib2.view.Views;
 
 public class InteractiveCATMAIDRotationExample

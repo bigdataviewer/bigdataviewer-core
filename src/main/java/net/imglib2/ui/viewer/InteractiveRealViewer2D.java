@@ -1,11 +1,12 @@
-package net.imglib.ui;
+package net.imglib2.ui.viewer;
 
-import net.imglib.ui.util.FinalSource;
-import net.imglib.ui.util.GuiUtil;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.converter.Converter;
 import net.imglib2.realtransform.AffineTransform2D;
 import net.imglib2.type.numeric.ARGBType;
+import net.imglib2.ui.AffineTransformType2D;
+import net.imglib2.ui.util.FinalSource;
+import net.imglib2.ui.util.GuiUtil;
 
 /**
  * Interactive viewer for a 2D {@link RealRandomAccessible}.

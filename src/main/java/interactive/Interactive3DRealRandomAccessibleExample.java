@@ -38,7 +38,6 @@
 package interactive;
 
 import interactive.fractals.MandelbulbRealRandomAccess;
-import net.imglib.ui.InteractiveRealViewer3D;
 import net.imglib2.Interval;
 import net.imglib2.RealInterval;
 import net.imglib2.RealRandomAccess;
@@ -47,6 +46,7 @@ import net.imglib2.display.RealARGBConverter;
 import net.imglib2.io.ImgIOException;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.integer.LongType;
+import net.imglib2.ui.viewer.InteractiveRealViewer3D;
 import net.imglib2.util.Intervals;
 
 public class Interactive3DRealRandomAccessibleExample

@@ -34,7 +34,7 @@
  * policies, either expressed or implied, of any organization.
  * #L%
  */
-package net.imglib.ui;
+package net.imglib2.ui;
 
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;

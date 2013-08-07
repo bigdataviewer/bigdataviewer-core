@@ -42,16 +42,16 @@ import interactive.fractals.JuliaRealRandomAccessible;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
 
-import net.imglib.ui.InteractiveRealViewer2D;
-import net.imglib.ui.TransformEventHandler2D;
-import net.imglib.ui.TransformListener;
-import net.imglib.ui.component.InteractiveDisplayCanvas;
 import net.imglib2.converter.Converter;
 import net.imglib2.io.ImgIOException;
 import net.imglib2.realtransform.AffineTransform2D;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.complex.ComplexDoubleType;
 import net.imglib2.type.numeric.integer.LongType;
+import net.imglib2.ui.InteractiveDisplayCanvas;
+import net.imglib2.ui.TransformEventHandler2D;
+import net.imglib2.ui.TransformListener;
+import net.imglib2.ui.viewer.InteractiveRealViewer2D;
 
 public class JuliaRealViewer2DExample
 {

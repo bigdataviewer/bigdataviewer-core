@@ -35,18 +35,19 @@
  * #L%
  */
 
-package net.imglib.ui;
+package net.imglib2.ui.viewer;
 
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 
-import net.imglib.ui.util.GuiUtil;
-import net.imglib.ui.util.InterpolatingSource;
 import net.imglib2.RandomAccessible;
 import net.imglib2.converter.Converter;
 import net.imglib2.realtransform.AffineTransform2D;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.NumericType;
+import net.imglib2.ui.AffineTransformType2D;
+import net.imglib2.ui.util.GuiUtil;
+import net.imglib2.ui.util.InterpolatingSource;
 
 /**
  * Interactive viewer for a 2D {@link RandomAccessible}.

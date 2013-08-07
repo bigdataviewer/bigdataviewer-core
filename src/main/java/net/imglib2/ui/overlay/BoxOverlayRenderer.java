@@ -1,13 +1,13 @@
-package net.imglib.ui.overlay;
+package net.imglib2.ui.overlay;
 
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 
-import net.imglib.ui.OverlayRenderer;
-import net.imglib.ui.TransformListener;
 import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.ui.OverlayRenderer;
+import net.imglib2.ui.TransformListener;
 import net.imglib2.util.Intervals;
 
 /**

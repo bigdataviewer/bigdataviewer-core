@@ -38,8 +38,6 @@
 package interactive;
 
 import ij.IJ;
-import net.imglib.ui.InteractiveViewer2D;
-import net.imglib.ui.InteractiveViewer3D;
 import net.imglib2.IterableInterval;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
@@ -55,6 +53,8 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.Type;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.ui.viewer.InteractiveViewer2D;
+import net.imglib2.ui.viewer.InteractiveViewer3D;
 import net.imglib2.view.Views;
 
 public class InteractiveImageViewerExample

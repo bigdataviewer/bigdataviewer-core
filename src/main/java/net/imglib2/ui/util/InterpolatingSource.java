@@ -1,6 +1,5 @@
-package net.imglib.ui.util;
+package net.imglib2.ui.util;
 
-import net.imglib.ui.SimpleSource;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.converter.Converter;
@@ -8,9 +7,10 @@ import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.NumericType;
+import net.imglib2.ui.RenderSource;
 import net.imglib2.view.Views;
 
-public class InterpolatingSource< T extends NumericType< T >, A > implements SimpleSource< T, A >
+public class InterpolatingSource< T extends NumericType< T >, A > implements RenderSource< T, A >
 {
 	protected final A sourceTransform;
 

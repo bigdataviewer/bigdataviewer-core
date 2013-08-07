@@ -1,4 +1,4 @@
-package net.imglib.ui.component;
+package net.imglib2.ui;
 
 import java.awt.Component;
 import java.awt.Dimension;
@@ -16,10 +16,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.swing.JComponent;
 
-import net.imglib.ui.OverlayRenderer;
-import net.imglib.ui.TransformEventHandler;
-import net.imglib.ui.TransformEventHandlerFactory;
-import net.imglib.ui.TransformListener;
 
 public class InteractiveDisplayCanvas< T > extends JComponent implements TransformListener< T >
 {
@@ -216,8 +212,13 @@ public class InteractiveDisplayCanvas< T > extends JComponent implements Transfo
 			bi = bufferedImage;
 		}
 		if ( bi != null )
+		{
+//			final StopWatch watch = new StopWatch();
+//			watch.start();
 //			( (Graphics2D ) g).setRenderingHint( RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR );
 			g.drawImage( bi, 0, 0, getWidth(), getHeight(), null );
+//			System.out.println( String.format( "g.drawImage() :%4d ms", watch.nanoTime() / 1000000 ) );
+		}
 		for ( final OverlayRenderer or : overlayRenderers )
 			or.drawOverlays( g );
 	}

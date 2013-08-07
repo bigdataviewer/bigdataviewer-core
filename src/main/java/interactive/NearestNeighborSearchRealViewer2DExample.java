@@ -36,7 +36,6 @@
  */
 
 package interactive;
-import net.imglib.ui.InteractiveRealViewer2D;
 import net.imglib2.RealPoint;
 import net.imglib2.collection.KDTree;
 import net.imglib2.collection.RealPointSampleList;
@@ -50,6 +49,7 @@ import net.imglib2.realtransform.AffineTransform2D;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.NumericType;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
+import net.imglib2.ui.viewer.InteractiveRealViewer2D;
 
 public class NearestNeighborSearchRealViewer2DExample< T extends NumericType< T > & NativeType< T > >
 {

@@ -37,13 +37,13 @@
 
 package interactive;
 import interactive.fractals.MandelbrotRealRandomAccessible;
-import net.imglib.ui.InteractiveRealViewer2D;
 import net.imglib2.display.RealARGBConverter;
 import net.imglib2.io.ImgIOException;
 import net.imglib2.realtransform.AffineTransform2D;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.NumericType;
 import net.imglib2.type.numeric.integer.LongType;
+import net.imglib2.ui.viewer.InteractiveRealViewer2D;
 
 public class MandelbrotRealViewer2DExample< T extends NumericType< T > & NativeType< T > >
 {

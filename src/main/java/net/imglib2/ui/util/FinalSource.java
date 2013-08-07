@@ -1,11 +1,11 @@
-package net.imglib.ui.util;
+package net.imglib2.ui.util;
 
-import net.imglib.ui.SimpleSource;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.converter.Converter;
 import net.imglib2.type.numeric.ARGBType;
+import net.imglib2.ui.RenderSource;
 
-public class FinalSource< T, A > implements SimpleSource< T, A >
+public class FinalSource< T, A > implements RenderSource< T, A >
 {
 	protected final RealRandomAccessible< T > source;
 
