@@ -10,15 +10,17 @@ import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.converter.Converter;
+import net.imglib2.ui.util.StopWatch;
 import viewer.hdf5.img.CacheIoTiming;
 import viewer.hdf5.img.CacheIoTiming.IoStatistics;
-import viewer.util.StopWatch;
 
+// TODO: should this extend net.imglib2.ui.InterruptibleProjector?
+// rename to XInterruptibleProjector
 public class InterruptibleRenderer< A, B > extends AbstractInterval
 {
 	final protected RandomAccessible< A > source;
 
-	final protected Converter< A, B > converter;
+	final protected Converter< ? super A, B > converter;
 
 	protected long lastFrameRenderNanoTime;
 
@@ -34,7 +36,7 @@ public class InterruptibleRenderer< A, B > extends AbstractInterval
 		ioTimeOutRunnable = runnable;
 	}
 
-	public InterruptibleRenderer( final RandomAccessible< A > source, final Converter< A, B > converter )
+	public InterruptibleRenderer( final RandomAccessible< A > source, final Converter< ? super A, B > converter )
 	{
 		super( new long[ source.numDimensions() ] );
 		this.source = source;

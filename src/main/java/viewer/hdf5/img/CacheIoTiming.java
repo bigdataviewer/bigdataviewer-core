@@ -2,7 +2,7 @@ package viewer.hdf5.img;
 
 import java.util.concurrent.ConcurrentHashMap;
 
-import viewer.util.StopWatch;
+import net.imglib2.ui.util.StopWatch;
 
 public class CacheIoTiming
 {

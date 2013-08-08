@@ -4,8 +4,6 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.imglib.ui.PainterThread;
-import net.imglib.ui.component.InteractiveDisplay3DCanvas;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.converter.Converters;
@@ -16,12 +14,14 @@ import net.imglib2.realtransform.RealViews;
 import net.imglib2.sampler.special.ConstantRandomAccessible;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.NumericType;
-import viewer.GuiHelpers;
+import net.imglib2.ui.InteractiveDisplayCanvas;
+import net.imglib2.ui.PainterThread;
+import net.imglib2.ui.util.GuiUtil;
 import viewer.display.AccumulateARGB;
 
 public class MultiResolutionRenderer
 {
-	final protected InteractiveDisplay3DCanvas display;
+	final protected InteractiveDisplayCanvas< AffineTransform3D > display;
 
 	/**
 	 * Thread that triggers repainting of the display.
@@ -166,7 +166,7 @@ public class MultiResolutionRenderer
 	 * @param numRenderingThreads
 	 *            How many threads to use for rendering.
 	 */
-	public MultiResolutionRenderer( final InteractiveDisplay3DCanvas display, final PainterThread painterThread, final double[] screenScales, final long targetRenderNanos, final long targetIoNanos, final int badIoFrameBlockFrames, final boolean doubleBuffered, final int numRenderingThreads )
+	public MultiResolutionRenderer( final InteractiveDisplayCanvas< AffineTransform3D > display, final PainterThread painterThread, final double[] screenScales, final long targetRenderNanos, final long targetIoNanos, final int badIoFrameBlockFrames, final boolean doubleBuffered, final int numRenderingThreads )
 	{
 		this.display = display;
 		this.painterThread = painterThread;
@@ -193,7 +193,7 @@ public class MultiResolutionRenderer
 		this.numRenderingThreads = numRenderingThreads;
 	}
 
-	public MultiResolutionRenderer( final InteractiveDisplay3DCanvas display, final PainterThread painterThread, final double[] screenScales )
+	public MultiResolutionRenderer( final InteractiveDisplayCanvas< AffineTransform3D > display, final PainterThread painterThread, final double[] screenScales )
 	{
 		this( display, painterThread, screenScales, 30 * 1000000, 10 * 1000000, 5, true, 3 );
 	}
@@ -216,7 +216,7 @@ public class MultiResolutionRenderer
 				for ( int b = 0; b < ( doubleBuffered ? 2 : 1 ); ++b )
 				{
 					screenImages[ i ][ b ] = new ARGBScreenImage( w, h );
-					bufferedImages[ i ][ b ] = GuiHelpers.getBufferedImage( screenImages[ i ][ b ] );
+					bufferedImages[ i ][ b ] = GuiUtil.getBufferedImage( screenImages[ i ][ b ] );
 				}
 				final AffineTransform3D scale = new AffineTransform3D();
 				final double xScale = ( double ) w / componentW;

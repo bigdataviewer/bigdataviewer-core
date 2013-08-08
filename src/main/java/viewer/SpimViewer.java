@@ -29,16 +29,18 @@ import javax.swing.RootPaneContainer;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import net.imglib.ui.OverlayRenderer;
-import net.imglib.ui.PainterThread;
-import net.imglib.ui.component.InteractiveDisplay3DCanvas;
 import net.imglib2.Pair;
 import net.imglib2.Positionable;
 import net.imglib2.RealPoint;
 import net.imglib2.RealPositionable;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.ui.InteractiveDisplayCanvas;
+import net.imglib2.ui.OverlayRenderer;
+import net.imglib2.ui.PainterThread;
+import net.imglib2.ui.TransformEventHandler;
 import net.imglib2.ui.TransformEventHandler3D;
-import net.imglib2.ui.TransformListener3D;
+import net.imglib2.ui.TransformListener;
+import net.imglib2.ui.util.GuiUtil;
 import net.imglib2.util.LinAlgHelpers;
 import net.imglib2.util.ValuePair;
 import viewer.TextOverlayAnimator.TextPosition;
@@ -52,7 +54,7 @@ import viewer.render.overlay.SourceInfoOverlayRenderer;
 import viewer.util.AbstractTransformAnimator;
 import viewer.util.Affine3DHelpers;
 
-public class SpimViewer implements OverlayRenderer, TransformListener3D, PainterThread.Paintable
+public class SpimViewer implements OverlayRenderer, TransformListener< AffineTransform3D >, PainterThread.Paintable
 {
 	protected ViewerState state;
 
@@ -70,7 +72,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 	/**
 	 * Canvas used for displaying the rendered {@link #screenImages screen image}.
 	 */
-	final protected InteractiveDisplay3DCanvas display;
+	final protected InteractiveDisplayCanvas< AffineTransform3D > display;
 
 	/**
 	 * Thread that triggers repainting of the display.
@@ -111,7 +113,9 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 
 		painterThread = new PainterThread( this );
 		viewerTransform = new AffineTransform3D();
-		display = new InteractiveDisplay3DCanvas( width, height, this, this );
+		display = new InteractiveDisplayCanvas< AffineTransform3D >( width, height, TransformEventHandler3D.factory() );
+		display.addTransformListener( this );
+		display.addOverlayRenderer( this );
 
 		final double[] screenScales = new double[] { 1, 0.75, 0.5, 0.25, 0.125 };
 		final long targetRenderNanos = 30 * 1000000;
@@ -134,8 +138,8 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 			}
 		} );
 
-//		final GraphicsConfiguration gc = GuiHelpers.getSuitableGraphicsConfiguration( ARGBScreenImage.ARGB_COLOR_MODEL );
-		final GraphicsConfiguration gc = GuiHelpers.getSuitableGraphicsConfiguration( GuiHelpers.RGB_COLOR_MODEL );
+//		final GraphicsConfiguration gc = GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.ARGB_COLOR_MODEL );
+		final GraphicsConfiguration gc = GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.RGB_COLOR_MODEL );
 		frame = new JFrame( "multi-angle viewer", gc );
 		frame.getRootPane().setDoubleBuffered( true );
 		final Container content = frame.getContentPane();
@@ -186,7 +190,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 		{
 			if ( currentAnimator != null )
 			{
-				final TransformEventHandler3D handler = display.getTransformEventHandler();
+				final TransformEventHandler< AffineTransform3D > handler = display.getTransformEventHandler();
 				final AffineTransform3D transform = currentAnimator.getCurrent( System.currentTimeMillis() );
 				handler.setTransform( transform );
 				transformChanged( transform );
@@ -383,7 +387,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 	 *
 	 * @return the viewer canvas.
 	 */
-	public InteractiveDisplay3DCanvas getDisplay()
+	public InteractiveDisplayCanvas< AffineTransform3D > getDisplay()
 	{
 		return display;
 	}
@@ -585,5 +589,12 @@ public class SpimViewer implements OverlayRenderer, TransformListener3D, Painter
 		{
 			return y;
 		}
+	}
+
+	@Override
+	public void setCanvasSize( final int width, final int height )
+	{
+		// TODO Auto-generated method stub
+
 	}
 }

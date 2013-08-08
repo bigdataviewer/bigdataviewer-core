@@ -10,9 +10,9 @@ import javax.swing.KeyStroke;
 import javax.xml.parsers.ParserConfigurationException;
 
 import mpicbg.spim.data.SequenceDescription;
-import net.imglib.display.RealARGBColorConverter;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.display.RealARGBColorConverter;
 import net.imglib2.histogram.DiscreteFrequencyDistribution;
 import net.imglib2.histogram.Histogram1d;
 import net.imglib2.histogram.Real1dBinMapper;
