@@ -1,6 +1,7 @@
 package creator;
 
 import fiji.plugin.Bead_Registration;
+import fiji.plugin.Multi_View_Fusion;
 import fiji.util.gui.GenericDialogPlus;
 import ij.IJ;
 import ij.ImageJ;
@@ -33,7 +34,7 @@ public class ExportSpimSequencePlugIn implements PlugIn
 	@Override
 	public void run( final String arg0 )
 	{
-		final Parameters params = getParameters( false );
+		final Parameters params = getParameters();
 
 		// cancelled
 		if ( params == null )
@@ -60,6 +61,7 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		IJ.log( "done" );
 	}
 
+	public static String fusionType[] = new String[] { "Single-channel", "Multi-channel" };
 	public static String allChannels = "0, 1";
 
 	protected static class Parameters
@@ -80,8 +82,18 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		}
 	}
 
-	protected Parameters getParameters( final boolean multichannel )
+
+	protected Parameters getParameters()
 	{
+		final GenericDialog gd0 = new GenericDialogPlus( "SpimViewer Import" );
+		gd0.addChoice( "Select_channel type", fusionType, fusionType[ Multi_View_Fusion.defaultFusionType ] );
+		gd0.showDialog();
+		if ( gd0.wasCanceled() )
+			return null;
+		final int channelChoice = gd0.getNextChoiceIndex();
+		Multi_View_Fusion.defaultFusionType = channelChoice;
+		final boolean multichannel = channelChoice == 1;
+
 		final GenericDialogPlus gd = new GenericDialogPlus( "SpimViewer Import" );
 
 		gd.addDirectoryOrFileField( "SPIM_data_directory", Bead_Registration.spimDataDirectory );
@@ -258,6 +270,8 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		{
 			conf.inputdirectory = Bead_Registration.spimDataDirectory;
 		}
+
+		conf.fuseOnly = true; // this is to avoid an exception in the multi-channel case
 
 		// get filenames and so on...
 		if ( ! init( conf ) )
