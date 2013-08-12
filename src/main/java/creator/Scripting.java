@@ -26,6 +26,10 @@ public class Scripting
 	 *
 	 * @param huiskenExperimentXmlFile
 	 *            path of the experiment xml file.
+	 * @param channels
+	 *            String specifying the channels to include in the sequence. In
+	 *            the format used by the SPIMRegistration plugin.
+	 *            For single-channel sequence, set to null.
 	 * @param angles
 	 *            String specifying the angles to include in the sequence. In
 	 *            the format used by the SPIMRegistration plugin.
@@ -39,9 +43,9 @@ public class Scripting
 	 * @return an initialized {@link SpimRegistrationSequence} sequence.
 	 * @throws ConfigurationParserException
 	 */
-	public static SpimRegistrationSequence createSpimRegistrationSequence( final String huiskenExperimentXmlFile, final String angles, final String timepoints, final int referenceTimePoint ) throws ConfigurationParserException
+	public static SpimRegistrationSequence createSpimRegistrationSequence( final String huiskenExperimentXmlFile, final String channels, final String angles, final String timepoints, final int referenceTimePoint ) throws ConfigurationParserException
 	{
-		return new SpimRegistrationSequence( huiskenExperimentXmlFile, angles, timepoints, referenceTimePoint );
+		return new SpimRegistrationSequence( huiskenExperimentXmlFile, channels, angles, timepoints, referenceTimePoint );
 	}
 
 	/**
@@ -53,6 +57,10 @@ public class Scripting
 	 * @param inputFilePattern
 	 *            pattern of the image file names In the format used by the
 	 *            SPIMRegistration plugin.
+	 * @param channels
+	 *            String specifying the channels to include in the sequence. In
+	 *            the format used by the SPIMRegistration plugin.
+	 *            For single-channel sequence, set to null.
 	 * @param angles
 	 *            String specifying the angles to include in the sequence. In
 	 *            the format used by the SPIMRegistration plugin.
@@ -73,9 +81,9 @@ public class Scripting
 	 * @return an initialized {@link SpimRegistrationSequence} sequence.
 	 * @throws ConfigurationParserException
 	 */
-	public static SpimRegistrationSequence createSpimRegistrationSequence( final String inputDirectory, final String inputFilePattern, final String angles, final String timepoints, final int referenceTimePoint, final boolean overrideImageZStretching, final double zStretching ) throws ConfigurationParserException
+	public static SpimRegistrationSequence createSpimRegistrationSequence( final String inputDirectory, final String inputFilePattern, final String channels, final String angles, final String timepoints, final int referenceTimePoint, final boolean overrideImageZStretching, final double zStretching ) throws ConfigurationParserException
 	{
-		return new SpimRegistrationSequence( inputDirectory, inputFilePattern, angles, timepoints, referenceTimePoint, overrideImageZStretching, zStretching );
+		return new SpimRegistrationSequence( inputDirectory, inputFilePattern, channels, angles, timepoints, referenceTimePoint, overrideImageZStretching, zStretching );
 	}
 
 	/**
@@ -239,7 +247,7 @@ public class Scripting
 		final String timepoints = "1-5";
 		final int referenceTimePoint = 50;
 
-		final SpimRegistrationSequence spimseq = createSpimRegistrationSequence( huiskenExperimentXmlFile, angles, timepoints, referenceTimePoint );
+		final SpimRegistrationSequence spimseq = createSpimRegistrationSequence( huiskenExperimentXmlFile, null, angles, timepoints, referenceTimePoint );
 
 		final String filepath = "/Users/pietzsch/workspace/data/fast fly/111010_weber/e012/output/";
 		final String filepattern = "img_tl%d_ch1_z%03d.tif";

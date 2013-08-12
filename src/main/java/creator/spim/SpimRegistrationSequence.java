@@ -44,14 +44,14 @@ public class SpimRegistrationSequence
 		sequenceDescription = new SequenceDescription( setups, makeList( conf.timepoints ), new File( conf.inputdirectory ), imgLoader );
 	}
 
-	public SpimRegistrationSequence( final String huiskenExperimentXmlFile, final String angles, final String timepoints, final int referenceTimePoint ) throws ConfigurationParserException
+	public SpimRegistrationSequence( final String huiskenExperimentXmlFile, final String channels, final String angles, final String timepoints, final int referenceTimePoint ) throws ConfigurationParserException
 	{
-		this( initExperimentConfiguration( huiskenExperimentXmlFile, "", angles, timepoints, referenceTimePoint, false, 0 ) );
+		this( initExperimentConfiguration( huiskenExperimentXmlFile, "", channels, angles, timepoints, referenceTimePoint, false, 0 ) );
 	}
 
-	public SpimRegistrationSequence( final String inputDirectory, final String inputFilePattern, final String angles, final String timepoints, final int referenceTimePoint, final boolean overrideImageZStretching, final double zStretching ) throws ConfigurationParserException
+	public SpimRegistrationSequence( final String inputDirectory, final String inputFilePattern, final String channels, final String angles, final String timepoints, final int referenceTimePoint, final boolean overrideImageZStretching, final double zStretching ) throws ConfigurationParserException
 	{
-		this( initExperimentConfiguration( inputDirectory, inputFilePattern, angles, timepoints, referenceTimePoint, overrideImageZStretching, zStretching ) );
+		this( initExperimentConfiguration( inputDirectory, inputFilePattern, channels, angles, timepoints, referenceTimePoint, overrideImageZStretching, zStretching ) );
 	}
 
 	public SequenceDescription getSequenceDescription()
@@ -103,11 +103,18 @@ public class SpimRegistrationSequence
 	 */
 	protected static SPIMConfiguration initExperimentConfiguration( final String inputDirectory, final String inputFilePattern, final String angles, final String timepoints, final int referenceTimePoint, final boolean overrideImageZStretching, final double zStretching ) throws ConfigurationParserException
 	{
+		return initExperimentConfiguration( inputDirectory, inputFilePattern, "", angles, timepoints, referenceTimePoint, overrideImageZStretching, zStretching );
+	}
+
+	/**
+	 * Instantiate the SPIM configuration only with the necessary parameters
+	 * @return
+	 */
+	protected static SPIMConfiguration initExperimentConfiguration( final String inputDirectory, final String inputFilePattern, final String channels, final String angles, final String timepoints, final int referenceTimePoint, final boolean overrideImageZStretching, final double zStretching ) throws ConfigurationParserException
+	{
 		final SPIMConfiguration conf = new SPIMConfiguration();
 		conf.timepointPattern = timepoints;
-		conf.channelPattern = "";
-		conf.channelsToRegister = "";
-		conf.channelsToFuse = "";
+		conf.channelPattern = conf.channelsToRegister = conf.channelsToFuse = (channels == null) ? "" : channels;
 		conf.anglePattern = angles;
 
 		final File f = new File( inputDirectory );
@@ -139,6 +146,8 @@ public class SpimRegistrationSequence
 
 		conf.overrideImageZStretching = overrideImageZStretching;
 		conf.zStretching = zStretching;
+
+		conf.fuseOnly= true; // this is to avoid an exception in the multi-channel case
 
 		if ( conf.isHuiskenFormat() )
 			conf.getFilenamesHuisken();
