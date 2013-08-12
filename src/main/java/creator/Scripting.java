@@ -3,7 +3,6 @@ package creator;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -22,13 +21,22 @@ import creator.spim.SpimRegistrationSequence;
 public class Scripting
 {
 	/**
-	 * TODO
+	 * Create a {@link SpimRegistrationSequence} based on a Huisken experiment
+	 * xml file.
 	 *
 	 * @param huiskenExperimentXmlFile
+	 *            path of the experiment xml file.
 	 * @param angles
+	 *            String specifying the angles to include in the sequence. In
+	 *            the format used by the SPIMRegistration plugin.
 	 * @param timepoints
+	 *            String specifying the timepoints to include in the sequence.
+	 *            In the format used by the SPIMRegistration plugin.
 	 * @param referenceTimePoint
-	 * @return
+	 *            the reference timepoint (registrations relative to this
+	 *            timepoint are laoded), or <em>-1</em>, indicating to use
+	 *            individual (non-timelapse) view registrations.
+	 * @return an initialized {@link SpimRegistrationSequence} sequence.
 	 * @throws ConfigurationParserException
 	 */
 	public static SpimRegistrationSequence createSpimRegistrationSequence( final String huiskenExperimentXmlFile, final String angles, final String timepoints, final int referenceTimePoint ) throws ConfigurationParserException
@@ -37,16 +45,32 @@ public class Scripting
 	}
 
 	/**
-	 * TODO
+	 * Create a {@link SpimRegistrationSequence} based on a directory of image
+	 * (.tif, .czi, etc...).
 	 *
 	 * @param inputDirectory
+	 *            path of image directory.
 	 * @param inputFilePattern
+	 *            pattern of the image file names In the format used by the
+	 *            SPIMRegistration plugin.
 	 * @param angles
+	 *            String specifying the angles to include in the sequence. In
+	 *            the format used by the SPIMRegistration plugin.
 	 * @param timepoints
+	 *            String specifying the timepoints to include in the sequence.
+	 *            In the format used by the SPIMRegistration plugin.
 	 * @param referenceTimePoint
+	 *            the reference timepoint (registrations relative to this
+	 *            timepoint are laoded), or <em>-1</em>, indicating to use
+	 *            individual (non-timelapse) view registrations.
 	 * @param overrideImageZStretching
+	 *            whether the z-stretching of the images should be overridden.
+	 *            If <code>false</code>, the z-stretching is read from the image
+	 *            metadata.
 	 * @param zStretching
-	 * @return
+	 *            z-stretching to use (if
+	 *            <code>overrideImageZStretching == true</code>).
+	 * @return an initialized {@link SpimRegistrationSequence} sequence.
 	 * @throws ConfigurationParserException
 	 */
 	public static SpimRegistrationSequence createSpimRegistrationSequence( final String inputDirectory, final String inputFilePattern, final String angles, final String timepoints, final int referenceTimePoint, final boolean overrideImageZStretching, final double zStretching ) throws ConfigurationParserException
@@ -87,79 +111,102 @@ public class Scripting
 	}
 
 	/**
-	 * TODO
-	 * @param timepoints
-	 * @param referenceTimePoint
-	 * @return
+	 * Split the sequence represented in <code>aggregator</code> into
+	 * partitions.
+	 *
+	 * @param aggregator
+	 *            represents the full dataset.
+	 * @param timepointsPerPartition
+	 *            how many timepoints should each partition contain (if this is
+	 *            &leq;0, put do not split timepoints across partitions).
+	 * @param setupsPerPartition
+	 *            how many setups should each partition contain (if this is
+	 *            &leq;0, put do not split setups across partitions).
+	 * @param xmlFilename
+	 *            path to the xml file to which the sequence will be saved. This
+	 *            is used to generate paths for the partitions.
+	 * @return list of partitions.
 	 */
-	public static SetupAggregator createEmptyCollector()
+	public static ArrayList< Partition > split( final SetupAggregator aggregator, final int timepointsPerPartition, final int setupsPerPartition, final String xmlFilename )
 	{
-		return new SetupAggregator();
+		final String basename = xmlFilename.endsWith( ".xml" ) ? xmlFilename.substring( 0, xmlFilename.length() - 4 ) : xmlFilename;
+		final String partitionFilenameFormat = basename + "-%02d-%02d.h5";
+		final int numTimepoints = aggregator.timepoints.size();
+		final int numSetups = aggregator.setups.size();
+
+		final ArrayList< Integer > timepointSplits = new ArrayList< Integer >();
+		timepointSplits.add( 0 );
+		if ( timepointsPerPartition > 0 )
+			for ( int t = timepointsPerPartition; t < numTimepoints; t += timepointsPerPartition )
+				timepointSplits.add( t );
+		timepointSplits.add( numTimepoints );
+
+		final ArrayList< Integer > setupSplits = new ArrayList< Integer >();
+		setupSplits.add( 0 );
+		if ( setupsPerPartition > 0 )
+			for ( int s = setupsPerPartition; s < numSetups; s += setupsPerPartition )
+				setupSplits.add( s );
+		setupSplits.add( numSetups );
+
+		final ArrayList< Partition > partitions = new ArrayList< Partition >();
+		final int timepointOffset = 0;
+		final int setupOffset = 0;
+		for ( int i = 0; i < timepointSplits.size() - 1; ++i )
+		{
+			final int timepointStart = timepointSplits.get( i );
+			final int timepointLength = timepointSplits.get( i + 1 ) - timepointStart;
+			for ( int j = 0; j < setupSplits.size() - 1; ++j )
+			{
+				final int setupStart = setupSplits.get( j );
+				final int setupLength = setupSplits.get( j + 1 ) - setupStart;
+				final String path = String.format( partitionFilenameFormat, i, j );
+				partitions.add( new Partition( path, timepointOffset, timepointStart, timepointLength, setupOffset, setupStart, setupLength ) );
+			}
+		}
+
+		return partitions;
 	}
 
+	/**
+	 * Get the partition from the given list that contains the given timepoint and setup.
+	 *
+	 * @return partition that contains given timepoint and setup or null if there is no such partition.
+	 */
+	Partition select( final List< Partition > partitions, final int timepoint, final int setup )
+	{
+		for ( final Partition p : partitions )
+			if ( p.contains( timepoint, setup ) )
+				return p;
+		return null;
+	}
 
 	public static class PartitionedSequenceWriter
 	{
-		final SequenceDescription seq;
+		protected final SequenceDescription seq;
 
-		final ViewRegistrations regs;
+		protected final ViewRegistrations regs;
 
-		final ArrayList< int[][] > perSetupResolutions;
+		protected final ArrayList< int[][] > perSetupResolutions;
 
-		final ArrayList< int[][] > perSetupSubdivisions;
+		protected final ArrayList< int[][] > perSetupSubdivisions;
 
-		final ArrayList< Partition > partitions;
+		protected final ArrayList< Partition > partitions;
 
-		final File seqFile;
+		protected final File seqFile;
 
-		final File hdf5File;
+		protected final File hdf5File;
 
-		public PartitionedSequenceWriter( final SetupAggregator setupCollector, final ArrayList< Integer > timepointStarts, final ArrayList< Integer > setupStarts, final String xmlFilename, final String hdf5Filename, final String hdf5PartitionFilenameFormat )
+		public PartitionedSequenceWriter( final SetupAggregator setupCollector, final String xmlFilename, final List< Partition > partitions )
 		{
 			seq = setupCollector.createSequenceDescription( null );
 			regs = setupCollector.createViewRegistrations();
 			perSetupResolutions = setupCollector.getPerSetupResolutions();
 			perSetupSubdivisions = setupCollector.getPerSetupSubdivisions();
-
-			final ArrayList< Integer > timepointSplits = new ArrayList< Integer >();
-			if ( timepointStarts != null )
-			{
-				for ( final int t : timepointStarts )
-					if ( t >= 0 && t < seq.numTimepoints() )
-						timepointSplits.add( t );
-			}
-			else
-				timepointSplits.add( 0 );
-			timepointSplits.add( seq.numTimepoints() );
-
-			final ArrayList< Integer > setupSplits = new ArrayList< Integer >();
-			if ( setupStarts != null )
-			{
-				for ( final int s : setupStarts )
-					if ( s >= 0 && s < seq.numViewSetups() )
-						setupSplits.add( s );
-			}
-			else
-				setupSplits.add( 0 );
-			setupSplits.add( seq.numViewSetups() );
-
-			this.partitions = new ArrayList< Partition >();
-			final int timepointOffset = 0;
-			final int setupOffset = 0;
-			for ( int i = 0; i < timepointSplits.size() - 1; ++i )
-			{
-				final int timepointStart = timepointSplits.get( i );
-				final int timepointLength = timepointSplits.get( i + 1 ) - timepointStart;
-				for ( int j = 0; j < setupSplits.size() - 1; ++j )
-				{
-					final int setupStart = setupSplits.get( j );
-					final int setupLength = setupSplits.get( j + 1 ) - setupStart;
-					final String path = String.format( hdf5PartitionFilenameFormat, i, j );
-					this.partitions.add( new Partition( path, timepointOffset, timepointStart, timepointLength, setupOffset, setupStart, setupLength ) );
-				}
-			}
+			this.partitions = new ArrayList< Partition >( partitions );
 
 			this.seqFile = new File( xmlFilename );
+
+			final String hdf5Filename = ( xmlFilename.endsWith( ".xml" ) ? xmlFilename.substring( 0, xmlFilename.length() - 4 ) : xmlFilename ) + ".h5";
 			this.hdf5File = new File( hdf5Filename );
 		}
 
@@ -185,7 +232,7 @@ public class Scripting
 
 	public static void main( final String[] args ) throws ConfigurationParserException, TransformerFactoryConfigurationError, TransformerException, ParserConfigurationException, FileNotFoundException
 	{
-		final SetupAggregator collector = createEmptyCollector();
+		final SetupAggregator aggregator = new SetupAggregator();
 
 		final String huiskenExperimentXmlFile = "/Users/pietzsch/workspace/data/fast fly/111010_weber/e012.xml";
 		final String angles = "0,120,240";
@@ -214,23 +261,17 @@ public class Scripting
 		final String fusionresolutions = "{ 1, 1, 1 }, { 2, 2, 2 }, { 4, 4, 4 }";
 		final String fusionsubdivisions = "{ 16, 16, 16 }, { 16, 16, 16 }, { 8, 8, 8 }";
 
-		collector.addSetups( spimseq, spimresolutions, spimsubdivisions );
-		collector.addSetups( fusion, fusionresolutions, fusionsubdivisions );
+		aggregator.addSetups( spimseq, spimresolutions, spimsubdivisions );
+		aggregator.addSetups( fusion, fusionresolutions, fusionsubdivisions );
 
+		final String xmlFilename = "/Users/pietzsch/Desktop/everything.xml";
 
 		// splitting ...
 		final int timepointsPerPartition = 3;
-		final int numTimepoints = 10;
-		final ArrayList< Integer > timepointStarts = new ArrayList< Integer >();
-		for ( int timepoint = 0; timepoint < numTimepoints; timepoint += timepointsPerPartition )
-			timepointStarts.add( timepoint );
-		final ArrayList< Integer > setupStarts = new ArrayList< Integer >( Arrays.asList( 0 ) );
+		final int setupsPerPartition = 2;
+		final ArrayList< Partition > partitions = split( aggregator, timepointsPerPartition, setupsPerPartition, xmlFilename );
 
-		final String xmlFilename = "/Users/pietzsch/Desktop/data/everything2.xml";
-		final String hdf5Filename = "/Users/pietzsch/Desktop/data/everything2.h5";
-		final String hdf5PartitionFilenameFormat = "/Users/pietzsch/Desktop/data/everything2-%02d-%02d.h5";
-		final PartitionedSequenceWriter writer = new PartitionedSequenceWriter( collector, timepointStarts, setupStarts, xmlFilename, hdf5Filename, hdf5PartitionFilenameFormat );
-
+		final PartitionedSequenceWriter writer = new PartitionedSequenceWriter( aggregator,xmlFilename, partitions );
 		System.out.println( writer.numPartitions() );
 		for ( int i = 0; i < writer.numPartitions(); ++i )
 			writer.writePartition( i );

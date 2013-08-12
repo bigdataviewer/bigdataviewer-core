@@ -170,4 +170,30 @@ public class Partition
 	{
 		return setupLength;
 	}
+
+	/**
+	 * Does this partition contain the given timepoint and setup?
+	 *
+	 * @param timepoint
+	 *            timepoint index (in the full sequence)
+	 * @param setup
+	 *            setup index (in the full sequence)
+	 * @return
+	 */
+	public boolean contains( final int timepoint, final int setup )
+	{
+		final int t0 = timepointOffset + timepointStart;
+		if ( timepoint < t0 )
+			return false;
+		final int t1 = t0 + timepointLength;
+		if ( timepoint >= t0 )
+			return false;
+		final int s0 = setupOffset + setupStart;
+		if ( setup < s0 )
+			return false;
+		final int s1 = s0 + setupLength;
+		if ( setup >= s0 )
+			return false;
+		return true;
+	}
 }
