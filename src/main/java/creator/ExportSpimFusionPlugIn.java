@@ -60,7 +60,7 @@ public class ExportSpimFusionPlugIn implements PlugIn
 	@Override
 	public void run( final String arg0 )
 	{
-		final Parameters params = getParameters( false );
+		final Parameters params = getParameters();
 
 		// cancelled
 		if ( params == null )
@@ -88,7 +88,7 @@ public class ExportSpimFusionPlugIn implements PlugIn
 
 		final SpimRegistrationSequence spimseq = new SpimRegistrationSequence( params.conf );
 		final List< AffineTransform3D > fusionTransforms = spimseq.getFusionTransforms( params.cropOffsetX, params.cropOffsetY, params.cropOffsetZ, params.scale );
-		final FusionResult fusionResult = new FusionResult( spimseq, params.fusionDirectory, params.filenamePattern, params.numSlices, params.sliceValueMin, params.sliceValueMax, fusionTransforms );
+		final FusionResult fusionResult = FusionResult.create( spimseq, params.fusionDirectory, params.filenamePattern, params.numSlices, params.sliceValueMin, params.sliceValueMax, fusionTransforms );
 
 		// aggregate the ViewSetups
 		final SetupAggregator aggregator = new SetupAggregator();
@@ -157,16 +157,17 @@ public class ExportSpimFusionPlugIn implements PlugIn
 	{
 		final SpimRegistrationSequence spimseq = new SpimRegistrationSequence( params.conf );
 		final List< AffineTransform3D > fusionTransforms = spimseq.getFusionTransforms( params.cropOffsetX, params.cropOffsetY, params.cropOffsetZ, params.scale );
-		final FusionResult fusionResult = new FusionResult( spimseq, params.fusionDirectory, params.filenamePattern, params.numSlices, params.sliceValueMin, params.sliceValueMax, fusionTransforms );
+		final FusionResult fusionResult = FusionResult.create( spimseq, params.fusionDirectory, params.filenamePattern, params.numSlices, params.sliceValueMin, params.sliceValueMax, fusionTransforms );
 
 		// aggregate the ViewSetups
 		final SetupAggregator aggregator = new SetupAggregator();
 
-		// now add a new setup from the fusion result
-		final SequenceDescription fusionSeq = fusionResult.getSequenceDescription();
-		final ViewRegistrations fusionReg = fusionResult.getViewRegistrations();
-		final ViewSetup fusionSetup = fusionSeq.setups.get( 0 );
-		aggregator.add( fusionSetup, fusionSeq, fusionReg, params.resolutions, params.subdivisions );
+		// add the setups from the fusion result
+//		final SequenceDescription fusionSeq = fusionResult.getSequenceDescription();
+//		final ViewRegistrations fusionReg = fusionResult.getViewRegistrations();
+//		final ViewSetup fusionSetup = fusionSeq.setups.get( 0 );
+//		aggregator.add( fusionSetup, fusionSeq, fusionReg, params.resolutions, params.subdivisions );
+		aggregator.addSetups( fusionResult, params.resolutions, params.subdivisions );
 
 		final File baseDirectory = params.seqFile.getParentFile();
 		final SequenceDescription aggregateSeq = aggregator.createSequenceDescription( baseDirectory );
@@ -227,8 +228,17 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		}
 	}
 
-	protected Parameters getParameters( final boolean multichannel )
+	protected Parameters getParameters()
 	{
+		final GenericDialog gd0 = new GenericDialogPlus( "SpimViewer Import" );
+		gd0.addChoice( "Select_channel type", ExportSpimSequencePlugIn.fusionType, ExportSpimSequencePlugIn.fusionType[ Multi_View_Fusion.defaultFusionType ] );
+		gd0.showDialog();
+		if ( gd0.wasCanceled() )
+			return null;
+		final int channelChoice = gd0.getNextChoiceIndex();
+		Multi_View_Fusion.defaultFusionType = channelChoice;
+		final boolean multichannel = channelChoice == 1;
+
 		final GenericDialogPlus gd = new GenericDialogPlus( "SpimViewer Import" );
 
 		gd.addDirectoryOrFileField( "SPIM_data_directory", Bead_Registration.spimDataDirectory );
@@ -405,6 +415,8 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		{
 			conf.inputdirectory = Bead_Registration.spimDataDirectory;
 		}
+
+		conf.fuseOnly = true; // this is to avoid an exception in the multi-channel case
 
 		// get filenames and so on...
 		if ( ! ExportSpimSequencePlugIn.init( conf ) )
@@ -702,7 +714,9 @@ public class ExportSpimFusionPlugIn implements PlugIn
 				if ( name.substring( tStart, tStart + 1 ).equals("l") )
 					tStart++;
 				final int tEnd = name.indexOf( "_", tStart );
-				final String pattern = name.substring( 0, tStart ) + "%1$d" + name.substring( tEnd, name.length() - 4 - digits ) + "%2$0" + digits + "d.tif";
+				final int cStart = name.indexOf( "_ch", tEnd ) + 3;
+				final int cEnd = name.indexOf( "_", cStart );
+				final String pattern = name.substring( 0, tStart ) + "%1$d" + name.substring( tEnd, cStart ) + "%2$d" + name.substring( cEnd, name.length() - 4 - digits ) + "%3$0" + digits + "d.tif";
 				IOFunctions.println( "detected pattern = " + pattern );
 
 				final String prefix = name.substring( 0, name.length() - 4 - digits );

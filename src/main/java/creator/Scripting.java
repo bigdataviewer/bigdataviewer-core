@@ -115,7 +115,7 @@ public class Scripting
 	 */
 	public static FusionResult createFusionResult( final SpimRegistrationSequence spimseq, final String filepath, final String filepattern, final int numSlices, final double sliceValueMin, final double sliceValueMax, final List< AffineTransform3D > fusionTransforms )
 	{
-		return new FusionResult( spimseq, filepath, filepattern, numSlices, sliceValueMin, sliceValueMax, fusionTransforms );
+		return FusionResult.create( spimseq, filepath, filepattern, numSlices, sliceValueMin, sliceValueMax, fusionTransforms );
 	}
 
 	/**
@@ -250,7 +250,7 @@ public class Scripting
 		final SpimRegistrationSequence spimseq = createSpimRegistrationSequence( huiskenExperimentXmlFile, null, angles, timepoints, referenceTimePoint );
 
 		final String filepath = "/Users/pietzsch/workspace/data/fast fly/111010_weber/e012/output/";
-		final String filepattern = "img_tl%d_ch1_z%03d.tif";
+		final String filepattern = "img_tl%1$d_ch%2$d_z%3$03d.tif";
 		final int numSlices = 387;
 		final double sliceValueMin = 0;
 		final double sliceValueMax = 8000;
