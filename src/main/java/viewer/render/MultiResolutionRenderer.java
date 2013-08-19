@@ -14,14 +14,17 @@ import net.imglib2.realtransform.RealViews;
 import net.imglib2.sampler.special.ConstantRandomAccessible;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.NumericType;
-import net.imglib2.ui.InteractiveDisplayCanvas;
 import net.imglib2.ui.PainterThread;
+import net.imglib2.ui.RenderTarget;
 import net.imglib2.ui.util.GuiUtil;
 import viewer.display.AccumulateARGB;
 
 public class MultiResolutionRenderer
 {
-	final protected InteractiveDisplayCanvas< AffineTransform3D > display;
+	/**
+	 * Receiver for the {@link BufferedImage BufferedImages} that we render.
+	 */
+	final protected RenderTarget display;
 
 	/**
 	 * Thread that triggers repainting of the display.
@@ -84,7 +87,6 @@ public class MultiResolutionRenderer
 	 * TODO
 	 */
 	final protected long targetIoNanos;
-
 
 	/**
 	 * The index of the coarsest mipmap level.
@@ -166,7 +168,7 @@ public class MultiResolutionRenderer
 	 * @param numRenderingThreads
 	 *            How many threads to use for rendering.
 	 */
-	public MultiResolutionRenderer( final InteractiveDisplayCanvas< AffineTransform3D > display, final PainterThread painterThread, final double[] screenScales, final long targetRenderNanos, final long targetIoNanos, final int badIoFrameBlockFrames, final boolean doubleBuffered, final int numRenderingThreads )
+	public MultiResolutionRenderer( final RenderTarget display, final PainterThread painterThread, final double[] screenScales, final long targetRenderNanos, final long targetIoNanos, final int badIoFrameBlockFrames, final boolean doubleBuffered, final int numRenderingThreads )
 	{
 		this.display = display;
 		this.painterThread = painterThread;
@@ -193,7 +195,7 @@ public class MultiResolutionRenderer
 		this.numRenderingThreads = numRenderingThreads;
 	}
 
-	public MultiResolutionRenderer( final InteractiveDisplayCanvas< AffineTransform3D > display, final PainterThread painterThread, final double[] screenScales )
+	public MultiResolutionRenderer( final RenderTarget display, final PainterThread painterThread, final double[] screenScales )
 	{
 		this( display, painterThread, screenScales, 30 * 1000000, 10 * 1000000, 5, true, 3 );
 	}

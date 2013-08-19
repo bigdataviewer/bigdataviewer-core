@@ -34,12 +34,13 @@ import net.imglib2.Positionable;
 import net.imglib2.RealPoint;
 import net.imglib2.RealPositionable;
 import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.ui.InteractiveDisplayCanvas;
+import net.imglib2.ui.InteractiveDisplayCanvasComponent;
 import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.TransformEventHandler;
 import net.imglib2.ui.TransformEventHandler3D;
 import net.imglib2.ui.TransformListener;
+import net.imglib2.ui.overlay.BufferedImageOverlayRenderer;
 import net.imglib2.ui.util.GuiUtil;
 import net.imglib2.util.LinAlgHelpers;
 import net.imglib2.util.ValuePair;
@@ -72,7 +73,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	/**
 	 * Canvas used for displaying the rendered {@link #screenImages screen image}.
 	 */
-	final protected InteractiveDisplayCanvas< AffineTransform3D > display;
+	final protected InteractiveDisplayCanvasComponent< AffineTransform3D > display;
 
 	/**
 	 * Thread that triggers repainting of the display.
@@ -113,8 +114,10 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 
 		painterThread = new PainterThread( this );
 		viewerTransform = new AffineTransform3D();
-		display = new InteractiveDisplayCanvas< AffineTransform3D >( width, height, TransformEventHandler3D.factory() );
+		display = new InteractiveDisplayCanvasComponent< AffineTransform3D >( width, height, TransformEventHandler3D.factory() );
 		display.addTransformListener( this );
+		final BufferedImageOverlayRenderer renderTarget = new BufferedImageOverlayRenderer();
+		display.addOverlayRenderer( renderTarget );
 		display.addOverlayRenderer( this );
 
 		final double[] screenScales = new double[] { 1, 0.75, 0.5, 0.25, 0.125 };
@@ -123,7 +126,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		final int badIoFrameBlockFrames = 5;
 		final boolean doubleBuffered = true;
 		final int numRenderingThreads = 3;
-		imageRenderer = new MultiResolutionRenderer( display, painterThread, screenScales, targetRenderNanos, targetIoNanos, badIoFrameBlockFrames, doubleBuffered, numRenderingThreads );
+		imageRenderer = new MultiResolutionRenderer( renderTarget, painterThread, screenScales, targetRenderNanos, targetIoNanos, badIoFrameBlockFrames, doubleBuffered, numRenderingThreads );
 
 		mouseCoordinates = new MouseCoordinateListener() ;
 		display.addHandler( mouseCoordinates );
@@ -202,7 +205,6 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		display.repaint();
 	}
 
-	// TODO remove?
 	public void requestRepaint()
 	{
 		imageRenderer.requestRepaint();
@@ -387,7 +389,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	 *
 	 * @return the viewer canvas.
 	 */
-	public InteractiveDisplayCanvas< AffineTransform3D > getDisplay()
+	public InteractiveDisplayCanvasComponent< AffineTransform3D > getDisplay()
 	{
 		return display;
 	}
@@ -594,7 +596,5 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	@Override
 	public void setCanvasSize( final int width, final int height )
 	{
-		// TODO Auto-generated method stub
-
 	}
 }
