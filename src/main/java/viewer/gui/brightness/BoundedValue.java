@@ -1,5 +1,12 @@
 package viewer.gui.brightness;
 
+/**
+ * A <code>int</code> variable that can take any value in a given range. A
+ * {@link #setUpdateListener(UpdateListener) listener} is notified when the
+ * value or its allowed range is changed.
+ *
+ * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ */
 public class BoundedValue
 {
 	private int rangeMin;

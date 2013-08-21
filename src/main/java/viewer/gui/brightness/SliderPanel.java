@@ -13,7 +13,7 @@ import javax.swing.event.ChangeListener;
 
 /**
  * A {@link JSlider} with a {@link JSpinner} next to it, both modifying the same
- * value;
+ * {@link BoundedValue value}.
  */
 public class SliderPanel extends JPanel implements BoundedValue.UpdateListener
 {
@@ -25,6 +25,14 @@ public class SliderPanel extends JPanel implements BoundedValue.UpdateListener
 
 	private final BoundedValue model;
 
+	/**
+	 * Create a {@link SliderPanel} to modify a given {@link BoundedValue value}.
+	 *
+	 * @param name
+	 *            label to show next to the slider.
+	 * @param model
+	 *            the value that is modified.
+	 */
 	public SliderPanel( final String name, final BoundedValue model, final int spinnerStepSize )
 	{
 		super();

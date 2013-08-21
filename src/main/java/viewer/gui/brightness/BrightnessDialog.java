@@ -34,8 +34,15 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import mpicbg.spim.data.ViewSetup;
 import net.imglib2.type.numeric.ARGBType;
 
+
+/**
+ * Adjust brightness and colors for individual (or groups of) {@link ViewSetup setups}.
+ *
+ * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ */
 public class BrightnessDialog extends JDialog
 {
 	public BrightnessDialog( final Frame owner, final SetupAssignments setupAssignments )
