@@ -27,7 +27,7 @@ import org.xml.sax.SAXException;
 import viewer.crop.CropDialog;
 import viewer.gui.brightness.ConverterSetup;
 import viewer.gui.brightness.MinMaxGroup;
-import viewer.gui.brightness.NewBrightnessDialog;
+import viewer.gui.brightness.BrightnessDialog;
 import viewer.gui.brightness.SetupAssignments;
 import viewer.render.Source;
 import viewer.render.SourceAndConverter;
@@ -49,7 +49,7 @@ public class ViewRegisteredAngles
 
 	final SetupAssignments setupAssignments;
 
-	final NewBrightnessDialog brightnessDialog;
+	final BrightnessDialog brightnessDialog;
 
 	final CropDialog cropDialog;
 
@@ -175,7 +175,7 @@ public class ViewRegisteredAngles
 		final MinMaxGroup group = setupAssignments.getMinMaxGroups().get( 0 );
 		for ( final ConverterSetup setup : setupAssignments.getConverterSetups() )
 			setupAssignments.moveSetupToGroup( setup, group );
-		brightnessDialog = new NewBrightnessDialog( viewer.frame, setupAssignments );
+		brightnessDialog = new BrightnessDialog( viewer.frame, setupAssignments );
 		viewer.installKeyActions( brightnessDialog );
 
 		cropDialog = new CropDialog( viewer.frame, viewer, seq );

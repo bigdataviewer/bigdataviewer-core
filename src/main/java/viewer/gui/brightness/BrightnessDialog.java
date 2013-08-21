@@ -36,9 +36,9 @@ import javax.swing.event.ChangeListener;
 
 import net.imglib2.type.numeric.ARGBType;
 
-public class NewBrightnessDialog extends JDialog
+public class BrightnessDialog extends JDialog
 {
-	public NewBrightnessDialog( final Frame owner, final SetupAssignments setupAssignments )
+	public BrightnessDialog( final Frame owner, final SetupAssignments setupAssignments )
 	{
 		super( owner, "display range", false );
 
