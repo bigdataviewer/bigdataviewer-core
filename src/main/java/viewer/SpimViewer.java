@@ -1,5 +1,7 @@
 package viewer;
 
+import static viewer.render.DisplayMode.FUSED;
+
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Font;
@@ -160,6 +162,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 			}
 		} );
 		frame.setVisible( true );
+		renderTarget.setCanvasSize( display.getWidth(), display.getHeight() );
 
 		keysActions = new ArrayList< Pair< KeyStroke, Action > >();
 		createKeyActions();
@@ -341,7 +344,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		if ( sourceIndex >= 0 && sourceIndex < state.numSources() )
 		{
 			final SourceState< ? > source = state.getSources().get( sourceIndex );
-			source.setActive( !source.isActive() );
+			source.setActive( FUSED, !source.isActive( FUSED ) );
 			multiBoxOverlayRenderer.highlight( sourceIndex );
 			if ( ! state.isSingleSourceMode() )
 				requestRepaint();

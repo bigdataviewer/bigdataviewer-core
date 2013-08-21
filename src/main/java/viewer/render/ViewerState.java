@@ -1,5 +1,7 @@
 package viewer.render;
 
+import static viewer.render.DisplayMode.FUSED;
+import static viewer.render.DisplayMode.SINGLE;
 import static viewer.render.Interpolation.NEARESTNEIGHBOR;
 
 import java.util.ArrayList;
@@ -34,7 +36,11 @@ public class ViewerState
 	 * mode, only the current source (SPIM angle). Otherwise, in <em>fused</em>
 	 * mode, all active sources are blended.
 	 */
-	protected boolean singleSourceMode;
+//	protected boolean singleSourceMode;
+	/**
+	 * TODO
+	 */
+	protected DisplayMode displayMode;
 
 	/**
 	 * The index of the current source.
@@ -63,7 +69,7 @@ public class ViewerState
 
 		viewerTransform = new AffineTransform3D();
 		interpolation = NEARESTNEIGHBOR;
-		singleSourceMode = true;
+		displayMode = SINGLE;
 		currentSource = 0;
 		currentTimepoint = 0;
 	}
@@ -80,7 +86,7 @@ public class ViewerState
 		numTimePoints = s.numTimePoints;
 		viewerTransform = s.viewerTransform.copy();
 		interpolation = s.interpolation;
-		singleSourceMode = s.singleSourceMode;
+		displayMode = s.displayMode;
 		currentSource = s.currentSource;
 		currentTimepoint = s.currentTimepoint;
 	}
@@ -157,6 +163,7 @@ public class ViewerState
 		interpolation = method;
 	}
 
+	// TODO: replace by getDisplayMode()
 	/**
 	 * Is the display mode <em>single-source</em>? In <em>single-source</em>
 	 * mode, only the current source (SPIM angle). Otherwise, in <em>fused</em>
@@ -166,9 +173,10 @@ public class ViewerState
 	 */
 	public synchronized boolean isSingleSourceMode()
 	{
-		return singleSourceMode;
+		return displayMode == SINGLE;
 	}
 
+	// TODO: replace by setDisplayMode();
 	/**
 	 * Set the display mode to <em>single-source</em> (true) or <em>fused</em>
 	 * (false). In <em>single-source</em> mode, only the current source (SPIM
@@ -180,7 +188,24 @@ public class ViewerState
 	 */
 	public synchronized void setSingleSourceMode( final boolean singleSourceMode )
 	{
-		this.singleSourceMode = singleSourceMode;
+		if ( singleSourceMode )
+			setDisplayMode( SINGLE );
+		else
+			setDisplayMode( FUSED );
+	}
+
+	/**
+	 * TODO
+	 * @param mode
+	 */
+	public synchronized void setDisplayMode( final DisplayMode mode )
+	{
+		displayMode = mode;
+	}
+
+	public synchronized DisplayMode getDisplayMode()
+	{
+		return displayMode;
 	}
 
 	/**
@@ -233,7 +258,7 @@ public class ViewerState
 	{
 		final ArrayList< SourceState< ? > > visibleSources = new ArrayList< SourceState< ? > >();
 		for ( final SourceState< ? > source : sources )
-			if ( source.isVisible( singleSourceMode ) )
+			if ( source.isVisible( displayMode ) )
 				visibleSources.add( source );
 		return visibleSources;
 	}
@@ -247,7 +272,7 @@ public class ViewerState
 	{
 		final ArrayList< Integer > visibleSources = new ArrayList< Integer >();
 		for ( int i = 0; i < sources.size(); ++i )
-			if ( sources.get( i ).isVisible( singleSourceMode ) )
+			if ( sources.get( i ).isVisible( displayMode ) )
 				visibleSources.add( i );
 		return visibleSources;
 	}
@@ -272,7 +297,7 @@ public class ViewerState
 
 		final SourceState< ? > source = sources.get( sourceIndex );
 		int targetLevel = source.getSpimSource().getNumMipmapLevels() - 1;
-		if ( source.isVisible( singleSourceMode ) )
+		if ( source.isVisible( displayMode ) )
 		{
 			for ( int level = targetLevel - 1; level >= 0; level-- )
 			{

@@ -7,6 +7,7 @@ import java.util.List;
 import net.imglib2.Interval;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.Intervals;
+import viewer.render.DisplayMode;
 import viewer.render.SourceState;
 import viewer.render.ViewerState;
 
@@ -96,7 +97,7 @@ public class MultiBoxOverlayRenderer
 		{
 			final List< SourceState< ? > > sources = viewerState.getSources();
 			final int timepoint = viewerState.getCurrentTimepoint();
-			final boolean singleSourceMode = viewerState.isSingleSourceMode();
+			final DisplayMode displayMode = viewerState.getDisplayMode();
 
 			final int numSources = sources.size();
 			if ( boxSources.size() != numSources )
@@ -116,7 +117,7 @@ public class MultiBoxOverlayRenderer
 				sourceToViewer.concatenate( source.getSpimSource().getSourceTransform( timepoint, 0 ) );
 				boxsource.setSourceToViewer( sourceToViewer );
 				boxsource.setSourceInterval( source.getSpimSource().getSource( timepoint, 0 ) );
-				boxsource.setVisible( source.isVisible( singleSourceMode ) );
+				boxsource.setVisible( source.isVisible( displayMode ) );
 			}
 		}
 	}

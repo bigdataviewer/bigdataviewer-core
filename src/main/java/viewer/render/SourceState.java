@@ -1,5 +1,7 @@
 package viewer.render;
 
+import static viewer.render.DisplayMode.FUSED;
+import static viewer.render.DisplayMode.SINGLE;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.NumericType;
 import net.imglib2.util.LinAlgHelpers;
@@ -10,20 +12,15 @@ import net.imglib2.util.LinAlgHelpers;
 public class SourceState< T extends NumericType< T > > extends SourceAndConverter< T >
 {
 	/**
-	 * Whether the source is active (visible in fused mode).
+	 * Whether the source is active in each of the {@link DisplayMode}s (visible if the respective mode is active).
 	 */
-	protected boolean isActive;
-
-	/**
-	 * Whether the source is current.
-	 */
-	protected boolean isCurrent;
+	protected boolean[] isActive;
 
 	public SourceState( final SourceAndConverter< T > soc )
 	{
 		super( soc );
-		isActive = true;
-		isCurrent = false;
+		isActive = new boolean[ DisplayMode.length ];
+		isActive[ FUSED.id() ] = true;
 	}
 
 	/**
@@ -33,8 +30,7 @@ public class SourceState< T extends NumericType< T > > extends SourceAndConverte
 	protected SourceState( final SourceState< T > s )
 	{
 		super( s );
-		isActive = s.isActive;
-		isCurrent = s.isCurrent;
+		isActive = s.isActive.clone();
 	}
 
 	public SourceState< T > copy()
@@ -43,21 +39,22 @@ public class SourceState< T extends NumericType< T > > extends SourceAndConverte
 	}
 
 	/**
-	 * Is the source is active (visible in fused mode)?
+	 * Is the source is active (visible in the specified mode)?
 	 *
 	 * @return whether the source is active.
 	 */
-	public boolean isActive()
+	public boolean isActive( final DisplayMode mode )
 	{
-		return isActive;
+		return isActive[ mode.id() ];
 	}
 
 	/**
+	 * TODO
 	 * Set the source active (visible in fused mode) or inactive
 	 */
-	public void setActive( final boolean isActive )
+	public void setActive( final DisplayMode mode, final boolean isActive )
 	{
-		this.isActive = isActive;
+		this.isActive[ mode.id() ] = isActive;
 	}
 
 	/**
@@ -67,7 +64,7 @@ public class SourceState< T extends NumericType< T > > extends SourceAndConverte
 	 */
 	public boolean isCurrent()
 	{
-		return isCurrent;
+		return isActive[ SINGLE.id() ];
 	}
 
 	/**
@@ -75,10 +72,12 @@ public class SourceState< T extends NumericType< T > > extends SourceAndConverte
 	 */
 	public void setCurrent( final boolean isCurrent )
 	{
-		this.isCurrent = isCurrent;
+		isActive[ SINGLE.id() ] = isCurrent;
 	}
 
+	// TODO: Should this be removed, and isActive() used instead?
 	/**
+	 * TODO
 	 * Is the source visible? The source is visible if it is active in
 	 * <em>fused-mode</em> or it is current in <em>single-source</em> mode.
 	 *
@@ -88,9 +87,9 @@ public class SourceState< T extends NumericType< T > > extends SourceAndConverte
 	 *
 	 * @return true, if the source is visible.
 	 */
-	public boolean isVisible( final boolean singleSourceMode )
+	public boolean isVisible( final DisplayMode mode )
 	{
-		return singleSourceMode ? isCurrent() : isActive();
+		return isActive( mode );
 	}
 
 	/**
