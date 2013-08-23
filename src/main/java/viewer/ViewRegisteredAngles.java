@@ -25,10 +25,11 @@ import net.imglib2.view.Views;
 import org.xml.sax.SAXException;
 
 import viewer.crop.CropDialog;
+import viewer.gui.brightness.BrightnessDialog;
 import viewer.gui.brightness.ConverterSetup;
 import viewer.gui.brightness.MinMaxGroup;
-import viewer.gui.brightness.BrightnessDialog;
 import viewer.gui.brightness.SetupAssignments;
+import viewer.gui.visibility.ActiveSourcesDialog;
 import viewer.render.Source;
 import viewer.render.SourceAndConverter;
 import viewer.render.SourceState;
@@ -38,6 +39,8 @@ import viewer.util.Affine3DHelpers;
 public class ViewRegisteredAngles
 {
 	final KeyStroke brightnessKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_S, 0 );
+
+	final KeyStroke activeSourcesKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_F6, 0 );
 
 	final KeyStroke helpKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_F1, 0 );
 
@@ -53,9 +56,16 @@ public class ViewRegisteredAngles
 
 	final CropDialog cropDialog;
 
+	final ActiveSourcesDialog activeSourcesDialog;
+
 	public void toggleBrightnessDialog()
 	{
 		brightnessDialog.setVisible( ! brightnessDialog.isVisible() );
+	}
+
+	public void toggleActiveSourcesDialog()
+	{
+		activeSourcesDialog.setVisible( ! activeSourcesDialog.isVisible() );
 	}
 
 	public void showHelp()
@@ -140,6 +150,17 @@ public class ViewRegisteredAngles
 			private static final long serialVersionUID = 1L;
 		} );
 
+		viewer.addKeyAction( activeSourcesKeystroke, new AbstractAction( "visibility and grouping" )
+		{
+			@Override
+			public void actionPerformed( final ActionEvent arg0 )
+			{
+				toggleActiveSourcesDialog();
+			}
+
+			private static final long serialVersionUID = 1L;
+		} );
+
 		final AbstractAction helpAction = new AbstractAction( "help" )
 		{
 			@Override
@@ -181,6 +202,8 @@ public class ViewRegisteredAngles
 		cropDialog = new CropDialog( viewer.frame, viewer, seq );
 		viewer.installKeyActions( cropDialog );
 
+		activeSourcesDialog = new ActiveSourcesDialog( viewer.frame, viewer.visibilityAndGrouping );
+		viewer.installKeyActions( activeSourcesDialog );
 
 		initTransform( width, height );
 		initBrightness( 0.001, 0.999 );

@@ -1,6 +1,7 @@
 package viewer;
 
 import static viewer.render.DisplayMode.FUSED;
+import static viewer.render.DisplayMode.SINGLE;
 
 import java.awt.BorderLayout;
 import java.awt.Container;
@@ -47,6 +48,7 @@ import net.imglib2.ui.util.GuiUtil;
 import net.imglib2.util.LinAlgHelpers;
 import net.imglib2.util.ValuePair;
 import viewer.TextOverlayAnimator.TextPosition;
+import viewer.render.DisplayMode;
 import viewer.render.Interpolation;
 import viewer.render.MultiResolutionRenderer;
 import viewer.render.SourceAndConverter;
@@ -57,7 +59,7 @@ import viewer.render.overlay.SourceInfoOverlayRenderer;
 import viewer.util.AbstractTransformAnimator;
 import viewer.util.Affine3DHelpers;
 
-public class SpimViewer implements OverlayRenderer, TransformListener< AffineTransform3D >, PainterThread.Paintable
+public class SpimViewer implements OverlayRenderer, TransformListener< AffineTransform3D >, PainterThread.Paintable, VisibilityAndGrouping.UpdateListener
 {
 	protected ViewerState state;
 
@@ -92,6 +94,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 
 	protected AbstractTransformAnimator currentAnimator = null;
 
+	final protected VisibilityAndGrouping visibilityAndGrouping;
 
 	/**
 	 *
@@ -143,6 +146,9 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 					updateTimepoint( sliderTime.getValue() );
 			}
 		} );
+
+		visibilityAndGrouping = new VisibilityAndGrouping( state );
+		visibilityAndGrouping.addUpdateListener( this );
 
 //		final GraphicsConfiguration gc = GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.ARGB_COLOR_MODEL );
 		final GraphicsConfiguration gc = GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.RGB_COLOR_MODEL );
@@ -253,7 +259,6 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		requestRepaint();
 	}
 
-
 	static enum AlignPlane
 	{
 		XY,
@@ -331,26 +336,33 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		requestRepaint();
 	}
 
-	public synchronized void toggleSingleSourceMode()
+	@Override
+	public void visibilityChanged( final VisibilityAndGrouping.Event e )
 	{
-		final boolean singleSourceMode = ! state.isSingleSourceMode();
-		state.setSingleSourceMode( singleSourceMode );
-		animatedOverlay = new TextOverlayAnimator( singleSourceMode ? "single-source mode" : "fused mode", indicatorTime );
-		requestRepaint();
-	}
-
-	public synchronized void toggleVisibility( final int sourceIndex )
-	{
-		if ( sourceIndex >= 0 && sourceIndex < state.numSources() )
+		switch ( e.id )
 		{
-			final SourceState< ? > source = state.getSources().get( sourceIndex );
-			source.setActive( FUSED, !source.isActive( FUSED ) );
-			multiBoxOverlayRenderer.highlight( sourceIndex );
-			if ( ! state.isSingleSourceMode() )
+		case VisibilityAndGrouping.Event.DISPLAY_MODE_CHANGED:
+			animatedOverlay = new TextOverlayAnimator( e.displayMode.getName(), indicatorTime );
+			requestRepaint();
+			break;
+		case VisibilityAndGrouping.Event.ACTIVATE:
+		case VisibilityAndGrouping.Event.DEACTIVATE:
+			multiBoxOverlayRenderer.highlight( e.sourceIndex );
+			if ( visibilityAndGrouping.getDisplayMode() == e.displayMode )
 				requestRepaint();
 			else
 				display.repaint();
+			break;
+		default:
 		}
+	}
+
+	/**
+	 * TODO
+	 */
+	public synchronized void setDisplayMode( final DisplayMode displayMode )
+	{
+		visibilityAndGrouping.setDisplayMode( displayMode );
 	}
 
 	/**
@@ -358,15 +370,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	 */
 	public synchronized void setCurrentSource( final int sourceIndex )
 	{
-		if ( sourceIndex >= 0 && sourceIndex < state.numSources() )
-		{
-			state.setCurrentSource( sourceIndex );
-			multiBoxOverlayRenderer.highlight( sourceIndex );
-			if ( state.isSingleSourceMode() )
-				requestRepaint();
-			else
-				display.repaint();
-		}
+		visibilityAndGrouping.setCurrentSource( sourceIndex );
 	}
 
 	/**
@@ -424,7 +428,10 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 			@Override
 			public void actionPerformed( final ActionEvent e )
 			{
-				toggleSingleSourceMode();
+				if ( visibilityAndGrouping.getDisplayMode() == SINGLE )
+					setDisplayMode( FUSED );
+				else
+					setDisplayMode( SINGLE );
 			}
 
 			private static final long serialVersionUID = 1L;
@@ -456,7 +463,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 				@Override
 				public void actionPerformed( final ActionEvent e )
 				{
-					toggleVisibility( index );
+					visibilityAndGrouping.toggleActive( index, FUSED );
 				}
 
 				private static final long serialVersionUID = 1L;
