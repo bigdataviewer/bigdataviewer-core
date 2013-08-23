@@ -16,6 +16,11 @@ public class ViewerState
 	final protected ArrayList< SourceState< ? > > sources;
 
 	/**
+	 * read-only view of {@link #sources}.
+	 */
+	final private List< SourceState< ? > > unmodifiableSources;
+
+	/**
 	 * number of available timepoints.
 	 */
 	final protected int numTimePoints;
@@ -63,6 +68,7 @@ public class ViewerState
 	public ViewerState( final Collection< SourceAndConverter< ? > > sources, final int numTimePoints )
 	{
 		this.sources = new ArrayList< SourceState< ? > >( sources.size() );
+		unmodifiableSources = Collections.unmodifiableList( this.sources );
 		for ( final SourceAndConverter< ? > source : sources )
 			this.sources.add( SourceState.create( source ) );
 		this.numTimePoints = numTimePoints;
@@ -81,6 +87,7 @@ public class ViewerState
 	protected ViewerState( final ViewerState s )
 	{
 		sources = new ArrayList< SourceState< ? > >( s.sources.size() );
+		unmodifiableSources = Collections.unmodifiableList( sources );
 		for ( final SourceState< ? > source : s.sources )
 			this.sources.add( source.copy() );
 		numTimePoints = s.numTimePoints;
@@ -234,9 +241,9 @@ public class ViewerState
 	 *
 	 * @return list of all sources.
 	 */
-	public synchronized List< SourceState< ? > > getSources()
+	public List< SourceState< ? > > getSources()
 	{
-		return Collections.unmodifiableList( sources );
+		return unmodifiableSources;
 	}
 
 	/**
