@@ -118,6 +118,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		display.addTransformListener( this );
 		final BufferedImageOverlayRenderer renderTarget = new BufferedImageOverlayRenderer();
 		display.addOverlayRenderer( renderTarget );
+		renderTarget.setCanvasSize( width, height );
 		display.addOverlayRenderer( this );
 
 		final double[] screenScales = new double[] { 1, 0.75, 0.5, 0.25, 0.125 };
