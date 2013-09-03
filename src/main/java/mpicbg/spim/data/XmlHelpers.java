@@ -112,7 +112,7 @@ public class XmlHelpers
 		else
 		{
 			e.setAttribute( "type", "relative" );
-			e.appendChild( doc.createTextNode( getRelativePath( path, basePath ).getName() ) );
+			e.appendChild( doc.createTextNode( getRelativePath( path, basePath ).getPath() ) );
 		}
 
 		return e;
