@@ -103,7 +103,7 @@ public class VisibilityAndGrouping
 	 */
 	public synchronized boolean isActive( final int sourceIndex, final DisplayMode displayMode )
 	{
-		if ( sourceIndex < 0 || sourceIndex > numSources() )
+		if ( sourceIndex < 0 || sourceIndex >= numSources() )
 			return false;
 
 		return state.getSources().get( sourceIndex ).isActive( displayMode );
@@ -123,7 +123,7 @@ public class VisibilityAndGrouping
 	 */
 	public synchronized void setActive( final int sourceIndex, final DisplayMode displayMode, final boolean isActive )
 	{
-		if ( sourceIndex < 0 || sourceIndex > numSources() )
+		if ( sourceIndex < 0 || sourceIndex >= numSources() )
 			return;
 
 		if ( displayMode == DisplayMode.SINGLE )
@@ -146,7 +146,7 @@ public class VisibilityAndGrouping
 	 */
 	public synchronized void toggleActive( final int sourceIndex, final DisplayMode displayMode )
 	{
-		if ( sourceIndex < 0 || sourceIndex > numSources() )
+		if ( sourceIndex < 0 || sourceIndex >= numSources() )
 			return;
 
 		final SourceState< ? > source = state.getSources().get( sourceIndex );
@@ -170,7 +170,7 @@ public class VisibilityAndGrouping
 	 */
 	public synchronized void setCurrentSource( final int sourceIndex )
 	{
-		if ( sourceIndex < 0 || sourceIndex > numSources() )
+		if ( sourceIndex < 0 || sourceIndex >= numSources() )
 			return;
 
 		final int oldSourceIndex = state.getCurrentSource();
