@@ -307,11 +307,11 @@ public class ViewRegisteredAngles
 
 	public static void main( final String[] args )
 	{
-//		final String fn = "/Users/tobias/workspace/data/fast fly/111010_weber/combined.xml";
+		final String fn = "/Users/pietzsch/workspace/data/fast fly/111010_weber/combined.xml";
 //		final String fn = "/Users/tobias/Desktop/openspim.xml";
 //		final String fn = "/Users/pietzsch/Desktop/data/fibsem.xml";
 //		final String fn = "/Users/pietzsch/Desktop/url-valia.xml";
-		final String fn = "/Users/pietzsch/Desktop/Valia/valia.xml";
+//		final String fn = "/Users/pietzsch/Desktop/Valia/valia.xml";
 		try
 		{
 			new ViewRegisteredAngles( fn );

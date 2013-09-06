@@ -1,8 +1,9 @@
 package viewer.render;
 
-import java.util.ArrayList;
 import java.util.Collections;
-import java.util.List;
+import java.util.SortedSet;
+import java.util.TreeSet;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class SourceGroup
 {
@@ -11,14 +12,23 @@ public class SourceGroup
 		public void update();
 	}
 
-	protected final ArrayList< Integer > sourceIds;
+	protected final TreeSet< Integer > sourceIds;
 
-	protected final ArrayList< UpdateListener > updateListeners;
+	protected final SortedSet< Integer > unmodifiableSourceIds;
+
+	protected final CopyOnWriteArrayList< UpdateListener > updateListeners;
+
+	protected String name;
+
+	protected boolean active;
 
 	public SourceGroup()
 	{
-		sourceIds = new ArrayList< Integer >();
-		updateListeners = new ArrayList< UpdateListener >();
+		sourceIds = new TreeSet< Integer >();
+		unmodifiableSourceIds = Collections.unmodifiableSortedSet( sourceIds );
+		updateListeners = new CopyOnWriteArrayList< UpdateListener >();
+		name = "group"; // TODO
+		active = true;
 	}
 
 	public synchronized void addSource( final int sourceId )
@@ -33,9 +43,19 @@ public class SourceGroup
 		update();
 	}
 
-	public synchronized List< Integer > getSourceIds()
+	public synchronized SortedSet< Integer > getSourceIds()
 	{
-		return Collections.unmodifiableList( sourceIds );
+		return unmodifiableSourceIds;
+	}
+
+	public String getName()
+	{
+		return name;
+	}
+
+	public void setName( final String name )
+	{
+		this.name = name;
 	}
 
 	protected void update()
@@ -44,13 +64,23 @@ public class SourceGroup
 			l.update();
 	}
 
-	public synchronized void addUpdateListener( final UpdateListener l )
+	public void addUpdateListener( final UpdateListener l )
 	{
 		updateListeners.add( l );
 	}
 
-	public synchronized void removeUpdateListener( final UpdateListener l )
+	public void removeUpdateListener( final UpdateListener l )
 	{
 		updateListeners.remove( l );
+	}
+
+	public boolean isActive()
+	{
+		return active;
+	}
+
+	public void setActive( final boolean active )
+	{
+		this.active = active;
 	}
 }

@@ -1,6 +1,7 @@
 package viewer;
 
 import static viewer.render.DisplayMode.FUSED;
+import static viewer.render.DisplayMode.GROUP;
 import static viewer.render.DisplayMode.SINGLE;
 
 import java.awt.BorderLayout;
@@ -259,6 +260,40 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		requestRepaint();
 	}
 
+	@Override
+	public void visibilityChanged( final VisibilityAndGrouping.Event e )
+	{
+		switch ( e.id )
+		{
+		case VisibilityAndGrouping.Event.DISPLAY_MODE_CHANGED:
+			animatedOverlay = new TextOverlayAnimator( e.displayMode.getName(), indicatorTime );
+			requestRepaint();
+			break;
+		case VisibilityAndGrouping.Event.ACTIVATE:
+		case VisibilityAndGrouping.Event.DEACTIVATE:
+			multiBoxOverlayRenderer.highlight( e.sourceIndex );
+			if ( visibilityAndGrouping.getDisplayMode() == e.displayMode )
+				requestRepaint();
+			else
+				display.repaint();
+			break;
+		case VisibilityAndGrouping.Event.GROUPING_ENABLED_CHANGED:
+			final DisplayMode mode = visibilityAndGrouping.getDisplayMode();
+			if ( visibilityAndGrouping.isGroupingEnabled() )
+			{
+				if ( mode == SINGLE )
+					visibilityAndGrouping.setDisplayMode( GROUP );
+			}
+			else
+			{
+				if ( mode == GROUP )
+					visibilityAndGrouping.setDisplayMode( SINGLE );
+			}
+			break;
+		default:
+		}
+	}
+
 	static enum AlignPlane
 	{
 		XY,
@@ -336,25 +371,20 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		requestRepaint();
 	}
 
-	@Override
-	public void visibilityChanged( final VisibilityAndGrouping.Event e )
+	protected void setCurrentGroupOrSource( final int index )
 	{
-		switch ( e.id )
-		{
-		case VisibilityAndGrouping.Event.DISPLAY_MODE_CHANGED:
-			animatedOverlay = new TextOverlayAnimator( e.displayMode.getName(), indicatorTime );
-			requestRepaint();
-			break;
-		case VisibilityAndGrouping.Event.ACTIVATE:
-		case VisibilityAndGrouping.Event.DEACTIVATE:
-			multiBoxOverlayRenderer.highlight( e.sourceIndex );
-			if ( visibilityAndGrouping.getDisplayMode() == e.displayMode )
-				requestRepaint();
-			else
-				display.repaint();
-			break;
-		default:
-		}
+		if ( visibilityAndGrouping.isGroupingEnabled() )
+			visibilityAndGrouping.setCurrentGroup( index );
+		else
+			visibilityAndGrouping.setCurrentSource( index );
+	}
+
+	protected void toggleActiveGroupOrSource( final int index )
+	{
+		if ( visibilityAndGrouping.isGroupingEnabled() )
+			visibilityAndGrouping.toggleGroupActive( index );
+		else
+			visibilityAndGrouping.toggleActive( index, FUSED );
 	}
 
 	/**
@@ -423,15 +453,29 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
 
 		key = KeyStroke.getKeyStroke( KeyEvent.VK_F, 0 );
-		action = new AbstractAction( "toogle display mode" )
+		action = new AbstractAction( "toogle fused mode" )
 		{
 			@Override
 			public void actionPerformed( final ActionEvent e )
 			{
-				if ( visibilityAndGrouping.getDisplayMode() == SINGLE )
+				if ( visibilityAndGrouping.getDisplayMode() != FUSED )
 					setDisplayMode( FUSED );
 				else
-					setDisplayMode( SINGLE );
+					setDisplayMode( visibilityAndGrouping.isGroupingEnabled() ? GROUP : SINGLE );
+			}
+
+			private static final long serialVersionUID = 1L;
+		};
+		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
+
+		key = KeyStroke.getKeyStroke( KeyEvent.VK_G, 0 );
+		action = new AbstractAction( "toogle grouping" )
+		{
+			@Override
+			public void actionPerformed( final ActionEvent e )
+			{
+				final boolean enable = !visibilityAndGrouping.isGroupingEnabled();
+				visibilityAndGrouping.setGroupingEnabled( enable );
 			}
 
 			private static final long serialVersionUID = 1L;
@@ -450,7 +494,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 				@Override
 				public void actionPerformed( final ActionEvent e )
 				{
-					setCurrentSource( index );
+					setCurrentGroupOrSource( index );
 				}
 
 				private static final long serialVersionUID = 1L;
@@ -463,7 +507,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 				@Override
 				public void actionPerformed( final ActionEvent e )
 				{
-					visibilityAndGrouping.toggleActive( index, FUSED );
+					toggleActiveGroupOrSource( index );
 				}
 
 				private static final long serialVersionUID = 1L;
