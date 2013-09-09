@@ -12,6 +12,11 @@ import viewer.render.SourceState;
 import viewer.render.TransformedSource;
 import viewer.render.ViewerState;
 
+
+// TODO: re-use TextOverlay of SpimViewer (don't implement OverlayRenderer)
+// TODO: construct with InteractiveDisplayCanvas so that it can register/unregister as a TransformListener
+// TODO: construct with TransformedSource<?> List to avoid casting every time?
+// TODO: what happens when the current source, display mode, etc is changed while the editor is active? deactivate?
 public class ManualTransformationEditor implements TransformListener< AffineTransform3D >, OverlayRenderer
 {
 
