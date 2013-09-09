@@ -24,8 +24,7 @@ import net.imglib2.util.Intervals;
 import net.imglib2.util.ValuePair;
 import net.imglib2.view.Views;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import org.jdom2.Element;
 
 import viewer.render.Source;
 
@@ -66,7 +65,7 @@ public class CropImgLoader implements ImgLoader
 	 * not implemented.
 	 */
 	@Override
-	public Element toXml( final Document doc, final File basePath )
+	public Element toXml( final File basePath )
 	{
 		throw new UnsupportedOperationException( "not implemented" );
 	}

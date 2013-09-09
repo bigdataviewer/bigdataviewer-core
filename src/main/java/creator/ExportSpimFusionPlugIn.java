@@ -14,17 +14,10 @@ import java.awt.TextField;
 import java.awt.event.TextEvent;
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactoryConfigurationError;
 
 import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.ViewRegistrations;
@@ -37,9 +30,10 @@ import net.imglib2.Pair;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.ValuePair;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
+import org.jdom2.Document;
+import org.jdom2.Element;
+import org.jdom2.JDOMException;
+import org.jdom2.input.SAXBuilder;
 
 import spimopener.SPIMExperiment;
 import viewer.hdf5.Hdf5ImageLoader;
@@ -82,7 +76,7 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		}
 	}
 
-	public static void appendToExistingFile( final Parameters params ) throws TransformerFactoryConfigurationError, TransformerException, ParserConfigurationException, IOException, SAXException, InstantiationException, IllegalAccessException, ClassNotFoundException
+	public static void appendToExistingFile( final Parameters params ) throws JDOMException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
 	{
 		final ProgressListenerIJ progress = new PluginHelper.ProgressListenerIJ( 0, 0.95 );
 
@@ -94,10 +88,9 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		final SetupAggregator aggregator = new SetupAggregator();
 
 		// first add the setups from the existing dataset
-		final DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-		final DocumentBuilder db = dbf.newDocumentBuilder();
-		final Document dom = db.parse( params.seqFile );
-		final Element root = dom.getDocumentElement();
+		final SAXBuilder sax = new SAXBuilder();
+		final Document doc = sax.build( params.seqFile );
+		final Element root = doc.getRootElement();
 
 		final File existingDatasetXmlFile = params.seqFile;
 		final File baseDirectory = existingDatasetXmlFile.getParentFile();
@@ -153,7 +146,7 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		WriteSequenceToXml.writeSequenceToXml( sequenceDescription, aggregateRegs, params.seqFile.getAbsolutePath() );
 	}
 
-	public static void saveAsNewFile( final Parameters params ) throws FileNotFoundException, TransformerFactoryConfigurationError, TransformerException, ParserConfigurationException
+	public static void saveAsNewFile( final Parameters params ) throws IOException
 	{
 		final SpimRegistrationSequence spimseq = new SpimRegistrationSequence( params.conf );
 		final List< AffineTransform3D > fusionTransforms = spimseq.getFusionTransforms( params.cropOffsetX, params.cropOffsetY, params.cropOffsetZ, params.scale );

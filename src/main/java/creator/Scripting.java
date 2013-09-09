@@ -1,13 +1,9 @@
 package creator;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactoryConfigurationError;
 
 import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.ViewRegistrations;
@@ -229,7 +225,7 @@ public class Scripting
 				WriteSequenceToHdf5.writeHdf5PartitionFile( seq, perSetupResolutions, perSetupSubdivisions, partitions.get( index ), null );
 		}
 
-		public void writeXmlAndLinks() throws TransformerFactoryConfigurationError, TransformerException, ParserConfigurationException, FileNotFoundException
+		public void writeXmlAndLinks() throws IOException
 		{
 			WriteSequenceToHdf5.writeHdf5PartitionLinkFile( seq, perSetupResolutions, perSetupSubdivisions, partitions, hdf5File );
 			final Hdf5ImageLoader loader = new Hdf5ImageLoader( hdf5File, partitions, false );
@@ -238,7 +234,7 @@ public class Scripting
 		}
 	}
 
-	public static void main( final String[] args ) throws ConfigurationParserException, TransformerFactoryConfigurationError, TransformerException, ParserConfigurationException, FileNotFoundException
+	public static void main( final String[] args ) throws IOException, ConfigurationParserException
 	{
 		final SetupAggregator aggregator = new SetupAggregator();
 

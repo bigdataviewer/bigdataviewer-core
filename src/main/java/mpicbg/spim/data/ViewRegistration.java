@@ -2,8 +2,7 @@ package mpicbg.spim.data;
 
 import net.imglib2.realtransform.AffineTransform3D;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import org.jdom2.Element;
 
 public class ViewRegistration
 {
@@ -39,9 +38,9 @@ public class ViewRegistration
 	public ViewRegistration( final Element elem )
 	{
 		this(
-				Integer.parseInt( elem.getElementsByTagName( "timepoint" ).item( 0 ).getTextContent() ),
-				Integer.parseInt( elem.getElementsByTagName( "setup" ).item( 0 ).getTextContent() ),
-				XmlHelpers.loadAffineTransform3D( ( Element ) elem.getElementsByTagName( "affine" ).item( 0 ) )
+				Integer.parseInt( elem.getChildText( "timepoint" ) ),
+				Integer.parseInt( elem.getChildText( "setup" ) ),
+				XmlHelpers.loadAffineTransform3D( elem.getChild( "affine" ) )
 		);
 	}
 
@@ -76,13 +75,13 @@ public class ViewRegistration
 		return model;
 	}
 
-	public Element toXml( final Document doc )
+	public Element toXml()
 	{
-		final Element elem = doc.createElement( "ViewRegistration" );
+		final Element elem = new Element( "ViewRegistration" );
 
-		elem.appendChild( XmlHelpers.intElement( doc, "timepoint", getTimepointIndex() ) );
-		elem.appendChild( XmlHelpers.intElement( doc, "setup", getSetupIndex() ) );
-		elem.appendChild( XmlHelpers.affineTransform3DElement( doc, "affine", getModel() ) );
+		elem.addContent( XmlHelpers.intElement( "timepoint", getTimepointIndex() ) );
+		elem.addContent( XmlHelpers.intElement( "setup", getSetupIndex() ) );
+		elem.addContent( XmlHelpers.affineTransform3DElement( "affine", getModel() ) );
 
 		return elem;
 	}
