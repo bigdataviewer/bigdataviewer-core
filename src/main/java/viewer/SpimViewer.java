@@ -52,6 +52,7 @@ import net.imglib2.ui.util.GuiUtil;
 import net.imglib2.util.LinAlgHelpers;
 import net.imglib2.util.ValuePair;
 import viewer.TextOverlayAnimator.TextPosition;
+import viewer.gui.transformation.ManualTransformationEditor;
 import viewer.render.DisplayMode;
 import viewer.render.Interpolation;
 import viewer.render.MultiResolutionRenderer;
@@ -103,6 +104,8 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 
 	final protected VisibilityAndGrouping visibilityAndGrouping;
 
+	private final ManualTransformationEditor manualTransformationEditor;
+
 	/**
 	 * 
 	 * @param width
@@ -145,6 +148,10 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 			transformedSources.add( sourceAndConverter );
 		}
 
+		/*
+		 * Create viewer state.
+		 */
+
 		state = new ViewerState( transformedSources, groups, numTimePoints );
 		if ( !sources.isEmpty() )
 		{
@@ -161,6 +168,12 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		display.addOverlayRenderer( renderTarget );
 		renderTarget.setCanvasSize( width, height );
 		display.addOverlayRenderer( this );
+
+		/*
+		 * The class in charge of performing the manual transformation.
+		 */
+		manualTransformationEditor = new ManualTransformationEditor( state );
+		display.addTransformListener( manualTransformationEditor );
 
 		final double[] screenScales = new double[] { 1, 0.75, 0.5, 0.25, 0.125 };
 		final long targetRenderNanos = 30 * 1000000;
@@ -402,6 +415,12 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 
 	final int indicatorTime = 800;
 
+	protected synchronized void toggleManualTransformation()
+	{
+		manualTransformationEditor.toggle();
+
+	}
+
 	protected synchronized void toggleInterpolation()
 	{
 		final Interpolation interpolation = state.getInterpolation();
@@ -494,8 +513,21 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	 */
 	protected void createKeyActions()
 	{
-		KeyStroke key = KeyStroke.getKeyStroke( KeyEvent.VK_I, 0 );
-		Action action = new AbstractAction( "toogle interpolation" )
+		KeyStroke key = KeyStroke.getKeyStroke( KeyEvent.VK_T, 0 );
+		Action action = new AbstractAction( "toogle manual transformation" )
+		{
+			@Override
+			public void actionPerformed( final ActionEvent e )
+			{
+				toggleManualTransformation();
+			}
+
+			private static final long serialVersionUID = 1L;
+		};
+		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
+
+		key = KeyStroke.getKeyStroke( KeyEvent.VK_I, 0 );
+		action = new AbstractAction( "toogle interpolation" )
 		{
 			@Override
 			public void actionPerformed( final ActionEvent e )
