@@ -10,9 +10,9 @@ import net.imglib2.realtransform.AffineTransform3D;
  * <p>
  * This extra transformation is made to capture manual editing of the actual
  * transform in the SpimViewer.
- * 
+ *
  * @author Jean-Yves Tinevez - Sept 2013
- * 
+ *
  * @param <T>
  *            the type of the original source.
  */
@@ -21,19 +21,35 @@ public class TransformedSource< T > implements Source< T >
 
 	private final Source< T > source;
 
-	private final AffineTransform3D transform;
+	private final AffineTransform3D incrementalTransform;
+
+	private final AffineTransform3D fixedTransform;
+
+	/**
+	 * concatenation of {@link #incrementalTransform} * {@link #fixedTransform}.
+	 */
+	private final AffineTransform3D sourceTransform;
+
+	/**
+	 * temporary. concatenation of {@link #sourceTransform} and the transform
+	 * obtained from the decorated source.
+	 */
+	private final AffineTransform3D composed;
 
 	/**
 	 * Instantiates a new {@link TransformedSource} wrapping the specified
 	 * source with the identity transform.
-	 * 
+	 *
 	 * @param source
 	 *            the source to wrap.
 	 */
 	public TransformedSource( final Source< T > source )
 	{
 		this.source = source;
-		this.transform = new AffineTransform3D();
+		incrementalTransform = new AffineTransform3D();
+		fixedTransform = new AffineTransform3D();
+		sourceTransform = new AffineTransform3D();
+		composed = new AffineTransform3D();
 	}
 
 	/*
@@ -41,27 +57,73 @@ public class TransformedSource< T > implements Source< T >
 	 */
 
 	/**
-	 * Sets the extra transformation of this instance to have the same values
-	 * that of the specified one.
-	 * 
+	 * Sets the fixed part of the extra transformation to the specified
+	 * transform.
+	 * <p>
+	 * The extra transformation applied by the {@link TransformedSource} is a
+	 * concatenation of an {@link #getIncrementalTransform(AffineTransform3D)
+	 * incremental} and a {@link #getFixedTransform(AffineTransform3D) fixed}
+	 * transform.
+	 *
 	 * @param transform
-	 *            the transformation to copy to this instance.
+	 *            is copied to the {@link #getFixedTransform(AffineTransform3D)
+	 *            fixed} transform.
 	 */
-	public void setTransform( final AffineTransform3D transform )
+	public synchronized void setFixedTransform( final AffineTransform3D transform )
 	{
-		this.transform.set( transform.getRowPackedCopy() );
+		fixedTransform.set( transform );
+		sourceTransform.set( incrementalTransform );
+		sourceTransform.concatenate( fixedTransform );
 	}
 
 	/**
-	 * Copy the values of the transformation wrapped in this instance to the
-	 * specified transformation.
-	 * 
+	 * Get the fixed part of the extra transformation.
+	 * <p>
+	 * The extra transformation applied by the {@link TransformedSource} is a
+	 * concatenation of an {@link #getIncrementalTransform(AffineTransform3D)
+	 * incremental} and this fixed transform.
+	 *
 	 * @param transform
-	 *            the transformation to write on.
+	 *            is set to the fixed transform.
 	 */
-	public void getTransform( final AffineTransform3D transform )
+	public synchronized void getFixedTransform( final AffineTransform3D transform )
 	{
-		transform.set( this.transform.getRowPackedCopy() );
+		transform.set( fixedTransform );
+	}
+
+	/**
+	 * Sets the incremental part of the extra transformation to the specified
+	 * transform.
+	 * <p>
+	 * The extra transformation applied by the {@link TransformedSource} is a
+	 * concatenation of an {@link #getIncrementalTransform(AffineTransform3D)
+	 * incremental} and a {@link #getFixedTransform(AffineTransform3D) fixed}
+	 * transform.
+	 *
+	 * @param transform
+	 *            is copied to the {@link #getIncrementalTransform(AffineTransform3D)
+	 *            incremental} transform.
+	 */
+	public synchronized void setIncrementalTransform( final AffineTransform3D transform )
+	{
+		incrementalTransform.set( transform );
+		sourceTransform.set( incrementalTransform );
+		sourceTransform.concatenate( fixedTransform );
+	}
+
+	/**
+	 * Get the incremental part of the extra transformation.
+	 * <p>
+	 * The extra transformation applied by the {@link TransformedSource} is a
+	 * concatenation of this incremental transform and a
+	 * {@link #getFixedTransform(AffineTransform3D) fixed} transform.
+	 *
+	 * @param transform
+	 *            is set to the incremental transform.
+	 */
+	public synchronized void getIncrementalTransform( final AffineTransform3D transform )
+	{
+		transform.set( incrementalTransform );
 	}
 
 	/*
@@ -69,9 +131,9 @@ public class TransformedSource< T > implements Source< T >
 	 */
 
 	@Override
-	public AffineTransform3D getSourceTransform( final int t, final int level )
+	public synchronized AffineTransform3D getSourceTransform( final int t, final int level )
 	{
-		final AffineTransform3D composed = transform.copy();
+		composed.set( sourceTransform );
 		composed.concatenate( source.getSourceTransform( t, level ) );
 		return composed;
 	}
