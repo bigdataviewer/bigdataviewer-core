@@ -38,11 +38,8 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 		{ // Enter manual edit mode
 			if ( state.getDisplayMode() != DisplayMode.FUSED )
 			{
-				if ( state.getDisplayMode() != DisplayMode.FUSED )
-				{
-					animatedOverlay = new TextOverlayAnimator( "Can only do manual transformation when in FUSED mode.", 1000 );
-					return;
-				}
+				animatedOverlay = new TextOverlayAnimator( "Can only do manual transformation when in FUSED mode.", 1000 );
+				return;
 			}
 			else
 			{
@@ -53,6 +50,17 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 		}
 		else
 		{ // Exit manual edit mode.
+
+			final int currentSource = state.getCurrentSource();
+			final SourceState< ? > sourceState = state.getSources().get( currentSource );
+			final TransformedSource< ? > source = ( TransformedSource< ? > ) sourceState.getSpimSource();
+			final AffineTransform3D tmp = new AffineTransform3D();
+			source.getIncrementalTransform( frozenTransform );
+			source.getFixedTransform( tmp );
+			frozenTransform.concatenate( tmp );
+			tmp.identity();
+			source.setIncrementalTransform( tmp );
+			source.setFixedTransform( frozenTransform );
 			active = false;
 		}
 	}
@@ -69,8 +77,7 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 		state.getViewerTransform( liveTransform );
 		liveTransform.preConcatenate( frozenTransform.inverse() );
 
-		source.setTransform( liveTransform.inverse() );
-
+		source.setIncrementalTransform( liveTransform.inverse() );
 	}
 
 	@Override
