@@ -434,7 +434,7 @@ public class MultiResolutionRenderer
 		synchronized( viewerState )
 		{
 			final List< SourceState< ? > > sources = viewerState.getSources();
-			final ArrayList< Integer > visibleSourceIndices = viewerState.getVisibleSourceIndices();
+			final List< Integer > visibleSourceIndices = viewerState.getVisibleSourceIndices();
 			if ( visibleSourceIndices.isEmpty() )
 				return new InterruptibleRenderer< ARGBType, ARGBType >( new ConstantRandomAccessible< ARGBType >( argbtype, 2 ), new TypeIdentity< ARGBType >() );
 			else if ( visibleSourceIndices.size() == 1 )

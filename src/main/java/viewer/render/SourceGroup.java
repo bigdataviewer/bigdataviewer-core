@@ -3,44 +3,54 @@ package viewer.render;
 import java.util.Collections;
 import java.util.SortedSet;
 import java.util.TreeSet;
-import java.util.concurrent.CopyOnWriteArrayList;
 
+/**
+ * TODO
+ *
+ * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ */
 public class SourceGroup
 {
-	public interface UpdateListener
-	{
-		public void update();
-	}
-
 	protected final TreeSet< Integer > sourceIds;
 
 	protected final SortedSet< Integer > unmodifiableSourceIds;
 
-	protected final CopyOnWriteArrayList< UpdateListener > updateListeners;
-
 	protected String name;
 
-	protected boolean active;
+	/**
+	 * Whether the group is active (visible in {@link DisplayMode#FUSED} mode).
+	 */
+	protected boolean isActive;
 
-	public SourceGroup()
+	/**
+	 * Whether the group is current (only group visible in
+	 * {@link DisplayMode#FUSED} mode).
+	 */
+	protected boolean isCurrent;
+
+	public SourceGroup( final String name )
 	{
 		sourceIds = new TreeSet< Integer >();
 		unmodifiableSourceIds = Collections.unmodifiableSortedSet( sourceIds );
-		updateListeners = new CopyOnWriteArrayList< UpdateListener >();
-		name = "group"; // TODO
-		active = true;
+		this.name = name;
+		isActive = true;
+		isCurrent = false;
+	}
+
+	public SourceGroup copy()
+	{
+//		return new SourceGroup( this );
+		return null; // TODO
 	}
 
 	public synchronized void addSource( final int sourceId )
 	{
 		sourceIds.add( sourceId );
-		update();
 	}
 
 	public synchronized void removeSource( final int sourceId )
 	{
 		sourceIds.remove( sourceId );
-		update();
 	}
 
 	public synchronized SortedSet< Integer > getSourceIds()
@@ -58,29 +68,40 @@ public class SourceGroup
 		this.name = name;
 	}
 
-	protected void update()
-	{
-		for ( final UpdateListener l : updateListeners )
-			l.update();
-	}
-
-	public void addUpdateListener( final UpdateListener l )
-	{
-		updateListeners.add( l );
-	}
-
-	public void removeUpdateListener( final UpdateListener l )
-	{
-		updateListeners.remove( l );
-	}
-
+	/**
+	 * Is the group active (visible in fused mode)?
+	 *
+	 * @return whether the source is active.
+	 */
 	public boolean isActive()
 	{
-		return active;
+		return isActive;
 	}
 
-	public void setActive( final boolean active )
+	/**
+	 * Set the group active (visible in fused mode) or inactive.
+	 */
+	public void setActive( final boolean isActive )
 	{
-		this.active = active;
+		this.isActive = isActive;
 	}
+
+	/**
+	 * Is this group the current group?
+	 *
+	 * @return whether the group is current.
+	 */
+	public boolean isCurrent()
+	{
+		return isCurrent;
+	}
+
+	/**
+	 * Set this group current (or not).
+	 */
+	public void setCurrent( final boolean isCurrent )
+	{
+		this.isCurrent = isCurrent;
+	}
+
 }
