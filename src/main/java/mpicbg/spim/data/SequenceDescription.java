@@ -8,8 +8,7 @@ import java.util.List;
 
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
+import org.jdom2.Element;
 import org.xml.sax.SAXException;
 
 /**
@@ -65,7 +64,7 @@ public class SequenceDescription
 	 *            The XML sequence description may contain a "BasePath" entry. If this is a relative path
 	 *            itself, it is relative to the directory of the XML file.
 	 */
-	public SequenceDescription( final Element elem, final File xmlFileParentDirectory, final boolean createImageLoader ) throws ParserConfigurationException, SAXException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
+	public SequenceDescription( final Element elem, final File xmlFileParentDirectory, final boolean createImageLoader ) throws InstantiationException, IllegalAccessException, ClassNotFoundException
 	{
 		timepoints = createTimepointsFromXml( elem );
 		setups = createViewSetupsFromXml( elem );
@@ -114,20 +113,20 @@ public class SequenceDescription
 
 	protected static ImgLoader createImgLoaderFromXml( final Element sequenceDescription, final File basePath ) throws InstantiationException, IllegalAccessException, ClassNotFoundException
 	{
-		final Element elem = ( Element ) sequenceDescription.getElementsByTagName( "ImageLoader" ).item( 0 );
-		final ImgLoader imgLoader = ( ImgLoader ) Class.forName( elem.getAttribute( "class" ) ).newInstance();
+		final Element elem = sequenceDescription.getChild( "ImageLoader" );
+		final ImgLoader imgLoader = ( ImgLoader ) Class.forName( elem.getAttributeValue( "class" ) ).newInstance();
 		imgLoader.init( elem, basePath );
 		return imgLoader;
 	}
 
 	protected static ArrayList< Integer > createTimepointsFromXml( final Element sequenceDescription )
 	{
-		final Element timepoints = ( Element ) sequenceDescription.getElementsByTagName( "Timepoints" ).item( 0 );
-		final String type = timepoints.getAttribute( "type" );
+		final Element timepoints = sequenceDescription.getChild( "Timepoints" );
+		final String type = timepoints.getAttributeValue( "type" );
 		if ( type.equals( "range" ) )
 		{
-			final int first = Integer.parseInt( timepoints.getElementsByTagName( "first" ).item( 0 ).getTextContent() );
-			final int last = Integer.parseInt( timepoints.getElementsByTagName( "last" ).item( 0 ).getTextContent() );
+			final int first = Integer.parseInt( timepoints.getChildText( "first" ) );
+			final int last = Integer.parseInt( timepoints.getChildText( "last" ) );
 			final ArrayList< Integer > tp = new ArrayList< Integer >();
 			for ( int t = first; t <= last; ++t )
 				tp.add( t );
@@ -143,9 +142,8 @@ public class SequenceDescription
 	{
 		final ArrayList< ViewSetup > setups = new ArrayList< ViewSetup >();
 
-		final NodeList nodes = sequenceDescription.getElementsByTagName( "ViewSetup" );
-		for ( int i = 0; i < nodes.getLength(); ++i )
-			setups.add( new ViewSetup( ( Element ) nodes.item( i ) ) );
+		for ( final Element elem : sequenceDescription.getChildren( "ViewSetup" ) )
+			setups.add( new ViewSetup( elem ) );
 
 		// sort by ViewSetup.id
 		Collections.sort( setups );

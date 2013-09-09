@@ -7,18 +7,15 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
 import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.View;
 import mpicbg.spim.data.ViewRegistration;
 import mpicbg.spim.data.ViewRegistrations;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.xml.sax.SAXException;
+import org.jdom2.Document;
+import org.jdom2.Element;
+import org.jdom2.JDOMException;
+import org.jdom2.input.SAXBuilder;
 
 /**
  * Loads SequenceDescription and ViewRegistrations from XML file.
@@ -32,17 +29,16 @@ public class SequenceViewsLoader
 
 	final private ArrayList< View > views;
 
-	public SequenceViewsLoader( final String xmlFilename ) throws ParserConfigurationException, SAXException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
+	public SequenceViewsLoader( final String xmlFilename ) throws JDOMException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
 	{
-		final DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
-		final DocumentBuilder db = dbf.newDocumentBuilder();
-		final Document dom = db.parse( xmlFilename );
-		final Element root = dom.getDocumentElement();
+		final SAXBuilder sax = new SAXBuilder();
+		final Document doc = sax.build( xmlFilename );
+		final Element root = doc.getRootElement();
 
 		final File baseDirectory = new File( xmlFilename ).getParentFile();
 		seq = new SequenceDescription( root, baseDirectory != null ? baseDirectory : new File("."), true );
 		views = new ArrayList< View >();
-		createViews( new ViewRegistrations( root ) );
+		createViews( new ViewRegistrations( root.getChild( "ViewRegistrations" ) ) );
 	}
 
 	public SequenceDescription getSequenceDescription()

@@ -1,12 +1,9 @@
 package creator;
 
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
-
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactoryConfigurationError;
 
 import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.ViewRegistration;
@@ -14,50 +11,52 @@ import mpicbg.spim.data.ViewRegistrations;
 import mpicbg.spim.data.ViewSetup;
 import mpicbg.spim.data.XmlHelpers;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import org.jdom2.Document;
+import org.jdom2.Element;
+import org.jdom2.output.Format;
+import org.jdom2.output.XMLOutputter;
 
 public class WriteSequenceToXml
 {
-	public static void writeSequenceToXml( final SequenceDescription sequence, final ViewRegistrations registrations, final String xmlFilename ) throws TransformerFactoryConfigurationError, TransformerException, ParserConfigurationException, FileNotFoundException
+	public static void writeSequenceToXml( final SequenceDescription sequence, final ViewRegistrations registrations, final String xmlFilename ) throws IOException
 	{
 		System.out.println( "writing sequence description to " + xmlFilename );
-		final Document doc = XmlHelpers.newXmlDocument();
-		final Element root = sequenceDescriptionToXml( doc, sequence, new File( xmlFilename ).getParentFile() );
-		root.appendChild( viewRegistrationsToXml( doc, registrations ) );
-		doc.appendChild( root );
-		XmlHelpers.writeXmlDocument( doc, xmlFilename );
+		final Element root = sequenceDescriptionToXml( sequence, new File( xmlFilename ).getParentFile() );
+		root.addContent( viewRegistrationsToXml( registrations ) );
+		final Document doc = new Document( root );
+		final XMLOutputter xout = new XMLOutputter( Format.getPrettyFormat() );
+		xout.output( doc, new FileWriter( xmlFilename ) );
 	}
 
-	public static Element sequenceDescriptionToXml( final Document doc, final SequenceDescription sequence, final File xmlFileDirectory )
+	public static Element sequenceDescriptionToXml( final SequenceDescription sequence, final File xmlFileDirectory )
 	{
-		final Element elem = doc.createElement( "SequenceDescription" );
+		final Element elem = new Element( "SequenceDescription" );
 
 		// add BasePath
-		elem.appendChild( XmlHelpers.pathElement( doc, "BasePath", sequence.getBasePath(), xmlFileDirectory ) );
+		elem.addContent( XmlHelpers.pathElement( "BasePath", sequence.getBasePath(), xmlFileDirectory ) );
 
 		// add ImageLoader
-		elem.appendChild( sequence.imgLoader.toXml( doc, sequence.getBasePath() ) );
+		elem.addContent( sequence.imgLoader.toXml( sequence.getBasePath() ) );
 
 		// add ViewSetups
 		for ( final ViewSetup setup : sequence.setups )
-			elem.appendChild( setup.toXml( doc ) );
+			elem.addContent( setup.toXml() );
 
-		elem.appendChild( timepointsToXml( doc, sequence ) );
+		elem.addContent( timepointsToXml( sequence ) );
 
 		return elem;
 	}
 
-	public static Element viewRegistrationsToXml( final Document doc, final ViewRegistrations viewRegistrations ) throws ParserConfigurationException, TransformerFactoryConfigurationError, TransformerException
+	public static Element viewRegistrationsToXml(  final ViewRegistrations viewRegistrations )
 	{
-		final Element elem = doc.createElement( "ViewRegistrations" );
+		final Element elem = new Element( "ViewRegistrations" );
 
 		// add reference timepoint
-		elem.appendChild( XmlHelpers.intElement( doc, "ReferenceTimepoint", viewRegistrations.referenceTimePoint ) );
+		elem.addContent( XmlHelpers.intElement( "ReferenceTimepoint", viewRegistrations.referenceTimePoint ) );
 
 		// add ViewSetups
 		for ( final ViewRegistration reg : viewRegistrations.registrations )
-			elem.appendChild( reg.toXml( doc ) );
+			elem.addContent( reg.toXml() );
 
 		return elem;
 	}
@@ -69,7 +68,7 @@ public class WriteSequenceToXml
 	 * @param doc
 	 * @param sequence
 	 */
-	protected static Element timepointsToXml( final Document doc, final SequenceDescription sequence )
+	protected static Element timepointsToXml( final SequenceDescription sequence )
 	{
 		final ArrayList< Integer > timepoints = sequence.timepoints;
 		if ( timepoints.size() == 0 )
@@ -96,10 +95,10 @@ A:		for ( int i = first + 1; i < last; ++i )
 		if ( nonContiguousTimepoints )
 			throw new RuntimeException( "non-contiguous time-point range not implemented." );
 
-		final Element tp = doc.createElement( "Timepoints" );
+		final Element tp = new Element( "Timepoints" );
 		tp.setAttribute( "type", "range" );
-		tp.appendChild( XmlHelpers.intElement( doc, "first", first ) );
-		tp.appendChild( XmlHelpers.intElement( doc, "last", last ) );
+		tp.addContent( XmlHelpers.intElement( "first", first ) );
+		tp.addContent( XmlHelpers.intElement( "last", last ) );
 		return tp;
 	}
 }

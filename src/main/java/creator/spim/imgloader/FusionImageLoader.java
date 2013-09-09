@@ -24,8 +24,7 @@ import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import org.jdom2.Element;
 
 /**
  * This {@link ImgLoader} loads images that represent a 3D stack as a sequence
@@ -88,7 +87,7 @@ public class FusionImageLoader< T extends RealType< T > > implements ImgLoader
 	 * not implemented.
 	 */
 	@Override
-	public Element toXml( final Document doc, final File basePath )
+	public Element toXml( final File basePath )
 	{
 		throw new UnsupportedOperationException( "not implemented" );
 	}

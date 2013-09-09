@@ -1,8 +1,6 @@
 package mpicbg.spim.data;
 
-
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import org.jdom2.Element;
 
 /**
  * A collection of parameters describing the setup for a particular view, e.g.
@@ -85,18 +83,18 @@ public class ViewSetup implements Comparable< ViewSetup >
 	public ViewSetup( final Element elem )
 	{
 		this(
-				Integer.parseInt( elem.getElementsByTagName( "id" ).item( 0 ).getTextContent() ),
-				Integer.parseInt( elem.getElementsByTagName( "angle" ).item( 0 ).getTextContent() ),
-				Integer.parseInt( elem.getElementsByTagName( "illumination" ).item( 0 ).getTextContent() ),
-				Integer.parseInt( elem.getElementsByTagName( "channel" ).item( 0 ).getTextContent() ),
+				Integer.parseInt( elem.getChildText( "id" ) ),
+				Integer.parseInt( elem.getChildText( "angle" ) ),
+				Integer.parseInt( elem.getChildText( "illumination" ) ),
+				Integer.parseInt( elem.getChildText( "channel" ) ),
 
-				Integer.parseInt( elem.getElementsByTagName( "width" ).item( 0 ).getTextContent() ),
-				Integer.parseInt( elem.getElementsByTagName( "height" ).item( 0 ).getTextContent() ),
-				Integer.parseInt( elem.getElementsByTagName( "depth" ).item( 0 ).getTextContent() ),
+				Integer.parseInt( elem.getChildText( "width" ) ),
+				Integer.parseInt( elem.getChildText( "height" ) ),
+				Integer.parseInt( elem.getChildText( "depth" ) ),
 
-				Double.parseDouble( elem.getElementsByTagName( "pixelWidth" ).item( 0 ).getTextContent() ),
-				Double.parseDouble( elem.getElementsByTagName( "pixelHeight" ).item( 0 ).getTextContent() ),
-				Double.parseDouble( elem.getElementsByTagName( "pixelDepth" ).item( 0 ).getTextContent() )
+				Double.parseDouble( elem.getChildText( "pixelWidth" ) ),
+				Double.parseDouble( elem.getChildText( "pixelHeight" ) ),
+				Double.parseDouble( elem.getChildText( "pixelDepth" ) )
 		);
 	}
 
@@ -200,22 +198,22 @@ public class ViewSetup implements Comparable< ViewSetup >
 		return pixelDepth;
 	}
 
-	public Element toXml( final Document doc )
+	public Element toXml()
 	{
-		final Element elem = doc.createElement( "ViewSetup" );
+		final Element elem = new Element( "ViewSetup" );
 
-		elem.appendChild( XmlHelpers.intElement( doc, "id", getId() ) );
-		elem.appendChild( XmlHelpers.intElement( doc, "angle", getAngle() ) );
-		elem.appendChild( XmlHelpers.intElement( doc, "illumination", getIllumination() ) );
-		elem.appendChild( XmlHelpers.intElement( doc, "channel", getChannel() ) );
+		elem.addContent( XmlHelpers.intElement( "id", getId() ) );
+		elem.addContent( XmlHelpers.intElement( "angle", getAngle() ) );
+		elem.addContent( XmlHelpers.intElement( "illumination", getIllumination() ) );
+		elem.addContent( XmlHelpers.intElement( "channel", getChannel() ) );
 
-		elem.appendChild( XmlHelpers.intElement( doc, "width", getWidth() ) );
-		elem.appendChild( XmlHelpers.intElement( doc, "height", getHeight() ) );
-		elem.appendChild( XmlHelpers.intElement( doc, "depth", getDepth() ) );
+		elem.addContent( XmlHelpers.intElement( "width", getWidth() ) );
+		elem.addContent( XmlHelpers.intElement( "height", getHeight() ) );
+		elem.addContent( XmlHelpers.intElement( "depth", getDepth() ) );
 
-		elem.appendChild( XmlHelpers.doubleElement( doc, "pixelWidth", getPixelWidth() ) );
-		elem.appendChild( XmlHelpers.doubleElement( doc, "pixelHeight", getPixelHeight() ) );
-		elem.appendChild( XmlHelpers.doubleElement( doc, "pixelDepth", getPixelDepth() ) );
+		elem.addContent( XmlHelpers.doubleElement( "pixelWidth", getPixelWidth() ) );
+		elem.addContent( XmlHelpers.doubleElement( "pixelHeight", getPixelHeight() ) );
+		elem.addContent( XmlHelpers.doubleElement( "pixelDepth", getPixelDepth() ) );
 
 		return elem;
 	}

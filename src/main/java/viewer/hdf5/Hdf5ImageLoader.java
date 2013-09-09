@@ -17,9 +17,7 @@ import net.imglib2.img.cell.CellImgFactory;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
+import org.jdom2.Element;
 
 import viewer.ViewerImgLoader;
 import viewer.hdf5.img.Hdf5Cell;
@@ -112,9 +110,8 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 		{
 			path = loadPath( elem, "hdf5", basePath ).toString();
 			partitions.clear();
-			final NodeList nodes = elem.getElementsByTagName( "partition" );
-			for ( int i = 0; i < nodes.getLength(); ++i )
-				partitions.add( new Partition( ( Element ) nodes.item( i ), basePath ) );
+			for ( final Element p : elem.getChildren( "partition" ) )
+				partitions.add( new Partition( p, basePath ) );
 		}
 		catch ( final Exception e )
 		{
@@ -125,13 +122,13 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 	}
 
 	@Override
-	public Element toXml( final Document doc, final File basePath )
+	public Element toXml( final File basePath )
 	{
-		final Element elem = doc.createElement( "ImageLoader" );
+		final Element elem = new Element( "ImageLoader" );
 		elem.setAttribute( "class", getClass().getCanonicalName() );
-		elem.appendChild( XmlHelpers.pathElement( doc, "hdf5", hdf5File, basePath ) );
+		elem.addContent( XmlHelpers.pathElement( "hdf5", hdf5File, basePath ) );
 		for ( final Partition partition : partitions )
-			elem.appendChild( partition.toXml( doc, basePath ) );
+			elem.addContent( partition.toXml( basePath ) );
 		return elem;
 	}
 

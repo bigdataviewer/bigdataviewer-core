@@ -7,7 +7,6 @@ import java.util.ArrayList;
 
 import javax.swing.AbstractAction;
 import javax.swing.KeyStroke;
-import javax.xml.parsers.ParserConfigurationException;
 
 import mpicbg.spim.data.SequenceDescription;
 import net.imglib2.Interval;
@@ -22,7 +21,7 @@ import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.util.LinAlgHelpers;
 import net.imglib2.view.Views;
 
-import org.xml.sax.SAXException;
+import org.jdom2.JDOMException;
 
 import viewer.crop.CropDialog;
 import viewer.gui.brightness.BrightnessDialog;
@@ -78,7 +77,7 @@ public class ViewRegisteredAngles
 		cropDialog.setVisible( ! cropDialog.isVisible() );
 	}
 
-	private ViewRegisteredAngles( final String xmlFilename ) throws ParserConfigurationException, SAXException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
+	private ViewRegisteredAngles( final String xmlFilename ) throws InstantiationException, IllegalAccessException, ClassNotFoundException, JDOMException, IOException
 	{
 		final int width = 800;
 		final int height = 600;
@@ -300,14 +299,15 @@ public class ViewRegisteredAngles
 		minmax.getMaxBoundedValue().setCurrentValue( max );
 	}
 
-	public static void view( final String filename ) throws InstantiationException, IllegalAccessException, ClassNotFoundException, ParserConfigurationException, SAXException, IOException
+	public static void view( final String filename ) throws InstantiationException, IllegalAccessException, ClassNotFoundException, JDOMException, IOException
 	{
 		new ViewRegisteredAngles( filename );
 	}
 
 	public static void main( final String[] args )
 	{
-		final String fn = "/Users/pietzsch/workspace/data/fast fly/111010_weber/combined.xml";
+//		final String fn = "/Users/pietzsch/workspace/data/fast fly/111010_weber/combined.xml";
+		final String fn = "/Users/pietzsch/workspace/data/mette/mette.xml";
 //		final String fn = "/Users/tobias/Desktop/openspim.xml";
 //		final String fn = "/Users/pietzsch/Desktop/data/fibsem.xml";
 //		final String fn = "/Users/pietzsch/Desktop/url-valia.xml";
