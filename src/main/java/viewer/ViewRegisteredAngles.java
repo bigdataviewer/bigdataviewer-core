@@ -197,13 +197,13 @@ public class ViewRegisteredAngles
 		for ( final ConverterSetup setup : setupAssignments.getConverterSetups() )
 			setupAssignments.moveSetupToGroup( setup, group );
 		brightnessDialog = new BrightnessDialog( viewer.frame, setupAssignments );
-		viewer.installKeyActions( brightnessDialog );
+//		viewer.installKeyActions( brightnessDialog );
 
 		cropDialog = new CropDialog( viewer.frame, viewer, seq );
-		viewer.installKeyActions( cropDialog );
+//		viewer.installKeyActions( cropDialog );
 
 		activeSourcesDialog = new ActiveSourcesDialog( viewer.frame, viewer.visibilityAndGrouping );
-		viewer.installKeyActions( activeSourcesDialog );
+//		viewer.installKeyActions( activeSourcesDialog );
 
 		initTransform( width, height );
 		initBrightness( 0.001, 0.999 );
