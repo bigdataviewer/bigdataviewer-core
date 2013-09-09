@@ -58,6 +58,7 @@ import viewer.render.MultiResolutionRenderer;
 import viewer.render.SourceAndConverter;
 import viewer.render.SourceGroup;
 import viewer.render.SourceState;
+import viewer.render.TransformedSource;
 import viewer.render.ViewerState;
 import viewer.render.overlay.MultiBoxOverlayRenderer;
 import viewer.render.overlay.SourceInfoOverlayRenderer;
@@ -80,7 +81,8 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	final protected AffineTransform3D viewerTransform;
 
 	/**
-	 * Canvas used for displaying the rendered {@link #screenImages screen image}.
+	 * Canvas used for displaying the rendered {@link #screenImages screen
+	 * image}.
 	 */
 	final protected InteractiveDisplayCanvasComponent< AffineTransform3D > display;
 
@@ -102,7 +104,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	final protected VisibilityAndGrouping visibilityAndGrouping;
 
 	/**
-	 *
+	 * 
 	 * @param width
 	 *            width of the display window.
 	 * @param height
@@ -114,7 +116,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	 * @param numMipmapLevels
 	 *            number of available mipmap levels.
 	 */
-	public SpimViewer( final int width, final int height, final List< SourceAndConverter< ? > > sources, final int numTimePoints)
+	public SpimViewer( final int width, final int height, final List< SourceAndConverter< ? > > sources, final int numTimePoints )
 	{
 		final int numGroups = 10;
 		final ArrayList< SourceGroup > groups = new ArrayList< SourceGroup >( numGroups );
@@ -122,12 +124,32 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		{
 			final SourceGroup g = new SourceGroup( "group " + Integer.toString( i + 1 ) );
 			if ( i < sources.size() )
+			{
 				g.addSource( i );
+			}
 			groups.add( g );
 		}
-		state = new ViewerState( sources, groups, numTimePoints );
-		if ( ! sources.isEmpty() )
+
+		/*
+		 * Decorate each source with an extra transformation, that can be edited
+		 * manually in this viewer.
+		 */
+
+		final List< SourceAndConverter< ? >> transformedSources = new ArrayList< SourceAndConverter< ? > >( sources.size() );
+		for ( final SourceAndConverter< ? > orig : sources )
+		{
+			@SuppressWarnings( { "unchecked", "rawtypes" } )
+			final TransformedSource< ? > nsource = new TransformedSource( orig.getSpimSource() );
+			@SuppressWarnings( { "unchecked", "rawtypes" } )
+			final SourceAndConverter< ? > sourceAndConverter = new SourceAndConverter( nsource, orig.getConverter() );
+			transformedSources.add( sourceAndConverter );
+		}
+
+		state = new ViewerState( transformedSources, groups, numTimePoints );
+		if ( !sources.isEmpty() )
+		{
 			state.setCurrentSource( 0 );
+		}
 		multiBoxOverlayRenderer = new MultiBoxOverlayRenderer( width, height );
 		sourceInfoOverlayRenderer = new SourceInfoOverlayRenderer();
 
@@ -148,23 +170,27 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		final int numRenderingThreads = 3;
 		imageRenderer = new MultiResolutionRenderer( renderTarget, painterThread, screenScales, targetRenderNanos, targetIoNanos, badIoFrameBlockFrames, doubleBuffered, numRenderingThreads );
 
-		mouseCoordinates = new MouseCoordinateListener() ;
+		mouseCoordinates = new MouseCoordinateListener();
 		display.addHandler( mouseCoordinates );
 
 		sliderTime = new JSlider( JSlider.HORIZONTAL, 0, numTimePoints - 1, 0 );
-		sliderTime.addChangeListener( new ChangeListener() {
+		sliderTime.addChangeListener( new ChangeListener()
+		{
 			@Override
 			public void stateChanged( final ChangeEvent e )
 			{
 				if ( e.getSource().equals( sliderTime ) )
+				{
 					updateTimepoint( sliderTime.getValue() );
+				}
 			}
 		} );
 
 		visibilityAndGrouping = new VisibilityAndGrouping( state );
 		visibilityAndGrouping.addUpdateListener( this );
 
-//		final GraphicsConfiguration gc = GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.ARGB_COLOR_MODEL );
+		// final GraphicsConfiguration gc =
+		// GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.ARGB_COLOR_MODEL );
 		final GraphicsConfiguration gc = GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.RGB_COLOR_MODEL );
 		frame = new JFrame( "multi-angle viewer", gc );
 		frame.getRootPane().setDoubleBuffered( true );
@@ -197,7 +223,9 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	{
 		display.addHandler( handler );
 		if ( KeyListener.class.isInstance( handler ) )
+		{
 			frame.addKeyListener( ( KeyListener ) handler );
+		}
 	}
 
 	public void getGlobalMouseCoordinates( final RealPositionable gPos )
@@ -213,7 +241,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	{
 		imageRenderer.paint( state );
 
-		synchronized( this )
+		synchronized ( this )
 		{
 			if ( currentAnimator != null )
 			{
@@ -222,7 +250,9 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 				handler.setTransform( transform );
 				transformChanged( transform );
 				if ( currentAnimator.isComplete() )
+				{
 					currentAnimator = null;
+				}
 			}
 		}
 
@@ -257,12 +287,18 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		{
 			animatedOverlay.paint( ( Graphics2D ) g, System.currentTimeMillis() );
 			if ( animatedOverlay.isComplete() )
+			{
 				animatedOverlay = null;
+			}
 			else
+			{
 				display.repaint();
+			}
 		}
 		if ( multiBoxOverlayRenderer.isHighlightInProgress() )
+		{
 			display.repaint();
+		}
 	}
 
 	@Override
@@ -290,10 +326,12 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 			display.repaint();
 			break;
 		case SOURCE_ACTVITY_CHANGED:
-			// TODO multiBoxOverlayRenderer.highlight() all sources that became visible
+			// TODO multiBoxOverlayRenderer.highlight() all sources that became
+			// visible
 			break;
 		case GROUP_ACTIVITY_CHANGED:
-			// TODO multiBoxOverlayRenderer.highlight() all sources that became visible
+			// TODO multiBoxOverlayRenderer.highlight() all sources that became
+			// visible
 			break;
 		case VISIBILITY_CHANGED:
 			requestRepaint();
@@ -303,15 +341,16 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 
 	static enum AlignPlane
 	{
-		XY,
-		ZY,
-		XZ
+		XY, ZY, XZ
 	}
 
 	private final static double c = Math.cos( Math.PI / 4 );
-	private final static double[] qAlignXY = new double[] { 1,  0,  0, 0 };
-	private final static double[] qAlignZY = new double[] { c,  0, -c, 0 };
-	private final static double[] qAlignXZ = new double[] { c,  c,  0, 0 };
+
+	private final static double[] qAlignXY = new double[] { 1, 0, 0, 0 };
+
+	private final static double[] qAlignZY = new double[] { c, 0, -c, 0 };
+
+	private final static double[] qAlignXZ = new double[] { c, c, 0, 0 };
 
 	protected synchronized void align( final AlignPlane plane )
 	{
@@ -329,13 +368,14 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		}
 		else
 		{
-			qTmpSource = new double[4];
+			qTmpSource = new double[ 4 ];
 			if ( plane == AlignPlane.ZY )
 			{
 				Affine3DHelpers.extractApproximateRotationAffine( sourceTransform, qSource, 0 );
 				LinAlgHelpers.quaternionMultiply( qSource, qAlignZY, qTmpSource );
 			}
-			else // if ( plane == AlignPlane.XZ )
+			else
+			// if ( plane == AlignPlane.XZ )
 			{
 				Affine3DHelpers.extractApproximateRotationAffine( sourceTransform, qSource, 1 );
 				LinAlgHelpers.quaternionMultiply( qSource, qAlignXZ, qTmpSource );
@@ -381,17 +421,25 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	protected void setCurrentGroupOrSource( final int index )
 	{
 		if ( visibilityAndGrouping.isGroupingEnabled() )
+		{
 			visibilityAndGrouping.setCurrentGroup( index );
+		}
 		else
+		{
 			visibilityAndGrouping.setCurrentSource( index );
+		}
 	}
 
 	protected void toggleActiveGroupOrSource( final int index )
 	{
 		if ( visibilityAndGrouping.isGroupingEnabled() )
-			visibilityAndGrouping.setGroupActive( index, ! visibilityAndGrouping.isGroupActive( index ) );
+		{
+			visibilityAndGrouping.setGroupActive( index, !visibilityAndGrouping.isGroupActive( index ) );
+		}
 		else
-			visibilityAndGrouping.setSourceActive( index, ! visibilityAndGrouping.isSourceActive( index ) );
+		{
+			visibilityAndGrouping.setSourceActive( index, !visibilityAndGrouping.isSourceActive( index ) );
+		}
 	}
 
 	/**
@@ -421,7 +469,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 
 	/**
 	 * Get a copy of the current {@link ViewerState}.
-	 *
+	 * 
 	 * @return a copy of the current {@link ViewerState}.
 	 */
 	public synchronized ViewerState getState()
@@ -431,7 +479,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 
 	/**
 	 * Get the viewer canvas.
-	 *
+	 * 
 	 * @return the viewer canvas.
 	 */
 	public InteractiveDisplayCanvasComponent< AffineTransform3D > getDisplay()
@@ -441,7 +489,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 
 	/**
 	 * Create Keystrokes and corresponding Actions.
-	 *
+	 * 
 	 * @return list of KeyStroke-Action-pairs.
 	 */
 	protected void createKeyActions()
@@ -597,7 +645,8 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	}
 
 	/**
-	 * Add Keystrokes and corresponding Actions from {@link #keysActions} to a container.
+	 * Add Keystrokes and corresponding Actions from {@link #keysActions} to a
+	 * container.
 	 */
 	public void installKeyActions( final RootPaneContainer container )
 	{
@@ -653,6 +702,5 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 
 	@Override
 	public void setCanvasSize( final int width, final int height )
-	{
-	}
+	{}
 }
