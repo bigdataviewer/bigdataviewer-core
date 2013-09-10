@@ -9,9 +9,7 @@ import java.util.Map;
 import mpicbg.spim.data.XmlHelpers;
 import net.imglib2.type.numeric.ARGBType;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
+import org.jdom2.Element;
 
 /**
  * Manage a (fixed) set of {@link ConverterSetup}s and (changing) set of
@@ -173,38 +171,38 @@ public class SetupAssignments
 	 * @param doc
 	 * @return
 	 */
-	public Element toXml( final Document doc )
+	public Element toXml()
 	{
-		final Element elem = doc.createElement( "SetupAssignments" );
+		final Element elem = new Element( "SetupAssignments" );
 
-		final Element elemConverterSetups = doc.createElement( "ConverterSetups" );
+		final Element elemConverterSetups = new Element( "ConverterSetups" );
 		for ( final ConverterSetup setup : setups )
 		{
-			final Element elemConverterSetup = doc.createElement( "ConverterSetup" );
-			elemConverterSetup.appendChild( XmlHelpers.intElement( doc, "id", setup.getSetupId() ) );
-			elemConverterSetup.appendChild( XmlHelpers.intElement( doc, "min", setup.getDisplayRangeMin() ) );
-			elemConverterSetup.appendChild( XmlHelpers.intElement( doc, "max", setup.getDisplayRangeMax() ) );
-			elemConverterSetup.appendChild( XmlHelpers.intElement( doc, "color", setup.getColor().get() ) );
-			elemConverterSetup.appendChild( XmlHelpers.intElement( doc, "groupId", minMaxGroups.indexOf( setupToGroup.get( setup ) ) ) );
-			elemConverterSetups.appendChild( elemConverterSetup );
+			final Element elemConverterSetup = new Element( "ConverterSetup" );
+			elemConverterSetup.addContent( XmlHelpers.intElement( "id", setup.getSetupId() ) );
+			elemConverterSetup.addContent( XmlHelpers.intElement( "min", setup.getDisplayRangeMin() ) );
+			elemConverterSetup.addContent( XmlHelpers.intElement( "max", setup.getDisplayRangeMax() ) );
+			elemConverterSetup.addContent( XmlHelpers.intElement( "color", setup.getColor().get() ) );
+			elemConverterSetup.addContent( XmlHelpers.intElement( "groupId", minMaxGroups.indexOf( setupToGroup.get( setup ) ) ) );
+			elemConverterSetups.addContent( elemConverterSetup );
 		}
-		elem.appendChild( elemConverterSetups );
+		elem.addContent( elemConverterSetups );
 
-		final Element elemMinMaxGroups = doc.createElement( "MinMaxGroups" );
+		final Element elemMinMaxGroups = new Element( "MinMaxGroups" );
 		for ( int i = 0; i < minMaxGroups.size(); ++i )
 		{
 			final MinMaxGroup group = minMaxGroups.get( i );
-			final Element elemMinMaxGroup = doc.createElement( "MinMaxGroup" );
-			elemMinMaxGroup.appendChild( XmlHelpers.intElement( doc, "id", i ) );
-			elemMinMaxGroup.appendChild( XmlHelpers.intElement( doc, "fullRangeMin", group.getFullRangeMin() ) );
-			elemMinMaxGroup.appendChild( XmlHelpers.intElement( doc, "fullRangeMax", group.getFullRangeMax() ) );
-			elemMinMaxGroup.appendChild( XmlHelpers.intElement( doc, "rangeMin", group.getRangeMin() ) );
-			elemMinMaxGroup.appendChild( XmlHelpers.intElement( doc, "rangeMax", group.getRangeMax() ) );
-			elemMinMaxGroup.appendChild( XmlHelpers.intElement( doc, "currentMin", group.getMinBoundedValue().getCurrentValue() ) );
-			elemMinMaxGroup.appendChild( XmlHelpers.intElement( doc, "currentMax", group.getMaxBoundedValue().getCurrentValue() ) );
-			elemMinMaxGroups.appendChild( elemMinMaxGroup );
+			final Element elemMinMaxGroup = new Element( "MinMaxGroup" );
+			elemMinMaxGroup.addContent( XmlHelpers.intElement( "id", i ) );
+			elemMinMaxGroup.addContent( XmlHelpers.intElement( "fullRangeMin", group.getFullRangeMin() ) );
+			elemMinMaxGroup.addContent( XmlHelpers.intElement( "fullRangeMax", group.getFullRangeMax() ) );
+			elemMinMaxGroup.addContent( XmlHelpers.intElement( "rangeMin", group.getRangeMin() ) );
+			elemMinMaxGroup.addContent( XmlHelpers.intElement( "rangeMax", group.getRangeMax() ) );
+			elemMinMaxGroup.addContent( XmlHelpers.intElement( "currentMin", group.getMinBoundedValue().getCurrentValue() ) );
+			elemMinMaxGroup.addContent( XmlHelpers.intElement( "currentMax", group.getMaxBoundedValue().getCurrentValue() ) );
+			elemMinMaxGroups.addContent( elemMinMaxGroup );
 		}
-		elem.appendChild( elemMinMaxGroups );
+		elem.addContent( elemMinMaxGroups );
 
 		return elem;
 	}
@@ -216,37 +214,35 @@ public class SetupAssignments
 	 */
 	public void restoreFromXml( final Element elemSetupAssignments )
 	{
-		final Element elemConverterSetups = ( Element ) elemSetupAssignments.getElementsByTagName( "ConverterSetups" ).item( 0 );
-		final NodeList converterSetupNodes = elemConverterSetups.getElementsByTagName( "ConverterSetup" );
-		if ( converterSetupNodes.getLength() != setups.size() )
+		final Element elemConverterSetups = elemSetupAssignments.getChild( "ConverterSetups" );
+		final List< Element > converterSetupNodes = elemConverterSetups.getChildren( "ConverterSetup" );
+		if ( converterSetupNodes.size() != setups.size() )
 			throw new IllegalArgumentException();
 
-		final Element elemMinMaxGroups = ( Element ) elemSetupAssignments.getElementsByTagName( "MinMaxGroups" ).item( 0 );
-		final NodeList minMaxGroupNodes = elemMinMaxGroups.getElementsByTagName( "MinMaxGroup" );
+		final Element elemMinMaxGroups = elemSetupAssignments.getChild( "MinMaxGroups" );
+		final List< Element > minMaxGroupNodes = elemMinMaxGroups.getChildren( "MinMaxGroup" );
 		minMaxGroups.clear();
-		for ( int i = 0; i < minMaxGroupNodes.getLength(); ++i )
+		for ( int i = 0; i < minMaxGroupNodes.size(); ++i )
 			minMaxGroups.add( null );
-		for ( int i = 0; i < minMaxGroupNodes.getLength(); ++i )
+		for ( final Element elem : minMaxGroupNodes  )
 		{
-			final Element elem = ( Element ) minMaxGroupNodes.item( i );
-			final int id = Integer.parseInt( elem.getElementsByTagName( "id" ).item( 0 ).getTextContent() );
-			final int fullRangeMin = Integer.parseInt( elem.getElementsByTagName( "fullRangeMin" ).item( 0 ).getTextContent() );
-			final int fullRangeMax = Integer.parseInt( elem.getElementsByTagName( "fullRangeMax" ).item( 0 ).getTextContent() );
-			final int rangeMin = Integer.parseInt( elem.getElementsByTagName( "rangeMin" ).item( 0 ).getTextContent() );
-			final int rangeMax = Integer.parseInt( elem.getElementsByTagName( "rangeMax" ).item( 0 ).getTextContent() );
-			final int currentMin = Integer.parseInt( elem.getElementsByTagName( "currentMin" ).item( 0 ).getTextContent() );
-			final int currentMax = Integer.parseInt( elem.getElementsByTagName( "currentMax" ).item( 0 ).getTextContent() );
+			final int id = Integer.parseInt( elem.getChildText( "id" ) );
+			final int fullRangeMin = Integer.parseInt( elem.getChildText( "fullRangeMin" ) );
+			final int fullRangeMax = Integer.parseInt( elem.getChildText( "fullRangeMax" ) );
+			final int rangeMin = Integer.parseInt( elem.getChildText( "rangeMin" ) );
+			final int rangeMax = Integer.parseInt( elem.getChildText( "rangeMax" ) );
+			final int currentMin = Integer.parseInt( elem.getChildText( "currentMin" ) );
+			final int currentMax = Integer.parseInt( elem.getChildText( "currentMax" ) );
 			minMaxGroups.set( id, new MinMaxGroup( fullRangeMin, fullRangeMax, rangeMin, rangeMax, currentMin, currentMax ) );
 		}
 
-		for ( int i = 0; i < converterSetupNodes.getLength(); ++i )
+		for ( final Element elem : converterSetupNodes )
 		{
-			final Element elem = ( Element ) converterSetupNodes.item( i );
-			final int id = Integer.parseInt( elem.getElementsByTagName( "id" ).item( 0 ).getTextContent() );
-			final int min = Integer.parseInt( elem.getElementsByTagName( "min" ).item( 0 ).getTextContent() );
-			final int max = Integer.parseInt( elem.getElementsByTagName( "max" ).item( 0 ).getTextContent() );
-			final int color = Integer.parseInt( elem.getElementsByTagName( "color" ).item( 0 ).getTextContent() );
-			final int groupId = Integer.parseInt( elem.getElementsByTagName( "groupId" ).item( 0 ).getTextContent() );
+			final int id = Integer.parseInt( elem.getChildText( "id" ) );
+			final int min = Integer.parseInt( elem.getChildText( "min" ) );
+			final int max = Integer.parseInt( elem.getChildText( "max" ) );
+			final int color = Integer.parseInt( elem.getChildText( "color" ) );
+			final int groupId = Integer.parseInt( elem.getChildText( "groupId" ) );
 			final ConverterSetup setup = setups.get( id );
 			setup.setDisplayRange( min, max );
 			setup.setColor( new ARGBType( color ) );

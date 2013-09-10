@@ -6,8 +6,7 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import org.jdom2.Element;
 
 public interface ImgLoader
 {
@@ -19,7 +18,7 @@ public interface ImgLoader
 	/**
 	 * create a "ImageLoader" DOM element for this loader.
 	 */
-	public Element toXml( final Document doc, final File basePath );
+	public Element toXml( final File basePath );
 
 	/**
 	 * Get {@link FloatType} image normalized to range [0,1].

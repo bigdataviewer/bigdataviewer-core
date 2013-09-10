@@ -15,8 +15,8 @@ import net.imglib2.meta.ImgPlus;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import org.jdom2.Element;
+
 
 /**
  * This {@link ImgLoader} loads images that represent a 3D stack in a single
@@ -68,7 +68,7 @@ public class StackImageLoader implements ImgLoader
 	 * not implemented.
 	 */
 	@Override
-	public Element toXml( final Document doc, final File basePath )
+	public Element toXml( final File basePath )
 	{
 		throw new UnsupportedOperationException( "not implemented" );
 	}

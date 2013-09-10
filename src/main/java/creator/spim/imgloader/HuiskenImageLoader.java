@@ -18,8 +18,7 @@ import net.imglib2.meta.ImgPlus;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import org.jdom2.Element;
 
 import spimopener.SPIMExperiment;
 
@@ -67,11 +66,11 @@ public class HuiskenImageLoader implements ImgLoader
 	}
 
 	@Override
-	public Element toXml( final Document doc, final File basePath )
+	public Element toXml( final File basePath )
 	{
-		final Element elem = doc.createElement( "ImageLoader" );
+		final Element elem = new Element( "ImageLoader" );
 		elem.setAttribute( "class", getClass().getCanonicalName() );
-		elem.appendChild( XmlHelpers.pathElement( doc, "path", expFile, basePath ) );
+		elem.addContent( XmlHelpers.pathElement( "path", expFile, basePath ) );
 		return elem;
 	}
 
