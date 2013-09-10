@@ -4,7 +4,9 @@ import ij.ImagePlus;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.TreeMap;
 
 import mpicbg.spim.data.ImgLoader;
@@ -38,12 +40,12 @@ public class TileImgLoader implements ImgLoader
 
 	private Document document;
 
-	private final int nChannels;
+	private final Map< Integer, long[] > offsets;
 
-	public TileImgLoader( final File rootFolder, final int nChannels )
+	public TileImgLoader( final File rootFolder, final Map< Integer, long[] > offsets )
 	{
 		this.rootFolder = rootFolder;
-		this.nChannels = nChannels;
+		this.offsets = offsets;
 		final SAXBuilder builder = new SAXBuilder();
 		try
 		{
@@ -64,19 +66,17 @@ public class TileImgLoader implements ImgLoader
 	@Override
 	public RandomAccessibleInterval< UnsignedShortType > getUnsignedShortImage( final View view )
 	{
-		final int viewTimePoint = view.getTimepointIndex() + 1; // 1-based in
-																// the file
-																// FIXME
-
-		final int viewFieldIndex = view.getSetupIndex() / nChannels;
+		final int viewTimePoint = view.getTimepointIndex() + 1;
 		final int viewChannel = view.getSetup().getChannel();
 
 		/*
 		 * Collect file names
 		 */
 
+		// Map of z -> all the tiles. The tiles are a map of field index ->
+		// filename
+		final TreeMap< Double, Map< Integer, String > > filenames = new TreeMap< Double, Map< Integer, String > >();
 		final Element root = document.getRootElement();
-		final TreeMap< Double, String > filenames = new TreeMap< Double, String >();
 
 		for ( final Element element : root.getChildren( "MeasurementRecord", NAMESPACE ) )
 		{
@@ -99,14 +99,20 @@ public class TileImgLoader implements ImgLoader
 				continue;
 			}
 
-			if ( isMIP || field != viewFieldIndex || timepoint != viewTimePoint || channel != viewChannel )
+			if ( isMIP || timepoint != viewTimePoint || channel != viewChannel )
 			{
 				continue;
 			}
 
 			final String filename = element.getText();
 			final Double dz = Double.valueOf( z );
-			filenames.put( dz, filename );
+
+			Map< Integer, String > tilesAtZ = filenames.get( dz );
+			if ( null == tilesAtZ )
+			{
+				tilesAtZ = new HashMap< Integer, String >();
+			}
+			tilesAtZ.put( field, filename );
 
 		}
 
@@ -118,27 +124,38 @@ public class TileImgLoader implements ImgLoader
 		final ArrayImg< UnsignedShortType, ShortArray > stack = ArrayImgs.unsignedShorts( dimensions );
 		final ArrayRandomAccess< UnsignedShortType > randomAccess = stack.randomAccess();
 
-		final Iterator< String > iterator = filenames.values().iterator();
+		final Iterator< Map< Integer, String >> iterator = filenames.values().iterator();
 
 		for ( int zindex = 0; zindex < filenames.size(); zindex++ )
 		{
-			String filename = iterator.next();
+			final Map< Integer, String > tilesFilenames = iterator.next();
 
-			// Comply to local path separator
-			filename = filename.replace( '\\', File.separatorChar );
-
-			// Open and copy this slice on the stack image
-			randomAccess.setPosition( zindex, 2 );
-			final ImagePlus imp = new ImagePlus( new File( rootFolder, filename ).getAbsolutePath() );
-			final Img< UnsignedShortType > sliceImg = ImageJFunctions.wrapShort( imp );
-
-			final Cursor< UnsignedShortType > cursor = sliceImg.cursor();
-			while ( cursor.hasNext() )
+			for ( final Integer fieldIndex : tilesFilenames.keySet() )
 			{
-				cursor.fwd();
-				randomAccess.setPosition( cursor.getLongPosition( 0 ), 0 );
-				randomAccess.setPosition( cursor.getLongPosition( 1 ), 1 );
-				randomAccess.get().set( cursor.get() );
+
+				// Filename for this Z, this field
+				String filename = tilesFilenames.get( fieldIndex );
+
+				// Comply to local path separator
+				filename = filename.replace( '\\', File.separatorChar );
+
+				// Offset for this field index
+				final long[] offset = offsets.get( fieldIndex );
+
+				// Open and copy this slice on the stack image
+				randomAccess.setPosition( zindex, 2 );
+				final ImagePlus imp = new ImagePlus( new File( rootFolder, filename ).getAbsolutePath() );
+				final Img< UnsignedShortType > sliceImg = ImageJFunctions.wrapShort( imp );
+
+				final Cursor< UnsignedShortType > cursor = sliceImg.cursor();
+				while ( cursor.hasNext() )
+				{
+					cursor.fwd();
+					randomAccess.setPosition( offset[ 0 ] + cursor.getLongPosition( 0 ), 0 );
+					randomAccess.setPosition( offset[ 1 ] + cursor.getLongPosition( 1 ), 1 );
+					randomAccess.get().set( cursor.get() );
+
+				}
 
 			}
 

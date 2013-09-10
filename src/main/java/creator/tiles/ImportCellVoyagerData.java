@@ -4,7 +4,9 @@ import ij.ImageJ;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.View;
@@ -54,7 +56,23 @@ public class ImportCellVoyagerData
 			timepoints.add( Integer.valueOf( tp ) );
 		}
 
-		final TileImgLoader imgLoader = new TileImgLoader( root_folder, nChannels );
+		/*
+		 * Build offsets
+		 */
+
+		final Map< Integer, long[] > offsets = new HashMap< Integer, long[] >( 6 );
+		offsets.put( 1, new long[] { 0, 0 } );
+		offsets.put( 2, new long[] { 920, 0 } );
+		offsets.put( 3, new long[] { 1840, 0 } );
+		offsets.put( 4, new long[] { 0, 920 } );
+		offsets.put( 5, new long[] { 920, 920 } );
+		offsets.put( 6, new long[] { 1840, 920 } );
+
+		/*
+		 * Instantiate the tile loader
+		 */
+
+		final TileImgLoader imgLoader = new TileImgLoader( root_folder, offsets );
 		final SequenceDescription sequenceDescription = new SequenceDescription( setups, timepoints, root_folder, imgLoader );
 
 		/*
