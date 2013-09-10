@@ -7,7 +7,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.beans.Beans;
 import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.ArrayList;
 
 import javax.swing.AbstractAction;
@@ -28,9 +28,6 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileFilter;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactoryConfigurationError;
 
 import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.View;
@@ -258,7 +255,7 @@ public class CropDialog extends JDialog
 	 * @param hdf5File
 	 * @param xmlFile
 	 */
-	public void cropGlobal( final int minTimepointIndex, final int maxTimepointIndex, final File hdf5File, final File xmlFile ) throws FileNotFoundException, TransformerFactoryConfigurationError, TransformerException, ParserConfigurationException
+	public void cropGlobal( final int minTimepointIndex, final int maxTimepointIndex, final File hdf5File, final File xmlFile ) throws IOException
 	{
 		final AffineTransform3D globalToCropTransform = new AffineTransform3D();
 		viewer.getState().getViewerTransform( globalToCropTransform );

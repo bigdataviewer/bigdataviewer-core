@@ -18,16 +18,15 @@ import net.imglib2.meta.ImgPlus;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
+import org.jdom2.Element;
 
 import spimopener.SPIMExperiment;
 
 /**
- * This {@link ImgLoader} implementation uses Benjamin Schmid's <a
- * href="http://fiji.sc/javadoc/spimopener/package-summary.html">spimopener</a>
+ * This {@link ImgLoader} implementation uses Benjamin Schmid's
+ * <a href="http://fiji.sc/javadoc/spimopener/package-summary.html">spimopener</a>
  * to load images in Jan Husiken's format.
- * 
+ *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
 public class HuiskenImageLoader implements ImgLoader
@@ -67,11 +66,11 @@ public class HuiskenImageLoader implements ImgLoader
 	}
 
 	@Override
-	public Element toXml( final Document doc, final File basePath )
+	public Element toXml( final File basePath )
 	{
-		final Element elem = doc.createElement( "ImageLoader" );
+		final Element elem = new Element( "ImageLoader" );
 		elem.setAttribute( "class", getClass().getCanonicalName() );
-		elem.appendChild( XmlHelpers.pathElement( doc, "path", expFile, basePath ) );
+		elem.addContent( XmlHelpers.pathElement( "path", expFile, basePath ) );
 		return elem;
 	}
 
@@ -119,11 +118,7 @@ public class HuiskenImageLoader implements ImgLoader
 
 		final ImagePlus imp = getImagePlus( view );
 		final Img< FloatType > img = ImageJFunctions.convertFloat( imp );
-		Normalize.normalize( img, new FloatType( 0 ), new FloatType( 1 ) ); // normalize
-																			// the
-																			// image
-																			// to
-																			// 0...1
+		Normalize.normalize( img, new FloatType( 0 ), new FloatType( 1 ) ); // normalize the image to 0...1
 
 		final String name = getBasename( timepoint, angle, channel, illumination );
 

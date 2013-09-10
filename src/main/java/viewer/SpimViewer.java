@@ -22,6 +22,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -52,12 +53,14 @@ import net.imglib2.ui.util.GuiUtil;
 import net.imglib2.util.LinAlgHelpers;
 import net.imglib2.util.ValuePair;
 import viewer.TextOverlayAnimator.TextPosition;
+import viewer.gui.transformation.ManualTransformationEditor;
 import viewer.render.DisplayMode;
 import viewer.render.Interpolation;
 import viewer.render.MultiResolutionRenderer;
 import viewer.render.SourceAndConverter;
 import viewer.render.SourceGroup;
 import viewer.render.SourceState;
+import viewer.render.TransformedSource;
 import viewer.render.ViewerState;
 import viewer.render.overlay.MultiBoxOverlayRenderer;
 import viewer.render.overlay.SourceInfoOverlayRenderer;
@@ -80,7 +83,8 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	final protected AffineTransform3D viewerTransform;
 
 	/**
-	 * Canvas used for displaying the rendered {@link #screenImages screen image}.
+	 * Canvas used for displaying the rendered {@link #screenImages screen
+	 * image}.
 	 */
 	final protected InteractiveDisplayCanvasComponent< AffineTransform3D > display;
 
@@ -101,6 +105,15 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 
 	final protected VisibilityAndGrouping visibilityAndGrouping;
 
+	private final ManualTransformationEditor manualTransformationEditor;
+
+	/**
+	 * These listeners will be notified about changes to the
+	 * {@link #viewerTransform}. This is done <em>before</em> calling
+	 * {@link #requestRepaint()} so listeners have the chance to interfere.
+	 */
+	final protected CopyOnWriteArrayList< TransformListener< AffineTransform3D > > transformListeners;
+
 	/**
 	 *
 	 * @param width
@@ -114,7 +127,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	 * @param numMipmapLevels
 	 *            number of available mipmap levels.
 	 */
-	public SpimViewer( final int width, final int height, final List< SourceAndConverter< ? > > sources, final int numTimePoints)
+	public SpimViewer( final int width, final int height, final List< SourceAndConverter< ? > > sources, final int numTimePoints )
 	{
 		final int numGroups = 10;
 		final ArrayList< SourceGroup > groups = new ArrayList< SourceGroup >( numGroups );
@@ -122,11 +135,33 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		{
 			final SourceGroup g = new SourceGroup( "group " + Integer.toString( i + 1 ) );
 			if ( i < sources.size() )
+			{
 				g.addSource( i );
+			}
 			groups.add( g );
 		}
-		state = new ViewerState( sources, groups, numTimePoints );
-		if ( ! sources.isEmpty() )
+
+		/*
+		 * Decorate each source with an extra transformation, that can be edited
+		 * manually in this viewer.
+		 */
+
+		final List< SourceAndConverter< ? >> transformedSources = new ArrayList< SourceAndConverter< ? > >( sources.size() );
+		for ( final SourceAndConverter< ? > orig : sources )
+		{
+			@SuppressWarnings( { "unchecked", "rawtypes" } )
+			final TransformedSource< ? > nsource = new TransformedSource( orig.getSpimSource() );
+			@SuppressWarnings( { "unchecked", "rawtypes" } )
+			final SourceAndConverter< ? > sourceAndConverter = new SourceAndConverter( nsource, orig.getConverter() );
+			transformedSources.add( sourceAndConverter );
+		}
+
+		/*
+		 * Create viewer state.
+		 */
+
+		state = new ViewerState( transformedSources, groups, numTimePoints );
+		if ( !sources.isEmpty() )
 			state.setCurrentSource( 0 );
 		multiBoxOverlayRenderer = new MultiBoxOverlayRenderer( width, height );
 		sourceInfoOverlayRenderer = new SourceInfoOverlayRenderer();
@@ -140,6 +175,11 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		renderTarget.setCanvasSize( width, height );
 		display.addOverlayRenderer( this );
 
+		/*
+		 * The class in charge of performing the manual transformation.
+		 */
+		manualTransformationEditor = new ManualTransformationEditor( this );
+
 		final double[] screenScales = new double[] { 1, 0.75, 0.5, 0.25, 0.125 };
 		final long targetRenderNanos = 30 * 1000000;
 		final long targetIoNanos = 10 * 1000000;
@@ -148,11 +188,12 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		final int numRenderingThreads = 3;
 		imageRenderer = new MultiResolutionRenderer( renderTarget, painterThread, screenScales, targetRenderNanos, targetIoNanos, badIoFrameBlockFrames, doubleBuffered, numRenderingThreads );
 
-		mouseCoordinates = new MouseCoordinateListener() ;
+		mouseCoordinates = new MouseCoordinateListener();
 		display.addHandler( mouseCoordinates );
 
 		sliderTime = new JSlider( JSlider.HORIZONTAL, 0, numTimePoints - 1, 0 );
-		sliderTime.addChangeListener( new ChangeListener() {
+		sliderTime.addChangeListener( new ChangeListener()
+		{
 			@Override
 			public void stateChanged( final ChangeEvent e )
 			{
@@ -163,6 +204,8 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 
 		visibilityAndGrouping = new VisibilityAndGrouping( state );
 		visibilityAndGrouping.addUpdateListener( this );
+
+		transformListeners = new CopyOnWriteArrayList< TransformListener< AffineTransform3D > >();
 
 //		final GraphicsConfiguration gc = GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.ARGB_COLOR_MODEL );
 		final GraphicsConfiguration gc = GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.RGB_COLOR_MODEL );
@@ -213,7 +256,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	{
 		imageRenderer.paint( state );
 
-		synchronized( this )
+		synchronized ( this )
 		{
 			if ( currentAnimator != null )
 			{
@@ -270,6 +313,8 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	{
 		viewerTransform.set( transform );
 		state.setViewerTransform( transform );
+		for ( final TransformListener< AffineTransform3D > l : transformListeners )
+			l.transformChanged( viewerTransform );
 		requestRepaint();
 	}
 
@@ -303,15 +348,16 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 
 	static enum AlignPlane
 	{
-		XY,
-		ZY,
-		XZ
+		XY, ZY, XZ
 	}
 
 	private final static double c = Math.cos( Math.PI / 4 );
-	private final static double[] qAlignXY = new double[] { 1,  0,  0, 0 };
-	private final static double[] qAlignZY = new double[] { c,  0, -c, 0 };
-	private final static double[] qAlignXZ = new double[] { c,  c,  0, 0 };
+
+	private final static double[] qAlignXY = new double[] { 1, 0, 0, 0 };
+
+	private final static double[] qAlignZY = new double[] { c, 0, -c, 0 };
+
+	private final static double[] qAlignXZ = new double[] { c, c, 0, 0 };
 
 	protected synchronized void align( final AlignPlane plane )
 	{
@@ -329,7 +375,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		}
 		else
 		{
-			qTmpSource = new double[4];
+			qTmpSource = new double[ 4 ];
 			if ( plane == AlignPlane.ZY )
 			{
 				Affine3DHelpers.extractApproximateRotationAffine( sourceTransform, qSource, 0 );
@@ -362,6 +408,12 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 
 	final int indicatorTime = 800;
 
+	protected synchronized void toggleManualTransformation()
+	{
+		manualTransformationEditor.toggle();
+
+	}
+
 	protected synchronized void toggleInterpolation()
 	{
 		final Interpolation interpolation = state.getInterpolation();
@@ -389,9 +441,9 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	protected void toggleActiveGroupOrSource( final int index )
 	{
 		if ( visibilityAndGrouping.isGroupingEnabled() )
-			visibilityAndGrouping.setGroupActive( index, ! visibilityAndGrouping.isGroupActive( index ) );
+			visibilityAndGrouping.setGroupActive( index, !visibilityAndGrouping.isGroupActive( index ) );
 		else
-			visibilityAndGrouping.setSourceActive( index, ! visibilityAndGrouping.isSourceActive( index ) );
+			visibilityAndGrouping.setSourceActive( index, !visibilityAndGrouping.isSourceActive( index ) );
 	}
 
 	/**
@@ -440,14 +492,73 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	}
 
 	/**
+	 * Add a {@link TransformListener} to notify about viewer transformation
+	 * changes. Listeners will be notified <em>before</em> calling
+	 * {@link #requestRepaint()} so they have the chance to interfere.
+	 *
+	 * @param listener
+	 *            the transform listener to add.
+	 */
+	public synchronized void addTransformListener( final TransformListener< AffineTransform3D > listener )
+	{
+		addTransformListener( listener, Integer.MAX_VALUE );
+	}
+
+	/**
+	 * Add a {@link TransformListener} to notify about viewer transformation
+	 * changes. Listeners will be notified <em>before</em> calling
+	 * {@link #requestRepaint()} so they have the chance to interfere.
+	 *
+	 * @param listener
+	 *            the transform listener to add.
+	 * @param index
+	 *            position in the list of listeners at which to insert this one.
+	 */
+	public void addTransformListener( final TransformListener< AffineTransform3D > listener, final int index )
+	{
+		synchronized ( transformListeners )
+		{
+			final int s = transformListeners.size();
+			transformListeners.add( index < 0 ? 0 : index > s ? s : index, listener );
+		}
+	}
+
+	/**
+	 * Remove a {@link TransformListener}.
+	 *
+	 * @param listener
+	 *            the transform listener to remove.
+	 */
+	public synchronized void removeTransformListener( final TransformListener< AffineTransform3D > listener )
+	{
+		synchronized ( transformListeners )
+		{
+			transformListeners.remove( listener );
+		}
+	}
+
+	/**
 	 * Create Keystrokes and corresponding Actions.
 	 *
 	 * @return list of KeyStroke-Action-pairs.
 	 */
 	protected void createKeyActions()
 	{
-		KeyStroke key = KeyStroke.getKeyStroke( KeyEvent.VK_I, 0 );
-		Action action = new AbstractAction( "toogle interpolation" )
+		KeyStroke key = KeyStroke.getKeyStroke( KeyEvent.VK_T, 0 );
+		Action action = new AbstractAction( "toggle manual transformation" )
+		{
+			@Override
+			public void actionPerformed( final ActionEvent e )
+			{
+				toggleManualTransformation();
+			}
+
+			private static final long serialVersionUID = 1L;
+		};
+		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
+
+		key = KeyStroke.getKeyStroke( KeyEvent.VK_I, 0 );
+		action = new AbstractAction( "toggle interpolation" )
 		{
 			@Override
 			public void actionPerformed( final ActionEvent e )
@@ -460,7 +571,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
 
 		key = KeyStroke.getKeyStroke( KeyEvent.VK_F, 0 );
-		action = new AbstractAction( "toogle fused mode" )
+		action = new AbstractAction( "toggle fused mode" )
 		{
 			@Override
 			public void actionPerformed( final ActionEvent e )
@@ -473,7 +584,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
 
 		key = KeyStroke.getKeyStroke( KeyEvent.VK_G, 0 );
-		action = new AbstractAction( "toogle grouping" )
+		action = new AbstractAction( "toggle grouping" )
 		{
 			@Override
 			public void actionPerformed( final ActionEvent e )
@@ -597,7 +708,8 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	}
 
 	/**
-	 * Add Keystrokes and corresponding Actions from {@link #keysActions} to a container.
+	 * Add Keystrokes and corresponding Actions from {@link #keysActions} to a
+	 * container.
 	 */
 	public void installKeyActions( final RootPaneContainer container )
 	{
@@ -653,6 +765,5 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 
 	@Override
 	public void setCanvasSize( final int width, final int height )
-	{
-	}
+	{}
 }

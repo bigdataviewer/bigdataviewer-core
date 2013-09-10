@@ -2,8 +2,7 @@ package mpicbg.spim.data;
 
 import java.util.ArrayList;
 
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
+import org.jdom2.Element;
 
 public class ViewRegistrations
 {
@@ -30,16 +29,15 @@ public class ViewRegistrations
 	{
 		this(
 				createRegistrationsFromXml( elem ),
-				Integer.parseInt( elem.getElementsByTagName( "ReferenceTimepoint" ).item( 0 ).getTextContent() )
+				Integer.parseInt( elem.getChildText( "ReferenceTimepoint" ) )
 		);
 	}
 
 	protected static ArrayList< ViewRegistration > createRegistrationsFromXml( final Element viewRegistrations )
 	{
 		final ArrayList< ViewRegistration > regs = new ArrayList< ViewRegistration >();
-		final NodeList nodes = viewRegistrations.getElementsByTagName( "ViewRegistration" );
-		for ( int i = 0; i < nodes.getLength(); ++i )
-			regs.add( new ViewRegistration( ( Element ) nodes.item( i ) ) );
+		for ( final Element elem : viewRegistrations.getChildren( "ViewRegistration" ) )
+			regs.add( new ViewRegistration( elem ) );
 		return regs;
 	}
 }

@@ -67,7 +67,9 @@ public class TileImgLoader implements ImgLoader
 	public RandomAccessibleInterval< UnsignedShortType > getUnsignedShortImage( final View view )
 	{
 		final int viewTimePoint = view.getTimepointIndex() + 1;
-		final int viewChannel = view.getSetup().getChannel();
+		final int viewChannel = view.getSetup().getChannel() + 1;
+
+		System.out.println( "Generating view for T = " + viewTimePoint + ", C = " + viewChannel );
 
 		/*
 		 * Collect file names
@@ -106,11 +108,11 @@ public class TileImgLoader implements ImgLoader
 
 			final String filename = element.getText();
 			final Double dz = Double.valueOf( z );
-
 			Map< Integer, String > tilesAtZ = filenames.get( dz );
 			if ( null == tilesAtZ )
 			{
 				tilesAtZ = new HashMap< Integer, String >();
+				filenames.put( dz, tilesAtZ );
 			}
 			tilesAtZ.put( field, filename );
 
@@ -169,24 +171,23 @@ public class TileImgLoader implements ImgLoader
 	 */
 
 	@Override
+	public Element toXml( final File basePath )
+	{
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
 	public RandomAccessibleInterval< FloatType > getImage( final View view )
 	{
-		System.out.println( "[TileimgLoader.getImage is not implemented." );
+		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
-	public void init( final org.w3c.dom.Element elem, final File basePath )
+	public void init( final Element elem, final File basePath )
 	{
 		// TODO Auto-generated method stub
-
-	}
-
-	@Override
-	public org.w3c.dom.Element toXml( final org.w3c.dom.Document doc, final File basePath )
-	{
-		// TODO Auto-generated method stub
-		return null;
 	}
 
 }

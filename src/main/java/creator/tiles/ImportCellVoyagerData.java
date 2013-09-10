@@ -24,13 +24,11 @@ public class ImportCellVoyagerData
 
 		final File root_folder = new File( "/Users/tinevez/Desktop/1_7_6_1_2/20130703T145244" );
 
-		final int nFields = 6; // Hardcoded
 		final int nChannels = 3; // Hardcoded -> MeasurementSetting.xml,
 									// IsEnabled
-		final int nTimePoints = 1; // Hardcoded, fomr <TimelapsCondition>
-		final int nViewSetups = nFields * nChannels;
-		final int width = 920; // Hardcoded -> MeasurementSetting.xml
-		final int height = 920; // Hardcoded -> MeasurementSetting.xml
+		final int nTimePoints = 1; // Hardcoded, from <TimelapsCondition>
+		final int width = 2760; // Hardcoded -> MeasurementSetting.xml
+		final int height = 1840; // Hardcoded -> MeasurementSetting.xml
 		final int depth = 41;// Hardcoded -> MeasurementSetting.xml, ZRange
 		final double pixelWidth = 0.1975; // -> to deduce from
 											// MeasurementSetting.xml
@@ -41,13 +39,10 @@ public class ImportCellVoyagerData
 
 		final List< ViewSetup > setups = new ArrayList< ViewSetup >();
 		int viewSetupIndex = 0;
-		for ( int field = 0; field < nFields; field++ )
+		for ( int channel = 0; channel < nChannels; channel++ )
 		{
-			for ( int channel = 0; channel < nChannels; channel++ )
-			{
-				final ViewSetup viewSetup = new ViewSetup( viewSetupIndex++, 0, 0, channel, width, height, depth, pixelWidth, pixelHeight, pixelDepth );
-				setups.add( viewSetup );
-			}
+			final ViewSetup viewSetup = new ViewSetup( viewSetupIndex++, 0, 0, channel, width, height, depth, pixelWidth, pixelHeight, pixelDepth );
+			setups.add( viewSetup );
 		}
 
 		final List< Integer > timepoints = new ArrayList< Integer >( nTimePoints );
@@ -81,7 +76,7 @@ public class ImportCellVoyagerData
 
 		final AffineTransform3D model = null; // for now
 		final int timepointIndex = 0;
-		final int setupIndex = 5;
+		final int setupIndex = 0;
 		final View view = new View( sequenceDescription, timepointIndex, setupIndex, model );
 
 		/*

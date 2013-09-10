@@ -1,76 +1,92 @@
 package mpicbg.spim.data;
 
 import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.TransformerFactoryConfigurationError;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
-
+import net.imglib2.realtransform.AffineGet;
 import net.imglib2.realtransform.AffineTransform3D;
 
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NodeList;
+import org.jdom2.Element;
 
 public class XmlHelpers
 {
-	public static Document newXmlDocument() throws ParserConfigurationException
+	public static Element affineTransform3DElement( final String name, final AffineGet value )
 	{
-		final DocumentBuilderFactory docFactory = DocumentBuilderFactory.newInstance();
-		final DocumentBuilder docBuilder = docFactory.newDocumentBuilder();
-		return docBuilder.newDocument();
-	}
-
-	public static void writeXmlDocument( final Document doc, final String xmlFilename ) throws TransformerFactoryConfigurationError, TransformerException, FileNotFoundException
-	{
-		writeXmlDocument( doc, new File( xmlFilename ) );
-	}
-
-	public static void writeXmlDocument( final Document doc, final File xmlFile ) throws TransformerFactoryConfigurationError, TransformerException, FileNotFoundException
-	{
-		final Transformer transformer = TransformerFactory.newInstance().newTransformer();
-		transformer.setOutputProperty( OutputKeys.INDENT, "yes" );
-		transformer.setOutputProperty( OutputKeys.ENCODING, "UTF-8" );
-		transformer.setOutputProperty( "{http://xml.apache.org/xslt}indent-amount", "4" );
-		transformer.transform( new DOMSource( doc ), new StreamResult( new FileOutputStream( xmlFile ) ) );
-	}
-
-	public static Element intElement( final Document doc, final String name, final int value )
-	{
-		final Element e = doc.createElement( name );
-		e.appendChild( doc.createTextNode( Integer.toString( value ) ) );
+		final Element e = new Element( name );
+		final double[] v = value.getRowPackedCopy();
+		final String text =
+				v[0] + " " + v[1] + " " + v[2] + " " + v[3] + " " +
+				v[4] + " " + v[5] + " " + v[6] + " " + v[7] + " " +
+				v[8] + " " + v[9] + " " + v[10] + " " + v[11];
+		e.setText( text );
 		return e;
 	}
 
-	public static Element doubleElement( final Document doc, final String name, final double value )
+	public static AffineTransform3D loadAffineTransform3D( final Element elem )
 	{
-		final Element e = doc.createElement( name );
-		e.appendChild( doc.createTextNode( Double.toString( value ) ) );
-		return e;
+		final String data = elem.getText();
+		final String[] fields = data.split( "\\s+" );
+		if ( fields.length == 12 )
+		{
+			final double[] values = new double[ 12 ];
+			for ( int i = 0; i < 12; ++i )
+				values[ i ] = Double.parseDouble( fields[ i ] );
+			final AffineTransform3D a = new AffineTransform3D();
+			a.set( values );
+			return a;
+		}
+		else
+			throw new NumberFormatException( "Inappropriate parameters for " + AffineTransform3D.class.getCanonicalName() );
 	}
 
-	public static Element textElement( final Document doc, final String name, final String value )
+	public static Element intElement( final String name, final int value )
 	{
-		final Element e = doc.createElement( name );
-		e.appendChild( doc.createTextNode( value ) );
-		return e;
+		return new Element( name ).addContent( Integer.toString( value ) );
 	}
 
-	public static File loadPath( final Element parent, final String name, final String defaultRelativePath, final File basePath ) throws InstantiationException, IllegalAccessException, ClassNotFoundException
+	public static int getInt( final Element parent, final String name )
 	{
-		final NodeList nd = parent.getElementsByTagName( name );
-		final String path = nd.getLength() > 0 ? nd.item( 0 ).getTextContent() : defaultRelativePath;
-		final boolean isRelative = nd.getLength() > 0 ? ( ( Element ) nd.item( 0 ) ).getAttribute( "type" ).equals( "relative" ) : true;
+		return Integer.parseInt( parent.getChildText( name ) );
+	}
+
+	public static int getInt( final Element parent, final String name, final int defaultValue )
+	{
+		final String text = parent.getChildText( name );
+		return text == null ? defaultValue : Integer.parseInt( text );
+	}
+
+	public static Element doubleElement( final String name, final double value )
+	{
+		return new Element( name ).addContent( Double.toString( value ) );
+	}
+
+	public static double getDouble( final Element parent, final String name )
+	{
+		return Double.parseDouble( parent.getChildText( name ) );
+	}
+
+	public static double getDouble( final Element parent, final String name, final double defaultValue )
+	{
+		final String text = parent.getChildText( name );
+		return text == null ? defaultValue : Double.parseDouble( text );
+	}
+
+	public static String getText( final Element parent, final String name, final String defaultValue )
+	{
+		final String text = parent.getChildText( name );
+		return text == null ? defaultValue : text;
+	}
+
+	public static Element textElement( final String name, final String text )
+	{
+		return new Element( name ).addContent( text );
+	}
+
+	public static File loadPath( final Element parent, final String name, final String defaultRelativePath, final File basePath )
+	{
+		final Element elem = parent.getChild( name );
+		final String path = ( elem == null ) ? defaultRelativePath : elem.getText();
+		final boolean isRelative = ( elem == null ) ? true : elem.getAttributeValue( "type" ).equals( "relative" );
 		if ( isRelative )
 		{
 			if ( basePath == null )
@@ -82,13 +98,13 @@ public class XmlHelpers
 			return new File( path );
 	}
 
-	public static File loadPath( final Element parent, final String name, final File basePath ) throws InstantiationException, IllegalAccessException, ClassNotFoundException
+	public static File loadPath( final Element parent, final String name, final File basePath )
 	{
-		final NodeList nd = parent.getElementsByTagName( name );
-		if ( nd.getLength() == 0 )
+		final Element elem = parent.getChild( name );
+		if ( elem == null )
 			return null;
-		final String path =  nd.item( 0 ).getTextContent();
-		final boolean isRelative = ( ( Element ) nd.item( 0 ) ).getAttribute( "type" ).equals( "relative" );
+		final String path = elem.getText();
+		final boolean isRelative = elem.getAttributeValue( "type" ).equals( "relative" );
 		if ( isRelative )
 		{
 			if ( basePath == null )
@@ -103,16 +119,16 @@ public class XmlHelpers
 	/**
 	 * @param basePath if null put the absolute path, otherwise relative to this
 	 */
-	public static Element pathElement( final Document doc, final String name, final File path, final File basePath )
+	public static Element pathElement( final String name, final File path, final File basePath )
 	{
-		final Element e = doc.createElement( name );
+		final Element e = new Element( name );
 
 		if ( basePath == null )
-			e.appendChild( doc.createTextNode( path.getAbsolutePath() ) );
+			e.setText( path.getAbsolutePath() );
 		else
 		{
 			e.setAttribute( "type", "relative" );
-			e.appendChild( doc.createTextNode( getRelativePath( path, basePath ).getPath() ) );
+			e.setText( getRelativePath( path, basePath ).getPath() );
 		}
 
 		return e;
@@ -151,32 +167,4 @@ public class XmlHelpers
 			return getRelativePath( file, toParent, "../" + relativeInitial );
 	}
 
-	public static Element affineTransform3DElement( final Document doc, final String name, final AffineTransform3D value )
-	{
-		final Element e = doc.createElement( name );
-		final double[] v = value.getRowPackedCopy();
-		final String text =
-				v[0] + " " + v[1] + " " + v[2] + " " + v[3] + " " +
-				v[4] + " " + v[5] + " " + v[6] + " " + v[7] + " " +
-				v[8] + " " + v[9] + " " + v[10] + " " + v[11];
-		e.appendChild( doc.createTextNode( text ) );
-		return e;
-	}
-
-	public static AffineTransform3D loadAffineTransform3D( final Element elem )
-	{
-		final String data = elem.getTextContent();
-		final String[] fields = data.split( "\\s+" );
-		if ( fields.length == 12 )
-		{
-			final double[] values = new double[ 12 ];
-			for ( int i = 0; i < 12; ++i )
-				values[ i ] = Double.parseDouble( fields[ i ] );
-			final AffineTransform3D a = new AffineTransform3D();
-			a.set( values );
-			return a;
-		}
-		else
-			throw new NumberFormatException( "Inappropriate parameters for " + AffineTransform3D.class.getCanonicalName() );
-	}
 }
