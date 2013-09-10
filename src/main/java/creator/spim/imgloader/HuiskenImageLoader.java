@@ -11,10 +11,10 @@ import mpicbg.spim.data.ViewSetup;
 import mpicbg.spim.data.XmlHelpers;
 import net.imglib2.algorithm.stats.Normalize;
 import net.imglib2.img.Img;
-import net.imglib2.img.ImgPlus;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.meta.Axes;
 import net.imglib2.meta.AxisType;
+import net.imglib2.meta.ImgPlus;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
 
@@ -24,10 +24,10 @@ import org.w3c.dom.Element;
 import spimopener.SPIMExperiment;
 
 /**
- * This {@link ImgLoader} implementation uses Benjamin Schmid's
- * <a href="http://fiji.sc/javadoc/spimopener/package-summary.html">spimopener</a>
+ * This {@link ImgLoader} implementation uses Benjamin Schmid's <a
+ * href="http://fiji.sc/javadoc/spimopener/package-summary.html">spimopener</a>
  * to load images in Jan Husiken's format.
- *
+ * 
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
 public class HuiskenImageLoader implements ImgLoader
@@ -119,7 +119,11 @@ public class HuiskenImageLoader implements ImgLoader
 
 		final ImagePlus imp = getImagePlus( view );
 		final Img< FloatType > img = ImageJFunctions.convertFloat( imp );
-		Normalize.normalize( img, new FloatType( 0 ), new FloatType( 1 ) ); // normalize the image to 0...1
+		Normalize.normalize( img, new FloatType( 0 ), new FloatType( 1 ) ); // normalize
+																			// the
+																			// image
+																			// to
+																			// 0...1
 
 		final String name = getBasename( timepoint, angle, channel, illumination );
 
