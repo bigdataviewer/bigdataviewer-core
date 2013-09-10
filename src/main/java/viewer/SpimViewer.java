@@ -22,6 +22,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -107,6 +108,13 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	private final ManualTransformationEditor manualTransformationEditor;
 
 	/**
+	 * These listeners will be notified about changes to the
+	 * {@link #viewerTransform}. This is done <em>before</em> calling
+	 * {@link #requestRepaint()} so listeners have the chance to interfere.
+	 */
+	final protected CopyOnWriteArrayList< TransformListener< AffineTransform3D > > transformListeners;
+
+	/**
 	 *
 	 * @param width
 	 *            width of the display window.
@@ -170,8 +178,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		/*
 		 * The class in charge of performing the manual transformation.
 		 */
-		manualTransformationEditor = new ManualTransformationEditor( state );
-		display.addTransformListener( manualTransformationEditor );
+		manualTransformationEditor = new ManualTransformationEditor( this );
 
 		final double[] screenScales = new double[] { 1, 0.75, 0.5, 0.25, 0.125 };
 		final long targetRenderNanos = 30 * 1000000;
@@ -197,6 +204,8 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 
 		visibilityAndGrouping = new VisibilityAndGrouping( state );
 		visibilityAndGrouping.addUpdateListener( this );
+
+		transformListeners = new CopyOnWriteArrayList< TransformListener< AffineTransform3D > >();
 
 //		final GraphicsConfiguration gc = GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.ARGB_COLOR_MODEL );
 		final GraphicsConfiguration gc = GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.RGB_COLOR_MODEL );
@@ -304,6 +313,8 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	{
 		viewerTransform.set( transform );
 		state.setViewerTransform( transform );
+		for ( final TransformListener< AffineTransform3D > l : transformListeners )
+			l.transformChanged( viewerTransform );
 		requestRepaint();
 	}
 
@@ -481,6 +492,52 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	}
 
 	/**
+	 * Add a {@link TransformListener} to notify about viewer transformation
+	 * changes. Listeners will be notified <em>before</em> calling
+	 * {@link #requestRepaint()} so they have the chance to interfere.
+	 *
+	 * @param listener
+	 *            the transform listener to add.
+	 */
+	public synchronized void addTransformListener( final TransformListener< AffineTransform3D > listener )
+	{
+		addTransformListener( listener, Integer.MAX_VALUE );
+	}
+
+	/**
+	 * Add a {@link TransformListener} to notify about viewer transformation
+	 * changes. Listeners will be notified <em>before</em> calling
+	 * {@link #requestRepaint()} so they have the chance to interfere.
+	 *
+	 * @param listener
+	 *            the transform listener to add.
+	 * @param index
+	 *            position in the list of listeners at which to insert this one.
+	 */
+	public void addTransformListener( final TransformListener< AffineTransform3D > listener, final int index )
+	{
+		synchronized ( transformListeners )
+		{
+			final int s = transformListeners.size();
+			transformListeners.add( index < 0 ? 0 : index > s ? s : index, listener );
+		}
+	}
+
+	/**
+	 * Remove a {@link TransformListener}.
+	 *
+	 * @param listener
+	 *            the transform listener to remove.
+	 */
+	public synchronized void removeTransformListener( final TransformListener< AffineTransform3D > listener )
+	{
+		synchronized ( transformListeners )
+		{
+			transformListeners.remove( listener );
+		}
+	}
+
+	/**
 	 * Create Keystrokes and corresponding Actions.
 	 *
 	 * @return list of KeyStroke-Action-pairs.
@@ -488,7 +545,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	protected void createKeyActions()
 	{
 		KeyStroke key = KeyStroke.getKeyStroke( KeyEvent.VK_T, 0 );
-		Action action = new AbstractAction( "toogle manual transformation" )
+		Action action = new AbstractAction( "toggle manual transformation" )
 		{
 			@Override
 			public void actionPerformed( final ActionEvent e )
@@ -501,7 +558,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
 
 		key = KeyStroke.getKeyStroke( KeyEvent.VK_I, 0 );
-		action = new AbstractAction( "toogle interpolation" )
+		action = new AbstractAction( "toggle interpolation" )
 		{
 			@Override
 			public void actionPerformed( final ActionEvent e )
@@ -514,7 +571,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
 
 		key = KeyStroke.getKeyStroke( KeyEvent.VK_F, 0 );
-		action = new AbstractAction( "toogle fused mode" )
+		action = new AbstractAction( "toggle fused mode" )
 		{
 			@Override
 			public void actionPerformed( final ActionEvent e )
@@ -527,7 +584,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
 
 		key = KeyStroke.getKeyStroke( KeyEvent.VK_G, 0 );
-		action = new AbstractAction( "toogle grouping" )
+		action = new AbstractAction( "toggle grouping" )
 		{
 			@Override
 			public void actionPerformed( final ActionEvent e )
