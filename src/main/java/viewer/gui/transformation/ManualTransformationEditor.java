@@ -1,8 +1,14 @@
 package viewer.gui.transformation;
 
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
+import javax.swing.AbstractAction;
+import javax.swing.Action;
+import javax.swing.KeyStroke;
 
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.ui.TransformListener;
@@ -32,12 +38,68 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 
 	private final ArrayList< TransformedSource< ? > > sourcesToModify;
 
+	private final KeyStroke abortKey;
+
+	private final Action abortAction;
+
+	private final KeyStroke resetKey;
+
+	private final Action resetAction;
+
 	public ManualTransformationEditor( final SpimViewer viewer )
 	{
 		this.viewer = viewer;
 		frozenTransform = new AffineTransform3D();
 		liveTransform = new AffineTransform3D();
 		sourcesToModify = new ArrayList< TransformedSource< ? > >();
+		abortKey = KeyStroke.getKeyStroke( KeyEvent.VK_ESCAPE, 0 );
+		abortAction = new AbstractAction( "abort manual transformation" )
+		{
+			@Override
+			public void actionPerformed( final ActionEvent e )
+			{
+				abort();
+			}
+
+			private static final long serialVersionUID = 1L;
+		};
+		resetKey = KeyStroke.getKeyStroke( KeyEvent.VK_R, 0 );
+		resetAction = new AbstractAction( "reset manual transformation" )
+		{
+			@Override
+			public void actionPerformed( final ActionEvent e )
+			{
+				reset();
+			}
+
+			private static final long serialVersionUID = 1L;
+		};
+	}
+
+	public synchronized void abort()
+	{
+		if ( active )
+		{
+			final AffineTransform3D tmp = new AffineTransform3D();
+			for ( final TransformedSource< ? > source : sourcesToModify )
+				source.setIncrementalTransform( tmp );
+			viewer.setCurrentViewerTransform( frozenTransform );
+			active = false;
+		}
+	}
+
+	public synchronized void reset()
+	{
+		if ( active )
+		{
+			final AffineTransform3D tmp = new AffineTransform3D();
+			for ( final TransformedSource< ? > source : sourcesToModify )
+			{
+				source.setIncrementalTransform( tmp );
+				source.setFixedTransform( tmp );
+			}
+			viewer.setCurrentViewerTransform( frozenTransform );
+		}
 	}
 
 	public synchronized void toggle()
@@ -63,15 +125,17 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 				}
 				active = true;
 				viewer.addTransformListener( this );
+				viewer.addKeyAction( abortKey, abortAction ); // TODO: we must be able to remove this
+				viewer.addKeyAction( resetKey, resetAction ); // TODO: we must be able to remove this
 			}
 		}
 		else
 		{ // Exit manual edit mode.
 			active = false;
 			viewer.removeTransformListener( this );
+			final AffineTransform3D tmp = new AffineTransform3D();
 			for ( final TransformedSource< ? > source : sourcesToModify )
 			{
-				final AffineTransform3D tmp = new AffineTransform3D();
 				source.getIncrementalTransform( frozenTransform );
 				source.getFixedTransform( tmp );
 				frozenTransform.concatenate( tmp );
