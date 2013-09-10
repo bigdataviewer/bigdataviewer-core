@@ -96,6 +96,7 @@ public class MultiBoxOverlayRenderer
 		synchronized ( viewerState )
 		{
 			final List< SourceState< ? > > sources = viewerState.getSources();
+			final List< Integer > visible = viewerState.getVisibleSourceIndices();
 			final int timepoint = viewerState.getCurrentTimepoint();
 			final DisplayMode displayMode = viewerState.getDisplayMode();
 
@@ -117,7 +118,7 @@ public class MultiBoxOverlayRenderer
 				sourceToViewer.concatenate( source.getSpimSource().getSourceTransform( timepoint, 0 ) );
 				boxsource.setSourceToViewer( sourceToViewer );
 				boxsource.setSourceInterval( source.getSpimSource().getSource( timepoint, 0 ) );
-				boxsource.setVisible( source.isVisible( displayMode ) );
+				boxsource.setVisible( visible.contains( i ) );
 			}
 		}
 	}

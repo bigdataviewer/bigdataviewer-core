@@ -84,6 +84,11 @@
 			<groupId>org.jdom</groupId>
 			<artifactId>jdom</artifactId>
 			<version>2.0.2</version>
+    </dependency>
+    <dependency>
+			<groupId>net.imglib2</groupId>
+			<artifactId>imglib2-meta</artifactId>
+			<version>2.0.0-SNAPSHOT</version>
 		</dependency>
 	</dependencies>
 

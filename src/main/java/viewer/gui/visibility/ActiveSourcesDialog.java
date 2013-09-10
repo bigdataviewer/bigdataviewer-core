@@ -1,6 +1,11 @@
 package viewer.gui.visibility;
 
-import static viewer.render.DisplayMode.FUSED;
+import static viewer.VisibilityAndGrouping.Event.CURRENT_SOURCE_CHANGED;
+import static viewer.VisibilityAndGrouping.Event.DISPLAY_MODE_CHANGED;
+import static viewer.VisibilityAndGrouping.Event.GROUP_NAME_CHANGED;
+import static viewer.VisibilityAndGrouping.Event.SOURCE_ACTVITY_CHANGED;
+import static viewer.VisibilityAndGrouping.Event.SOURCE_TO_GROUP_ASSIGNMENT_CHANGED;
+import static viewer.VisibilityAndGrouping.Event.VISIBILITY_CHANGED;
 
 import java.awt.BorderLayout;
 import java.awt.Frame;
@@ -155,7 +160,7 @@ public class ActiveSourcesDialog extends JDialog
 					@Override
 					public void actionPerformed( final ActionEvent e )
 					{
-						visibility.setActive( sourceIndex, FUSED, b.isSelected() );
+						visibility.setSourceActive( sourceIndex, b.isSelected() );
 					}
 				} );
 				fusedBoxes.add( b );
@@ -186,8 +191,8 @@ public class ActiveSourcesDialog extends JDialog
 				currentButtons.get( visibility.getCurrentSource() ).setSelected( true );
 				for ( int i = 0; i < n; ++i )
 				{
-					fusedBoxes.get( i ).setSelected( visibility.isActive( i, FUSED ) );
-					visibleBoxes.get( i ).setSelected( visibility.isVisible( i ) );
+					fusedBoxes.get( i ).setSelected( visibility.isSourceActive( i ) );
+					visibleBoxes.get( i ).setSelected( visibility.isSourceVisible( i ) );
 				}
 			}
 		}
@@ -197,24 +202,11 @@ public class ActiveSourcesDialog extends JDialog
 		{
 			switch ( e.id )
 			{
-			case Event.ACTIVATE:
-				if ( e.displayMode == FUSED )
-					fusedBoxes.get( e.sourceIndex ).setSelected( true );
-				if ( e.displayMode == visibility.getDisplayMode() )
-					visibleBoxes.get( e.sourceIndex ).setSelected( true );
-				break;
-			case Event.DEACTIVATE:
-				if ( e.displayMode == FUSED )
-					fusedBoxes.get( e.sourceIndex ).setSelected( false );
-				if ( e.displayMode == visibility.getDisplayMode() )
-					visibleBoxes.get( e.sourceIndex ).setSelected( false );
-				break;
-			case Event.MAKE_CURRENT:
-				currentButtons.get( e.sourceIndex ).setSelected( true );
-				break;
-			case Event.DISPLAY_MODE_CHANGED:
+			case CURRENT_SOURCE_CHANGED:
+			case SOURCE_ACTVITY_CHANGED:
+			case VISIBILITY_CHANGED:
 				update();
-			default:
+				break;
 			}
 		}
 	}
@@ -267,13 +259,13 @@ public class ActiveSourcesDialog extends JDialog
 			c.gridy = GridBagConstraints.RELATIVE;
 			for ( int g = 0; g < numGroups; ++g )
 			{
-				final SourceGroup group = groups.get( g );
-				final JTextField tf = new JTextField( group.getName(), 10 );
+				final JTextField tf = new JTextField( groups.get( g ).getName(), 10 );
+				final int groupIndex = g;
 				tf.getDocument().addDocumentListener( new DocumentListener()
 				{
 					private void doit()
 					{
-						group.setName( tf.getText() );
+						visibility.setGroupName( groupIndex, tf.getText() );
 					}
 
 					@Override
@@ -312,18 +304,19 @@ public class ActiveSourcesDialog extends JDialog
 				c.gridx = sourceIndex + 2;
 				for ( int g = 0; g < numGroups; ++g )
 				{
-					final SourceGroup group = groups.get( g );
+					final int groupIndex = g;
 					c.gridy = g + 1;
 					final JCheckBox b = new JCheckBox();
+					b.setSelected( groups.get( g ).getSourceIds().contains( s ) );
 					b.addActionListener( new ActionListener()
 					{
 						@Override
 						public void actionPerformed( final ActionEvent e )
 						{
 							if ( b.isSelected() )
-								group.addSource( sourceIndex );
+								visibility.addSourceToGroup( sourceIndex, groupIndex );
 							else
-								group.removeSource( sourceIndex );
+								visibility.removeSourceFromGroup( sourceIndex, groupIndex );
 						}
 					} );
 					assignBoxes.add( b );
@@ -351,16 +344,23 @@ public class ActiveSourcesDialog extends JDialog
 			c.gridwidth = 2 + numSources;
 			c.anchor = GridBagConstraints.CENTER;
 			add( panel, c );
-
-			update();
 		}
 
-		protected void update()
+		protected void updateGroupNames()
 		{
 			final List< SourceGroup > groups = visibility.getSourceGroups();
 			for ( int i = 0; i < numGroups; ++i )
-				nameFields.get( i ).setText( groups.get( i ).getName() );
+			{
+				final JTextField tf = nameFields.get( i );
+				final String name = groups.get( i ).getName();
+				if ( ! tf.getText().equals( name ) )
+					tf.setText( name );
+			}
+		}
 
+		protected void updateGroupAssignments()
+		{
+			final List< SourceGroup > groups = visibility.getSourceGroups();
 			for ( int s = 0; s < numSources; ++s )
 				for ( int g = 0; g < numGroups; ++g )
 					assignBoxes.get( s * numGroups + g ).setSelected( groups.get( g ).getSourceIds().contains( s ) );
@@ -371,9 +371,15 @@ public class ActiveSourcesDialog extends JDialog
 		{
 			switch ( e.id )
 			{
-			case Event.GROUPING_ENABLED_CHANGED:
+			case DISPLAY_MODE_CHANGED:
 				groupingBox.setSelected( visibility.isGroupingEnabled() );
-			default:
+				break;
+			case SOURCE_TO_GROUP_ASSIGNMENT_CHANGED:
+				updateGroupAssignments();
+				break;
+			case GROUP_NAME_CHANGED:
+				updateGroupNames();
+				break;
 			}
 		}
 	}

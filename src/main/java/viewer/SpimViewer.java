@@ -1,8 +1,11 @@
 package viewer;
 
-import static viewer.render.DisplayMode.FUSED;
-import static viewer.render.DisplayMode.GROUP;
-import static viewer.render.DisplayMode.SINGLE;
+import static viewer.VisibilityAndGrouping.Event.CURRENT_SOURCE_CHANGED;
+import static viewer.VisibilityAndGrouping.Event.DISPLAY_MODE_CHANGED;
+import static viewer.VisibilityAndGrouping.Event.GROUP_ACTIVITY_CHANGED;
+import static viewer.VisibilityAndGrouping.Event.GROUP_NAME_CHANGED;
+import static viewer.VisibilityAndGrouping.Event.SOURCE_ACTVITY_CHANGED;
+import static viewer.VisibilityAndGrouping.Event.VISIBILITY_CHANGED;
 
 import java.awt.BorderLayout;
 import java.awt.Container;
@@ -18,7 +21,7 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.List;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -53,6 +56,7 @@ import viewer.render.DisplayMode;
 import viewer.render.Interpolation;
 import viewer.render.MultiResolutionRenderer;
 import viewer.render.SourceAndConverter;
+import viewer.render.SourceGroup;
 import viewer.render.SourceState;
 import viewer.render.ViewerState;
 import viewer.render.overlay.MultiBoxOverlayRenderer;
@@ -110,9 +114,18 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	 * @param numMipmapLevels
 	 *            number of available mipmap levels.
 	 */
-	public SpimViewer( final int width, final int height, final Collection< SourceAndConverter< ? > > sources, final int numTimePoints)
+	public SpimViewer( final int width, final int height, final List< SourceAndConverter< ? > > sources, final int numTimePoints)
 	{
-		state = new ViewerState( sources, numTimePoints );
+		final int numGroups = 10;
+		final ArrayList< SourceGroup > groups = new ArrayList< SourceGroup >( numGroups );
+		for ( int i = 0; i < numGroups; ++i )
+		{
+			final SourceGroup g = new SourceGroup( "group " + Integer.toString( i + 1 ) );
+			if ( i < sources.size() )
+				g.addSource( i );
+			groups.add( g );
+		}
+		state = new ViewerState( sources, groups, numTimePoints );
 		if ( ! sources.isEmpty() )
 			state.setCurrentSource( 0 );
 		multiBoxOverlayRenderer = new MultiBoxOverlayRenderer( width, height );
@@ -265,32 +278,26 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	{
 		switch ( e.id )
 		{
-		case VisibilityAndGrouping.Event.DISPLAY_MODE_CHANGED:
-			animatedOverlay = new TextOverlayAnimator( e.displayMode.getName(), indicatorTime );
+		case CURRENT_SOURCE_CHANGED:
+			multiBoxOverlayRenderer.highlight( visibilityAndGrouping.getCurrentSource() );
+			display.repaint();
+			break;
+		case DISPLAY_MODE_CHANGED:
+			animatedOverlay = new TextOverlayAnimator( visibilityAndGrouping.getDisplayMode().getName(), indicatorTime );
+			display.repaint();
+			break;
+		case GROUP_NAME_CHANGED:
+			display.repaint();
+			break;
+		case SOURCE_ACTVITY_CHANGED:
+			// TODO multiBoxOverlayRenderer.highlight() all sources that became visible
+			break;
+		case GROUP_ACTIVITY_CHANGED:
+			// TODO multiBoxOverlayRenderer.highlight() all sources that became visible
+			break;
+		case VISIBILITY_CHANGED:
 			requestRepaint();
 			break;
-		case VisibilityAndGrouping.Event.ACTIVATE:
-		case VisibilityAndGrouping.Event.DEACTIVATE:
-			multiBoxOverlayRenderer.highlight( e.sourceIndex );
-			if ( visibilityAndGrouping.getDisplayMode() == e.displayMode )
-				requestRepaint();
-			else
-				display.repaint();
-			break;
-		case VisibilityAndGrouping.Event.GROUPING_ENABLED_CHANGED:
-			final DisplayMode mode = visibilityAndGrouping.getDisplayMode();
-			if ( visibilityAndGrouping.isGroupingEnabled() )
-			{
-				if ( mode == SINGLE )
-					visibilityAndGrouping.setDisplayMode( GROUP );
-			}
-			else
-			{
-				if ( mode == GROUP )
-					visibilityAndGrouping.setDisplayMode( SINGLE );
-			}
-			break;
-		default:
 		}
 	}
 
@@ -382,9 +389,9 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	protected void toggleActiveGroupOrSource( final int index )
 	{
 		if ( visibilityAndGrouping.isGroupingEnabled() )
-			visibilityAndGrouping.toggleGroupActive( index );
+			visibilityAndGrouping.setGroupActive( index, ! visibilityAndGrouping.isGroupActive( index ) );
 		else
-			visibilityAndGrouping.toggleActive( index, FUSED );
+			visibilityAndGrouping.setSourceActive( index, ! visibilityAndGrouping.isSourceActive( index ) );
 	}
 
 	/**
@@ -458,10 +465,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 			@Override
 			public void actionPerformed( final ActionEvent e )
 			{
-				if ( visibilityAndGrouping.getDisplayMode() != FUSED )
-					setDisplayMode( FUSED );
-				else
-					setDisplayMode( visibilityAndGrouping.isGroupingEnabled() ? GROUP : SINGLE );
+				visibilityAndGrouping.setFusedEnabled( !visibilityAndGrouping.isFusedEnabled() );
 			}
 
 			private static final long serialVersionUID = 1L;
@@ -474,8 +478,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 			@Override
 			public void actionPerformed( final ActionEvent e )
 			{
-				final boolean enable = !visibilityAndGrouping.isGroupingEnabled();
-				visibilityAndGrouping.setGroupingEnabled( enable );
+				visibilityAndGrouping.setGroupingEnabled( !visibilityAndGrouping.isGroupingEnabled() );
 			}
 
 			private static final long serialVersionUID = 1L;

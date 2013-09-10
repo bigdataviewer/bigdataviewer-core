@@ -2,9 +2,10 @@ package viewer.render;
 
 public enum DisplayMode
 {
-	SINGLE ( 0, "single-source mode" ),
-	GROUP  ( 1, "single-group mode"),
-	FUSED  ( 2, "fused mode" );
+	SINGLE     ( 0, "single-source mode" ),
+	GROUP      ( 1, "single-group mode"),
+	FUSED      ( 2, "fused mode" ),
+	FUSEDGROUP ( 3, "fused group mode" );
 
 	private final int id;
 	private final String name;

@@ -1,13 +1,19 @@
 package viewer;
 
-import static viewer.VisibilityAndGrouping.Event.ACTIVATE;
-import static viewer.VisibilityAndGrouping.Event.DEACTIVATE;
+import static viewer.VisibilityAndGrouping.Event.CURRENT_GROUP_CHANGED;
+import static viewer.VisibilityAndGrouping.Event.CURRENT_SOURCE_CHANGED;
 import static viewer.VisibilityAndGrouping.Event.DISPLAY_MODE_CHANGED;
-import static viewer.VisibilityAndGrouping.Event.GROUPING_ENABLED_CHANGED;
-import static viewer.VisibilityAndGrouping.Event.MAKE_CURRENT;
+import static viewer.VisibilityAndGrouping.Event.GROUP_ACTIVITY_CHANGED;
+import static viewer.VisibilityAndGrouping.Event.GROUP_NAME_CHANGED;
+import static viewer.VisibilityAndGrouping.Event.SOURCE_ACTVITY_CHANGED;
+import static viewer.VisibilityAndGrouping.Event.SOURCE_TO_GROUP_ASSIGNMENT_CHANGED;
+import static viewer.VisibilityAndGrouping.Event.VISIBILITY_CHANGED;
+import static viewer.render.DisplayMode.FUSED;
+import static viewer.render.DisplayMode.FUSEDGROUP;
+import static viewer.render.DisplayMode.GROUP;
+import static viewer.render.DisplayMode.SINGLE;
 
-import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -21,27 +27,30 @@ public class VisibilityAndGrouping
 {
 	public static final class Event
 	{
-		public static final int ACTIVATE = 0;
+		public static final int CURRENT_SOURCE_CHANGED = 0;
 
-		public static final int DEACTIVATE = 1;
+		public static final int CURRENT_GROUP_CHANGED = 1;
 
-		public static final int MAKE_CURRENT = 2;
+		public static final int SOURCE_ACTVITY_CHANGED = 2;
 
-		public static final int DISPLAY_MODE_CHANGED = 3;
+		public static final int GROUP_ACTIVITY_CHANGED = 3;
 
-		public static final int GROUPING_ENABLED_CHANGED = 4;
+		public static final int DISPLAY_MODE_CHANGED = 4;
+
+		public static final int SOURCE_TO_GROUP_ASSIGNMENT_CHANGED = 5;
+
+		public static final int GROUP_NAME_CHANGED = 6;
+
+		public static final int VISIBILITY_CHANGED = 7;
 
 		public final int id;
 
-		public final int sourceIndex;
+		public final VisibilityAndGrouping visibilityAndGrouping;
 
-		public final DisplayMode displayMode;
-
-		public Event( final int id, final int sourceIndex, final DisplayMode displayMode )
+		public Event( final int id, final VisibilityAndGrouping v )
 		{
 			this.id = id;
-			this.sourceIndex = sourceIndex;
-			this.displayMode = displayMode;
+			this.visibilityAndGrouping = v;
 		}
 	}
 
@@ -54,28 +63,10 @@ public class VisibilityAndGrouping
 
 	protected final ViewerState state;
 
-	protected final ArrayList< SourceGroup > groups;
-
-	/**
-	 * read-only view of {@link #groups}.
-	 */
-	final private List< SourceGroup > unmodifiableGroups;
-
-	protected boolean groupingEnabled;
-
 	public VisibilityAndGrouping( final ViewerState viewerState )
 	{
 		updateListeners = new CopyOnWriteArrayList< UpdateListener >();
 		state = viewerState;
-		groups = new ArrayList< SourceGroup >();
-		unmodifiableGroups = Collections.unmodifiableList( groups );
-		groupingEnabled = false;
-		for ( int i = 0; i < numSources(); ++i )
-		{
-			final SourceGroup g = new SourceGroup();
-			g.addSource( i );
-			groups.add( g );
-		}
 	}
 
 	public int numSources()
@@ -90,12 +81,12 @@ public class VisibilityAndGrouping
 
 	public int numGroups()
 	{
-		return groups.size();
+		return state.numSourceGroups();
 	}
 
 	public List< SourceGroup > getSourceGroups()
 	{
-		return unmodifiableGroups;
+		return state.getSourceGroups();
 	}
 
 	public synchronized DisplayMode getDisplayMode()
@@ -106,74 +97,13 @@ public class VisibilityAndGrouping
 	public synchronized void setDisplayMode( final DisplayMode displayMode )
 	{
 		state.setDisplayMode( displayMode );
-		update( new VisibilityAndGrouping.Event( DISPLAY_MODE_CHANGED, 0, displayMode ) );
+		checkVisibilityChange();
+		update( DISPLAY_MODE_CHANGED );
 	}
 
-	/**
-	 * Is the source is active (visible in the specified mode)?
-	 *
-	 * @return whether the source is active.
-	 */
-	public synchronized boolean isActive( final int sourceIndex, final DisplayMode displayMode )
+	public synchronized int getCurrentSource()
 	{
-		if ( sourceIndex < 0 || sourceIndex >= numSources() )
-			return false;
-
-		return state.getSources().get( sourceIndex ).isActive( displayMode );
-	}
-
-	public synchronized boolean isVisible( final int sourceIndex )
-	{
-		return isActive( sourceIndex, getDisplayMode() );
-	}
-
-	/**
-	 * TODO Set the source active (visible in fused mode) or inactive
-	 *
-	 * @param sourceIndex
-	 * @param displayMode
-	 * @param isActive
-	 */
-	public synchronized void setActive( final int sourceIndex, final DisplayMode displayMode, final boolean isActive )
-	{
-		if ( sourceIndex < 0 || sourceIndex >= numSources() )
-			return;
-
-		if ( displayMode == DisplayMode.SINGLE )
-		{
-			if ( isActive )
-				setCurrentSource( sourceIndex );
-		}
-		else
-		{
-			state.getSources().get( sourceIndex ).setActive( displayMode, isActive );
-			update( new VisibilityAndGrouping.Event( isActive ? ACTIVATE : DEACTIVATE, sourceIndex, displayMode ) );
-		}
-	}
-
-	/**
-	 * TODO
-	 *
-	 * @param sourceIndex
-	 * @param displayMode
-	 */
-	public synchronized void toggleActive( final int sourceIndex, final DisplayMode displayMode )
-	{
-		if ( sourceIndex < 0 || sourceIndex >= numSources() )
-			return;
-
-		final SourceState< ? > source = state.getSources().get( sourceIndex );
-		if ( displayMode == DisplayMode.SINGLE )
-		{
-			if ( !source.isActive( displayMode ) )
-				setCurrentSource( sourceIndex );
-		}
-		else
-		{
-			final boolean a = !source.isActive( displayMode );
-			source.setActive( displayMode, a );
-			update( new VisibilityAndGrouping.Event( a ? ACTIVATE : DEACTIVATE, sourceIndex, displayMode ) );
-		}
+		return state.getCurrentSource();
 	}
 
 	/**
@@ -186,86 +116,38 @@ public class VisibilityAndGrouping
 		if ( sourceIndex < 0 || sourceIndex >= numSources() )
 			return;
 
-		final int oldSourceIndex = state.getCurrentSource();
 		state.setCurrentSource( sourceIndex );
-
-		update( new VisibilityAndGrouping.Event( MAKE_CURRENT, sourceIndex, null ) );
-		if ( oldSourceIndex != sourceIndex )
-		{
-			update( new VisibilityAndGrouping.Event( DEACTIVATE, oldSourceIndex, DisplayMode.SINGLE ) );
-			update( new VisibilityAndGrouping.Event( ACTIVATE, sourceIndex, DisplayMode.SINGLE ) );
-		}
+		checkVisibilityChange();
+		update( CURRENT_SOURCE_CHANGED );
 	};
 
-	public synchronized int getCurrentSource()
+	public synchronized boolean isSourceActive( final int sourceIndex )
 	{
-		return state.getCurrentSource();
-	}
+		if ( sourceIndex < 0 || sourceIndex >= numSources() )
+			return false;
 
-	public void setGroupingEnabled( final boolean enable )
-	{
-		if ( groupingEnabled != enable )
-		{
-			groupingEnabled = enable;
-			update( new VisibilityAndGrouping.Event( GROUPING_ENABLED_CHANGED, 0, null ) );
-		}
-	}
-
-	public boolean isGroupingEnabled()
-	{
-		return groupingEnabled;
+		return state.getSources().get( sourceIndex ).isActive();
 	}
 
 	/**
-	 * TODO Set the sources in the group active (visible in fused mode) or inactive
-	 */
-	public synchronized void setGroupActive( final int groupIndex, final DisplayMode displayMode, final boolean isActive )
-	{
-		if ( groupIndex < 0 || groupIndex >= numGroups() )
-			return;
-
-		if ( displayMode == DisplayMode.SINGLE )
-		{
-			if ( isActive )
-			{
-				final SortedSet< Integer > groupSourceIds = groups.get( groupIndex ).getSourceIds();
-				if ( !groupSourceIds.isEmpty() )
-					setCurrentSource( groupSourceIds.first() );
-			}
-		}
-		else if ( displayMode == DisplayMode.GROUP )
-		{
-			if ( isActive )
-				setCurrentGroup( groupIndex );
-		}
-		else
-		{
-			final SortedSet< Integer > groupSourceIds = groups.get( groupIndex ).getSourceIds();
-			for ( final int sourceIndex : groupSourceIds )
-			{
-				state.getSources().get( sourceIndex ).setActive( displayMode, isActive );
-				update( new VisibilityAndGrouping.Event( isActive ? ACTIVATE : DEACTIVATE, sourceIndex, displayMode ) );
-			}
-		}
-	}
-
-	/**
-	 * TODO
+	 * Set the source active (visible in fused mode) or inactive.
 	 *
-	 * @param groupIndex
+	 * @param sourceIndex
+	 * @param isActive
 	 */
-	public synchronized void toggleGroupActive( final int groupIndex )
+	public synchronized void setSourceActive( final int sourceIndex, final boolean isActive )
 	{
-		if ( groupIndex < 0 || groupIndex >= numGroups() )
+		if ( sourceIndex < 0 || sourceIndex >= numSources() )
 			return;
 
-		final SourceGroup group = groups.get( groupIndex );
+		state.getSources().get( sourceIndex ).setActive( isActive );
+		update( SOURCE_ACTVITY_CHANGED );
+		checkVisibilityChange();
+	}
 
-		final boolean a = !group.isActive();
-		group.setActive( a );
-		final SortedSet< Integer > groupSourceIDs = group.getSourceIds();
-		for ( final int i : groupSourceIDs )
-			setActive( i, DisplayMode.FUSED, a );
+	public synchronized int getCurrentGroup()
+	{
+		return state.getCurrentGroup();
 	}
 
 	/**
@@ -278,28 +160,133 @@ public class VisibilityAndGrouping
 		if ( groupIndex < 0 || groupIndex >= numGroups() )
 			return;
 
-		final SortedSet< Integer > groupSourceIds = groups.get( groupIndex ).getSourceIds();
-		if ( groupSourceIds.isEmpty() )
-			return;
-
-		// activate / deactivate sources in GROUP mode
-		for ( int i = 0; i < numSources(); ++i )
+		state.setCurrentGroup( groupIndex );
+		checkVisibilityChange();
+		update( CURRENT_GROUP_CHANGED );
+		final SortedSet< Integer > ids = state.getSourceGroups().get( groupIndex ).getSourceIds();
+		if ( !ids.isEmpty() )
 		{
-			final SourceState< ? > source = getSources().get( i );
-			final boolean activate = groupSourceIds.contains( i );
-			if ( activate )
-				setActive( i, DisplayMode.GROUP, true );
-			else if ( source.isActive( DisplayMode.GROUP ) )
-				setActive( i, DisplayMode.GROUP, false );
+			state.setCurrentSource( ids.first() );
+			update( CURRENT_SOURCE_CHANGED );
 		}
-
-		setCurrentSource( groupSourceIds.first() );
 	}
 
-	protected void update( final Event e )
+	public synchronized boolean isGroupActive( final int groupIndex )
 	{
+		if ( groupIndex < 0 || groupIndex >= numGroups() )
+			return false;
+
+		return state.getSourceGroups().get( groupIndex ).isActive();
+	}
+
+	/**
+	 * Set the group active (visible in fused mode) or inactive.
+	 *
+	 * @param groupIndex
+	 * @param isActive
+	 */
+	public synchronized void setGroupActive( final int groupIndex, final boolean isActive )
+	{
+		if ( groupIndex < 0 || groupIndex >= numGroups() )
+			return;
+
+		state.getSourceGroups().get( groupIndex ).setActive( isActive );
+		update( GROUP_ACTIVITY_CHANGED );
+		checkVisibilityChange();
+	}
+
+	public synchronized void setGroupName( final int groupIndex, final String name )
+	{
+		if ( groupIndex < 0 || groupIndex >= numGroups() )
+			return;
+
+		state.getSourceGroups().get( groupIndex ).setName( name );
+		update( GROUP_NAME_CHANGED );
+	}
+
+	public synchronized void addSourceToGroup( final int sourceIndex, final int groupIndex )
+	{
+		if ( groupIndex < 0 || groupIndex >= numGroups() )
+			return;
+
+		state.getSourceGroups().get( groupIndex ).addSource( sourceIndex );
+		update( SOURCE_TO_GROUP_ASSIGNMENT_CHANGED );
+		checkVisibilityChange();
+	}
+
+	public synchronized void removeSourceFromGroup( final int sourceIndex, final int groupIndex )
+	{
+		if ( groupIndex < 0 || groupIndex >= numGroups() )
+			return;
+
+		state.getSourceGroups().get( groupIndex ).removeSource( sourceIndex );
+		update( SOURCE_TO_GROUP_ASSIGNMENT_CHANGED );
+		checkVisibilityChange();
+	}
+
+	public synchronized boolean isGroupingEnabled()
+	{
+		final DisplayMode mode = state.getDisplayMode();
+		return ( mode == GROUP ) || ( mode == FUSEDGROUP );
+	}
+
+	public synchronized boolean isFusedEnabled()
+	{
+		final DisplayMode mode = state.getDisplayMode();
+		return ( mode == FUSED ) || ( mode == FUSEDGROUP );
+	}
+
+	public synchronized void setGroupingEnabled( final boolean enable )
+	{
+		setDisplayMode( isFusedEnabled() ? ( enable ? FUSEDGROUP : FUSED ) : ( enable ? GROUP : SINGLE ) );
+	}
+
+	public synchronized void setFusedEnabled( final boolean enable )
+	{
+		setDisplayMode( isGroupingEnabled() ? ( enable ? FUSEDGROUP : GROUP ) : ( enable ? FUSED : SINGLE ) );
+	}
+
+	public synchronized boolean isSourceVisible( final int sourceIndex )
+	{
+		return state.isSourceVisible( sourceIndex );
+	}
+
+	protected boolean[] previousVisibleSources = null;
+
+	protected boolean[] currentVisibleSources = null;
+
+	protected void checkVisibilityChange()
+	{
+		final boolean[] tmp = previousVisibleSources;
+		previousVisibleSources = currentVisibleSources;
+		currentVisibleSources = tmp;
+
+		final int n = numSources();
+		if ( currentVisibleSources == null || currentVisibleSources.length != n )
+			currentVisibleSources = new boolean[ n ];
+		Arrays.fill( currentVisibleSources, false );
+		for ( final int i : state.getVisibleSourceIndices() )
+			currentVisibleSources[ i ] = true;
+
+		if ( previousVisibleSources == null || previousVisibleSources.length != n )
+		{
+			update( VISIBILITY_CHANGED );
+			return;
+		}
+
+		for ( int i = 0; i < currentVisibleSources.length; ++i )
+			if ( currentVisibleSources[ i ] != previousVisibleSources[ i ] )
+			{
+				update( VISIBILITY_CHANGED );
+				return;
+			}
+	}
+
+	protected void update( final int id )
+	{
+		final Event event = new Event( id, this );
 		for ( final UpdateListener l : updateListeners )
-			l.visibilityChanged( e );
+			l.visibilityChanged( event );
 	}
 
 	public void addUpdateListener( final UpdateListener l )
