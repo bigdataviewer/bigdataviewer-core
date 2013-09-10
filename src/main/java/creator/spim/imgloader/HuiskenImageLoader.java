@@ -23,10 +23,10 @@ import org.jdom2.Element;
 import spimopener.SPIMExperiment;
 
 /**
- * This {@link ImgLoader} implementation uses Benjamin Schmid's <a
- * href="http://fiji.sc/javadoc/spimopener/package-summary.html">spimopener</a>
+ * This {@link ImgLoader} implementation uses Benjamin Schmid's
+ * <a href="http://fiji.sc/javadoc/spimopener/package-summary.html">spimopener</a>
  * to load images in Jan Husiken's format.
- * 
+ *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
 public class HuiskenImageLoader implements ImgLoader
@@ -118,11 +118,7 @@ public class HuiskenImageLoader implements ImgLoader
 
 		final ImagePlus imp = getImagePlus( view );
 		final Img< FloatType > img = ImageJFunctions.convertFloat( imp );
-		Normalize.normalize( img, new FloatType( 0 ), new FloatType( 1 ) ); // normalize
-																			// the
-																			// image
-																			// to
-																			// 0...1
+		Normalize.normalize( img, new FloatType( 0 ), new FloatType( 1 ) ); // normalize the image to 0...1
 
 		final String name = getBasename( timepoint, angle, channel, illumination );
 
