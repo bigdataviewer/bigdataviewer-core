@@ -183,8 +183,9 @@ public class SetupAssignments
 	 * this only restores the assignments of setups to groups and group
 	 * settings. The list of {@link ConverterSetup}s is not restored.
 	 */
-	public void restoreFromXml( final Element elemSetupAssignments )
+	public void restoreFromXml( final Element parent )
 	{
+		final Element elemSetupAssignments = parent.getChild( "SetupAssignments" );
 		final Element elemConverterSetups = elemSetupAssignments.getChild( "ConverterSetups" );
 		final List< Element > converterSetupNodes = elemConverterSetups.getChildren( "ConverterSetup" );
 		if ( converterSetupNodes.size() != setups.size() )

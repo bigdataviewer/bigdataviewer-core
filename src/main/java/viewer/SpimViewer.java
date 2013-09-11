@@ -53,11 +53,16 @@ import net.imglib2.ui.overlay.BufferedImageOverlayRenderer;
 import net.imglib2.ui.util.GuiUtil;
 import net.imglib2.util.LinAlgHelpers;
 import net.imglib2.util.ValuePair;
+
+import org.jdom2.Element;
+
 import viewer.TextOverlayAnimator.TextPosition;
+import viewer.gui.XmlIoViewerState;
 import viewer.gui.transformation.ManualTransformationEditor;
 import viewer.render.DisplayMode;
 import viewer.render.Interpolation;
 import viewer.render.MultiResolutionRenderer;
+import viewer.render.Source;
 import viewer.render.SourceAndConverter;
 import viewer.render.SourceGroup;
 import viewer.render.SourceState;
@@ -239,9 +244,23 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		animatedOverlay = new TextOverlayAnimator( "Press <F1> for help.", 3000, TextPosition.CENTER );
 	}
 
-	private static < T extends NumericType< T > > SourceAndConverter< T > wrapWithTransformedSource( final SourceAndConverter< T > sc )
+	// TODO: should move to separate ManualTransform tool
+	protected static < T extends NumericType< T > > SourceAndConverter< T > wrapWithTransformedSource( final SourceAndConverter< T > sc )
 	{
 		return new SourceAndConverter< T >( new TransformedSource< T >( sc.getSpimSource() ), sc.getConverter() );
+	}
+
+	// TODO: should move to separate ManualTransform tool
+	public ArrayList< TransformedSource< ? > > getTransformedSources()
+	{
+		final ArrayList< TransformedSource< ? > > list = new ArrayList< TransformedSource< ? > >();
+		for ( final SourceState< ? > sourceState : state.getSources() )
+		{
+			final Source< ? > source = sourceState.getSpimSource();
+			if ( TransformedSource.class.isInstance( source ) )
+				list.add( ( TransformedSource< ? > ) source );
+		}
+		return list;
 	}
 
 	public void addHandler( final Object handler )
@@ -785,6 +804,17 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		{
 			return y;
 		}
+	}
+
+	public synchronized Element stateToXml()
+	{
+		return new XmlIoViewerState().toXml( state );
+	}
+
+	public synchronized void stateFromXml( final Element parent )
+	{
+		final XmlIoViewerState io = new XmlIoViewerState();
+		io.restoreFromXml( parent.getChild( io.getTagName() ), state );
 	}
 
 	@Override
