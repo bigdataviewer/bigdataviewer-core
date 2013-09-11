@@ -42,6 +42,7 @@ import net.imglib2.Positionable;
 import net.imglib2.RealPoint;
 import net.imglib2.RealPositionable;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.numeric.NumericType;
 import net.imglib2.ui.InteractiveDisplayCanvasComponent;
 import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.PainterThread;
@@ -153,10 +154,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		final List< SourceAndConverter< ? >> transformedSources = new ArrayList< SourceAndConverter< ? > >( sources.size() );
 		for ( final SourceAndConverter< ? > orig : sources )
 		{
-			@SuppressWarnings( { "unchecked", "rawtypes" } )
-			final TransformedSource< ? > nsource = new TransformedSource( orig.getSpimSource() );
-			@SuppressWarnings( { "unchecked", "rawtypes" } )
-			final SourceAndConverter< ? > sourceAndConverter = new SourceAndConverter( nsource, orig.getConverter() );
+			final SourceAndConverter< ? > sourceAndConverter = wrapWithTransformedSource( orig );
 			transformedSources.add( sourceAndConverter );
 		}
 
@@ -239,6 +237,11 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		painterThread.start();
 
 		animatedOverlay = new TextOverlayAnimator( "Press <F1> for help.", 3000, TextPosition.CENTER );
+	}
+
+	private static < T extends NumericType< T > > SourceAndConverter< T > wrapWithTransformedSource( final SourceAndConverter< T > sc )
+	{
+		return new SourceAndConverter< T >( new TransformedSource< T >( sc.getSpimSource() ), sc.getConverter() );
 	}
 
 	public void addHandler( final Object handler )
