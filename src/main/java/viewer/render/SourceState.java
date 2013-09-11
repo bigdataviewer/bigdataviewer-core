@@ -79,21 +79,6 @@ public class SourceState< T extends NumericType< T > > extends SourceAndConverte
 	}
 
 	/**
-	 * Is the source visible? The source is visible if it is active in
-	 * <em>fused-mode</em> or it is current in <em>single-source</em> mode.
-	 *
-	 * @param singleSourceMode
-	 *            Is the display mode <em>single-source</em> (true) or
-	 *            <em>fused</em> (false).
-	 *
-	 * @return true, if the source is visible.
-	 */
-	public boolean isVisible( final boolean singleSourceMode )
-	{
-		return singleSourceMode ? isCurrent() : isActive();
-	}
-
-	/**
 	 * Create a {@link SourceState} from a {@link SourceAndConverter}.
 	 */
 	public static < T extends NumericType< T > > SourceState< T > create( final SourceAndConverter< T > soc )
