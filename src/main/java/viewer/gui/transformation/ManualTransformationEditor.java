@@ -20,8 +20,6 @@ import viewer.render.TransformedSource;
 import viewer.render.ViewerState;
 
 
-// TODO: re-use TextOverlay of SpimViewer (don't implement OverlayRenderer)
-// TODO: construct with TransformedSource<?> List to avoid casting every time?
 // TODO: what happens when the current source, display mode, etc is changed while the editor is active? deactivate?
 public class ManualTransformationEditor implements TransformListener< AffineTransform3D >
 {
@@ -38,6 +36,8 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 
 	private final ArrayList< TransformedSource< ? > > sourcesToModify;
 
+	private final ArrayList< TransformedSource< ? > > sourcesToFix;
+
 	private final KeyStroke abortKey;
 
 	private final Action abortAction;
@@ -52,6 +52,7 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 		frozenTransform = new AffineTransform3D();
 		liveTransform = new AffineTransform3D();
 		sourcesToModify = new ArrayList< TransformedSource< ? > >();
+		sourcesToFix = new ArrayList< TransformedSource< ? > >();
 		abortKey = KeyStroke.getKeyStroke( KeyEvent.VK_ESCAPE, 0 );
 		abortAction = new AbstractAction( "abort manual transformation" )
 		{
@@ -84,6 +85,7 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 			for ( final TransformedSource< ? > source : sourcesToModify )
 				source.setIncrementalTransform( tmp );
 			viewer.setCurrentViewerTransform( frozenTransform );
+			viewer.showMessage( "aborted manual transform" );
 			active = false;
 		}
 	}
@@ -98,7 +100,13 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 				source.setIncrementalTransform( tmp );
 				source.setFixedTransform( tmp );
 			}
+			for ( final TransformedSource< ? > source : sourcesToFix )
+			{
+				source.setIncrementalTransform( tmp );
+				source.setFixedTransform( tmp );
+			}
 			viewer.setCurrentViewerTransform( frozenTransform );
+			viewer.showMessage( "reset manual transform" );
 		}
 	}
 
@@ -109,7 +117,7 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 			final ViewerState state = viewer.getState();
 			if ( state.getDisplayMode() != DisplayMode.FUSED )
 			{
-// TODO:		animatedOverlay = new TextOverlayAnimator( "Can only do manual transformation when in FUSED mode.", 1000 );
+				viewer.showMessage( "Can only do manual transformation when in FUSED mode." );
 				return;
 			}
 			else
@@ -117,16 +125,24 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 				state.getViewerTransform( frozenTransform );
 				final List< Integer > indices = Arrays.asList( new Integer( state.getCurrentSource() ) );
 				sourcesToModify.clear();
-				for ( final int i : indices )
+				sourcesToFix.clear();
+				final int numSources = state.numSources();
+				for ( int i = 0; i < numSources; ++i )
 				{
 					final Source< ? > source = state.getSources().get( i ).getSpimSource();
 					if ( TransformedSource.class.isInstance( source ) )
-						sourcesToModify.add( ( TransformedSource< ? > ) source );
+					{
+						if ( indices.contains( i ) )
+							sourcesToModify.add( ( TransformedSource< ? > ) source );
+						else
+							sourcesToFix.add( ( TransformedSource< ? > ) source );
+					}
 				}
 				active = true;
 				viewer.addTransformListener( this );
 				viewer.addKeyAction( abortKey, abortAction ); // TODO: we must be able to remove this
 				viewer.addKeyAction( resetKey, resetAction ); // TODO: we must be able to remove this
+				viewer.showMessage( "starting manual transform" );
 			}
 		}
 		else
@@ -136,13 +152,17 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 			final AffineTransform3D tmp = new AffineTransform3D();
 			for ( final TransformedSource< ? > source : sourcesToModify )
 			{
-				source.getIncrementalTransform( frozenTransform );
-				source.getFixedTransform( tmp );
-				frozenTransform.concatenate( tmp );
 				tmp.identity();
 				source.setIncrementalTransform( tmp );
-				source.setFixedTransform( frozenTransform );
+				source.getFixedTransform( tmp );
+				tmp.preConcatenate( liveTransform );
+				source.setFixedTransform( tmp );
 			}
+			tmp.identity();
+			for ( final TransformedSource< ? > source : sourcesToFix )
+				source.setIncrementalTransform( tmp );
+			viewer.setCurrentViewerTransform( frozenTransform );
+			viewer.showMessage( "fixed manual transform" );
 		}
 	}
 
@@ -154,7 +174,7 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 		liveTransform.set( transform );
 		liveTransform.preConcatenate( frozenTransform.inverse() );
 
-		for ( final TransformedSource< ? > source : sourcesToModify )
+		for ( final TransformedSource< ? > source : sourcesToFix )
 			source.setIncrementalTransform( liveTransform.inverse() );
 	}
 
