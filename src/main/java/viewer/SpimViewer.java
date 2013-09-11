@@ -101,8 +101,6 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 
 	final protected ArrayList< Pair< KeyStroke, Action > > keysActions;
 
-	protected AbstractTransformAnimator currentAnimator = null;
-
 	final protected VisibilityAndGrouping visibilityAndGrouping;
 
 	private final ManualTransformationEditor manualTransformationEditor;
@@ -112,7 +110,13 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	 * {@link #viewerTransform}. This is done <em>before</em> calling
 	 * {@link #requestRepaint()} so listeners have the chance to interfere.
 	 */
-	final protected CopyOnWriteArrayList< TransformListener< AffineTransform3D > > transformListeners;
+	protected final CopyOnWriteArrayList< TransformListener< AffineTransform3D > > transformListeners;
+
+	protected AbstractTransformAnimator currentAnimator = null;
+
+	protected TextOverlayAnimator animatedOverlay;
+
+	protected final MessageOverlayAnimator msgOverlay;
 
 	/**
 	 *
@@ -206,6 +210,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		visibilityAndGrouping.addUpdateListener( this );
 
 		transformListeners = new CopyOnWriteArrayList< TransformListener< AffineTransform3D > >();
+		msgOverlay = new MessageOverlayAnimator( 800 );
 
 //		final GraphicsConfiguration gc = GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.ARGB_COLOR_MODEL );
 		final GraphicsConfiguration gc = GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.RGB_COLOR_MODEL );
@@ -277,8 +282,6 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		imageRenderer.requestRepaint();
 	}
 
-	TextOverlayAnimator animatedOverlay = null;
-
 	@Override
 	public void drawOverlays( final Graphics g )
 	{
@@ -304,6 +307,14 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 			else
 				display.repaint();
 		}
+
+		if ( !msgOverlay.isComplete() )
+		{
+			msgOverlay.paint( ( Graphics2D ) g, System.currentTimeMillis() );
+			if ( !msgOverlay.isComplete() )
+				display.repaint();
+		}
+
 		if ( multiBoxOverlayRenderer.isHighlightInProgress() )
 			display.repaint();
 	}
@@ -328,7 +339,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 			display.repaint();
 			break;
 		case DISPLAY_MODE_CHANGED:
-			animatedOverlay = new TextOverlayAnimator( visibilityAndGrouping.getDisplayMode().getName(), indicatorTime );
+			showMessage( visibilityAndGrouping.getDisplayMode().getName() );
 			display.repaint();
 			break;
 		case GROUP_NAME_CHANGED:
@@ -406,8 +417,6 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		}
 	}
 
-	final int indicatorTime = 800;
-
 	protected synchronized void toggleManualTransformation()
 	{
 		manualTransformationEditor.toggle();
@@ -420,12 +429,12 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		if ( interpolation == Interpolation.NEARESTNEIGHBOR )
 		{
 			state.setInterpolation( Interpolation.NLINEAR );
-			animatedOverlay = new TextOverlayAnimator( "tri-linear interpolation", indicatorTime );
+			showMessage( "tri-linear interpolation" );
 		}
 		else
 		{
 			state.setInterpolation( Interpolation.NEARESTNEIGHBOR );
-			animatedOverlay = new TextOverlayAnimator( "nearest-neighbor interpolation", indicatorTime );
+			showMessage( "nearest-neighbor interpolation" );
 		}
 		requestRepaint();
 	}
@@ -489,6 +498,18 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	public InteractiveDisplayCanvasComponent< AffineTransform3D > getDisplay()
 	{
 		return display;
+	}
+
+	/**
+	 * Display the specified message in a text overlay for a short time.
+	 *
+	 * @param msg
+	 *            String to display. Should be just one line of text.
+	 */
+	public void showMessage( final String msg )
+	{
+		msgOverlay.add( msg );
+		display.repaint();
 	}
 
 	/**
