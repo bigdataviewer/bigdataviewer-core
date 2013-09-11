@@ -1,6 +1,5 @@
 package viewer.render;
 
-import java.util.Collections;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -12,8 +11,6 @@ import java.util.TreeSet;
 public class SourceGroup
 {
 	protected final TreeSet< Integer > sourceIds;
-
-	protected final SortedSet< Integer > unmodifiableSourceIds;
 
 	protected String name;
 
@@ -31,7 +28,6 @@ public class SourceGroup
 	public SourceGroup( final String name )
 	{
 		sourceIds = new TreeSet< Integer >();
-		unmodifiableSourceIds = Collections.unmodifiableSortedSet( sourceIds );
 		this.name = name;
 		isActive = true;
 		isCurrent = false;
@@ -55,7 +51,7 @@ public class SourceGroup
 
 	public synchronized SortedSet< Integer > getSourceIds()
 	{
-		return unmodifiableSourceIds;
+		return sourceIds;
 	}
 
 	public String getName()
