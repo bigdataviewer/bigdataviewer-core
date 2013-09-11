@@ -2,11 +2,15 @@ package viewer;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 
 import javax.swing.AbstractAction;
+import javax.swing.JFileChooser;
 import javax.swing.KeyStroke;
+import javax.swing.filechooser.FileFilter;
 
 import mpicbg.spim.data.SequenceDescription;
 import net.imglib2.Interval;
@@ -21,13 +25,19 @@ import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.util.LinAlgHelpers;
 import net.imglib2.view.Views;
 
+import org.jdom2.Document;
+import org.jdom2.Element;
 import org.jdom2.JDOMException;
+import org.jdom2.input.SAXBuilder;
+import org.jdom2.output.Format;
+import org.jdom2.output.XMLOutputter;
 
 import viewer.crop.CropDialog;
 import viewer.gui.brightness.BrightnessDialog;
 import viewer.gui.brightness.ConverterSetup;
 import viewer.gui.brightness.MinMaxGroup;
 import viewer.gui.brightness.SetupAssignments;
+import viewer.gui.transformation.ManualTransformation;
 import viewer.gui.visibility.ActiveSourcesDialog;
 import viewer.render.Source;
 import viewer.render.SourceAndConverter;
@@ -47,15 +57,25 @@ public class ViewRegisteredAngles
 
 	final KeyStroke cropKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_F5, 0 );
 
+	final KeyStroke saveKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_F11, 0 );
+
+	final KeyStroke loadKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_F12, 0 );
+
 	final SpimViewer viewer;
 
 	final SetupAssignments setupAssignments;
+
+	final ManualTransformation manualTransformation;
 
 	final BrightnessDialog brightnessDialog;
 
 	final CropDialog cropDialog;
 
 	final ActiveSourcesDialog activeSourcesDialog;
+
+	final JFileChooser fileChooser;
+
+	File proposedSettingsFile;
 
 	public void toggleBrightnessDialog()
 	{
@@ -84,6 +104,33 @@ public class ViewRegisteredAngles
 
 		final SequenceViewsLoader loader = new SequenceViewsLoader( xmlFilename );
 		final SequenceDescription seq = loader.getSequenceDescription();
+
+		fileChooser = new JFileChooser();
+		fileChooser.setFileFilter( new FileFilter()
+		{
+			@Override
+			public String getDescription()
+			{
+				return "xml files";
+			}
+
+			@Override
+			public boolean accept( final File f )
+			{
+				if ( f.isDirectory() )
+					return true;
+				if ( f.isFile() )
+				{
+			        final String s = f.getName();
+			        final int i = s.lastIndexOf('.');
+			        if (i > 0 &&  i < s.length() - 1) {
+			            final String ext = s.substring(i+1).toLowerCase();
+			            return ext.equals( "xml" );
+			        }
+				}
+				return false;
+			}
+		} );
 
 		final ArrayList< ConverterSetup > converterSetups = new ArrayList< ConverterSetup >();
 		final ArrayList< SourceAndConverter< ? > > sources = new ArrayList< SourceAndConverter< ? > >();
@@ -137,6 +184,7 @@ public class ViewRegisteredAngles
 		}
 
 		viewer = new SpimViewer( width, height, sources, seq.numTimepoints() );
+		manualTransformation = new ManualTransformation( viewer );
 
 		viewer.addKeyAction( brightnessKeystroke, new AbstractAction( "brightness settings" )
 		{
@@ -191,6 +239,42 @@ public class ViewRegisteredAngles
 			private static final long serialVersionUID = 1L;
 		} );
 
+		viewer.addKeyAction( saveKeystroke, new AbstractAction( "save settings" )
+		{
+			@Override
+			public void actionPerformed( final ActionEvent arg0 )
+			{
+				try
+				{
+					saveSettings();
+				}
+				catch ( final Exception e )
+				{
+					e.printStackTrace();
+				}
+			}
+
+			private static final long serialVersionUID = 1L;
+		} );
+
+		viewer.addKeyAction( loadKeystroke, new AbstractAction( "load settings" )
+		{
+			@Override
+			public void actionPerformed( final ActionEvent arg0 )
+			{
+				try
+				{
+					loadSettings();
+				}
+				catch ( final Exception e )
+				{
+					e.printStackTrace();
+				}
+			}
+
+			private static final long serialVersionUID = 1L;
+		} );
+
 		setupAssignments = new SetupAssignments( converterSetups, 0, 65535 );
 		final MinMaxGroup group = setupAssignments.getMinMaxGroups().get( 0 );
 		for ( final ConverterSetup setup : setupAssignments.getConverterSetups() )
@@ -205,8 +289,34 @@ public class ViewRegisteredAngles
 //		viewer.installKeyActions( activeSourcesDialog );
 
 		initTransform( width, height );
-		initBrightness( 0.001, 0.999 );
 
+		if( ! tryLoadSettings( xmlFilename ) )
+			initBrightness( 0.001, 0.999 );
+
+		// check for settings file
+	}
+
+	boolean tryLoadSettings( final String xmlFilename )
+	{
+		proposedSettingsFile = null;
+		if ( xmlFilename.endsWith( ".xml" ) )
+		{
+			final String settings = xmlFilename.substring( 0, xmlFilename.length() - ".xml".length() ) + ".settings" + ".xml";
+			proposedSettingsFile = new File( settings );
+			if ( proposedSettingsFile.isFile() )
+			{
+				try
+				{
+					loadSettings( settings );
+					return true;
+				}
+				catch ( final Exception e )
+				{
+					e.printStackTrace();
+				}
+			}
+		}
+		return false;
 	}
 
 	void initTransform( final int viewerWidth, final int viewerHeight )
@@ -297,6 +407,64 @@ public class ViewRegisteredAngles
 		final MinMaxGroup minmax = setupAssignments.getMinMaxGroups().get( 0 );
 		minmax.getMinBoundedValue().setCurrentValue( min );
 		minmax.getMaxBoundedValue().setCurrentValue( max );
+	}
+
+	void saveSettings()
+	{
+		fileChooser.setSelectedFile( proposedSettingsFile );
+		final int returnVal = fileChooser.showSaveDialog( null );
+		if ( returnVal == JFileChooser.APPROVE_OPTION )
+		{
+			proposedSettingsFile = fileChooser.getSelectedFile();
+			try
+			{
+				saveSettings( proposedSettingsFile.getCanonicalPath() );
+			}
+			catch ( final IOException e )
+			{
+				e.printStackTrace();
+			}
+		}
+	}
+
+	void saveSettings( final String xmlFilename ) throws IOException
+	{
+		final Element root = new Element( "Settings" );
+		root.addContent( viewer.stateToXml() );
+		root.addContent( setupAssignments.toXml() );
+		root.addContent( manualTransformation.toXml() );
+		final Document doc = new Document( root );
+		final XMLOutputter xout = new XMLOutputter( Format.getPrettyFormat() );
+		xout.output( doc, new FileWriter( xmlFilename ) );
+	}
+
+	void loadSettings()
+	{
+		fileChooser.setSelectedFile( proposedSettingsFile );
+		final int returnVal = fileChooser.showOpenDialog( null );
+		if ( returnVal == JFileChooser.APPROVE_OPTION )
+		{
+			proposedSettingsFile = fileChooser.getSelectedFile();
+			try
+			{
+				loadSettings( proposedSettingsFile.getCanonicalPath() );
+			}
+			catch ( final Exception e )
+			{
+				e.printStackTrace();
+			}
+		}
+	}
+
+	void loadSettings( final String xmlFilename ) throws IOException, JDOMException
+	{
+		final SAXBuilder sax = new SAXBuilder();
+		final Document doc = sax.build( xmlFilename );
+		final Element root = doc.getRootElement();
+		viewer.stateFromXml( root );
+		setupAssignments.restoreFromXml( root );
+		manualTransformation.restoreFromXml( root );
+		viewer.requestRepaint();
 	}
 
 	public static void view( final String filename ) throws InstantiationException, IllegalAccessException, ClassNotFoundException, JDOMException, IOException
