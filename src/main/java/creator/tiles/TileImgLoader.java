@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -29,47 +30,54 @@ import org.jdom2.JDOMException;
 import org.jdom2.Namespace;
 import org.jdom2.input.SAXBuilder;
 
+import creator.tiles.CellVoyagerDataExporter.ChannelInfo;
+
 public class TileImgLoader implements ImgLoader
 {
 
-	private static final String IMAGE_INDEX_FILENAME = "ImageIndex.xml";
-
 	private static final Namespace NAMESPACE = Namespace.getNamespace( "bts", "http://www.yokogawa.co.jp/BTS/BTSSchema/1.0" );
 
-	private final File rootFolder;
+	private final File imageIndexFile;
 
 	private Document document;
 
-	private final Map< Integer, long[] > offsets;
+	private final List< ChannelInfo > channelInfos;
 
-	public TileImgLoader( final File rootFolder, final Map< Integer, long[] > offsets )
+	public TileImgLoader( final File imageIndexFile, final List< ChannelInfo > channelInfos )
 	{
-		this.rootFolder = rootFolder;
-		this.offsets = offsets;
+
+		if ( !imageIndexFile.exists() ) { throw new IllegalArgumentException( "The target file " + imageIndexFile + " does not exist." ); }
+		if ( !imageIndexFile.isFile() ) { throw new IllegalArgumentException( "The target file " + imageIndexFile + " is not a file." ); }
+
+		this.imageIndexFile = imageIndexFile;
+		this.channelInfos = channelInfos;
 		final SAXBuilder builder = new SAXBuilder();
 		try
 		{
-			document = builder.build( new File( rootFolder, IMAGE_INDEX_FILENAME ) );
+			document = builder.build( imageIndexFile );
 		}
 		catch ( final JDOMException e )
 		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new IllegalArgumentException( "The target file " + imageIndexFile + " is malformed:\n" + e.getMessage() );
 		}
 		catch ( final IOException e )
 		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			throw new IllegalArgumentException( "Trouble reading " + imageIndexFile + ":\n" + e.getMessage() );
 		}
+
+		if ( !document.getRootElement().getName().equals( "ImageIndex" ) ) { throw new IllegalArgumentException( "The target file " + imageIndexFile + " is not a CellVoyager Image Index file." ); }
+
 	}
 
 	@Override
 	public RandomAccessibleInterval< UnsignedShortType > getUnsignedShortImage( final View view )
 	{
-		final int viewTimePoint = view.getTimepointIndex() + 1;
-		final int viewChannel = view.getSetup().getChannel() + 1;
 
-		System.out.println( "Generating view for T = " + viewTimePoint + ", C = " + viewChannel );
+		final int setupIndex = view.getSetupIndex();
+		final int viewTimePoint = view.getTimepointIndex() + 1; // FIXME
+		final ChannelInfo channelInfo = channelInfos.get( setupIndex );
+
+		final int viewChannel = channelInfo.channelNumber;
 
 		/*
 		 * Collect file names
@@ -132,21 +140,23 @@ public class TileImgLoader implements ImgLoader
 		{
 			final Map< Integer, String > tilesFilenames = iterator.next();
 
-			for ( final Integer fieldIndex : tilesFilenames.keySet() )
+			for ( final Integer fieldNumber : tilesFilenames.keySet() )
 			{
+				final int fieldIndex = fieldNumber - 1;
 
 				// Filename for this Z, this field
-				String filename = tilesFilenames.get( fieldIndex );
+				String filename = tilesFilenames.get( fieldNumber );
 
 				// Comply to local path separator
 				filename = filename.replace( '\\', File.separatorChar );
 
 				// Offset for this field index
-				final long[] offset = offsets.get( fieldIndex );
+				final long[] offset = channelInfo.offsets.get( fieldIndex );
 
 				// Open and copy this slice on the stack image
 				randomAccess.setPosition( zindex, 2 );
-				final ImagePlus imp = new ImagePlus( new File( rootFolder, filename ).getAbsolutePath() );
+				final File filePath = new File( imageIndexFile.getParentFile(), filename );
+				final ImagePlus imp = new ImagePlus( filePath.getAbsolutePath() );
 				final Img< UnsignedShortType > sliceImg = ImageJFunctions.wrapShort( imp );
 
 				final Cursor< UnsignedShortType > cursor = sliceImg.cursor();
@@ -173,21 +183,19 @@ public class TileImgLoader implements ImgLoader
 	@Override
 	public Element toXml( final File basePath )
 	{
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException( "not implemented" );
 	}
 
 	@Override
 	public RandomAccessibleInterval< FloatType > getImage( final View view )
 	{
-		// TODO Auto-generated method stub
-		return null;
+		throw new UnsupportedOperationException( "not implemented" );
 	}
 
 	@Override
 	public void init( final Element elem, final File basePath )
 	{
-		// TODO Auto-generated method stub
+		throw new UnsupportedOperationException( "not implemented" );
 	}
 
 }
