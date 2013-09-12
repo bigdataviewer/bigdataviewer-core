@@ -137,35 +137,6 @@ public class SetupAssignments
 		return Collections.unmodifiableList( setups );
 	}
 
-	// private final Element firstSavedState = null;
-	//
-	// public void testXml()
-	// {
-	// try
-	// {
-	// final Document doc = XmlHelpers.newXmlDocument();
-	// final Element elem = toXml( doc );
-	// doc.appendChild( elem );
-	// final Transformer transformer =
-	// TransformerFactory.newInstance().newTransformer();
-	// transformer.setOutputProperty( OutputKeys.INDENT, "yes" );
-	// transformer.setOutputProperty( OutputKeys.ENCODING, "UTF-8" );
-	// transformer.setOutputProperty(
-	// "{http://xml.apache.org/xslt}indent-amount", "4" );
-	//
-	// final StringWriter w = new StringWriter();
-	// transformer.transform( new DOMSource( doc ), new StreamResult( w ) );
-	// System.out.println( w );
-	//
-	// if ( firstSavedState != null )
-	// restoreFromXml( firstSavedState );
-	// else
-	// firstSavedState = elem;
-	// }
-	// catch ( final Exception e )
-	// {}
-	// }
-
 	/**
 	 * Serialize the state of this {@link SetupAssignments} to XML.
 	 * @param doc
@@ -212,8 +183,9 @@ public class SetupAssignments
 	 * this only restores the assignments of setups to groups and group
 	 * settings. The list of {@link ConverterSetup}s is not restored.
 	 */
-	public void restoreFromXml( final Element elemSetupAssignments )
+	public void restoreFromXml( final Element parent )
 	{
+		final Element elemSetupAssignments = parent.getChild( "SetupAssignments" );
 		final Element elemConverterSetups = elemSetupAssignments.getChild( "ConverterSetups" );
 		final List< Element > converterSetupNodes = elemConverterSetups.getChildren( "ConverterSetup" );
 		if ( converterSetupNodes.size() != setups.size() )

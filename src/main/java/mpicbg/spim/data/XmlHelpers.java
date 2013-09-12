@@ -71,6 +71,22 @@ public class XmlHelpers
 		return text == null ? defaultValue : Double.parseDouble( text );
 	}
 
+	public static Element booleanElement( final String name, final boolean value )
+	{
+		return new Element( name ).addContent( Boolean.toString( value ) );
+	}
+
+	public static boolean getBoolean( final Element parent, final String name )
+	{
+		return Boolean.parseBoolean( parent.getChildText( name ) );
+	}
+
+	public static boolean getBoolean( final Element parent, final String name, final boolean defaultValue )
+	{
+		final String text = parent.getChildText( name );
+		return text == null ? defaultValue : Boolean.parseBoolean( text );
+	}
+
 	public static String getText( final Element parent, final String name, final String defaultValue )
 	{
 		final String text = parent.getChildText( name );

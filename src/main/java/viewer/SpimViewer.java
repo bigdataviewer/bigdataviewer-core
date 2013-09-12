@@ -42,6 +42,7 @@ import net.imglib2.Positionable;
 import net.imglib2.RealPoint;
 import net.imglib2.RealPositionable;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.numeric.NumericType;
 import net.imglib2.ui.InteractiveDisplayCanvasComponent;
 import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.PainterThread;
@@ -52,11 +53,16 @@ import net.imglib2.ui.overlay.BufferedImageOverlayRenderer;
 import net.imglib2.ui.util.GuiUtil;
 import net.imglib2.util.LinAlgHelpers;
 import net.imglib2.util.ValuePair;
+
+import org.jdom2.Element;
+
 import viewer.TextOverlayAnimator.TextPosition;
+import viewer.gui.XmlIoViewerState;
 import viewer.gui.transformation.ManualTransformationEditor;
 import viewer.render.DisplayMode;
 import viewer.render.Interpolation;
 import viewer.render.MultiResolutionRenderer;
+import viewer.render.Source;
 import viewer.render.SourceAndConverter;
 import viewer.render.SourceGroup;
 import viewer.render.SourceState;
@@ -101,8 +107,6 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 
 	final protected ArrayList< Pair< KeyStroke, Action > > keysActions;
 
-	protected AbstractTransformAnimator currentAnimator = null;
-
 	final protected VisibilityAndGrouping visibilityAndGrouping;
 
 	private final ManualTransformationEditor manualTransformationEditor;
@@ -112,7 +116,13 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	 * {@link #viewerTransform}. This is done <em>before</em> calling
 	 * {@link #requestRepaint()} so listeners have the chance to interfere.
 	 */
-	final protected CopyOnWriteArrayList< TransformListener< AffineTransform3D > > transformListeners;
+	protected final CopyOnWriteArrayList< TransformListener< AffineTransform3D > > transformListeners;
+
+	protected AbstractTransformAnimator currentAnimator = null;
+
+	protected TextOverlayAnimator animatedOverlay;
+
+	protected final MessageOverlayAnimator msgOverlay;
 
 	/**
 	 *
@@ -149,10 +159,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		final List< SourceAndConverter< ? >> transformedSources = new ArrayList< SourceAndConverter< ? > >( sources.size() );
 		for ( final SourceAndConverter< ? > orig : sources )
 		{
-			@SuppressWarnings( { "unchecked", "rawtypes" } )
-			final TransformedSource< ? > nsource = new TransformedSource( orig.getSpimSource() );
-			@SuppressWarnings( { "unchecked", "rawtypes" } )
-			final SourceAndConverter< ? > sourceAndConverter = new SourceAndConverter( nsource, orig.getConverter() );
+			final SourceAndConverter< ? > sourceAndConverter = wrapWithTransformedSource( orig );
 			transformedSources.add( sourceAndConverter );
 		}
 
@@ -206,6 +213,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		visibilityAndGrouping.addUpdateListener( this );
 
 		transformListeners = new CopyOnWriteArrayList< TransformListener< AffineTransform3D > >();
+		msgOverlay = new MessageOverlayAnimator( 800 );
 
 //		final GraphicsConfiguration gc = GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.ARGB_COLOR_MODEL );
 		final GraphicsConfiguration gc = GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.RGB_COLOR_MODEL );
@@ -234,6 +242,25 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		painterThread.start();
 
 		animatedOverlay = new TextOverlayAnimator( "Press <F1> for help.", 3000, TextPosition.CENTER );
+	}
+
+	// TODO: should move to separate ManualTransform tool
+	protected static < T extends NumericType< T > > SourceAndConverter< T > wrapWithTransformedSource( final SourceAndConverter< T > sc )
+	{
+		return new SourceAndConverter< T >( new TransformedSource< T >( sc.getSpimSource() ), sc.getConverter() );
+	}
+
+	// TODO: should move to separate ManualTransform tool
+	public ArrayList< TransformedSource< ? > > getTransformedSources()
+	{
+		final ArrayList< TransformedSource< ? > > list = new ArrayList< TransformedSource< ? > >();
+		for ( final SourceState< ? > sourceState : state.getSources() )
+		{
+			final Source< ? > source = sourceState.getSpimSource();
+			if ( TransformedSource.class.isInstance( source ) )
+				list.add( ( TransformedSource< ? > ) source );
+		}
+		return list;
 	}
 
 	public void addHandler( final Object handler )
@@ -277,8 +304,6 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		imageRenderer.requestRepaint();
 	}
 
-	TextOverlayAnimator animatedOverlay = null;
-
 	@Override
 	public void drawOverlays( final Graphics g )
 	{
@@ -304,6 +329,14 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 			else
 				display.repaint();
 		}
+
+		if ( !msgOverlay.isComplete() )
+		{
+			msgOverlay.paint( ( Graphics2D ) g, System.currentTimeMillis() );
+			if ( !msgOverlay.isComplete() )
+				display.repaint();
+		}
+
 		if ( multiBoxOverlayRenderer.isHighlightInProgress() )
 			display.repaint();
 	}
@@ -328,7 +361,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 			display.repaint();
 			break;
 		case DISPLAY_MODE_CHANGED:
-			animatedOverlay = new TextOverlayAnimator( visibilityAndGrouping.getDisplayMode().getName(), indicatorTime );
+			showMessage( visibilityAndGrouping.getDisplayMode().getName() );
 			display.repaint();
 			break;
 		case GROUP_NAME_CHANGED:
@@ -406,8 +439,6 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		}
 	}
 
-	final int indicatorTime = 800;
-
 	protected synchronized void toggleManualTransformation()
 	{
 		manualTransformationEditor.toggle();
@@ -420,12 +451,12 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		if ( interpolation == Interpolation.NEARESTNEIGHBOR )
 		{
 			state.setInterpolation( Interpolation.NLINEAR );
-			animatedOverlay = new TextOverlayAnimator( "tri-linear interpolation", indicatorTime );
+			showMessage( "tri-linear interpolation" );
 		}
 		else
 		{
 			state.setInterpolation( Interpolation.NEARESTNEIGHBOR );
-			animatedOverlay = new TextOverlayAnimator( "nearest-neighbor interpolation", indicatorTime );
+			showMessage( "nearest-neighbor interpolation" );
 		}
 		requestRepaint();
 	}
@@ -489,6 +520,18 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	public InteractiveDisplayCanvasComponent< AffineTransform3D > getDisplay()
 	{
 		return display;
+	}
+
+	/**
+	 * Display the specified message in a text overlay for a short time.
+	 *
+	 * @param msg
+	 *            String to display. Should be just one line of text.
+	 */
+	public void showMessage( final String msg )
+	{
+		msgOverlay.add( msg );
+		display.repaint();
 	}
 
 	/**
@@ -761,6 +804,17 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		{
 			return y;
 		}
+	}
+
+	public synchronized Element stateToXml()
+	{
+		return new XmlIoViewerState().toXml( state );
+	}
+
+	public synchronized void stateFromXml( final Element parent )
+	{
+		final XmlIoViewerState io = new XmlIoViewerState();
+		io.restoreFromXml( parent.getChild( io.getTagName() ), state );
 	}
 
 	@Override

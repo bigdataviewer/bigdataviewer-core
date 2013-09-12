@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import viewer.gui.XmlIoViewerState;
 import viewer.render.DisplayMode;
 import viewer.render.SourceGroup;
 import viewer.render.SourceState;
@@ -63,10 +64,13 @@ public class VisibilityAndGrouping
 
 	protected final ViewerState state;
 
+	protected final XmlIoViewerState io;
+
 	public VisibilityAndGrouping( final ViewerState viewerState )
 	{
 		updateListeners = new CopyOnWriteArrayList< UpdateListener >();
 		state = viewerState;
+		io = new XmlIoViewerState();
 	}
 
 	public int numSources()
