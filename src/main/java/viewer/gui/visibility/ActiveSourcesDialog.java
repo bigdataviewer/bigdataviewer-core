@@ -42,15 +42,17 @@ import viewer.render.SourceGroup;
 
 public class ActiveSourcesDialog extends JDialog
 {
-	private final VisibilityAndGrouping visibilityAndGrouping;
+	private static final long serialVersionUID = 1L;
+
+	private final VisibilityPanel visibilityPanel;
+
+	private final GroupingPanel groupingPanel;
 
 	public ActiveSourcesDialog( final Frame owner, final VisibilityAndGrouping visibilityAndGrouping )
 	{
 		super( owner, "visibility and grouping", false );
 
-		this.visibilityAndGrouping = visibilityAndGrouping;
-
-		final VisibilityPanel visibilityPanel = new VisibilityPanel( visibilityAndGrouping );
+		visibilityPanel = new VisibilityPanel( visibilityAndGrouping );
 		visibilityAndGrouping.addUpdateListener( visibilityPanel );
 		visibilityPanel.setBorder( BorderFactory.createCompoundBorder(
 				BorderFactory.createEmptyBorder( 4, 2, 4, 2 ),
@@ -61,7 +63,7 @@ public class ActiveSourcesDialog extends JDialog
 						BorderFactory.createEmptyBorder( 2, 2, 2, 2 ) ) ) );
 		getContentPane().add( visibilityPanel, BorderLayout.NORTH );
 
-		final GroupingPanel groupingPanel = new GroupingPanel( visibilityAndGrouping );
+		groupingPanel = new GroupingPanel( visibilityAndGrouping );
 		visibilityAndGrouping.addUpdateListener( groupingPanel );
 		groupingPanel.setBorder( BorderFactory.createCompoundBorder(
 				BorderFactory.createEmptyBorder( 4, 2, 4, 2 ),
@@ -77,6 +79,8 @@ public class ActiveSourcesDialog extends JDialog
 		final Object hideKey = new Object();
 		final Action hideAction = new AbstractAction()
 		{
+			private static final long serialVersionUID = 1L;
+
 			@Override
 			public void actionPerformed( final ActionEvent e )
 			{
@@ -90,8 +94,16 @@ public class ActiveSourcesDialog extends JDialog
 		setDefaultCloseOperation( JDialog.HIDE_ON_CLOSE );
 	}
 
+	public void update()
+	{
+		visibilityPanel.update();
+		groupingPanel.update();
+	}
+
 	public static class VisibilityPanel extends JPanel implements VisibilityAndGrouping.UpdateListener
 	{
+		private static final long serialVersionUID = 1L;
+
 		private final VisibilityAndGrouping visibility;
 
 		private final ArrayList< JRadioButton > currentButtons;
@@ -213,6 +225,8 @@ public class ActiveSourcesDialog extends JDialog
 
 	public static class GroupingPanel extends JPanel implements VisibilityAndGrouping.UpdateListener
 	{
+		private static final long serialVersionUID = 1L;
+
 		private final VisibilityAndGrouping visibility;
 
 		private final ArrayList< JTextField > nameFields;
@@ -344,6 +358,13 @@ public class ActiveSourcesDialog extends JDialog
 			c.gridwidth = 2 + numSources;
 			c.anchor = GridBagConstraints.CENTER;
 			add( panel, c );
+		}
+
+		protected void update()
+		{
+			groupingBox.setSelected( visibility.isGroupingEnabled() );
+			updateGroupNames();
+			updateGroupAssignments();
 		}
 
 		protected void updateGroupNames()

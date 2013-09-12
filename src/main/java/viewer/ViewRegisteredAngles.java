@@ -464,6 +464,7 @@ public class ViewRegisteredAngles
 		viewer.stateFromXml( root );
 		setupAssignments.restoreFromXml( root );
 		manualTransformation.restoreFromXml( root );
+		activeSourcesDialog.update();
 		viewer.requestRepaint();
 	}
 
