@@ -101,6 +101,8 @@ public class LabellingSource implements Source<ARGBType> {
 
 	@Override
 	public AffineTransform3D getSourceTransform(final int t, final int level) {
+		if (t != currentTimepoint)
+			loadTimepoint(t);
 		return sourceTransform;
 	}
 

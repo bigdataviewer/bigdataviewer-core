@@ -50,7 +50,6 @@ import viewer.render.Source;
 import viewer.render.SourceAndConverter;
 import viewer.render.SourceState;
 import viewer.render.ViewerState;
-import viewer.render.labelling.LabellingSource;
 import viewer.util.Affine3DHelpers;
 
 public class Demo {
@@ -298,11 +297,14 @@ public class Demo {
 		viewer.requestRepaint();
 	}
 
-	private void addLabelHyperSphere(final RealLocalizable center, final int radius, final Integer label) {
+	private void addLabelHyperSphere(final RealLocalizable centerGlobal, final int radius, final Integer label) {
+		final AffineTransform3D globalToSource = overlay.getSourceTransform(viewer.getState().getCurrentTimepoint(),0).inverse();
+		final RealPoint centerLocal = new RealPoint( centerGlobal.numDimensions() );
+		globalToSource.apply( centerGlobal, centerLocal );
 		final HyperSphereShape sphere = new HyperSphereShape(radius);
 		final IntervalView<LabelingType<Integer>> ext = Views.interval(Views.extendValue(overlay.getCurrentLabelling(), new LabelingType<Integer>()), Intervals.expand(overlay.getCurrentLabelling(), radius));
 		final RandomAccess<Neighborhood<LabelingType<Integer>>> na = sphere.neighborhoodsRandomAccessible(ext).randomAccess();
-		new Round<RandomAccess<Neighborhood<LabelingType<Integer>>>>(na).setPosition(center);
+		new Round<RandomAccess<Neighborhood<LabelingType<Integer>>>>(na).setPosition(centerLocal);
 		for (final LabelingType<Integer> t : na.get()) {
 			final List<Integer> l = t.getLabeling();
 			if (!l.contains(label)) {
