@@ -186,6 +186,8 @@ public class SetupAssignments
 	public void restoreFromXml( final Element parent )
 	{
 		final Element elemSetupAssignments = parent.getChild( "SetupAssignments" );
+		if ( elemSetupAssignments == null )
+			return;
 		final Element elemConverterSetups = elemSetupAssignments.getChild( "ConverterSetups" );
 		final List< Element > converterSetupNodes = elemConverterSetups.getChildren( "ConverterSetup" );
 		if ( converterSetupNodes.size() != setups.size() )
