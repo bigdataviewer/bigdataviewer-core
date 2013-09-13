@@ -88,16 +88,10 @@ public class LabellingSource implements Source<ARGBType> {
 	void loadTimepoint(final int timepoint) {
 		currentTimepoint = timepoint;
 		if (isPresent(timepoint)) {
+			sourceTransform.set( imgSource.getSourceTransform( timepoint, 0 ) );
 			final Dimensions sourceDimensions = imgSource.getSource(timepoint, 0);
-
-			// TODO: fix this HORRIBLE hack that deals with z-scaling...
-			final AffineTransform3D sourceTransform = imgSource.getSourceTransform(timepoint, 0);
-			final long[] dim = new long[sourceDimensions.numDimensions()];
-			sourceDimensions.dimensions(dim);
-			dim[2] *= sourceTransform.get(2, 2);
-
 			final NtreeImgFactory<IntType> factory = new NtreeImgFactory<IntType>();
-			final Img<IntType> img = factory.create(dim, new IntType());
+			final Img<IntType> img = factory.create(sourceDimensions, new IntType());
 			final NativeImgLabeling<Integer, IntType> labeling = new NativeImgLabeling<Integer, IntType>(img);
 			currentSource = labeling;
 			updateColorTable();
