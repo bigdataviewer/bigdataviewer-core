@@ -12,8 +12,8 @@ import net.imglib2.converter.Converters;
 import net.imglib2.img.Img;
 import net.imglib2.img.sparse.NtreeImgFactory;
 import net.imglib2.interpolation.InterpolatorFactory;
-import net.imglib2.interpolation.neighborsearch.NearestNeighborInterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
+import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory;
 import net.imglib2.labeling.LabelingMapping;
 import net.imglib2.labeling.LabelingType;
 import net.imglib2.labeling.NativeImgLabeling;
@@ -55,16 +55,15 @@ public class LabellingSource implements Source< ARGBType >
 
 	private int currentAlpha;
 
-	@SuppressWarnings( { "unchecked", "rawtypes" } )
+	@SuppressWarnings( "unchecked" )
 	public LabellingSource( final SpimSource imgSource, final SpimViewer viewer )
-
 	{
 		this.imgSource = imgSource;
 		this.viewer = viewer;
 		name = imgSource.getName() + " annotations";
 		converter = new LabelingTypeARGBConverter< Integer >( new HashMap< List< Integer >, ARGBType >() );
 		interpolatorFactories = new InterpolatorFactory[ numInterpolationMethods ];
-		interpolatorFactories[ iNearestNeighborMethod ] = new NearestNeighborInterpolatorFactory();
+		interpolatorFactories[ iNearestNeighborMethod ] = new NearestNeighborInterpolatorFactory< ARGBType >();
 		interpolatorFactories[ iNLinearMethod ] = new NLinearInterpolatorFactory< ARGBType >();
 		loadTimepoint( 0 );
 	}
