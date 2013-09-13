@@ -36,6 +36,7 @@ import viewer.crop.CropDialog;
 import viewer.gui.brightness.BrightnessDialog;
 import viewer.gui.brightness.ConverterSetup;
 import viewer.gui.brightness.MinMaxGroup;
+import viewer.gui.brightness.RealARGBColorConverterSetup;
 import viewer.gui.brightness.SetupAssignments;
 import viewer.gui.transformation.ManualTransformation;
 import viewer.gui.visibility.ActiveSourcesDialog;
@@ -139,48 +140,7 @@ public class ViewRegisteredAngles
 			final RealARGBColorConverter< UnsignedShortType > converter = new RealARGBColorConverter< UnsignedShortType >( 0, 65535 );
 			converter.setColor( new ARGBType( ARGBType.rgba( 255, 255, 255, 255 ) ) );
 			sources.add( new SourceAndConverter< UnsignedShortType >( new SpimSource( loader, setup, "angle " + seq.setups.get( setup ).getAngle() ), converter ) );
-			final int id = setup;
-			converterSetups.add( new ConverterSetup()
-			{
-				@Override
-				public void setDisplayRange( final int min, final int max )
-				{
-					converter.setMin( min );
-					converter.setMax( max );
-					viewer.requestRepaint();
-				}
-
-				@Override
-				public void setColor( final ARGBType color )
-				{
-					converter.setColor( color );
-					viewer.requestRepaint();
-				}
-
-				@Override
-				public int getSetupId()
-				{
-					return id;
-				}
-
-				@Override
-				public int getDisplayRangeMin()
-				{
-					return ( int ) converter.getMin();
-				}
-
-				@Override
-				public int getDisplayRangeMax()
-				{
-					return ( int ) converter.getMax();
-				}
-
-				@Override
-				public ARGBType getColor()
-				{
-					return converter.getColor();
-				}
-			} );
+			converterSetups.add( new RealARGBColorConverterSetup< UnsignedShortType >( setup, converter ) );
 		}
 
 		viewer = new SpimViewer( width, height, sources, seq.numTimepoints() );
