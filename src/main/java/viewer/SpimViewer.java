@@ -820,4 +820,14 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	@Override
 	public void setCanvasSize( final int width, final int height )
 	{}
+
+	public JFrame getFrame()
+	{
+		return frame;
+	}
+
+	public VisibilityAndGrouping getVisibilityAndGrouping()
+	{
+		return visibilityAndGrouping;
+	}
 }
