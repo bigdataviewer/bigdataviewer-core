@@ -85,10 +85,10 @@ public class LabellingSource implements Source<ARGBType> {
 		return 1;
 	}
 
-	void loadTimepoint(final int timepoint) {
+	private void loadTimepoint(final int timepoint) {
 		currentTimepoint = timepoint;
 		if (isPresent(timepoint)) {
-			sourceTransform.set( imgSource.getSourceTransform( timepoint, 0 ) );
+			sourceTransform.set(imgSource.getSourceTransform(timepoint, 0));
 			final Dimensions sourceDimensions = imgSource.getSource(timepoint, 0);
 			final NtreeImgFactory<IntType> factory = new NtreeImgFactory<IntType>();
 			final Img<IntType> img = factory.create(sourceDimensions, new IntType());
@@ -114,11 +114,11 @@ public class LabellingSource implements Source<ARGBType> {
 		return name;
 	}
 
-	public LabelingTypeARGBConverter<Integer> getConverter() {
-		return null;
+	public NativeImgLabeling<Integer, IntType> getCurrentLabelling() {
+		return currentSource;
 	}
 
-	private void updateColorTable() {
+	public void updateColorTable() {
 		final int a = currentAlpha;
 		final HashMap<List<Integer>, ARGBType> colorTable = new HashMap<List<Integer>, ARGBType>();
 		final LabelingMapping<Integer> mapping = currentSource.getMapping();
