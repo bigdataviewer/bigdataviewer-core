@@ -21,7 +21,6 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.view.Views;
-import viewer.SpimSource;
 import viewer.display.LabelingTypeARGBConverter;
 import viewer.render.Interpolation;
 import viewer.render.Source;
@@ -31,7 +30,7 @@ public class LabellingSource implements Source<ARGBType> {
 
 	private NativeImgLabeling<Integer, IntType> currentSource;
 
-	private final SpimSource imgSource;
+	private final Source<?> imgSource;
 
 	private final String name;
 
@@ -52,7 +51,7 @@ public class LabellingSource implements Source<ARGBType> {
 	private int currentAlpha;
 
 	@SuppressWarnings("unchecked")
-	public LabellingSource(final SpimSource imgSource) {
+	public LabellingSource(final Source<?> imgSource) {
 		this.imgSource = imgSource;
 		name = imgSource.getName() + " annotations";
 		converter = new LabelingTypeARGBConverter<Integer>(new HashMap<List<Integer>, ARGBType>());
