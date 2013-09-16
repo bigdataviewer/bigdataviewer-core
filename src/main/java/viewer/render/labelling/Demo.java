@@ -31,6 +31,7 @@ import net.imglib2.position.transform.Round;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.ui.TransformEventHandler;
 import net.imglib2.util.Intervals;
 import net.imglib2.util.LinAlgHelpers;
 import net.imglib2.view.IntervalView;
@@ -63,6 +64,9 @@ public class Demo {
 	private final BrightnessDialog brightnessDialog;
 	private int nextCellId = 0;
 	private final int defaultRadius = 5;
+	private boolean editMode = false;
+	private TransformEventHandler<AffineTransform3D> transformEventHandler;
+	private final RegionGrowingAnnotationTool regionGrowingAnnotationTool;
 
 	public Demo(final File file) throws ParserConfigurationException, SAXException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException, JDOMException {
 
@@ -75,6 +79,12 @@ public class Demo {
 		viewer = newViewer();
 		initTransform(viewer, 800, 600);
 		initBrightness(viewer, 0, 1);
+
+		/*
+		 * Region annotation listener
+		 */
+
+		regionGrowingAnnotationTool = new RegionGrowingAnnotationTool(viewer, sources.get(0).getSpimSource(), overlay, 0, 0);
 
 		/*
 		 * Brightness
@@ -155,6 +165,15 @@ public class Demo {
 				final RealPoint p = new RealPoint(3);
 				viewer.getGlobalMouseCoordinates(p);
 				addCellAt(p);
+			}
+
+			private static final long serialVersionUID = 1L;
+		});
+
+		viewer.addKeyAction(KeyStroke.getKeyStroke("ESCAPE"), new AbstractAction("toggle mode") {
+			@Override
+			public void actionPerformed(final ActionEvent arg0) {
+				toggleMode();
 			}
 
 			private static final long serialVersionUID = 1L;
@@ -298,9 +317,9 @@ public class Demo {
 	}
 
 	private void addLabelHyperSphere(final RealLocalizable centerGlobal, final int radius, final Integer label) {
-		final AffineTransform3D globalToSource = overlay.getSourceTransform(viewer.getState().getCurrentTimepoint(),0).inverse();
-		final RealPoint centerLocal = new RealPoint( centerGlobal.numDimensions() );
-		globalToSource.apply( centerGlobal, centerLocal );
+		final AffineTransform3D globalToSource = overlay.getSourceTransform(viewer.getState().getCurrentTimepoint(), 0).inverse();
+		final RealPoint centerLocal = new RealPoint(centerGlobal.numDimensions());
+		globalToSource.apply(centerGlobal, centerLocal);
 		final HyperSphereShape sphere = new HyperSphereShape(radius);
 		final IntervalView<LabelingType<Integer>> ext = Views.interval(Views.extendValue(overlay.getCurrentLabelling(), new LabelingType<Integer>()), Intervals.expand(overlay.getCurrentLabelling(), radius));
 		final RandomAccess<Neighborhood<LabelingType<Integer>>> na = sphere.neighborhoodsRandomAccessible(ext).randomAccess();
@@ -327,6 +346,20 @@ public class Demo {
 				labels.remove(label);
 				t.setLabeling(labels);
 			}
+		}
+	}
+
+	private void toggleMode() {
+		this.editMode = !editMode;
+		System.out.println(editMode);// DEBUG
+
+		if (editMode) {
+			transformEventHandler = viewer.getDisplay().getTransformEventHandler();
+			viewer.getDisplay().removeHandler(transformEventHandler);
+			viewer.getDisplay().addHandler(regionGrowingAnnotationTool);
+		} else {
+			viewer.getDisplay().removeHandler(regionGrowingAnnotationTool);
+			viewer.getDisplay().addHandler(transformEventHandler);
 		}
 	}
 
