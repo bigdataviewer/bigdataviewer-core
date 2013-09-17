@@ -29,7 +29,7 @@ public class RegionGrowingAnnotationTool<T extends RealType<T>> implements Mouse
 	private final int level;
 	private final SpimViewer viewer;
 	private Map<long[], Integer> seed;
-	private final LabellingSource labellingSource;
+	private final LabellingSource labelingSource;
 	private int label = -1;
 	private final Source<T> source;
 	private final int t;
@@ -39,7 +39,7 @@ public class RegionGrowingAnnotationTool<T extends RealType<T>> implements Mouse
 	public RegionGrowingAnnotationTool(final SpimViewer viewer, final Source<T> source, final LabellingSource labellingSource, final int t, final int level) {
 		this.viewer = viewer;
 		this.source = source;
-		this.labellingSource = labellingSource;
+		this.labelingSource = labellingSource;
 		this.t = t;
 		this.level = level;
 		this.structuringElement = AbstractRegionGrowing.get8ConStructuringElement(3);
@@ -61,20 +61,22 @@ public class RegionGrowingAnnotationTool<T extends RealType<T>> implements Mouse
 		final long[] pos = new long[3];
 		point.localize(pos);
 
-		if (!labellingSource.getCurrentLabelling().getLabels().isEmpty()) {
+		if (!labelingSource.getCurrentLabelling().getLabels().isEmpty()) {
 
-			final RandomAccess<LabelingType<Integer>> randomAccess = labellingSource.getCurrentLabelling().randomAccess();
+			final RandomAccess<LabelingType<Integer>> randomAccess = labelingSource.getCurrentLabelling().randomAccess();
 			randomAccess.setPosition(point);
 
 			final List<Integer> existingLabels = randomAccess.get().getLabeling();
 			if (!existingLabels.isEmpty()) {
 
-				label = existingLabels.get(0); // For future new annotation
+				System.out.println("Found some labels under the seed point: " + existingLabels);// DEBUG
+
+				label = existingLabels.get(0).intValue(); // For future new annotation
 
 				for (final Integer existingLabel : existingLabels) {
 
-					final IterableRegionOfInterest roi = labellingSource.getCurrentLabelling().getIterableRegionOfInterest(existingLabel);
-					final IterableInterval<LabelingType<Integer>> overROI = roi.getIterableIntervalOverROI(labellingSource.getCurrentLabelling());
+					final IterableRegionOfInterest roi = labelingSource.getCurrentLabelling().getIterableRegionOfInterest(existingLabel);
+					final IterableInterval<LabelingType<Integer>> overROI = roi.getIterableIntervalOverROI(labelingSource.getCurrentLabelling());
 					for (final LabelingType<Integer> labelingType : overROI) {
 						final ArrayList<Integer> labels = new ArrayList<Integer>(labelingType.getLabeling());
 						labels.clear();
@@ -96,16 +98,28 @@ public class RegionGrowingAnnotationTool<T extends RealType<T>> implements Mouse
 	}
 
 	@Override
-	public void mouseReleased(final MouseEvent e) {
-		labellingSource.updateColorTable();
-		viewer.requestRepaint();
-	}
+	public void mouseReleased(final MouseEvent e) {}
 
 	@Override
 	public void mouseDragged(final MouseEvent arg0) {
 
 		/*
 		 * Remove old stuff
+		 */
+
+		if (labelingSource.getCurrentLabelling().getLabels().contains(Integer.valueOf(label))) {
+
+			final IterableRegionOfInterest iterableRegionOfInterest = labelingSource.getCurrentLabelling().getIterableRegionOfInterest(Integer.valueOf(label));
+			for (final LabelingType<Integer> labeling : iterableRegionOfInterest.getIterableIntervalOverROI(labelingSource.getCurrentLabelling())) {
+				final ArrayList<Integer> labels = new ArrayList<Integer>(labeling.getLabeling());
+				labels.remove(Integer.valueOf(label));
+				labeling.setLabeling(labels);
+			}
+
+		}
+
+		/*
+		 * Make new stuff
 		 */
 
 		final RandomAccessibleInterval<T> rai = source.getSource(t, level);
@@ -115,10 +129,14 @@ public class RegionGrowingAnnotationTool<T extends RealType<T>> implements Mouse
 		ra.setPosition(current);
 		final T threshold = ra.get().copy();
 
-		final ThresholdRegionGrowing<T, Integer> regionGrowing = new ThresholdRegionGrowing<T, Integer>(ra, threshold, seed, growingMode, structuringElement, labellingSource.getCurrentLabelling());
+		final ThresholdRegionGrowing<T, Integer> regionGrowing = new ThresholdRegionGrowing<T, Integer>(ra, threshold, seed, growingMode, structuringElement, labelingSource.getCurrentLabelling());
 
 		regionGrowing.checkInput();
 		regionGrowing.process();
+
+		labelingSource.updateColorTable();
+		viewer.requestRepaint();
+
 		System.out.println(label + ": area = " + regionGrowing.getResult().getArea(Integer.valueOf(label)));// DEBUG
 	}
 
