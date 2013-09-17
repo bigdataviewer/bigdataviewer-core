@@ -2,6 +2,7 @@ package viewer.render.labelling;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 
 import net.imglib2.Dimensions;
@@ -25,7 +26,16 @@ import viewer.display.LabelingTypeARGBConverter;
 import viewer.render.Interpolation;
 import viewer.render.Source;
 
-public class LabellingSource implements Source<ARGBType> {
+/**
+ * A {@link Source} that wraps a {@link NativeImgLabeling}, build from another
+ * source and copying its dimension and transform at the lowest level only (=0).
+ * 
+ * @author Jean-Yves Tinevez <jeanyves.tinevez@gmail.com> 2013
+ * @author Tobias Pietzsch
+ * @author Stephan Preibisch
+ * 
+ */
+public class LabelingSource implements Source<ARGBType> {
 	private int currentTimepoint;
 
 	private NativeImgLabeling<Integer, IntType> currentSource;
@@ -34,7 +44,7 @@ public class LabellingSource implements Source<ARGBType> {
 
 	private final String name;
 
-	final LabelingTypeARGBConverter<Integer> converter;
+	private final LabelingTypeARGBConverter<Integer> converter;
 
 	final protected static int numInterpolationMethods = 2;
 
@@ -44,20 +54,29 @@ public class LabellingSource implements Source<ARGBType> {
 
 	final protected InterpolatorFactory<ARGBType, RandomAccessible<ARGBType>>[] interpolatorFactories;
 
-	final AffineTransform3D sourceTransform = new AffineTransform3D();
-
 	private volatile int oldAlpha = -1;
 
 	private int currentAlpha;
 
+	/**
+	 * The map that stores the labeling for each time point. Its values are all
+	 * <code>null</code> until the target time-point is initialized.
+	 */
+	private final Map<Integer, NativeImgLabeling<Integer, IntType>> labelings;
+
+	private final AffineTransform3D currentTranform = new AffineTransform3D();
+
 	@SuppressWarnings("unchecked")
-	public LabellingSource(final Source<?> imgSource) {
+	public LabelingSource(final Source<?> imgSource) {
 		this.imgSource = imgSource;
 		name = imgSource.getName() + " annotations";
 		converter = new LabelingTypeARGBConverter<Integer>(new HashMap<List<Integer>, ARGBType>());
 		interpolatorFactories = new InterpolatorFactory[numInterpolationMethods];
 		interpolatorFactories[iNearestNeighborMethod] = new NearestNeighborInterpolatorFactory<ARGBType>();
 		interpolatorFactories[iNLinearMethod] = new NLinearInterpolatorFactory<ARGBType>();
+
+		labelings = new HashMap<Integer, NativeImgLabeling<Integer, IntType>>();
+
 		loadTimepoint(0);
 	}
 
@@ -88,11 +107,15 @@ public class LabellingSource implements Source<ARGBType> {
 	private void loadTimepoint(final int timepoint) {
 		currentTimepoint = timepoint;
 		if (isPresent(timepoint)) {
-			sourceTransform.set(imgSource.getSourceTransform(timepoint, 0));
-			final Dimensions sourceDimensions = imgSource.getSource(timepoint, 0);
-			final NtreeImgFactory<IntType> factory = new NtreeImgFactory<IntType>();
-			final Img<IntType> img = factory.create(sourceDimensions, new IntType());
-			final NativeImgLabeling<Integer, IntType> labeling = new NativeImgLabeling<Integer, IntType>(img);
+
+			currentTranform.set(imgSource.getSourceTransform(timepoint, 0));
+
+			NativeImgLabeling<Integer, IntType> labeling = labelings.get(Integer.valueOf(timepoint));
+			if (null == labeling) {
+				final Dimensions sourceDimensions = imgSource.getSource(timepoint, 0);
+				labeling = newLabeling(sourceDimensions);
+				labelings.put(Integer.valueOf(timepoint), labeling);
+			}
 			currentSource = labeling;
 			updateColorTable();
 		} else
@@ -101,9 +124,10 @@ public class LabellingSource implements Source<ARGBType> {
 
 	@Override
 	public AffineTransform3D getSourceTransform(final int t, final int level) {
-		if (t != currentTimepoint)
+		if (currentTimepoint != t) {
 			loadTimepoint(t);
-		return sourceTransform;
+		}
+		return currentTranform;
 	}
 
 	@Override
@@ -116,8 +140,38 @@ public class LabellingSource implements Source<ARGBType> {
 		return name;
 	}
 
-	public NativeImgLabeling<Integer, IntType> getCurrentLabelling() {
-		return currentSource;
+	public NativeImgLabeling<Integer, IntType> getLabeling(final int t) {
+		NativeImgLabeling<Integer, IntType> target;
+		if (isPresent(t)) {
+			target = labelings.get(Integer.valueOf(t));
+			if (null == target) {
+				final Dimensions sourceDimensions = imgSource.getSource(t, 0);
+				target = newLabeling(sourceDimensions);
+				labelings.put(Integer.valueOf(t), target);
+			}
+		} else {
+			target = null;
+		}
+		return target;
+	}
+
+	/**
+	 * Sets the transparency (alpha value) for this source.
+	 * 
+	 * @param alpha
+	 *            an <code>int</code>, ranging from 0 to 255.
+	 */
+	public void setAlpha(final int alpha) {
+		this.currentAlpha = alpha;
+	}
+
+	/**
+	 * Returns the current transparency (alpha value) for this source.
+	 * 
+	 * @return an <code>int</code>, ranging from 0 to 255.
+	 */
+	public int getAlpha() {
+		return currentAlpha;
 	}
 
 	public void updateColorTable() {
@@ -137,4 +191,12 @@ public class LabellingSource implements Source<ARGBType> {
 		converter.setColorTable(colorTable);
 		oldAlpha = a;
 	}
+
+	private static final NativeImgLabeling<Integer, IntType> newLabeling(final Dimensions dimensions) {
+		final NtreeImgFactory<IntType> factory = new NtreeImgFactory<IntType>();
+		final Img<IntType> img = factory.create(dimensions, new IntType());
+		final NativeImgLabeling<Integer, IntType> labeling = new NativeImgLabeling<Integer, IntType>(img);
+		return labeling;
+	}
+
 }

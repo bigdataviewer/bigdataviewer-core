@@ -14,27 +14,17 @@ import javax.xml.parsers.ParserConfigurationException;
 
 import mpicbg.spim.data.SequenceDescription;
 import net.imglib2.Interval;
-import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.RealLocalizable;
-import net.imglib2.RealPoint;
-import net.imglib2.algorithm.region.localneighborhood.HyperSphereShape;
-import net.imglib2.algorithm.region.localneighborhood.Neighborhood;
 import net.imglib2.converter.TypeIdentity;
-import net.imglib2.display.AbstractLinearRange;
 import net.imglib2.display.RealARGBColorConverter;
 import net.imglib2.histogram.DiscreteFrequencyDistribution;
 import net.imglib2.histogram.Histogram1d;
 import net.imglib2.histogram.Real1dBinMapper;
-import net.imglib2.labeling.LabelingType;
-import net.imglib2.position.transform.Round;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.ui.TransformEventHandler;
-import net.imglib2.util.Intervals;
 import net.imglib2.util.LinAlgHelpers;
-import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
 import org.jdom2.JDOMException;
@@ -55,18 +45,15 @@ import viewer.util.Affine3DHelpers;
 
 public class Demo {
 
-	private ArrayList<AbstractLinearRange> displayRanges;
-	private LabellingSource overlay;
+	private LabelingSource overlay;
 	private final SpimViewer viewer;
 	private int nTimepoints;
-	private ArrayList<SourceAndConverter<?>> sources;
+	private List<SourceAndConverter<?>> sources;
 	private SetupAssignments setupAssignments;
 	private final BrightnessDialog brightnessDialog;
-	private int nextCellId = 0;
-	private final int defaultRadius = 5;
 	private boolean editMode = false;
 	private TransformEventHandler<AffineTransform3D> transformEventHandler;
-	private final RegionGrowingAnnotationTool regionGrowingAnnotationTool;
+	private RegionGrowingAnnotationTool<?> regionGrowingAnnotationTool;
 
 	public Demo(final File file) throws ParserConfigurationException, SAXException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException, JDOMException {
 
@@ -79,12 +66,6 @@ public class Demo {
 		viewer = newViewer();
 		initTransform(viewer, 800, 600);
 		initBrightness(viewer, 0, 1);
-
-		/*
-		 * Region annotation listener
-		 */
-
-		regionGrowingAnnotationTool = new RegionGrowingAnnotationTool(viewer, sources.get(0).getSpimSource(), overlay, 0, 0);
 
 		/*
 		 * Brightness
@@ -151,24 +132,12 @@ public class Demo {
 			setupAssignments.moveSetupToGroup(setup, group);
 		}
 
-		overlay = new LabellingSource(sources.get(0).getSpimSource());
+		overlay = new LabelingSource(sources.get(0).getSpimSource());
 		sources.add(new SourceAndConverter<ARGBType>(overlay, new TypeIdentity<ARGBType>()));
-		overlay.getSource(0, 0);
 	}
 
 	private SpimViewer newViewer() {
 		final SpimViewer viewer = new SpimViewer(800, 600, sources, nTimepoints);
-
-		viewer.addKeyAction(KeyStroke.getKeyStroke("A"), new AbstractAction("add cell") {
-			@Override
-			public void actionPerformed(final ActionEvent arg0) {
-				final RealPoint p = new RealPoint(3);
-				viewer.getGlobalMouseCoordinates(p);
-				addCellAt(p);
-			}
-
-			private static final long serialVersionUID = 1L;
-		});
 
 		viewer.addKeyAction(KeyStroke.getKeyStroke("ESCAPE"), new AbstractAction("toggle mode") {
 			@Override
@@ -289,66 +258,7 @@ public class Demo {
 		viewer.setCurrentViewerTransform(viewerTransform);
 	}
 
-	synchronized void addCellAt(final RealLocalizable p) {
-		final int cellId = nextCellId;
-		++nextCellId;
-		final int radius = defaultRadius;
-		addLabelHyperSphere(p, radius, cellId);
-		overlay.updateColorTable();
-		viewer.requestRepaint();
-	}
-
-	synchronized void removeCellsAt(final RealLocalizable p) {
-		final RandomAccess<LabelingType<Integer>> a = overlay.getCurrentLabelling().randomAccess();
-		new Round<RandomAccess<LabelingType<Integer>>>(a).setPosition(p);
-		// TODO
-		overlay.updateColorTable();
-		viewer.requestRepaint();
-	}
-
-	synchronized void modifiyCellRadiusAt(final RealPoint p, final int diff) {
-		final RandomAccess<LabelingType<Integer>> a = overlay.getCurrentLabelling().randomAccess();
-		new Round<RandomAccess<LabelingType<Integer>>>(a).setPosition(p);
-		for (final Integer label : a.get().getLabeling()) {
-			// TODO
-		}
-		overlay.updateColorTable();
-		viewer.requestRepaint();
-	}
-
-	private void addLabelHyperSphere(final RealLocalizable centerGlobal, final int radius, final Integer label) {
-		final AffineTransform3D globalToSource = overlay.getSourceTransform(viewer.getState().getCurrentTimepoint(), 0).inverse();
-		final RealPoint centerLocal = new RealPoint(centerGlobal.numDimensions());
-		globalToSource.apply(centerGlobal, centerLocal);
-		final HyperSphereShape sphere = new HyperSphereShape(radius);
-		final IntervalView<LabelingType<Integer>> ext = Views.interval(Views.extendValue(overlay.getCurrentLabelling(), new LabelingType<Integer>()), Intervals.expand(overlay.getCurrentLabelling(), radius));
-		final RandomAccess<Neighborhood<LabelingType<Integer>>> na = sphere.neighborhoodsRandomAccessible(ext).randomAccess();
-		new Round<RandomAccess<Neighborhood<LabelingType<Integer>>>>(na).setPosition(centerLocal);
-		for (final LabelingType<Integer> t : na.get()) {
-			final List<Integer> l = t.getLabeling();
-			if (!l.contains(label)) {
-				final ArrayList<Integer> labels = new ArrayList<Integer>(t.getLabeling());
-				labels.add(label);
-				t.setLabeling(labels);
-			}
-		}
-	}
-
-	private void removeLabelHyperSphere(final RealLocalizable center, final int radius, final Integer label) {
-		final HyperSphereShape sphere = new HyperSphereShape(radius);
-		final IntervalView<LabelingType<Integer>> ext = Views.interval(Views.extendValue(overlay.getCurrentLabelling(), new LabelingType<Integer>()), Intervals.expand(overlay.getCurrentLabelling(), radius));
-		final RandomAccess<Neighborhood<LabelingType<Integer>>> na = sphere.neighborhoodsRandomAccessible(ext).randomAccess();
-		new Round<RandomAccess<Neighborhood<LabelingType<Integer>>>>(na).setPosition(center);
-		for (final LabelingType<Integer> t : na.get()) {
-			final List<Integer> l = t.getLabeling();
-			if (l.contains(label)) {
-				final ArrayList<Integer> labels = new ArrayList<Integer>(t.getLabeling());
-				labels.remove(label);
-				t.setLabeling(labels);
-			}
-		}
-	}
-
+	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private void toggleMode() {
 		this.editMode = !editMode;
 		System.out.println(editMode);// DEBUG
@@ -356,6 +266,10 @@ public class Demo {
 		if (editMode) {
 			transformEventHandler = viewer.getDisplay().getTransformEventHandler();
 			viewer.getDisplay().removeHandler(transformEventHandler);
+
+			final int currentSource = viewer.getState().getCurrentSource();
+			final int timePoint = viewer.getState().getCurrentTimepoint();
+			regionGrowingAnnotationTool = new RegionGrowingAnnotationTool(viewer, sources.get(currentSource).getSpimSource(), overlay, timePoint);
 			viewer.getDisplay().addHandler(regionGrowingAnnotationTool);
 		} else {
 			viewer.getDisplay().removeHandler(regionGrowingAnnotationTool);
@@ -367,7 +281,7 @@ public class Demo {
 		ImageJ.main(args);
 
 		final File file = new File("/Users/tinevez/Desktop/Data/Mamut/parhyale-crop/parhyale-crop-2.xml");
-		final Demo plugin = new Demo(file);
+		new Demo(file);
 	}
 
 }
