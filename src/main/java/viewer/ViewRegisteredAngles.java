@@ -146,6 +146,10 @@ public class ViewRegisteredAngles
 		viewer = new SpimViewer( width, height, sources, seq.numTimepoints() );
 		manualTransformation = new ManualTransformation( viewer );
 
+		for ( final ConverterSetup cs : converterSetups )
+			if ( RealARGBColorConverterSetup.class.isInstance( cs ) )
+				( ( RealARGBColorConverterSetup< ? > ) cs ).setViewer( viewer );
+
 		viewer.addKeyAction( brightnessKeystroke, new AbstractAction( "brightness settings" )
 		{
 			@Override
