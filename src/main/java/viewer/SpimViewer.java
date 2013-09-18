@@ -13,8 +13,6 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
-import java.awt.event.ActionEvent;
-import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
@@ -24,7 +22,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
@@ -99,8 +96,6 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 
 	final protected MouseCoordinateListener mouseCoordinates;
 
-	final protected ArrayList< Pair< KeyStroke, Action > > keysActions;
-
 	protected AbstractTransformAnimator currentAnimator = null;
 
 	final protected VisibilityAndGrouping visibilityAndGrouping;
@@ -114,8 +109,12 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	 */
 	final protected CopyOnWriteArrayList< TransformListener< AffineTransform3D > > transformListeners;
 
+	private final NavigationKeyHandler navigationKeyHandler;
+
+	final protected ArrayList< Pair< KeyStroke, Action > > keysActions;
+
 	/**
-	 *
+	 * 
 	 * @param width
 	 *            width of the display window.
 	 * @param height
@@ -162,7 +161,9 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 
 		state = new ViewerState( transformedSources, groups, numTimePoints );
 		if ( !sources.isEmpty() )
+		{
 			state.setCurrentSource( 0 );
+		}
 		multiBoxOverlayRenderer = new MultiBoxOverlayRenderer( width, height );
 		sourceInfoOverlayRenderer = new SourceInfoOverlayRenderer();
 
@@ -198,7 +199,9 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 			public void stateChanged( final ChangeEvent e )
 			{
 				if ( e.getSource().equals( sliderTime ) )
+				{
 					updateTimepoint( sliderTime.getValue() );
+				}
 			}
 		} );
 
@@ -207,7 +210,8 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 
 		transformListeners = new CopyOnWriteArrayList< TransformListener< AffineTransform3D > >();
 
-//		final GraphicsConfiguration gc = GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.ARGB_COLOR_MODEL );
+		// final GraphicsConfiguration gc =
+		// GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.ARGB_COLOR_MODEL );
 		final GraphicsConfiguration gc = GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.RGB_COLOR_MODEL );
 		frame = new JFrame( "multi-angle viewer", gc );
 		frame.getRootPane().setDoubleBuffered( true );
@@ -227,9 +231,11 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		frame.setVisible( true );
 		renderTarget.setCanvasSize( display.getWidth(), display.getHeight() );
 
+		// Hnadle navigation keys
+		navigationKeyHandler = new NavigationKeyHandler( this );
+		// Old way to handle key presses. We leave it here to add extra key
+		// bindings in a simple way
 		keysActions = new ArrayList< Pair< KeyStroke, Action > >();
-		createKeyActions();
-		installKeyActions( frame );
 
 		painterThread.start();
 
@@ -240,7 +246,9 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	{
 		display.addHandler( handler );
 		if ( KeyListener.class.isInstance( handler ) )
+		{
 			frame.addKeyListener( ( KeyListener ) handler );
+		}
 	}
 
 	public void getGlobalMouseCoordinates( final RealPositionable gPos )
@@ -249,6 +257,30 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		final RealPoint lPos = new RealPoint( 3 );
 		mouseCoordinates.getMouseCoordinates( lPos );
 		viewerTransform.applyInverse( gPos, lPos );
+	}
+
+	public void addKeyAction( final KeyStroke keystroke, final Action action )
+	{
+		keysActions.add( new ValuePair< KeyStroke, Action >( keystroke, action ) );
+		installKeyActions( frame );
+	}
+
+	/**
+	 * Add Keystrokes and corresponding Actions from {@link #keysActions} to a
+	 * container.
+	 */
+	public void installKeyActions( final RootPaneContainer container )
+	{
+		final JRootPane rootpane = container.getRootPane();
+		final ActionMap am = rootpane.getActionMap();
+		final InputMap im = rootpane.getInputMap( JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT );
+		for ( final Pair< KeyStroke, Action > keyAction : keysActions )
+		{
+			final KeyStroke key = keyAction.getA();
+			final Action action = keyAction.getB();
+			im.put( key, action.getValue( Action.NAME ) );
+			am.put( action.getValue( Action.NAME ), action );
+		}
 	}
 
 	@Override
@@ -265,7 +297,9 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 				handler.setTransform( transform );
 				transformChanged( transform );
 				if ( currentAnimator.isComplete() )
+				{
 					currentAnimator = null;
+				}
 			}
 		}
 
@@ -300,12 +334,18 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		{
 			animatedOverlay.paint( ( Graphics2D ) g, System.currentTimeMillis() );
 			if ( animatedOverlay.isComplete() )
+			{
 				animatedOverlay = null;
+			}
 			else
+			{
 				display.repaint();
+			}
 		}
 		if ( multiBoxOverlayRenderer.isHighlightInProgress() )
+		{
 			display.repaint();
+		}
 	}
 
 	@Override
@@ -314,7 +354,9 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		viewerTransform.set( transform );
 		state.setViewerTransform( transform );
 		for ( final TransformListener< AffineTransform3D > l : transformListeners )
+		{
 			l.transformChanged( viewerTransform );
+		}
 		requestRepaint();
 	}
 
@@ -335,10 +377,12 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 			display.repaint();
 			break;
 		case SOURCE_ACTVITY_CHANGED:
-			// TODO multiBoxOverlayRenderer.highlight() all sources that became visible
+			// TODO multiBoxOverlayRenderer.highlight() all sources that became
+			// visible
 			break;
 		case GROUP_ACTIVITY_CHANGED:
-			// TODO multiBoxOverlayRenderer.highlight() all sources that became visible
+			// TODO multiBoxOverlayRenderer.highlight() all sources that became
+			// visible
 			break;
 		case VISIBILITY_CHANGED:
 			requestRepaint();
@@ -381,7 +425,8 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 				Affine3DHelpers.extractApproximateRotationAffine( sourceTransform, qSource, 0 );
 				LinAlgHelpers.quaternionMultiply( qSource, qAlignZY, qTmpSource );
 			}
-			else // if ( plane == AlignPlane.XZ )
+			else
+			// if ( plane == AlignPlane.XZ )
 			{
 				Affine3DHelpers.extractApproximateRotationAffine( sourceTransform, qSource, 1 );
 				LinAlgHelpers.quaternionMultiply( qSource, qAlignXZ, qTmpSource );
@@ -433,17 +478,25 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	protected void setCurrentGroupOrSource( final int index )
 	{
 		if ( visibilityAndGrouping.isGroupingEnabled() )
+		{
 			visibilityAndGrouping.setCurrentGroup( index );
+		}
 		else
+		{
 			visibilityAndGrouping.setCurrentSource( index );
+		}
 	}
 
 	protected void toggleActiveGroupOrSource( final int index )
 	{
 		if ( visibilityAndGrouping.isGroupingEnabled() )
+		{
 			visibilityAndGrouping.setGroupActive( index, !visibilityAndGrouping.isGroupActive( index ) );
+		}
 		else
+		{
 			visibilityAndGrouping.setSourceActive( index, !visibilityAndGrouping.isSourceActive( index ) );
+		}
 	}
 
 	/**
@@ -473,7 +526,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 
 	/**
 	 * Get a copy of the current {@link ViewerState}.
-	 *
+	 * 
 	 * @return a copy of the current {@link ViewerState}.
 	 */
 	public synchronized ViewerState getState()
@@ -483,7 +536,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 
 	/**
 	 * Get the viewer canvas.
-	 *
+	 * 
 	 * @return the viewer canvas.
 	 */
 	public InteractiveDisplayCanvasComponent< AffineTransform3D > getDisplay()
@@ -495,7 +548,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	 * Add a {@link TransformListener} to notify about viewer transformation
 	 * changes. Listeners will be notified <em>before</em> calling
 	 * {@link #requestRepaint()} so they have the chance to interfere.
-	 *
+	 * 
 	 * @param listener
 	 *            the transform listener to add.
 	 */
@@ -508,7 +561,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	 * Add a {@link TransformListener} to notify about viewer transformation
 	 * changes. Listeners will be notified <em>before</em> calling
 	 * {@link #requestRepaint()} so they have the chance to interfere.
-	 *
+	 * 
 	 * @param listener
 	 *            the transform listener to add.
 	 * @param index
@@ -525,7 +578,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 
 	/**
 	 * Remove a {@link TransformListener}.
-	 *
+	 * 
 	 * @param listener
 	 *            the transform listener to remove.
 	 */
@@ -534,194 +587,6 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		synchronized ( transformListeners )
 		{
 			transformListeners.remove( listener );
-		}
-	}
-
-	/**
-	 * Create Keystrokes and corresponding Actions.
-	 *
-	 * @return list of KeyStroke-Action-pairs.
-	 */
-	protected void createKeyActions()
-	{
-		KeyStroke key = KeyStroke.getKeyStroke( KeyEvent.VK_T, 0 );
-		Action action = new AbstractAction( "toggle manual transformation" )
-		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
-			{
-				toggleManualTransformation();
-			}
-
-			private static final long serialVersionUID = 1L;
-		};
-		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
-
-		key = KeyStroke.getKeyStroke( KeyEvent.VK_I, 0 );
-		action = new AbstractAction( "toggle interpolation" )
-		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
-			{
-				toggleInterpolation();
-			}
-
-			private static final long serialVersionUID = 1L;
-		};
-		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
-
-		key = KeyStroke.getKeyStroke( KeyEvent.VK_F, 0 );
-		action = new AbstractAction( "toggle fused mode" )
-		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
-			{
-				visibilityAndGrouping.setFusedEnabled( !visibilityAndGrouping.isFusedEnabled() );
-			}
-
-			private static final long serialVersionUID = 1L;
-		};
-		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
-
-		key = KeyStroke.getKeyStroke( KeyEvent.VK_G, 0 );
-		action = new AbstractAction( "toggle grouping" )
-		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
-			{
-				visibilityAndGrouping.setGroupingEnabled( !visibilityAndGrouping.isGroupingEnabled() );
-			}
-
-			private static final long serialVersionUID = 1L;
-		};
-		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
-
-		final int[] numkeys = new int[] { KeyEvent.VK_1, KeyEvent.VK_2, KeyEvent.VK_3, KeyEvent.VK_4, KeyEvent.VK_5, KeyEvent.VK_6, KeyEvent.VK_7, KeyEvent.VK_8, KeyEvent.VK_9, KeyEvent.VK_0 };
-
-		for ( int i = 0; i < numkeys.length; ++i )
-		{
-			final int index = i;
-
-			key = KeyStroke.getKeyStroke( numkeys[ i ], 0 );
-			action = new AbstractAction( "set current source " + i )
-			{
-				@Override
-				public void actionPerformed( final ActionEvent e )
-				{
-					setCurrentGroupOrSource( index );
-				}
-
-				private static final long serialVersionUID = 1L;
-			};
-			keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
-
-			key = KeyStroke.getKeyStroke( numkeys[ i ], KeyEvent.SHIFT_DOWN_MASK );
-			action = new AbstractAction( "toggle source visibility " + i )
-			{
-				@Override
-				public void actionPerformed( final ActionEvent e )
-				{
-					toggleActiveGroupOrSource( index );
-				}
-
-				private static final long serialVersionUID = 1L;
-			};
-			keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
-		}
-
-		key = KeyStroke.getKeyStroke( KeyEvent.VK_Z, KeyEvent.SHIFT_DOWN_MASK );
-		action = new AbstractAction( "align XY plane" )
-		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
-			{
-				align( AlignPlane.XY );
-			}
-
-			private static final long serialVersionUID = 1L;
-		};
-		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
-
-		key = KeyStroke.getKeyStroke( KeyEvent.VK_X, KeyEvent.SHIFT_DOWN_MASK );
-		action = new AbstractAction( "align ZY plane" )
-		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
-			{
-				align( AlignPlane.ZY );
-			}
-
-			private static final long serialVersionUID = 1L;
-		};
-		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
-
-		key = KeyStroke.getKeyStroke( KeyEvent.VK_Y, KeyEvent.SHIFT_DOWN_MASK );
-		action = new AbstractAction( "align XZ plane" )
-		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
-			{
-				align( AlignPlane.XZ );
-			}
-
-			private static final long serialVersionUID = 1L;
-		};
-		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
-		key = KeyStroke.getKeyStroke( KeyEvent.VK_A, KeyEvent.SHIFT_DOWN_MASK );
-		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
-
-		key = KeyStroke.getKeyStroke( KeyEvent.VK_CLOSE_BRACKET, 0, false );
-		action = new AbstractAction( "next timepoint" )
-		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
-			{
-				sliderTime.setValue( sliderTime.getValue() + 1 );
-			}
-
-			private static final long serialVersionUID = 1L;
-		};
-		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
-		key = KeyStroke.getKeyStroke( KeyEvent.VK_M, 0 );
-		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
-
-		key = KeyStroke.getKeyStroke( KeyEvent.VK_OPEN_BRACKET, 0, false );
-		action = new AbstractAction( "previous timepoint" )
-		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
-			{
-				sliderTime.setValue( sliderTime.getValue() - 1 );
-			}
-
-			private static final long serialVersionUID = 1L;
-		};
-		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
-		key = KeyStroke.getKeyStroke( KeyEvent.VK_N, 0 );
-		keysActions.add( new ValuePair< KeyStroke, Action >( key, action ) );
-	}
-
-	public void addKeyAction( final KeyStroke keystroke, final Action action )
-	{
-		keysActions.add( new ValuePair< KeyStroke, Action >( keystroke, action ) );
-		installKeyActions( frame );
-	}
-
-	/**
-	 * Add Keystrokes and corresponding Actions from {@link #keysActions} to a
-	 * container.
-	 */
-	public void installKeyActions( final RootPaneContainer container )
-	{
-		final JRootPane rootpane = container.getRootPane();
-		final ActionMap am = rootpane.getActionMap();
-		final InputMap im = rootpane.getInputMap( JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT );
-		for ( final Pair< KeyStroke, Action > keyAction : keysActions )
-		{
-			final KeyStroke key = keyAction.getA();
-			final Action action = keyAction.getB();
-			im.put( key, action.getValue( Action.NAME ) );
-			am.put( action.getValue( Action.NAME ), action );
 		}
 	}
 
