@@ -100,7 +100,7 @@ public class NavigationActions
 
 	public static final Action getAlignPlaneAction( final SpimViewer viewer, final AlignPlane plane )
 	{
-		return new AbstractAction( "align XY plane" )
+		return new AbstractAction( "align plane " + plane.name )
 		{
 			@Override
 			public void actionPerformed( final ActionEvent e )

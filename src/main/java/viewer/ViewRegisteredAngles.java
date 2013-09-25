@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.util.ArrayList;
 
 import javax.swing.AbstractAction;
+import javax.swing.ActionMap;
+import javax.swing.InputMap;
 import javax.swing.JFileChooser;
 import javax.swing.KeyStroke;
 import javax.swing.filechooser.FileFilter;
@@ -54,7 +56,7 @@ public class ViewRegisteredAngles
 
 	final KeyStroke helpKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_F1, 0 );
 
-	final KeyStroke HelpKeystroke2 = KeyStroke.getKeyStroke( KeyEvent.VK_H, 0 );
+	final KeyStroke helpKeystroke2 = KeyStroke.getKeyStroke( KeyEvent.VK_H, 0 );
 
 	final KeyStroke cropKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_F5, 0 );
 
@@ -150,7 +152,10 @@ public class ViewRegisteredAngles
 			if ( RealARGBColorConverterSetup.class.isInstance( cs ) )
 				( ( RealARGBColorConverterSetup< ? > ) cs ).setViewer( viewer );
 
-		viewer.addKeyAction( brightnessKeystroke, new AbstractAction( "brightness settings" )
+		final ActionMap actionMap = new ActionMap();
+		final InputMap inputMap = new InputMap();
+		inputMap.put( brightnessKeystroke, "brightness settings" );
+		actionMap.put( "brightness settings", new AbstractAction( "brightness settings" )
 		{
 			@Override
 			public void actionPerformed( final ActionEvent arg0 )
@@ -161,7 +166,8 @@ public class ViewRegisteredAngles
 			private static final long serialVersionUID = 1L;
 		} );
 
-		viewer.addKeyAction( activeSourcesKeystroke, new AbstractAction( "visibility and grouping" )
+		inputMap.put( activeSourcesKeystroke, "visibility and grouping" );
+		actionMap.put( "visibility and grouping", new AbstractAction( "visibility and grouping" )
 		{
 			@Override
 			public void actionPerformed( final ActionEvent arg0 )
@@ -172,7 +178,9 @@ public class ViewRegisteredAngles
 			private static final long serialVersionUID = 1L;
 		} );
 
-		final AbstractAction helpAction = new AbstractAction( "help" )
+		inputMap.put( helpKeystroke,  "help" );
+		inputMap.put( helpKeystroke2,  "help" );
+		actionMap.put(  "help", new AbstractAction( "help" )
 		{
 			@Override
 			public void actionPerformed( final ActionEvent arg0 )
@@ -181,11 +189,10 @@ public class ViewRegisteredAngles
 			}
 
 			private static final long serialVersionUID = 1L;
-		};
-		viewer.addKeyAction( helpKeystroke, helpAction );
-		viewer.addKeyAction( HelpKeystroke2, helpAction );
+		} );
 
-		viewer.addKeyAction( cropKeystroke, new AbstractAction( "crop" )
+		inputMap.put( cropKeystroke, "crop" );
+		actionMap.put( "crop", new AbstractAction( "crop" )
 		{
 			@Override
 			public void actionPerformed( final ActionEvent arg0 )
@@ -203,7 +210,8 @@ public class ViewRegisteredAngles
 			private static final long serialVersionUID = 1L;
 		} );
 
-		viewer.addKeyAction( saveKeystroke, new AbstractAction( "save settings" )
+		inputMap.put( saveKeystroke, "save settings" );
+		actionMap.put( "save settings", new AbstractAction( "save settings" )
 		{
 			@Override
 			public void actionPerformed( final ActionEvent arg0 )
@@ -221,7 +229,8 @@ public class ViewRegisteredAngles
 			private static final long serialVersionUID = 1L;
 		} );
 
-		viewer.addKeyAction( loadKeystroke, new AbstractAction( "load settings" )
+		inputMap.put( loadKeystroke, "load settings" );
+		actionMap.put( "load settings", new AbstractAction( "load settings" )
 		{
 			@Override
 			public void actionPerformed( final ActionEvent arg0 )
@@ -238,6 +247,9 @@ public class ViewRegisteredAngles
 
 			private static final long serialVersionUID = 1L;
 		} );
+
+		viewer.getKeybindings().addActionMap( "dialogs", actionMap );
+		viewer.getKeybindings().addInputMap( "dialogs", inputMap );
 
 		setupAssignments = new SetupAssignments( converterSetups, 0, 65535 );
 		final MinMaxGroup group = setupAssignments.getMinMaxGroups().get( 0 );

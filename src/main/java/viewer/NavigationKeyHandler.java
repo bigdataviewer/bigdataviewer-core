@@ -8,9 +8,7 @@ import java.util.Properties;
 
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
-import javax.swing.JComponent;
 import javax.swing.KeyStroke;
-import javax.swing.SwingUtilities;
 
 import viewer.SpimViewer.AlignPlane;
 
@@ -48,13 +46,13 @@ public class NavigationKeyHandler
 	public NavigationKeyHandler( final SpimViewer viewer )
 	{
 		this.viewer = viewer;
-
-		installKeyboardActions( viewer.frame.getRootPane() );
+		viewer.getKeybindings().addActionMap( "navigation", createActionMap() );
+		viewer.getKeybindings().addInputMap( "navigation", readPropertyFile() );
 	}
 
 	/**
 	 * Unused, yet.
-	 * 
+	 *
 	 * @return
 	 */
 	protected InputMap readPropertyFile()
@@ -89,16 +87,6 @@ public class NavigationKeyHandler
 		}
 
 		return map;
-	}
-
-	protected void installKeyboardActions( final JComponent component )
-	{
-		final InputMap inputMap = readPropertyFile();
-
-		SwingUtilities.replaceUIActionMap( component, createActionMap() );
-		SwingUtilities.replaceUIInputMap( component, JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, inputMap );
-		// SwingUtilities.replaceUIInputMap( component, JComponent.WHEN_FOCUSED,
-		// inputMap );
 	}
 
 	protected ActionMap createActionMap()

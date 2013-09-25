@@ -8,6 +8,8 @@ import java.util.List;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
+import javax.swing.ActionMap;
+import javax.swing.InputMap;
 import javax.swing.KeyStroke;
 
 import net.imglib2.realtransform.AffineTransform3D;
@@ -38,13 +40,9 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 
 	private final ArrayList< TransformedSource< ? > > sourcesToFix;
 
-	private final KeyStroke abortKey;
+	private final ActionMap actionMap;
 
-	private final Action abortAction;
-
-	private final KeyStroke resetKey;
-
-	private final Action resetAction;
+	private final InputMap inputMap;
 
 	public ManualTransformationEditor( final SpimViewer viewer )
 	{
@@ -53,8 +51,9 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 		liveTransform = new AffineTransform3D();
 		sourcesToModify = new ArrayList< TransformedSource< ? > >();
 		sourcesToFix = new ArrayList< TransformedSource< ? > >();
-		abortKey = KeyStroke.getKeyStroke( KeyEvent.VK_ESCAPE, 0 );
-		abortAction = new AbstractAction( "abort manual transformation" )
+
+		final KeyStroke abortKey = KeyStroke.getKeyStroke( KeyEvent.VK_ESCAPE, 0 );
+		final Action abortAction = new AbstractAction( "abort manual transformation" )
 		{
 			@Override
 			public void actionPerformed( final ActionEvent e )
@@ -64,8 +63,8 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 
 			private static final long serialVersionUID = 1L;
 		};
-		resetKey = KeyStroke.getKeyStroke( KeyEvent.VK_R, 0 );
-		resetAction = new AbstractAction( "reset manual transformation" )
+		final KeyStroke resetKey = KeyStroke.getKeyStroke( KeyEvent.VK_R, 0 );
+		final Action resetAction = new AbstractAction( "reset manual transformation" )
 		{
 			@Override
 			public void actionPerformed( final ActionEvent e )
@@ -75,6 +74,13 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 
 			private static final long serialVersionUID = 1L;
 		};
+		actionMap = new ActionMap();
+		inputMap = new InputMap();
+		actionMap.put( "abort manual transformation", abortAction );
+		inputMap.put( abortKey, "abort manual transformation" );
+		actionMap.put( "reset manual transformation", resetAction );
+		inputMap.put( resetKey, "reset manual transformation" );
+		viewer.getKeybindings().addActionMap( "manual transform", actionMap );
 	}
 
 	public synchronized void abort()
@@ -140,8 +146,7 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 				}
 				active = true;
 				viewer.addTransformListener( this );
-				viewer.addKeyAction( abortKey, abortAction ); // TODO: we must be able to remove this
-				viewer.addKeyAction( resetKey, resetAction ); // TODO: we must be able to remove this
+				viewer.getKeybindings().addInputMap( "manual transform", inputMap );
 				viewer.showMessage( "starting manual transform" );
 			}
 		}
@@ -149,6 +154,7 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 		{ // Exit manual edit mode.
 			active = false;
 			viewer.removeTransformListener( this );
+			viewer.getKeybindings().removeInputMap( "manual transform" );
 			final AffineTransform3D tmp = new AffineTransform3D();
 			for ( final TransformedSource< ? > source : sourcesToModify )
 			{
