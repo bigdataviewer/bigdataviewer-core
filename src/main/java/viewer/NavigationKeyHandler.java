@@ -18,7 +18,6 @@ public class NavigationKeyHandler
 	private static final Properties DEFAULT_KEYBINGS = new Properties();
 	static
 	{
-		DEFAULT_KEYBINGS.setProperty( "T", "toggle manual transformation" );
 		DEFAULT_KEYBINGS.setProperty( "I", "toggle interpolation" );
 		DEFAULT_KEYBINGS.setProperty( "F", "toggle fused mode" );
 		DEFAULT_KEYBINGS.setProperty( "G", "toggle grouping" );
@@ -93,7 +92,6 @@ public class NavigationKeyHandler
 	{
 		final ActionMap map = new ActionMap();
 
-		map.put( "toggle manual transformation", NavigationActions.getToggleManualTransformationAction( viewer ) );
 		map.put( "toggle interpolation", NavigationActions.getToggleInterpolationAction( viewer ) );
 		map.put( "toggle fused mode", NavigationActions.getToggleFusedModeAction( viewer ) );
 		map.put( "toggle grouping", NavigationActions.getToggleGroupingAction( viewer ) );

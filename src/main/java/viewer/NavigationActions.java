@@ -13,20 +13,6 @@ public class NavigationActions
 	private NavigationActions()
 	{}
 
-	public static final Action getToggleManualTransformationAction( final SpimViewer viewer )
-	{
-		return new AbstractAction( "toggle manual transformation" )
-		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
-			{
-				viewer.toggleManualTransformation();
-			}
-
-			private static final long serialVersionUID = 1L;
-		};
-	}
-
 	public static final Action getToggleInterpolationAction( final SpimViewer viewer )
 	{
 		return new AbstractAction( "toggle interpolation" )

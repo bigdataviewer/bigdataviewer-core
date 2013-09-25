@@ -33,7 +33,6 @@ import net.imglib2.Positionable;
 import net.imglib2.RealPoint;
 import net.imglib2.RealPositionable;
 import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.type.numeric.NumericType;
 import net.imglib2.ui.InteractiveDisplayCanvasComponent;
 import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.PainterThread;
@@ -49,15 +48,12 @@ import org.jdom2.Element;
 import viewer.TextOverlayAnimator.TextPosition;
 import viewer.gui.InputActionBindings;
 import viewer.gui.XmlIoViewerState;
-import viewer.gui.transformation.ManualTransformationEditor;
 import viewer.render.DisplayMode;
 import viewer.render.Interpolation;
 import viewer.render.MultiResolutionRenderer;
-import viewer.render.Source;
 import viewer.render.SourceAndConverter;
 import viewer.render.SourceGroup;
 import viewer.render.SourceState;
-import viewer.render.TransformedSource;
 import viewer.render.ViewerState;
 import viewer.render.overlay.MultiBoxOverlayRenderer;
 import viewer.render.overlay.SourceInfoOverlayRenderer;
@@ -100,8 +96,6 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 
 	final protected VisibilityAndGrouping visibilityAndGrouping;
 
-	private final ManualTransformationEditor manualTransformationEditor;
-
 	/**
 	 * These listeners will be notified about changes to the
 	 * {@link #viewerTransform}. This is done <em>before</em> calling
@@ -142,23 +136,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 			groups.add( g );
 		}
 
-		/*
-		 * Decorate each source with an extra transformation, that can be edited
-		 * manually in this viewer.
-		 */
-
-		final List< SourceAndConverter< ? >> transformedSources = new ArrayList< SourceAndConverter< ? > >( sources.size() );
-		for ( final SourceAndConverter< ? > orig : sources )
-		{
-			final SourceAndConverter< ? > sourceAndConverter = wrapWithTransformedSource( orig );
-			transformedSources.add( sourceAndConverter );
-		}
-
-		/*
-		 * Create viewer state.
-		 */
-
-		state = new ViewerState( transformedSources, groups, numTimePoints );
+		state = new ViewerState( sources, groups, numTimePoints );
 		if ( !sources.isEmpty() )
 			state.setCurrentSource( 0 );
 		multiBoxOverlayRenderer = new MultiBoxOverlayRenderer( width, height );
@@ -173,11 +151,6 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		renderTarget.setCanvasSize( width, height );
 		display.addOverlayRenderer( this );
 		keybindings = new InputActionBindings();
-
-		/*
-		 * The class in charge of performing the manual transformation.
-		 */
-		manualTransformationEditor = new ManualTransformationEditor( this );
 
 		final double[] screenScales = new double[] { 1, 0.75, 0.5, 0.25, 0.125 };
 		final long targetRenderNanos = 30 * 1000000;
@@ -234,25 +207,6 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		painterThread.start();
 
 		animatedOverlay = new TextOverlayAnimator( "Press <F1> for help.", 3000, TextPosition.CENTER );
-	}
-
-	// TODO: should move to separate ManualTransform tool
-	protected static < T extends NumericType< T > > SourceAndConverter< T > wrapWithTransformedSource( final SourceAndConverter< T > sc )
-	{
-		return new SourceAndConverter< T >( new TransformedSource< T >( sc.getSpimSource() ), sc.getConverter() );
-	}
-
-	// TODO: should move to separate ManualTransform tool
-	public ArrayList< TransformedSource< ? > > getTransformedSources()
-	{
-		final ArrayList< TransformedSource< ? > > list = new ArrayList< TransformedSource< ? > >();
-		for ( final SourceState< ? > sourceState : state.getSources() )
-		{
-			final Source< ? > source = sourceState.getSpimSource();
-			if ( TransformedSource.class.isInstance( source ) )
-				list.add( ( TransformedSource< ? > ) source );
-		}
-		return list;
 	}
 
 	public void addHandler( final Object handler )
@@ -434,12 +388,6 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 			state.setCurrentTimepoint( timepoint );
 			requestRepaint();
 		}
-	}
-
-	protected synchronized void toggleManualTransformation()
-	{
-		manualTransformationEditor.toggle();
-
 	}
 
 	protected synchronized void toggleInterpolation()

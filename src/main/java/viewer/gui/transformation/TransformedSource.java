@@ -1,5 +1,7 @@
-package viewer.render;
+package viewer.gui.transformation;
 
+import viewer.render.Interpolation;
+import viewer.render.Source;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.realtransform.AffineTransform3D;

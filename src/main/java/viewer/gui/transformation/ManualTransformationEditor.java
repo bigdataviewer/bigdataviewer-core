@@ -3,7 +3,6 @@ package viewer.gui.transformation;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.swing.AbstractAction;
@@ -15,10 +14,8 @@ import javax.swing.KeyStroke;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.ui.TransformListener;
 import viewer.SpimViewer;
-import viewer.TextOverlayAnimator;
-import viewer.render.DisplayMode;
 import viewer.render.Source;
-import viewer.render.TransformedSource;
+import viewer.render.SourceGroup;
 import viewer.render.ViewerState;
 
 
@@ -29,8 +26,6 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 	private boolean active = false;
 
 	private final SpimViewer viewer;
-
-	private TextOverlayAnimator animatedOverlay;
 
 	private final AffineTransform3D frozenTransform;
 
@@ -87,9 +82,9 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 	{
 		if ( active )
 		{
-			final AffineTransform3D tmp = new AffineTransform3D();
+			final AffineTransform3D identity = new AffineTransform3D();
 			for ( final TransformedSource< ? > source : sourcesToModify )
-				source.setIncrementalTransform( tmp );
+				source.setIncrementalTransform( identity );
 			viewer.setCurrentViewerTransform( frozenTransform );
 			viewer.showMessage( "aborted manual transform" );
 			active = false;
@@ -100,16 +95,15 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 	{
 		if ( active )
 		{
-			final AffineTransform3D tmp = new AffineTransform3D();
+			final AffineTransform3D identity = new AffineTransform3D();
 			for ( final TransformedSource< ? > source : sourcesToModify )
 			{
-				source.setIncrementalTransform( tmp );
-				source.setFixedTransform( tmp );
+				source.setIncrementalTransform( identity );
+				source.setFixedTransform( identity );
 			}
 			for ( final TransformedSource< ? > source : sourcesToFix )
 			{
-				source.setIncrementalTransform( tmp );
-				source.setFixedTransform( tmp );
+				source.setIncrementalTransform( identity );
 			}
 			viewer.setCurrentViewerTransform( frozenTransform );
 			viewer.showMessage( "reset manual transform" );
@@ -121,34 +115,39 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 		if ( !active )
 		{ // Enter manual edit mode
 			final ViewerState state = viewer.getState();
-			if ( state.getDisplayMode() != DisplayMode.FUSED )
+			final List< Integer > indices = new ArrayList< Integer >();
+			switch ( state.getDisplayMode() )
 			{
+			case FUSED:
+				indices.add( state.getCurrentSource() );
+				break;
+			case FUSEDGROUP:
+				final SourceGroup group = state.getSourceGroups().get( state.getCurrentGroup() );
+				indices.addAll( group.getSourceIds() );
+				break;
+			default:
 				viewer.showMessage( "Can only do manual transformation when in FUSED mode." );
 				return;
 			}
-			else
+			state.getViewerTransform( frozenTransform );
+			sourcesToModify.clear();
+			sourcesToFix.clear();
+			final int numSources = state.numSources();
+			for ( int i = 0; i < numSources; ++i )
 			{
-				state.getViewerTransform( frozenTransform );
-				final List< Integer > indices = Arrays.asList( new Integer( state.getCurrentSource() ) );
-				sourcesToModify.clear();
-				sourcesToFix.clear();
-				final int numSources = state.numSources();
-				for ( int i = 0; i < numSources; ++i )
+				final Source< ? > source = state.getSources().get( i ).getSpimSource();
+				if ( TransformedSource.class.isInstance( source ) )
 				{
-					final Source< ? > source = state.getSources().get( i ).getSpimSource();
-					if ( TransformedSource.class.isInstance( source ) )
-					{
-						if ( indices.contains( i ) )
-							sourcesToModify.add( ( TransformedSource< ? > ) source );
-						else
-							sourcesToFix.add( ( TransformedSource< ? > ) source );
-					}
+					if ( indices.contains( i ) )
+						sourcesToModify.add( (viewer.gui.transformation.TransformedSource< ? > ) source );
+					else
+						sourcesToFix.add( (viewer.gui.transformation.TransformedSource< ? > ) source );
 				}
-				active = true;
-				viewer.addTransformListener( this );
-				viewer.getKeybindings().addInputMap( "manual transform", inputMap );
-				viewer.showMessage( "starting manual transform" );
 			}
+			active = true;
+			viewer.addTransformListener( this );
+			viewer.getKeybindings().addInputMap( "manual transform", inputMap );
+			viewer.showMessage( "starting manual transform" );
 		}
 		else
 		{ // Exit manual edit mode.

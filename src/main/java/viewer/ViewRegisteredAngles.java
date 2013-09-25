@@ -41,6 +41,8 @@ import viewer.gui.brightness.MinMaxGroup;
 import viewer.gui.brightness.RealARGBColorConverterSetup;
 import viewer.gui.brightness.SetupAssignments;
 import viewer.gui.transformation.ManualTransformation;
+import viewer.gui.transformation.ManualTransformationEditor;
+import viewer.gui.transformation.TransformedSource;
 import viewer.gui.visibility.ActiveSourcesDialog;
 import viewer.render.Source;
 import viewer.render.SourceAndConverter;
@@ -60,6 +62,8 @@ public class ViewRegisteredAngles
 
 	final KeyStroke cropKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_F5, 0 );
 
+	final KeyStroke manualTransformKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_T, 0 );
+
 	final KeyStroke saveKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_F11, 0 );
 
 	final KeyStroke loadKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_F12, 0 );
@@ -75,6 +79,8 @@ public class ViewRegisteredAngles
 	final CropDialog cropDialog;
 
 	final ActiveSourcesDialog activeSourcesDialog;
+
+	final ManualTransformationEditor manualTransformationEditor;
 
 	final JFileChooser fileChooser;
 
@@ -98,6 +104,11 @@ public class ViewRegisteredAngles
 	public void crop()
 	{
 		cropDialog.setVisible( ! cropDialog.isVisible() );
+	}
+
+	public void toggleManualTransformation()
+	{
+		manualTransformationEditor.toggle();
 	}
 
 	private ViewRegisteredAngles( final String xmlFilename ) throws InstantiationException, IllegalAccessException, ClassNotFoundException, JDOMException, IOException
@@ -141,12 +152,16 @@ public class ViewRegisteredAngles
 		{
 			final RealARGBColorConverter< UnsignedShortType > converter = new RealARGBColorConverter< UnsignedShortType >( 0, 65535 );
 			converter.setColor( new ARGBType( ARGBType.rgba( 255, 255, 255, 255 ) ) );
-			sources.add( new SourceAndConverter< UnsignedShortType >( new SpimSource( loader, setup, "angle " + seq.setups.get( setup ).getAngle() ), converter ) );
+			final SpimSource spimSource = new SpimSource( loader, setup, "angle " + seq.setups.get( setup ).getAngle() );
+			// Decorate each source with an extra transformation, that can be edited manually in this viewer.
+			final TransformedSource< UnsignedShortType > transformedSource = new TransformedSource< UnsignedShortType >( spimSource );
+			sources.add( new SourceAndConverter< UnsignedShortType >( transformedSource, converter ) );
 			converterSetups.add( new RealARGBColorConverterSetup< UnsignedShortType >( setup, converter ) );
 		}
 
 		viewer = new SpimViewer( width, height, sources, seq.numTimepoints() );
 		manualTransformation = new ManualTransformation( viewer );
+		manualTransformationEditor = new ManualTransformationEditor( viewer );
 
 		for ( final ConverterSetup cs : converterSetups )
 			if ( RealARGBColorConverterSetup.class.isInstance( cs ) )
@@ -205,6 +220,18 @@ public class ViewRegisteredAngles
 				{
 					e.printStackTrace();
 				}
+			}
+
+			private static final long serialVersionUID = 1L;
+		} );
+
+		inputMap.put(  manualTransformKeystroke, "toggle manual transformation" );
+		actionMap.put( "toggle manual transformation", new AbstractAction( "toggle manual transformation" )
+		{
+			@Override
+			public void actionPerformed( final ActionEvent e )
+			{
+				toggleManualTransformation();
 			}
 
 			private static final long serialVersionUID = 1L;
@@ -451,8 +478,8 @@ public class ViewRegisteredAngles
 
 	public static void main( final String[] args )
 	{
-//		final String fn = "/Users/pietzsch/workspace/data/fast fly/111010_weber/combined.xml";
-		final String fn = "/Users/pietzsch/workspace/data/mette/mette.xml";
+		final String fn = "/Users/pietzsch/workspace/data/fast fly/111010_weber/combined.xml";
+//		final String fn = "/Users/pietzsch/workspace/data/mette/mette.xml";
 //		final String fn = "/Users/tobias/Desktop/openspim.xml";
 //		final String fn = "/Users/pietzsch/Desktop/data/fibsem.xml";
 //		final String fn = "/Users/pietzsch/Desktop/url-valia.xml";
