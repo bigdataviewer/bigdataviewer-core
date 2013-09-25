@@ -371,25 +371,40 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		}
 	}
 
-	static enum AlignPlane
+	private final static double c = Math.cos( Math.PI / 4 );
+	public static enum AlignPlane
 	{
-		XY( "XY" ), ZY( "ZY" ), XZ( "XZ" );
+		XY( "XY", 2, new double[] { 1, 0, 0, 0 } ),
+		ZY( "ZY", 0, new double[] { c, 0, -c, 0 } ),
+		XZ( "XZ", 1, new double[] { c, c, 0, 0 } );
 
-		String name;
+		private final String name;
 
-		AlignPlane( final String name )
+		public String getName()
+		{
+			return name;
+		}
+
+		/**
+		 * rotation from the xy-plane aligned coordinate system to this plane.
+		 */
+		private final double[] qAlign;
+
+		/**
+		 * Axis index. The plane spanned by the remaining two axes will be
+		 * transformed to the same plane by the computed rotation and the
+		 * "rotation part" of the affine source transform.
+		 * @see Affine3DHelpers#extractApproximateRotationAffine(AffineTransform3D, double[], int)
+		 */
+		private final int coerceAffineDimension;
+
+		private AlignPlane( final String name, final int coerceAffineDimension, final double[] qAlign )
 		{
 			this.name = name;
+			this.coerceAffineDimension = coerceAffineDimension;
+			this.qAlign = qAlign;
 		}
 	}
-
-	private final static double c = Math.cos( Math.PI / 4 );
-
-	private final static double[] qAlignXY = new double[] { 1, 0, 0, 0 };
-
-	private final static double[] qAlignZY = new double[] { c, 0, -c, 0 };
-
-	private final static double[] qAlignXZ = new double[] { c, c, 0, 0 };
 
 	protected synchronized void align( final AlignPlane plane )
 	{
@@ -399,26 +414,9 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		final double[] qSource = new double[ 4 ];
 		Affine3DHelpers.extractRotationAnisotropic( sourceTransform, qSource );
 
-		final double[] qTmpSource;
-		if ( plane == AlignPlane.XY )
-		{
-			Affine3DHelpers.extractApproximateRotationAffine( sourceTransform, qSource, 2 );
-			qTmpSource = qSource;
-		}
-		else
-		{
-			qTmpSource = new double[ 4 ];
-			if ( plane == AlignPlane.ZY )
-			{
-				Affine3DHelpers.extractApproximateRotationAffine( sourceTransform, qSource, 0 );
-				LinAlgHelpers.quaternionMultiply( qSource, qAlignZY, qTmpSource );
-			}
-			else // if ( plane == AlignPlane.XZ )
-			{
-				Affine3DHelpers.extractApproximateRotationAffine( sourceTransform, qSource, 1 );
-				LinAlgHelpers.quaternionMultiply( qSource, qAlignXZ, qTmpSource );
-			}
-		}
+		final double[] qTmpSource = new double[ 4 ];
+		Affine3DHelpers.extractApproximateRotationAffine( sourceTransform, qSource, plane.coerceAffineDimension );
+		LinAlgHelpers.quaternionMultiply( qSource, plane.qAlign, qTmpSource );
 
 		final double[] qTarget = new double[ 4 ];
 		LinAlgHelpers.quaternionInvert( qTmpSource, qTarget );
