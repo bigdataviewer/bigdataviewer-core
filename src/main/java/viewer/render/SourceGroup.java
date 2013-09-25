@@ -33,10 +33,17 @@ public class SourceGroup
 		isCurrent = false;
 	}
 
+	public SourceGroup( final SourceGroup g )
+	{
+		sourceIds = new TreeSet< Integer >( g.sourceIds );
+		name = g.name;
+		isActive = g.isActive;
+		isCurrent = g.isCurrent;
+	}
+
 	public SourceGroup copy()
 	{
-//		return new SourceGroup( this );
-		return null; // TODO
+		return new SourceGroup( this );
 	}
 
 	public synchronized void addSource( final int sourceId )
