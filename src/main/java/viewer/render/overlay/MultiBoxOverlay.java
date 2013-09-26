@@ -355,6 +355,13 @@ public class MultiBoxOverlay
 			}
 		}
 
+		if ( highlightIndex >= sources.size() )
+		{
+			highlightInProgress = false;
+			highlightIndex = -1;
+			highlighStartTime = -1;
+		}
+
 		graphics.setRenderingHint( RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON );
 		graphics.setPaint( inactiveBackColor );
 		graphics.draw( inactiveBack );

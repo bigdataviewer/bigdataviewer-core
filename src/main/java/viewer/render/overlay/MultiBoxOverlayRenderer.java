@@ -101,24 +101,31 @@ public class MultiBoxOverlayRenderer
 			final DisplayMode displayMode = viewerState.getDisplayMode();
 
 			final int numSources = sources.size();
-			if ( boxSources.size() != numSources )
+			int numPresentSources = 0;
+			for ( final SourceState< ? > source : sources )
+				if ( source.getSpimSource().isPresent( timepoint ) )
+					numPresentSources++;
+			if ( boxSources.size() != numPresentSources )
 			{
-				while ( boxSources.size() < numSources )
+				while ( boxSources.size() < numPresentSources )
 					boxSources.add( new IntervalAndTransform() );
-				while ( boxSources.size() > numSources )
+				while ( boxSources.size() > numPresentSources )
 					boxSources.remove( boxSources.size() - 1 );
 			}
 
 			final AffineTransform3D sourceToViewer = new AffineTransform3D();
-			for ( int i = 0; i < numSources; ++i )
+			for ( int i = 0, j = 0; i < numSources; ++i )
 			{
 				final SourceState< ? > source = sources.get( i );
-				final IntervalAndTransform boxsource = boxSources.get( i );
-				viewerState.getViewerTransform( sourceToViewer );
-				sourceToViewer.concatenate( source.getSpimSource().getSourceTransform( timepoint, 0 ) );
-				boxsource.setSourceToViewer( sourceToViewer );
-				boxsource.setSourceInterval( source.getSpimSource().getSource( timepoint, 0 ) );
-				boxsource.setVisible( visible.contains( i ) );
+				if ( source.getSpimSource().isPresent( timepoint ) )
+				{
+					final IntervalAndTransform boxsource = boxSources.get( j++ );
+					viewerState.getViewerTransform( sourceToViewer );
+					sourceToViewer.concatenate( source.getSpimSource().getSourceTransform( timepoint, 0 ) );
+					boxsource.setSourceToViewer( sourceToViewer );
+					boxsource.setSourceInterval( source.getSpimSource().getSource( timepoint, 0 ) );
+					boxsource.setVisible( visible.contains( i ) );
+				}
 			}
 		}
 	}
