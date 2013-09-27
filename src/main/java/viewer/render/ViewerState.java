@@ -5,7 +5,6 @@ import static viewer.render.DisplayMode.SINGLE;
 import static viewer.render.Interpolation.NEARESTNEIGHBOR;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.TreeSet;
@@ -324,18 +323,23 @@ public class ViewerState
 		switch ( displayMode )
 		{
 		case SINGLE:
-			return index == currentSource;
+			return ( index == currentSource ) && isPresent( index );
 		case GROUP:
-			return groups.get( currentGroup ).getSourceIds().contains( index );
+			return groups.get( currentGroup ).getSourceIds().contains( index ) && isPresent( index );
 		case FUSED:
-			return sources.get( index ).isActive();
+			return sources.get( index ).isActive() && isPresent( index );
 		case FUSEDGROUP:
 		default:
 			for ( final SourceGroup group : groups )
-				if ( group.isActive() && group.getSourceIds().contains( index ) )
+				if ( group.isActive() && group.getSourceIds().contains( index ) && isPresent( index ) )
 					return true;
 			return false;
 		}
+	}
+
+	private boolean isPresent( final int sourceId )
+	{
+		return sources.get( sourceId ).getSpimSource().isPresent( currentTimepoint );
 	}
 
 	/**
@@ -345,26 +349,34 @@ public class ViewerState
 	 */
 	public synchronized List< Integer > getVisibleSourceIndices()
 	{
+		final ArrayList< Integer > visible = new ArrayList< Integer >();
 		switch ( displayMode )
 		{
 		case SINGLE:
-			return Arrays.asList( new Integer( currentSource ) );
+			if ( isPresent( currentSource ) )
+				visible.add( currentSource );
+			break;
 		case GROUP:
-			return new ArrayList< Integer >( groups.get( currentGroup ).getSourceIds() );
+			for ( final int sourceId : groups.get( currentGroup ).getSourceIds() )
+				if ( isPresent( sourceId ) )
+					visible.add( sourceId );
+			break;
 		case FUSED:
-			final ArrayList< Integer > active = new ArrayList< Integer >();
 			for ( int i = 0; i < sources.size(); ++i )
-				if ( sources.get( i ).isActive() )
-					active.add( i );
-			return active;
+				if ( sources.get( i ).isActive() && isPresent( i ) )
+					visible.add( i );
+			break;
 		case FUSEDGROUP:
-		default:
 			final TreeSet< Integer > gactive = new TreeSet< Integer >();
 			for ( final SourceGroup group : groups )
 				if ( group.isActive() )
 					gactive.addAll( group.getSourceIds() );
-			return new ArrayList< Integer >( gactive );
+			for ( final int sourceId : new ArrayList< Integer >( gactive ) )
+				if ( isPresent( sourceId ) )
+					visible.add( sourceId );
+			break;
 		}
+		return visible;
 	}
 
 	/*
@@ -405,5 +417,10 @@ public class ViewerState
 			}
 		}
 		return targetLevel;
+	}
+
+	public int getNumTimePoints()
+	{
+		return numTimePoints;
 	}
 }
