@@ -1,13 +1,12 @@
 package viewer.render;
 
 import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.type.numeric.NumericType;
 import net.imglib2.util.LinAlgHelpers;
 
 /**
  * Source with some attached state needed for rendering.
  */
-public class SourceState< T extends NumericType< T > > extends SourceAndConverter< T >
+public class SourceState< T > extends SourceAndConverter< T >
 {
 	/**
 	 * Whether the source is active (visible in  {@link DisplayMode#FUSED} mode).
@@ -81,7 +80,7 @@ public class SourceState< T extends NumericType< T > > extends SourceAndConverte
 	/**
 	 * Create a {@link SourceState} from a {@link SourceAndConverter}.
 	 */
-	public static < T extends NumericType< T > > SourceState< T > create( final SourceAndConverter< T > soc )
+	public static < T > SourceState< T > create( final SourceAndConverter< T > soc )
 	{
 		return new SourceState< T >( soc );
 	}

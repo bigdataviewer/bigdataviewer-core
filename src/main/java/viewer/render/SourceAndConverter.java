@@ -2,12 +2,11 @@ package viewer.render;
 
 import net.imglib2.converter.Converter;
 import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.type.numeric.NumericType;
 
 /**
  * Data source (for one view setup) and a converter to ARGBType.
  */
-public class SourceAndConverter< T extends NumericType< T > >
+public class SourceAndConverter< T >
 {
 	/**
 	 * provides image data for all timepoints of one view.
