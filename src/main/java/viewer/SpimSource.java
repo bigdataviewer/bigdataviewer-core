@@ -5,6 +5,7 @@ import mpicbg.spim.data.View;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
+import net.imglib2.display.nativevolatile.VolatileShortArray;
 import net.imglib2.display.nativevolatile.VolatileUnsignedShortType;
 import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
@@ -71,7 +72,7 @@ public class SpimSource implements Source< VolatileUnsignedShortType >
 		currentTimepoint = timepoint;
 		if ( isPresent( timepoint ) )
 		{
-			final VolatileUnsignedShortType zero = new VolatileUnsignedShortType( new UnsignedShortType(), true );
+			final VolatileUnsignedShortType zero = new VolatileUnsignedShortType( new UnsignedShortType( new VolatileShortArray( 1, true ) ), true );
 			zero.get().setZero();
 			final View view = sequenceViews.getView( timepoint, setup );
 			final AffineTransform3D reg = view.getModel();

@@ -1,5 +1,6 @@
 package viewer.render;
 
+import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -11,10 +12,8 @@ import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.converter.Converter;
 import net.imglib2.display.Volatile;
-import net.imglib2.img.array.ArrayImg;
+import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgs;
-import net.imglib2.img.array.ArrayRandomAccess;
-import net.imglib2.img.basictypeaccess.array.IntArray;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.ui.util.StopWatch;
 import viewer.hdf5.img.CacheIoTiming;
@@ -66,9 +65,10 @@ public class InterruptibleRenderer< A extends Volatile< ? >, B > extends Abstrac
 		final long startTimeIoCumulative = iostat.getCumulativeIoNanoTime();
 		final long startIoBytes = iostat.getIoBytes();
 
-		final ArrayImg< IntType, IntArray > mask = ArrayImgs.ints( target.dimension( 0 ), target.dimension( 1 ) );
-		for ( final IntType t : mask )
-			t.set( Integer.MAX_VALUE );
+		final int size = ( int ) ( target.dimension( 0 ) * target.dimension( 1 ) );
+		final int[] maskArray = new int[ size ];
+		Arrays.fill( maskArray, Integer.MAX_VALUE );
+		final Img< IntType > mask = ArrayImgs.ints( maskArray, target.dimension( 0 ), target.dimension( 1 ) );
 
 		if ( ioTimeOutNanos > 0 )
 			CacheIoTiming.setThreadGroupIoNanoTimeout( startTimeIo + ioTimeOutNanos, new Runnable()
@@ -115,13 +115,13 @@ public class InterruptibleRenderer< A extends Volatile< ? >, B > extends Abstrac
 				@Override
 				public void run()
 				{
-					boolean myValid = true;
 					if ( interrupted.get() )
 						return;
 
 					final RandomAccess< A > sourceRandomAccess = source.randomAccess( InterruptibleRenderer.this );
 					final RandomAccess< B > targetRandomAccess = target.randomAccess( target );
-					final ArrayRandomAccess< IntType > maskRandomAccess = mask.randomAccess( target );
+					final RandomAccess< IntType > maskRandomAccess = mask.randomAccess( target );
+					boolean myValid = true;
 
 					sourceRandomAccess.setPosition( min );
 					sourceRandomAccess.setPosition( myMinY, 1 );
@@ -148,7 +148,6 @@ public class InterruptibleRenderer< A extends Volatile< ? >, B > extends Abstrac
 								else
 									myValid = false;
 							}
-							converter.convert( sourceRandomAccess.get(), targetRandomAccess.get() );
 							sourceRandomAccess.fwd( 0 );
 							targetRandomAccess.fwd( 0 );
 							maskRandomAccess.fwd( 0 );

@@ -2,6 +2,7 @@ package viewer.hdf5.img;
 
 import static viewer.hdf5.Util.getCellsPath;
 import static viewer.hdf5.Util.reorder;
+import net.imglib2.display.nativevolatile.VolatileShortArray;
 import ch.systemsx.cisd.base.mdarray.MDShortArray;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
 
