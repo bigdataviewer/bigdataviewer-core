@@ -10,13 +10,19 @@ import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.converter.Converter;
+import net.imglib2.display.Volatile;
+import net.imglib2.img.array.ArrayImg;
+import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.array.ArrayRandomAccess;
+import net.imglib2.img.basictypeaccess.array.IntArray;
+import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.ui.util.StopWatch;
 import viewer.hdf5.img.CacheIoTiming;
 import viewer.hdf5.img.CacheIoTiming.IoStatistics;
 
 // TODO: should this extend net.imglib2.ui.InterruptibleProjector?
 // rename to XInterruptibleProjector
-public class InterruptibleRenderer< A, B > extends AbstractInterval
+public class InterruptibleRenderer< A extends Volatile< ? >, B > extends AbstractInterval
 {
 	final protected RandomAccessible< A > source;
 
@@ -29,6 +35,8 @@ public class InterruptibleRenderer< A, B > extends AbstractInterval
 	protected long ioTimeOutNanos;
 
 	protected Runnable ioTimeOutRunnable;
+
+	protected volatile boolean valid = false;
 
 	public void setIoTimeOut( final long nanos, final Runnable runnable )
 	{
@@ -58,6 +66,10 @@ public class InterruptibleRenderer< A, B > extends AbstractInterval
 		final long startTimeIoCumulative = iostat.getCumulativeIoNanoTime();
 		final long startIoBytes = iostat.getIoBytes();
 
+		final ArrayImg< IntType, IntArray > mask = ArrayImgs.ints( target.dimension( 0 ), target.dimension( 1 ) );
+		for ( final IntType t : mask )
+			t.set( Integer.MAX_VALUE );
+
 		if ( ioTimeOutNanos > 0 )
 			CacheIoTiming.setThreadGroupIoNanoTimeout( startTimeIo + ioTimeOutNanos, new Runnable()
 			{
@@ -81,6 +93,9 @@ public class InterruptibleRenderer< A, B > extends AbstractInterval
 		final int width = ( int ) target.dimension( 0 );
 		final int height = ( int ) target.dimension( 1 );
 
+		final int iFinal = 0;
+		valid = true;
+
 		final ExecutorService ex = Executors.newFixedThreadPool( numThreads );
 		final int numTasks;
 		if ( numThreads > 1 )
@@ -100,31 +115,53 @@ public class InterruptibleRenderer< A, B > extends AbstractInterval
 				@Override
 				public void run()
 				{
+					boolean myValid = true;
 					if ( interrupted.get() )
 						return;
 
 					final RandomAccess< A > sourceRandomAccess = source.randomAccess( InterruptibleRenderer.this );
 					final RandomAccess< B > targetRandomAccess = target.randomAccess( target );
+					final ArrayRandomAccess< IntType > maskRandomAccess = mask.randomAccess( target );
 
 					sourceRandomAccess.setPosition( min );
 					sourceRandomAccess.setPosition( myMinY, 1 );
 					targetRandomAccess.setPosition( min[ 0 ], 0 );
 					targetRandomAccess.setPosition( myMinY, 1 );
+					maskRandomAccess.setPosition( min[ 0 ], 0 );
+					maskRandomAccess.setPosition( myMinY, 1 );
 					for ( int y = 0; y < myHeight; ++y )
 					{
 						if ( interrupted.get() )
 							break;
 						for ( int x = 0; x < width; ++x )
 						{
+							final IntType m = maskRandomAccess.get();
+							if ( m.get() > iFinal )
+							{
+								final A a = sourceRandomAccess.get();
+								final boolean v = a.isValid();
+								if ( v )
+								{
+									converter.convert( a, targetRandomAccess.get() );
+									m.set( iFinal );
+								}
+								else
+									myValid = false;
+							}
 							converter.convert( sourceRandomAccess.get(), targetRandomAccess.get() );
 							sourceRandomAccess.fwd( 0 );
 							targetRandomAccess.fwd( 0 );
+							maskRandomAccess.fwd( 0 );
 						}
 						sourceRandomAccess.move( cr, 0 );
 						targetRandomAccess.move( cr, 0 );
+						maskRandomAccess.move( cr, 0 );
 						sourceRandomAccess.fwd( 1 );
 						targetRandomAccess.fwd( 1 );
+						maskRandomAccess.fwd( 1 );
 					}
+					if ( !myValid )
+						valid = false;
 				}
 			};
 			ex.execute( r );

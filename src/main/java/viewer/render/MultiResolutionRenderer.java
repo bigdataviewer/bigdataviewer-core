@@ -1,22 +1,19 @@
 package viewer.render;
 
 import java.awt.image.BufferedImage;
-import java.util.ArrayList;
 import java.util.List;
 
 import net.imglib2.RandomAccessible;
 import net.imglib2.RealRandomAccessible;
-import net.imglib2.converter.Converters;
-import net.imglib2.converter.TypeIdentity;
 import net.imglib2.display.ARGBScreenImage;
+import net.imglib2.display.Volatile;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.realtransform.RealViews;
-import net.imglib2.sampler.special.ConstantRandomAccessible;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
 import net.imglib2.ui.util.GuiUtil;
-import viewer.display.AccumulateARGB;
+import net.imglib2.util.Util;
 
 public class MultiResolutionRenderer
 {
@@ -240,7 +237,7 @@ public class MultiResolutionRenderer
 		final int numSources = state.numSources();
 		if ( numSources != maxMipmapLevel.length )
 		{
-			final List< SourceState< ? >> sources = state.getSources();
+			final List< SourceState< ? > > sources = state.getSources();
 			maxMipmapLevel = new int[ numSources ];
 			for ( int i = 0; i < maxMipmapLevel.length; ++i )
 				maxMipmapLevel[ i ] = sources.get( i ).getSpimSource().getNumMipmapLevels() - 1;
@@ -368,8 +365,8 @@ public class MultiResolutionRenderer
 						maxScreenScaleIndex--;
 				}
 //				System.out.println( "maxScreenScaleIndex = " + maxScreenScaleIndex + "  (" + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 0 ) + " x " + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 1 ) + ")" );
-//				System.out.println( String.format( "rendering:%4d ms   io:%4d ms   (total:%4d ms)", rendertime / 1000000, iotime / 1000000, ( rendertime + iotime ) / 1000000 ) );
-//				System.out.println( "scale = " + currentScreenScaleIndex + "   mipmap = " + Util.printCoordinates( currentMipmapLevel ) );
+				System.out.println( String.format( "rendering:%4d ms   io:%4d ms   (total:%4d ms)", rendertime / 1000000, iotime / 1000000, ( rendertime + iotime ) / 1000000 ) );
+				System.out.println( "scale = " + currentScreenScaleIndex + "   mipmap = " + Util.printCoordinates( currentMipmapLevel ) );
 //				System.out.println( "     target mipmap = " + Util.printCoordinates( targetMipmapLevel ) );
 
 				boolean refineMipmap = false;
@@ -434,20 +431,20 @@ public class MultiResolutionRenderer
 		{
 			final List< SourceState< ? > > sources = viewerState.getSources();
 			final List< Integer > visibleSourceIndices = viewerState.getVisibleSourceIndices();
-			if ( visibleSourceIndices.isEmpty() )
-				return new InterruptibleRenderer< ARGBType, ARGBType >( new ConstantRandomAccessible< ARGBType >( argbtype, 2 ), new TypeIdentity< ARGBType >() );
-			else if ( visibleSourceIndices.size() == 1 )
-			{
+//			if ( visibleSourceIndices.isEmpty() )
+//				return new InterruptibleRenderer< ARGBType, ARGBType >( new ConstantRandomAccessible< ARGBType >( argbtype, 2 ), new TypeIdentity< ARGBType >() );
+//			else if ( visibleSourceIndices.size() == 1 )
+//			{
 				final int i = visibleSourceIndices.get( 0 );
 				return createSingleSourceProjector( viewerState, sources.get( i ), screenScaleTransform, mipmapIndex[ i ] );
-			}
-			else
-			{
-				final ArrayList< RandomAccessible< ARGBType > > accessibles = new ArrayList< RandomAccessible< ARGBType > >( visibleSourceIndices.size() );
-				for ( final int i : visibleSourceIndices )
-					accessibles.add( getConvertedTransformedSource( viewerState, sources.get( i ), screenScaleTransform, mipmapIndex[ i ] ) );
-				return new InterruptibleRenderer< ARGBType, ARGBType >( new AccumulateARGB( accessibles ), new TypeIdentity< ARGBType >() );
-			}
+//			}
+//			else
+//			{
+//				final ArrayList< RandomAccessible< ARGBType > > accessibles = new ArrayList< RandomAccessible< ARGBType > >( visibleSourceIndices.size() );
+//				for ( final int i : visibleSourceIndices )
+//					accessibles.add( getConvertedTransformedSource( viewerState, sources.get( i ), screenScaleTransform, mipmapIndex[ i ] ) );
+//				return new InterruptibleRenderer< ARGBType, ARGBType >( new AccumulateARGB( accessibles ), new TypeIdentity< ARGBType >() );
+//			}
 		}
 	}
 
@@ -467,12 +464,12 @@ public class MultiResolutionRenderer
 		return RealViews.constantAffine( img, sourceToScreen );
 	}
 
-	private static < T > RandomAccessible< ARGBType > getConvertedTransformedSource( final ViewerState viewerState, final SourceState< T > source, final AffineTransform3D screenScaleTransform, final int mipmapIndex )
-	{
-		return Converters.convert( getTransformedSource( viewerState, source.getSpimSource(), screenScaleTransform, mipmapIndex ), source.getConverter(), argbtype );
-	}
+//	private static < T > RandomAccessible< ARGBType > getConvertedTransformedSource( final ViewerState viewerState, final SourceState< T > source, final AffineTransform3D screenScaleTransform, final int mipmapIndex )
+//	{
+//		return Converters.convert( getTransformedSource( viewerState, source.getSpimSource(), screenScaleTransform, mipmapIndex ), source.getConverter(), argbtype );
+//	}
 
-	private static < T > InterruptibleRenderer< T, ARGBType > createSingleSourceProjector( final ViewerState viewerState, final SourceState< T > source, final AffineTransform3D screenScaleTransform, final int mipmapIndex )
+	private static < T extends Volatile< ? > > InterruptibleRenderer< T, ARGBType > createSingleSourceProjector( final ViewerState viewerState, final SourceState< T > source, final AffineTransform3D screenScaleTransform, final int mipmapIndex )
 	{
 		return new InterruptibleRenderer< T, ARGBType >( getTransformedSource( viewerState, source.getSpimSource(), screenScaleTransform, mipmapIndex ), source.getConverter() );
 	}

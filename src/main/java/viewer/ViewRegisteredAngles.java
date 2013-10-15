@@ -18,6 +18,7 @@ import mpicbg.spim.data.SequenceDescription;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.display.RealARGBColorConverter;
+import net.imglib2.display.nativevolatile.VolatileUnsignedShortType;
 import net.imglib2.histogram.DiscreteFrequencyDistribution;
 import net.imglib2.histogram.Histogram1d;
 import net.imglib2.histogram.Real1dBinMapper;
@@ -150,13 +151,13 @@ public class ViewRegisteredAngles
 		final ArrayList< SourceAndConverter< ? > > sources = new ArrayList< SourceAndConverter< ? > >();
 		for ( int setup = 0; setup < seq.numViewSetups(); ++setup )
 		{
-			final RealARGBColorConverter< UnsignedShortType > converter = new RealARGBColorConverter< UnsignedShortType >( 0, 65535 );
+			final RealARGBColorConverter< VolatileUnsignedShortType > converter = new RealARGBColorConverter< VolatileUnsignedShortType >( 0, 65535 );
 			converter.setColor( new ARGBType( ARGBType.rgba( 255, 255, 255, 255 ) ) );
 			final SpimSource spimSource = new SpimSource( loader, setup, "angle " + seq.setups.get( setup ).getAngle() );
 			// Decorate each source with an extra transformation, that can be edited manually in this viewer.
-			final TransformedSource< UnsignedShortType > transformedSource = new TransformedSource< UnsignedShortType >( spimSource );
-			sources.add( new SourceAndConverter< UnsignedShortType >( transformedSource, converter ) );
-			converterSetups.add( new RealARGBColorConverterSetup< UnsignedShortType >( setup, converter ) );
+			final TransformedSource< VolatileUnsignedShortType > transformedSource = new TransformedSource< VolatileUnsignedShortType >( spimSource );
+			sources.add( new SourceAndConverter< VolatileUnsignedShortType >( transformedSource, converter ) );
+			converterSetups.add( new RealARGBColorConverterSetup< VolatileUnsignedShortType >( setup, converter ) );
 		}
 
 		viewer = new SpimViewer( width, height, sources, seq.numTimepoints() );
@@ -483,7 +484,8 @@ public class ViewRegisteredAngles
 //		final String fn = "/Users/tobias/Desktop/openspim.xml";
 //		final String fn = "/Users/pietzsch/Desktop/data/fibsem.xml";
 //		final String fn = "/Users/pietzsch/Desktop/url-valia.xml";
-//		final String fn = "/Users/pietzsch/Desktop/Valia/valia.xml";
+//		final String fn = "/Users/pietzsch/Desktop/data/Valia1/valia1.xml";
+//		final String fn = "/Users/pietzsch/workspace/data/111010_weber_full.xml";
 		try
 		{
 			new ViewRegisteredAngles( fn );

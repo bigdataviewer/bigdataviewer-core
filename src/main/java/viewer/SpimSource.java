@@ -5,6 +5,7 @@ import mpicbg.spim.data.View;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
+import net.imglib2.display.nativevolatile.VolatileUnsignedShortType;
 import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory;
@@ -14,13 +15,13 @@ import net.imglib2.view.Views;
 import viewer.render.Interpolation;
 import viewer.render.Source;
 
-public class SpimSource implements Source< UnsignedShortType >
+public class SpimSource implements Source< VolatileUnsignedShortType >
 {
 	int currentTimepoint;
 
-	RandomAccessibleInterval< UnsignedShortType >[] currentSources;
+	RandomAccessibleInterval< VolatileUnsignedShortType >[] currentSources;
 
-	RealRandomAccessible< UnsignedShortType >[][] currentInterpolatedSources;
+	RealRandomAccessible< VolatileUnsignedShortType >[][] currentInterpolatedSources;
 
 	final AffineTransform3D[] currentSourceTransforms;
 
@@ -42,7 +43,7 @@ public class SpimSource implements Source< UnsignedShortType >
 
 	final protected static int iNLinearMethod = 1;
 
-	final protected InterpolatorFactory< UnsignedShortType, RandomAccessible< UnsignedShortType > >[] interpolatorFactories;
+	final protected InterpolatorFactory< VolatileUnsignedShortType, RandomAccessible< VolatileUnsignedShortType > >[] interpolatorFactories;
 
 	@SuppressWarnings( "unchecked" )
 	public SpimSource( final SequenceViewsLoader loader, final int setup, final String name )
@@ -60,8 +61,8 @@ public class SpimSource implements Source< UnsignedShortType >
 		for ( int level = 0; level < numMipmapLevels; level++ )
 			currentSourceTransforms[ level ] = new AffineTransform3D();
 		interpolatorFactories = new InterpolatorFactory[ numInterpolationMethods ];
-		interpolatorFactories[ iNearestNeighborMethod ] = new NearestNeighborInterpolatorFactory< UnsignedShortType >();
-		interpolatorFactories[ iNLinearMethod ] = new NLinearInterpolatorFactory< UnsignedShortType >();
+		interpolatorFactories[ iNearestNeighborMethod ] = new NearestNeighborInterpolatorFactory< VolatileUnsignedShortType >();
+		interpolatorFactories[ iNLinearMethod ] = new NLinearInterpolatorFactory< VolatileUnsignedShortType >();
 		loadTimepoint( 0 );
 	}
 
@@ -70,8 +71,8 @@ public class SpimSource implements Source< UnsignedShortType >
 		currentTimepoint = timepoint;
 		if ( isPresent( timepoint ) )
 		{
-			final UnsignedShortType zero = new UnsignedShortType();
-			zero.setZero();
+			final VolatileUnsignedShortType zero = new VolatileUnsignedShortType( new UnsignedShortType(), true );
+			zero.get().setZero();
 			final View view = sequenceViews.getView( timepoint, setup );
 			final AffineTransform3D reg = view.getModel();
 			final AffineTransform3D mipmapTransform = new AffineTransform3D();
@@ -85,7 +86,7 @@ public class SpimSource implements Source< UnsignedShortType >
 				}
 				currentSourceTransforms[ level ].set( reg );
 				currentSourceTransforms[ level ].concatenate( mipmapTransform );
-				currentSources[ level ] = imgLoader.getUnsignedShortImage( view, level );
+				currentSources[ level ] = imgLoader.getVolatileUnsignedShortImage( view, level );
 				for ( int method = 0; method < numInterpolationMethods; ++method )
 					currentInterpolatedSources[ level ][ method ] = Views.interpolate( Views.extendValue( currentSources[ level ], zero ), interpolatorFactories[ method ] );
 			}
@@ -109,7 +110,7 @@ public class SpimSource implements Source< UnsignedShortType >
 	}
 
 	@Override
-	public synchronized RandomAccessibleInterval< UnsignedShortType > getSource( final int t, final int level )
+	public synchronized RandomAccessibleInterval< VolatileUnsignedShortType > getSource( final int t, final int level )
 	{
 		if ( t != currentTimepoint )
 			loadTimepoint( t );
@@ -117,7 +118,7 @@ public class SpimSource implements Source< UnsignedShortType >
 	}
 
 	@Override
-	public RealRandomAccessible< UnsignedShortType > getInterpolatedSource( final int t, final int level, final Interpolation method )
+	public RealRandomAccessible< VolatileUnsignedShortType > getInterpolatedSource( final int t, final int level, final Interpolation method )
 	{
 		if ( t != currentTimepoint )
 			loadTimepoint( t );
@@ -139,9 +140,9 @@ public class SpimSource implements Source< UnsignedShortType >
 	}
 
 	@Override
-	public UnsignedShortType getType()
+	public VolatileUnsignedShortType getType()
 	{
-		return new UnsignedShortType();
+		return new VolatileUnsignedShortType( new UnsignedShortType(), true );
 	}
 
 	@Override

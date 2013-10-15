@@ -34,7 +34,7 @@ public class Hdf5CellImgFactory
 		final int numLevels = hdf5Reader.readDoubleMatrix( "resolutions" ).length;
 		final Hdf5GlobalCellCache< ShortArray > cache = new Hdf5GlobalCellCache< ShortArray >( new ShortArrayLoader( hdf5Reader ), numTimepoints, numSetups, numLevels );
 		final Hdf5GlobalCellCache< ShortArray >.Hdf5CellCache c = cache.new Hdf5CellCache( timepoint, setup, level );
-		final Hdf5ImgCells< ShortArray > cells = new Hdf5ImgCells< ShortArray >( c, 1, dimensions, cellDimensions );
+		final Hdf5ImgCells< ShortArray, ShortArray > cells = new Hdf5ImgCells< ShortArray, ShortArray >( c, 1, dimensions, cellDimensions );
 		final CellImgFactory< UnsignedShortType > factory = null;
 		final CellImg< UnsignedShortType, ShortArray, Hdf5Cell< ShortArray > > img = new CellImg< UnsignedShortType, ShortArray, Hdf5Cell< ShortArray > >( factory, cells );
 		final UnsignedShortType linkedType = new UnsignedShortType( img );
