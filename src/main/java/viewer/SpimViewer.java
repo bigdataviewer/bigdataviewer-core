@@ -154,11 +154,9 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 
 		final double[] screenScales = new double[] { 1, 0.75, 0.5, 0.25, 0.125 };
 		final long targetRenderNanos = 30 * 1000000;
-		final long targetIoNanos = 10 * 1000000;
-		final int badIoFrameBlockFrames = 5;
 		final boolean doubleBuffered = true;
 		final int numRenderingThreads = 3;
-		imageRenderer = new MultiResolutionRenderer( renderTarget, painterThread, screenScales, targetRenderNanos, targetIoNanos, badIoFrameBlockFrames, doubleBuffered, numRenderingThreads );
+		imageRenderer = new MultiResolutionRenderer( renderTarget, painterThread, screenScales, targetRenderNanos, doubleBuffered, numRenderingThreads );
 
 		mouseCoordinates = new MouseCoordinateListener();
 		display.addHandler( mouseCoordinates );

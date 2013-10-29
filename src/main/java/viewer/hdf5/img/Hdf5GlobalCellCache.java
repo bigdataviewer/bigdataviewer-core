@@ -3,7 +3,6 @@ package viewer.hdf5.img;
 import java.lang.ref.SoftReference;
 import java.util.concurrent.ConcurrentHashMap;
 
-import viewer.hdf5.img.CacheIoTiming.IoStatistics;
 import viewer.hdf5.img.Hdf5ImgCells.CellCache;
 
 public class Hdf5GlobalCellCache< A >
@@ -117,22 +116,10 @@ public class Hdf5GlobalCellCache< A >
 				return entry.data;
 		}
 
-		final IoStatistics statistics = CacheIoTiming.getThreadGroupIoStatistics();
-		if ( statistics.timeoutReached() )
-		{
-			statistics.timeoutCallback();
-			return new Hdf5Cell< A >( cellDims, cellMin, loader.emptyArray( cellDims ) );
-		}
+//		return new Hdf5Cell< A >( cellDims, cellMin, loader.emptyArray( cellDims ) );
 
-		statistics.start();
 		final Hdf5Cell< A > cell = new Hdf5Cell< A >( cellDims, cellMin, loader.loadArray( timepoint, setup, level, cellDims, cellMin ) );
 		softReferenceCache.put( k, new SoftReference< Entry >( new Entry( k, cell ) ) );
-		statistics.stop();
-
-		int c = loader.getBytesPerElement();
-		for ( final int l : cellDims )
-			c *= l;
-		statistics.incIoBytes( c );
 
 		return cell;
 	}

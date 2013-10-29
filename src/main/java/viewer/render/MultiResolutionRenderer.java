@@ -80,11 +80,6 @@ public class MultiResolutionRenderer
 	final protected long targetRenderNanos;
 
 	/**
-	 * TODO
-	 */
-	final protected long targetIoNanos;
-
-	/**
 	 * The index of the coarsest mipmap level.
 	 */
 	protected int[] maxMipmapLevel;
@@ -117,20 +112,6 @@ public class MultiResolutionRenderer
 	protected volatile boolean renderingMayBeCancelled;
 
 	/**
-	 * If more frames than this have been rendered without hitting the
-	 * {@link #targetIoNanos io time limit} then we assume that enough image
-	 * data is cached to render at a higher than the
-	 * {@link #requestedMipmapLevel requested mipmap level}.
-	 */
-	final protected int badIoFrameBlockFrames;
-
-	/**
-	 * How many consecutive frames have been rendered without hitting the
-	 * {@link #targetIoNanos io time limit}.
-	 */
-	protected int goodIoFrames;
-
-	/**
 	 * How many threads to use for rendering.
 	 */
 	final protected int numRenderingThreads;
@@ -150,21 +131,12 @@ public class MultiResolutionRenderer
 	 * @param targetRenderNanos
 	 *            Target rendering time in nanoseconds. The rendering time for
 	 *            the coarsest rendered scale should be below this threshold.
-	 * @param targetIoNanos
-	 *            Target io time in nanoseconds. A frame is considered a
-	 *            "bad io frame" if the time spent reading data from disk is
-	 *            above this threshold.
-	 * @param badIoFrameBlockFrames
-	 *            If more frames than this have been rendered without hitting a
-	 *            "bad io frame" then we assume that enough image data is cached
-	 *            to render at the optimal mipmap level (instead of the coarsest
-	 *            first).
 	 * @param doubleBuffered
 	 *            Whether to use double buffered rendering.
 	 * @param numRenderingThreads
 	 *            How many threads to use for rendering.
 	 */
-	public MultiResolutionRenderer( final RenderTarget display, final PainterThread painterThread, final double[] screenScales, final long targetRenderNanos, final long targetIoNanos, final int badIoFrameBlockFrames, final boolean doubleBuffered, final int numRenderingThreads )
+	public MultiResolutionRenderer( final RenderTarget display, final PainterThread painterThread, final double[] screenScales, final long targetRenderNanos, final boolean doubleBuffered, final int numRenderingThreads )
 	{
 		this.display = display;
 		this.painterThread = painterThread;
@@ -180,20 +152,17 @@ public class MultiResolutionRenderer
 //		for ( int i = 0; i < maxMipmapLevel.length; ++i )
 //			maxMipmapLevel[ i ] = numMipmapLevels[ i ] - 1;
 		this.targetRenderNanos = targetRenderNanos;
-		this.targetIoNanos = targetIoNanos;
-		this.badIoFrameBlockFrames = badIoFrameBlockFrames;
 
 		maxScreenScaleIndex = screenScales.length - 1;
 		requestedScreenScaleIndex = maxScreenScaleIndex;
 		requestedMipmapLevel = maxMipmapLevel.clone();
 		renderingMayBeCancelled = true;
-		goodIoFrames = 0;
 		this.numRenderingThreads = numRenderingThreads;
 	}
 
 	public MultiResolutionRenderer( final RenderTarget display, final PainterThread painterThread, final double[] screenScales )
 	{
-		this( display, painterThread, screenScales, 30 * 1000000, 10 * 1000000, 5, true, 3 );
+		this( display, painterThread, screenScales, 30 * 1000000, true, 3 );
 	}
 
 	/**
@@ -285,7 +254,7 @@ public class MultiResolutionRenderer
 			for ( int i = 0; ( ! renderingMayBeCancelled ) && ( i < numSources ); ++i )
 				renderingMayBeCancelled = requestedMipmapLevel[ i ] < maxMipmapLevel[ i ];
 
-			boolean setIoTimeLimit = false;
+			boolean setIoTimeLimit = false; // TODO: remove, check logic
 			currentScreenScaleIndex = requestedScreenScaleIndex;
 			currentScreenScaleTransform = screenScaleTransforms[ currentScreenScaleIndex ];
 			for ( int i = 0; i < numSources; ++i )
@@ -297,7 +266,7 @@ public class MultiResolutionRenderer
 					// the current screen scale. Use that one.
 					currentMipmapLevel[ i ] = targetMipmapLevel[ i ];
 				}
-				else if ( targetMipmapLevel[ i ] < requestedMipmapLevel[ i ] && goodIoFrames > badIoFrameBlockFrames )
+				else if ( targetMipmapLevel[ i ] < requestedMipmapLevel[ i ] )
 				{
 					// More than badIoFrameBlockFrames frames have been rendered
 					// without hitting the io time limit. We assume that enough
@@ -316,18 +285,6 @@ public class MultiResolutionRenderer
 			}
 
 			p = createProjector( state, currentScreenScaleTransform, currentMipmapLevel );
-			if ( setIoTimeLimit )
-			{
-				p.setIoTimeOut( targetIoNanos, new Runnable()
-				{
-					@Override
-					public void run()
-					{
-						goodIoFrames = 0;
-						requestRepaint();
-					}
-				} );
-			}
 
 			screenImage = screenImages[ currentScreenScaleIndex ][ 0 ];
 			bufferedImage = bufferedImages[ currentScreenScaleIndex ][ 0 ];
@@ -337,7 +294,6 @@ public class MultiResolutionRenderer
 		// try rendering
 		final boolean success = p.map( screenImage, numRenderingThreads );
 		final long rendertime = p.getLastFrameRenderNanoTime();
-		final long iotime = p.getLastFrameIoNanoTime();
 
 		synchronized ( this )
 		{
@@ -365,7 +321,7 @@ public class MultiResolutionRenderer
 						maxScreenScaleIndex--;
 				}
 //				System.out.println( "maxScreenScaleIndex = " + maxScreenScaleIndex + "  (" + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 0 ) + " x " + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 1 ) + ")" );
-				System.out.println( String.format( "rendering:%4d ms   io:%4d ms   (total:%4d ms)", rendertime / 1000000, iotime / 1000000, ( rendertime + iotime ) / 1000000 ) );
+				System.out.println( String.format( "rendering:%4d ms", rendertime / 1000000 ) );
 				System.out.println( "scale = " + currentScreenScaleIndex + "   mipmap = " + Util.printCoordinates( currentMipmapLevel ) );
 //				System.out.println( "     target mipmap = " + Util.printCoordinates( targetMipmapLevel ) );
 
@@ -381,11 +337,6 @@ public class MultiResolutionRenderer
 				else if ( currentScreenScaleIndex > 0 )
 					requestRepaint( currentScreenScaleIndex - 1, currentMipmapLevel );
 			}
-			if ( iotime <= targetIoNanos )
-				goodIoFrames++;
-			else
-				goodIoFrames = 0;
-//			System.out.println( "goodIoFrames = " + goodIoFrames );
 		}
 
 		return success;

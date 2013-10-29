@@ -16,8 +16,6 @@ import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.numeric.integer.IntType;
 import net.imglib2.ui.util.StopWatch;
-import viewer.hdf5.img.CacheIoTiming;
-import viewer.hdf5.img.CacheIoTiming.IoStatistics;
 
 // TODO: should this extend net.imglib2.ui.InterruptibleProjector?
 // rename to XInterruptibleProjector
@@ -29,19 +27,7 @@ public class InterruptibleRenderer< A extends Volatile< ? >, B > extends Abstrac
 
 	protected long lastFrameRenderNanoTime;
 
-	protected long lastFrameIoNanoTime;
-
-	protected long ioTimeOutNanos;
-
-	protected Runnable ioTimeOutRunnable;
-
 	protected volatile boolean valid = false;
-
-	public void setIoTimeOut( final long nanos, final Runnable runnable )
-	{
-		ioTimeOutNanos = nanos;
-		ioTimeOutRunnable = runnable;
-	}
 
 	public InterruptibleRenderer( final RandomAccessible< A > source, final Converter< ? super A, B > converter )
 	{
@@ -49,8 +35,6 @@ public class InterruptibleRenderer< A extends Volatile< ? >, B > extends Abstrac
 		this.source = source;
 		this.converter = converter;
 		lastFrameRenderNanoTime = -1;
-		lastFrameIoNanoTime = -1;
-		ioTimeOutNanos = -1;
 	}
 
 	public boolean map( final RandomAccessibleInterval< B > target, final int numThreads )
@@ -59,29 +43,11 @@ public class InterruptibleRenderer< A extends Volatile< ? >, B > extends Abstrac
 
 		final StopWatch stopWatch = new StopWatch();
 		stopWatch.start();
-		final long startTimeTotal = stopWatch.nanoTime();
-		final IoStatistics iostat = CacheIoTiming.getThreadGroupIoStatistics();
-		final long startTimeIo = iostat.getIoNanoTime();
-		final long startTimeIoCumulative = iostat.getCumulativeIoNanoTime();
-		final long startIoBytes = iostat.getIoBytes();
 
 		final int size = ( int ) ( target.dimension( 0 ) * target.dimension( 1 ) );
 		final int[] maskArray = new int[ size ];
 		Arrays.fill( maskArray, Integer.MAX_VALUE );
 		final Img< IntType > mask = ArrayImgs.ints( maskArray, target.dimension( 0 ), target.dimension( 1 ) );
-
-		if ( ioTimeOutNanos > 0 )
-			CacheIoTiming.setThreadGroupIoNanoTimeout( startTimeIo + ioTimeOutNanos, new Runnable()
-			{
-				@Override
-				public void run()
-				{
-					ioTimeOutRunnable.run();
-					interrupted.set( true );
-				}
-			} );
-		else
-			CacheIoTiming.clearThreadGroupIoNanoTimeout();
 
 		min[ 0 ] = target.min( 0 );
 		min[ 1 ] = target.min( 1 );
@@ -175,18 +141,11 @@ public class InterruptibleRenderer< A extends Volatile< ? >, B > extends Abstrac
 			e.printStackTrace();
 		}
 
-		final long numIoBytes = iostat.getIoBytes() - startIoBytes;
-		final long lastFrameTime = stopWatch.nanoTime() - startTimeTotal;
-		lastFrameIoNanoTime = iostat.getIoNanoTime() - startTimeIo;
-		lastFrameRenderNanoTime = lastFrameTime - ( iostat.getCumulativeIoNanoTime() - startTimeIoCumulative ) / numThreads;
+		lastFrameRenderNanoTime = stopWatch.nanoTime();
 
-//		if ( wasInterrupted )
+//		if ( interrupted.get() )
 //			System.out.println( "rendering was interrupted." );
-//		System.out.println( String.format( "rendering:%4d ms   io:%4d ms   (total:%4d ms)", lastFrameRenderNanoTime / 1000000, lastFrameIoNanoTime / 1000000, lastFrameTime / 1000000 ) );
-//		System.out.println( lastFrameTime/1000000 + " ms  (io = " + lastFrameIoNanoTime/1000000 + " ms,  render = " + lastFrameRenderNanoTime/1000000 + " ms)" );
-//		final double bytesPerSecond = 1000.0 * 1000000.0 * ( ( double ) numIoBytes / lastFrameIoNanoTime ) / 1024.0;
-//		if ( ! Double.isNaN( bytesPerSecond ) )
-//			System.out.println( String.format( "%.0f kB/s", bytesPerSecond ) );
+//		System.out.println( String.format( "rendering:%4d ms", lastFrameRenderNanoTime / 1000000 ) );
 
 		return ! interrupted.get();
 	}
@@ -197,17 +156,10 @@ public class InterruptibleRenderer< A extends Volatile< ? >, B > extends Abstrac
 	{
 //		System.out.println( "interrupting..." );
 		interrupted.set( true );
-		CacheIoTiming.setThreadGroupIoNanoTimeout( CacheIoTiming.getThreadGroupIoNanoTime(), null );
 	}
 
 	public long getLastFrameRenderNanoTime()
 	{
 		return lastFrameRenderNanoTime;
-	}
-
-	// TODO: remove?
-	public long getLastFrameIoNanoTime()
-	{
-		return lastFrameIoNanoTime;
 	}
 }
