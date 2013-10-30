@@ -1,13 +1,14 @@
 package viewer.hdf5.img;
 
+import net.imglib2.display.nativevolatile.VolatileAccess;
 import net.imglib2.img.Img;
 import net.imglib2.img.cell.AbstractCells;
 import net.imglib2.img.list.AbstractListImg;
 import net.imglib2.util.IntervalIndexer;
 
-public class Hdf5ImgCells< A > extends AbstractCells< A, Hdf5Cell< A >, Hdf5ImgCells< A >.CachedCells >
+public class Hdf5ImgCells< A extends VolatileAccess > extends AbstractCells< A, Hdf5Cell< A >, Hdf5ImgCells< A >.CachedCells >
 {
-	public static interface CellCache< A >
+	public static interface CellCache< A extends VolatileAccess >
 	{
 		/**
 		 * Get the cell at a specified index.

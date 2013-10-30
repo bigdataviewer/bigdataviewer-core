@@ -1,11 +1,14 @@
 package viewer.hdf5.img;
 
 import java.lang.ref.SoftReference;
+import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.LinkedBlockingDeque;
 
+import net.imglib2.display.nativevolatile.VolatileAccess;
 import viewer.hdf5.img.Hdf5ImgCells.CellCache;
 
-public class Hdf5GlobalCellCache< A >
+public class Hdf5GlobalCellCache< A extends VolatileAccess >
 {
 	final int numTimepoints;
 
@@ -59,7 +62,7 @@ public class Hdf5GlobalCellCache< A >
 	{
 		final protected Key key;
 
-		final protected Hdf5Cell< A > data;
+		protected Hdf5Cell< A > data;
 
 		public Entry( final Key key, final Hdf5Cell< A > data )
 		{
@@ -82,6 +85,29 @@ public class Hdf5GlobalCellCache< A >
 
 	final protected ConcurrentHashMap< Key, SoftReference< Entry > > softReferenceCache = new ConcurrentHashMap< Key, SoftReference< Entry > >();
 
+	final protected BlockingDeque< Key > queue = new LinkedBlockingDeque< Key >();
+
+	class Fetcher extends Thread
+	{
+		@Override
+		final public void run()
+		{
+			while ( !isInterrupted() )
+			{
+				try
+				{
+					loadIfNotValid( queue.takeFirst() );
+				}
+				catch ( final InterruptedException e )
+				{
+					break;
+				}
+			}
+		}
+	}
+
+	final protected Fetcher fetcher;
+
 	final protected Hdf5ArrayLoader< A > loader;
 
 	public Hdf5GlobalCellCache( final Hdf5ArrayLoader< A > loader, final int numTimepoints, final int numSetups, final int maxNumLevels )
@@ -90,6 +116,8 @@ public class Hdf5GlobalCellCache< A >
 		this.numTimepoints = numTimepoints;
 		this.numSetups = numSetups;
 		this.maxNumLevels = maxNumLevels;
+		fetcher = new Fetcher();
+		fetcher.start();
 	}
 
 	public Hdf5Cell< A > getGlobalIfCached( final int timepoint, final int setup, final int level, final int index )
@@ -105,7 +133,39 @@ public class Hdf5GlobalCellCache< A >
 		return null;
 	}
 
-	public synchronized Hdf5Cell< A > loadGlobal( final int[] cellDims, final long[] cellMin, final int timepoint, final int setup, final int level, final int index )
+	/**
+	 * Load the data for the {@link Hdf5Cell} referenced by k, if
+	 * <ul>
+	 * <li>the {@link Hdf5Cell} is in the cache, and
+	 * <li>the data is not yet loaded (valid).
+	 * </ul>
+	 *
+	 * @param k
+	 */
+	public void loadIfNotValid( final Key k )
+	{
+		final SoftReference< Entry > ref = softReferenceCache.get( k );
+		if ( ref != null )
+		{
+			final Entry entry = ref.get();
+			if ( entry != null )
+			{
+				final Hdf5Cell< A > c = entry.data;
+				if ( ! c.getData().isValid() )
+				{
+					final int[] cellDims = c.getDimensions();
+					final long[] cellMin = c.getMin();
+					final int timepoint = k.timepoint;
+					final int setup = k.setup;
+					final int level = k.level;
+					final Hdf5Cell< A > cell = new Hdf5Cell< A >( cellDims, cellMin, loader.loadArray( timepoint, setup, level, cellDims, cellMin ) );
+					entry.data = cell; // TODO: need to synchronize or make entry.data volatile?
+				}
+			}
+		}
+	}
+
+	public synchronized Hdf5Cell< A > createGlobal( final int[] cellDims, final long[] cellMin, final int timepoint, final int setup, final int level, final int index )
 	{
 		final Key k = new Key( timepoint, setup, level, index );
 		final SoftReference< Entry > ref = softReferenceCache.get( k );
@@ -116,10 +176,9 @@ public class Hdf5GlobalCellCache< A >
 				return entry.data;
 		}
 
-//		return new Hdf5Cell< A >( cellDims, cellMin, loader.emptyArray( cellDims ) );
-
-		final Hdf5Cell< A > cell = new Hdf5Cell< A >( cellDims, cellMin, loader.loadArray( timepoint, setup, level, cellDims, cellMin ) );
+		final Hdf5Cell< A > cell = new Hdf5Cell< A >( cellDims, cellMin, loader.emptyArray( cellDims ) );
 		softReferenceCache.put( k, new SoftReference< Entry >( new Entry( k, cell ) ) );
+		queue.addFirst( k );
 
 		return cell;
 	}
@@ -148,7 +207,7 @@ public class Hdf5GlobalCellCache< A >
 		@Override
 		public Hdf5Cell< A > load( final int index, final int[] cellDims, final long[] cellMin )
 		{
-			return loadGlobal( cellDims, cellMin, timepoint, setup, level, index );
+			return createGlobal( cellDims, cellMin, timepoint, setup, level, index );
 		}
 	}
 }
