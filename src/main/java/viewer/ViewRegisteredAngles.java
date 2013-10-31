@@ -45,6 +45,7 @@ import viewer.gui.transformation.ManualTransformation;
 import viewer.gui.transformation.ManualTransformationEditor;
 import viewer.gui.transformation.TransformedSource;
 import viewer.gui.visibility.ActiveSourcesDialog;
+import viewer.hdf5.Hdf5ImageLoader;
 import viewer.render.Source;
 import viewer.render.SourceAndConverter;
 import viewer.render.SourceState;
@@ -160,7 +161,7 @@ public class ViewRegisteredAngles
 			converterSetups.add( new RealARGBColorConverterSetup< VolatileUnsignedShortType >( setup, converter ) );
 		}
 
-		viewer = new SpimViewer( width, height, sources, seq.numTimepoints() );
+		viewer = new SpimViewer( width, height, sources, seq.numTimepoints(), ( ( Hdf5ImageLoader ) seq.imgLoader ).getCache() );
 		manualTransformation = new ManualTransformation( viewer );
 		manualTransformationEditor = new ManualTransformationEditor( viewer );
 

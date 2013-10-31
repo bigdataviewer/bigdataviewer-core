@@ -48,6 +48,7 @@ import org.jdom2.Element;
 import viewer.TextOverlayAnimator.TextPosition;
 import viewer.gui.InputActionBindings;
 import viewer.gui.XmlIoViewerState;
+import viewer.hdf5.img.Hdf5GlobalCellCache;
 import viewer.render.DisplayMode;
 import viewer.render.Interpolation;
 import viewer.render.MultiResolutionRenderer;
@@ -122,7 +123,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 	 * @param numMipmapLevels
 	 *            number of available mipmap levels.
 	 */
-	public SpimViewer( final int width, final int height, final List< SourceAndConverter< ? > > sources, final int numTimePoints )
+	public SpimViewer( final int width, final int height, final List< SourceAndConverter< ? > > sources, final int numTimePoints, final Hdf5GlobalCellCache< ? > cache )
 	{
 		final int numGroups = 10;
 		final ArrayList< SourceGroup > groups = new ArrayList< SourceGroup >( numGroups );
@@ -155,8 +156,8 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		final double[] screenScales = new double[] { 1, 0.75, 0.5, 0.25, 0.125 };
 		final long targetRenderNanos = 30 * 1000000;
 		final boolean doubleBuffered = true;
-		final int numRenderingThreads = 3;
-		imageRenderer = new MultiResolutionRenderer( renderTarget, painterThread, screenScales, targetRenderNanos, doubleBuffered, numRenderingThreads );
+		final int numRenderingThreads = 5;
+		imageRenderer = new MultiResolutionRenderer( renderTarget, painterThread, screenScales, targetRenderNanos, doubleBuffered, numRenderingThreads, cache );
 
 		mouseCoordinates = new MouseCoordinateListener();
 		display.addHandler( mouseCoordinates );

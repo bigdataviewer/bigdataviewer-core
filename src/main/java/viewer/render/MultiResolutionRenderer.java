@@ -15,6 +15,7 @@ import net.imglib2.ui.InterruptibleProjector;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
 import net.imglib2.ui.util.GuiUtil;
+import viewer.hdf5.img.Hdf5GlobalCellCache;
 
 public class MultiResolutionRenderer
 {
@@ -107,6 +108,10 @@ public class MultiResolutionRenderer
 	 */
 	final protected int numRenderingThreads;
 
+	final protected Hdf5GlobalCellCache< ? > cache;
+
+	protected boolean clearQueue;
+
 	/**
 	 * @param display
 	 *            The canvas that will display the images we render.
@@ -127,7 +132,7 @@ public class MultiResolutionRenderer
 	 * @param numRenderingThreads
 	 *            How many threads to use for rendering.
 	 */
-	public MultiResolutionRenderer( final RenderTarget display, final PainterThread painterThread, final double[] screenScales, final long targetRenderNanos, final boolean doubleBuffered, final int numRenderingThreads )
+	public MultiResolutionRenderer( final RenderTarget display, final PainterThread painterThread, final double[] screenScales, final long targetRenderNanos, final boolean doubleBuffered, final int numRenderingThreads, final Hdf5GlobalCellCache< ? > cache )
 	{
 		this.display = display;
 		this.painterThread = painterThread;
@@ -144,11 +149,13 @@ public class MultiResolutionRenderer
 		requestedScreenScaleIndex = maxScreenScaleIndex;
 		renderingMayBeCancelled = true;
 		this.numRenderingThreads = numRenderingThreads;
+		this.cache = cache;
+		clearQueue = false;
 	}
 
-	public MultiResolutionRenderer( final RenderTarget display, final PainterThread painterThread, final double[] screenScales )
+	public MultiResolutionRenderer( final RenderTarget display, final PainterThread painterThread, final double[] screenScales, final Hdf5GlobalCellCache< ? > cache )
 	{
-		this( display, painterThread, screenScales, 30 * 1000000, true, 3 );
+		this( display, painterThread, screenScales, 30 * 1000000, true, 3, cache );
 	}
 
 	/**
@@ -208,6 +215,8 @@ public class MultiResolutionRenderer
 		// the projector that paints to the screenImage.
 		final InterruptibleProjector p;
 
+		final boolean clearQueue;
+
 		synchronized( this )
 		{
 			// Rendering may be cancelled unless we are rendering at coarsest
@@ -220,9 +229,13 @@ public class MultiResolutionRenderer
 			bufferedImage = bufferedImages[ currentScreenScaleIndex ][ 0 ];
 			p = createProjector( state, currentScreenScaleTransform, screenImage );
 			projector = p;
+			clearQueue = this.clearQueue;
+			this.clearQueue = false;
 		}
 
 		// try rendering
+		if ( clearQueue )
+			cache.clearQueue();
 		final boolean success = p.map();
 		final long rendertime = p.getLastFrameRenderNanoTime();
 
@@ -277,6 +290,7 @@ public class MultiResolutionRenderer
 	public synchronized void requestRepaint()
 	{
 		System.out.println("requestRepaint()");
+		clearQueue = true;
 		requestRepaint( maxScreenScaleIndex );
 	}
 

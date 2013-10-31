@@ -87,6 +87,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 		final int numSetups = hdf5Reader.readInt( "numSetups" );
 
 		int maxNumLevels = 0;
+		final int[] maxLevels = new int[ numSetups ];
 		perSetupMipmapResolutions.clear();
 		perSetupSubdivisions.clear();
 		for ( int setup = 0; setup < numSetups; ++setup )
@@ -95,12 +96,14 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 			perSetupMipmapResolutions.add( mipmapResolutions );
 			if ( mipmapResolutions.length > maxNumLevels )
 				maxNumLevels = mipmapResolutions.length;
+			maxLevels[ setup ] = mipmapResolutions.length - 1;
 
 			final int [][] subdivisions = hdf5Reader.readIntMatrix( getSubdivisionsPath( setup ) );
 			perSetupSubdivisions.add( subdivisions );
 		}
 
-		cache = new Hdf5GlobalCellCache< VolatileShortArray >( new VolatileShortArrayLoader( hdf5Reader ), numTimepoints, numSetups, maxNumLevels );
+
+		cache = new Hdf5GlobalCellCache< VolatileShortArray >( new VolatileShortArrayLoader( hdf5Reader ), numTimepoints, numSetups, maxNumLevels, maxLevels );
 	}
 
 	@Override
