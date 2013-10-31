@@ -1,6 +1,7 @@
 package viewer.hdf5.img;
 
 import java.lang.ref.SoftReference;
+import java.util.ArrayList;
 import java.util.concurrent.BlockingDeque;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.LinkedBlockingDeque;
@@ -97,6 +98,7 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 				try
 				{
 					loadIfNotValid( queue.takeFirst() );
+					Thread.sleep(1);
 				}
 				catch ( final InterruptedException e )
 				{
@@ -106,7 +108,7 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 		}
 	}
 
-	final protected Fetcher fetcher;
+	final protected ArrayList< Fetcher > fetchers;
 
 	final protected Hdf5ArrayLoader< A > loader;
 
@@ -116,8 +118,14 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 		this.numTimepoints = numTimepoints;
 		this.numSetups = numSetups;
 		this.maxNumLevels = maxNumLevels;
-		fetcher = new Fetcher();
-		fetcher.start();
+
+		fetchers = new ArrayList< Fetcher >();
+		for ( int i = 0; i < 4; ++i )
+		{
+			final Fetcher f = new Fetcher();
+			fetchers.add( f );
+			f.start();
+		}
 	}
 
 	public Hdf5Cell< A > getGlobalIfCached( final int timepoint, final int setup, final int level, final int index )
@@ -158,7 +166,11 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 					final int timepoint = k.timepoint;
 					final int setup = k.setup;
 					final int level = k.level;
-					final Hdf5Cell< A > cell = new Hdf5Cell< A >( cellDims, cellMin, loader.loadArray( timepoint, setup, level, cellDims, cellMin ) );
+					final Hdf5Cell< A > cell;
+					synchronized( loader )
+					{
+						cell = new Hdf5Cell< A >( cellDims, cellMin, loader.loadArray( timepoint, setup, level, cellDims, cellMin ) );
+					}
 					entry.data = cell; // TODO: need to synchronize or make entry.data volatile?
 				}
 			}
