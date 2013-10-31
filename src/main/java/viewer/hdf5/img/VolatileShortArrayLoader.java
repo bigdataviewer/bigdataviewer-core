@@ -8,11 +8,14 @@ import ch.systemsx.cisd.hdf5.IHDF5Reader;
 
 public class VolatileShortArrayLoader implements Hdf5ArrayLoader< VolatileShortArray >
 {
-	final IHDF5Reader hdf5Reader;
+	private final IHDF5Reader hdf5Reader;
+
+	private VolatileShortArray theEmptyArray;
 
 	public VolatileShortArrayLoader( final IHDF5Reader hdf5Reader )
 	{
 		this.hdf5Reader = hdf5Reader;
+		theEmptyArray = new VolatileShortArray( 32 * 32 * 32, false );
 	}
 
 	@Override
@@ -31,7 +34,9 @@ public class VolatileShortArrayLoader implements Hdf5ArrayLoader< VolatileShortA
 		int numEntities = 1;
 		for ( int i = 0; i < dimensions.length; ++i )
 			numEntities *= dimensions[ i ];
-		return new VolatileShortArray( numEntities, false );
+		if ( theEmptyArray.getCurrentStorageArray().length < numEntities )
+			theEmptyArray = new VolatileShortArray( numEntities, false );
+		return theEmptyArray;
 	}
 
 	@Override
