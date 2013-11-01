@@ -201,7 +201,8 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 
 			for ( int taskNum = 0; taskNum < numTasks; ++taskNum )
 			{
-				final long myMinY = min[ 1 ] + ( int ) ( taskNum * taskHeight );
+				final long myOffsetY = ( int ) ( taskNum * taskHeight );
+				final long myMinY = min[ 1 ] + myOffsetY;
 				final long myHeight = ( (taskNum == numTasks - 1 ) ? height : ( int ) ( ( taskNum + 1 ) * taskHeight ) ) - myMinY - min[ 1 ];
 
 				final Runnable r = new Runnable()
@@ -223,8 +224,8 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 						targetRandomAccess.setPosition( min[ 0 ], 0 );
 						targetRandomAccess.setPosition( myMinY, 1 );
 
-						maskRandomAccess.setPosition( min[ 0 ], 0 );
-						maskRandomAccess.setPosition( myMinY, 1 );
+						maskRandomAccess.setPosition( 0, 0 );
+						maskRandomAccess.setPosition( myOffsetY, 1 );
 
 						for ( long y = 0; y < myHeight; ++y )
 						{
