@@ -244,7 +244,7 @@ public class MultiResolutionRenderer
 			// if rendering was not cancelled...
 			if ( success )
 			{
-				System.out.println("success");
+//				System.out.println("success");
 				display.setBufferedImage( bufferedImage );
 
 				if ( doubleBuffered )
@@ -276,8 +276,8 @@ public class MultiResolutionRenderer
 					if ( ! ( ( VolatileHierarchyProjector< ?, ? > ) p ).isValid() )
 					requestRepaint( currentScreenScaleIndex );
 			}
-			else
-				System.out.println("! success");
+//			else
+//				System.out.println("! success");
 		}
 
 		return success;
@@ -289,7 +289,7 @@ public class MultiResolutionRenderer
 	 */
 	public synchronized void requestRepaint()
 	{
-		System.out.println("requestRepaint()");
+//		System.out.println("requestRepaint()");
 		clearQueue = true;
 		requestRepaint( maxScreenScaleIndex );
 	}

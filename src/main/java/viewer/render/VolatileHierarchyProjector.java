@@ -173,7 +173,6 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 	@Override
 	public boolean map()
 	{
-		System.out.println("map");
 		interrupted.set( false );
 
 		final StopWatch stopWatch = new StopWatch();
