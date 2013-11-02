@@ -37,6 +37,11 @@ public class MultiResolutionRenderer
 	protected InterruptibleProjector projector;
 
 	/**
+	 * The index of the screen scale of the {@link #projector current projector}.
+	 */
+	protected int currentScreenScaleIndex;
+
+	/**
 	 * Whether double buffering is used.
 	 */
 	final protected boolean doubleBuffered;
@@ -110,7 +115,7 @@ public class MultiResolutionRenderer
 
 	final protected Hdf5GlobalCellCache< ? > cache;
 
-	protected boolean clearQueue;
+	protected boolean newFrameRequest;
 
 	/**
 	 * @param display
@@ -137,6 +142,7 @@ public class MultiResolutionRenderer
 		this.display = display;
 		this.painterThread = painterThread;
 		projector = null;
+		currentScreenScaleIndex = -1;
 		this.screenScales = screenScales.clone();
 		this.doubleBuffered = doubleBuffered;
 		screenImages = new ARGBScreenImage[ screenScales.length ][ 2 ];
@@ -150,7 +156,7 @@ public class MultiResolutionRenderer
 		renderingMayBeCancelled = true;
 		this.numRenderingThreads = numRenderingThreads;
 		this.cache = cache;
-		clearQueue = false;
+		newFrameRequest = false;
 	}
 
 	public MultiResolutionRenderer( final RenderTarget display, final PainterThread painterThread, final double[] screenScales, final Hdf5GlobalCellCache< ? > cache )
@@ -161,8 +167,10 @@ public class MultiResolutionRenderer
 	/**
 	 * Check whether the size of the display component was changed and
 	 * recreate {@link #screenImages} and {@link #screenScaleTransforms} accordingly.
+	 *
+	 * @return whether the size was changed.
 	 */
-	protected synchronized void checkResize()
+	protected synchronized boolean checkResize()
 	{
 		final int componentW = display.getWidth();
 		final int componentH = display.getHeight();
@@ -187,7 +195,10 @@ public class MultiResolutionRenderer
 				scale.set( 0.5 * yScale - 0.5, 1, 3 );
 				screenScaleTransforms[ i ] = scale;
 			}
+
+			return true;
 		}
+		return false;
 	}
 
 	/**
@@ -196,15 +207,7 @@ public class MultiResolutionRenderer
 	 */
 	public boolean paint( final ViewerState state )
 	{
-		checkResize();
-
-		final int numSources = state.numSources();
-
-		// the screen scale at which we will be rendering
-		final int currentScreenScaleIndex;
-
-		// the corresponding screen scale transform
-		final AffineTransform3D currentScreenScaleTransform;
+		final boolean resized = checkResize();
 
 		// the corresponding ARGBScreenImage (to render to)
 		final ARGBScreenImage screenImage;
@@ -213,9 +216,11 @@ public class MultiResolutionRenderer
 		final BufferedImage bufferedImage;
 
 		// the projector that paints to the screenImage.
-		final InterruptibleProjector p;
+		final VolatileHierarchyProjector< ?, ? > p;
 
 		final boolean clearQueue;
+
+		final boolean createProjector;
 
 		synchronized( this )
 		{
@@ -223,20 +228,36 @@ public class MultiResolutionRenderer
 			// screen scale and coarsest mipmap level.
 			renderingMayBeCancelled = ( requestedScreenScaleIndex < maxScreenScaleIndex );
 
-			currentScreenScaleIndex = requestedScreenScaleIndex;
-			currentScreenScaleTransform = screenScaleTransforms[ currentScreenScaleIndex ];
-			screenImage = screenImages[ currentScreenScaleIndex ][ 0 ];
-			bufferedImage = bufferedImages[ currentScreenScaleIndex ][ 0 ];
-			p = createProjector( state, currentScreenScaleTransform, screenImage );
-			projector = p;
-			clearQueue = this.clearQueue;
-			this.clearQueue = false;
+			clearQueue = newFrameRequest;
+
+			createProjector = newFrameRequest || resized || ( requestedScreenScaleIndex != currentScreenScaleIndex );
+
+			if ( createProjector )
+			{
+				currentScreenScaleIndex = requestedScreenScaleIndex;
+				screenImage = screenImages[ currentScreenScaleIndex ][ 0 ];
+				bufferedImage = bufferedImages[ currentScreenScaleIndex ][ 0 ];
+				p = createProjector( state, screenScaleTransforms[ currentScreenScaleIndex ], screenImage );
+				projector = p;
+			}
+			else
+			{
+				screenImage = null;
+				bufferedImage = null;
+				p = ( VolatileHierarchyProjector< ?, ? > ) projector;
+			}
+
+			newFrameRequest = false;
 		}
+
+//		System.out.println( createProjector ? "+++ createProjector" : "--- don't createProjector" );
 
 		// try rendering
 		if ( clearQueue )
 			cache.clearQueue();
 		final boolean success = p.map();
+		if ( createProjector )
+			p.clearUntouchedTargetPixels();
 		final long rendertime = p.getLastFrameRenderNanoTime();
 
 		synchronized ( this )
@@ -244,15 +265,16 @@ public class MultiResolutionRenderer
 			// if rendering was not cancelled...
 			if ( success )
 			{
-//				System.out.println("success");
-				display.setBufferedImage( bufferedImage );
-
-				if ( doubleBuffered )
+				if ( createProjector )
 				{
-					screenImages[ currentScreenScaleIndex ][ 0 ] = screenImages[ currentScreenScaleIndex ][ 1 ];
-					screenImages[ currentScreenScaleIndex ][ 1 ] = screenImage;
-					bufferedImages[ currentScreenScaleIndex ][ 0 ] = bufferedImages[ currentScreenScaleIndex ][ 1 ];
-					bufferedImages[ currentScreenScaleIndex ][ 1 ] = bufferedImage;
+					display.setBufferedImage( bufferedImage );
+					if ( doubleBuffered )
+					{
+						screenImages[ currentScreenScaleIndex ][ 0 ] = screenImages[ currentScreenScaleIndex ][ 1 ];
+						screenImages[ currentScreenScaleIndex ][ 1 ] = screenImage;
+						bufferedImages[ currentScreenScaleIndex ][ 0 ] = bufferedImages[ currentScreenScaleIndex ][ 1 ];
+						bufferedImages[ currentScreenScaleIndex ][ 1 ] = bufferedImage;
+					}
 				}
 
 				if ( currentScreenScaleIndex == maxScreenScaleIndex )
@@ -268,12 +290,10 @@ public class MultiResolutionRenderer
 				System.out.println( "maxScreenScaleIndex = " + maxScreenScaleIndex + "  (" + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 0 ) + " x " + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 1 ) + ")" );
 				System.out.println( String.format( "rendering:%4d ms", rendertime / 1000000 ) );
 				System.out.println( "scale = " + currentScreenScaleIndex );
-//				System.out.println( "     target mipmap = " + Util.printCoordinates( targetMipmapLevel ) );
 
 				if ( currentScreenScaleIndex > 0 )
 					requestRepaint( currentScreenScaleIndex - 1 );
-				else
-					if ( ! ( ( VolatileHierarchyProjector< ?, ? > ) p ).isValid() )
+				else if ( !p.isValid() )
 					requestRepaint( currentScreenScaleIndex );
 			}
 //			else
@@ -290,7 +310,7 @@ public class MultiResolutionRenderer
 	public synchronized void requestRepaint()
 	{
 //		System.out.println("requestRepaint()");
-		clearQueue = true;
+		newFrameRequest = true;
 		requestRepaint( maxScreenScaleIndex );
 	}
 
@@ -308,7 +328,7 @@ public class MultiResolutionRenderer
 		painterThread.requestRepaint();
 	}
 
-	private InterruptibleProjector createProjector(
+	private VolatileHierarchyProjector< ?, ARGBType > createProjector(
 			final ViewerState viewerState,
 			final AffineTransform3D screenScaleTransform,
 			final ARGBScreenImage screenImage )
@@ -325,7 +345,7 @@ public class MultiResolutionRenderer
 		}
 	}
 
-	private < T extends Volatile< ? > > InterruptibleProjector createSingleSourceProjector(
+	private < T extends Volatile< ? > > VolatileHierarchyProjector< T, ARGBType > createSingleSourceProjector(
 			final ViewerState viewerState,
 			final SourceState< T > source,
 			final int sourceIndex,

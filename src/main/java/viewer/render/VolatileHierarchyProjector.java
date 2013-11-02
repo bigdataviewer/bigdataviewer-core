@@ -1,6 +1,7 @@
 package viewer.render;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -16,13 +17,10 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.converter.Converter;
 import net.imglib2.display.Projector;
 import net.imglib2.display.Volatile;
-import net.imglib2.img.array.ArrayCursor;
-import net.imglib2.img.array.ArrayImg;
+import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgs;
-import net.imglib2.img.array.ArrayRandomAccess;
-import net.imglib2.img.basictypeaccess.array.IntArray;
 import net.imglib2.type.numeric.NumericType;
-import net.imglib2.type.numeric.integer.IntType;
+import net.imglib2.type.numeric.integer.ByteType;
 import net.imglib2.ui.AbstractInterruptibleProjector;
 import net.imglib2.ui.util.StopWatch;
 import net.imglib2.view.Views;
@@ -38,9 +36,14 @@ import net.imglib2.view.Views;
 public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends NumericType< B > > extends AbstractInterruptibleProjector< A, B >
 {
 	final protected ArrayList< RandomAccessible< A > > sources = new ArrayList< RandomAccessible< A > >();
-	final protected ArrayImg< IntType, IntArray > mask;
+
+	final private byte[] maskArray;
+
+	final protected Img< ByteType > mask;
+
 	protected volatile boolean valid = false;
-	protected int s = 0;
+
+	protected int numInvalidLevels;
 
 	/**
 	 * Extends of the source to be used for mapping.
@@ -89,9 +92,12 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 		super( Math.max( 2, sources.get( 0 ).numDimensions() ), converter, target );
 
 		this.sources.addAll( sources );
-		s = sources.size();
+		numInvalidLevels = sources.size();
 
-		mask = ArrayImgs.ints( target.dimension( 0 ), target.dimension( 1 ) );
+		final int size = ( int ) ( target.dimension( 0 ) * target.dimension( 1 ) );
+		maskArray = new byte[ size ];
+		mask = ArrayImgs.bytes( maskArray, target.dimension( 0 ), target.dimension( 1 ) );
+
 		iterableTarget = Views.iterable( target );
 
 		for ( int d = 2; d < min.length; ++d )
@@ -108,7 +114,7 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 		this.numThreads = numThreads;
 		lastFrameRenderNanoTime = -1;
 
-		clear();
+		clearMask();
 	}
 
 	@Override
@@ -135,26 +141,17 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 	 * Set all pixels in target to 100% transparent zero, and mask to all
 	 * Integer.MAX_VALUE.
 	 */
-	public void clear()
-	{
-		final Cursor< B > targetCursor = iterableTarget.cursor();
-		final ArrayCursor< IntType > maskCursor = mask.cursor();
-
-		/* Despite the extra comparison, is consistently 60% faster than
-		 * while ( targetCursor.hasNext() )
-		 * {
-		 *	targetCursor.next().set( 0x00000000 );
-		 *	maskCursor.next().set( Integer.MAX_VALUE );
-		 * }
-		 * because it exploits CPU caching better.
-		 */
-		while ( targetCursor.hasNext() )
-			targetCursor.next().setZero();
-		while ( maskCursor.hasNext() )
-			maskCursor.next().set( Integer.MAX_VALUE );
-
-		s = sources.size();
-	}
+//	public void clear()
+//	{
+//		final Cursor< B > targetCursor = iterableTarget.cursor();
+//
+//		while ( targetCursor.hasNext() )
+//			targetCursor.next().setZero();
+//
+//		clearMask();
+//
+//		numInvalidLevels = sources.size();
+//	}
 
 	/**
 	 * Set all pixels in target to 100% transparent zero, and mask to all
@@ -162,12 +159,17 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 	 */
 	public void clearMask()
 	{
-		final ArrayCursor< IntType > maskCursor = mask.cursor();
+		Arrays.fill( maskArray, Byte.MAX_VALUE );
+		numInvalidLevels = sources.size();
+	}
 
-		while ( maskCursor.hasNext() )
-			maskCursor.next().set( Integer.MAX_VALUE );
-
-		s = sources.size();
+	public void clearUntouchedTargetPixels()
+	{
+		// clear target pixels that were never written
+		final Cursor< ByteType > maskCursor = mask.cursor();
+		for ( final B t : iterableTarget )
+			if ( maskCursor.next().get() == Byte.MAX_VALUE )
+				t.setZero();
 	}
 
 	@Override
@@ -191,9 +193,9 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 
 		valid = false;
 
-		for ( i = 0; i < s && !valid; ++i )
+		for ( i = 0; i < numInvalidLevels && !valid; ++i )
 		{
-			final int iFinal = i;
+			final byte iFinal = ( byte ) i;
 
 			valid = true;
 
@@ -201,9 +203,9 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 
 			for ( int taskNum = 0; taskNum < numTasks; ++taskNum )
 			{
-				final long myOffsetY = ( int ) ( taskNum * taskHeight );
-				final long myMinY = min[ 1 ] + myOffsetY;
-				final long myHeight = ( (taskNum == numTasks - 1 ) ? height : ( int ) ( ( taskNum + 1 ) * taskHeight ) ) - myMinY - min[ 1 ];
+				final int myOffset = width * ( int ) ( taskNum * taskHeight );
+				final long myMinY = min[ 1 ] + ( int ) ( taskNum * taskHeight );
+				final int myHeight = ( int ) ( ( (taskNum == numTasks - 1 ) ? height : ( int ) ( ( taskNum + 1 ) * taskHeight ) ) - myMinY - min[ 1 ] );
 
 				final Runnable r = new Runnable()
 				{
@@ -214,7 +216,7 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 							return;
 
 						final RandomAccess< B > targetRandomAccess = target.randomAccess( target );
-						final ArrayRandomAccess< IntType > maskRandomAccess = mask.randomAccess( target );
+						final Cursor< ByteType > maskCursor = mask.cursor();
 						final RandomAccess< A > sourceRandomAccess = sources.get( iFinal ).randomAccess( sourceInterval );
 						boolean myValid = true;
 
@@ -224,17 +226,16 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 						targetRandomAccess.setPosition( min[ 0 ], 0 );
 						targetRandomAccess.setPosition( myMinY, 1 );
 
-						maskRandomAccess.setPosition( 0, 0 );
-						maskRandomAccess.setPosition( myOffsetY, 1 );
+						maskCursor.jumpFwd( myOffset );
 
-						for ( long y = 0; y < myHeight; ++y )
+						for ( int y = 0; y < myHeight; ++y )
 						{
 							if ( interrupted.get() )
 								return;
 
-							for ( long x = 0; x < width; ++x )
+							for ( int x = 0; x < width; ++x )
 							{
-								final IntType m = maskRandomAccess.get();
+								final ByteType m = maskCursor.next();
 								if ( m.get() > iFinal )
 								{
 									final A a = sourceRandomAccess.get();
@@ -249,14 +250,11 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 								}
 								sourceRandomAccess.fwd( 0 );
 								targetRandomAccess.fwd( 0 );
-								maskRandomAccess.fwd( 0 );
 							}
 							sourceRandomAccess.move( cr, 0 );
 							targetRandomAccess.move( cr, 0 );
-							maskRandomAccess.move( cr, 0 );
 							sourceRandomAccess.fwd( 1 );
 							targetRandomAccess.fwd( 1 );
-							maskRandomAccess.fwd( 1 );
 						}
 						if ( !myValid )
 							valid = false;
@@ -283,10 +281,10 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 		lastFrameRenderNanoTime = stopWatch.nanoTime();
 
 		if ( valid )
-			s = i - 1;
-		valid = s == 0;
+			numInvalidLevels = i - 1;
+		valid = numInvalidLevels == 0;
 
-		System.out.println( "Mapping complete after " + ( s + 1 ) + " levels." );
+//		System.out.println( "Mapping complete after " + ( s + 1 ) + " levels." );
 
 		return !interrupted.get();
 	}
