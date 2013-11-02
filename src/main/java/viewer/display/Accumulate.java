@@ -9,7 +9,7 @@ import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.type.numeric.NumericType;
 
-public abstract class Accumulate< T extends NumericType< T> > extends AbstractEuclideanSpace implements RandomAccessible< T >
+public abstract class Accumulate< T extends NumericType< T > > extends AbstractEuclideanSpace implements RandomAccessible< T >
 {
 	final List< RandomAccessible< T > > sources;
 

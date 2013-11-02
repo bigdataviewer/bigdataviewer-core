@@ -33,7 +33,7 @@ import net.imglib2.view.Views;
  * @author Stephan Saalfeld <saalfeld@mpi-cbg.de>
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
-public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends NumericType< B > > extends AbstractInterruptibleProjector< A, B >
+public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends NumericType< B > > extends AbstractInterruptibleProjector< A, B > implements VolatileProjector
 {
 	final protected ArrayList< RandomAccessible< A > > sources = new ArrayList< RandomAccessible< A > >();
 
@@ -129,9 +129,7 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 		return lastFrameRenderNanoTime;
 	}
 
-	/**
-	 * @return true if all mapped pixels were {@link Volatile#isValid() valid}.
-	 */
+	@Override
 	public boolean isValid()
 	{
 		return valid;
@@ -163,7 +161,7 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 		numInvalidLevels = sources.size();
 	}
 
-	public void clearUntouchedTargetPixels()
+	protected void clearUntouchedTargetPixels()
 	{
 		// clear target pixels that were never written
 		final Cursor< ByteType > maskCursor = mask.cursor();
@@ -174,6 +172,12 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 
 	@Override
 	public boolean map()
+	{
+		return map( true );
+	}
+
+	@Override
+	public boolean map( final boolean clearUntouchedTargetPixels )
 	{
 		interrupted.set( false );
 
@@ -277,6 +281,9 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 				return false;
 			}
 		}
+
+		if ( clearUntouchedTargetPixels && !interrupted.get() )
+			clearUntouchedTargetPixels();
 
 		lastFrameRenderNanoTime = stopWatch.nanoTime();
 

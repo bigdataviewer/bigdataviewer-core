@@ -11,10 +11,10 @@ import net.imglib2.display.Volatile;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.ui.InterruptibleProjector;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
 import net.imglib2.ui.util.GuiUtil;
+import viewer.display.AccumulateProjectorARGB;
 import viewer.hdf5.img.Hdf5GlobalCellCache;
 
 public class MultiResolutionRenderer
@@ -34,7 +34,7 @@ public class MultiResolutionRenderer
 	 * Currently active projector, used to re-paint the display. It maps the
 	 * {@link #source} data to {@link #screenImage}.
 	 */
-	protected InterruptibleProjector projector;
+	protected VolatileProjector projector;
 
 	/**
 	 * The index of the screen scale of the {@link #projector current projector}.
@@ -45,6 +45,13 @@ public class MultiResolutionRenderer
 	 * Whether double buffering is used.
 	 */
 	final protected boolean doubleBuffered;
+
+	/**
+	 * Used to render an individual source. One image per screen resolution and
+	 * visible source. First index is screen scale, second index is index in
+	 * list of visible sources.
+	 */
+	protected ARGBScreenImage[][] renderImages;
 
 	/**
 	 * Used to render the image for display. Two images per screen resolution
@@ -145,6 +152,7 @@ public class MultiResolutionRenderer
 		currentScreenScaleIndex = -1;
 		this.screenScales = screenScales.clone();
 		this.doubleBuffered = doubleBuffered;
+		renderImages = new ARGBScreenImage[ screenScales.length ][ 0 ];
 		screenImages = new ARGBScreenImage[ screenScales.length ][ 2 ];
 		bufferedImages = new BufferedImage[ screenScales.length ][ 2 ];
 		screenScaleTransforms = new AffineTransform3D[ screenScales.length ];
@@ -201,6 +209,25 @@ public class MultiResolutionRenderer
 		return false;
 	}
 
+	protected synchronized boolean checkRenewRenderImages( final int numVisibleSources )
+	{
+		if ( numVisibleSources != renderImages[ 0 ].length ||
+			 renderImages[ 0 ][ 0 ].dimension( 0 ) != screenImages[ 0 ][ 0 ].dimension( 0 ) ||
+			 renderImages[ 0 ][ 0 ].dimension( 1 ) != screenImages[ 0 ][ 0 ].dimension( 1 ) )
+		{
+			renderImages = new ARGBScreenImage[ screenScales.length ][ numVisibleSources ];
+			for ( int i = 0; i < screenScales.length; ++i )
+			{
+				final int w = ( int ) screenImages[ i ][ 0 ].dimension( 0 );
+				final int h = ( int ) screenImages[ i ][ 0 ].dimension( 1 );
+				for ( int j = 0; j < numVisibleSources; ++j )
+					renderImages[ i ][ j ] = new ARGBScreenImage( w, h );
+			}
+			return true;
+		}
+		return false;
+	}
+
 	/**
 	 * Render image at the {@link #requestedScreenScaleIndex requested screen
 	 * scale} and the {@link #requestedMipmapLevel requested mipmap level}.
@@ -209,6 +236,8 @@ public class MultiResolutionRenderer
 	{
 		final boolean resized = checkResize();
 
+		checkRenewRenderImages( state.getVisibleSourceIndices().size() );
+
 		// the corresponding ARGBScreenImage (to render to)
 		final ARGBScreenImage screenImage;
 
@@ -216,7 +245,7 @@ public class MultiResolutionRenderer
 		final BufferedImage bufferedImage;
 
 		// the projector that paints to the screenImage.
-		final VolatileHierarchyProjector< ?, ? > p;
+		final VolatileProjector p;
 
 		final boolean clearQueue;
 
@@ -237,14 +266,14 @@ public class MultiResolutionRenderer
 				currentScreenScaleIndex = requestedScreenScaleIndex;
 				screenImage = screenImages[ currentScreenScaleIndex ][ 0 ];
 				bufferedImage = bufferedImages[ currentScreenScaleIndex ][ 0 ];
-				p = createProjector( state, screenScaleTransforms[ currentScreenScaleIndex ], screenImage );
+				p = createProjector( state, currentScreenScaleIndex, screenImage );
 				projector = p;
 			}
 			else
 			{
 				screenImage = null;
 				bufferedImage = null;
-				p = ( VolatileHierarchyProjector< ?, ? > ) projector;
+				p = projector;
 			}
 
 			newFrameRequest = false;
@@ -255,9 +284,7 @@ public class MultiResolutionRenderer
 		// try rendering
 		if ( clearQueue )
 			cache.clearQueue();
-		final boolean success = p.map();
-		if ( createProjector )
-			p.clearUntouchedTargetPixels();
+		final boolean success = p.map( createProjector );
 		final long rendertime = p.getLastFrameRenderNanoTime();
 
 		synchronized ( this )
@@ -329,9 +356,9 @@ public class MultiResolutionRenderer
 		painterThread.requestRepaint();
 	}
 
-	private VolatileHierarchyProjector< ?, ARGBType > createProjector(
+	private VolatileProjector createProjector(
 			final ViewerState viewerState,
-			final AffineTransform3D screenScaleTransform,
+			final int screenScaleIndex,
 			final ARGBScreenImage screenImage )
 	{
 		synchronized( viewerState )
@@ -341,12 +368,13 @@ public class MultiResolutionRenderer
 			if ( visibleSourceIndices.isEmpty() )
 				return null; // TODO: handle no visible sources case
 			final int i = visibleSourceIndices.get( 0 );
-			return createSingleSourceProjector( viewerState, sources.get( i ), i, screenScaleTransform, screenImage );
+//			return createSingleSourceProjector( viewerState, sources.get( i ), i, screenScaleTransforms[ currentScreenScaleIndex ], screenImage );
+			return createIndirectSingleSourceProjector( viewerState, sources.get( i ), i, currentScreenScaleIndex, screenImage );
 			// TODO: handle multiple sources
 		}
 	}
 
-	private < T extends Volatile< ? > > VolatileHierarchyProjector< T, ARGBType > createSingleSourceProjector(
+	private < T extends Volatile< ? > > VolatileProjector createSingleSourceProjector(
 			final ViewerState viewerState,
 			final SourceState< T > source,
 			final int sourceIndex,
@@ -365,6 +393,34 @@ public class MultiResolutionRenderer
 		return new VolatileHierarchyProjector< T, ARGBType >( levels, source.getConverter(), screenImage, numRenderingThreads );
 	}
 
+	private < T extends Volatile< ? > > VolatileProjector createIndirectSingleSourceProjector(
+			final ViewerState viewerState,
+			final SourceState< T > source,
+			final int sourceIndex,
+			final int screenScaleIndex,
+			final ARGBScreenImage screenImage )
+	{
+		final AffineTransform3D screenScaleTransform = screenScaleTransforms[ currentScreenScaleIndex ];
+		final ArrayList< RandomAccessible< T > > levels = new ArrayList< RandomAccessible< T > >();
+		final int bestLevel = viewerState.getBestMipMapLevel( screenScaleTransform, sourceIndex );
+		final int nLevels = source.getSpimSource().getNumMipmapLevels();
+		final Source< T > spimSource = source.getSpimSource();
+		for ( int i = bestLevel; i < nLevels; ++i )
+			levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, i ) );
+//		for ( int i = bestLevel - 1; i >= 0; --i )
+//			levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, i ) );
+
+		final ARGBScreenImage renderImage = renderImages[ screenScaleIndex ][ sourceIndex ];
+		final VolatileHierarchyProjector< T, ARGBType > renderImageProjector = new VolatileHierarchyProjector< T, ARGBType >(
+				levels,
+				source.getConverter(),
+				renderImage, numRenderingThreads );
+		final ArrayList< VolatileProjector > sourceProjectors = new ArrayList< VolatileProjector >();
+		final ArrayList< ARGBScreenImage > sourceImages = new ArrayList< ARGBScreenImage >();
+		sourceProjectors.add( renderImageProjector );
+		sourceImages.add( renderImage );
+		return new AccumulateProjectorARGB( sourceProjectors, sourceImages, screenImage, numRenderingThreads );
+	}
 
 	/**
 	 *
