@@ -191,7 +191,9 @@ public class MultiResolutionRenderer
 				final int h = ( int ) ( screenToViewerScale * componentH );
 				for ( int b = 0; b < ( doubleBuffered ? 2 : 1 ); ++b )
 				{
-					screenImages[ i ][ b ] = new ARGBScreenImage( w, h );
+					screenImages[ i ][ b ] = ( i == 0 ) ?
+							new ARGBScreenImage( w, h ) :
+							new ARGBScreenImage( w, h, screenImages[ 0 ][ b ].getData() );
 					bufferedImages[ i ][ b ] = GuiUtil.getBufferedImage( screenImages[ i ][ b ] );
 				}
 				final AffineTransform3D scale = new AffineTransform3D();
@@ -221,7 +223,9 @@ public class MultiResolutionRenderer
 				final int w = ( int ) screenImages[ i ][ 0 ].dimension( 0 );
 				final int h = ( int ) screenImages[ i ][ 0 ].dimension( 1 );
 				for ( int j = 0; j < numVisibleSources; ++j )
-					renderImages[ i ][ j ] = new ARGBScreenImage( w, h );
+					renderImages[ i ][ j ] = ( i == 0 ) ?
+						new ARGBScreenImage( w, h ) :
+						new ARGBScreenImage( w, h, renderImages[ 0 ][ j ].getData() );
 			}
 			return true;
 		}
@@ -238,10 +242,7 @@ public class MultiResolutionRenderer
 
 		checkRenewRenderImages( state.getVisibleSourceIndices().size() );
 
-		// the corresponding ARGBScreenImage (to render to)
-		final ARGBScreenImage screenImage;
-
-		// the corresponding BufferedImage (to paint to the canvas)
+		// the BufferedImage that is rendered to (to paint to the canvas)
 		final BufferedImage bufferedImage;
 
 		// the projector that paints to the screenImage.
@@ -264,14 +265,13 @@ public class MultiResolutionRenderer
 			if ( createProjector )
 			{
 				currentScreenScaleIndex = requestedScreenScaleIndex;
-				screenImage = screenImages[ currentScreenScaleIndex ][ 0 ];
 				bufferedImage = bufferedImages[ currentScreenScaleIndex ][ 0 ];
+				final ARGBScreenImage screenImage = screenImages[ currentScreenScaleIndex ][ 0 ];
 				p = createProjector( state, currentScreenScaleIndex, screenImage );
 				projector = p;
 			}
 			else
 			{
-				screenImage = null;
 				bufferedImage = null;
 				p = projector;
 			}
@@ -296,12 +296,15 @@ public class MultiResolutionRenderer
 				{
 					display.setBufferedImage( bufferedImage );
 					if ( doubleBuffered )
-					{
-						screenImages[ currentScreenScaleIndex ][ 0 ] = screenImages[ currentScreenScaleIndex ][ 1 ];
-						screenImages[ currentScreenScaleIndex ][ 1 ] = screenImage;
-						bufferedImages[ currentScreenScaleIndex ][ 0 ] = bufferedImages[ currentScreenScaleIndex ][ 1 ];
-						bufferedImages[ currentScreenScaleIndex ][ 1 ] = bufferedImage;
-					}
+						for ( int i = 0; i < screenScales.length; ++i )
+						{
+							final ARGBScreenImage si = screenImages[ i ][ 0 ];
+							screenImages[ i ][ 0 ] = screenImages[ i ][ 1 ];
+							screenImages[ i ][ 1 ] = si;
+							final BufferedImage bi = bufferedImages[ i ][ 0 ];
+							bufferedImages[ i ][ 0 ] = bufferedImages[ i ][ 1 ];
+							bufferedImages[ i ][ 1 ] = bi;
+						}
 
 					if ( currentScreenScaleIndex == maxScreenScaleIndex )
 					{
