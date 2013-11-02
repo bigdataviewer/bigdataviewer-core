@@ -275,18 +275,19 @@ public class MultiResolutionRenderer
 						bufferedImages[ currentScreenScaleIndex ][ 0 ] = bufferedImages[ currentScreenScaleIndex ][ 1 ];
 						bufferedImages[ currentScreenScaleIndex ][ 1 ] = bufferedImage;
 					}
+
+					if ( currentScreenScaleIndex == maxScreenScaleIndex )
+					{
+						if ( rendertime > targetRenderNanos && maxScreenScaleIndex < screenScales.length - 1 )
+							maxScreenScaleIndex++;
+					}
+					else if ( currentScreenScaleIndex == maxScreenScaleIndex - 1 )
+					{
+						if ( rendertime < targetRenderNanos && maxScreenScaleIndex > 0 )
+							maxScreenScaleIndex--;
+					}
 				}
 
-				if ( currentScreenScaleIndex == maxScreenScaleIndex )
-				{
-					if ( rendertime > targetRenderNanos && maxScreenScaleIndex < screenScales.length - 1 )
-						maxScreenScaleIndex++;
-				}
-				else if ( currentScreenScaleIndex == maxScreenScaleIndex - 1 )
-				{
-					if ( rendertime < targetRenderNanos && maxScreenScaleIndex > 0 )
-						maxScreenScaleIndex--;
-				}
 				System.out.println( "maxScreenScaleIndex = " + maxScreenScaleIndex + "  (" + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 0 ) + " x " + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 1 ) + ")" );
 				System.out.println( String.format( "rendering:%4d ms", rendertime / 1000000 ) );
 				System.out.println( "scale = " + currentScreenScaleIndex );
