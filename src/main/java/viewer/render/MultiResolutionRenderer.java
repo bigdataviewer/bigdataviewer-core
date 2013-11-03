@@ -279,8 +279,6 @@ public class MultiResolutionRenderer
 			newFrameRequest = false;
 		}
 
-//		System.out.println( createProjector ? "+++ createProjector" : "--- don't createProjector" );
-
 		// try rendering
 		if ( clearQueue )
 			cache.clearQueue();
@@ -318,9 +316,9 @@ public class MultiResolutionRenderer
 					}
 				}
 
-				System.out.println( "maxScreenScaleIndex = " + maxScreenScaleIndex + "  (" + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 0 ) + " x " + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 1 ) + ")" );
-				System.out.println( String.format( "rendering:%4d ms", rendertime / 1000000 ) );
-				System.out.println( "scale = " + currentScreenScaleIndex );
+//				System.out.println( "maxScreenScaleIndex = " + maxScreenScaleIndex + "  (" + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 0 ) + " x " + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 1 ) + ")" );
+//				System.out.println( String.format( "rendering:%4d ms", rendertime / 1000000 ) );
+//				System.out.println( "scale = " + currentScreenScaleIndex );
 
 				if ( currentScreenScaleIndex > 0 )
 					requestRepaint( currentScreenScaleIndex - 1 );
@@ -369,34 +367,32 @@ public class MultiResolutionRenderer
 			final List< SourceState< ? > > sources = viewerState.getSources();
 			final List< Integer > visibleSourceIndices = viewerState.getVisibleSourceIndices();
 			if ( visibleSourceIndices.isEmpty() )
-				return null; // TODO: handle no visible sources case
-			final int i = visibleSourceIndices.get( 0 );
-//			return createSingleSourceProjector( viewerState, sources.get( i ), i, screenScaleTransforms[ currentScreenScaleIndex ], screenImage );
-			return createIndirectSingleSourceProjector( viewerState, sources.get( i ), i, currentScreenScaleIndex, screenImage );
-			// TODO: handle multiple sources
+				return new EmptyProjector< ARGBType >( screenImage );
+			else if ( visibleSourceIndices.size() == 1 )
+			{
+				final int i = visibleSourceIndices.get( 0 );
+				return createSingleSourceProjector( viewerState, sources.get( i ), i, currentScreenScaleIndex, screenImage );
+			}
+			else
+			{
+				final ArrayList< VolatileProjector > sourceProjectors = new ArrayList< VolatileProjector >();
+				final ArrayList< ARGBScreenImage > sourceImages = new ArrayList< ARGBScreenImage >();
+				int j = 0;
+				for ( final int i : visibleSourceIndices )
+				{
+					final ARGBScreenImage renderImage = renderImages[ currentScreenScaleIndex ][ j++ ];
+					final VolatileProjector p = createSingleSourceProjector(
+							viewerState, sources.get( i ), i, currentScreenScaleIndex,
+							renderImage );
+					sourceProjectors.add( p );
+					sourceImages.add( renderImage );
+				}
+				return new AccumulateProjectorARGB( sourceProjectors, sourceImages, screenImage, numRenderingThreads );
+			}
 		}
 	}
 
 	private < T extends Volatile< ? > > VolatileProjector createSingleSourceProjector(
-			final ViewerState viewerState,
-			final SourceState< T > source,
-			final int sourceIndex,
-			final AffineTransform3D screenScaleTransform,
-			final ARGBScreenImage screenImage )
-	{
-		final ArrayList< RandomAccessible< T > > levels = new ArrayList< RandomAccessible< T > >();
-		final int bestLevel = viewerState.getBestMipMapLevel( screenScaleTransform, sourceIndex );
-		final int nLevels = source.getSpimSource().getNumMipmapLevels();
-		final Source< T > spimSource = source.getSpimSource();
-		for ( int i = bestLevel; i < nLevels; ++i )
-			levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, i ) );
-//		for ( int i = bestLevel - 1; i >= 0; --i )
-//			levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, i ) );
-
-		return new VolatileHierarchyProjector< T, ARGBType >( levels, source.getConverter(), screenImage, numRenderingThreads );
-	}
-
-	private < T extends Volatile< ? > > VolatileProjector createIndirectSingleSourceProjector(
 			final ViewerState viewerState,
 			final SourceState< T > source,
 			final int sourceIndex,
@@ -412,49 +408,7 @@ public class MultiResolutionRenderer
 			levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, i ) );
 //		for ( int i = bestLevel - 1; i >= 0; --i )
 //			levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, i ) );
-
-		final ARGBScreenImage renderImage = renderImages[ screenScaleIndex ][ sourceIndex ];
-		final VolatileHierarchyProjector< T, ARGBType > renderImageProjector = new VolatileHierarchyProjector< T, ARGBType >(
-				levels,
-				source.getConverter(),
-				renderImage, numRenderingThreads );
-		final ArrayList< VolatileProjector > sourceProjectors = new ArrayList< VolatileProjector >();
-		final ArrayList< ARGBScreenImage > sourceImages = new ArrayList< ARGBScreenImage >();
-		sourceProjectors.add( renderImageProjector );
-		sourceImages.add( renderImage );
-		return new AccumulateProjectorARGB( sourceProjectors, sourceImages, screenImage, numRenderingThreads );
-	}
-
-	/**
-	 *
-	 * @param screenImage
-	 * 			  render target.
-	 * @param screenScaleTransform
-	 *            screen scale, transforms screen coordinates to viewer coordinates.
-	 * @param mipmapIndex
-	 *            mipmap level.
-	 */
-	public static InterruptibleRenderer< ?, ARGBType > createProjector( final ViewerState viewerState, final AffineTransform3D screenScaleTransform, final int[] mipmapIndex )
-	{
-		synchronized( viewerState )
-		{
-			final List< SourceState< ? > > sources = viewerState.getSources();
-			final List< Integer > visibleSourceIndices = viewerState.getVisibleSourceIndices();
-//			if ( visibleSourceIndices.isEmpty() )
-//				return new InterruptibleRenderer< ARGBType, ARGBType >( new ConstantRandomAccessible< ARGBType >( argbtype, 2 ), new TypeIdentity< ARGBType >() );
-//			else if ( visibleSourceIndices.size() == 1 )
-//			{
-				final int i = visibleSourceIndices.get( 0 );
-				return createSingleSourceProjector( viewerState, sources.get( i ), screenScaleTransform, mipmapIndex[ i ] );
-//			}
-//			else
-//			{
-//				final ArrayList< RandomAccessible< ARGBType > > accessibles = new ArrayList< RandomAccessible< ARGBType > >( visibleSourceIndices.size() );
-//				for ( final int i : visibleSourceIndices )
-//					accessibles.add( getConvertedTransformedSource( viewerState, sources.get( i ), screenScaleTransform, mipmapIndex[ i ] ) );
-//				return new InterruptibleRenderer< ARGBType, ARGBType >( new AccumulateARGB( accessibles ), new TypeIdentity< ARGBType >() );
-//			}
-		}
+		return new VolatileHierarchyProjector< T, ARGBType >( levels, source.getConverter(), screenImage, numRenderingThreads );
 	}
 
 	private final static ARGBType argbtype = new ARGBType();
@@ -472,11 +426,6 @@ public class MultiResolutionRenderer
 
 		return RealViews.constantAffine( img, sourceToScreen );
 	}
-
-//	private static < T > RandomAccessible< ARGBType > getConvertedTransformedSource( final ViewerState viewerState, final SourceState< T > source, final AffineTransform3D screenScaleTransform, final int mipmapIndex )
-//	{
-//		return Converters.convert( getTransformedSource( viewerState, source.getSpimSource(), screenScaleTransform, mipmapIndex ), source.getConverter(), argbtype );
-//	}
 
 	private static < T extends Volatile< ? > > InterruptibleRenderer< T, ARGBType > createSingleSourceProjector( final ViewerState viewerState, final SourceState< T > source, final AffineTransform3D screenScaleTransform, final int mipmapIndex )
 	{
