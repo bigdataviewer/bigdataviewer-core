@@ -213,9 +213,11 @@ public class MultiResolutionRenderer
 
 	protected synchronized boolean checkRenewRenderImages( final int numVisibleSources )
 	{
-		if ( numVisibleSources != renderImages[ 0 ].length ||
-			 renderImages[ 0 ][ 0 ].dimension( 0 ) != screenImages[ 0 ][ 0 ].dimension( 0 ) ||
-			 renderImages[ 0 ][ 0 ].dimension( 1 ) != screenImages[ 0 ][ 0 ].dimension( 1 ) )
+		final int n = numVisibleSources > 1 ? numVisibleSources : 0;
+		if ( n != renderImages[ 0 ].length ||
+				( n != 0 &&
+					( renderImages[ 0 ][ 0 ].dimension( 0 ) != screenImages[ 0 ][ 0 ].dimension( 0 ) ||
+					  renderImages[ 0 ][ 0 ].dimension( 1 ) != screenImages[ 0 ][ 0 ].dimension( 1 ) ) ) )
 		{
 			renderImages = new ARGBScreenImage[ screenScales.length ][ numVisibleSources ];
 			for ( int i = 0; i < screenScales.length; ++i )
