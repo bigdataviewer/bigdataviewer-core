@@ -7,6 +7,7 @@ import static viewer.render.Interpolation.NEARESTNEIGHBOR;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.SortedSet;
 import java.util.TreeSet;
 
 import net.imglib2.realtransform.AffineTransform3D;
@@ -316,6 +317,43 @@ public class ViewerState
 	public int numSourceGroups()
 	{
 		return groups.size();
+	}
+
+	public synchronized void addSource( final SourceAndConverter< ? > source )
+	{
+		sources.add( SourceState.create( source ) );
+	}
+
+	public synchronized void removeSource( final Source< ? > source )
+	{
+		for ( int i = 0; i < sources.size(); )
+		{
+			final SourceState< ? > s = sources.get( i );
+			if ( s.getSpimSource() == source )
+				removeSource( i );
+			else
+				i++;
+		}
+	}
+
+	protected void removeSource( final int index )
+	{
+		sources.remove( index );
+		if ( currentSource == index )
+			currentSource = 0;
+		for( final SourceGroup group : groups )
+		{
+			final SortedSet< Integer > ids = group.getSourceIds();
+			final ArrayList< Integer > oldids = new ArrayList< Integer >( ids );
+			ids.clear();
+			for ( final int id : oldids )
+			{
+				if ( id < index )
+					ids.add( id );
+				else if ( id > index )
+					ids.add( id - 1 );
+			}
+		}
 	}
 
 	public synchronized boolean isSourceVisible( final int index )

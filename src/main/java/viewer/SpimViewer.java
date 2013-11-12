@@ -4,6 +4,7 @@ import static viewer.VisibilityAndGrouping.Event.CURRENT_SOURCE_CHANGED;
 import static viewer.VisibilityAndGrouping.Event.DISPLAY_MODE_CHANGED;
 import static viewer.VisibilityAndGrouping.Event.GROUP_ACTIVITY_CHANGED;
 import static viewer.VisibilityAndGrouping.Event.GROUP_NAME_CHANGED;
+import static viewer.VisibilityAndGrouping.Event.NUM_SOURCES_CHANGED;
 import static viewer.VisibilityAndGrouping.Event.SOURCE_ACTVITY_CHANGED;
 import static viewer.VisibilityAndGrouping.Event.VISIBILITY_CHANGED;
 
@@ -51,6 +52,7 @@ import viewer.gui.XmlIoViewerState;
 import viewer.render.DisplayMode;
 import viewer.render.Interpolation;
 import viewer.render.MultiResolutionRenderer;
+import viewer.render.Source;
 import viewer.render.SourceAndConverter;
 import viewer.render.SourceGroup;
 import viewer.render.SourceState;
@@ -207,6 +209,26 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		painterThread.start();
 
 		animatedOverlay = new TextOverlayAnimator( "Press <F1> for help.", 3000, TextPosition.CENTER );
+	}
+
+	public void addSource( final SourceAndConverter< ? > sourceAndConverter )
+	{
+		synchronized ( visibilityAndGrouping )
+		{
+			state.addSource( sourceAndConverter );
+			visibilityAndGrouping.update( NUM_SOURCES_CHANGED );
+		}
+		requestRepaint();
+	}
+
+	public void removeSource( final Source< ? > source )
+	{
+		synchronized ( visibilityAndGrouping )
+		{
+			state.removeSource( source );
+			visibilityAndGrouping.update( NUM_SOURCES_CHANGED );
+		}
+		requestRepaint();
 	}
 
 	public void addHandler( final Object handler )

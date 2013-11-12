@@ -12,6 +12,7 @@ import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -33,6 +34,7 @@ import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -119,8 +121,18 @@ public class ActiveSourcesDialog extends JDialog
 			currentButtons = new ArrayList< JRadioButton >();
 			fusedBoxes = new ArrayList< JCheckBox >();
 			visibleBoxes = new ArrayList< JCheckBox >();
+			recreateContent();
+			update();
+		}
 
-			final int numSources = visibilityAndGrouping.numSources();
+		protected void recreateContent()
+		{
+			removeAll();
+			currentButtons.clear();
+			fusedBoxes.clear();
+			visibleBoxes.clear();
+
+			final int numSources = visibility.numSources();
 			final GridBagConstraints c = new GridBagConstraints();
 			c.insets = new Insets( 0, 5, 0, 5 );
 
@@ -131,7 +143,7 @@ public class ActiveSourcesDialog extends JDialog
 			c.anchor = GridBagConstraints.LINE_END;
 			c.gridy = GridBagConstraints.RELATIVE;
 			for ( int i = 0; i < numSources; ++i )
-				add( new JLabel( visibilityAndGrouping.getSources().get( i ).getSpimSource().getName() ), c );
+				add( new JLabel( visibility.getSources().get( i ).getSpimSource().getName() ), c );
 
 			// "current" radio-buttons
 			c.anchor = GridBagConstraints.CENTER;
@@ -192,16 +204,22 @@ public class ActiveSourcesDialog extends JDialog
 				add( b, c );
 			}
 
-			update();
+			invalidate();
+			final Window frame = SwingUtilities.getWindowAncestor( this );
+			if ( frame != null )
+				frame.pack();
 		}
 
 		protected void update()
 		{
 			synchronized ( visibility )
 			{
-				final int n = visibility.numSources();
+				final int numSources = visibility.numSources();
+				if ( currentButtons.size() != numSources )
+					recreateContent();
+
 				currentButtons.get( visibility.getCurrentSource() ).setSelected( true );
-				for ( int i = 0; i < n; ++i )
+				for ( int i = 0; i < numSources; ++i )
 				{
 					fusedBoxes.get( i ).setSelected( visibility.isSourceActive( i ) );
 					visibleBoxes.get( i ).setSelected( visibility.isSourceVisible( i ) );
@@ -212,13 +230,19 @@ public class ActiveSourcesDialog extends JDialog
 		@Override
 		public void visibilityChanged( final Event e )
 		{
-			switch ( e.id )
+			synchronized ( visibility )
 			{
-			case CURRENT_SOURCE_CHANGED:
-			case SOURCE_ACTVITY_CHANGED:
-			case VISIBILITY_CHANGED:
-				update();
-				break;
+				if ( currentButtons.size() != visibility.numSources() )
+					recreateContent();
+
+				switch ( e.id )
+				{
+				case CURRENT_SOURCE_CHANGED:
+				case SOURCE_ACTVITY_CHANGED:
+				case VISIBILITY_CHANGED:
+					update();
+					break;
+				}
 			}
 		}
 	}
@@ -233,11 +257,11 @@ public class ActiveSourcesDialog extends JDialog
 
 		private final ArrayList< JCheckBox > assignBoxes;
 
-		private final JCheckBox groupingBox;
+		private JCheckBox groupingBox;
 
-		private final int numSources;
+		private int numSources;
 
-		private final int numGroups;
+		private int numGroups;
 
 		public GroupingPanel( final VisibilityAndGrouping visibilityAndGrouping )
 		{
@@ -247,6 +271,17 @@ public class ActiveSourcesDialog extends JDialog
 			assignBoxes = new ArrayList< JCheckBox >();
 			numSources = visibilityAndGrouping.numSources();
 			numGroups = visibilityAndGrouping.numGroups();
+			recreateContent();
+		}
+
+		protected void recreateContent()
+		{
+			removeAll();
+			nameFields.clear();
+			assignBoxes.clear();
+
+			numSources = visibility.numSources();
+			numGroups = visibility.numGroups();
 
 			final GridBagConstraints c = new GridBagConstraints();
 			c.insets = new Insets( 0, 5, 0, 5 );
@@ -358,13 +393,24 @@ public class ActiveSourcesDialog extends JDialog
 			c.gridwidth = 2 + numSources;
 			c.anchor = GridBagConstraints.CENTER;
 			add( panel, c );
+
+			invalidate();
+			final Window frame = SwingUtilities.getWindowAncestor( this );
+			if ( frame != null )
+				frame.pack();
 		}
 
 		protected void update()
 		{
-			groupingBox.setSelected( visibility.isGroupingEnabled() );
-			updateGroupNames();
-			updateGroupAssignments();
+			synchronized ( visibility )
+			{
+				if ( visibility.numSources() != numSources && visibility.numGroups() != numGroups )
+					recreateContent();
+
+				groupingBox.setSelected( visibility.isGroupingEnabled() );
+				updateGroupNames();
+				updateGroupAssignments();
+			}
 		}
 
 		protected void updateGroupNames()
@@ -390,17 +436,23 @@ public class ActiveSourcesDialog extends JDialog
 		@Override
 		public void visibilityChanged( final Event e )
 		{
-			switch ( e.id )
+			synchronized ( visibility )
 			{
-			case DISPLAY_MODE_CHANGED:
-				groupingBox.setSelected( visibility.isGroupingEnabled() );
-				break;
-			case SOURCE_TO_GROUP_ASSIGNMENT_CHANGED:
-				updateGroupAssignments();
-				break;
-			case GROUP_NAME_CHANGED:
-				updateGroupNames();
-				break;
+				if ( visibility.numSources() != numSources || visibility.numGroups() != numGroups )
+					recreateContent();
+
+				switch ( e.id )
+				{
+				case DISPLAY_MODE_CHANGED:
+					groupingBox.setSelected( visibility.isGroupingEnabled() );
+					break;
+				case SOURCE_TO_GROUP_ASSIGNMENT_CHANGED:
+					updateGroupAssignments();
+					break;
+				case GROUP_NAME_CHANGED:
+					updateGroupNames();
+					break;
+				}
 			}
 		}
 	}
