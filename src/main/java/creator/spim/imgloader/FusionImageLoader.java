@@ -9,7 +9,7 @@ import mpicbg.spim.data.View;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.converter.Converters;
-import net.imglib2.display.RealUnsignedShortConverter;
+import net.imglib2.converter.RealUnsignedShortConverter;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.array.ArrayImgFactory;

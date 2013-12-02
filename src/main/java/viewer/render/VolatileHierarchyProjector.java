@@ -14,9 +14,8 @@ import net.imglib2.IterableInterval;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.Volatile;
 import net.imglib2.converter.Converter;
-import net.imglib2.display.Projector;
-import net.imglib2.display.Volatile;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.numeric.NumericType;
@@ -277,7 +276,7 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 			}
 			if ( interrupted.get() )
 			{
-				System.out.println( "interrupted" );
+//				System.out.println( "interrupted" );
 				return false;
 			}
 		}

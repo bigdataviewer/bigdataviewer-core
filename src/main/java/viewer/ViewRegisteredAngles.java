@@ -18,13 +18,13 @@ import mpicbg.spim.data.SequenceDescription;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.display.RealARGBColorConverter;
-import net.imglib2.display.nativevolatile.VolatileUnsignedShortType;
 import net.imglib2.histogram.DiscreteFrequencyDistribution;
 import net.imglib2.histogram.Histogram1d;
 import net.imglib2.histogram.Real1dBinMapper;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.type.volatiles.natives.VolatileUnsignedShortType;
 import net.imglib2.util.LinAlgHelpers;
 import net.imglib2.view.Views;
 

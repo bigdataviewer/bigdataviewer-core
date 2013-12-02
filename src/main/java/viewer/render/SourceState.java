@@ -1,6 +1,6 @@
 package viewer.render;
 
-import net.imglib2.display.Volatile;
+import net.imglib2.Volatile;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.LinAlgHelpers;
 

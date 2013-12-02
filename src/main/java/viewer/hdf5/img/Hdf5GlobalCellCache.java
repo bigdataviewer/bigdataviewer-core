@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import net.imglib2.display.nativevolatile.VolatileAccess;
+import net.imglib2.type.volatiles.natives.VolatileAccess;
 import viewer.hdf5.img.Hdf5ImgCells.CellCache;
 
 public class Hdf5GlobalCellCache< A extends VolatileAccess >
@@ -180,11 +180,11 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 			lock.lock();
 			try
 			{
-				System.out.println( "prefetch size before clear = " + prefetch.size() );
+//				System.out.println( "prefetch size before clear = " + prefetch.size() );
 
 				// make room in the prefetch deque
 				final int toRemoveFromPrefetch = Math.max( 0, Math.min( prefetch.size(), count - prefetchCapacity ) );
-				System.out.println( "toRemoveFromPrefetch = " + toRemoveFromPrefetch );
+//				System.out.println( "toRemoveFromPrefetch = " + toRemoveFromPrefetch );
 				if ( toRemoveFromPrefetch == prefetch.size() )
 					prefetch.clear();
 				else
@@ -214,7 +214,7 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 				// update count: only prefetch is non-empty now
 				count = prefetch.size();
 
-				System.out.println( "prefetch size after clear = " + prefetch.size() );
+//				System.out.println( "prefetch size after clear = " + prefetch.size() );
 			}
 			finally
 			{

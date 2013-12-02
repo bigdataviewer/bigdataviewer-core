@@ -9,7 +9,7 @@ import mpicbg.spim.data.View;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.algorithm.stats.ComputeMinMax;
 import net.imglib2.converter.Converters;
-import net.imglib2.display.RealUnsignedShortConverter;
+import net.imglib2.converter.RealUnsignedShortConverter;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.UnsignedByteType;

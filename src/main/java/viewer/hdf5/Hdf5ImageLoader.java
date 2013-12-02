@@ -11,12 +11,12 @@ import java.util.ArrayList;
 import mpicbg.spim.data.View;
 import mpicbg.spim.data.XmlHelpers;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.display.nativevolatile.VolatileShortArray;
-import net.imglib2.display.nativevolatile.VolatileUnsignedShortType;
 import net.imglib2.img.cell.CellImg;
 import net.imglib2.img.cell.CellImgFactory;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.type.volatiles.natives.VolatileShortArray;
+import net.imglib2.type.volatiles.natives.VolatileUnsignedShortType;
 
 import org.jdom2.Element;
 

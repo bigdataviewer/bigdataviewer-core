@@ -1,7 +1,7 @@
 package viewer.render;
 
+import net.imglib2.Volatile;
 import net.imglib2.converter.Converter;
-import net.imglib2.display.Volatile;
 import net.imglib2.type.numeric.ARGBType;
 
 /**

@@ -1,6 +1,6 @@
 package viewer.render;
 
-import net.imglib2.display.Volatile;
+import net.imglib2.Volatile;
 import net.imglib2.ui.InterruptibleProjector;
 
 public interface VolatileProjector extends InterruptibleProjector
