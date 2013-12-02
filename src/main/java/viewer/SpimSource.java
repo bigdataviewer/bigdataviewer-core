@@ -9,8 +9,6 @@ import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory;
 import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.type.volatiles.natives.VolatileShortArray;
 import net.imglib2.type.volatiles.natives.VolatileUnsignedShortType;
 import net.imglib2.view.Views;
 import viewer.render.Interpolation;
@@ -72,8 +70,7 @@ public class SpimSource implements Source< VolatileUnsignedShortType >
 		currentTimepoint = timepoint;
 		if ( isPresent( timepoint ) )
 		{
-			final VolatileUnsignedShortType zero = new VolatileUnsignedShortType( new UnsignedShortType( new VolatileShortArray( 1, true ) ), true );
-			zero.get().setZero();
+			final VolatileUnsignedShortType zero = new VolatileUnsignedShortType( 0 );
 			final View view = sequenceViews.getView( timepoint, setup );
 			final AffineTransform3D reg = view.getModel();
 			final AffineTransform3D mipmapTransform = new AffineTransform3D();
@@ -143,7 +140,7 @@ public class SpimSource implements Source< VolatileUnsignedShortType >
 	@Override
 	public VolatileUnsignedShortType getType()
 	{
-		return new VolatileUnsignedShortType( new UnsignedShortType(), true );
+		return new VolatileUnsignedShortType();
 	}
 
 	@Override
