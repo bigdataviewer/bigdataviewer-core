@@ -68,6 +68,12 @@ public class MultiResolutionRenderer
 	protected ARGBScreenImage[][] renderImages;
 
 	/**
+	 * Storage for mask images of {@link VolatileHierarchyProjector}.
+	 * One array per visible source. (First) index is index in list of visible sources.
+	 */
+	protected byte[][] renderMaskArrays;
+
+	/**
 	 * Used to render the image for display. Two images per screen resolution
 	 * if double buffering is enabled. First index is screen scale, second index is
 	 * double-buffer.
@@ -169,6 +175,7 @@ public class MultiResolutionRenderer
 		renderIdQueue = new ArrayDeque< Integer >();
 		bufferedImageToRenderId = new HashMap< BufferedImage, Integer >();
 		renderImages = new ARGBScreenImage[ screenScales.length ][ 0 ];
+		renderMaskArrays = new byte[ 0 ][];
 		screenImages = new ARGBScreenImage[ screenScales.length ][ 3 ];
 		bufferedImages = new BufferedImage[ screenScales.length ][ 3 ];
 		screenScaleTransforms = new AffineTransform3D[ screenScales.length ];
@@ -246,10 +253,26 @@ public class MultiResolutionRenderer
 				final int w = ( int ) screenImages[ i ][ 0 ].dimension( 0 );
 				final int h = ( int ) screenImages[ i ][ 0 ].dimension( 1 );
 				for ( int j = 0; j < numVisibleSources; ++j )
+				{
 					renderImages[ i ][ j ] = ( i == 0 ) ?
 						new ARGBScreenImage( w, h ) :
 						new ARGBScreenImage( w, h, renderImages[ 0 ][ j ].getData() );
+				}
 			}
+			return true;
+		}
+		return false;
+	}
+
+	protected synchronized boolean checkRenewMaskArrays( final int numVisibleSources )
+	{
+		if ( numVisibleSources != renderMaskArrays.length ||
+				( numVisibleSources != 0 &&	( renderMaskArrays[ 0 ].length < screenImages[ 0 ][ 0 ].size() ) ) )
+		{
+			final int size = ( int ) screenImages[ 0 ][ 0 ].size();
+			renderMaskArrays = new byte[ numVisibleSources ][];
+			for ( int j = 0; j < numVisibleSources; ++j )
+				renderMaskArrays[ j ] = new byte[ size ];
 			return true;
 		}
 		return false;
@@ -263,7 +286,9 @@ public class MultiResolutionRenderer
 	{
 		final boolean resized = checkResize();
 
-		checkRenewRenderImages( state.getVisibleSourceIndices().size() );
+		final int numVisibleSources = state.getVisibleSourceIndices().size();
+		checkRenewRenderImages( numVisibleSources );
+		checkRenewMaskArrays( numVisibleSources );
 
 		// the BufferedImage that is rendered to (to paint to the canvas)
 		final BufferedImage bufferedImage;
@@ -392,7 +417,7 @@ public class MultiResolutionRenderer
 			else if ( visibleSourceIndices.size() == 1 )
 			{
 				final int i = visibleSourceIndices.get( 0 );
-				return createSingleSourceProjector( viewerState, sources.get( i ), i, currentScreenScaleIndex, screenImage );
+				return createSingleSourceProjector( viewerState, sources.get( i ), i, currentScreenScaleIndex, screenImage, renderMaskArrays[ 0 ] );
 			}
 			else
 			{
@@ -401,10 +426,12 @@ public class MultiResolutionRenderer
 				int j = 0;
 				for ( final int i : visibleSourceIndices )
 				{
-					final ARGBScreenImage renderImage = renderImages[ currentScreenScaleIndex ][ j++ ];
+					final ARGBScreenImage renderImage = renderImages[ currentScreenScaleIndex ][ j ];
+					final byte[] maskArray = renderMaskArrays[ j ];
+					++j;
 					final VolatileProjector p = createSingleSourceProjector(
 							viewerState, sources.get( i ), i, currentScreenScaleIndex,
-							renderImage );
+							renderImage, maskArray );
 					sourceProjectors.add( p );
 					sourceImages.add( renderImage );
 				}
@@ -418,7 +445,8 @@ public class MultiResolutionRenderer
 			final SourceState< T > source,
 			final int sourceIndex,
 			final int screenScaleIndex,
-			final ARGBScreenImage screenImage )
+			final ARGBScreenImage screenImage,
+			final byte[] maskArray )
 	{
 		final AffineTransform3D screenScaleTransform = screenScaleTransforms[ currentScreenScaleIndex ];
 		final ArrayList< RandomAccessible< T > > levels = new ArrayList< RandomAccessible< T > >();

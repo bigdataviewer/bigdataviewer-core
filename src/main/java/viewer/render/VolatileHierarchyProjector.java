@@ -88,13 +88,22 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 			final RandomAccessibleInterval< B > target,
 			final int numThreads )
 	{
+		this( sources, converter, target, new byte[ ( int ) ( target.dimension( 0 ) * target.dimension( 1 ) ) ], numThreads );
+	}
+
+	public VolatileHierarchyProjector(
+			final List< ? extends RandomAccessible< A > > sources,
+			final Converter< ? super A, B > converter,
+			final RandomAccessibleInterval< B > target,
+			final byte[] maskArray,
+			final int numThreads )
+	{
 		super( Math.max( 2, sources.get( 0 ).numDimensions() ), converter, target );
 
 		this.sources.addAll( sources );
 		numInvalidLevels = sources.size();
 
-		final int size = ( int ) ( target.dimension( 0 ) * target.dimension( 1 ) );
-		maskArray = new byte[ size ];
+		this.maskArray = maskArray;
 		mask = ArrayImgs.bytes( maskArray, target.dimension( 0 ), target.dimension( 1 ) );
 
 		iterableTarget = Views.iterable( target );
@@ -138,31 +147,17 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 	 * Set all pixels in target to 100% transparent zero, and mask to all
 	 * Integer.MAX_VALUE.
 	 */
-//	public void clear()
-//	{
-//		final Cursor< B > targetCursor = iterableTarget.cursor();
-//
-//		while ( targetCursor.hasNext() )
-//			targetCursor.next().setZero();
-//
-//		clearMask();
-//
-//		numInvalidLevels = sources.size();
-//	}
-
-	/**
-	 * Set all pixels in target to 100% transparent zero, and mask to all
-	 * Integer.MAX_VALUE.
-	 */
 	public void clearMask()
 	{
-		Arrays.fill( maskArray, Byte.MAX_VALUE );
+		Arrays.fill( maskArray, 0, ( int ) mask.size(), Byte.MAX_VALUE );
 		numInvalidLevels = sources.size();
 	}
 
+	/**
+	 * Clear target pixels that were never written.
+	 */
 	protected void clearUntouchedTargetPixels()
 	{
-		// clear target pixels that were never written
 		final Cursor< ByteType > maskCursor = mask.cursor();
 		for ( final B t : iterableTarget )
 			if ( maskCursor.next().get() == Byte.MAX_VALUE )
