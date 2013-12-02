@@ -23,6 +23,8 @@ import org.jdom2.Element;
 import viewer.ViewerImgLoader;
 import viewer.hdf5.img.Hdf5Cell;
 import viewer.hdf5.img.Hdf5GlobalCellCache;
+import viewer.hdf5.img.Hdf5GlobalCellCache.Hdf5BlockingCellCache;
+import viewer.hdf5.img.Hdf5GlobalCellCache.Hdf5CellCache;
 import viewer.hdf5.img.Hdf5ImgCells;
 import viewer.hdf5.img.VolatileShortArrayLoader;
 import ch.systemsx.cisd.hdf5.HDF5DataSetInformation;
@@ -172,7 +174,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 			final long[] dimensions = reorder( info.getDimensions() );
 			final int[] cellDimensions = reorder( info.tryGetChunkSizes() );
 
-			final Hdf5GlobalCellCache< VolatileShortArray >.Hdf5CellCache c = cache.new Hdf5CellCache( view.getTimepointIndex(), view.getSetupIndex(), level );
+			final Hdf5GlobalCellCache< VolatileShortArray >.Hdf5BlockingCellCache c = cache.new Hdf5BlockingCellCache( view.getTimepointIndex(), view.getSetupIndex(), level );
 			final Hdf5ImgCells< VolatileShortArray > cells = new Hdf5ImgCells< VolatileShortArray >( c, 1, dimensions, cellDimensions );
 			final CellImgFactory< UnsignedShortType > factory = null;
 			final CellImg< UnsignedShortType, VolatileShortArray, Hdf5Cell< VolatileShortArray > > img = new CellImg< UnsignedShortType, VolatileShortArray, Hdf5Cell< VolatileShortArray > >( factory, cells );

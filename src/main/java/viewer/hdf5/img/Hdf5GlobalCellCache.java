@@ -257,7 +257,7 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 
 		queue = new BlockingFetchQueues< Key >( maxNumLevels );
 		fetchers = new ArrayList< Fetcher >();
-		for ( int i = 0; i < 4; ++i )
+		for ( int i = 0; i < 4; ++i ) // TODO: add numFetcherThreads parameter
 		{
 			final Fetcher f = new Fetcher();
 			fetchers.add( f );
@@ -279,6 +279,22 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 					entry.enqueueFrame = currentQueueFrame;
 					queue.put( k, maxLevels[ setup ] - level );
 				}
+				return entry.data;
+			}
+		}
+		return null;
+	}
+
+	public Hdf5Cell< A > getGlobalIfCachedAndLoadBlocking( final int timepoint, final int setup, final int level, final int index )
+	{
+		final Key k = new Key( timepoint, setup, level, index );
+		final SoftReference< Entry > ref = softReferenceCache.get( k );
+		if ( ref != null )
+		{
+			final Entry entry = ref.get();
+			if ( entry != null )
+			{
+				loadIfNotValid( k );
 				return entry.data;
 			}
 		}
@@ -339,6 +355,25 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 		return cell;
 	}
 
+	public Hdf5Cell< A > createGlobalAndLoadBlocking( final int[] cellDims, final long[] cellMin, final int timepoint, final int setup, final int level, final int index )
+	{
+		final Key k = new Key( timepoint, setup, level, index );
+		Entry entry = null;
+
+		final SoftReference< Entry > ref = softReferenceCache.get( k );
+		if ( ref != null )
+			entry = ref.get();
+		if ( entry == null )
+		{
+			final Hdf5Cell< A > cell = new Hdf5Cell< A >( cellDims, cellMin, loader.emptyArray( cellDims ) );
+			entry = new Entry( k, cell );
+			softReferenceCache.put( k, new SoftReference< Entry >( entry ) );
+		}
+
+		loadIfNotValid( k );
+		return entry.data;
+	}
+
 	public class Hdf5CellCache implements CellCache< A >
 	{
 		final int timepoint;
@@ -364,6 +399,34 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 		public Hdf5Cell< A > load( final int index, final int[] cellDims, final long[] cellMin )
 		{
 			return createGlobal( cellDims, cellMin, timepoint, setup, level, index );
+		}
+	}
+
+	public class Hdf5BlockingCellCache implements CellCache< A >
+	{
+		final int timepoint;
+
+		final int setup;
+
+		final int level;
+
+		public Hdf5BlockingCellCache( final int timepoint, final int setup, final int level )
+		{
+			this.timepoint = timepoint;
+			this.setup = setup;
+			this.level = level;
+		}
+
+		@Override
+		public Hdf5Cell< A > get( final int index )
+		{
+			return getGlobalIfCachedAndLoadBlocking( timepoint, setup, level, index );
+		}
+
+		@Override
+		public Hdf5Cell< A > load( final int index, final int[] cellDims, final long[] cellMin )
+		{
+			return createGlobalAndLoadBlocking( cellDims, cellMin, timepoint, setup, level, index );
 		}
 	}
 

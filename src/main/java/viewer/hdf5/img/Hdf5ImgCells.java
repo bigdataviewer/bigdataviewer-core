@@ -18,10 +18,13 @@ public class Hdf5ImgCells< A extends VolatileAccess > extends AbstractCells< A, 
 		public Hdf5Cell< A > get( final int index );
 
 		/**
-		 * Load a cell into memory and put it into the cache at the specified index.
+		 * Load a cell into memory (eventually) and put it into the cache at the
+		 * specified index. Depending on the implementation, loading may be
+		 * asynchronous, so the {@link VolatileAccess} of the returned cell may
+		 * be invalid for a while.
 		 *
 		 * @param index
-		 * 			  cell is stored at this index in the cache.
+		 *            cell is stored at this index in the cache.
 		 * @param cellDims
 		 *            dimensions of the cell.
 		 * @param cellMin
@@ -29,7 +32,6 @@ public class Hdf5ImgCells< A extends VolatileAccess > extends AbstractCells< A, 
 		 * @return cell at index
 		 */
 		public Hdf5Cell< A > load( final int index, final int[] cellDims, final long[] cellMin );
-
 	}
 
 	protected final CachedCells cells;
