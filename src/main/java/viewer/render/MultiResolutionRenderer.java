@@ -432,8 +432,6 @@ public class MultiResolutionRenderer
 		return new VolatileHierarchyProjector< T, ARGBType >( levels, source.getConverter(), screenImage, numRenderingThreads );
 	}
 
-	private final static ARGBType argbtype = new ARGBType();
-
 	private static < T > RandomAccessible< T > getTransformedSource( final ViewerState viewerState, final Source< T > source, final AffineTransform3D screenScaleTransform, final int mipmapIndex )
 	{
 		final int timepoint = viewerState.getCurrentTimepoint();
@@ -446,10 +444,5 @@ public class MultiResolutionRenderer
 		sourceToScreen.preConcatenate( screenScaleTransform );
 
 		return RealViews.constantAffine( img, sourceToScreen );
-	}
-
-	private static < T extends Volatile< ? > > InterruptibleRenderer< T, ARGBType > createSingleSourceProjector( final ViewerState viewerState, final SourceState< T > source, final AffineTransform3D screenScaleTransform, final int mipmapIndex )
-	{
-		return new InterruptibleRenderer< T, ARGBType >( getTransformedSource( viewerState, source.getSpimSource(), screenScaleTransform, mipmapIndex ), source.getConverter() );
 	}
 }
