@@ -1,7 +1,10 @@
 package viewer.render;
 
 import java.awt.image.BufferedImage;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
 
 import net.imglib2.RandomAccessible;
@@ -45,6 +48,17 @@ public class MultiResolutionRenderer
 	 * Whether double buffering is used.
 	 */
 	final protected boolean doubleBuffered;
+
+	/**
+	 * Double-buffer index of next {@link #screenImages image} to render.
+	 */
+	final protected ArrayDeque< Integer > renderIdQueue;
+
+	/**
+	 * Maps from {@link BufferedImage} to double-buffer index.
+	 * Needed for double-buffering.
+	 */
+	final protected HashMap< BufferedImage, Integer > bufferedImageToRenderId;
 
 	/**
 	 * Used to render an individual source. One image per screen resolution and
@@ -152,9 +166,11 @@ public class MultiResolutionRenderer
 		currentScreenScaleIndex = -1;
 		this.screenScales = screenScales.clone();
 		this.doubleBuffered = doubleBuffered;
+		renderIdQueue = new ArrayDeque< Integer >();
+		bufferedImageToRenderId = new HashMap< BufferedImage, Integer >();
 		renderImages = new ARGBScreenImage[ screenScales.length ][ 0 ];
-		screenImages = new ARGBScreenImage[ screenScales.length ][ 2 ];
-		bufferedImages = new BufferedImage[ screenScales.length ][ 2 ];
+		screenImages = new ARGBScreenImage[ screenScales.length ][ 3 ];
+		bufferedImages = new BufferedImage[ screenScales.length ][ 3 ];
 		screenScaleTransforms = new AffineTransform3D[ screenScales.length ];
 
 		this.targetRenderNanos = targetRenderNanos;
@@ -184,17 +200,22 @@ public class MultiResolutionRenderer
 		final int componentH = display.getHeight();
 		if ( screenImages[ 0 ][ 0 ] == null || screenImages[ 0 ][ 0 ].dimension( 0 ) * screenScales[ 0 ] != componentW || screenImages[ 0 ][ 0 ].dimension( 1 )  * screenScales[ 0 ] != componentH )
 		{
+			renderIdQueue.clear();
+			renderIdQueue.addAll( Arrays.asList( 0, 1, 2 ) );
+			bufferedImageToRenderId.clear();
 			for ( int i = 0; i < screenScales.length; ++i )
 			{
 				final double screenToViewerScale = screenScales[ i ];
 				final int w = ( int ) ( screenToViewerScale * componentW );
 				final int h = ( int ) ( screenToViewerScale * componentH );
-				for ( int b = 0; b < ( doubleBuffered ? 2 : 1 ); ++b )
+				for ( int b = 0; b < ( doubleBuffered ? 3 : 1 ); ++b )
 				{
 					screenImages[ i ][ b ] = ( i == 0 ) ?
 							new ARGBScreenImage( w, h ) :
 							new ARGBScreenImage( w, h, screenImages[ 0 ][ b ].getData() );
-					bufferedImages[ i ][ b ] = GuiUtil.getBufferedImage( screenImages[ i ][ b ] );
+					final BufferedImage bi = GuiUtil.getBufferedImage( screenImages[ i ][ b ] );
+					bufferedImages[ i ][ b ] = bi;
+					bufferedImageToRenderId.put( bi, b );
 				}
 				final AffineTransform3D scale = new AffineTransform3D();
 				final double xScale = ( double ) w / componentW;
@@ -266,9 +287,10 @@ public class MultiResolutionRenderer
 
 			if ( createProjector )
 			{
+				final int renderId = renderIdQueue.peek();
 				currentScreenScaleIndex = requestedScreenScaleIndex;
-				bufferedImage = bufferedImages[ currentScreenScaleIndex ][ 0 ];
-				final ARGBScreenImage screenImage = screenImages[ currentScreenScaleIndex ][ 0 ];
+				bufferedImage = bufferedImages[ currentScreenScaleIndex ][ renderId ];
+				final ARGBScreenImage screenImage = screenImages[ currentScreenScaleIndex ][ renderId ];
 				p = createProjector( state, currentScreenScaleIndex, screenImage );
 				projector = p;
 			}
@@ -294,17 +316,14 @@ public class MultiResolutionRenderer
 			{
 				if ( createProjector )
 				{
-					display.setBufferedImage( bufferedImage );
+					final BufferedImage bi = display.setBufferedImage( bufferedImage );
 					if ( doubleBuffered )
-						for ( int i = 0; i < screenScales.length; ++i )
-						{
-							final ARGBScreenImage si = screenImages[ i ][ 0 ];
-							screenImages[ i ][ 0 ] = screenImages[ i ][ 1 ];
-							screenImages[ i ][ 1 ] = si;
-							final BufferedImage bi = bufferedImages[ i ][ 0 ];
-							bufferedImages[ i ][ 0 ] = bufferedImages[ i ][ 1 ];
-							bufferedImages[ i ][ 1 ] = bi;
-						}
+					{
+						renderIdQueue.pop();
+						final Integer id = bufferedImageToRenderId.get( bi );
+						if ( id != null )
+							renderIdQueue.add( id );
+					}
 
 					if ( currentScreenScaleIndex == maxScreenScaleIndex )
 					{
