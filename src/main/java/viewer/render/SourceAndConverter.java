@@ -1,13 +1,12 @@
 package viewer.render;
 
-import net.imglib2.Volatile;
 import net.imglib2.converter.Converter;
 import net.imglib2.type.numeric.ARGBType;
 
 /**
  * Data source (for one view setup) and a converter to ARGBType.
  */
-public class SourceAndConverter< T extends Volatile< ? > >
+public class SourceAndConverter< T >
 {
 	/**
 	 * provides image data for all timepoints of one view.

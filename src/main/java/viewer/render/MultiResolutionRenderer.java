@@ -440,7 +440,25 @@ public class MultiResolutionRenderer
 		}
 	}
 
-	private < T extends Volatile< ? > > VolatileProjector createSingleSourceProjector(
+	private < T > VolatileProjector createSingleSourceProjector(
+			final ViewerState viewerState,
+			final SourceState< T > source,
+			final int sourceIndex,
+			final int screenScaleIndex,
+			final ARGBScreenImage screenImage,
+			final byte[] maskArray )
+	{
+		if ( VolatileSource.class.isInstance( source.getSpimSource() ) )
+		{
+			@SuppressWarnings( "unchecked" )
+			final SourceState< Volatile< ? > > volatileSourceState = ( SourceState< Volatile< ? > > ) source;
+			return createSingleSourceVolatileProjector( viewerState, volatileSourceState, sourceIndex, screenScaleIndex, screenImage, maskArray );
+		}
+		// TODO : implement non-volatile case
+		throw new UnsupportedOperationException("createSingleSourceProjector() for nonvolatile sources not implemented");
+	}
+
+	private < T extends Volatile< ? > > VolatileProjector createSingleSourceVolatileProjector(
 			final ViewerState viewerState,
 			final SourceState< T > source,
 			final int sourceIndex,
