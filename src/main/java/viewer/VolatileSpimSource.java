@@ -3,13 +3,19 @@ package viewer;
 import mpicbg.spim.data.View;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.type.volatiles.natives.VolatileUnsignedShortType;
 import net.imglib2.view.Views;
+import viewer.render.Source;
+import viewer.render.VolatileSource;
 
-public class SpimSource extends AbstractSpimSource< UnsignedShortType >
+public class VolatileSpimSource extends AbstractSpimSource< VolatileUnsignedShortType > implements VolatileSource< UnsignedShortType, VolatileUnsignedShortType >
 {
-	public SpimSource( final SequenceViewsLoader loader, final int setup, final String name )
+	protected final SpimSource nonVolatileSource;
+
+	public VolatileSpimSource( final SequenceViewsLoader loader, final int setup, final String name )
 	{
 		super( loader, setup, name );
+		nonVolatileSource = new SpimSource( loader, setup, name );
 	}
 
 	@Override
@@ -18,7 +24,7 @@ public class SpimSource extends AbstractSpimSource< UnsignedShortType >
 		currentTimepoint = timepoint;
 		if ( isPresent( timepoint ) )
 		{
-			final UnsignedShortType zero = new UnsignedShortType( 0 );
+			final VolatileUnsignedShortType zero = new VolatileUnsignedShortType( 0 );
 			final View view = sequenceViews.getView( timepoint, setup );
 			final AffineTransform3D reg = view.getModel();
 			final AffineTransform3D mipmapTransform = new AffineTransform3D();
@@ -32,7 +38,7 @@ public class SpimSource extends AbstractSpimSource< UnsignedShortType >
 				}
 				currentSourceTransforms[ level ].set( reg );
 				currentSourceTransforms[ level ].concatenate( mipmapTransform );
-				currentSources[ level ] = imgLoader.getUnsignedShortImage( view, level );
+				currentSources[ level ] = imgLoader.getVolatileUnsignedShortImage( view, level );
 				for ( int method = 0; method < numInterpolationMethods; ++method )
 					currentInterpolatedSources[ level ][ method ] = Views.interpolate( Views.extendValue( currentSources[ level ], zero ), interpolatorFactories[ method ] );
 			}
@@ -50,8 +56,14 @@ public class SpimSource extends AbstractSpimSource< UnsignedShortType >
 	}
 
 	@Override
-	public UnsignedShortType getType()
+	public VolatileUnsignedShortType getType()
 	{
-		return new UnsignedShortType();
+		return new VolatileUnsignedShortType();
+	}
+
+	@Override
+	public Source< UnsignedShortType > nonVolatile()
+	{
+		return nonVolatileSource;
 	}
 }

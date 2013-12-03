@@ -50,6 +50,7 @@ import viewer.render.Source;
 import viewer.render.SourceAndConverter;
 import viewer.render.SourceState;
 import viewer.render.ViewerState;
+import viewer.render.VolatileSource;
 import viewer.util.Affine3DHelpers;
 
 public class ViewRegisteredAngles
@@ -154,7 +155,7 @@ public class ViewRegisteredAngles
 		{
 			final RealARGBColorConverter< VolatileUnsignedShortType > converter = new RealARGBColorConverter< VolatileUnsignedShortType >( 0, 65535 );
 			converter.setColor( new ARGBType( ARGBType.rgba( 255, 255, 255, 255 ) ) );
-			final SpimSource spimSource = new SpimSource( loader, setup, "angle " + seq.setups.get( setup ).getAngle() );
+			final VolatileSpimSource spimSource = new VolatileSpimSource( loader, setup, "angle " + seq.setups.get( setup ).getAngle() );
 			// Decorate each source with an extra transformation, that can be edited manually in this viewer.
 			final TransformedSource< VolatileUnsignedShortType > transformedSource = new TransformedSource< VolatileUnsignedShortType >( spimSource );
 			sources.add( new SourceAndConverter< VolatileUnsignedShortType >( transformedSource, converter ) );
