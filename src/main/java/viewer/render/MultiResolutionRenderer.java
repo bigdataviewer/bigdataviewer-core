@@ -8,14 +8,17 @@ import java.util.HashMap;
 import java.util.List;
 
 import net.imglib2.RandomAccessible;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.Volatile;
+import net.imglib2.converter.Converter;
 import net.imglib2.display.screenimage.awt.ARGBScreenImage;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
+import net.imglib2.ui.SimpleInterruptibleProjector;
 import net.imglib2.ui.util.GuiUtil;
 import viewer.display.AccumulateProjectorARGB;
 import viewer.hdf5.img.Hdf5GlobalCellCache;
@@ -440,6 +443,34 @@ public class MultiResolutionRenderer
 		}
 	}
 
+	private static class SimpleVolatileProjector< A, B > extends SimpleInterruptibleProjector< A, B > implements VolatileProjector
+	{
+		private boolean valid = false;
+
+		public SimpleVolatileProjector(
+				final RandomAccessible< A > source,
+				final Converter< ? super A, B > converter,
+				final RandomAccessibleInterval< B > target,
+				final int numThreads )
+		{
+			super( source, converter, target, numThreads );
+		}
+
+		@Override
+		public boolean map( final boolean clearUntouchedTargetPixels )
+		{
+			final boolean success = super.map();
+			valid |= success;
+			return success;
+		}
+
+		@Override
+		public boolean isValid()
+		{
+			return valid;
+		}
+	}
+
 	private < T > VolatileProjector createSingleSourceProjector(
 			final ViewerState viewerState,
 			final SourceState< T > source,
@@ -454,8 +485,14 @@ public class MultiResolutionRenderer
 			final SourceState< Volatile< ? > > volatileSourceState = ( SourceState< Volatile< ? > > ) source;
 			return createSingleSourceVolatileProjector( viewerState, volatileSourceState, sourceIndex, screenScaleIndex, screenImage, maskArray );
 		}
-		// TODO : implement non-volatile case
-		throw new UnsupportedOperationException("createSingleSourceProjector() for nonvolatile sources not implemented");
+		else
+		{
+			final AffineTransform3D screenScaleTransform = screenScaleTransforms[ currentScreenScaleIndex ];
+			final int bestLevel = viewerState.getBestMipMapLevel( screenScaleTransform, sourceIndex );
+			return new SimpleVolatileProjector< T, ARGBType >(
+					getTransformedSource( viewerState, source.getSpimSource(), screenScaleTransform, bestLevel ),
+					source.getConverter(), screenImage, numRenderingThreads );
+		}
 	}
 
 	private < T extends Volatile< ? > > VolatileProjector createSingleSourceVolatileProjector(
