@@ -1,6 +1,8 @@
 package viewer.hdf5;
 
 import static mpicbg.spim.data.XmlHelpers.loadPath;
+import static viewer.hdf5.Hdf5ImageLoader.CacheType.BLOCKING;
+import static viewer.hdf5.Hdf5ImageLoader.CacheType.VOLATILE;
 import static viewer.hdf5.Util.getResolutionsPath;
 import static viewer.hdf5.Util.getSubdivisionsPath;
 import static viewer.hdf5.Util.reorder;
@@ -48,6 +50,10 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 	 */
 	protected final ArrayList< Partition > partitions;
 
+	protected int[] maxLevels;
+
+	protected final boolean isCoarsestLevelBlocking = true;
+
 	public Hdf5ImageLoader()
 	{
 		this( null );
@@ -63,6 +69,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 		partitions = new ArrayList< Partition >();
 		if ( hdf5Partitions != null )
 			partitions.addAll( hdf5Partitions );
+		maxLevels = null;
 	}
 
 	public Hdf5ImageLoader( final File hdf5File, final ArrayList< Partition > hdf5Partitions )
@@ -89,7 +96,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 		final int numSetups = hdf5Reader.readInt( "numSetups" );
 
 		int maxNumLevels = 0;
-		final int[] maxLevels = new int[ numSetups ];
+		maxLevels = new int[ numSetups ];
 		perSetupMipmapResolutions.clear();
 		perSetupSubdivisions.clear();
 		for ( int setup = 0; setup < numSetups; ++setup )
@@ -103,7 +110,6 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 			final int [][] subdivisions = hdf5Reader.readIntMatrix( getSubdivisionsPath( setup ) );
 			perSetupSubdivisions.add( subdivisions );
 		}
-
 
 		cache = new Hdf5GlobalCellCache< VolatileShortArray >( new VolatileShortArrayLoader( hdf5Reader ), numTimepoints, numSetups, maxNumLevels, maxLevels );
 	}
@@ -163,7 +169,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 	@Override
 	public CellImg< UnsignedShortType, VolatileShortArray, Hdf5Cell< VolatileShortArray > > getUnsignedShortImage( final View view, final int level )
 	{
-		final CellImg< UnsignedShortType, VolatileShortArray, Hdf5Cell< VolatileShortArray > >  img = prepareCachedImage( view, level, CacheType.BLOCKING );
+		final CellImg< UnsignedShortType, VolatileShortArray, Hdf5Cell< VolatileShortArray > >  img = prepareCachedImage( view, level, BLOCKING );
 		final UnsignedShortType linkedType = new UnsignedShortType( img );
 		img.setLinkedType( linkedType );
 		return img;
@@ -172,7 +178,8 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 	@Override
 	public CellImg< VolatileUnsignedShortType, VolatileShortArray, Hdf5Cell< VolatileShortArray > > getVolatileUnsignedShortImage( final View view, final int level )
 	{
-		final CellImg< VolatileUnsignedShortType, VolatileShortArray, Hdf5Cell< VolatileShortArray > >  img = prepareCachedImage( view, level, CacheType.VOLATILE );
+		final CacheType cacheType = ( isCoarsestLevelBlocking && maxLevels[ view.getSetupIndex() ] == level ) ? BLOCKING : VOLATILE;
+		final CellImg< VolatileUnsignedShortType, VolatileShortArray, Hdf5Cell< VolatileShortArray > >  img = prepareCachedImage( view, level, cacheType );
 		final VolatileUnsignedShortType linkedType = new VolatileUnsignedShortType( img );
 		img.setLinkedType( linkedType );
 		return img;
