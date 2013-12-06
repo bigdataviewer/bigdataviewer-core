@@ -2,7 +2,6 @@ package viewer.hdf5.img;
 
 import java.lang.ref.SoftReference;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Condition;
@@ -10,6 +9,7 @@ import java.util.concurrent.locks.ReentrantLock;
 
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 import viewer.hdf5.img.Hdf5ImgCells.CellCache;
+import viewer.util.ThreadManager;
 
 public class Hdf5GlobalCellCache< A extends VolatileAccess >
 {
@@ -263,7 +263,7 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 		}
 	}
 
-	final protected ArrayList< Fetcher > fetchers;
+	private final ThreadManager threadManager;
 
 	final protected Hdf5ArrayLoader< A > loader;
 
@@ -276,11 +276,11 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 		this.maxLevels = maxLevels;
 
 		queue = new BlockingFetchQueues< Key >( maxNumLevels );
-		fetchers = new ArrayList< Fetcher >();
+		threadManager = new ThreadManager();
 		for ( int i = 0; i < 2; ++i ) // TODO: add numFetcherThreads parameter
 		{
 			final Fetcher f = new Fetcher();
-			fetchers.add( f );
+			getThreadManager().addThread( f );
 			f.start();
 		}
 	}
@@ -470,5 +470,10 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 	{
 		queue.clear();
 		++currentQueueFrame;
+	}
+
+	public ThreadManager getThreadManager()
+	{
+		return threadManager;
 	}
 }

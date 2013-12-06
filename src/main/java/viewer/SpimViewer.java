@@ -144,6 +144,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 		sourceInfoOverlayRenderer = new SourceInfoOverlayRenderer();
 
 		painterThread = new PainterThread( this );
+		cache.getThreadManager().addConsumer( painterThread );
 		viewerTransform = new AffineTransform3D();
 		display = new InteractiveDisplayCanvasComponent< AffineTransform3D >( width, height, TransformEventHandler3D.factory() );
 		display.addTransformListener( this );
@@ -194,6 +195,7 @@ public class SpimViewer implements OverlayRenderer, TransformListener< AffineTra
 			public void windowClosing( final WindowEvent e )
 			{
 				painterThread.interrupt();
+				cache.getThreadManager().removeConsumer( painterThread );
 			}
 		} );
 		frame.setVisible( true );
