@@ -223,6 +223,26 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 		}
 	}
 
+	/**
+	 * Load the data for the {@link Hdf5Cell} referenced by k, if
+	 * <ul>
+	 * <li>the {@link Hdf5Cell} is in the cache, and
+	 * <li>the data is not yet loaded (valid).
+	 * </ul>
+	 *
+	 * @param k
+	 */
+	protected void loadIfNotValid( final Key k )
+	{
+		final SoftReference< Entry > ref = softReferenceCache.get( k );
+		if ( ref != null )
+		{
+			final Entry entry = ref.get();
+			if ( entry != null )
+				loadEntryIfNotValid( entry );
+		}
+	}
+
 	class Fetcher extends Thread
 	{
 		@Override
@@ -257,7 +277,7 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 
 		queue = new BlockingFetchQueues< Key >( maxNumLevels );
 		fetchers = new ArrayList< Fetcher >();
-		for ( int i = 0; i < 4; ++i ) // TODO: add numFetcherThreads parameter
+		for ( int i = 0; i < 2; ++i ) // TODO: add numFetcherThreads parameter
 		{
 			final Fetcher f = new Fetcher();
 			fetchers.add( f );
@@ -265,6 +285,14 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 		}
 	}
 
+	/**
+	 * Get a cell if it is in the cache or null. Note, that a cell being in the
+	 * cache only means that here is a data array, but not necessarily that the
+	 * data has already been loaded. If the cell's cache entry has not been
+	 * enqueued for loading in the current frame yet, it is enqueued.
+	 *
+	 * @return a cell with the specified coordinates or null.
+	 */
 	public Hdf5Cell< A > getGlobalIfCached( final int timepoint, final int setup, final int level, final int index )
 	{
 		final Key k = new Key( timepoint, setup, level, index );
@@ -285,6 +313,13 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 		return null;
 	}
 
+	/**
+	 * Get a cell if it is in the cache or null. If a cell is returned, it is
+	 * guaranteed to have valid data. If necessary this call will block until
+	 * the data is loaded.
+	 *
+	 * @return a valid cell with the specified coordinates or null.
+	 */
 	public Hdf5Cell< A > getGlobalIfCachedAndLoadBlocking( final int timepoint, final int setup, final int level, final int index )
 	{
 		final Key k = new Key( timepoint, setup, level, index );
@@ -294,7 +329,7 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 			final Entry entry = ref.get();
 			if ( entry != null )
 			{
-				loadIfNotValid( k );
+				loadEntryIfNotValid( entry );
 				return entry.data;
 			}
 		}
@@ -302,41 +337,11 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 	}
 
 	/**
-	 * Load the data for the {@link Hdf5Cell} referenced by k, if
-	 * <ul>
-	 * <li>the {@link Hdf5Cell} is in the cache, and
-	 * <li>the data is not yet loaded (valid).
-	 * </ul>
+	 * Create a new cell with the specified coordinates, if it isn't in the
+	 * cache already. Enqueue the cell for loading.
 	 *
-	 * @param k
+	 * @return a cell with the specified coordinates.
 	 */
-	public void loadIfNotValid( final Key k )
-	{
-		final SoftReference< Entry > ref = softReferenceCache.get( k );
-		if ( ref != null )
-		{
-			final Entry entry = ref.get();
-			if ( entry != null )
-			{
-				final Hdf5Cell< A > c = entry.data;
-				if ( ! c.getData().isValid() )
-				{
-					final int[] cellDims = c.getDimensions();
-					final long[] cellMin = c.getMin();
-					final int timepoint = k.timepoint;
-					final int setup = k.setup;
-					final int level = k.level;
-					final Hdf5Cell< A > cell;
-					synchronized( loader )
-					{
-						cell = new Hdf5Cell< A >( cellDims, cellMin, loader.loadArray( timepoint, setup, level, cellDims, cellMin ) );
-					}
-					entry.data = cell; // TODO: need to synchronize or make entry.data volatile?
-				}
-			}
-		}
-	}
-
 	public synchronized Hdf5Cell< A > createGlobal( final int[] cellDims, final long[] cellMin, final int timepoint, final int setup, final int level, final int index )
 	{
 		final Key k = new Key( timepoint, setup, level, index );
@@ -355,6 +360,12 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 		return cell;
 	}
 
+	/**
+	 * Create a new cell with the specified coordinates, if it isn't in the
+	 * cache already. Block until the data for the cell has been loaded.
+	 *
+	 * @return a valid cell with the specified coordinates.
+	 */
 	public Hdf5Cell< A > createGlobalAndLoadBlocking( final int[] cellDims, final long[] cellMin, final int timepoint, final int setup, final int level, final int index )
 	{
 		final Key k = new Key( timepoint, setup, level, index );
@@ -370,8 +381,33 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 			softReferenceCache.put( k, new SoftReference< Entry >( entry ) );
 		}
 
-		loadIfNotValid( k );
+		loadEntryIfNotValid( entry );
 		return entry.data;
+	}
+
+	/**
+	 * Load the data for the {@link Entry}, if it is not yet loaded (valid).
+	 */
+	protected void loadEntryIfNotValid( final Entry entry )
+	{
+		final Hdf5Cell< A > c = entry.data;
+		if ( !c.getData().isValid() )
+		{
+			final int[] cellDims = c.getDimensions();
+			final long[] cellMin = c.getMin();
+			final Key k = entry.key;
+			final int timepoint = k.timepoint;
+			final int setup = k.setup;
+			final int level = k.level;
+			synchronized( loader )
+			{
+				if ( !entry.data.getData().isValid() )
+				{
+					final Hdf5Cell< A > cell = new Hdf5Cell< A >( cellDims, cellMin, loader.loadArray( timepoint, setup, level, cellDims, cellMin ) );
+					entry.data = cell; // TODO: need to synchronize or make entry.data volatile?
+				}
+			}
+		}
 	}
 
 	public class Hdf5CellCache implements CellCache< A >
