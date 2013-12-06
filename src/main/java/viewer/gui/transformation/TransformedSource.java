@@ -1,10 +1,10 @@
 package viewer.gui.transformation;
 
-import viewer.render.Interpolation;
-import viewer.render.Source;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.realtransform.AffineTransform3D;
+import viewer.render.Interpolation;
+import viewer.render.Source;
 
 /**
  * A {@link Source} that wraps another {@link Source} and allows to decorate it
@@ -20,23 +20,29 @@ import net.imglib2.realtransform.AffineTransform3D;
  */
 public class TransformedSource< T > implements Source< T >
 {
-
-	private final Source< T > source;
-
-	private final AffineTransform3D incrementalTransform;
-
-	private final AffineTransform3D fixedTransform;
+	protected final Source< T > source;
 
 	/**
-	 * concatenation of {@link #incrementalTransform} * {@link #fixedTransform}.
+	 * Incremental part of the extra transformation.
 	 */
-	private final AffineTransform3D sourceTransform;
+	protected final AffineTransform3D incrementalTransform;
+
+	/**
+	 * Fixed part of the extra transformation.
+	 */
+	protected final AffineTransform3D fixedTransform;
+
+	/**
+	 * Extra transformation. Concatenation of {@link #incrementalTransform} *
+	 * {@link #fixedTransform}.
+	 */
+	protected final AffineTransform3D sourceTransform;
 
 	/**
 	 * temporary. concatenation of {@link #sourceTransform} and the transform
 	 * obtained from the decorated source.
 	 */
-	private final AffineTransform3D composed;
+	protected final AffineTransform3D composed;
 
 	/**
 	 * Instantiates a new {@link TransformedSource} wrapping the specified
@@ -52,6 +58,15 @@ public class TransformedSource< T > implements Source< T >
 		fixedTransform = new AffineTransform3D();
 		sourceTransform = new AffineTransform3D();
 		composed = new AffineTransform3D();
+	}
+
+	protected TransformedSource( final Source< T > source, final AffineTransform3D incrementalTransform, final AffineTransform3D fixedTransform, final AffineTransform3D sourceTransform, final AffineTransform3D composed )
+	{
+		this.source = source;
+		this.incrementalTransform = incrementalTransform;
+		this.fixedTransform = fixedTransform;
+		this.sourceTransform = sourceTransform;
+		this.composed = composed;
 	}
 
 	/*

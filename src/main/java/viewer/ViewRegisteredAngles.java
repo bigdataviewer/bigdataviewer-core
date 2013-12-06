@@ -43,7 +43,7 @@ import viewer.gui.brightness.RealARGBColorConverterSetup;
 import viewer.gui.brightness.SetupAssignments;
 import viewer.gui.transformation.ManualTransformation;
 import viewer.gui.transformation.ManualTransformationEditor;
-import viewer.gui.transformation.TransformedSource;
+import viewer.gui.transformation.TransformedVolatileSource;
 import viewer.gui.visibility.ActiveSourcesDialog;
 import viewer.hdf5.Hdf5ImageLoader;
 import viewer.render.Source;
@@ -157,7 +157,7 @@ public class ViewRegisteredAngles
 			converter.setColor( new ARGBType( ARGBType.rgba( 255, 255, 255, 255 ) ) );
 			final VolatileSpimSource spimSource = new VolatileSpimSource( loader, setup, "angle " + seq.setups.get( setup ).getAngle() );
 			// Decorate each source with an extra transformation, that can be edited manually in this viewer.
-			final TransformedSource< VolatileUnsignedShortType > transformedSource = new TransformedSource< VolatileUnsignedShortType >( spimSource );
+			final TransformedVolatileSource< UnsignedShortType, VolatileUnsignedShortType > transformedSource = new TransformedVolatileSource< UnsignedShortType, VolatileUnsignedShortType >( spimSource );
 			sources.add( new SourceAndConverter< VolatileUnsignedShortType >( transformedSource, converter ) );
 			converterSetups.add( new RealARGBColorConverterSetup< VolatileUnsignedShortType >( setup, converter ) );
 		}
@@ -388,7 +388,9 @@ public class ViewRegisteredAngles
 	void initBrightness( final double cumulativeMinCutoff, final double cumulativeMaxCutoff )
 	{
 		final ViewerState state = viewer.getState();
-		final Source< ? > source = state.getSources().get( state.getCurrentSource() ).getSpimSource();
+		Source< ? > source = state.getSources().get( state.getCurrentSource() ).getSpimSource();
+		if ( VolatileSource.class.isInstance( source ) )
+			source = ( ( VolatileSource< ?, ? > ) source ).nonVolatile();
 		final RandomAccessibleInterval< UnsignedShortType > img = ( RandomAccessibleInterval ) source.getSource( state.getCurrentTimepoint(), source.getNumMipmapLevels() - 1 );
 		final long z = ( img.min( 2 ) + img.max( 2 ) + 1 ) / 2;
 
