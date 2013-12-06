@@ -3,7 +3,7 @@ package viewer;
 import mpicbg.spim.data.View;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.type.volatiles.natives.VolatileUnsignedShortType;
+import net.imglib2.type.numeric.integer.VolatileUnsignedShortType;
 import net.imglib2.view.Views;
 import viewer.render.Source;
 import viewer.render.VolatileSource;

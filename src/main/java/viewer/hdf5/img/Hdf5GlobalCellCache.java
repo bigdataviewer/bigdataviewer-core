@@ -8,7 +8,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
-import net.imglib2.type.volatiles.natives.VolatileAccess;
+import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 import viewer.hdf5.img.Hdf5ImgCells.CellCache;
 
 public class Hdf5GlobalCellCache< A extends VolatileAccess >
