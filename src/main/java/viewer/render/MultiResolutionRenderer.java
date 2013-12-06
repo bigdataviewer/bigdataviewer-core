@@ -218,14 +218,23 @@ public class MultiResolutionRenderer
 				final double screenToViewerScale = screenScales[ i ];
 				final int w = ( int ) ( screenToViewerScale * componentW );
 				final int h = ( int ) ( screenToViewerScale * componentH );
-				for ( int b = 0; b < ( doubleBuffered ? 3 : 1 ); ++b )
+				if ( doubleBuffered )
 				{
-					screenImages[ i ][ b ] = ( i == 0 ) ?
-							new ARGBScreenImage( w, h ) :
-							new ARGBScreenImage( w, h, screenImages[ 0 ][ b ].getData() );
-					final BufferedImage bi = GuiUtil.getBufferedImage( screenImages[ i ][ b ] );
-					bufferedImages[ i ][ b ] = bi;
-					bufferedImageToRenderId.put( bi, b );
+					for ( int b = 0; b < ( doubleBuffered ? 3 : 1 ); ++b )
+					{
+						// reuse storage arrays of level 0 (highest resolution)
+						screenImages[ i ][ b ] = ( i == 0 ) ?
+								new ARGBScreenImage( w, h ) :
+								new ARGBScreenImage( w, h, screenImages[ 0 ][ b ].getData() );
+						final BufferedImage bi = GuiUtil.getBufferedImage( screenImages[ i ][ b ] );
+						bufferedImages[ i ][ b ] = bi;
+						bufferedImageToRenderId.put( bi, b );
+					}
+				}
+				else
+				{
+					screenImages[ i ][ 0 ] = new ARGBScreenImage( w, h );
+					bufferedImages[ i ][ 0 ] = GuiUtil.getBufferedImage( screenImages[ i ][ 0 ] );
 				}
 				final AffineTransform3D scale = new AffineTransform3D();
 				final double xScale = ( double ) w / componentW;
