@@ -13,8 +13,8 @@ import javax.swing.KeyStroke;
 
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.ui.TransformListener;
-import viewer.SpimViewer;
 import viewer.ViewerPanel;
+import viewer.gui.InputActionBindings;
 import viewer.render.Source;
 import viewer.render.SourceGroup;
 import viewer.render.ViewerState;
@@ -26,7 +26,7 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 
 	private boolean active = false;
 
-	private final SpimViewer viewerFrame;
+	private final InputActionBindings bindings;
 
 	private final ViewerPanel viewer;
 
@@ -42,10 +42,10 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 
 	private final InputMap inputMap;
 
-	public ManualTransformationEditor( final SpimViewer viewerFrame )
+	public ManualTransformationEditor( final ViewerPanel viewer, final InputActionBindings inputActionBindings )
 	{
-		this.viewerFrame = viewerFrame;
-		viewer = viewerFrame.getViewer();
+		this.viewer = viewer;
+		bindings = inputActionBindings;
 		frozenTransform = new AffineTransform3D();
 		liveTransform = new AffineTransform3D();
 		sourcesToModify = new ArrayList< TransformedSource< ? > >();
@@ -79,7 +79,7 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 		inputMap.put( abortKey, "abort manual transformation" );
 		actionMap.put( "reset manual transformation", resetAction );
 		inputMap.put( resetKey, "reset manual transformation" );
-		viewerFrame.getKeybindings().addActionMap( "manual transform", actionMap );
+		bindings.addActionMap( "manual transform", actionMap );
 	}
 
 	public synchronized void abort()
@@ -150,14 +150,14 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 			}
 			active = true;
 			viewer.addTransformListener( this );
-			viewerFrame.getKeybindings().addInputMap( "manual transform", inputMap );
+			bindings.addInputMap( "manual transform", inputMap );
 			viewer.showMessage( "starting manual transform" );
 		}
 		else
 		{ // Exit manual edit mode.
 			active = false;
 			viewer.removeTransformListener( this );
-			viewerFrame.getKeybindings().removeInputMap( "manual transform" );
+			bindings.removeInputMap( "manual transform" );
 			final AffineTransform3D tmp = new AffineTransform3D();
 			for ( final TransformedSource< ? > source : sourcesToModify )
 			{

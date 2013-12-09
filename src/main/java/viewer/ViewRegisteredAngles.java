@@ -167,7 +167,7 @@ public class ViewRegisteredAngles
 		viewerFrame = new SpimViewer( width, height, sources, seq.numTimepoints(), ( ( Hdf5ImageLoader ) seq.imgLoader ).getCache() );
 		viewer = viewerFrame.getViewer();
 		manualTransformation = new ManualTransformation( viewer );
-		manualTransformationEditor = new ManualTransformationEditor( viewerFrame );
+		manualTransformationEditor = new ManualTransformationEditor( viewer, viewerFrame.getKeybindings() );
 
 		for ( final ConverterSetup cs : converterSetups )
 			if ( RealARGBColorConverterSetup.class.isInstance( cs ) )
