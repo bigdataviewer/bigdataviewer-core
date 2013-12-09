@@ -7,18 +7,18 @@ import net.imglib2.realtransform.AffineTransform3D;
 
 import org.jdom2.Element;
 
-import viewer.SpimViewer;
+import viewer.ViewerPanel;
 import viewer.render.Source;
 import viewer.render.SourceState;
 import viewer.render.ViewerState;
 
 public class ManualTransformation
 {
-	protected final SpimViewer viewer;
+	protected final ViewerPanel viewer;
 
 	protected final XmlIoTransformedSources io;
 
-	public ManualTransformation( final SpimViewer viewer )
+	public ManualTransformation( final ViewerPanel viewer )
 	{
 		this.viewer = viewer;
 		io = new XmlIoTransformedSources();
@@ -57,7 +57,7 @@ public class ManualTransformation
 		{
 			final Source< ? > source = sourceState.getSpimSource();
 			if ( TransformedSource.class.isInstance( source ) )
-				list.add( (viewer.gui.transformation.TransformedSource< ? > ) source );
+				list.add( (TransformedSource< ? > ) source );
 		}
 		return list;
 	}

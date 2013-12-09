@@ -71,7 +71,9 @@ public class ViewRegisteredAngles
 
 	final KeyStroke loadKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_F12, 0 );
 
-	final SpimViewer viewer;
+	final SpimViewer viewerFrame;
+
+	final ViewerPanel viewer;
 
 	final SetupAssignments setupAssignments;
 
@@ -162,9 +164,10 @@ public class ViewRegisteredAngles
 			converterSetups.add( new RealARGBColorConverterSetup< VolatileUnsignedShortType >( setup, converter ) );
 		}
 
-		viewer = new SpimViewer( width, height, sources, seq.numTimepoints(), ( ( Hdf5ImageLoader ) seq.imgLoader ).getCache() );
+		viewerFrame = new SpimViewer( width, height, sources, seq.numTimepoints(), ( ( Hdf5ImageLoader ) seq.imgLoader ).getCache() );
+		viewer = viewerFrame.getViewer();
 		manualTransformation = new ManualTransformation( viewer );
-		manualTransformationEditor = new ManualTransformationEditor( viewer );
+		manualTransformationEditor = new ManualTransformationEditor( viewerFrame );
 
 		for ( final ConverterSetup cs : converterSetups )
 			if ( RealARGBColorConverterSetup.class.isInstance( cs ) )
@@ -278,23 +281,22 @@ public class ViewRegisteredAngles
 			private static final long serialVersionUID = 1L;
 		} );
 
-		viewer.getKeybindings().addActionMap( "dialogs", actionMap );
-		viewer.getKeybindings().addInputMap( "dialogs", inputMap );
+		viewerFrame.getKeybindings().addActionMap( "dialogs", actionMap );
+		viewerFrame.getKeybindings().addInputMap( "dialogs", inputMap );
 
 		setupAssignments = new SetupAssignments( converterSetups, 0, 65535 );
 		final MinMaxGroup group = setupAssignments.getMinMaxGroups().get( 0 );
 		for ( final ConverterSetup setup : setupAssignments.getConverterSetups() )
 			setupAssignments.moveSetupToGroup( setup, group );
-		brightnessDialog = new BrightnessDialog( viewer.frame, setupAssignments );
-//		viewer.installKeyActions( brightnessDialog );
+		brightnessDialog = new BrightnessDialog( viewerFrame, setupAssignments );
 
-		cropDialog = new CropDialog( viewer.frame, viewer, seq );
-//		viewer.installKeyActions( cropDialog );
+		cropDialog = new CropDialog( viewerFrame, viewer, seq );
 
-		activeSourcesDialog = new ActiveSourcesDialog( viewer.frame, viewer.visibilityAndGrouping );
-//		viewer.installKeyActions( activeSourcesDialog );
+		activeSourcesDialog = new ActiveSourcesDialog( viewerFrame, viewer.getVisibilityAndGrouping() );
 
 		initTransform( width, height );
+
+		viewerFrame.setVisible( true );
 
 		if( ! tryLoadSettings( xmlFilename ) )
 			initBrightness( 0.001, 0.999 );
@@ -488,8 +490,9 @@ public class ViewRegisteredAngles
 //		final String fn = "/Users/tobias/Desktop/openspim.xml";
 //		final String fn = "/Users/pietzsch/Desktop/data/fibsem.xml";
 //		final String fn = "/Users/pietzsch/Desktop/url-valia.xml";
-//		final String fn = "/Users/pietzsch/Desktop/data/Valia1/valia1.xml";
+//		final String fn = "/Users/pietzsch/Desktop/data/Valia/valia.xml";
 //		final String fn = "/Users/pietzsch/workspace/data/111010_weber_full.xml";
+//		final String fn = "/Volumes/projects/tomancak_lightsheet/Mette/ZeissZ1SPIM/Maritigrella/021013_McH2BsGFP_CAAX-mCherry/11-use/hdf5/021013_McH2BsGFP_CAAX-mCherry-11-use.xml";
 		try
 		{
 			new ViewRegisteredAngles( fn );

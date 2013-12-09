@@ -10,7 +10,7 @@ import javax.swing.ActionMap;
 import javax.swing.InputMap;
 import javax.swing.KeyStroke;
 
-import viewer.SpimViewer.AlignPlane;
+import viewer.ViewerPanel.AlignPlane;
 
 public class NavigationKeyHandler
 {
@@ -40,13 +40,14 @@ public class NavigationKeyHandler
 		DEFAULT_KEYBINGS.setProperty( "N", "previous timepoint" );
 	}
 
-	private final SpimViewer viewer;
+	private final ViewerPanel viewer;
 
-	public NavigationKeyHandler( final SpimViewer viewer )
+	// TODO, fix this...
+	public NavigationKeyHandler( final SpimViewer frame, final ViewerPanel viewer )
 	{
 		this.viewer = viewer;
-		viewer.getKeybindings().addActionMap( "navigation", createActionMap() );
-		viewer.getKeybindings().addInputMap( "navigation", readPropertyFile() );
+		frame.getKeybindings().addActionMap( "navigation", createActionMap() );
+		frame.getKeybindings().addInputMap( "navigation", readPropertyFile() );
 	}
 
 	/**

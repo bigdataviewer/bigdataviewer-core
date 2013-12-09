@@ -3,7 +3,7 @@ package viewer.gui.brightness;
 import net.imglib2.display.RealARGBColorConverter;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.RealType;
-import viewer.SpimViewer;
+import viewer.ViewerPanel;
 
 public class RealARGBColorConverterSetup< T extends RealType< T > > implements ConverterSetup
 {
@@ -11,7 +11,7 @@ public class RealARGBColorConverterSetup< T extends RealType< T > > implements C
 
 	protected final RealARGBColorConverter< T > converter;
 
-	protected SpimViewer viewer;
+	protected ViewerPanel viewer;
 
 	public RealARGBColorConverterSetup( final int setupId, final RealARGBColorConverter< T > converter )
 	{
@@ -61,7 +61,7 @@ public class RealARGBColorConverterSetup< T extends RealType< T > > implements C
 		return converter.getColor();
 	}
 
-	public void setViewer( final SpimViewer viewer )
+	public void setViewer( final ViewerPanel viewer )
 	{
 		this.viewer = viewer;
 	}

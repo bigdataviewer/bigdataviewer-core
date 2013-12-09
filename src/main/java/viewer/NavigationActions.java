@@ -5,7 +5,7 @@ import java.awt.event.ActionEvent;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 
-import viewer.SpimViewer.AlignPlane;
+import viewer.ViewerPanel.AlignPlane;
 
 public class NavigationActions
 {
@@ -13,7 +13,7 @@ public class NavigationActions
 	private NavigationActions()
 	{}
 
-	public static final Action getToggleInterpolationAction( final SpimViewer viewer )
+	public static final Action getToggleInterpolationAction( final ViewerPanel viewer )
 	{
 		return new AbstractAction( "toggle interpolation" )
 		{
@@ -27,7 +27,7 @@ public class NavigationActions
 		};
 	}
 
-	public static final Action getToggleFusedModeAction( final SpimViewer viewer )
+	public static final Action getToggleFusedModeAction( final ViewerPanel viewer )
 	{
 		return new AbstractAction( "toggle fused mode" )
 		{
@@ -42,7 +42,7 @@ public class NavigationActions
 
 	}
 
-	public static final Action getToggleGroupingAction( final SpimViewer viewer )
+	public static final Action getToggleGroupingAction( final ViewerPanel viewer )
 	{
 		return new AbstractAction( "toggle grouping" )
 		{
@@ -56,7 +56,7 @@ public class NavigationActions
 		};
 	}
 
-	public static final Action getSetCurrentSource( final SpimViewer viewer, final int sourceIndex )
+	public static final Action getSetCurrentSource( final ViewerPanel viewer, final int sourceIndex )
 	{
 		return new AbstractAction( "set current source " + sourceIndex )
 		{
@@ -70,7 +70,7 @@ public class NavigationActions
 		};
 	}
 
-	public static final Action getToggleSourceVisibilityAction( final SpimViewer viewer, final int sourceIndex )
+	public static final Action getToggleSourceVisibilityAction( final ViewerPanel viewer, final int sourceIndex )
 	{
 		return new AbstractAction( "toggle source visibility " + sourceIndex )
 		{
@@ -84,7 +84,7 @@ public class NavigationActions
 		};
 	}
 
-	public static final Action getAlignPlaneAction( final SpimViewer viewer, final AlignPlane plane )
+	public static final Action getAlignPlaneAction( final ViewerPanel viewer, final AlignPlane plane )
 	{
 		return new AbstractAction( "align plane " + plane.getName() )
 		{
@@ -98,7 +98,7 @@ public class NavigationActions
 		};
 	}
 
-	public static final Action getNextTimePointAction( final SpimViewer viewer )
+	public static final Action getNextTimePointAction( final ViewerPanel viewer )
 	{
 		return new AbstractAction( "next timepoint" )
 		{
@@ -112,7 +112,7 @@ public class NavigationActions
 		};
 	}
 
-	public static Action getPreviousTimePointAction( final SpimViewer viewer )
+	public static Action getPreviousTimePointAction( final ViewerPanel viewer )
 	{
 		return new AbstractAction( "next timepoint" )
 		{

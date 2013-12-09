@@ -38,7 +38,7 @@ import net.imglib2.RealInterval;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.util.Intervals;
-import viewer.SpimViewer;
+import viewer.ViewerPanel;
 import viewer.hdf5.Hdf5ImageLoader;
 import viewer.hdf5.Util;
 import viewer.render.Source;
@@ -48,7 +48,7 @@ import creator.WriteSequenceToXml;
 
 public class CropDialog extends JDialog
 {
-	private final SpimViewer viewer;
+	private final ViewerPanel viewer;
 
 	private final SequenceDescription sequenceDescription;
 
@@ -72,7 +72,7 @@ public class CropDialog extends JDialog
 		super.setVisible( b );
 	}
 
-	public CropDialog( final Frame owner, final SpimViewer viewer, final SequenceDescription sequenceDescription )
+	public CropDialog( final Frame owner, final ViewerPanel viewer, final SequenceDescription sequenceDescription )
 	{
 		super( owner, "crop and save", false );
 		this.viewer = viewer;
