@@ -11,12 +11,30 @@ import java.util.Set;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
 
+/**
+ * Maintains lists of {@link ActionMap}s and {@link InputMap}s, which are
+ * chained to a {@link #getConcatenatedInputMap() concatenated InputMap} and a
+ * {@link #getConcatenatedActionMap() concatenated ActionMap}.
+ * Maps can be added and will be chained in reverse order of addition, that is, the last added map overrides all previous ones.
+ * For {@link InputMap}s it is possible to block maps that were added earlier.
+ *
+ * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ */
 public final class InputActionBindings
 {
+	/**
+	 * the root of the {@link InputMap} chain.
+	 */
 	private final InputMap theInputMap;
 
+	/**
+	 * the root of the {@link ActionMap} chain.
+	 */
 	private final ActionMap theActionMap;
 
+	/**
+	 * Create chained maps just consisting of empty roots.
+	 */
 	public InputActionBindings()
 	{
 		theInputMap = new InputMap();
@@ -25,6 +43,10 @@ public final class InputActionBindings
 		inputs = new ArrayList< Keys >();
 	}
 
+	/**
+	 * Add as {@link ActionMap} with the specified id to the end of the list (overrides maps that were added earlier).
+	 * If the specified id already exists in the list, remove the corresponding earlier {@link ActionMap}.
+	 */
 	public void addActionMap( final String id, final ActionMap actionMap )
 	{
 		removeId( actions, id );
@@ -33,17 +55,44 @@ public final class InputActionBindings
 		updateTheActionMap();
 	}
 
+	/**
+	 * Remove the {@link ActionMap} with the given id from the list.
+	 */
 	public void removeActionMap( final String id )
 	{
 		if ( removeId( actions, id ) )
 			updateTheActionMap();
 	}
 
+	/**
+	 * Add as {@link InputMap} with the specified id to the end of the list
+	 * (overrides maps that were added earlier).
+	 * If the specified id already exists in the list, remove the corresponding
+	 * earlier {@link InputMap}.
+	 *
+	 * @param id
+	 * @param inputMap
+	 * @param idsToBlock
+	 *            ids of {@link InputMap}s earlier in the chain that should be
+	 *            disabled.
+	 */
 	public void addInputMap( final String id, final InputMap inputMap, final String... idsToBlock )
 	{
 		addInputMap( id, inputMap, Arrays.asList( idsToBlock ) );
 	}
 
+	/**
+	 * Add as {@link InputMap} with the specified id to the end of the list
+	 * (overrides maps that were added earlier).
+	 * If the specified id already exists in the list, remove the corresponding
+	 * earlier {@link InputMap}.
+	 *
+	 * @param id
+	 * @param inputMap
+	 * @param idsToBlock
+	 *            ids of {@link InputMap}s earlier in the chain that should be
+	 *            disabled.
+	 */
 	public void addInputMap( final String id, final InputMap inputMap, final Collection< String > idsToBlock )
 	{
 		removeId( inputs, id );
@@ -52,17 +101,28 @@ public final class InputActionBindings
 		updateTheInputMap();
 	}
 
+	/**
+	 * Remove the {@link InputMap} with the given id from the list.
+	 */
 	public void removeInputMap( final String id )
 	{
 		if ( removeId( inputs, id ) )
 			updateTheInputMap();
 	}
 
+	/**
+	 * Get the chained {@link InputMap}. Note, that this will remain the same
+	 * instance when maps are added or removed.
+	 */
 	public InputMap getConcatenatedInputMap()
 	{
 		return theInputMap;
 	}
 
+	/**
+	 * Get the chained {@link ActionMap}. Note, that this will remain the same
+	 * instance when maps are added or removed.
+	 */
 	public ActionMap getConcatenatedActionMap()
 	{
 		return theActionMap;
@@ -167,19 +227,19 @@ public final class InputActionBindings
 		final HashSet< String > blocked = new HashSet< String >();
 		while ( iter.hasPrevious() )
 		{
-			final Keys tool = iter.previous();
+			final Keys keys = iter.previous();
 
-			if ( blocked.contains( tool.getId() ) )
+			if ( blocked.contains( keys.getId() ) )
 				continue;
 
-			final InputMap map = tool.getInputMap();
+			final InputMap map = keys.getInputMap();
 			if ( map != null )
 			{
 				root.setParent( map );
 				root = map;
 			}
 
-			blocked.addAll( tool.getKeysIdsToBlock() );
+			blocked.addAll( keys.getKeysIdsToBlock() );
 			if ( blocked.contains( "all" ) )
 				break;
 		}
