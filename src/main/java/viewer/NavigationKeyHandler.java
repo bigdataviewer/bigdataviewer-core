@@ -11,10 +11,10 @@ import javax.swing.InputMap;
 import javax.swing.KeyStroke;
 
 import viewer.ViewerPanel.AlignPlane;
+import viewer.gui.InputActionBindings;
 
 public class NavigationKeyHandler
 {
-
 	private static final Properties DEFAULT_KEYBINGS = new Properties();
 	static
 	{
@@ -42,12 +42,11 @@ public class NavigationKeyHandler
 
 	private final ViewerPanel viewer;
 
-	// TODO, fix this...
-	public NavigationKeyHandler( final SpimViewer frame, final ViewerPanel viewer )
+	public NavigationKeyHandler( final InputActionBindings inputActionBindings, final ViewerPanel viewer )
 	{
 		this.viewer = viewer;
-		frame.getKeybindings().addActionMap( "navigation", createActionMap() );
-		frame.getKeybindings().addInputMap( "navigation", readPropertyFile() );
+		inputActionBindings.addActionMap( "navigation", createActionMap() );
+		inputActionBindings.addInputMap( "navigation", readPropertyFile() );
 	}
 
 	/**

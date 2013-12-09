@@ -41,6 +41,7 @@ public class SpimViewer extends JFrame
 		super( "BigDataViewer", GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.RGB_COLOR_MODEL ) );
 		viewer = new ViewerPanel( sources, numTimePoints, cache );
 		keybindings = new InputActionBindings();
+		new NavigationKeyHandler( keybindings, viewer );
 
 		getRootPane().setDoubleBuffered( true );
 		setPreferredSize( new Dimension( width, height ) );
@@ -58,8 +59,6 @@ public class SpimViewer extends JFrame
 
 		SwingUtilities.replaceUIActionMap( getRootPane(), keybindings.getConcatenatedActionMap() );
 		SwingUtilities.replaceUIInputMap( getRootPane(), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, keybindings.getConcatenatedInputMap() );
-
-		new NavigationKeyHandler( this, viewer );
 	}
 
 	public void addHandler( final Object handler )
