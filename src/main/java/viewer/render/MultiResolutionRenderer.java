@@ -296,6 +296,9 @@ public class MultiResolutionRenderer
 	 */
 	public boolean paint( final ViewerState state )
 	{
+		if ( display.getWidth() <= 0 || display.getHeight() <= 0 )
+			return false;
+
 		final boolean resized = checkResize();
 
 		final int numVisibleSources = state.getVisibleSourceIndices().size();
