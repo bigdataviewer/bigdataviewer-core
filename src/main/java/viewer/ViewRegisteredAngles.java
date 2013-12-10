@@ -71,7 +71,7 @@ public class ViewRegisteredAngles
 
 	final KeyStroke loadKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_F12, 0 );
 
-	final SpimViewer viewerFrame;
+	final ViewerFrame viewerFrame;
 
 	final ViewerPanel viewer;
 
@@ -164,7 +164,7 @@ public class ViewRegisteredAngles
 			converterSetups.add( new RealARGBColorConverterSetup< VolatileUnsignedShortType >( setup, converter ) );
 		}
 
-		viewerFrame = new SpimViewer( width, height, sources, seq.numTimepoints(), ( ( Hdf5ImageLoader ) seq.imgLoader ).getCache() );
+		viewerFrame = new ViewerFrame( width, height, sources, seq.numTimepoints(), ( ( Hdf5ImageLoader ) seq.imgLoader ).getCache() );
 		viewer = viewerFrame.getViewer();
 		manualTransformation = new ManualTransformation( viewer );
 		manualTransformationEditor = new ManualTransformationEditor( viewer, viewerFrame.getKeybindings() );

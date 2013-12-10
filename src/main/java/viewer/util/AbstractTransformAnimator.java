@@ -1,11 +1,11 @@
 package viewer.util;
 
 import net.imglib2.realtransform.AffineTransform3D;
-import viewer.SpimViewer;
+import viewer.ViewerFrame;
 
 /**
  * Mother abstract class for animators that animate the current view in a
- * {@link SpimViewer} instance by modifying the viewer transform. The time unit
+ * {@link ViewerFrame} instance by modifying the viewer transform. The time unit
  * for animation duration, start time and current time is not specified, or
  * example you can use <b>ms</b> obtained from
  * {@link System#currentTimeMillis()} or a frame number when rendering movies.
@@ -29,7 +29,7 @@ public abstract class AbstractTransformAnimator extends AbstractAnimator
 
 	/**
 	 * Returns an {@link AffineTransform3D} that can be used to set the
-	 * viewpoint of a {@link SpimViewer} instance, for the time specified.
+	 * viewpoint of a {@link ViewerFrame} instance, for the time specified.
 	 *
 	 * @param time
 	 *            the target absolute time for which the transform should be

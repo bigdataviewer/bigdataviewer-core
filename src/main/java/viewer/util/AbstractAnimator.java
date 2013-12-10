@@ -1,10 +1,10 @@
 package viewer.util;
 
-import viewer.SpimViewer;
+import viewer.ViewerFrame;
 
 /**
  * Mother abstract class for animators that can animate the current view in a
- * {@link SpimViewer} instance. The time unit for animation duration, start time
+ * {@link ViewerFrame} instance. The time unit for animation duration, start time
  * and current time is not specified, or example you can use <b>ms</b> obtained
  * from {@link System#currentTimeMillis()} or a frame number when rendering
  * movies.

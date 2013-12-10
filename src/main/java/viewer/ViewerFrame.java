@@ -16,7 +16,13 @@ import viewer.gui.InputActionBindings;
 import viewer.hdf5.img.Hdf5GlobalCellCache;
 import viewer.render.SourceAndConverter;
 
-public class SpimViewer extends JFrame
+/**
+ * A {@link JFrame} containing a {@link ViewerPanel} and associated
+ * {@link InputActionBindings}.
+ *
+ * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ */
+public class ViewerFrame extends JFrame
 {
 	final protected ViewerPanel viewer;
 
@@ -32,10 +38,8 @@ public class SpimViewer extends JFrame
 	 *            the {@link SourceAndConverter sources} to display.
 	 * @param numTimePoints
 	 *            number of available timepoints.
-	 * @param numMipmapLevels
-	 *            number of available mipmap levels.
 	 */
-	public SpimViewer( final int width, final int height, final List< SourceAndConverter< ? > > sources, final int numTimePoints, final Hdf5GlobalCellCache< ? > cache )
+	public ViewerFrame( final int width, final int height, final List< SourceAndConverter< ? > > sources, final int numTimePoints, final Hdf5GlobalCellCache< ? > cache )
 	{
 //		super( "BigDataViewer", GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.ARGB_COLOR_MODEL ) );
 		super( "BigDataViewer", GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.RGB_COLOR_MODEL ) );
