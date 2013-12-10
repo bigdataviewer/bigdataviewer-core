@@ -70,6 +70,7 @@ import viewer.util.Affine3DHelpers;
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
+// TODO: rename?
 public class ViewerPanel extends JPanel implements OverlayRenderer, TransformListener< AffineTransform3D >, PainterThread.Paintable, VisibilityAndGrouping.UpdateListener
 {
 	/**
@@ -451,44 +452,10 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 	/**
 	 * TODO
-	 * @param index
-	 */
-	// TODO: public?
-	protected void setCurrentGroupOrSource( final int index )
-	{
-		if ( visibilityAndGrouping.isGroupingEnabled() )
-			visibilityAndGrouping.setCurrentGroup( index );
-		else
-			visibilityAndGrouping.setCurrentSource( index );
-	}
-
-	/**
-	 * TODO
-	 * @param index
-	 */
-	// TODO: public?
-	protected void toggleActiveGroupOrSource( final int index )
-	{
-		if ( visibilityAndGrouping.isGroupingEnabled() )
-			visibilityAndGrouping.setGroupActive( index, !visibilityAndGrouping.isGroupActive( index ) );
-		else
-			visibilityAndGrouping.setSourceActive( index, !visibilityAndGrouping.isSourceActive( index ) );
-	}
-
-	/**
-	 * TODO
 	 */
 	public synchronized void setDisplayMode( final DisplayMode displayMode )
 	{
 		visibilityAndGrouping.setDisplayMode( displayMode );
-	}
-
-	/**
-	 * Set the index of the source to display.
-	 */
-	public synchronized void setCurrentSource( final int sourceIndex )
-	{
-		visibilityAndGrouping.setCurrentSource( sourceIndex );
 	}
 
 	/**
@@ -498,6 +465,24 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	{
 		display.getTransformEventHandler().setTransform( viewerTransform );
 		transformChanged( viewerTransform );
+	}
+
+	/**
+	 * TODO
+	 */
+	public synchronized void nextTimePoint()
+	{
+		if ( sliderTime != null )
+			sliderTime.setValue( sliderTime.getValue() + 1 );
+	}
+
+	/**
+	 * TODO
+	 */
+	public synchronized void previousTimePoint()
+	{
+		if ( sliderTime != null )
+			sliderTime.setValue( sliderTime.getValue() - 1 );
 	}
 
 	/**

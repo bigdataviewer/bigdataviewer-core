@@ -228,6 +228,30 @@ public class VisibilityAndGrouping
 		checkVisibilityChange();
 	}
 
+	/**
+	 * TODO
+	 * @param index
+	 */
+	public synchronized void setCurrentGroupOrSource( final int index )
+	{
+		if ( isGroupingEnabled() )
+			setCurrentGroup( index );
+		else
+			setCurrentSource( index );
+	}
+
+	/**
+	 * TODO
+	 * @param index
+	 */
+	public synchronized void toggleActiveGroupOrSource( final int index )
+	{
+		if ( isGroupingEnabled() )
+			setGroupActive( index, !isGroupActive( index ) );
+		else
+			setSourceActive( index, !isSourceActive( index ) );
+	}
+
 	public synchronized boolean isGroupingEnabled()
 	{
 		final DisplayMode mode = state.getDisplayMode();

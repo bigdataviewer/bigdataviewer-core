@@ -3,126 +3,206 @@ package viewer;
 import java.awt.event.ActionEvent;
 
 import javax.swing.AbstractAction;
-import javax.swing.Action;
+import javax.swing.ActionMap;
 
 import viewer.ViewerPanel.AlignPlane;
 
 public class NavigationActions
 {
-
 	private NavigationActions()
 	{}
 
-	public static final Action getToggleInterpolationAction( final ViewerPanel viewer )
-	{
-		return new AbstractAction( "toggle interpolation" )
-		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
-			{
-				viewer.toggleInterpolation();
-			}
+	public static final String TOGGLE_INTERPOLATION = "toggle interpolation";
+	public static final String TOGGLE_FUSED_MODE = "toggle fused mode";
+	public static final String TOGGLE_GROUPING = "toggle grouping";
+	public static final String SET_CURRENT_SOURCE = "set current source %d";
+	public static final String TOGGLE_SOURCE_VISIBILITY = "toggle source visibility %d";
+	public static final String ALIGN_PLANE = "align %s plane";
+	public static final String NEXT_TIMEPOINT = "next timepoint";
+	public static final String PREVIOUS_TIMEPOINT = "previous timepoint";
 
-			private static final long serialVersionUID = 1L;
-		};
+	public static ActionMap createActionMap( final ViewerPanel viewer, final int numSourceKeys )
+	{
+		final ActionMap map = new ActionMap();
+		addToActionMap( map, viewer, numSourceKeys );
+		return map;
 	}
 
-	public static final Action getToggleFusedModeAction( final ViewerPanel viewer )
+	public static void addToActionMap( final ActionMap map, final ViewerPanel viewer, final int numSourceKeys )
 	{
-		return new AbstractAction( "toggle fused mode" )
+		put( map, new ToggleInterPolationAction( viewer ) );
+		put( map, new ToggleFusedModeAction( viewer ) );
+		put( map, new ToggleGroupingAction( viewer ) );
+		put( map, new NextTimePointAction( viewer ) );
+		put( map, new PreviousTimePointAction( viewer ) );
+
+		for ( int i = 0; i < numSourceKeys; ++i )
 		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
-			{
-				viewer.visibilityAndGrouping.setFusedEnabled( !viewer.visibilityAndGrouping.isFusedEnabled() );
-			}
+			put( map, new SetCurrentSourceOrGroupAction( viewer, i ) );
+			put( map, new ToggleSourceOrGroupVisibilityAction( viewer, i ) );
+		}
 
-			private static final long serialVersionUID = 1L;
-		};
-
+		for ( final AlignPlane plane : AlignPlane.values() )
+			put( map, new AlignPlaneAction( viewer, plane ) );
 	}
 
-	public static final Action getToggleGroupingAction( final ViewerPanel viewer )
+	private static abstract class NavigationAction extends AbstractAction
 	{
-		return new AbstractAction( "toggle grouping" )
-		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
-			{
-				viewer.visibilityAndGrouping.setGroupingEnabled( !viewer.visibilityAndGrouping.isGroupingEnabled() );
-			}
+		protected final ViewerPanel viewer;
 
-			private static final long serialVersionUID = 1L;
-		};
+		public NavigationAction( final String name, final ViewerPanel viewer )
+		{
+			super( name );
+			this.viewer = viewer;
+		}
+
+		public String name()
+		{
+			return ( String ) getValue( NAME );
+		}
+
+		private static final long serialVersionUID = 1L;
 	}
 
-	public static final Action getSetCurrentSource( final ViewerPanel viewer, final int sourceIndex )
+	private static void put( final ActionMap map, final NavigationAction a )
 	{
-		return new AbstractAction( "set current source " + sourceIndex )
-		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
-			{
-				viewer.setCurrentGroupOrSource( sourceIndex );
-			}
-
-			private static final long serialVersionUID = 1L;
-		};
+		map.put( a.name(), a );
 	}
 
-	public static final Action getToggleSourceVisibilityAction( final ViewerPanel viewer, final int sourceIndex )
+	public static class ToggleInterPolationAction extends NavigationAction
 	{
-		return new AbstractAction( "toggle source visibility " + sourceIndex )
+		public ToggleInterPolationAction( final ViewerPanel viewer )
 		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
-			{
-				viewer.toggleActiveGroupOrSource( sourceIndex );
-			}
+			super( TOGGLE_INTERPOLATION, viewer );
+		}
 
-			private static final long serialVersionUID = 1L;
-		};
+		@Override
+		public void actionPerformed( final ActionEvent e )
+		{
+			viewer.toggleInterpolation();
+		}
+
+		private static final long serialVersionUID = 1L;
 	}
 
-	public static final Action getAlignPlaneAction( final ViewerPanel viewer, final AlignPlane plane )
+	public static class ToggleFusedModeAction extends NavigationAction
 	{
-		return new AbstractAction( "align plane " + plane.getName() )
+		public ToggleFusedModeAction( final ViewerPanel viewer )
 		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
-			{
-				viewer.align( plane );
-			}
+			super( TOGGLE_FUSED_MODE, viewer );
+		}
 
-			private static final long serialVersionUID = 1L;
-		};
+		@Override
+		public void actionPerformed( final ActionEvent e )
+		{
+			viewer.getVisibilityAndGrouping().setFusedEnabled( !viewer.visibilityAndGrouping.isFusedEnabled() );
+		}
+
+		private static final long serialVersionUID = 1L;
 	}
 
-	public static final Action getNextTimePointAction( final ViewerPanel viewer )
+	public static class ToggleGroupingAction extends NavigationAction
 	{
-		return new AbstractAction( "next timepoint" )
+		public ToggleGroupingAction( final ViewerPanel viewer )
 		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
-			{
-				viewer.sliderTime.setValue( viewer.sliderTime.getValue() + 1 );
-			}
+			super( TOGGLE_GROUPING, viewer );
+		}
 
-			private static final long serialVersionUID = 1L;
-		};
+		@Override
+		public void actionPerformed( final ActionEvent e )
+		{
+			viewer.getVisibilityAndGrouping().setGroupingEnabled( !viewer.visibilityAndGrouping.isGroupingEnabled() );
+		}
+
+		private static final long serialVersionUID = 1L;
 	}
 
-	public static Action getPreviousTimePointAction( final ViewerPanel viewer )
+	public static class SetCurrentSourceOrGroupAction extends NavigationAction
 	{
-		return new AbstractAction( "next timepoint" )
-		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
-			{
-				viewer.sliderTime.setValue( viewer.sliderTime.getValue() - 1 );
-			}
+		private final int sourceIndex;
 
-			private static final long serialVersionUID = 1L;
-		};
+		public SetCurrentSourceOrGroupAction( final ViewerPanel viewer, final int sourceIndex )
+		{
+			super( String.format( SET_CURRENT_SOURCE, sourceIndex ), viewer );
+			this.sourceIndex = sourceIndex;
+		}
+
+		@Override
+		public void actionPerformed( final ActionEvent e )
+		{
+			viewer.getVisibilityAndGrouping().setCurrentGroupOrSource( sourceIndex );
+		}
+
+		private static final long serialVersionUID = 1L;
+	}
+
+	public static class ToggleSourceOrGroupVisibilityAction extends NavigationAction
+	{
+		private final int sourceIndex;
+
+		public ToggleSourceOrGroupVisibilityAction( final ViewerPanel viewer, final int sourceIndex )
+		{
+			super( String.format( TOGGLE_SOURCE_VISIBILITY, sourceIndex ), viewer );
+			this.sourceIndex = sourceIndex;
+		}
+
+		@Override
+		public void actionPerformed( final ActionEvent e )
+		{
+			viewer.getVisibilityAndGrouping().toggleActiveGroupOrSource( sourceIndex );
+		}
+
+		private static final long serialVersionUID = 1L;
+	}
+
+	public static class AlignPlaneAction extends NavigationAction
+	{
+		private final AlignPlane plane;
+
+		public AlignPlaneAction( final ViewerPanel viewer, final AlignPlane plane )
+		{
+			super( String.format( ALIGN_PLANE, plane.getName() ), viewer );
+			this.plane = plane;
+		}
+
+		@Override
+		public void actionPerformed( final ActionEvent e )
+		{
+			viewer.align( plane );
+		}
+
+		private static final long serialVersionUID = 1L;
+	}
+
+	public static class NextTimePointAction extends NavigationAction
+	{
+		public NextTimePointAction( final ViewerPanel viewer )
+		{
+			super( NEXT_TIMEPOINT, viewer );
+		}
+
+		@Override
+		public void actionPerformed( final ActionEvent e )
+		{
+			viewer.nextTimePoint();
+		}
+
+		private static final long serialVersionUID = 1L;
+	}
+
+	public static class PreviousTimePointAction extends NavigationAction
+	{
+		public PreviousTimePointAction( final ViewerPanel viewer )
+		{
+			super( PREVIOUS_TIMEPOINT, viewer );
+		}
+
+		@Override
+		public void actionPerformed( final ActionEvent e )
+		{
+			viewer.previousTimePoint();
+		}
+
+		private static final long serialVersionUID = 1L;
 	}
 }

@@ -1,5 +1,14 @@
 package viewer;
 
+import static viewer.NavigationActions.ALIGN_PLANE;
+import static viewer.NavigationActions.NEXT_TIMEPOINT;
+import static viewer.NavigationActions.PREVIOUS_TIMEPOINT;
+import static viewer.NavigationActions.SET_CURRENT_SOURCE;
+import static viewer.NavigationActions.TOGGLE_FUSED_MODE;
+import static viewer.NavigationActions.TOGGLE_GROUPING;
+import static viewer.NavigationActions.TOGGLE_INTERPOLATION;
+import static viewer.NavigationActions.TOGGLE_SOURCE_VISIBILITY;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -18,26 +27,26 @@ public class NavigationKeyHandler
 	private static final Properties DEFAULT_KEYBINGS = new Properties();
 	static
 	{
-		DEFAULT_KEYBINGS.setProperty( "I", "toggle interpolation" );
-		DEFAULT_KEYBINGS.setProperty( "F", "toggle fused mode" );
-		DEFAULT_KEYBINGS.setProperty( "G", "toggle grouping" );
+		DEFAULT_KEYBINGS.setProperty( "I", TOGGLE_INTERPOLATION );
+		DEFAULT_KEYBINGS.setProperty( "F", TOGGLE_FUSED_MODE );
+		DEFAULT_KEYBINGS.setProperty( "G", TOGGLE_GROUPING );
 
 		final String[] numkeys = new String[] { "1", "2", "3", "4", "5", "6", "7", "8", "9", "0" };
 		for ( int i = 0; i < numkeys.length; ++i )
 		{
-			DEFAULT_KEYBINGS.setProperty( numkeys[ i ], "set current source " + i );
-			DEFAULT_KEYBINGS.setProperty( "shift " + numkeys[ i ], "toggle source visibility " + i );
+			DEFAULT_KEYBINGS.setProperty( numkeys[ i ], String.format( SET_CURRENT_SOURCE, i ) );
+			DEFAULT_KEYBINGS.setProperty( "shift " + numkeys[ i ], String.format( TOGGLE_SOURCE_VISIBILITY, i ) );
 		}
 
-		DEFAULT_KEYBINGS.setProperty( "shift Z", "align XY plane" );
-		DEFAULT_KEYBINGS.setProperty( "shift X", "align ZY plane" );
-		DEFAULT_KEYBINGS.setProperty( "shift Y", "align XZ plane" );
-		DEFAULT_KEYBINGS.setProperty( "shift A", "align XZ plane" );
+		DEFAULT_KEYBINGS.setProperty( "shift Z", String.format( ALIGN_PLANE, AlignPlane.XY ) );
+		DEFAULT_KEYBINGS.setProperty( "shift X", String.format( ALIGN_PLANE, AlignPlane.ZY ) );
+		DEFAULT_KEYBINGS.setProperty( "shift Y", String.format( ALIGN_PLANE, AlignPlane.XZ ) );
+		DEFAULT_KEYBINGS.setProperty( "shift A", String.format( ALIGN_PLANE, AlignPlane.XZ ) );
 
-		DEFAULT_KEYBINGS.setProperty( "CLOSE_BRACKET", "next timepoint" );
-		DEFAULT_KEYBINGS.setProperty( "M", "next timepoint" );
-		DEFAULT_KEYBINGS.setProperty( "OPEN_BRACKET", "previous timepoint" );
-		DEFAULT_KEYBINGS.setProperty( "N", "previous timepoint" );
+		DEFAULT_KEYBINGS.setProperty( "CLOSE_BRACKET", NEXT_TIMEPOINT );
+		DEFAULT_KEYBINGS.setProperty( "M", NEXT_TIMEPOINT );
+		DEFAULT_KEYBINGS.setProperty( "OPEN_BRACKET", PREVIOUS_TIMEPOINT );
+		DEFAULT_KEYBINGS.setProperty( "N", PREVIOUS_TIMEPOINT );
 	}
 
 	private final ViewerPanel viewer;
@@ -83,6 +92,7 @@ public class NavigationKeyHandler
 			final String key = ( String ) obj;
 			final String command = config.getProperty( key );
 			map.put( KeyStroke.getKeyStroke( key ), command );
+//			System.out.println( KeyStroke.getKeyStroke( key ) + " -- " + key );
 		}
 
 		return map;
@@ -90,25 +100,6 @@ public class NavigationKeyHandler
 
 	protected ActionMap createActionMap()
 	{
-		final ActionMap map = new ActionMap();
-
-		map.put( "toggle interpolation", NavigationActions.getToggleInterpolationAction( viewer ) );
-		map.put( "toggle fused mode", NavigationActions.getToggleFusedModeAction( viewer ) );
-		map.put( "toggle grouping", NavigationActions.getToggleGroupingAction( viewer ) );
-
-		for ( int i = 0; i < 10; ++i )
-		{
-			map.put( "set current source " + i, NavigationActions.getSetCurrentSource( viewer, i ) );
-			map.put( "toggle source visibility " + i, NavigationActions.getToggleSourceVisibilityAction( viewer, i ) );
-		}
-
-		map.put( "align XY plane", NavigationActions.getAlignPlaneAction( viewer, AlignPlane.XY ) );
-		map.put( "align ZY plane", NavigationActions.getAlignPlaneAction( viewer, AlignPlane.ZY ) );
-		map.put( "align XZ plane", NavigationActions.getAlignPlaneAction( viewer, AlignPlane.XZ ) );
-
-		map.put( "next timepoint", NavigationActions.getNextTimePointAction( viewer ) );
-		map.put( "previous timepoint", NavigationActions.getPreviousTimePointAction( viewer ) );
-
-		return map;
+		return NavigationActions.createActionMap( viewer, 10 );
 	}
 }

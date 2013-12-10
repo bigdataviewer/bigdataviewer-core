@@ -1,16 +1,17 @@
 package viewer;
 
-import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
 import javax.swing.JFileChooser;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.KeyStroke;
 import javax.swing.filechooser.FileFilter;
 
@@ -56,19 +57,12 @@ import viewer.util.Affine3DHelpers;
 public class ViewRegisteredAngles
 {
 	final KeyStroke brightnessKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_S, 0 );
-
 	final KeyStroke activeSourcesKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_F6, 0 );
-
 	final KeyStroke helpKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_F1, 0 );
-
 	final KeyStroke helpKeystroke2 = KeyStroke.getKeyStroke( KeyEvent.VK_H, 0 );
-
 	final KeyStroke cropKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_F5, 0 );
-
 	final KeyStroke manualTransformKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_T, 0 );
-
 	final KeyStroke saveKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_F11, 0 );
-
 	final KeyStroke loadKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_F12, 0 );
 
 	final ViewerFrame viewerFrame;
@@ -173,115 +167,18 @@ public class ViewRegisteredAngles
 			if ( RealARGBColorConverterSetup.class.isInstance( cs ) )
 				( ( RealARGBColorConverterSetup< ? > ) cs ).setViewer( viewer );
 
-		final ActionMap actionMap = new ActionMap();
-		final InputMap inputMap = new InputMap();
-		inputMap.put( brightnessKeystroke, "brightness settings" );
-		actionMap.put( "brightness settings", new AbstractAction( "brightness settings" )
-		{
-			@Override
-			public void actionPerformed( final ActionEvent arg0 )
-			{
-				toggleBrightnessDialog();
-			}
-
-			private static final long serialVersionUID = 1L;
-		} );
-
-		inputMap.put( activeSourcesKeystroke, "visibility and grouping" );
-		actionMap.put( "visibility and grouping", new AbstractAction( "visibility and grouping" )
-		{
-			@Override
-			public void actionPerformed( final ActionEvent arg0 )
-			{
-				toggleActiveSourcesDialog();
-			}
-
-			private static final long serialVersionUID = 1L;
-		} );
-
-		inputMap.put( helpKeystroke,  "help" );
-		inputMap.put( helpKeystroke2,  "help" );
-		actionMap.put(  "help", new AbstractAction( "help" )
-		{
-			@Override
-			public void actionPerformed( final ActionEvent arg0 )
-			{
-				showHelp();
-			}
-
-			private static final long serialVersionUID = 1L;
-		} );
-
-		inputMap.put( cropKeystroke, "crop" );
-		actionMap.put( "crop", new AbstractAction( "crop" )
-		{
-			@Override
-			public void actionPerformed( final ActionEvent arg0 )
-			{
-				try
-				{
-					crop();
-				}
-				catch ( final Exception e )
-				{
-					e.printStackTrace();
-				}
-			}
-
-			private static final long serialVersionUID = 1L;
-		} );
-
-		inputMap.put(  manualTransformKeystroke, "toggle manual transformation" );
-		actionMap.put( "toggle manual transformation", new AbstractAction( "toggle manual transformation" )
-		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
-			{
-				toggleManualTransformation();
-			}
-
-			private static final long serialVersionUID = 1L;
-		} );
-
-		inputMap.put( saveKeystroke, "save settings" );
-		actionMap.put( "save settings", new AbstractAction( "save settings" )
-		{
-			@Override
-			public void actionPerformed( final ActionEvent arg0 )
-			{
-				try
-				{
-					saveSettings();
-				}
-				catch ( final Exception e )
-				{
-					e.printStackTrace();
-				}
-			}
-
-			private static final long serialVersionUID = 1L;
-		} );
-
-		inputMap.put( loadKeystroke, "load settings" );
-		actionMap.put( "load settings", new AbstractAction( "load settings" )
-		{
-			@Override
-			public void actionPerformed( final ActionEvent arg0 )
-			{
-				try
-				{
-					loadSettings();
-				}
-				catch ( final Exception e )
-				{
-					e.printStackTrace();
-				}
-			}
-
-			private static final long serialVersionUID = 1L;
-		} );
-
+		final ActionMap actionMap = SpimViewerActions.createActionMap( this );
 		viewerFrame.getKeybindings().addActionMap( "dialogs", actionMap );
+
+		final InputMap inputMap = new InputMap();
+		inputMap.put( brightnessKeystroke, SpimViewerActions.BRIGHTNESS_SETTINGS );
+		inputMap.put( activeSourcesKeystroke, SpimViewerActions.VISIBILITY_AND_GROUPING );
+		inputMap.put( helpKeystroke, SpimViewerActions.SHOW_HELP );
+		inputMap.put( helpKeystroke2, SpimViewerActions.SHOW_HELP );
+		inputMap.put( cropKeystroke, SpimViewerActions.CROP );
+		inputMap.put( manualTransformKeystroke, SpimViewerActions.MANUAL_TRANSFORM );
+		inputMap.put( saveKeystroke, SpimViewerActions.SAVE_SETTINGS );
+		inputMap.put( loadKeystroke, SpimViewerActions.LOAD_SETTINGS );
 		viewerFrame.getKeybindings().addInputMap( "dialogs", inputMap );
 
 		setupAssignments = new SetupAssignments( converterSetups, 0, 65535 );
@@ -296,12 +193,53 @@ public class ViewRegisteredAngles
 
 		initTransform( width, height );
 
+		final JMenuBar menubar = new JMenuBar();
+		JMenu menu = new JMenu( "File" );
+		menubar.add( menu );
+
+		final JMenuItem miLoadSettings = new JMenuItem( actionMap.get( SpimViewerActions.LOAD_SETTINGS ) );
+		miLoadSettings.setText( "Load settings" );
+		menu.add( miLoadSettings );
+
+		final JMenuItem miSaveSettings = new JMenuItem( actionMap.get( SpimViewerActions.SAVE_SETTINGS ) );
+		miSaveSettings.setText( "Save settings" );
+		menu.add( miSaveSettings );
+
+		menu = new JMenu( "Settings" );
+		menubar.add( menu );
+
+		final JMenuItem miBrightness = new JMenuItem( actionMap.get( SpimViewerActions.BRIGHTNESS_SETTINGS ) );
+		miBrightness.setText( "Brightness & Color" );
+		menu.add( miBrightness );
+
+		final JMenuItem miVisibility = new JMenuItem( actionMap.get( SpimViewerActions.VISIBILITY_AND_GROUPING ) );
+		miVisibility.setText( "Visibility & Grouping" );
+		menu.add( miVisibility );
+
+		menu = new JMenu( "Settings" );
+		menubar.add( menu );
+
+		final JMenuItem miCrop = new JMenuItem( actionMap.get( SpimViewerActions.CROP ) );
+		miCrop.setText( "Crop" );
+		menu.add( miCrop );
+
+		final JMenuItem miManualTransform = new JMenuItem( actionMap.get( SpimViewerActions.MANUAL_TRANSFORM ) );
+		miManualTransform.setText( "Manual Transform" );
+		menu.add( miManualTransform );
+
+		menu = new JMenu( "Help" );
+		menubar.add( menu );
+
+		final JMenuItem miHelp = new JMenuItem( actionMap.get( SpimViewerActions.SHOW_HELP ) );
+		miHelp.setText( "Show Help" );
+		menu.add( miHelp );
+
+		viewerFrame.setJMenuBar( menubar );
+
 		viewerFrame.setVisible( true );
 
 		if( ! tryLoadSettings( xmlFilename ) )
 			initBrightness( 0.001, 0.999 );
-
-		// check for settings file
 	}
 
 	boolean tryLoadSettings( final String xmlFilename )
@@ -495,6 +433,7 @@ public class ViewRegisteredAngles
 //		final String fn = "/Volumes/projects/tomancak_lightsheet/Mette/ZeissZ1SPIM/Maritigrella/021013_McH2BsGFP_CAAX-mCherry/11-use/hdf5/021013_McH2BsGFP_CAAX-mCherry-11-use.xml";
 		try
 		{
+			System.setProperty("apple.laf.useScreenMenuBar", "true");
 			new ViewRegisteredAngles( fn );
 		}
 		catch ( final Exception e )
