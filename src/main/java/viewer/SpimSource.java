@@ -3,6 +3,7 @@ package viewer;
 import mpicbg.spim.data.View;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.type.numeric.integer.VolatileUnsignedShortType;
 import net.imglib2.view.Views;
 
 public class SpimSource extends AbstractSpimSource< UnsignedShortType >
@@ -18,7 +19,7 @@ public class SpimSource extends AbstractSpimSource< UnsignedShortType >
 		currentTimepoint = timepoint;
 		if ( isPresent( timepoint ) )
 		{
-			final UnsignedShortType zero = new UnsignedShortType( 0 );
+			final UnsignedShortType zero = new VolatileUnsignedShortType( 0 ).get();
 			final View view = sequenceViews.getView( timepoint, setup );
 			final AffineTransform3D reg = view.getModel();
 			final AffineTransform3D mipmapTransform = new AffineTransform3D();
