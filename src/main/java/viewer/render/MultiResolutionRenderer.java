@@ -8,7 +8,7 @@ import net.imglib2.RandomAccessible;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.converter.Converters;
 import net.imglib2.converter.TypeIdentity;
-import net.imglib2.display.ARGBScreenImage;
+import net.imglib2.display.screenimage.awt.ARGBScreenImage;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.realtransform.RealViews;
 import net.imglib2.sampler.special.ConstantRandomAccessible;
