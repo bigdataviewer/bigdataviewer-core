@@ -1,6 +1,9 @@
 package viewer.hdf5.img;
 
+import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
@@ -87,7 +90,7 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 		}
 	}
 
-	final protected ConcurrentHashMap< Key, SoftReference< Entry > > softReferenceCache = new ConcurrentHashMap< Key, SoftReference< Entry > >();
+	final protected ConcurrentHashMap< Key, Reference< Entry > > softReferenceCache = new ConcurrentHashMap< Key, Reference< Entry > >();
 
 	final protected BlockingFetchQueues< Key > queue;
 
@@ -104,7 +107,7 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 	 */
 	protected void loadIfNotValid( final Key k )
 	{
-		final SoftReference< Entry > ref = softReferenceCache.get( k );
+		final Reference< Entry > ref = softReferenceCache.get( k );
 		if ( ref != null )
 		{
 			final Entry entry = ref.get();
@@ -166,7 +169,7 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 	public Hdf5Cell< A > getGlobalIfCached( final int timepoint, final int setup, final int level, final int index )
 	{
 		final Key k = new Key( timepoint, setup, level, index );
-		final SoftReference< Entry > ref = softReferenceCache.get( k );
+		final Reference< Entry > ref = softReferenceCache.get( k );
 		if ( ref != null )
 		{
 			final Entry entry = ref.get();
@@ -193,7 +196,7 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 	public Hdf5Cell< A > getGlobalIfCachedAndLoadBlocking( final int timepoint, final int setup, final int level, final int index )
 	{
 		final Key k = new Key( timepoint, setup, level, index );
-		final SoftReference< Entry > ref = softReferenceCache.get( k );
+		final Reference< Entry > ref = softReferenceCache.get( k );
 		if ( ref != null )
 		{
 			final Entry entry = ref.get();
@@ -215,7 +218,7 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 	public synchronized Hdf5Cell< A > createGlobal( final int[] cellDims, final long[] cellMin, final int timepoint, final int setup, final int level, final int index )
 	{
 		final Key k = new Key( timepoint, setup, level, index );
-		final SoftReference< Entry > ref = softReferenceCache.get( k );
+		final Reference< Entry > ref = softReferenceCache.get( k );
 		if ( ref != null )
 		{
 			final Entry entry = ref.get();
@@ -224,7 +227,7 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 		}
 
 		final Hdf5Cell< A > cell = new Hdf5Cell< A >( cellDims, cellMin, loader.emptyArray( cellDims ) );
-		softReferenceCache.put( k, new SoftReference< Entry >( new Entry( k, cell ) ) );
+		softReferenceCache.put( k, new WeakReference< Entry >( new Entry( k, cell ) ) );
 		queue.put( k, maxLevels[ setup ] - level );
 
 		return cell;
@@ -241,7 +244,7 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 		final Key k = new Key( timepoint, setup, level, index );
 		Entry entry = null;
 
-		final SoftReference< Entry > ref = softReferenceCache.get( k );
+		final Reference< Entry > ref = softReferenceCache.get( k );
 		if ( ref != null )
 			entry = ref.get();
 		if ( entry == null )
@@ -275,6 +278,7 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 				{
 					final Hdf5Cell< A > cell = new Hdf5Cell< A >( cellDims, cellMin, loader.loadArray( timepoint, setup, level, cellDims, cellMin ) );
 					entry.data = cell; // TODO: need to synchronize or make entry.data volatile?
+					softReferenceCache.put( entry.key, new SoftReference< Entry >( entry ) );
 				}
 			}
 		}
