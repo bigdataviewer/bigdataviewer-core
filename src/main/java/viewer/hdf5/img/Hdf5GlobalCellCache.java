@@ -1,11 +1,7 @@
 package viewer.hdf5.img;
 
 import java.lang.ref.SoftReference;
-import java.util.ArrayDeque;
-import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.ReentrantLock;
 
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 import viewer.hdf5.img.Hdf5ImgCells.CellCache;
@@ -96,132 +92,6 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 	final protected BlockingFetchQueues< Key > queue;
 
 	protected long currentQueueFrame = 0;
-
-	/**
-	 * locking adapted from {@link ArrayBlockingQueue}
-	 */
-	static class BlockingFetchQueues< E >
-	{
-		private final ArrayDeque< E >[] queues;
-
-		private final int prefetchCapacity;
-
-		private final ArrayDeque< E > prefetch;
-
-	    /** Number of elements in the queue */
-	    private int count;
-
-	    /** Main lock guarding all access */
-	    private final ReentrantLock lock;
-
-	    /** Condition for waiting takes */
-	    private final Condition notEmpty;
-
-		public BlockingFetchQueues( final int numPriorities )
-		{
-			this( numPriorities, 16384 );
-		}
-
-		@SuppressWarnings( "unchecked" )
-		public BlockingFetchQueues( final int numPriorities, final int prefetchCapacity )
-		{
-			queues = new ArrayDeque[ numPriorities ];
-			for ( int i = 0; i < numPriorities; ++i )
-				queues[ i ] = new ArrayDeque< E >();
-			this.prefetchCapacity = prefetchCapacity;
-			prefetch = new ArrayDeque< E >( prefetchCapacity );
-			lock = new ReentrantLock();
-			notEmpty = lock.newCondition();
-		}
-
-		public void put( final E element, final int priority )
-		{
-			final ReentrantLock lock = this.lock;
-			lock.lock();
-			try
-			{
-				queues[ priority ].add( element );
-				++count;
-				notEmpty.signal();
-			}
-			finally
-			{
-				lock.unlock();
-			}
-		}
-
-		public E take() throws InterruptedException
-		{
-			final ReentrantLock lock = this.lock;
-			lock.lockInterruptibly();
-			try
-			{
-				while ( count == 0 )
-					notEmpty.await();
-				--count;
-				for ( final ArrayDeque< E > q : queues )
-					if ( !q.isEmpty() )
-						return q.remove();
-				return prefetch.poll();
-			}
-			finally
-			{
-				lock.unlock();
-			}
-		}
-
-		/**
-		 * Atomically removes all of the elements from this queue. The queue
-		 * will be empty after this call returns.
-		 */
-		public void clear()
-		{
-			final ReentrantLock lock = this.lock;
-			lock.lock();
-			try
-			{
-//				System.out.println( "prefetch size before clear = " + prefetch.size() );
-
-				// make room in the prefetch deque
-				final int toRemoveFromPrefetch = Math.max( 0, Math.min( prefetch.size(), count - prefetchCapacity ) );
-//				System.out.println( "toRemoveFromPrefetch = " + toRemoveFromPrefetch );
-				if ( toRemoveFromPrefetch == prefetch.size() )
-					prefetch.clear();
-				else
-					for ( int i = 0; i < toRemoveFromPrefetch; ++i )
-						prefetch.remove();
-
-				// move queue contents to the prefetch
-				int c = prefetchCapacity; // prefetch capacity left
-				// add elements of first queue to the front of the prefetch
-				final ArrayDeque< E > q0 = queues[ 0 ];
-				final int q0n = Math.min( q0.size(), c );
-				for ( int i = 0; i < q0n; ++i )
-					prefetch.addFirst( q0.removeLast() );
-				q0.clear();
-				c -= q0n;
-				// add elements of remaining queues to the end of the prefetch
-				for ( int j = 1; j < queues.length; ++j )
-				{
-					final ArrayDeque< E > q = queues[ j ];
-					final int qn = Math.min( q.size(), c );
-					for ( int i = 0; i < qn; ++i )
-						prefetch.addLast( q.removeFirst() );
-					q.clear();
-					c -= qn;
-				}
-
-				// update count: only prefetch is non-empty now
-				count = prefetch.size();
-
-//				System.out.println( "prefetch size after clear = " + prefetch.size() );
-			}
-			finally
-			{
-				lock.unlock();
-			}
-		}
-	}
 
 	/**
 	 * Load the data for the {@link Hdf5Cell} referenced by k, if
