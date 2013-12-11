@@ -125,6 +125,13 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 			{
 				try
 				{
+					while ( pause )
+						synchronized ( this )
+						{
+							pause = false;
+							wait( 1 );
+						}
+//					System.out.println("->fetcher");
 					loadIfNotValid( queue.take() );
 //					Thread.sleep(1);
 				}
@@ -134,7 +141,22 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 				}
 			}
 		}
+
+		private volatile boolean pause = false;
+
+		public void pause()
+		{
+			pause = true;
+		}
 	}
+
+	public void pause()
+	{
+		for ( final Fetcher f : fetchers )
+			f.pause();
+	}
+
+	final protected ArrayList< Fetcher > fetchers;
 
 	private final ThreadManager threadManager;
 
@@ -150,10 +172,12 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 
 		queue = new BlockingFetchQueues< Key >( maxNumLevels );
 		threadManager = new ThreadManager();
+		fetchers = new ArrayList< Fetcher >();
 		for ( int i = 0; i < 2; ++i ) // TODO: add numFetcherThreads parameter
 		{
 			final Fetcher f = new Fetcher();
-			getThreadManager().addThread( f );
+			fetchers.add( f );
+			threadManager.addThread( f );
 			f.start();
 		}
 	}
@@ -202,6 +226,8 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 			final Entry entry = ref.get();
 			if ( entry != null )
 			{
+				if ( !entry.data.getData().isValid() )
+					pause();
 				loadEntryIfNotValid( entry );
 				return entry.data;
 			}
@@ -254,6 +280,7 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 			softReferenceCache.put( k, new SoftReference< Entry >( entry ) );
 		}
 
+		pause();
 		loadEntryIfNotValid( entry );
 		return entry.data;
 	}
