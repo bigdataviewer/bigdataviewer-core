@@ -3,9 +3,9 @@ package viewer.render;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import net.imglib2.Cursor;
@@ -191,27 +191,27 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 
 		valid = false;
 
+		final ExecutorService ex = Executors.newFixedThreadPool( numThreads );
 		for ( i = 0; i < numInvalidLevels && !valid; ++i )
 		{
 			final byte iFinal = ( byte ) i;
 
 			valid = true;
 
-			final ExecutorService ex = Executors.newFixedThreadPool( numThreads );
-
+			final ArrayList< Callable< Void > > tasks = new ArrayList< Callable< Void > >( numTasks );
 			for ( int taskNum = 0; taskNum < numTasks; ++taskNum )
 			{
 				final int myOffset = width * ( int ) ( taskNum * taskHeight );
 				final long myMinY = min[ 1 ] + ( int ) ( taskNum * taskHeight );
 				final int myHeight = ( int ) ( ( (taskNum == numTasks - 1 ) ? height : ( int ) ( ( taskNum + 1 ) * taskHeight ) ) - myMinY - min[ 1 ] );
 
-				final Runnable r = new Runnable()
+				final Callable< Void > r = new Callable< Void >()
 				{
 					@Override
-					public void run()
+					public Void call()
 					{
 						if ( interrupted.get() )
-							return;
+							return null;
 
 						final RandomAccess< B > targetRandomAccess = target.randomAccess( target );
 						final Cursor< ByteType > maskCursor = mask.cursor();
@@ -229,7 +229,7 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 						for ( int y = 0; y < myHeight; ++y )
 						{
 							if ( interrupted.get() )
-								return;
+								return null;
 
 							for ( int x = 0; x < width; ++x )
 							{
@@ -256,14 +256,14 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 						}
 						if ( !myValid )
 							valid = false;
+						return null;
 					}
 				};
-				ex.execute( r );
+				tasks.add( r );
 			}
-			ex.shutdown();
 			try
 			{
-				ex.awaitTermination( 1, TimeUnit.HOURS );
+				ex.invokeAll( tasks );
 			}
 			catch ( final InterruptedException e )
 			{
@@ -272,9 +272,11 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 			if ( interrupted.get() )
 			{
 //				System.out.println( "interrupted" );
+				ex.shutdown();
 				return false;
 			}
 		}
+		ex.shutdown();
 
 		if ( clearUntouchedTargetPixels && !interrupted.get() )
 			clearUntouchedTargetPixels();
