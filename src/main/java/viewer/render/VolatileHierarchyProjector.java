@@ -193,7 +193,7 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 		final IoStatistics iostat = CacheIoTiming.getThreadGroupIoStatistics();
 		final long startTimeIo = iostat.getIoNanoTime();
 		final long startTimeIoCumulative = iostat.getCumulativeIoNanoTime();
-		final long startIoBytes = iostat.getIoBytes();
+//		final long startIoBytes = iostat.getIoBytes();
 
 		final int numTasks;
 		if ( numThreads > 1 )
