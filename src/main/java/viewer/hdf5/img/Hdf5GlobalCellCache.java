@@ -364,15 +364,37 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 		return entry.data;
 	}
 
+	/**
+	 * TODO
+	 */
 	public void clearQueue()
 	{
 		queue.clear();
 		++currentQueueFrame;
 	}
 
+	/**
+	 * TODO
+	 */
 	public ThreadManager getThreadManager()
 	{
 		return threadManager;
+	}
+
+	/**
+	 * TODO
+	 */
+	public void initIoTimeBudget( final long[] partialBudget, final boolean reinitialize )
+	{
+		final IoStatistics stats = CacheIoTiming.getThreadGroupIoStatistics();
+		if ( reinitialize || stats.getIoTimeBudget() == null )
+		{
+			final long[] budget = new long[ maxNumLevels ];
+			for ( int i = 0; i < budget.length; ++i )
+				budget[ i ] = partialBudget.length > i ? partialBudget[ i ] : partialBudget[ partialBudget.length - 1 ];
+			stats.setIoTimeBudget( new IoTimeBudget( budget ) );
+		}
+		stats.getIoTimeBudget().reset();
 	}
 
 	public class Hdf5CellCache implements CellCache< A >

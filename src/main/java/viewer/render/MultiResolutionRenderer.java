@@ -21,8 +21,6 @@ import net.imglib2.ui.RenderTarget;
 import net.imglib2.ui.SimpleInterruptibleProjector;
 import net.imglib2.ui.util.GuiUtil;
 import viewer.display.AccumulateProjectorARGB;
-import viewer.hdf5.img.CacheIoTiming;
-import viewer.hdf5.img.CacheIoTiming.IoTimeBudget;
 import viewer.hdf5.img.Hdf5GlobalCellCache;
 
 public class MultiResolutionRenderer
@@ -148,6 +146,8 @@ public class MultiResolutionRenderer
 	final protected Hdf5GlobalCellCache< ? > cache;
 
 	protected boolean newFrameRequest;
+
+	protected long[] iobudget = new long[] { 3000l * 1000000l, 20l * 1000000l, 10l * 1000000l };
 
 	/**
 	 * @param display
@@ -421,18 +421,14 @@ public class MultiResolutionRenderer
 		painterThread.requestRepaint();
 	}
 
-//	private final ArrayList< Integer > setupToNumLevels = new ArrayList< Integer >();
-
 	private VolatileProjector createProjector(
 			final ViewerState viewerState,
 			final int screenScaleIndex,
 			final ARGBScreenImage screenImage )
 	{
-//		for ( int i = 0; i < setupToNumLevels.size(); ++i )
-//			setupToNumLevels.set( i, 0 );
 		synchronized ( viewerState )
 		{
-			CacheIoTiming.getThreadGroupIoStatistics().setIoTimeBudget( new IoTimeBudget( new long[] { 1000 * 1000000, 500 * 1000000, 100 * 1000000, 3 * 1000000, 3 * 1000000 } ) );
+			cache.initIoTimeBudget( iobudget, false );
 			final List< SourceState< ? > > sources = viewerState.getSources();
 			final List< Integer > visibleSourceIndices = viewerState.getVisibleSourceIndices();
 			if ( visibleSourceIndices.isEmpty() )

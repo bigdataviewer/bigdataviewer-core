@@ -8,14 +8,23 @@ public class CacheIoTiming
 {
 	public static class IoTimeBudget
 	{
+		private final long[] initialBudget;
+
 		private final long[] budget;
 
-		public IoTimeBudget( final long[] budget )
+		public IoTimeBudget( final long[] initBudget )
 		{
-			this.budget = budget.clone();
-			for ( int l = 1; l < budget.length; ++l )
-				if ( budget[ l ] > budget[ l - 1 ] )
-					budget[ l ] = budget[ l - 1 ];
+			initialBudget = initBudget.clone();
+			for ( int l = 1; l < initialBudget.length; ++l )
+				if ( initialBudget[ l ] > initialBudget[ l - 1 ] )
+					initialBudget[ l ] = initialBudget[ l - 1 ];
+			budget = initialBudget.clone();
+		}
+
+		public void reset()
+		{
+			System.arraycopy( initialBudget, 0, budget, 0, budget.length );
+			System.out.println( net.imglib2.util.Util.printCoordinates( budget ) );
 		}
 
 		public synchronized long timeLeft( final int level )
