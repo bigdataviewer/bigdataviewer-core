@@ -7,6 +7,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import net.imglib2.Cursor;
 import net.imglib2.FinalInterval;
@@ -79,15 +80,24 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 
 	/**
 	 * Time needed for rendering the last frame, in nano-seconds.
+	 * This does not include time spent in blocking IO.
 	 */
 	protected long lastFrameRenderNanoTime;
 
 	/**
-	 * TODO
+	 * Time spent in blocking IO rendering the last frame, in nano-seconds.
 	 */
-	// TODO move to derived implementation for local sources only
-	protected long lastFrameIoNanoTime;
+	protected long lastFrameIoNanoTime; // TODO move to derived implementation for local sources only
 
+	/**
+	 * temporary variable to store the number of invalid pixels in the current
+	 * rendering pass.
+	 */
+	final protected AtomicInteger numInvalidPixels = new AtomicInteger();
+
+	/**
+	 * Flag to indicate that someone is trying to interrupt rendering.
+	 */
 	final protected AtomicBoolean interrupted = new AtomicBoolean();
 
 	public VolatileHierarchyProjector(
@@ -214,6 +224,7 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 			final byte iFinal = ( byte ) i;
 
 			valid = true;
+			numInvalidPixels.set( 0 );
 
 			final ArrayList< Callable< Void > > tasks = new ArrayList< Callable< Void > >( numTasks );
 			for ( int taskNum = 0; taskNum < numTasks; ++taskNum )
@@ -233,7 +244,7 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 						final RandomAccess< B > targetRandomAccess = target.randomAccess( target );
 						final Cursor< ByteType > maskCursor = mask.cursor();
 						final RandomAccess< A > sourceRandomAccess = sources.get( iFinal ).randomAccess( sourceInterval );
-						boolean myValid = true;
+						int myNumInvalidPixels = 0;
 
 						sourceRandomAccess.setPosition( min );
 						sourceRandomAccess.setPosition( myMinY, 1 );
@@ -261,7 +272,7 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 										m.set( iFinal );
 									}
 									else
-										myValid = false;
+										++myNumInvalidPixels;
 								}
 								sourceRandomAccess.fwd( 0 );
 								targetRandomAccess.fwd( 0 );
@@ -271,7 +282,8 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 							sourceRandomAccess.fwd( 1 );
 							targetRandomAccess.fwd( 1 );
 						}
-						if ( !myValid )
+						numInvalidPixels.addAndGet( myNumInvalidPixels );
+						if ( myNumInvalidPixels != 0 )
 							valid = false;
 						return null;
 					}
@@ -288,10 +300,11 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 			}
 			if ( interrupted.get() )
 			{
-//				System.out.println( "interrupted" );
+				System.out.println( "interrupted" );
 				ex.shutdown();
 				return false;
 			}
+			System.out.println( "numInvalidPixels(" + i + ") = " + numInvalidPixels );
 		}
 		ex.shutdown();
 
