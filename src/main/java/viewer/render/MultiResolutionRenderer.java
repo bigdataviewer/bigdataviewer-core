@@ -511,6 +511,8 @@ public class MultiResolutionRenderer
 		}
 	}
 
+	private int previousTimepoint = -1;
+
 	private < T extends Volatile< ? > > VolatileProjector createSingleSourceVolatileProjector(
 			final ViewerState viewerState,
 			final SourceState< T > source,
@@ -524,12 +526,16 @@ public class MultiResolutionRenderer
 		final int bestLevel = viewerState.getBestMipMapLevel( screenScaleTransform, sourceIndex );
 		final int nLevels = source.getSpimSource().getNumMipmapLevels();
 		final Source< T > spimSource = source.getSpimSource();
-		for ( int i = bestLevel; i < nLevels; ++i )
-		// for ( int i = nLevels - 1; i < nLevels; ++i )
+		final int t = viewerState.getCurrentTimepoint();
+		if ( t != previousTimepoint )
 		{
-			levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, i ) );
-//			final int setup = ( ( VolatileSpimSource ) spimSource ).getSetupIndex();
+			levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, bestLevel ) );
+			if ( nLevels - 1 != bestLevel )
+				levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, nLevels - 1 ) );
 		}
+		else
+		for ( int i = bestLevel; i < nLevels; ++i )
+			levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, i ) );
 //		for ( int i = bestLevel - 1; i >= 0; --i )
 //			levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, i ) );
 		return new VolatileHierarchyProjector< T, ARGBType >( levels, source.getConverter(), screenImage, numRenderingThreads );
