@@ -70,6 +70,12 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 
 		protected Hdf5Cell< A > data;
 
+		/**
+		 * When was this entry last enqueued for loading (see
+		 * {@link Hdf5GlobalCellCache#currentQueueFrame}). This is initialized
+		 * to -1. When the entry's data becomes valid, it is set to
+		 * {@link Long#MAX_VALUE}.
+		 */
 		protected long enqueueFrame;
 
 		public Entry( final Key key, final Hdf5Cell< A > data )
@@ -98,26 +104,6 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 
 	protected long currentQueueFrame = 0;
 
-	/**
-	 * Load the data for the {@link Hdf5Cell} referenced by k, if
-	 * <ul>
-	 * <li>the {@link Hdf5Cell} is in the cache, and
-	 * <li>the data is not yet loaded (valid).
-	 * </ul>
-	 *
-	 * @param k
-	 */
-	protected void loadIfNotValid( final Key k )
-	{
-		final Reference< Entry > ref = softReferenceCache.get( k );
-		if ( ref != null )
-		{
-			final Entry entry = ref.get();
-			if ( entry != null )
-				loadEntryIfNotValid( entry );
-		}
-	}
-
 	class Fetcher extends Thread
 	{
 		@Override
@@ -133,7 +119,6 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 							pause = false;
 							wait( 1 );
 						}
-//					System.out.println("->fetcher");
 					loadIfNotValid( queue.take() );
 //					Thread.sleep(1);
 				}
@@ -152,7 +137,7 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 		}
 	}
 
-	public void pause()
+	public void pauseFetcherThreads()
 	{
 		for ( final Fetcher f : fetchers )
 			f.pause();
@@ -185,151 +170,23 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 	}
 
 	/**
-	 * Get a cell if it is in the cache or null. Note, that a cell being in the
-	 * cache only means that here is a data array, but not necessarily that the
-	 * data has already been loaded. If the cell's cache entry has not been
-	 * enqueued for loading in the current frame yet, it is enqueued.
+	 * Load the data for the {@link Hdf5Cell} referenced by k, if
+	 * <ul>
+	 * <li>the {@link Hdf5Cell} is in the cache, and
+	 * <li>the data is not yet loaded (valid).
+	 * </ul>
 	 *
-	 * @return a cell with the specified coordinates or null.
+	 * @param k
 	 */
-	public Hdf5Cell< A > getGlobalIfCached( final int timepoint, final int setup, final int level, final int index )
+	protected void loadIfNotValid( final Key k )
 	{
-		final Key k = new Key( timepoint, setup, level, index );
 		final Reference< Entry > ref = softReferenceCache.get( k );
 		if ( ref != null )
 		{
 			final Entry entry = ref.get();
 			if ( entry != null )
-			{
-				if ( !entry.data.getData().isValid() )
-				{
-					if ( entry.enqueueFrame < currentQueueFrame )
-					{
-						entry.enqueueFrame = currentQueueFrame;
-						queue.put( k, maxLevels[ setup ] - level );
-					}
-				}
-				return entry.data;
-			}
+				loadEntryIfNotValid( entry );
 		}
-		return null;
-	}
-
-	/**
-	 * Get a cell if it is in the cache or null. If a cell is returned, it is
-	 * guaranteed to have valid data. If necessary this call will block until
-	 * the data is loaded.
-	 *
-	 * @return a valid cell with the specified coordinates or null.
-	 */
-	public Hdf5Cell< A > getGlobalIfCachedAndLoadBlocking( final int timepoint, final int setup, final int level, final int index )
-	{
-		final Key k = new Key( timepoint, setup, level, index );
-		final Reference< Entry > ref = softReferenceCache.get( k );
-		if ( ref != null )
-		{
-			final Entry entry = ref.get();
-			if ( entry != null )
-			{
-				if ( !entry.data.getData().isValid() )
-				{
-					final IoStatistics stats = CacheIoTiming.getThreadGroupIoStatistics();
-					final IoTimeBudget budget = stats.getIoTimeBudget();
-					final int priority = maxLevels[ setup ] - level;
-					if ( budget.timeLeft( priority ) > 0 )
-					{
-						pause();
-						final long t0 = stats.getIoNanoTime();
-						stats.start();
-						loadEntryIfNotValid( entry );
-						stats.stop();
-						final long t = stats.getIoNanoTime() - t0;
-						budget.use( t, priority );
-//						System.out.println( "getGlobalIfCachedAndLoadBlocking" );
-//						System.out.println( "budget.use( " + t + ", " + priority + " );" );
-//						System.out.println( "budget.timeLeft( " + priority + " ) = " + budget.timeLeft( priority ) );
-					}
-					else if ( entry.enqueueFrame < currentQueueFrame )
-					{
-						entry.enqueueFrame = currentQueueFrame;
-						queue.put( k, priority );
-					}
-				}
-				return entry.data;
-			}
-		}
-		return null;
-	}
-
-	/**
-	 * Create a new cell with the specified coordinates, if it isn't in the
-	 * cache already. Enqueue the cell for loading.
-	 *
-	 * @return a cell with the specified coordinates.
-	 */
-	public synchronized Hdf5Cell< A > createGlobal( final int[] cellDims, final long[] cellMin, final int timepoint, final int setup, final int level, final int index )
-	{
-		final Key k = new Key( timepoint, setup, level, index );
-		final Reference< Entry > ref = softReferenceCache.get( k );
-		if ( ref != null )
-		{
-			final Entry entry = ref.get();
-			if ( entry != null )
-				return entry.data;
-		}
-
-		final Hdf5Cell< A > cell = new Hdf5Cell< A >( cellDims, cellMin, loader.emptyArray( cellDims ) );
-		final Entry entry = new Entry( k, cell );
-		softReferenceCache.put( k, new WeakReference< Entry >( entry ) );
-		entry.enqueueFrame = currentQueueFrame;
-		queue.put( k, maxLevels[ setup ] - level );
-
-		return cell;
-	}
-
-	/**
-	 * Create a new cell with the specified coordinates, if it isn't in the
-	 * cache already. Block until the data for the cell has been loaded.
-	 *
-	 * @return a valid cell with the specified coordinates.
-	 */
-	public Hdf5Cell< A > createGlobalAndLoadBlocking( final int[] cellDims, final long[] cellMin, final int timepoint, final int setup, final int level, final int index )
-	{
-		final Key k = new Key( timepoint, setup, level, index );
-		Entry entry = null;
-
-		final Reference< Entry > ref = softReferenceCache.get( k );
-		if ( ref != null )
-			entry = ref.get();
-		if ( entry == null )
-		{
-			final Hdf5Cell< A > cell = new Hdf5Cell< A >( cellDims, cellMin, loader.emptyArray( cellDims ) );
-			entry = new Entry( k, cell );
-			softReferenceCache.put( k, new SoftReference< Entry >( entry ) );
-		}
-
-		final IoStatistics stats = CacheIoTiming.getThreadGroupIoStatistics();
-		final IoTimeBudget budget = stats.getIoTimeBudget();
-		final int priority = maxLevels[ setup ] - level;
-		if ( budget.timeLeft( priority ) > 0 )
-		{
-			pause();
-			final long t0 = stats.getIoNanoTime();
-			stats.start();
-			loadEntryIfNotValid( entry );
-			stats.stop();
-			final long t = stats.getIoNanoTime() - t0;
-			budget.use( t, priority );
-//			System.out.println( "createGlobalAndLoadBlocking" );
-//			System.out.println( "budget.use( " + t + ", " + priority + " );" );
-//			System.out.println( "budget.timeLeft( " + priority + " ) = " + budget.timeLeft( priority ) );
-		}
-		else
-		{
-			entry.enqueueFrame = currentQueueFrame;
-			queue.put( k, priority );
-		}
-		return entry.data;
 	}
 
 	/**
@@ -358,60 +215,153 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 		}
 	}
 
-	public class Hdf5CellCache implements CellCache< A >
+	/**
+	 * Enqueue the {@link Entry} if it hasn't been enqueued for this frame
+	 * already.
+	 */
+	protected void enqueueEntry( final Entry entry )
 	{
-		final int timepoint;
-
-		final int setup;
-
-		final int level;
-
-		public Hdf5CellCache( final int timepoint, final int setup, final int level )
+		if ( entry.enqueueFrame < currentQueueFrame )
 		{
-			this.timepoint = timepoint;
-			this.setup = setup;
-			this.level = level;
-		}
-
-		@Override
-		public Hdf5Cell< A > get( final int index )
-		{
-			return getGlobalIfCached( timepoint, setup, level, index );
-		}
-
-		@Override
-		public Hdf5Cell< A > load( final int index, final int[] cellDims, final long[] cellMin )
-		{
-			return createGlobal( cellDims, cellMin, timepoint, setup, level, index );
+			entry.enqueueFrame = currentQueueFrame;
+			final Key k = entry.key;
+			final int priority = maxLevels[ k.setup ] - k.level;
+			queue.put( k, priority );
 		}
 	}
 
-	public class Hdf5BlockingCellCache implements CellCache< A >
+	/**
+	 * Load the data for the {@link Entry} if it is not yet loaded (valid) and
+	 * there is enough {@link IoTimeBudget} left. Otherwise, enqueue the
+	 * {@link Entry} if it hasn't been enqueued for this frame already.
+	 */
+	protected void loadOrEnqueue( final Entry entry )
 	{
-		final int timepoint;
-
-		final int setup;
-
-		final int level;
-
-		public Hdf5BlockingCellCache( final int timepoint, final int setup, final int level )
+		final IoStatistics stats = CacheIoTiming.getThreadGroupIoStatistics();
+		final IoTimeBudget budget = stats.getIoTimeBudget();
+		final Key k = entry.key;
+		final int priority = maxLevels[ k.setup ] - k.level;
+		if ( budget.timeLeft( priority ) > 0 )
 		{
-			this.timepoint = timepoint;
-			this.setup = setup;
-			this.level = level;
+			pauseFetcherThreads();
+			final long t0 = stats.getIoNanoTime();
+			stats.start();
+			loadEntryIfNotValid( entry );
+			stats.stop();
+			final long t = stats.getIoNanoTime() - t0;
+			budget.use( t, priority );
+		}
+		else
+			enqueueEntry( entry );
+	}
+
+	public static enum LoadingStrategy
+	{
+		VOLATILE,
+		BLOCKING,
+		BUDGETED
+	};
+
+	/**
+	 * Get a cell if it is in the cache or null. Note, that a cell being in the
+	 * cache only means that here is a data array, but not necessarily that the
+	 * data has already been loaded.
+	 *
+	 * If the cell data has not been loaded, do the following, depending on the
+	 * {@link LoadingStrategy}:
+	 *
+	 * <ul>
+	 *   <li> {@link LoadingStrategy#VOLATILE}:
+	 *        Enqueue the cell for asynchronous loading by a fetcher thread, if
+	 *        it has not been enqueued in the current frame already.
+	 *   <li> {@link LoadingStrategy#BLOCKING}:
+	 *        Load the cell data immediately.
+	 *   <li> {@link LoadingStrategy#BUDGETED}:
+	 *        Load the cell data immediately if there is enough
+	 *        {@link IoTimeBudget} left for the current thread group.
+	 *        Otherwise enqueue for asynchronous loading, if it has not been
+	 *        enqueued in the current frame already.
+	 * </ul>
+	 *
+	 * @return a cell with the specified coordinates or null.
+	 */
+	public Hdf5Cell< A > getGlobalIfCached( final int timepoint, final int setup, final int level, final int index, final LoadingStrategy loadingStrategy )
+	{
+		final Key k = new Key( timepoint, setup, level, index );
+		final Reference< Entry > ref = softReferenceCache.get( k );
+		if ( ref != null )
+		{
+			final Entry entry = ref.get();
+			if ( entry != null )
+			{
+				switch ( loadingStrategy )
+				{
+				case VOLATILE:
+				default:
+					enqueueEntry( entry );
+					break;
+				case BLOCKING:
+					loadEntryIfNotValid( entry );
+					break;
+				case BUDGETED:
+					if ( !entry.data.getData().isValid() )
+						loadOrEnqueue( entry );
+					break;
+				}
+				return entry.data;
+			}
+		}
+		return null;
+	}
+
+	/**
+	 * Create a new cell with the specified coordinates, if it isn't in the
+	 * cache already. Depending on the {@link LoadingStrategy}, do the
+	 * following:
+	 * <ul>
+	 *   <li> {@link LoadingStrategy#VOLATILE}:
+	 *        Enqueue the cell for asynchronous loading by a fetcher thread.
+	 *   <li> {@link LoadingStrategy#BLOCKING}:
+	 *        Load the cell data immediately.
+	 *   <li> {@link LoadingStrategy#BUDGETED}:
+	 *        Load the cell data immediately if there is enough
+	 *        {@link IoTimeBudget} left for the current thread group.
+	 *        Otherwise enqueue for asynchronous loading.
+	 * </ul>
+	 *
+	 * @return a cell with the specified coordinates.
+	 */
+	public synchronized Hdf5Cell< A > createGlobal( final int[] cellDims, final long[] cellMin, final int timepoint, final int setup, final int level, final int index, final LoadingStrategy loadingStrategy )
+	{
+		final Key k = new Key( timepoint, setup, level, index );
+		Entry entry = null;
+
+		final Reference< Entry > ref = softReferenceCache.get( k );
+		if ( ref != null )
+			entry = ref.get();
+
+		if ( entry == null )
+		{
+			final Hdf5Cell< A > cell = new Hdf5Cell< A >( cellDims, cellMin, loader.emptyArray( cellDims ) );
+			entry = new Entry( k, cell );
+			softReferenceCache.put( k, new WeakReference< Entry >( entry ) );
 		}
 
-		@Override
-		public Hdf5Cell< A > get( final int index )
+		switch ( loadingStrategy )
 		{
-			return getGlobalIfCachedAndLoadBlocking( timepoint, setup, level, index );
+		case VOLATILE:
+		default:
+			enqueueEntry( entry );
+			break;
+		case BLOCKING:
+			loadEntryIfNotValid( entry );
+			break;
+		case BUDGETED:
+			if ( !entry.data.getData().isValid() )
+				loadOrEnqueue( entry );
+			break;
 		}
-
-		@Override
-		public Hdf5Cell< A > load( final int index, final int[] cellDims, final long[] cellMin )
-		{
-			return createGlobalAndLoadBlocking( cellDims, cellMin, timepoint, setup, level, index );
-		}
+		return entry.data;
 	}
 
 	public void clearQueue()
@@ -423,5 +373,36 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 	public ThreadManager getThreadManager()
 	{
 		return threadManager;
+	}
+
+	public class Hdf5CellCache implements CellCache< A >
+	{
+		final int timepoint;
+
+		final int setup;
+
+		final int level;
+
+		final LoadingStrategy loadingStrategy;
+
+		public Hdf5CellCache( final int timepoint, final int setup, final int level, final LoadingStrategy strategy )
+		{
+			this.timepoint = timepoint;
+			this.setup = setup;
+			this.level = level;
+			this.loadingStrategy = strategy;
+		}
+
+		@Override
+		public Hdf5Cell< A > get( final int index )
+		{
+			return getGlobalIfCached( timepoint, setup, level, index, loadingStrategy );
+		}
+
+		@Override
+		public Hdf5Cell< A > load( final int index, final int[] cellDims, final long[] cellMin )
+		{
+			return createGlobal( cellDims, cellMin, timepoint, setup, level, index, loadingStrategy );
+		}
 	}
 }

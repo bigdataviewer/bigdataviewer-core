@@ -1,7 +1,6 @@
 package viewer.hdf5;
 
 import static mpicbg.spim.data.XmlHelpers.loadPath;
-import static viewer.hdf5.Hdf5ImageLoader.CacheType.BLOCKING;
 import static viewer.hdf5.Util.getResolutionsPath;
 import static viewer.hdf5.Util.getSubdivisionsPath;
 import static viewer.hdf5.Util.reorder;
@@ -25,6 +24,7 @@ import org.jdom2.Element;
 import viewer.ViewerImgLoader;
 import viewer.hdf5.img.Hdf5Cell;
 import viewer.hdf5.img.Hdf5GlobalCellCache;
+import viewer.hdf5.img.Hdf5GlobalCellCache.LoadingStrategy;
 import viewer.hdf5.img.Hdf5ImgCells;
 import viewer.hdf5.img.Hdf5ImgCells.CellCache;
 import viewer.hdf5.img.VolatileShortArrayLoader;
@@ -168,7 +168,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 	@Override
 	public CellImg< UnsignedShortType, VolatileShortArray, Hdf5Cell< VolatileShortArray > > getUnsignedShortImage( final View view, final int level )
 	{
-		final CellImg< UnsignedShortType, VolatileShortArray, Hdf5Cell< VolatileShortArray > >  img = prepareCachedImage( view, level, BLOCKING );
+		final CellImg< UnsignedShortType, VolatileShortArray, Hdf5Cell< VolatileShortArray > >  img = prepareCachedImage( view, level, LoadingStrategy.BLOCKING );
 		final UnsignedShortType linkedType = new UnsignedShortType( img );
 		img.setLinkedType( linkedType );
 		return img;
@@ -177,8 +177,8 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 	@Override
 	public CellImg< VolatileUnsignedShortType, VolatileShortArray, Hdf5Cell< VolatileShortArray > > getVolatileUnsignedShortImage( final View view, final int level )
 	{
-		final CacheType cacheType = BLOCKING; //( isCoarsestLevelBlocking && maxLevels[ view.getSetupIndex() ] == level ) ? BLOCKING : VOLATILE;
-		final CellImg< VolatileUnsignedShortType, VolatileShortArray, Hdf5Cell< VolatileShortArray > >  img = prepareCachedImage( view, level, cacheType );
+//		final CellImg< VolatileUnsignedShortType, VolatileShortArray, Hdf5Cell< VolatileShortArray > >  img = prepareCachedImage( view, level, LoadingStrategy.VOLATILE );
+		final CellImg< VolatileUnsignedShortType, VolatileShortArray, Hdf5Cell< VolatileShortArray > >  img = prepareCachedImage( view, level, LoadingStrategy.BUDGETED );
 		final VolatileUnsignedShortType linkedType = new VolatileUnsignedShortType( img );
 		img.setLinkedType( linkedType );
 		return img;
@@ -206,18 +206,12 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 		return getMipmapResolutions( setup ).length;
 	}
 
-	protected static enum CacheType
-	{
-		VOLATILE,
-		BLOCKING
-	}
-
 	/**
 	 * (Almost) create a {@link CellImg} backed by the cache.
 	 * The created image needs a {@link NativeImg#setLinkedType(net.imglib2.type.Type) lined type} before it can be used.
 	 * The type should be either {@link UnsignedShortType} and {@link VolatileUnsignedShortType}.
 	 */
-	protected < T extends NativeType< T > > CellImg< T, VolatileShortArray, Hdf5Cell< VolatileShortArray > > prepareCachedImage( final View view, final int level, final CacheType cacheType )
+	protected < T extends NativeType< T > > CellImg< T, VolatileShortArray, Hdf5Cell< VolatileShortArray > > prepareCachedImage( final View view, final int level, final LoadingStrategy loadingStrategy )
 	{
 		if ( hdf5Reader == null )
 			throw new RuntimeException( "no hdf5 file open" );
@@ -231,17 +225,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 		final long[] dimensions = reorder( info.getDimensions() );
 		final int[] cellDimensions = reorder( info.tryGetChunkSizes() );
 
-		final CellCache< VolatileShortArray > c;
-		switch ( cacheType )
-		{
-		case VOLATILE:
-			c = cache.new Hdf5CellCache( view.getTimepointIndex(), view.getSetupIndex(), level );
-			break;
-		case BLOCKING:
-		default:
-			c = cache.new Hdf5BlockingCellCache( view.getTimepointIndex(), view.getSetupIndex(), level );
-		}
-
+		final CellCache< VolatileShortArray > c = cache.new Hdf5CellCache( view.getTimepointIndex(), view.getSetupIndex(), level, loadingStrategy );
 		final Hdf5ImgCells< VolatileShortArray > cells = new Hdf5ImgCells< VolatileShortArray >( c, 1, dimensions, cellDimensions );
 		final CellImg< T, VolatileShortArray, Hdf5Cell< VolatileShortArray > > img = new CellImg< T, VolatileShortArray, Hdf5Cell< VolatileShortArray > >( null, cells );
 		return img;
