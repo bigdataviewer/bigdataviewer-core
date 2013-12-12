@@ -62,25 +62,25 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 	final protected int height;
 
 	/**
-	 * Steps for carriage return.  Typically -{@link #width}
+	 * Steps for carriage return. Typically -{@link #width}
 	 */
 	final protected int cr;
 
 	/**
-	 * A reference to the target image as an iterable.  Used for source-less
+	 * A reference to the target image as an iterable. Used for source-less
 	 * operations such as clearing its content.
 	 */
 	final protected IterableInterval< B > iterableTarget;
 
 	/**
-     * Number of threads to use for rendering
-     */
-    final protected int numThreads;
+	 * Number of threads to use for rendering
+	 */
+	final protected int numThreads;
 
-    /**
-     * Time needed for rendering the last frame, in nano-seconds.
-     */
-    protected long lastFrameRenderNanoTime;
+	/**
+	 * Time needed for rendering the last frame, in nano-seconds.
+	 */
+	protected long lastFrameRenderNanoTime;
 
 	/**
 	 * TODO
@@ -88,7 +88,7 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 	// TODO move to derived implementation for local sources only
 	protected long lastFrameIoNanoTime;
 
-    final protected AtomicBoolean interrupted = new AtomicBoolean();
+	final protected AtomicBoolean interrupted = new AtomicBoolean();
 
 	public VolatileHierarchyProjector(
 			final List< ? extends RandomAccessible< A > > sources,
