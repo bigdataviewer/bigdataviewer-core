@@ -28,9 +28,8 @@ public class CacheIoTiming
 			int l = 0;
 			for ( ; l <= level; ++l )
 				budget[ l ] -= t;
-			for ( ; l < budget.length; ++l )
-				if ( budget[ l ] > budget[ l - 1 ] )
-					budget[ l ] = budget[ l - 1 ];
+			for ( ; l < budget.length && budget[ l ] > budget[ l - 1 ]; ++l )
+				budget[ l ] = budget[ l - 1 ];
 		}
 	}
 
