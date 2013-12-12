@@ -7,7 +7,6 @@ import java.util.List;
 
 import mpicbg.spim.data.ImgLoader;
 import mpicbg.spim.data.View;
-import net.imglib2.FinalInterval;
 import net.imglib2.FinalRealInterval;
 import net.imglib2.Interval;
 import net.imglib2.Pair;
@@ -131,7 +130,7 @@ public class CropImgLoader implements ImgLoader
 			sourceCorners.add( sourceCorner );
 		}
 		final RandomAccessibleInterval< T > sourceImg = source.getSource( timepoint, 0 );
-		final Interval cropBoundingBox = roundUp( getBoundingBox( sourceCorners ) );
+		final Interval cropBoundingBox = Intervals.smallestContainingInterval( getBoundingBox( sourceCorners ) );
 		Interval sourceInterval = Intervals.intersect( cropBoundingBox, sourceImg );
 
 		final RandomAccessibleInterval< T > croppedSourceImg;
@@ -154,24 +153,6 @@ public class CropImgLoader implements ImgLoader
 		croppedSourceTransform.preConcatenate( sourceToGlobal );
 
 		return new ValuePair< RandomAccessibleInterval<T>, AffineTransform3D >( croppedSourceImg, croppedSourceTransform );
-	}
-
-	/**
-	 * Expand the given interval to the nearest integer interval.
-	 *
-	 * @return smallest enclosing integer interval.
-	 */
-	public static Interval roundUp( final RealInterval realInterval )
-	{
-		final int n = realInterval.numDimensions();
-		final long[] min = new long[ n ];
-		final long[] max = new long[ n ];
-		for ( int d = 0; d < n; ++d )
-		{
-			min[ d ] = ( long ) Math.floor( realInterval.realMin( d ) );
-			max[ d ] = ( long ) Math.ceil( realInterval.realMax( d ) );
-		}
-		return new FinalInterval( min, max );
 	}
 
 	/**
