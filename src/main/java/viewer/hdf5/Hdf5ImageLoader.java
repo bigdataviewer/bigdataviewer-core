@@ -2,7 +2,6 @@ package viewer.hdf5;
 
 import static mpicbg.spim.data.XmlHelpers.loadPath;
 import static viewer.hdf5.Hdf5ImageLoader.CacheType.BLOCKING;
-import static viewer.hdf5.Hdf5ImageLoader.CacheType.VOLATILE;
 import static viewer.hdf5.Util.getResolutionsPath;
 import static viewer.hdf5.Util.getSubdivisionsPath;
 import static viewer.hdf5.Util.reorder;
@@ -178,7 +177,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 	@Override
 	public CellImg< VolatileUnsignedShortType, VolatileShortArray, Hdf5Cell< VolatileShortArray > > getVolatileUnsignedShortImage( final View view, final int level )
 	{
-		final CacheType cacheType = ( isCoarsestLevelBlocking && maxLevels[ view.getSetupIndex() ] == level ) ? BLOCKING : VOLATILE;
+		final CacheType cacheType = BLOCKING; //( isCoarsestLevelBlocking && maxLevels[ view.getSetupIndex() ] == level ) ? BLOCKING : VOLATILE;
 		final CellImg< VolatileUnsignedShortType, VolatileShortArray, Hdf5Cell< VolatileShortArray > >  img = prepareCachedImage( view, level, cacheType );
 		final VolatileUnsignedShortType linkedType = new VolatileUnsignedShortType( img );
 		img.setLinkedType( linkedType );

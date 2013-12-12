@@ -21,6 +21,8 @@ import net.imglib2.ui.RenderTarget;
 import net.imglib2.ui.SimpleInterruptibleProjector;
 import net.imglib2.ui.util.GuiUtil;
 import viewer.display.AccumulateProjectorARGB;
+import viewer.hdf5.img.CacheIoTiming;
+import viewer.hdf5.img.CacheIoTiming.IoTimeBudget;
 import viewer.hdf5.img.Hdf5GlobalCellCache;
 
 public class MultiResolutionRenderer
@@ -375,11 +377,12 @@ public class MultiResolutionRenderer
 						if ( rendertime < targetRenderNanos && maxScreenScaleIndex > 0 )
 							maxScreenScaleIndex--;
 					}
+					System.out.println( "created projector" );
+					System.out.println( String.format( "rendering:%4d ms", rendertime / 1000000 ) );
+					System.out.println( "scale = " + currentScreenScaleIndex );
+					System.out.println( "maxScreenScaleIndex = " + maxScreenScaleIndex + "  (" + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 0 ) + " x " + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 1 ) + ")" );
+					System.out.println();
 				}
-
-//				System.out.println( "maxScreenScaleIndex = " + maxScreenScaleIndex + "  (" + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 0 ) + " x " + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 1 ) + ")" );
-//				System.out.println( String.format( "rendering:%4d ms", rendertime / 1000000 ) );
-//				System.out.println( "scale = " + currentScreenScaleIndex );
 
 				if ( currentScreenScaleIndex > 0 )
 					requestRepaint( currentScreenScaleIndex - 1 );
@@ -418,13 +421,18 @@ public class MultiResolutionRenderer
 		painterThread.requestRepaint();
 	}
 
+//	private final ArrayList< Integer > setupToNumLevels = new ArrayList< Integer >();
+
 	private VolatileProjector createProjector(
 			final ViewerState viewerState,
 			final int screenScaleIndex,
 			final ARGBScreenImage screenImage )
 	{
-		synchronized( viewerState )
+//		for ( int i = 0; i < setupToNumLevels.size(); ++i )
+//			setupToNumLevels.set( i, 0 );
+		synchronized ( viewerState )
 		{
+			CacheIoTiming.getThreadGroupIoStatistics().setIoTimeBudget( new IoTimeBudget( new long[] { 1000 * 1000000, 500 * 1000000, 100 * 1000000, 3 * 1000000, 3 * 1000000 } ) );
 			final List< SourceState< ? > > sources = viewerState.getSources();
 			final List< Integer > visibleSourceIndices = viewerState.getVisibleSourceIndices();
 			if ( visibleSourceIndices.isEmpty() )
@@ -521,7 +529,11 @@ public class MultiResolutionRenderer
 		final int nLevels = source.getSpimSource().getNumMipmapLevels();
 		final Source< T > spimSource = source.getSpimSource();
 		for ( int i = bestLevel; i < nLevels; ++i )
+		// for ( int i = nLevels - 1; i < nLevels; ++i )
+		{
 			levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, i ) );
+//			final int setup = ( ( VolatileSpimSource ) spimSource ).getSetupIndex();
+		}
 //		for ( int i = bestLevel - 1; i >= 0; --i )
 //			levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, i ) );
 		return new VolatileHierarchyProjector< T, ARGBType >( levels, source.getConverter(), screenImage, numRenderingThreads );

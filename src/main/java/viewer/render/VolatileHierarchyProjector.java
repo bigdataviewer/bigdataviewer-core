@@ -23,6 +23,8 @@ import net.imglib2.type.numeric.integer.ByteType;
 import net.imglib2.ui.AbstractInterruptibleProjector;
 import net.imglib2.ui.util.StopWatch;
 import net.imglib2.view.Views;
+import viewer.hdf5.img.CacheIoTiming;
+import viewer.hdf5.img.CacheIoTiming.IoStatistics;
 
 /**
  * {@link Projector} for a hierarchy of {@link Volatile} inputs.  After each
@@ -79,6 +81,12 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
      * Time needed for rendering the last frame, in nano-seconds.
      */
     protected long lastFrameRenderNanoTime;
+
+	/**
+	 * TODO
+	 */
+	// TODO move to derived implementation for local sources only
+	protected long lastFrameIoNanoTime;
 
     final protected AtomicBoolean interrupted = new AtomicBoolean();
 
@@ -137,6 +145,11 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 		return lastFrameRenderNanoTime;
 	}
 
+	public long getLastFrameIoNanoTime()
+	{
+		return lastFrameIoNanoTime;
+	}
+
 	@Override
 	public boolean isValid()
 	{
@@ -177,6 +190,10 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 
 		final StopWatch stopWatch = new StopWatch();
 		stopWatch.start();
+		final IoStatistics iostat = CacheIoTiming.getThreadGroupIoStatistics();
+		final long startTimeIo = iostat.getIoNanoTime();
+		final long startTimeIoCumulative = iostat.getCumulativeIoNanoTime();
+		final long startIoBytes = iostat.getIoBytes();
 
 		final int numTasks;
 		if ( numThreads > 1 )
@@ -281,7 +298,13 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 		if ( clearUntouchedTargetPixels && !interrupted.get() )
 			clearUntouchedTargetPixels();
 
-		lastFrameRenderNanoTime = stopWatch.nanoTime();
+		final long lastFrameTime = stopWatch.nanoTime();
+//		final long numIoBytes = iostat.getIoBytes() - startIoBytes;
+		lastFrameIoNanoTime = iostat.getIoNanoTime() - startTimeIo;
+		lastFrameRenderNanoTime = lastFrameTime - ( iostat.getCumulativeIoNanoTime() - startTimeIoCumulative ) / numThreads;
+
+		System.out.println( "lastFrameTime = " + lastFrameTime / 1000000 );
+		System.out.println( "lastFrameRenderNanoTime = " + lastFrameRenderNanoTime / 1000000 );
 
 		if ( valid )
 			numInvalidLevels = i - 1;

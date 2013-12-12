@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
+import viewer.hdf5.img.CacheIoTiming.IoStatistics;
+import viewer.hdf5.img.CacheIoTiming.IoTimeBudget;
 import viewer.hdf5.img.Hdf5ImgCells.CellCache;
 import viewer.util.ThreadManager;
 
@@ -199,10 +201,13 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 			final Entry entry = ref.get();
 			if ( entry != null )
 			{
-				if ( entry.enqueueFrame < currentQueueFrame )
+				if ( !entry.data.getData().isValid() )
 				{
-					entry.enqueueFrame = currentQueueFrame;
-					queue.put( k, maxLevels[ setup ] - level );
+					if ( entry.enqueueFrame < currentQueueFrame )
+					{
+						entry.enqueueFrame = currentQueueFrame;
+						queue.put( k, maxLevels[ setup ] - level );
+					}
 				}
 				return entry.data;
 			}
@@ -227,8 +232,29 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 			if ( entry != null )
 			{
 				if ( !entry.data.getData().isValid() )
-					pause();
-				loadEntryIfNotValid( entry );
+				{
+					final IoStatistics stats = CacheIoTiming.getThreadGroupIoStatistics();
+					final IoTimeBudget budget = stats.getIoTimeBudget();
+					final int priority = maxLevels[ setup ] - level;
+					if ( budget.timeLeft( priority ) > 0 )
+					{
+						pause();
+						final long t0 = stats.getIoNanoTime();
+						stats.start();
+						loadEntryIfNotValid( entry );
+						stats.stop();
+						final long t = stats.getIoNanoTime() - t0;
+						budget.use( t, priority );
+//						System.out.println( "getGlobalIfCachedAndLoadBlocking" );
+//						System.out.println( "budget.use( " + t + ", " + priority + " );" );
+//						System.out.println( "budget.timeLeft( " + priority + " ) = " + budget.timeLeft( priority ) );
+					}
+					else if ( entry.enqueueFrame < currentQueueFrame )
+					{
+						entry.enqueueFrame = currentQueueFrame;
+						queue.put( k, priority );
+					}
+				}
 				return entry.data;
 			}
 		}
@@ -253,7 +279,9 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 		}
 
 		final Hdf5Cell< A > cell = new Hdf5Cell< A >( cellDims, cellMin, loader.emptyArray( cellDims ) );
-		softReferenceCache.put( k, new WeakReference< Entry >( new Entry( k, cell ) ) );
+		final Entry entry = new Entry( k, cell );
+		softReferenceCache.put( k, new WeakReference< Entry >( entry ) );
+		entry.enqueueFrame = currentQueueFrame;
 		queue.put( k, maxLevels[ setup ] - level );
 
 		return cell;
@@ -280,8 +308,27 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 			softReferenceCache.put( k, new SoftReference< Entry >( entry ) );
 		}
 
-		pause();
-		loadEntryIfNotValid( entry );
+		final IoStatistics stats = CacheIoTiming.getThreadGroupIoStatistics();
+		final IoTimeBudget budget = stats.getIoTimeBudget();
+		final int priority = maxLevels[ setup ] - level;
+		if ( budget.timeLeft( priority ) > 0 )
+		{
+			pause();
+			final long t0 = stats.getIoNanoTime();
+			stats.start();
+			loadEntryIfNotValid( entry );
+			stats.stop();
+			final long t = stats.getIoNanoTime() - t0;
+			budget.use( t, priority );
+//			System.out.println( "createGlobalAndLoadBlocking" );
+//			System.out.println( "budget.use( " + t + ", " + priority + " );" );
+//			System.out.println( "budget.timeLeft( " + priority + " ) = " + budget.timeLeft( priority ) );
+		}
+		else
+		{
+			entry.enqueueFrame = currentQueueFrame;
+			queue.put( k, priority );
+		}
 		return entry.data;
 	}
 
