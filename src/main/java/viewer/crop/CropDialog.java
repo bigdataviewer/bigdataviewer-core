@@ -58,8 +58,6 @@ public class CropDialog extends JDialog
 
 	private final JSpinner spinnerMaxTimepoint;
 
-	private final ThreadGroup croppingThreadGroup = new ThreadGroup( "cropping" );
-
 	@Override
 	public void setVisible( final boolean b )
 	{
@@ -207,7 +205,7 @@ public class CropDialog extends JDialog
 					final int minTimepointIndex = ( Integer ) spinnerMinTimepoint.getValue();
 					final int maxTimepointIndex = ( Integer ) spinnerMaxTimepoint.getValue();
 
-					new Thread( croppingThreadGroup, new Runnable()
+					new Thread()
 					{
 						@Override
 						public void run()
@@ -221,7 +219,7 @@ public class CropDialog extends JDialog
 								ex.printStackTrace();
 							}
 						}
-					} ).start();
+					}.start();
 				}
 			} );
 		}
@@ -247,9 +245,6 @@ public class CropDialog extends JDialog
 	}
 
 	/**
-	 * Note: Run this from it's own ThreadGroup such that the viewers rendering
-	 * timeouts wont interfere with the export .
-	 *
 	 * @param minTimepointIndex
 	 * @param maxTimepointIndex
 	 * @param hdf5File
