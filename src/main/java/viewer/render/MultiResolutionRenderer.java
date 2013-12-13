@@ -495,11 +495,9 @@ public class MultiResolutionRenderer
 			final ARGBScreenImage screenImage,
 			final byte[] maskArray )
 	{
-		if ( VolatileSource.class.isInstance( source.getSpimSource() ) )
+		if ( source.asVolatile() != null )
 		{
-			@SuppressWarnings( "unchecked" )
-			final SourceState< Volatile< ? > > volatileSourceState = ( SourceState< Volatile< ? > > ) source;
-			return createSingleSourceVolatileProjector( viewerState, volatileSourceState, sourceIndex, screenScaleIndex, screenImage, maskArray );
+			return createSingleSourceVolatileProjector( viewerState, source.asVolatile(), sourceIndex, screenScaleIndex, screenImage, maskArray );
 		}
 		else
 		{

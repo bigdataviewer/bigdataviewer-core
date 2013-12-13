@@ -60,13 +60,13 @@ public class TransformedSource< T > implements Source< T >
 		composed = new AffineTransform3D();
 	}
 
-	protected TransformedSource( final Source< T > source, final AffineTransform3D incrementalTransform, final AffineTransform3D fixedTransform, final AffineTransform3D sourceTransform, final AffineTransform3D composed )
+	public TransformedSource( final Source< T > source, final TransformedSource< ? > shareTransform )
 	{
 		this.source = source;
-		this.incrementalTransform = incrementalTransform;
-		this.fixedTransform = fixedTransform;
-		this.sourceTransform = sourceTransform;
-		this.composed = composed;
+		this.incrementalTransform = shareTransform.incrementalTransform;
+		this.fixedTransform = shareTransform.fixedTransform;
+		this.sourceTransform = shareTransform.sourceTransform;
+		this.composed = shareTransform.composed;
 	}
 
 	/*

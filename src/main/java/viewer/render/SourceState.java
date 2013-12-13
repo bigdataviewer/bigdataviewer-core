@@ -1,5 +1,6 @@
 package viewer.render;
 
+import net.imglib2.Volatile;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.LinAlgHelpers;
 
@@ -8,21 +9,68 @@ import net.imglib2.util.LinAlgHelpers;
  */
 public class SourceState< T > extends SourceAndConverter< T >
 {
-	/**
-	 * Whether the source is active (visible in  {@link DisplayMode#FUSED} mode).
-	 */
-	protected boolean isActive;
+	protected static class Data
+	{
+		/**
+		 * Whether the source is active (visible in  {@link DisplayMode#FUSED} mode).
+		 */
+		protected boolean isActive;
 
-	/**
-	 * Whether the source is current.
-	 */
-	protected boolean isCurrent;
+		/**
+		 * Whether the source is current.
+		 */
+		protected boolean isCurrent;
+
+		public Data()
+		{
+			isActive = true;
+			isCurrent = false;
+		}
+
+		protected Data( final Data d )
+		{
+			isActive = d.isActive;
+			isCurrent = d.isCurrent;
+		}
+
+		public Data copy()
+		{
+			return new Data( this );
+		}
+	}
+
+	static class VolatileSourceState< T, V extends Volatile< T > > extends SourceState< V >
+	{
+		public VolatileSourceState( final SourceAndConverter< V > soc, final Data data )
+		{
+			super( soc, data );
+		}
+
+		public static < T, V extends Volatile< T > > VolatileSourceState< T, V > create( final SourceAndConverter< V > soc, final Data data )
+		{
+			if ( soc == null )
+				return null;
+			else
+				return new VolatileSourceState< T, V >( soc, data );
+		}
+	}
+
+	final Data data;
+
+	final VolatileSourceState< T, ? extends Volatile< T > > volatileSourceState;
 
 	public SourceState( final SourceAndConverter< T > soc )
 	{
 		super( soc );
-		isActive = true;
-		isCurrent = false;
+		data = new Data();
+		volatileSourceState = VolatileSourceState.create( soc.volatileSourceAndConverter, data );
+	}
+
+	protected SourceState( final SourceAndConverter< T > soc, final Data data )
+	{
+		super( soc );
+		this.data = data;
+		volatileSourceState = VolatileSourceState.create( soc.volatileSourceAndConverter, data );
 	}
 
 	/**
@@ -32,8 +80,8 @@ public class SourceState< T > extends SourceAndConverter< T >
 	protected SourceState( final SourceState< T > s )
 	{
 		super( s );
-		isActive = s.isActive;
-		isCurrent = s.isCurrent;
+		data = s.data.copy();
+		volatileSourceState = VolatileSourceState.create( s.volatileSourceAndConverter, data );
 	}
 
 	public SourceState< T > copy()
@@ -48,7 +96,7 @@ public class SourceState< T > extends SourceAndConverter< T >
 	 */
 	public boolean isActive()
 	{
-		return isActive;
+		return data.isActive;
 	}
 
 	/**
@@ -56,7 +104,7 @@ public class SourceState< T > extends SourceAndConverter< T >
 	 */
 	public void setActive( final boolean isActive )
 	{
-		this.isActive = isActive;
+		data.isActive = isActive;
 	}
 
 	/**
@@ -66,7 +114,7 @@ public class SourceState< T > extends SourceAndConverter< T >
 	 */
 	public boolean isCurrent()
 	{
-		return isCurrent;
+		return data.isCurrent;
 	}
 
 	/**
@@ -74,7 +122,7 @@ public class SourceState< T > extends SourceAndConverter< T >
 	 */
 	public void setCurrent( final boolean isCurrent )
 	{
-		this.isCurrent = isCurrent;
+		data.isCurrent = isCurrent;
 	}
 
 	/**
@@ -83,6 +131,12 @@ public class SourceState< T > extends SourceAndConverter< T >
 	public static < T > SourceState< T > create( final SourceAndConverter< T > soc )
 	{
 		return new SourceState< T >( soc );
+	}
+
+	@Override
+	public SourceState< ? extends Volatile< T > > asVolatile()
+	{
+		return volatileSourceState;
 	}
 
 	/**

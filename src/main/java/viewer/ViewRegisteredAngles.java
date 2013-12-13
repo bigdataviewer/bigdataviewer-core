@@ -44,14 +44,13 @@ import viewer.gui.brightness.RealARGBColorConverterSetup;
 import viewer.gui.brightness.SetupAssignments;
 import viewer.gui.transformation.ManualTransformation;
 import viewer.gui.transformation.ManualTransformationEditor;
-import viewer.gui.transformation.TransformedVolatileSource;
+import viewer.gui.transformation.TransformedSource;
 import viewer.gui.visibility.ActiveSourcesDialog;
 import viewer.hdf5.Hdf5ImageLoader;
 import viewer.render.Source;
 import viewer.render.SourceAndConverter;
 import viewer.render.SourceState;
 import viewer.render.ViewerState;
-import viewer.render.VolatileSource;
 import viewer.util.Affine3DHelpers;
 
 public class ViewRegisteredAngles
@@ -151,10 +150,20 @@ public class ViewRegisteredAngles
 		{
 			final RealARGBColorConverter< VolatileUnsignedShortType > converter = new RealARGBColorConverter< VolatileUnsignedShortType >( 0, 65535 );
 			converter.setColor( new ARGBType( ARGBType.rgba( 255, 255, 255, 255 ) ) );
-			final VolatileSpimSource spimSource = new VolatileSpimSource( loader, setup, "angle " + seq.setups.get( setup ).getAngle() );
+			final VolatileSpimSource vs = new VolatileSpimSource( loader, setup, "angle " + seq.setups.get( setup ).getAngle() );
+			final SpimSource s = vs.nonVolatile();
+
 			// Decorate each source with an extra transformation, that can be edited manually in this viewer.
-			final TransformedVolatileSource< UnsignedShortType, VolatileUnsignedShortType > transformedSource = new TransformedVolatileSource< UnsignedShortType, VolatileUnsignedShortType >( spimSource );
-			sources.add( new SourceAndConverter< VolatileUnsignedShortType >( transformedSource, converter ) );
+			final TransformedSource< VolatileUnsignedShortType > tvs = new TransformedSource< VolatileUnsignedShortType >( vs );
+			final TransformedSource< UnsignedShortType > ts = new TransformedSource< UnsignedShortType >( s, tvs );
+
+			final SourceAndConverter< VolatileUnsignedShortType > vsoc = new SourceAndConverter< VolatileUnsignedShortType >( tvs, converter );
+			final SourceAndConverter< UnsignedShortType > soc = new SourceAndConverter< UnsignedShortType >( ts, null, vsoc );
+			// TODO: the converter for soc is null because it is not used currently.
+			// TODO: It would be better to add a RealARGBColorConverter that shares state with converter.
+			// TODO: This is needed for movie recording for example.
+
+			sources.add( soc );
 			converterSetups.add( new RealARGBColorConverterSetup< VolatileUnsignedShortType >( setup, converter ) );
 		}
 
@@ -328,9 +337,7 @@ public class ViewRegisteredAngles
 	void initBrightness( final double cumulativeMinCutoff, final double cumulativeMaxCutoff )
 	{
 		final ViewerState state = viewer.getState();
-		Source< ? > source = state.getSources().get( state.getCurrentSource() ).getSpimSource();
-		if ( VolatileSource.class.isInstance( source ) )
-			source = ( ( VolatileSource< ?, ? > ) source ).nonVolatile();
+		final Source< ? > source = state.getSources().get( state.getCurrentSource() ).getSpimSource();
 		final RandomAccessibleInterval< UnsignedShortType > img = ( RandomAccessibleInterval ) source.getSource( state.getCurrentTimepoint(), source.getNumMipmapLevels() - 1 );
 		final long z = ( img.min( 2 ) + img.max( 2 ) + 1 ) / 2;
 

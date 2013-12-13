@@ -1,5 +1,6 @@
 package viewer.render;
 
+import net.imglib2.Volatile;
 import net.imglib2.converter.Converter;
 import net.imglib2.type.numeric.ARGBType;
 
@@ -18,10 +19,20 @@ public class SourceAndConverter< T >
 	 */
 	final protected Converter< T, ARGBType > converter;
 
+	final protected SourceAndConverter< ? extends Volatile< T > > volatileSourceAndConverter;
+
 	public SourceAndConverter( final Source< T > spimSource, final Converter< T, ARGBType > converter )
 	{
 		this.spimSource = spimSource;
 		this.converter = converter;
+		this.volatileSourceAndConverter = null;
+	}
+
+	public SourceAndConverter( final Source< T > spimSource, final Converter< T, ARGBType > converter, final SourceAndConverter< ? extends Volatile< T > > volatileSourceAndConverter )
+	{
+		this.spimSource = spimSource;
+		this.converter = converter;
+		this.volatileSourceAndConverter = volatileSourceAndConverter;
 	}
 
 	/**
@@ -32,6 +43,7 @@ public class SourceAndConverter< T >
 	{
 		this.spimSource = soc.spimSource;
 		this.converter = soc.converter;
+		this.volatileSourceAndConverter = soc.volatileSourceAndConverter;
 	}
 
 	/**
@@ -50,5 +62,10 @@ public class SourceAndConverter< T >
 	public Converter< T, ARGBType > getConverter()
 	{
 		return converter;
+	}
+
+	public SourceAndConverter< ? extends Volatile< T > > asVolatile()
+	{
+		return volatileSourceAndConverter;
 	}
 }

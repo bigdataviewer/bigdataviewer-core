@@ -2,13 +2,10 @@ package viewer;
 
 import mpicbg.spim.data.View;
 import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.integer.VolatileUnsignedShortType;
 import net.imglib2.view.Views;
-import viewer.render.Source;
-import viewer.render.VolatileSource;
 
-public class VolatileSpimSource extends AbstractSpimSource< VolatileUnsignedShortType > implements VolatileSource< UnsignedShortType, VolatileUnsignedShortType >
+public class VolatileSpimSource extends AbstractSpimSource< VolatileUnsignedShortType >
 {
 	protected final SpimSource nonVolatileSource;
 
@@ -61,8 +58,7 @@ public class VolatileSpimSource extends AbstractSpimSource< VolatileUnsignedShor
 		return new VolatileUnsignedShortType();
 	}
 
-	@Override
-	public Source< UnsignedShortType > nonVolatile()
+	public SpimSource nonVolatile()
 	{
 		return nonVolatileSource;
 	}
