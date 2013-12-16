@@ -159,6 +159,74 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	protected final Cache cache;
 
 	/**
+	 * Optional parameters for {@link ViewerPanel}.
+	 */
+	public static class Options
+	{
+		private int width = 800;
+
+		private int height = 600;
+
+		private double[] screenScales = new double[] { 1, 0.75, 0.5, 0.25, 0.125 };
+
+		private long targetRenderNanos = 30 * 1000000;
+
+		private boolean doubleBuffered = true;
+
+		private int numRenderingThreads = 5;
+
+		public Options width( final int w )
+		{
+			width = w;
+			return this;
+		}
+
+		public Options height( final int h )
+		{
+			height = h;
+			return this;
+		}
+
+		public Options screenScales( final double[] s )
+		{
+			screenScales = s;
+			return this;
+		}
+
+		public Options targetRenderNanos( final long t )
+		{
+			targetRenderNanos = t;
+			return this;
+		}
+
+		public Options doubleBuffered( final boolean d )
+		{
+			doubleBuffered = d;
+			return this;
+		}
+
+		public Options numRenderingThreads( final int n )
+		{
+			numRenderingThreads = n;
+			return this;
+		}
+	}
+
+	/**
+	 * Create default {@link Options}.
+	 * @return default {@link Options}.
+	 */
+	public static Options options()
+	{
+		return new Options();
+	}
+
+	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimePoints, final Cache cache )
+	{
+		this( sources, numTimePoints, cache, options() );
+	}
+
+	/**
 	 * @param sources
 	 *            the {@link SourceAndConverter sources} to display.
 	 * @param numTimePoints
@@ -168,15 +236,13 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 *            is used to subscribe / {@link #stop() unsubscribe} to the
 	 *            cache as a consumer, so that eventually the io fetcher threads
 	 *            can be shut down.
+	 * @param optional
+	 *            optional parameters. See {@link #options()}.
 	 */
-	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimePoints, final Cache cache )
+	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimePoints, final Cache cache, final Options optional )
 	{
 		super( new BorderLayout(), false );
 		this.cache = cache;
-
-		// TODO: should be settable from the outside with fluent API Options object?
-		final int defaultWidth = 800;
-		final int defaultHeight = 600;
 
 		final int numGroups = 10;
 		final ArrayList< SourceGroup > groups = new ArrayList< SourceGroup >( numGroups );
@@ -199,20 +265,19 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		painterThread = new PainterThread( this );
 		cache.getThreadManager().addConsumer( painterThread );
 		viewerTransform = new AffineTransform3D();
-		display = new InteractiveDisplayCanvasComponent< AffineTransform3D >( defaultWidth, defaultHeight, TransformEventHandler3D.factory() );
+		display = new InteractiveDisplayCanvasComponent< AffineTransform3D >(
+				optional.width, optional.height, TransformEventHandler3D.factory() );
 		display.addTransformListener( this );
 		final BufferedImageOverlayRenderer renderTarget = new BufferedImageOverlayRenderer();
-		renderTarget.setCanvasSize( defaultWidth, defaultHeight );
+		renderTarget.setCanvasSize( optional.width, optional.height );
 		display.addOverlayRenderer( renderTarget );
 		display.addOverlayRenderer( this );
 
-		// TODO: should be settable from the outside with fluent API Options object
-		final double[] screenScales = new double[] { 1, 0.75, 0.5, 0.25, 0.125 };
-		final long targetRenderNanos = 30 * 1000000;
-		final boolean doubleBuffered = true;
-		final int numRenderingThreads = 5;
-		renderingExecutorService = Executors.newFixedThreadPool( numRenderingThreads );
-		imageRenderer = new MultiResolutionRenderer( renderTarget, painterThread, screenScales, targetRenderNanos, doubleBuffered, numRenderingThreads, renderingExecutorService, true, cache );
+		renderingExecutorService = Executors.newFixedThreadPool( optional.numRenderingThreads );
+		imageRenderer = new MultiResolutionRenderer(
+				renderTarget, painterThread,
+				optional.screenScales, optional.targetRenderNanos, optional.doubleBuffered,
+				optional.numRenderingThreads, renderingExecutorService, optional.doubleBuffered, cache );
 
 		mouseCoordinates = new MouseCoordinateListener();
 		display.addHandler( mouseCoordinates );

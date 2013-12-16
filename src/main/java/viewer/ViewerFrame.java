@@ -11,6 +11,7 @@ import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
 import net.imglib2.ui.util.GuiUtil;
+import viewer.ViewerPanel.Options;
 import viewer.gui.InputActionBindings;
 import viewer.hdf5.img.Hdf5GlobalCellCache;
 import viewer.render.SourceAndConverter;
@@ -23,9 +24,29 @@ import viewer.render.SourceAndConverter;
  */
 public class ViewerFrame extends JFrame
 {
+	private static final long serialVersionUID = 1L;
+
 	protected final ViewerPanel viewer;
 
 	private final InputActionBindings keybindings;
+
+	/**
+	 * Create default {@link Options}.
+	 * @return default {@link Options}.
+	 */
+	public static Options options()
+	{
+		return new Options();
+	}
+
+	public ViewerFrame(
+			final int width, final int height,
+			final List< SourceAndConverter< ? > > sources,
+			final int numTimePoints,
+			final Hdf5GlobalCellCache< ? > cache )
+	{
+		this( width, height, sources, numTimePoints, cache, options() );
+	}
 
 	/**
 	 *
@@ -37,12 +58,24 @@ public class ViewerFrame extends JFrame
 	 *            the {@link SourceAndConverter sources} to display.
 	 * @param numTimePoints
 	 *            number of available timepoints.
+	 * @param cache
+	 *            handle to cache. This is used to control io timing. Also, is
+	 *            is used to subscribe / {@link #stop() unsubscribe} to the
+	 *            cache as a consumer, so that eventually the io fetcher threads
+	 *            can be shut down.
+	 * @param optional
+	 *            optional parameters. See {@link #options()}.
 	 */
-	public ViewerFrame( final int width, final int height, final List< SourceAndConverter< ? > > sources, final int numTimePoints, final Hdf5GlobalCellCache< ? > cache )
+	public ViewerFrame(
+			final int width, final int height,
+			final List< SourceAndConverter< ? > > sources,
+			final int numTimePoints,
+			final Hdf5GlobalCellCache< ? > cache,
+			final Options optional )
 	{
 //		super( "BigDataViewer", GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.ARGB_COLOR_MODEL ) );
 		super( "BigDataViewer", GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.RGB_COLOR_MODEL ) );
-		viewer = new ViewerPanel( sources, numTimePoints, cache );
+		viewer = new ViewerPanel( sources, numTimePoints, cache, optional.width( width ).height( height ) );
 		keybindings = new InputActionBindings();
 		new NavigationKeyHandler( keybindings, viewer );
 
