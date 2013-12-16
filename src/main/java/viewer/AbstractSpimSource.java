@@ -80,7 +80,7 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 	}
 
 	@Override
-	public RealRandomAccessible< T > getInterpolatedSource( final int t, final int level, final Interpolation method )
+	public synchronized RealRandomAccessible< T > getInterpolatedSource( final int t, final int level, final Interpolation method )
 	{
 		if ( t != currentTimepoint )
 			loadTimepoint( t );
