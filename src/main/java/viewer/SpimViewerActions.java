@@ -14,6 +14,7 @@ public class SpimViewerActions
 	public static final String MANUAL_TRANSFORM = "toggle manual transformation";
 	public static final String SAVE_SETTINGS = "save settings";
 	public static final String LOAD_SETTINGS = "load settings";
+	public static final String RECORD_MOVIE = "record movie";
 
 	public static ActionMap createActionMap( final ViewRegisteredAngles bdv )
 	{
@@ -31,6 +32,7 @@ public class SpimViewerActions
 		put( map, new ManualTransformAction( bdv ) );
 		put( map, new SaveSettingsAction( bdv ) );
 		put( map, new LoadSettingsAction( bdv ) );
+		put( map, new RecordMovieAction( bdv ) );
 //		put( map, new ( bdv ) );
 	}
 
@@ -164,6 +166,30 @@ public class SpimViewerActions
 		public void actionPerformed( final ActionEvent e )
 		{
 			bdv.loadSettings();
+		}
+
+		private static final long serialVersionUID = 1L;
+	}
+
+	public static class RecordMovieAction extends ViewerAction
+	{
+		public RecordMovieAction( final ViewRegisteredAngles bdv )
+		{
+			super( RECORD_MOVIE, bdv );
+		}
+
+		@Override
+		public void actionPerformed( final ActionEvent e )
+		{
+			bdv.recordMovieDialog();
+//			try
+//			{
+//				bdv.recordMovie( 400, 300, 0, 50, new File( "/Users/pietzsch/Desktop/bdv-record" ) );
+//			}
+//			catch ( final IOException e1 )
+//			{
+//				e1.printStackTrace();
+//			}
 		}
 
 		private static final long serialVersionUID = 1L;

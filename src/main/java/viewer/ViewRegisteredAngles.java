@@ -64,6 +64,7 @@ public class ViewRegisteredAngles
 	final KeyStroke manualTransformKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_T, 0 );
 	final KeyStroke saveKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_F11, 0 );
 	final KeyStroke loadKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_F12, 0 );
+	final KeyStroke recordKeystroke = KeyStroke.getKeyStroke( KeyEvent.VK_F10, 0 );
 
 	final ViewerFrame viewerFrame;
 
@@ -76,6 +77,8 @@ public class ViewRegisteredAngles
 	final BrightnessDialog brightnessDialog;
 
 	final CropDialog cropDialog;
+
+	final MovieDialog movieDialog;
 
 	final ActiveSourcesDialog activeSourcesDialog;
 
@@ -191,6 +194,7 @@ public class ViewRegisteredAngles
 		inputMap.put( manualTransformKeystroke, SpimViewerActions.MANUAL_TRANSFORM );
 		inputMap.put( saveKeystroke, SpimViewerActions.SAVE_SETTINGS );
 		inputMap.put( loadKeystroke, SpimViewerActions.LOAD_SETTINGS );
+		inputMap.put( recordKeystroke, SpimViewerActions.RECORD_MOVIE );
 		viewerFrame.getKeybindings().addInputMap( "dialogs", inputMap );
 
 		setupAssignments = new SetupAssignments( converterSetups, 0, 65535 );
@@ -200,6 +204,8 @@ public class ViewRegisteredAngles
 		brightnessDialog = new BrightnessDialog( viewerFrame, setupAssignments );
 
 		cropDialog = new CropDialog( viewerFrame, viewer, seq );
+
+		movieDialog = new MovieDialog( viewerFrame, viewer );
 
 		activeSourcesDialog = new ActiveSourcesDialog( viewerFrame, viewer.getVisibilityAndGrouping() );
 
@@ -424,6 +430,12 @@ public class ViewRegisteredAngles
 		manualTransformation.restoreFromXml( root );
 		activeSourcesDialog.update();
 		viewer.requestRepaint();
+	}
+
+
+	public void recordMovieDialog()
+	{
+		movieDialog.setVisible( ! movieDialog.isVisible() );
 	}
 
 	public static void view( final String filename ) throws InstantiationException, IllegalAccessException, ClassNotFoundException, JDOMException, IOException
