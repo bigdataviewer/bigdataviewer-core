@@ -6,12 +6,12 @@ import org.jdom2.Element;
 
 public class ViewRegistrations
 {
-	final public ArrayList< ViewRegistration > registrations;
+	public final ArrayList< ViewRegistration > registrations;
 
 	/**
 	 * the id (not index!) of the reference timepoint.
 	 */
-	final public int referenceTimePoint;
+	public final int referenceTimePoint;
 
 	public ViewRegistrations( final ArrayList< ViewRegistration > registrations, final int referenceTimePoint )
 	{

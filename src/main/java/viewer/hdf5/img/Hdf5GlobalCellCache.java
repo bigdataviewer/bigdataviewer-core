@@ -97,16 +97,16 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess > implements Cache
 		}
 	}
 
-	final protected ConcurrentHashMap< Key, Reference< Entry > > softReferenceCache = new ConcurrentHashMap< Key, Reference< Entry > >();
+	protected final ConcurrentHashMap< Key, Reference< Entry > > softReferenceCache = new ConcurrentHashMap< Key, Reference< Entry > >();
 
-	final protected BlockingFetchQueues< Key > queue;
+	protected final BlockingFetchQueues< Key > queue;
 
 	protected long currentQueueFrame = 0;
 
 	class Fetcher extends Thread
 	{
 		@Override
-		final public void run()
+		public final void run()
 		{
 			while ( !isInterrupted() )
 			{

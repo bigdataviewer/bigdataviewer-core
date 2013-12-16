@@ -79,36 +79,37 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	/**
 	 * TODO
 	 */
-	protected ViewerState state;
+	protected final ViewerState state;
 
 	/**
 	 * TODO
 	 */
-	protected MultiResolutionRenderer imageRenderer;
+	protected final MultiResolutionRenderer imageRenderer;
 
 	// TODO: move to specialized class
-	protected MultiBoxOverlayRenderer multiBoxOverlayRenderer;
+	protected final MultiBoxOverlayRenderer multiBoxOverlayRenderer;
 
 	// TODO: move to specialized class
-	protected SourceInfoOverlayRenderer sourceInfoOverlayRenderer;
+	protected final SourceInfoOverlayRenderer sourceInfoOverlayRenderer;
 
 	/**
 	 * Transformation set by the interactive viewer.
 	 */
-	final protected AffineTransform3D viewerTransform;
+	protected final AffineTransform3D viewerTransform;
 
 	/**
 	 * Canvas used for displaying the rendered {@link #screenImages screen
 	 * image}.
 	 */
-	final protected InteractiveDisplayCanvasComponent< AffineTransform3D > display;
+	protected final InteractiveDisplayCanvasComponent< AffineTransform3D > display;
 
-	final protected JSlider sliderTime;
+	protected final JSlider sliderTime;
 
 	/**
 	 * Thread that triggers repainting of the display.
 	 */
-	final protected PainterThread painterThread;
+	protected final PainterThread painterThread;
+
 	protected final ExecutorService renderingExecutorService;
 
 
@@ -116,12 +117,12 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 * Keeps track of the current mouse coordinates, which are used to provide
 	 * the current global position (see {@link #getGlobalMouseCoordinates(RealPositionable)}).
 	 */
-	final protected MouseCoordinateListener mouseCoordinates;
+	protected final MouseCoordinateListener mouseCoordinates;
 
 	/**
 	 * TODO
 	 */
-	final protected VisibilityAndGrouping visibilityAndGrouping;
+	protected final VisibilityAndGrouping visibilityAndGrouping;
 
 	/**
 	 * These listeners will be notified about changes to the
@@ -648,7 +649,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	}
 
 	// TODO: this is a quick hack. Should it stay like this?
-	final private Cache cache;
+	private final Cache cache;
 	public void stop()
 	{
 		painterThread.interrupt();

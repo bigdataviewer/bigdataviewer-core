@@ -32,28 +32,28 @@ public class SetupAggregator
 	/**
 	 * timepoint id for every timepoint index.
 	 */
-	final protected ArrayList< Integer > timepoints;
+	protected final ArrayList< Integer > timepoints;
 
 	/**
 	 * the id (not index!) of the reference timepoint.
 	 */
 	protected int referenceTimePoint;
 
-	final protected ArrayList< ViewRegistration > registrations;
+	protected final ArrayList< ViewRegistration > registrations;
 
 	/**
 	 * Contains {@link ViewSetupWrapper wrappers} around setups in other sequences.
 	 */
-	final protected ArrayList< ViewSetupWrapper > setups;
+	protected final ArrayList< ViewSetupWrapper > setups;
 
-	final protected ArrayList< int[][] > perSetupResolutions;
+	protected final ArrayList< int[][] > perSetupResolutions;
 
-	final protected ArrayList< int[][] > perSetupSubdivisions;
+	protected final ArrayList< int[][] > perSetupSubdivisions;
 
 	/**
 	 * An {@link ImgLoader} that forwards to wrapped source sequences.
 	 */
-	final protected ImgLoader imgLoader;
+	protected final ImgLoader imgLoader;
 
 	/**
 	 * Create an empty aggregator.

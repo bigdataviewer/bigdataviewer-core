@@ -29,13 +29,13 @@ public class MultiResolutionRenderer
 	/**
 	 * Receiver for the {@link BufferedImage BufferedImages} that we render.
 	 */
-	final protected RenderTarget display;
+	protected final RenderTarget display;
 
 	/**
 	 * Thread that triggers repainting of the display.
 	 * Requests for repainting are send there.
 	 */
-	final protected PainterThread painterThread;
+	protected final PainterThread painterThread;
 
 	/**
 	 * Currently active projector, used to re-paint the display. It maps the
@@ -51,18 +51,18 @@ public class MultiResolutionRenderer
 	/**
 	 * Whether double buffering is used.
 	 */
-	final protected boolean doubleBuffered;
+	protected final boolean doubleBuffered;
 
 	/**
 	 * Double-buffer index of next {@link #screenImages image} to render.
 	 */
-	final protected ArrayDeque< Integer > renderIdQueue;
+	protected final ArrayDeque< Integer > renderIdQueue;
 
 	/**
 	 * Maps from {@link BufferedImage} to double-buffer index.
 	 * Needed for double-buffering.
 	 */
-	final protected HashMap< BufferedImage, Integer > bufferedImageToRenderId;
+	protected final HashMap< BufferedImage, Integer > bufferedImageToRenderId;
 
 	/**
 	 * Used to render an individual source. One image per screen resolution and
@@ -98,7 +98,7 @@ public class MultiResolutionRenderer
 	 * pixel on the canvas, a scale factor of 0.5 means 1 pixel in the screen
 	 * image is displayed as 2 pixel on the canvas, etc.
 	 */
-	final protected double[] screenScales;
+	protected final double[] screenScales;
 
 	/**
 	 * The scale transformation from viewer to {@link #screenImages screen
@@ -115,7 +115,7 @@ public class MultiResolutionRenderer
 	 * scaled screen image is below this threshold, decrease the
 	 * {@link #maxScreenScaleIndex index} of the highest screen scale to use.
 	 */
-	final protected long targetRenderNanos;
+	protected final long targetRenderNanos;
 
 	/**
 	 * The index of the (coarsest) screen scale with which to start rendering.
@@ -142,16 +142,16 @@ public class MultiResolutionRenderer
 	/**
 	 * How many threads to use for rendering.
 	 */
-	final protected int numRenderingThreads;
+	protected final int numRenderingThreads;
 
 	/**
 	 * {@link ExecutorService} used for rendering.
 	 */
-	final protected ExecutorService renderingExecutorService;
+	protected final ExecutorService renderingExecutorService;
 
-	final protected Cache cache;
+	protected final Cache cache;
 
-	final protected boolean useVolatileIfAvailable;
+	protected final boolean useVolatileIfAvailable;
 
 	protected boolean newFrameRequest;
 
@@ -523,7 +523,7 @@ public class MultiResolutionRenderer
 		}
 	}
 
-	private int previousTimepoint = -1;
+	private final int previousTimepoint = -1;
 
 	private < T extends Volatile< ? > > VolatileProjector createSingleSourceVolatileProjector(
 			final ViewerState viewerState,

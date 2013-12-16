@@ -22,7 +22,7 @@ public class MultiBoxOverlayRenderer
 	/**
 	 * Navigation wire-frame cube.
 	 */
-	final protected MultiBoxOverlay box;
+	protected final MultiBoxOverlay box;
 
 	/**
 	 * Screen interval in which to display navigation wire-frame cube.
@@ -34,7 +34,7 @@ public class MultiBoxOverlayRenderer
 	 */
 	protected Interval virtualScreenInterval;
 
-	final protected ArrayList< IntervalAndTransform > boxSources;
+	protected final ArrayList< IntervalAndTransform > boxSources;
 
 	public MultiBoxOverlayRenderer()
 	{

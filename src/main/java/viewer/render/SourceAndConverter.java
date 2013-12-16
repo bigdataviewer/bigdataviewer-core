@@ -12,14 +12,14 @@ public class SourceAndConverter< T >
 	/**
 	 * provides image data for all timepoints of one view.
 	 */
-	final protected Source< T > spimSource;
+	protected final Source< T > spimSource;
 
 	/**
 	 * converts {@link #spimSource} type T to ARGBType for display
 	 */
-	final protected Converter< T, ARGBType > converter;
+	protected final Converter< T, ARGBType > converter;
 
-	final protected SourceAndConverter< ? extends Volatile< T > > volatileSourceAndConverter;
+	protected final SourceAndConverter< ? extends Volatile< T > > volatileSourceAndConverter;
 
 	public SourceAndConverter( final Source< T > spimSource, final Converter< T, ARGBType > converter )
 	{

@@ -35,13 +35,13 @@ import viewer.render.Source;
  */
 public class CropImgLoader implements ImgLoader
 {
-	final private ArrayList< Source< UnsignedShortType > > sources;
+	private final ArrayList< Source< UnsignedShortType > > sources;
 
-	final private AffineTransform3D globalToCropTransform;
+	private final AffineTransform3D globalToCropTransform;
 
-	final private RealInterval cropInterval;
+	private final RealInterval cropInterval;
 
-	final private ArrayList< Integer > timepointMap;
+	private final ArrayList< Integer > timepointMap;
 
 	public CropImgLoader( final ArrayList< Source< UnsignedShortType > > sources, final AffineTransform3D globalToCropTransform, final RealInterval cropInterval, final ArrayList< Integer > timepointMap )
 	{

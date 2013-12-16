@@ -37,11 +37,11 @@ import viewer.hdf5.img.CacheIoTiming.IoStatistics;
  */
 public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends NumericType< B > > extends AbstractInterruptibleProjector< A, B > implements VolatileProjector
 {
-	final protected ArrayList< RandomAccessible< A > > sources = new ArrayList< RandomAccessible< A > >();
+	protected final ArrayList< RandomAccessible< A > > sources = new ArrayList< RandomAccessible< A > >();
 
-	final private byte[] maskArray;
+	private final byte[] maskArray;
 
-	final protected Img< ByteType > mask;
+	protected final Img< ByteType > mask;
 
 	protected volatile boolean valid = false;
 
@@ -50,33 +50,33 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 	/**
 	 * Extends of the source to be used for mapping.
 	 */
-	final protected FinalInterval sourceInterval;
+	protected final FinalInterval sourceInterval;
 
 	/**
 	 * Target width
 	 */
-	final protected int width;
+	protected final int width;
 
 	/**
 	 * Target height
 	 */
-	final protected int height;
+	protected final int height;
 
 	/**
 	 * Steps for carriage return. Typically -{@link #width}
 	 */
-	final protected int cr;
+	protected final int cr;
 
 	/**
 	 * A reference to the target image as an iterable. Used for source-less
 	 * operations such as clearing its content.
 	 */
-	final protected IterableInterval< B > iterableTarget;
+	protected final IterableInterval< B > iterableTarget;
 
 	/**
 	 * Number of threads to use for rendering
 	 */
-	final protected int numThreads;
+	protected final int numThreads;
 
 	protected final ExecutorService executorService;
 
@@ -95,12 +95,12 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 	 * temporary variable to store the number of invalid pixels in the current
 	 * rendering pass.
 	 */
-	final protected AtomicInteger numInvalidPixels = new AtomicInteger();
+	protected final AtomicInteger numInvalidPixels = new AtomicInteger();
 
 	/**
 	 * Flag to indicate that someone is trying to interrupt rendering.
 	 */
-	final protected AtomicBoolean interrupted = new AtomicBoolean();
+	protected final AtomicBoolean interrupted = new AtomicBoolean();
 
 	public VolatileHierarchyProjector(
 			final List< ? extends RandomAccessible< A > > sources,

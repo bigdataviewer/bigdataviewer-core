@@ -25,9 +25,9 @@ import org.jdom2.input.SAXBuilder;
  */
 public class SequenceViewsLoader
 {
-	final private SequenceDescription seq;
+	private final SequenceDescription seq;
 
-	final private ArrayList< View > views;
+	private final ArrayList< View > views;
 
 	public SequenceViewsLoader( final String xmlFilename ) throws JDOMException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
 	{

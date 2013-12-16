@@ -21,15 +21,15 @@ import net.imglib2.realtransform.AffineTransform3D;
  */
 public class MultiBoxOverlay
 {
-	final Color activeBackColor = new Color( 0x00994499 );// Color.MAGENTA;
+	private final Color activeBackColor = new Color( 0x00994499 );// Color.MAGENTA;
 
-	final Color activeFrontColor = Color.GREEN;
+	private final Color activeFrontColor = Color.GREEN;
 
-	final Color inactiveBackColor = Color.DARK_GRAY;
+	private final Color inactiveBackColor = Color.DARK_GRAY;
 
-	final Color inactiveFrontColor = Color.LIGHT_GRAY;
+	private final Color inactiveFrontColor = Color.LIGHT_GRAY;
 
-	final Color canvasColor = new Color( 0xb0bbbbbb, true );
+	private final Color canvasColor = new Color( 0xb0bbbbbb, true );
 
 	/**
 	 * distance from the eye to the projection plane z=0.
@@ -41,7 +41,7 @@ public class MultiBoxOverlay
 	 */
 	private double scale = 0.1;
 
-	final private double[] origin = new double[ 3 ];
+	private final double[] origin = new double[ 3 ];
 
 	public interface IntervalAndTransform
 	{

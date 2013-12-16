@@ -18,38 +18,38 @@ import viewer.render.VolatileProjector;
 
 public abstract class AccumulateProjector< A, B > implements VolatileProjector
 {
-	final protected ArrayList< VolatileProjector > sourceProjectors;
+	protected final ArrayList< VolatileProjector > sourceProjectors;
 
-	final protected ArrayList< IterableInterval< A > > sources;
+	protected final ArrayList< IterableInterval< A > > sources;
 
 	/**
 	 * A converter from the source pixel type to the target pixel type.
 	 */
-	final protected Converter< ? super A, B > converter;
+	protected final Converter< ? super A, B > converter;
 
 	/**
 	 * The target interval. Pixels of the target interval should be set by
 	 * {@link InterruptibleProjector#map()}
 	 */
-	final protected RandomAccessibleInterval< B > target;
+	protected final RandomAccessibleInterval< B > target;
 
 	/**
 	 * A reference to the target image as an iterable.  Used for source-less
 	 * operations such as clearing its content.
 	 */
-	final protected IterableInterval< B > iterableTarget;
+	protected final IterableInterval< B > iterableTarget;
 
 	/**
      * Number of threads to use for rendering
      */
-    final protected int numThreads;
+    protected final int numThreads;
 
     /**
      * Time needed for rendering the last frame, in nano-seconds.
      */
     protected long lastFrameRenderNanoTime;
 
-	final protected AtomicBoolean interrupted = new AtomicBoolean();
+	protected final AtomicBoolean interrupted = new AtomicBoolean();
 
 	protected volatile boolean valid = false;
 

@@ -24,7 +24,7 @@ import viewer.render.SourceAndConverter;
  */
 public class ViewerFrame extends JFrame
 {
-	final protected ViewerPanel viewer;
+	protected final ViewerPanel viewer;
 
 	private final InputActionBindings keybindings;
 

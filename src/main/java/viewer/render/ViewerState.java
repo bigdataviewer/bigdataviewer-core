@@ -14,30 +14,30 @@ import net.imglib2.realtransform.AffineTransform3D;
 
 public class ViewerState
 {
-	final protected ArrayList< SourceState< ? > > sources;
+	protected final ArrayList< SourceState< ? > > sources;
 
 	/**
 	 * read-only view of {@link #sources}.
 	 */
-	final private List< SourceState< ? > > unmodifiableSources;
+	private final List< SourceState< ? > > unmodifiableSources;
 
-	final protected ArrayList< SourceGroup > groups;
+	protected final ArrayList< SourceGroup > groups;
 
 	/**
 	 * read-only view of {@link #groups}.
 	 */
-	final private List< SourceGroup > unmodifiableGroups;
+	private final List< SourceGroup > unmodifiableGroups;
 
 	/**
 	 * number of available timepoints.
 	 */
-	final protected int numTimePoints;
+	protected final int numTimePoints;
 
 	/**
 	 * Transformation set by the interactive viewer. Transforms from global
 	 * coordinate system to viewer coordinate system.
 	 */
-	final protected AffineTransform3D viewerTransform;
+	protected final AffineTransform3D viewerTransform;
 
 	/**
 	 * Which interpolation method is currently used to render the display.

@@ -22,24 +22,24 @@ public class SequenceDescription
 	/**
 	 * timepoint id for every timepoint index.
 	 */
-	final public ArrayList< Integer > timepoints;
+	public final ArrayList< Integer > timepoints;
 	// TODO: make protected and use getter
 
 	/**
 	 * angle and illumination setup for every view-setup index.
 	 */
-	final public ArrayList< ViewSetup > setups;
+	public final ArrayList< ViewSetup > setups;
 	// TODO: make protected and use getter
 
 	/**
 	 * Relative paths in the XML sequence description are interpreted with respect to this.
 	 */
-	final protected File basePath;
+	protected final File basePath;
 
 	/**
 	 * load images for every view. might be null.
 	 */
-	final public ImgLoader imgLoader;
+	public final ImgLoader imgLoader;
 	// TODO: make protected and use getter
 
 	public SequenceDescription( final List< ? extends ViewSetup > setups, final List< Integer > timepoints, final File basePath, final ImgLoader imgLoader )
@@ -85,7 +85,7 @@ public class SequenceDescription
 	 *
 	 * @return number of timepoints
 	 */
-	final public int numTimepoints()
+	public final int numTimepoints()
 	{
 		return timepoints.size();
 	}
@@ -95,7 +95,7 @@ public class SequenceDescription
 	 *
 	 * @return number of view setups
 	 */
-	final public int numViewSetups()
+	public final int numViewSetups()
 	{
 		return setups.size();
 	}
