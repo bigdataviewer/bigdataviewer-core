@@ -13,23 +13,23 @@ import viewer.hdf5.img.Hdf5ImgCells.CellCache;
 
 public class Hdf5GlobalCellCache< A extends VolatileAccess > implements Cache
 {
-	final int numTimepoints;
+	private final int numTimepoints;
 
-	final int numSetups;
+	private final int numSetups;
 
-	final int maxNumLevels;
+	private final int maxNumLevels;
 
-	final int[] maxLevels;
+	private final int[] maxLevels;
 
 	class Key
 	{
-		final int timepoint;
+		private final int timepoint;
 
-		final int setup;
+		private final int setup;
 
-		final int level;
+		private final int level;
 
-		final int index;
+		private final int index;
 
 		public Key( final int timepoint, final int setup, final int level, final int index )
 		{
@@ -65,9 +65,9 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess > implements Cache
 
 	class Entry
 	{
-		final protected Key key;
+		private final Key key;
 
-		protected Hdf5Cell< A > data;
+		private Hdf5Cell< A > data;
 
 		/**
 		 * When was this entry last enqueued for loading (see
@@ -75,7 +75,7 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess > implements Cache
 		 * to -1. When the entry's data becomes valid, it is set to
 		 * {@link Long#MAX_VALUE}.
 		 */
-		protected long enqueueFrame;
+		private long enqueueFrame;
 
 		public Entry( final Key key, final Hdf5Cell< A > data )
 		{
@@ -142,11 +142,11 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess > implements Cache
 			f.pause();
 	}
 
-	final protected ArrayList< Fetcher > fetchers;
+	private final ArrayList< Fetcher > fetchers;
 
 	private final ThreadManager threadManager;
 
-	final protected Hdf5ArrayLoader< A > loader;
+	private final Hdf5ArrayLoader< A > loader;
 
 	public Hdf5GlobalCellCache( final Hdf5ArrayLoader< A > loader, final int numTimepoints, final int numSetups, final int maxNumLevels, final int[] maxLevels )
 	{
@@ -401,13 +401,13 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess > implements Cache
 
 	public class Hdf5CellCache implements CellCache< A >
 	{
-		final int timepoint;
+		private final int timepoint;
 
-		final int setup;
+		private final int setup;
 
-		final int level;
+		private final int level;
 
-		final LoadingStrategy loadingStrategy;
+		private final LoadingStrategy loadingStrategy;
 
 		public Hdf5CellCache( final int timepoint, final int setup, final int level, final LoadingStrategy strategy )
 		{
