@@ -1,4 +1,4 @@
-package viewer.gui.transformation;
+package viewer.tools.transformation;
 
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;

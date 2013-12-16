@@ -1,4 +1,4 @@
-package viewer.gui.transformation;
+package viewer.tools.transformation;
 
 import java.util.ArrayList;
 import java.util.List;

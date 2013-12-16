@@ -1,4 +1,4 @@
-package viewer;
+package viewer.tools;
 
 import java.awt.BorderLayout;
 import java.awt.Frame;
@@ -33,13 +33,16 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
+import viewer.ViewerPanel;
 import viewer.hdf5.img.Cache;
 import viewer.hdf5.img.ThreadManager;
 import viewer.render.MultiResolutionRenderer;
 import viewer.render.ViewerState;
 
-public class MovieDialog extends JDialog implements OverlayRenderer
+public class RecordMovieDialog extends JDialog implements OverlayRenderer
 {
+	private static final long serialVersionUID = 1L;
+
 	private final ViewerPanel viewer;
 
 	private final int maxTimepoint;
@@ -64,7 +67,7 @@ public class MovieDialog extends JDialog implements OverlayRenderer
 		super.setVisible( b );
 	}
 
-	public MovieDialog( final Frame owner, final ViewerPanel viewer )
+	public RecordMovieDialog( final Frame owner, final ViewerPanel viewer )
 	{
 		super( owner, "record movie", false );
 		this.viewer = viewer;

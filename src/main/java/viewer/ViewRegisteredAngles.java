@@ -37,21 +37,23 @@ import org.jdom2.input.SAXBuilder;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 
-import viewer.crop.CropDialog;
+import viewer.gui.HelpFrame;
 import viewer.gui.brightness.BrightnessDialog;
 import viewer.gui.brightness.ConverterSetup;
 import viewer.gui.brightness.MinMaxGroup;
 import viewer.gui.brightness.RealARGBColorConverterSetup;
 import viewer.gui.brightness.SetupAssignments;
-import viewer.gui.transformation.ManualTransformation;
-import viewer.gui.transformation.ManualTransformationEditor;
-import viewer.gui.transformation.TransformedSource;
 import viewer.gui.visibility.ActiveSourcesDialog;
 import viewer.hdf5.Hdf5ImageLoader;
 import viewer.render.Source;
 import viewer.render.SourceAndConverter;
 import viewer.render.SourceState;
 import viewer.render.ViewerState;
+import viewer.tools.RecordMovieDialog;
+import viewer.tools.crop.CropDialog;
+import viewer.tools.transformation.ManualTransformation;
+import viewer.tools.transformation.ManualTransformationEditor;
+import viewer.tools.transformation.TransformedSource;
 import viewer.util.Affine3DHelpers;
 
 public class ViewRegisteredAngles
@@ -78,7 +80,7 @@ public class ViewRegisteredAngles
 
 	final CropDialog cropDialog;
 
-	final MovieDialog movieDialog;
+	final RecordMovieDialog movieDialog;
 
 	final ActiveSourcesDialog activeSourcesDialog;
 
@@ -205,7 +207,7 @@ public class ViewRegisteredAngles
 
 		cropDialog = new CropDialog( viewerFrame, viewer, seq );
 
-		movieDialog = new MovieDialog( viewerFrame, viewer );
+		movieDialog = new RecordMovieDialog( viewerFrame, viewer );
 		viewer.getDisplay().addOverlayRenderer( movieDialog ); // this is just to get updates of window size
 
 		activeSourcesDialog = new ActiveSourcesDialog( viewerFrame, viewer.getVisibilityAndGrouping() );

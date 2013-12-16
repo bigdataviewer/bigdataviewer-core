@@ -1,4 +1,4 @@
-package viewer.crop;
+package viewer.tools.crop;
 
 import java.awt.BorderLayout;
 import java.awt.Frame;

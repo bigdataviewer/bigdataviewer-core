@@ -1,4 +1,4 @@
-package viewer.gui.transformation;
+package viewer.tools.transformation;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -143,9 +143,9 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 				if ( TransformedSource.class.isInstance( source ) )
 				{
 					if ( indices.contains( i ) )
-						sourcesToModify.add( (viewer.gui.transformation.TransformedSource< ? > ) source );
+						sourcesToModify.add( (viewer.tools.transformation.TransformedSource< ? > ) source );
 					else
-						sourcesToFix.add( (viewer.gui.transformation.TransformedSource< ? > ) source );
+						sourcesToFix.add( (viewer.tools.transformation.TransformedSource< ? > ) source );
 				}
 			}
 			active = true;
