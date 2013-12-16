@@ -146,6 +146,8 @@ public class MultiResolutionRenderer
 
 	final protected Cache cache;
 
+	final protected boolean useVolatileIfAvailable;
+
 	protected boolean newFrameRequest;
 
 	protected long[] iobudget = new long[] { 3000l * 1000000l, 20l * 1000000l, 10l * 1000000l };
@@ -177,6 +179,7 @@ public class MultiResolutionRenderer
 			final long targetRenderNanos,
 			final boolean doubleBuffered,
 			final int numRenderingThreads,
+			final boolean useVolatileIfAvailable,
 			final Cache cache )
 	{
 		this.display = display;
@@ -199,13 +202,14 @@ public class MultiResolutionRenderer
 		requestedScreenScaleIndex = maxScreenScaleIndex;
 		renderingMayBeCancelled = true;
 		this.numRenderingThreads = numRenderingThreads;
+		this.useVolatileIfAvailable = useVolatileIfAvailable;
 		this.cache = cache;
 		newFrameRequest = false;
 	}
 
 	public MultiResolutionRenderer( final RenderTarget display, final PainterThread painterThread, final double[] screenScales, final Hdf5GlobalCellCache< ? > cache )
 	{
-		this( display, painterThread, screenScales, 30 * 1000000, true, 3, cache );
+		this( display, painterThread, screenScales, 30 * 1000000, true, 3, true, cache );
 	}
 
 	/**
@@ -503,7 +507,7 @@ public class MultiResolutionRenderer
 			final ARGBScreenImage screenImage,
 			final byte[] maskArray )
 	{
-		if ( source.asVolatile() != null )
+		if ( useVolatileIfAvailable && source.asVolatile() != null )
 		{
 			return createSingleSourceVolatileProjector( viewerState, source.asVolatile(), sourceIndex, screenScaleIndex, screenImage, maskArray );
 		}

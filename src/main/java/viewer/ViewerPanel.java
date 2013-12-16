@@ -191,7 +191,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		final long targetRenderNanos = 30 * 1000000;
 		final boolean doubleBuffered = true;
 		final int numRenderingThreads = 5;
-		imageRenderer = new MultiResolutionRenderer( renderTarget, painterThread, screenScales, targetRenderNanos, doubleBuffered, numRenderingThreads, cache );
+		imageRenderer = new MultiResolutionRenderer( renderTarget, painterThread, screenScales, targetRenderNanos, doubleBuffered, numRenderingThreads, true, cache );
 
 		mouseCoordinates = new MouseCoordinateListener();
 		display.addHandler( mouseCoordinates );
