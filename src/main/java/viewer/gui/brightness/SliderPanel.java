@@ -11,6 +11,8 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import viewer.util.BoundedValue;
+
 /**
  * A {@link JSlider} with a {@link JSpinner} next to it, both modifying the same
  * {@link BoundedValue value}.

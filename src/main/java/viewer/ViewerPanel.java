@@ -4,6 +4,7 @@ import static viewer.VisibilityAndGrouping.Event.CURRENT_SOURCE_CHANGED;
 import static viewer.VisibilityAndGrouping.Event.DISPLAY_MODE_CHANGED;
 import static viewer.VisibilityAndGrouping.Event.GROUP_ACTIVITY_CHANGED;
 import static viewer.VisibilityAndGrouping.Event.GROUP_NAME_CHANGED;
+import static viewer.VisibilityAndGrouping.Event.NUM_SOURCES_CHANGED;
 import static viewer.VisibilityAndGrouping.Event.SOURCE_ACTVITY_CHANGED;
 import static viewer.VisibilityAndGrouping.Event.VISIBILITY_CHANGED;
 
@@ -223,6 +224,26 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		animatedOverlay = new TextOverlayAnimator( "Press <F1> for help.", 3000, TextPosition.CENTER );
 
 		painterThread.start();
+	}
+
+	public void addSource( final SourceAndConverter< ? > sourceAndConverter )
+	{
+		synchronized ( visibilityAndGrouping )
+		{
+			state.addSource( sourceAndConverter );
+			visibilityAndGrouping.update( NUM_SOURCES_CHANGED );
+		}
+		requestRepaint();
+	}
+
+	public void removeSource( final Source< ? > source )
+	{
+		synchronized ( visibilityAndGrouping )
+		{
+			state.removeSource( source );
+			visibilityAndGrouping.update( NUM_SOURCES_CHANGED );
+		}
+		requestRepaint();
 	}
 
 	// TODO: remove?

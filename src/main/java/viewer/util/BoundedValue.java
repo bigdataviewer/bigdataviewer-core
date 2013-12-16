@@ -1,4 +1,4 @@
-package viewer.gui.brightness;
+package viewer.util;
 
 /**
  * A <code>int</code> variable that can take any value in a given range. A

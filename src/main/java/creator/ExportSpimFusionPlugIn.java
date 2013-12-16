@@ -95,7 +95,7 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		final File existingDatasetXmlFile = params.seqFile;
 		final File baseDirectory = existingDatasetXmlFile.getParentFile();
 		final SequenceDescription existingSequence = new SequenceDescription( root, baseDirectory != null ? baseDirectory : new File("."), true );
-		final ViewRegistrations existingRegistrations = new ViewRegistrations( root );
+		final ViewRegistrations existingRegistrations = new ViewRegistrations( root.getChild( "ViewRegistrations" ) );
 		final Hdf5ImageLoader hdf5Loader = ( Hdf5ImageLoader ) existingSequence.imgLoader;
 
 		for ( int setup = 0; setup < existingSequence.numViewSetups(); ++setup )

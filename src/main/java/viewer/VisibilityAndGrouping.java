@@ -44,6 +44,8 @@ public class VisibilityAndGrouping
 
 		public static final int VISIBILITY_CHANGED = 7;
 
+		public static final int NUM_SOURCES_CHANGED = 8;
+
 		public final int id;
 
 		public final VisibilityAndGrouping visibilityAndGrouping;
