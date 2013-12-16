@@ -58,37 +58,37 @@ import viewer.util.Affine3DHelpers;
 
 
 /**
- * A JPanel for viewing multiple of {@link Source}s.
- * The panel contains a {@link InteractiveDisplayCanvasComponent canvas} and a time slider (if there are multiple time-points).
- * TODO
- * TODO
- * TODO
- * TODO
- * TODO
- * TODO
- * TODO
- * TODO
- * TODO
- * TODO
+ * A JPanel for viewing multiple of {@link Source}s. The panel contains a
+ * {@link InteractiveDisplayCanvasComponent canvas} and a time slider (if there
+ * are multiple time-points). Maintains a {@link ViewerState render state}, the
+ * renderer, and basic navigation help overlays. It has it's own
+ * {@link PainterThread} for painting, which is started on construction (use
+ * {@link #stop() to stop the PainterThread}.
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
-// TODO: rename?
 public class ViewerPanel extends JPanel implements OverlayRenderer, TransformListener< AffineTransform3D >, PainterThread.Paintable, VisibilityAndGrouping.UpdateListener
 {
 	/**
-	 * TODO
+	 * Currently rendered state (visible sources, transformation, timepoint,
+	 * etc.) A copy can be obtained byt {@link #getState()}.
 	 */
 	protected final ViewerState state;
 
 	/**
-	 * TODO
+	 * Renders the current state for the {@link #display}.
 	 */
 	protected final MultiResolutionRenderer imageRenderer;
 
+	/**
+	 * Overlay navigation boxes.
+	 */
 	// TODO: move to specialized class
 	protected final MultiBoxOverlayRenderer multiBoxOverlayRenderer;
 
+	/**
+	 * Overlay current source name and current timepoint.
+	 */
 	// TODO: move to specialized class
 	protected final SourceInfoOverlayRenderer sourceInfoOverlayRenderer;
 
@@ -110,8 +110,10 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 */
 	protected final PainterThread painterThread;
 
+	/**
+	 * The {@link ExecutorService} used for rendereing.
+	 */
 	protected final ExecutorService renderingExecutorService;
-
 
 	/**
 	 * Keeps track of the current mouse coordinates, which are used to provide
@@ -120,7 +122,8 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	protected final MouseCoordinateListener mouseCoordinates;
 
 	/**
-	 * TODO
+	 * Manages visibility and currentness of sources and groups, as well as
+	 * grouping of sources, and display mode.
 	 */
 	protected final VisibilityAndGrouping visibilityAndGrouping;
 
@@ -132,28 +135,39 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	protected final CopyOnWriteArrayList< TransformListener< AffineTransform3D > > transformListeners;
 
 	/**
-	 * TODO
+	 * Current animator for viewer transform, or null. This is for example used
+	 * to make smooth transitions when {@link #align(AlignPlane) aligning to
+	 * orthogonal planes}.
 	 */
 	protected AbstractTransformAnimator currentAnimator = null;
 
 	/**
-	 * TODO
+	 * Currently only used to show initial "press F1 for help" message.
 	 */
 	protected TextOverlayAnimator animatedOverlay;
 
 	/**
-	 * TODO
+	 * Fade-out overlay of recent messages. See {@link #showMessage(String)}.
 	 */
 	protected final MessageOverlayAnimator msgOverlay;
 
 	/**
-	 *
+	 * Handle to the cache. This is used to control io timing. Also, is is used to
+	 * subscribe / {@link #stop() unsubscribe} to the cache as a consumer, so
+	 * that eventually the io fetcher threads can be shut down.
+	 */
+	protected final Cache cache;
+
+	/**
 	 * @param sources
 	 *            the {@link SourceAndConverter sources} to display.
 	 * @param numTimePoints
 	 *            number of available timepoints.
-	 * @param numMipmapLevels
-	 *            number of available mipmap levels.
+	 * @param cache
+	 *            handle to cache. This is used to control io timing. Also, is
+	 *            is used to subscribe / {@link #stop() unsubscribe} to the
+	 *            cache as a consumer, so that eventually the io fetcher threads
+	 *            can be shut down.
 	 */
 	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimePoints, final Cache cache )
 	{
@@ -213,7 +227,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 				public void stateChanged( final ChangeEvent e )
 				{
 					if ( e.getSource().equals( sliderTime ) )
-						updateTimepoint( sliderTime.getValue() );
+						setTimepoint( sliderTime.getValue() );
 				}
 			} );
 			add( sliderTime, BorderLayout.SOUTH );
@@ -253,10 +267,10 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	}
 
 	// TODO: remove?
-	public void addHandler( final Object handler )
-	{
-		display.addHandler( handler );
-	}
+//	public void addHandler( final Object handler )
+//	{
+//		display.addHandler( handler );
+//	}
 
 	/**
 	 * Set {@code gPos} to the current mouse coordinates transformed into the
@@ -418,10 +432,12 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	}
 
 	/**
-	 * TODO
+	 * Align the XY, ZY, or XZ plane of the local coordinate system of the
+	 * currently active source with the viewer coordinate system.
+	 *
 	 * @param plane
+	 *            to which plane to align.
 	 */
-	// TODO: public?
 	protected synchronized void align( final AlignPlane plane )
 	{
 		final SourceState< ? > source = state.getSources().get( state.getCurrentSource() );
@@ -444,24 +460,10 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	}
 
 	/**
-	 * TODO
-	 * @param timepoint
+	 * Switch to next interpolation mode. (Currently, there are two
+	 * interpolation modes: nearest-neighbor and N-linear.
 	 */
-	// TODO: public?
-	protected synchronized void updateTimepoint( final int timepoint )
-	{
-		if ( state.getCurrentTimepoint() != timepoint )
-		{
-			state.setCurrentTimepoint( timepoint );
-			requestRepaint();
-		}
-	}
-
-	/**
-	 * TODO
-	 */
-	// TODO: public?
-	protected synchronized void toggleInterpolation()
+	public synchronized void toggleInterpolation()
 	{
 		final Interpolation interpolation = state.getInterpolation();
 		if ( interpolation == Interpolation.NEARESTNEIGHBOR )
@@ -478,7 +480,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	}
 
 	/**
-	 * TODO
+	 * Set the {@link DisplayMode}.
 	 */
 	public synchronized void setDisplayMode( final DisplayMode displayMode )
 	{
@@ -495,7 +497,22 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	}
 
 	/**
-	 * TODO
+	 * Show the specified time-point.
+	 *
+	 * @param timepoint
+	 *            time-point index.
+	 */
+	public synchronized void setTimepoint( final int timepoint )
+	{
+		if ( state.getCurrentTimepoint() != timepoint )
+		{
+			state.setCurrentTimepoint( timepoint );
+			requestRepaint();
+		}
+	}
+
+	/**
+	 * Show the next time-point.
 	 */
 	public synchronized void nextTimePoint()
 	{
@@ -504,7 +521,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	}
 
 	/**
-	 * TODO
+	 * Show the previous time-point.
 	 */
 	public synchronized void previousTimePoint()
 	{
@@ -639,17 +656,26 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		io.restoreFromXml( parent.getChild( io.getTagName() ), state );
 	}
 
+	/**
+	 * does nothing.
+	 */
 	@Override
 	public void setCanvasSize( final int width, final int height )
 	{}
 
+	/**
+	 * Returns the {@link VisibilityAndGrouping} that can be used to modify
+	 * visibility and currentness of sources and groups, as well as grouping of
+	 * sources, and display mode.
+	 */
 	public VisibilityAndGrouping getVisibilityAndGrouping()
 	{
 		return visibilityAndGrouping;
 	}
 
-	// TODO: this is a quick hack. Should it stay like this?
-	private final Cache cache;
+	/**
+	 * Stop the {@link #painterThread} and unsubscribe as a cache consumer.
+	 */
 	public void stop()
 	{
 		painterThread.interrupt();

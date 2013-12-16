@@ -4,8 +4,20 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import net.imglib2.ui.util.StopWatch;
 
+/**
+ * Utilities for per {@link ThreadGroup} measuring and budgeting of time spend
+ * in (blocking) IO.
+ *
+ * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ */
 public class CacheIoTiming
 {
+	/**
+	 * Budget of time that can be spent in blocking IO. The budget is grouped by
+	 * priority levels, where level 0 is the highest priority. The budget for
+	 * level <em>i>j</em> must always be smaller-equal the budget for level
+	 * <em>j</em>.
+	 */
 	public static class IoTimeBudget
 	{
 		private final long[] initialBudget;

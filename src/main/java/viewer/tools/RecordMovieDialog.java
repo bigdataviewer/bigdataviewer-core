@@ -278,7 +278,7 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 			}
 
 			@Override
-			public void clearQueue()
+			public void prepareNextFrame()
 			{}
 		} );
 		for ( int timepoint = minTimepointIndex; timepoint <= maxTimepointIndex; ++timepoint )

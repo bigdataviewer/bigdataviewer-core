@@ -176,7 +176,7 @@ public class ViewRegisteredAngles
 		}
 
 		viewerFrame = new ViewerFrame( width, height, sources, seq.numTimepoints(), ( ( Hdf5ImageLoader ) seq.imgLoader ).getCache() );
-		viewer = viewerFrame.getViewer();
+		viewer = viewerFrame.getViewerPanel();
 		manualTransformation = new ManualTransformation( viewer );
 		manualTransformationEditor = new ManualTransformationEditor( viewer, viewerFrame.getKeybindings() );
 

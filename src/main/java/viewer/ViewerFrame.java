@@ -2,7 +2,6 @@ package viewer;
 
 import java.awt.BorderLayout;
 import java.awt.Dimension;
-import java.awt.event.KeyListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.List;
@@ -65,15 +64,15 @@ public class ViewerFrame extends JFrame
 		SwingUtilities.replaceUIInputMap( getRootPane(), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, keybindings.getConcatenatedInputMap() );
 	}
 
-	public void addHandler( final Object handler )
-	{
-		viewer.addHandler( handler );
-		if ( KeyListener.class.isInstance( handler ) )
-			addKeyListener( ( KeyListener ) handler );
-	}
+	// TODO: remove!?
+//	public void addHandler( final Object handler )
+//	{
+//		viewer.addHandler( handler );
+//		if ( KeyListener.class.isInstance( handler ) )
+//			addKeyListener( ( KeyListener ) handler );
+//	}
 
-	// TODO: rename!?
-	public ViewerPanel getViewer()
+	public ViewerPanel getViewerPanel()
 	{
 		return viewer;
 	}

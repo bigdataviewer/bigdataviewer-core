@@ -12,6 +12,13 @@ import java.util.TreeSet;
 
 import net.imglib2.realtransform.AffineTransform3D;
 
+/**
+ * Description of everything required to render the current image, such as the
+ * current timepoint, the visible and current sources and groups respectively,
+ * the viewer transformation, etc.
+ *
+ * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ */
 public class ViewerState
 {
 	protected final ArrayList< SourceState< ? > > sources;

@@ -367,7 +367,7 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess > implements Cache
 	 * TODO
 	 */
 	@Override
-	public void clearQueue()
+	public void prepareNextFrame()
 	{
 		queue.clear();
 		++currentQueueFrame;

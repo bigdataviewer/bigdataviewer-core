@@ -105,7 +105,8 @@ public class BlockingFetchQueues< E >
 
 	/**
 	 * Atomically removes all of the elements from this queue. The queue will be
-	 * empty after this call returns.
+	 * empty after this call returns. Removed elements are moved to the
+	 * {@link #prefetch} deque.
 	 */
 	public void clear()
 	{

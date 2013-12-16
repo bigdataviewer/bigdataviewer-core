@@ -24,6 +24,12 @@ import viewer.render.SourceGroup;
 import viewer.render.SourceState;
 import viewer.render.ViewerState;
 
+/**
+ * Manage visibility and currentness of sources and groups, as well as grouping
+ * of sources, and display mode.
+ *
+ * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ */
 public class VisibilityAndGrouping
 {
 	public static final class Event
