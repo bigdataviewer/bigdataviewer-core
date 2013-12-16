@@ -2,6 +2,7 @@ package viewer;
 
 import java.awt.BorderLayout;
 import java.awt.Frame;
+import java.awt.Graphics;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -29,6 +30,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
 import viewer.hdf5.img.Cache;
@@ -36,7 +38,7 @@ import viewer.hdf5.img.ThreadManager;
 import viewer.render.MultiResolutionRenderer;
 import viewer.render.ViewerState;
 
-public class MovieDialog extends JDialog
+public class MovieDialog extends JDialog implements OverlayRenderer
 {
 	private final ViewerPanel viewer;
 
@@ -47,6 +49,10 @@ public class MovieDialog extends JDialog
 	private final JSpinner spinnerMinTimepoint;
 
 	private final JSpinner spinnerMaxTimepoint;
+
+	private final JSpinner spinnerWidth;
+
+	private final JSpinner spinnerHeight;
 
 	@Override
 	public void setVisible( final boolean b )
@@ -95,6 +101,20 @@ public class MovieDialog extends JDialog
 		spinnerMaxTimepoint = new JSpinner();
 		spinnerMaxTimepoint.setModel( new SpinnerNumberModel( maxTimepoint, 0, maxTimepoint, 1 ) );
 		timepointsPanel.add( spinnerMaxTimepoint );
+
+		final JPanel widthPanel = new JPanel();
+		boxes.add( widthPanel );
+		widthPanel.add( new JLabel( "width" ) );
+		spinnerWidth = new JSpinner();
+		spinnerWidth.setModel( new SpinnerNumberModel( 800, 10, 5000, 1 ) );
+		widthPanel.add( spinnerWidth );
+
+		final JPanel heightPanel = new JPanel();
+		boxes.add( heightPanel );
+		heightPanel.add( new JLabel( "height" ) );
+		spinnerHeight = new JSpinner();
+		spinnerHeight.setModel( new SpinnerNumberModel( 600, 10, 5000, 1 ) );
+		heightPanel.add( spinnerHeight );
 
 		final JPanel buttonsPanel = new JPanel();
 		boxes.add( buttonsPanel );
@@ -162,6 +182,8 @@ public class MovieDialog extends JDialog
 				}
 				final int minTimepointIndex = ( Integer ) spinnerMinTimepoint.getValue();
 				final int maxTimepointIndex = ( Integer ) spinnerMaxTimepoint.getValue();
+				final int width = ( Integer ) spinnerWidth.getValue();
+				final int height = ( Integer ) spinnerHeight.getValue();
 				new Thread()
 				{
 					@Override
@@ -169,7 +191,7 @@ public class MovieDialog extends JDialog
 					{
 						try
 						{
-							recordMovie( 800, 600, minTimepointIndex, maxTimepointIndex, dir );
+							recordMovie( width, height, minTimepointIndex, maxTimepointIndex, dir );
 							setVisible( false );
 						}
 						catch ( final Exception ex )
@@ -263,5 +285,16 @@ public class MovieDialog extends JDialog
 			renderer.paint( renderState );
 			ImageIO.write( target.bi, "png", new File( String.format( "%s/img-%03d.tif", dir, timepoint ) ) );
 		}
+	}
+
+	@Override
+	public void drawOverlays( final Graphics g )
+	{}
+
+	@Override
+	public void setCanvasSize( final int width, final int height )
+	{
+		spinnerWidth.setValue( width );
+		spinnerHeight.setValue( height );
 	}
 }

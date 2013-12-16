@@ -206,6 +206,7 @@ public class ViewRegisteredAngles
 		cropDialog = new CropDialog( viewerFrame, viewer, seq );
 
 		movieDialog = new MovieDialog( viewerFrame, viewer );
+		viewer.getDisplay().addOverlayRenderer( movieDialog ); // this is just to get updates of window size
 
 		activeSourcesDialog = new ActiveSourcesDialog( viewerFrame, viewer.getVisibilityAndGrouping() );
 
