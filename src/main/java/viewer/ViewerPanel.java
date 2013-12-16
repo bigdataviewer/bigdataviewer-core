@@ -17,6 +17,8 @@ import java.awt.event.MouseMotionListener;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import javax.swing.JPanel;
 import javax.swing.JSlider;
@@ -107,6 +109,8 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 * Thread that triggers repainting of the display.
 	 */
 	final protected PainterThread painterThread;
+	protected final ExecutorService renderingExecutorService;
+
 
 	/**
 	 * Keeps track of the current mouse coordinates, which are used to provide
@@ -192,7 +196,8 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		final long targetRenderNanos = 30 * 1000000;
 		final boolean doubleBuffered = true;
 		final int numRenderingThreads = 5;
-		imageRenderer = new MultiResolutionRenderer( renderTarget, painterThread, screenScales, targetRenderNanos, doubleBuffered, numRenderingThreads, true, cache );
+		renderingExecutorService = Executors.newFixedThreadPool( numRenderingThreads );
+		imageRenderer = new MultiResolutionRenderer( renderTarget, painterThread, screenScales, targetRenderNanos, doubleBuffered, numRenderingThreads, renderingExecutorService, true, cache );
 
 		mouseCoordinates = new MouseCoordinateListener();
 		display.addHandler( mouseCoordinates );
@@ -647,6 +652,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	public void stop()
 	{
 		painterThread.interrupt();
+		renderingExecutorService.shutdown();
 		cache.getThreadManager().removeConsumer( painterThread );
 	}
 }

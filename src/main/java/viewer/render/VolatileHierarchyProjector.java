@@ -78,6 +78,8 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 	 */
 	final protected int numThreads;
 
+	protected final ExecutorService executorService;
+
 	/**
 	 * Time needed for rendering the last frame, in nano-seconds.
 	 * This does not include time spent in blocking IO.
@@ -104,9 +106,10 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 			final List< ? extends RandomAccessible< A > > sources,
 			final Converter< ? super A, B > converter,
 			final RandomAccessibleInterval< B > target,
-			final int numThreads )
+			final int numThreads,
+			final ExecutorService executorService )
 	{
-		this( sources, converter, target, new byte[ ( int ) ( target.dimension( 0 ) * target.dimension( 1 ) ) ], numThreads );
+		this( sources, converter, target, new byte[ ( int ) ( target.dimension( 0 ) * target.dimension( 1 ) ) ], numThreads, executorService );
 	}
 
 	public VolatileHierarchyProjector(
@@ -114,7 +117,8 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 			final Converter< ? super A, B > converter,
 			final RandomAccessibleInterval< B > target,
 			final byte[] maskArray,
-			final int numThreads )
+			final int numThreads,
+			final ExecutorService executorService )
 	{
 		super( Math.max( 2, sources.get( 0 ).numDimensions() ), converter, target );
 
@@ -138,6 +142,7 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 		cr = -width;
 
 		this.numThreads = numThreads;
+		this.executorService = executorService;
 		lastFrameRenderNanoTime = -1;
 
 		clearMask();
@@ -218,7 +223,8 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 
 		valid = false;
 
-		final ExecutorService ex = Executors.newFixedThreadPool( numThreads );
+		final boolean createExecutor = ( executorService == null );
+		final ExecutorService ex = createExecutor ? Executors.newFixedThreadPool( numThreads ) : executorService;
 		for ( i = 0; i < numInvalidLevels && !valid; ++i )
 		{
 			final byte iFinal = ( byte ) i;
@@ -301,12 +307,14 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 			if ( interrupted.get() )
 			{
 				System.out.println( "interrupted" );
-				ex.shutdown();
+				if ( createExecutor )
+					ex.shutdown();
 				return false;
 			}
 			System.out.println( "numInvalidPixels(" + i + ") = " + numInvalidPixels );
 		}
-		ex.shutdown();
+		if ( createExecutor )
+			ex.shutdown();
 
 		if ( clearUntouchedTargetPixels && !interrupted.get() )
 			clearUntouchedTargetPixels();

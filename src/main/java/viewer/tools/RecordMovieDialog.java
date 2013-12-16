@@ -265,7 +265,7 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 			}
 		}
 		final MyTarget target = new MyTarget();
-		final MultiResolutionRenderer renderer = new MultiResolutionRenderer( target, new PainterThread( null ), new double[] { 1 }, 0, false, 1, false, new Cache()
+		final MultiResolutionRenderer renderer = new MultiResolutionRenderer( target, new PainterThread( null ), new double[] { 1 }, 0, false, 1, null, false, new Cache()
 		{
 			@Override
 			public void initIoTimeBudget( final long[] partialBudget, final boolean reinitialize )

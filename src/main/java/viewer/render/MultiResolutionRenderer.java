@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
 
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
@@ -22,7 +23,6 @@ import net.imglib2.ui.SimpleInterruptibleProjector;
 import net.imglib2.ui.util.GuiUtil;
 import viewer.display.AccumulateProjectorARGB;
 import viewer.hdf5.img.Cache;
-import viewer.hdf5.img.Hdf5GlobalCellCache;
 
 public class MultiResolutionRenderer
 {
@@ -144,6 +144,11 @@ public class MultiResolutionRenderer
 	 */
 	final protected int numRenderingThreads;
 
+	/**
+	 * {@link ExecutorService} used for rendering.
+	 */
+	final protected ExecutorService renderingExecutorService;
+
 	final protected Cache cache;
 
 	final protected boolean useVolatileIfAvailable;
@@ -179,6 +184,7 @@ public class MultiResolutionRenderer
 			final long targetRenderNanos,
 			final boolean doubleBuffered,
 			final int numRenderingThreads,
+			final ExecutorService renderingExecutorService,
 			final boolean useVolatileIfAvailable,
 			final Cache cache )
 	{
@@ -202,14 +208,10 @@ public class MultiResolutionRenderer
 		requestedScreenScaleIndex = maxScreenScaleIndex;
 		renderingMayBeCancelled = true;
 		this.numRenderingThreads = numRenderingThreads;
+		this.renderingExecutorService = renderingExecutorService;
 		this.useVolatileIfAvailable = useVolatileIfAvailable;
 		this.cache = cache;
 		newFrameRequest = false;
-	}
-
-	public MultiResolutionRenderer( final RenderTarget display, final PainterThread painterThread, final double[] screenScales, final Hdf5GlobalCellCache< ? > cache )
-	{
-		this( display, painterThread, screenScales, 30 * 1000000, true, 3, true, cache );
 	}
 
 	/**
@@ -548,7 +550,7 @@ public class MultiResolutionRenderer
 			levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, i ) );
 //		for ( int i = bestLevel - 1; i >= 0; --i )
 //			levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, i ) );
-		return new VolatileHierarchyProjector< T, ARGBType >( levels, source.getConverter(), screenImage, numRenderingThreads );
+		return new VolatileHierarchyProjector< T, ARGBType >( levels, source.getConverter(), screenImage, numRenderingThreads, renderingExecutorService );
 	}
 
 	private static < T > RandomAccessible< T > getTransformedSource( final ViewerState viewerState, final Source< T > source, final AffineTransform3D screenScaleTransform, final int mipmapIndex )
