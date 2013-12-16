@@ -21,6 +21,7 @@ import net.imglib2.ui.RenderTarget;
 import net.imglib2.ui.SimpleInterruptibleProjector;
 import net.imglib2.ui.util.GuiUtil;
 import viewer.display.AccumulateProjectorARGB;
+import viewer.hdf5.img.Cache;
 import viewer.hdf5.img.Hdf5GlobalCellCache;
 
 public class MultiResolutionRenderer
@@ -143,7 +144,7 @@ public class MultiResolutionRenderer
 	 */
 	final protected int numRenderingThreads;
 
-	final protected Hdf5GlobalCellCache< ? > cache;
+	final protected Cache cache;
 
 	protected boolean newFrameRequest;
 
@@ -169,7 +170,14 @@ public class MultiResolutionRenderer
 	 * @param numRenderingThreads
 	 *            How many threads to use for rendering.
 	 */
-	public MultiResolutionRenderer( final RenderTarget display, final PainterThread painterThread, final double[] screenScales, final long targetRenderNanos, final boolean doubleBuffered, final int numRenderingThreads, final Hdf5GlobalCellCache< ? > cache )
+	public MultiResolutionRenderer(
+			final RenderTarget display,
+			final PainterThread painterThread,
+			final double[] screenScales,
+			final long targetRenderNanos,
+			final boolean doubleBuffered,
+			final int numRenderingThreads,
+			final Cache cache )
 	{
 		this.display = display;
 		this.painterThread = painterThread;

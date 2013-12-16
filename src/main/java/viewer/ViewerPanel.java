@@ -39,7 +39,7 @@ import org.jdom2.Element;
 
 import viewer.TextOverlayAnimator.TextPosition;
 import viewer.gui.XmlIoViewerState;
-import viewer.hdf5.img.Hdf5GlobalCellCache;
+import viewer.hdf5.img.Cache;
 import viewer.render.DisplayMode;
 import viewer.render.Interpolation;
 import viewer.render.MultiResolutionRenderer;
@@ -149,7 +149,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 * @param numMipmapLevels
 	 *            number of available mipmap levels.
 	 */
-	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimePoints, final Hdf5GlobalCellCache< ? > cache )
+	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimePoints, final Cache cache )
 	{
 		super( new BorderLayout(), false );
 		this.cache = cache;
@@ -622,7 +622,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	}
 
 	// TODO: this is a quick hack. Should it stay like this?
-	final private Hdf5GlobalCellCache< ? > cache;
+	final private Cache cache;
 	public void stop()
 	{
 		painterThread.interrupt();

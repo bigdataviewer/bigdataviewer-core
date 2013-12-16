@@ -10,9 +10,8 @@ import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 import viewer.hdf5.img.CacheIoTiming.IoStatistics;
 import viewer.hdf5.img.CacheIoTiming.IoTimeBudget;
 import viewer.hdf5.img.Hdf5ImgCells.CellCache;
-import viewer.util.ThreadManager;
 
-public class Hdf5GlobalCellCache< A extends VolatileAccess >
+public class Hdf5GlobalCellCache< A extends VolatileAccess > implements Cache
 {
 	final int numTimepoints;
 
@@ -367,6 +366,7 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 	/**
 	 * TODO
 	 */
+	@Override
 	public void clearQueue()
 	{
 		queue.clear();
@@ -376,6 +376,7 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 	/**
 	 * TODO
 	 */
+	@Override
 	public ThreadManager getThreadManager()
 	{
 		return threadManager;
@@ -384,6 +385,7 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess >
 	/**
 	 * TODO
 	 */
+	@Override
 	public void initIoTimeBudget( final long[] partialBudget, final boolean reinitialize )
 	{
 		final IoStatistics stats = CacheIoTiming.getThreadGroupIoStatistics();
