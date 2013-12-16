@@ -1,30 +1,34 @@
 package viewer.gui.brightness;
 
+import java.util.List;
+
 import net.imglib2.display.RealARGBColorConverter;
 import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.type.numeric.RealType;
 import viewer.ViewerPanel;
 
-public class RealARGBColorConverterSetup< T extends RealType< T > > implements ConverterSetup
+public class RealARGBColorConverterSetup implements ConverterSetup
 {
 	protected final int id;
 
-	protected final RealARGBColorConverter< T > converter;
+	protected final List< RealARGBColorConverter< ? > > converters;
 
 	protected ViewerPanel viewer;
 
-	public RealARGBColorConverterSetup( final int setupId, final RealARGBColorConverter< T > converter )
+	public RealARGBColorConverterSetup( final int setupId, final List< RealARGBColorConverter< ? > > converters )
 	{
 		this.id = setupId;
-		this.converter = converter;
+		this.converters = converters;
 		this.viewer = null;
 	}
 
 	@Override
 	public void setDisplayRange( final int min, final int max )
 	{
-		converter.setMin( min );
-		converter.setMax( max );
+		for ( final RealARGBColorConverter< ? > converter : converters )
+		{
+			converter.setMin( min );
+			converter.setMax( max );
+		}
 		if ( viewer != null )
 			viewer.requestRepaint();
 	}
@@ -32,7 +36,8 @@ public class RealARGBColorConverterSetup< T extends RealType< T > > implements C
 	@Override
 	public void setColor( final ARGBType color )
 	{
-		converter.setColor( color );
+		for ( final RealARGBColorConverter< ? > converter : converters )
+			converter.setColor( color );
 		if ( viewer != null )
 			viewer.requestRepaint();
 	}
@@ -46,19 +51,19 @@ public class RealARGBColorConverterSetup< T extends RealType< T > > implements C
 	@Override
 	public int getDisplayRangeMin()
 	{
-		return ( int ) converter.getMin();
+		return ( int ) converters.get( 0 ).getMin();
 	}
 
 	@Override
 	public int getDisplayRangeMax()
 	{
-		return ( int ) converter.getMax();
+		return ( int ) converters.get( 0 ).getMax();
 	}
 
 	@Override
 	public ARGBType getColor()
 	{
-		return converter.getColor();
+		return converters.get( 0 ).getColor();
 	}
 
 	public void setViewer( final ViewerPanel viewer )

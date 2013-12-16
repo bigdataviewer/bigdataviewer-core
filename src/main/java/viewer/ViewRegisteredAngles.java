@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
@@ -148,7 +149,9 @@ public class ViewRegisteredAngles
 		final ArrayList< SourceAndConverter< ? > > sources = new ArrayList< SourceAndConverter< ? > >();
 		for ( int setup = 0; setup < seq.numViewSetups(); ++setup )
 		{
-			final RealARGBColorConverter< VolatileUnsignedShortType > converter = new RealARGBColorConverter< VolatileUnsignedShortType >( 0, 65535 );
+			final RealARGBColorConverter< VolatileUnsignedShortType > vconverter = new RealARGBColorConverter< VolatileUnsignedShortType >( 0, 65535 );
+			vconverter.setColor( new ARGBType( ARGBType.rgba( 255, 255, 255, 255 ) ) );
+			final RealARGBColorConverter< UnsignedShortType > converter = new RealARGBColorConverter< UnsignedShortType >( 0, 65535 );
 			converter.setColor( new ARGBType( ARGBType.rgba( 255, 255, 255, 255 ) ) );
 			final VolatileSpimSource vs = new VolatileSpimSource( loader, setup, "angle " + seq.setups.get( setup ).getAngle() );
 			final SpimSource s = vs.nonVolatile();
@@ -157,14 +160,14 @@ public class ViewRegisteredAngles
 			final TransformedSource< VolatileUnsignedShortType > tvs = new TransformedSource< VolatileUnsignedShortType >( vs );
 			final TransformedSource< UnsignedShortType > ts = new TransformedSource< UnsignedShortType >( s, tvs );
 
-			final SourceAndConverter< VolatileUnsignedShortType > vsoc = new SourceAndConverter< VolatileUnsignedShortType >( tvs, converter );
-			final SourceAndConverter< UnsignedShortType > soc = new SourceAndConverter< UnsignedShortType >( ts, null, vsoc );
+			final SourceAndConverter< VolatileUnsignedShortType > vsoc = new SourceAndConverter< VolatileUnsignedShortType >( tvs, vconverter );
+			final SourceAndConverter< UnsignedShortType > soc = new SourceAndConverter< UnsignedShortType >( ts, converter, vsoc );
 			// TODO: the converter for soc is null because it is not used currently.
 			// TODO: It would be better to add a RealARGBColorConverter that shares state with converter.
 			// TODO: This is needed for movie recording for example.
 
 			sources.add( soc );
-			converterSetups.add( new RealARGBColorConverterSetup< VolatileUnsignedShortType >( setup, converter ) );
+			converterSetups.add( new RealARGBColorConverterSetup( setup, Arrays.< RealARGBColorConverter< ? > >asList( converter, vconverter ) ) );
 		}
 
 		viewerFrame = new ViewerFrame( width, height, sources, seq.numTimepoints(), ( ( Hdf5ImageLoader ) seq.imgLoader ).getCache() );
@@ -174,7 +177,7 @@ public class ViewRegisteredAngles
 
 		for ( final ConverterSetup cs : converterSetups )
 			if ( RealARGBColorConverterSetup.class.isInstance( cs ) )
-				( ( RealARGBColorConverterSetup< ? > ) cs ).setViewer( viewer );
+				( ( RealARGBColorConverterSetup ) cs ).setViewer( viewer );
 
 		final ActionMap actionMap = SpimViewerActions.createActionMap( this );
 		viewerFrame.getKeybindings().addActionMap( "dialogs", actionMap );
