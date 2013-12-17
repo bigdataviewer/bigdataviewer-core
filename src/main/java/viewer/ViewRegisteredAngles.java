@@ -167,9 +167,6 @@ public class ViewRegisteredAngles
 
 			final SourceAndConverter< VolatileUnsignedShortType > vsoc = new SourceAndConverter< VolatileUnsignedShortType >( tvs, vconverter );
 			final SourceAndConverter< UnsignedShortType > soc = new SourceAndConverter< UnsignedShortType >( ts, converter, vsoc );
-			// TODO: the converter for soc is null because it is not used currently.
-			// TODO: It would be better to add a RealARGBColorConverter that shares state with converter.
-			// TODO: This is needed for movie recording for example.
 
 			sources.add( soc );
 			converterSetups.add( new RealARGBColorConverterSetup( setup, Arrays.< RealARGBColorConverter< ? > >asList( converter, vconverter ) ) );
