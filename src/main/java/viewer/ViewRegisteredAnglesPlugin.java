@@ -45,7 +45,7 @@ public class ViewRegisteredAnglesPlugin implements PlugIn
 			final File file = fileChooser.getSelectedFile();
 			try
 			{
-				ViewRegisteredAngles.view( file.getAbsolutePath() );
+				BigDataViewer.view( file.getAbsolutePath() );
 			}
 			catch ( final Exception e )
 			{

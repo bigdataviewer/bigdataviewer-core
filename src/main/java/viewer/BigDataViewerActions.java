@@ -11,7 +11,7 @@ import viewer.tools.ToggleDialogAction;
 import viewer.util.AbstractNamedAction;
 import viewer.util.AbstractNamedAction.NamedActionAdder;
 
-public class SpimViewerActions
+public class BigDataViewerActions
 {
 	public static final String BRIGHTNESS_SETTINGS = "brightness settings";
 	public static final String VISIBILITY_AND_GROUPING = "visibility and grouping";
@@ -29,13 +29,13 @@ public class SpimViewerActions
 	 * @param inputActionBindings
 	 *            {@link InputMap} and {@link ActionMap} are installed here.
 	 * @param bdv
-	 *            Actions are targeted at this {@link ViewRegisteredAngles}.
+	 *            Actions are targeted at this {@link BigDataViewer}.
 	 * @param keyProperties
 	 *            user-defined key-bindings.
 	 */
 	public static void installActionBindings(
 			final InputActionBindings inputActionBindings,
-			final ViewRegisteredAngles bdv,
+			final BigDataViewer bdv,
 			final KeyProperties keyProperties )
 	{
 		inputActionBindings.addActionMap( "bdv", createActionMap( bdv ) );
@@ -59,7 +59,7 @@ public class SpimViewerActions
 		return inputMap;
 	}
 
-	public static ActionMap createActionMap( final ViewRegisteredAngles bdv )
+	public static ActionMap createActionMap( final BigDataViewer bdv )
 	{
 		final ActionMap actionMap = new ActionMap();
 		final NamedActionAdder map = new NamedActionAdder( actionMap );
@@ -78,9 +78,9 @@ public class SpimViewerActions
 
 	private static abstract class ViewerAction extends AbstractNamedAction
 	{
-		protected final ViewRegisteredAngles bdv;
+		protected final BigDataViewer bdv;
 
-		public ViewerAction( final String name, final ViewRegisteredAngles bdv )
+		public ViewerAction( final String name, final BigDataViewer bdv )
 		{
 			super( name );
 			this.bdv = bdv;
@@ -91,7 +91,7 @@ public class SpimViewerActions
 
 	public static class ManualTransformAction extends ViewerAction
 	{
-		public ManualTransformAction( final ViewRegisteredAngles bdv )
+		public ManualTransformAction( final BigDataViewer bdv )
 		{
 			super( MANUAL_TRANSFORM, bdv );
 		}
@@ -107,7 +107,7 @@ public class SpimViewerActions
 
 	public static class SaveSettingsAction extends ViewerAction
 	{
-		public SaveSettingsAction( final ViewRegisteredAngles bdv )
+		public SaveSettingsAction( final BigDataViewer bdv )
 		{
 			super( SAVE_SETTINGS, bdv );
 		}
@@ -123,7 +123,7 @@ public class SpimViewerActions
 
 	public static class LoadSettingsAction extends ViewerAction
 	{
-		public LoadSettingsAction( final ViewRegisteredAngles bdv )
+		public LoadSettingsAction( final BigDataViewer bdv )
 		{
 			super( LOAD_SETTINGS, bdv );
 		}
@@ -137,6 +137,6 @@ public class SpimViewerActions
 		private static final long serialVersionUID = 1L;
 	}
 
-	private SpimViewerActions()
+	private BigDataViewerActions()
 	{}
 }

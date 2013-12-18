@@ -42,7 +42,7 @@ import viewer.tools.transformation.ManualTransformation;
 import viewer.tools.transformation.ManualTransformationEditor;
 import viewer.tools.transformation.TransformedSource;
 
-public class ViewRegisteredAngles
+public class BigDataViewer
 {
 	final ViewerFrame viewerFrame;
 
@@ -73,7 +73,7 @@ public class ViewRegisteredAngles
 		manualTransformationEditor.toggle();
 	}
 
-	private ViewRegisteredAngles( final String xmlFilename ) throws InstantiationException, IllegalAccessException, ClassNotFoundException, JDOMException, IOException
+	private BigDataViewer( final String xmlFilename ) throws InstantiationException, IllegalAccessException, ClassNotFoundException, JDOMException, IOException
 	{
 		final int width = 800;
 		final int height = 600;
@@ -159,47 +159,47 @@ public class ViewRegisteredAngles
 
 		final KeyProperties keyProperties = KeyProperties.readPropertyFile();
 		NavigationActions.installActionBindings( viewerFrame.getKeybindings(), viewer, keyProperties );
-		SpimViewerActions.installActionBindings( viewerFrame.getKeybindings(), this, keyProperties );
+		BigDataViewerActions.installActionBindings( viewerFrame.getKeybindings(), this, keyProperties );
 
 		final JMenuBar menubar = new JMenuBar();
 		JMenu menu = new JMenu( "File" );
 		menubar.add( menu );
 
 		final ActionMap actionMap = viewerFrame.getKeybindings().getConcatenatedActionMap();
-		final JMenuItem miLoadSettings = new JMenuItem( actionMap.get( SpimViewerActions.LOAD_SETTINGS ) );
+		final JMenuItem miLoadSettings = new JMenuItem( actionMap.get( BigDataViewerActions.LOAD_SETTINGS ) );
 		miLoadSettings.setText( "Load settings" );
 		menu.add( miLoadSettings );
 
-		final JMenuItem miSaveSettings = new JMenuItem( actionMap.get( SpimViewerActions.SAVE_SETTINGS ) );
+		final JMenuItem miSaveSettings = new JMenuItem( actionMap.get( BigDataViewerActions.SAVE_SETTINGS ) );
 		miSaveSettings.setText( "Save settings" );
 		menu.add( miSaveSettings );
 
 		menu = new JMenu( "Settings" );
 		menubar.add( menu );
 
-		final JMenuItem miBrightness = new JMenuItem( actionMap.get( SpimViewerActions.BRIGHTNESS_SETTINGS ) );
+		final JMenuItem miBrightness = new JMenuItem( actionMap.get( BigDataViewerActions.BRIGHTNESS_SETTINGS ) );
 		miBrightness.setText( "Brightness & Color" );
 		menu.add( miBrightness );
 
-		final JMenuItem miVisibility = new JMenuItem( actionMap.get( SpimViewerActions.VISIBILITY_AND_GROUPING ) );
+		final JMenuItem miVisibility = new JMenuItem( actionMap.get( BigDataViewerActions.VISIBILITY_AND_GROUPING ) );
 		miVisibility.setText( "Visibility & Grouping" );
 		menu.add( miVisibility );
 
 		menu = new JMenu( "Settings" );
 		menubar.add( menu );
 
-		final JMenuItem miCrop = new JMenuItem( actionMap.get( SpimViewerActions.CROP ) );
+		final JMenuItem miCrop = new JMenuItem( actionMap.get( BigDataViewerActions.CROP ) );
 		miCrop.setText( "Crop" );
 		menu.add( miCrop );
 
-		final JMenuItem miManualTransform = new JMenuItem( actionMap.get( SpimViewerActions.MANUAL_TRANSFORM ) );
+		final JMenuItem miManualTransform = new JMenuItem( actionMap.get( BigDataViewerActions.MANUAL_TRANSFORM ) );
 		miManualTransform.setText( "Manual Transform" );
 		menu.add( miManualTransform );
 
 		menu = new JMenu( "Help" );
 		menubar.add( menu );
 
-		final JMenuItem miHelp = new JMenuItem( actionMap.get( SpimViewerActions.SHOW_HELP ) );
+		final JMenuItem miHelp = new JMenuItem( actionMap.get( BigDataViewerActions.SHOW_HELP ) );
 		miHelp.setText( "Show Help" );
 		menu.add( miHelp );
 
@@ -297,7 +297,7 @@ public class ViewRegisteredAngles
 
 	public static void view( final String filename ) throws InstantiationException, IllegalAccessException, ClassNotFoundException, JDOMException, IOException
 	{
-		new ViewRegisteredAngles( filename );
+		new BigDataViewer( filename );
 	}
 
 	public static void main( final String[] args )
@@ -313,7 +313,7 @@ public class ViewRegisteredAngles
 		try
 		{
 			System.setProperty("apple.laf.useScreenMenuBar", "true");
-			new ViewRegisteredAngles( fn );
+			new BigDataViewer( fn );
 		}
 		catch ( final Exception e )
 		{
