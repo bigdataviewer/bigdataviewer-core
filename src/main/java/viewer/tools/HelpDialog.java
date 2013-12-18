@@ -1,12 +1,10 @@
-package viewer.gui;
+package viewer.tools;
 
 import java.awt.BorderLayout;
-import java.awt.Container;
 import java.awt.Dimension;
+import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.io.IOException;
 import java.net.URL;
 
@@ -16,43 +14,28 @@ import javax.swing.ActionMap;
 import javax.swing.BorderFactory;
 import javax.swing.InputMap;
 import javax.swing.JComponent;
+import javax.swing.JDialog;
 import javax.swing.JEditorPane;
-import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.KeyStroke;
 
-public class HelpFrame
+public class HelpDialog extends JDialog
 {
-	private static URL helpFile = null;
-
-	private static JFrame frame = null;
+	private static final long serialVersionUID = 1L;
 
 	/**
 	 * Instantiates and displays a JFrame that lists the help file for the SPIM
 	 * viewer UI.
 	 */
-	public HelpFrame()
+	public HelpDialog( final Frame owner )
 	{
-		this( HelpFrame.class.getResource( "/viewer/Help.html" ) );
+		this( owner, HelpDialog.class.getResource( "/viewer/Help.html" ) );
 	}
 
-	/**
-	 * Instantiates and displays a JFrame that lists the content of a html file
-	 * specified by its {@link URL}.
-	 */
-	public HelpFrame( final URL url )
+	public HelpDialog( final Frame owner, final URL helpFile )
 	{
-		if ( frame != null )
-		{
-			if ( url != null && url.equals( helpFile ) )
-			{
-				frame.toFront();
-				return;
-			}
-			else
-				frame.dispose();
-		}
-		helpFile = url;
+		super( owner, "Help", false );
+
 		if ( helpFile == null )
 		{
 			System.err.println( "helpFile url is null." );
@@ -60,7 +43,6 @@ public class HelpFrame
 		}
 		try
 		{
-			frame = new JFrame( "Help" );
 			final JEditorPane editorPane = new JEditorPane( helpFile );
 			editorPane.setEditable( false );
 			editorPane.setBorder( BorderFactory.createEmptyBorder( 10, 0, 10, 10 ) );
@@ -69,20 +51,10 @@ public class HelpFrame
 			editorScrollPane.setVerticalScrollBarPolicy( JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED );
 			editorScrollPane.setPreferredSize( new Dimension( 800, 800 ) );
 
-			final Container content = frame.getContentPane();
-			content.add( editorScrollPane, BorderLayout.CENTER );
+			getContentPane().add( editorScrollPane, BorderLayout.CENTER );
 
-			frame.addWindowListener( new WindowAdapter()
-			{
-				@Override
-				public void windowClosing( final WindowEvent e )
-				{
-					frame = null;
-				}
-			} );
-
-			final ActionMap am = frame.getRootPane().getActionMap();
-			final InputMap im = frame.getRootPane().getInputMap( JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT );
+			final ActionMap am = getRootPane().getActionMap();
+			final InputMap im = getRootPane().getInputMap( JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT );
 			final Object hideKey = new Object();
 			final Action hideAction = new AbstractAction()
 			{
@@ -91,16 +63,14 @@ public class HelpFrame
 				@Override
 				public void actionPerformed( final ActionEvent e )
 				{
-					frame.dispose();
-					frame = null;
+					setVisible( false );
 				}
 			};
 			im.put( KeyStroke.getKeyStroke( KeyEvent.VK_ESCAPE, 0 ), hideKey );
 			am.put( hideKey, hideAction );
 
-			frame.pack();
-			frame.setDefaultCloseOperation( JFrame.DISPOSE_ON_CLOSE );
-			frame.setVisible( true );
+			pack();
+			setDefaultCloseOperation( JDialog.HIDE_ON_CLOSE );
 		}
 		catch ( final IOException e )
 		{

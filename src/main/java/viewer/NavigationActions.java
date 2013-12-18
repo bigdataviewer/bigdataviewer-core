@@ -1,17 +1,19 @@
 package viewer;
 
+import static viewer.util.AbstractNamedAction.put;
+
 import java.awt.event.ActionEvent;
 
-import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
+import javax.swing.InputMap;
 
+import viewer.KeyProperties.KeyStrokeAdder;
 import viewer.ViewerPanel.AlignPlane;
+import viewer.gui.InputActionBindings;
+import viewer.util.AbstractNamedAction;
 
 public class NavigationActions
 {
-	private NavigationActions()
-	{}
-
 	public static final String TOGGLE_INTERPOLATION = "toggle interpolation";
 	public static final String TOGGLE_FUSED_MODE = "toggle fused mode";
 	public static final String TOGGLE_GROUPING = "toggle grouping";
@@ -20,6 +22,56 @@ public class NavigationActions
 	public static final String ALIGN_PLANE = "align %s plane";
 	public static final String NEXT_TIMEPOINT = "next timepoint";
 	public static final String PREVIOUS_TIMEPOINT = "previous timepoint";
+
+	/**
+	 * Create navigation actions and install them in the specified
+	 * {@link InputActionBindings}.
+	 *
+	 * @param inputActionBindings
+	 *            {@link InputMap} and {@link ActionMap} are installed here.
+	 * @param viewer
+	 *            Navigation actions are targeted at this {@link ViewerPanel}.
+	 * @param keyProperties
+	 *            user-defined key-bindings.
+	 */
+	public static void installActionBindings(
+			final InputActionBindings inputActionBindings,
+			final ViewerPanel viewer,
+			final KeyProperties keyProperties )
+	{
+		inputActionBindings.addActionMap( "navigation", createActionMap( viewer ) );
+		inputActionBindings.addInputMap( "navigation", createInputMap( keyProperties ) );
+	}
+
+	public static InputMap createInputMap( final KeyProperties keyProperties )
+	{
+		final InputMap inputMap = new InputMap();
+		final KeyStrokeAdder map = keyProperties.adder( inputMap );
+
+		map.put( TOGGLE_INTERPOLATION, "I" );
+		map.put( TOGGLE_FUSED_MODE, "F" );
+		map.put( TOGGLE_GROUPING, "G" );
+		map.put( NEXT_TIMEPOINT, "CLOSE_BRACKET", "M" );
+		map.put( PREVIOUS_TIMEPOINT, "OPEN_BRACKET", "N" );
+
+		final String[] numkeys = new String[] { "1", "2", "3", "4", "5", "6", "7", "8", "9", "0" };
+		for ( int i = 0; i < numkeys.length; ++i )
+		{
+			map.put( String.format( SET_CURRENT_SOURCE, i ), numkeys[ i ] );
+			map.put( String.format( TOGGLE_SOURCE_VISIBILITY, i ), "shift " + numkeys[ i ] );
+		}
+
+		map.put( String.format( ALIGN_PLANE, AlignPlane.XY ), "shift Z" );
+		map.put( String.format( ALIGN_PLANE, AlignPlane.ZY ), "shift X" );
+		map.put( String.format( ALIGN_PLANE, AlignPlane.XZ ), "shift Y", "shift A" );
+
+		return inputMap;
+	}
+
+	public static ActionMap createActionMap( final ViewerPanel viewer )
+	{
+		return createActionMap( viewer, 10 );
+	}
 
 	public static ActionMap createActionMap( final ViewerPanel viewer, final int numSourceKeys )
 	{
@@ -46,7 +98,7 @@ public class NavigationActions
 			put( map, new AlignPlaneAction( viewer, plane ) );
 	}
 
-	private static abstract class NavigationAction extends AbstractAction
+	private static abstract class NavigationAction extends AbstractNamedAction
 	{
 		protected final ViewerPanel viewer;
 
@@ -56,17 +108,7 @@ public class NavigationActions
 			this.viewer = viewer;
 		}
 
-		public String name()
-		{
-			return ( String ) getValue( NAME );
-		}
-
 		private static final long serialVersionUID = 1L;
-	}
-
-	private static void put( final ActionMap map, final NavigationAction a )
-	{
-		map.put( a.name(), a );
 	}
 
 	public static class ToggleInterPolationAction extends NavigationAction
@@ -205,4 +247,7 @@ public class NavigationActions
 
 		private static final long serialVersionUID = 1L;
 	}
+
+	private NavigationActions()
+	{}
 }

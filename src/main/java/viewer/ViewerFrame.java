@@ -30,22 +30,13 @@ public class ViewerFrame extends JFrame
 
 	private final InputActionBindings keybindings;
 
-	/**
-	 * Create default {@link Options}.
-	 * @return default {@link Options}.
-	 */
-	public static Options options()
-	{
-		return new Options();
-	}
-
 	public ViewerFrame(
 			final int width, final int height,
 			final List< SourceAndConverter< ? > > sources,
 			final int numTimePoints,
 			final Hdf5GlobalCellCache< ? > cache )
 	{
-		this( width, height, sources, numTimePoints, cache, options() );
+		this( width, height, sources, numTimePoints, cache, ViewerPanel.options() );
 	}
 
 	/**
@@ -64,7 +55,7 @@ public class ViewerFrame extends JFrame
 	 *            cache as a consumer, so that eventually the io fetcher threads
 	 *            can be shut down.
 	 * @param optional
-	 *            optional parameters. See {@link #options()}.
+	 *            optional parameters. See {@link ViewerPanel#options()}.
 	 */
 	public ViewerFrame(
 			final int width, final int height,
@@ -77,7 +68,6 @@ public class ViewerFrame extends JFrame
 		super( "BigDataViewer", GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.RGB_COLOR_MODEL ) );
 		viewer = new ViewerPanel( sources, numTimePoints, cache, optional.width( width ).height( height ) );
 		keybindings = new InputActionBindings();
-		new NavigationKeyHandler( keybindings, viewer );
 
 		getRootPane().setDoubleBuffered( true );
 		setPreferredSize( new Dimension( width, height ) );

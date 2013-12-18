@@ -2,8 +2,14 @@ package viewer;
 
 import java.awt.event.ActionEvent;
 
-import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
+import javax.swing.InputMap;
+
+import viewer.KeyProperties.KeyStrokeAdder;
+import viewer.gui.InputActionBindings;
+import viewer.tools.ToggleDialogAction;
+import viewer.util.AbstractNamedAction;
+import viewer.util.AbstractNamedAction.NamedActionAdder;
 
 public class SpimViewerActions
 {
@@ -16,27 +22,61 @@ public class SpimViewerActions
 	public static final String LOAD_SETTINGS = "load settings";
 	public static final String RECORD_MOVIE = "record movie";
 
+	/**
+	 * Create BigDataViewer actions and install them in the specified
+	 * {@link InputActionBindings}.
+	 *
+	 * @param inputActionBindings
+	 *            {@link InputMap} and {@link ActionMap} are installed here.
+	 * @param bdv
+	 *            Actions are targeted at this {@link ViewRegisteredAngles}.
+	 * @param keyProperties
+	 *            user-defined key-bindings.
+	 */
+	public static void installActionBindings(
+			final InputActionBindings inputActionBindings,
+			final ViewRegisteredAngles bdv,
+			final KeyProperties keyProperties )
+	{
+		inputActionBindings.addActionMap( "bdv", createActionMap( bdv ) );
+		inputActionBindings.addInputMap( "bdv", createInputMap( keyProperties ) );
+	}
+
+	public static InputMap createInputMap( final KeyProperties keyProperties )
+	{
+		final InputMap inputMap = new InputMap();
+		final KeyStrokeAdder map = keyProperties.adder( inputMap );
+
+		map.put( BRIGHTNESS_SETTINGS, "S" );
+		map.put( VISIBILITY_AND_GROUPING, "F6" );
+		map.put( MANUAL_TRANSFORM, "T" );
+		map.put( SHOW_HELP, "F1", "H" );
+		map.put( CROP, "F9" );
+		map.put( RECORD_MOVIE, "F10" );
+		map.put( SAVE_SETTINGS, "F11" );
+		map.put( LOAD_SETTINGS, "F12" );
+
+		return inputMap;
+	}
+
 	public static ActionMap createActionMap( final ViewRegisteredAngles bdv )
 	{
-		final ActionMap map = new ActionMap();
-		addToActionMap( map, bdv );
-		return map;
+		final ActionMap actionMap = new ActionMap();
+		final NamedActionAdder map = new NamedActionAdder( actionMap );
+
+		map.put( new ToggleDialogAction( BRIGHTNESS_SETTINGS, bdv.brightnessDialog ) );
+		map.put( new ToggleDialogAction( VISIBILITY_AND_GROUPING, bdv.activeSourcesDialog ) );
+		map.put( new ToggleDialogAction( CROP, bdv.cropDialog ) );
+		map.put( new ToggleDialogAction( RECORD_MOVIE, bdv.movieDialog ) );
+		map.put( new ToggleDialogAction( SHOW_HELP, bdv.helpDialog ) );
+		map.put( new ManualTransformAction( bdv ) );
+		map.put( new SaveSettingsAction( bdv ) );
+		map.put( new LoadSettingsAction( bdv ) );
+
+		return actionMap;
 	}
 
-	public static void addToActionMap( final ActionMap map, final ViewRegisteredAngles bdv )
-	{
-		put( map, new BrightnessSettingsAction( bdv ) );
-		put( map, new VisibilityAndGroupingSettingsAction( bdv ) );
-		put( map, new ShowHelpAction( bdv ) );
-		put( map, new CropAction( bdv ) );
-		put( map, new ManualTransformAction( bdv ) );
-		put( map, new SaveSettingsAction( bdv ) );
-		put( map, new LoadSettingsAction( bdv ) );
-		put( map, new RecordMovieAction( bdv ) );
-//		put( map, new ( bdv ) );
-	}
-
-	private static abstract class ViewerAction extends AbstractAction
+	private static abstract class ViewerAction extends AbstractNamedAction
 	{
 		protected final ViewRegisteredAngles bdv;
 
@@ -44,80 +84,6 @@ public class SpimViewerActions
 		{
 			super( name );
 			this.bdv = bdv;
-		}
-
-		public String name()
-		{
-			return ( String ) getValue( NAME );
-		}
-
-		private static final long serialVersionUID = 1L;
-	}
-
-	private static void put( final ActionMap map, final ViewerAction a )
-	{
-		map.put( a.name(), a );
-	}
-
-	public static class BrightnessSettingsAction extends ViewerAction
-	{
-		public BrightnessSettingsAction( final ViewRegisteredAngles bdv )
-		{
-			super( BRIGHTNESS_SETTINGS, bdv );
-		}
-
-		@Override
-		public void actionPerformed( final ActionEvent e )
-		{
-			bdv.toggleBrightnessDialog();
-		}
-
-		private static final long serialVersionUID = 1L;
-	}
-
-	public static class VisibilityAndGroupingSettingsAction extends ViewerAction
-	{
-		public VisibilityAndGroupingSettingsAction( final ViewRegisteredAngles bdv )
-		{
-			super( VISIBILITY_AND_GROUPING, bdv );
-		}
-
-		@Override
-		public void actionPerformed( final ActionEvent e )
-		{
-			bdv.toggleActiveSourcesDialog();
-		}
-
-		private static final long serialVersionUID = 1L;
-	}
-
-	public static class ShowHelpAction extends ViewerAction
-	{
-		public ShowHelpAction( final ViewRegisteredAngles bdv )
-		{
-			super( SHOW_HELP, bdv );
-		}
-
-		@Override
-		public void actionPerformed( final ActionEvent e )
-		{
-			bdv.showHelp();
-		}
-
-		private static final long serialVersionUID = 1L;
-	}
-
-	public static class CropAction extends ViewerAction
-	{
-		public CropAction( final ViewRegisteredAngles bdv )
-		{
-			super( CROP, bdv );
-		}
-
-		@Override
-		public void actionPerformed( final ActionEvent e )
-		{
-			bdv.crop();
 		}
 
 		private static final long serialVersionUID = 1L;
@@ -171,27 +137,6 @@ public class SpimViewerActions
 		private static final long serialVersionUID = 1L;
 	}
 
-	public static class RecordMovieAction extends ViewerAction
-	{
-		public RecordMovieAction( final ViewRegisteredAngles bdv )
-		{
-			super( RECORD_MOVIE, bdv );
-		}
-
-		@Override
-		public void actionPerformed( final ActionEvent e )
-		{
-			bdv.recordMovieDialog();
-//			try
-//			{
-//				bdv.recordMovie( 400, 300, 0, 50, new File( "/Users/pietzsch/Desktop/bdv-record" ) );
-//			}
-//			catch ( final IOException e1 )
-//			{
-//				e1.printStackTrace();
-//			}
-		}
-
-		private static final long serialVersionUID = 1L;
-	}
+	private SpimViewerActions()
+	{}
 }
