@@ -26,7 +26,7 @@ import mpicbg.spim.io.SPIMConfiguration;
 import mpicbg.spim.io.TextFileAccess;
 import mpicbg.spim.registration.ViewStructure;
 import spimopener.SPIMExperiment;
-import viewer.hdf5.Hdf5ImageLoader;
+import viewer.img.hdf5.Hdf5ImageLoader;
 import creator.spim.SpimRegistrationSequence;
 
 public class ExportSpimSequencePlugIn implements PlugIn

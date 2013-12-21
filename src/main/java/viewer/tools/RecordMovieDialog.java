@@ -34,8 +34,8 @@ import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
 import viewer.ViewerPanel;
-import viewer.hdf5.img.Cache;
-import viewer.hdf5.img.ThreadManager;
+import viewer.img.cache.Cache;
+import viewer.img.cache.ThreadManager;
 import viewer.render.MultiResolutionRenderer;
 import viewer.render.ViewerState;
 

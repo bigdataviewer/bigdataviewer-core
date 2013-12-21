@@ -36,9 +36,9 @@ import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 
 import spimopener.SPIMExperiment;
-import viewer.hdf5.Hdf5ImageLoader;
-import viewer.hdf5.Partition;
-import viewer.hdf5.Util;
+import viewer.img.hdf5.Hdf5ImageLoader;
+import viewer.img.hdf5.Partition;
+import viewer.img.hdf5.Util;
 import creator.PluginHelper.ProgressListenerIJ;
 import creator.spim.FusionResult;
 import creator.spim.SpimRegistrationSequence;

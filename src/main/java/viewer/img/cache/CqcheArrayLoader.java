@@ -1,7 +1,6 @@
-package viewer.hdf5.img;
+package viewer.img.cache;
 
-
-public interface Hdf5ArrayLoader< A >
+public interface CqcheArrayLoader< A >
 {
 	public int getBytesPerElement();
 

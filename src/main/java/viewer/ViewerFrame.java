@@ -13,7 +13,7 @@ import javax.swing.SwingUtilities;
 import net.imglib2.ui.util.GuiUtil;
 import viewer.ViewerPanel.Options;
 import viewer.gui.InputActionBindings;
-import viewer.hdf5.img.Hdf5GlobalCellCache;
+import viewer.img.cache.VolatileGlobalCellCache;
 import viewer.render.SourceAndConverter;
 
 /**
@@ -34,7 +34,7 @@ public class ViewerFrame extends JFrame
 			final int width, final int height,
 			final List< SourceAndConverter< ? > > sources,
 			final int numTimePoints,
-			final Hdf5GlobalCellCache< ? > cache )
+			final VolatileGlobalCellCache< ? > cache )
 	{
 		this( width, height, sources, numTimePoints, cache, ViewerPanel.options() );
 	}
@@ -61,7 +61,7 @@ public class ViewerFrame extends JFrame
 			final int width, final int height,
 			final List< SourceAndConverter< ? > > sources,
 			final int numTimePoints,
-			final Hdf5GlobalCellCache< ? > cache,
+			final VolatileGlobalCellCache< ? > cache,
 			final Options optional )
 	{
 //		super( "BigDataViewer", GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.ARGB_COLOR_MODEL ) );

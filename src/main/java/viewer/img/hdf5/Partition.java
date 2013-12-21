@@ -1,4 +1,4 @@
-package viewer.hdf5;
+package viewer.img.hdf5;
 
 import java.io.File;
 

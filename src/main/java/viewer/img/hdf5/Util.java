@@ -1,4 +1,4 @@
-package viewer.hdf5;
+package viewer.img.hdf5;
 
 import mpicbg.spim.data.View;
 

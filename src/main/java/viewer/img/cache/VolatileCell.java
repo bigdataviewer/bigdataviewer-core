@@ -1,11 +1,11 @@
-package viewer.hdf5.img;
+package viewer.img.cache;
 
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 import net.imglib2.img.cell.AbstractCell;
 
-public class Hdf5Cell< A extends VolatileAccess > extends AbstractCell< A >
+public class VolatileCell< A extends VolatileAccess > extends AbstractCell< A >
 {
-	public Hdf5Cell( final int[] dimensions, final long[] min, final A data )
+	public VolatileCell( final int[] dimensions, final long[] min, final A data )
 	{
 		super( dimensions, min );
 		this.data = data;

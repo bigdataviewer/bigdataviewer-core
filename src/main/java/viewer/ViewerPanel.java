@@ -42,7 +42,7 @@ import org.jdom2.Element;
 
 import viewer.TextOverlayAnimator.TextPosition;
 import viewer.gui.XmlIoViewerState;
-import viewer.hdf5.img.Cache;
+import viewer.img.cache.Cache;
 import viewer.render.DisplayMode;
 import viewer.render.Interpolation;
 import viewer.render.MultiResolutionRenderer;

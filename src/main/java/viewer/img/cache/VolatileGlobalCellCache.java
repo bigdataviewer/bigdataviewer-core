@@ -1,4 +1,4 @@
-package viewer.hdf5.img;
+package viewer.img.cache;
 
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
@@ -7,11 +7,11 @@ import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
-import viewer.hdf5.img.CacheIoTiming.IoStatistics;
-import viewer.hdf5.img.CacheIoTiming.IoTimeBudget;
-import viewer.hdf5.img.Hdf5ImgCells.CellCache;
+import viewer.img.cache.CacheIoTiming.IoStatistics;
+import viewer.img.cache.CacheIoTiming.IoTimeBudget;
+import viewer.img.cache.VolatileImgCells.CellCache;
 
-public class Hdf5GlobalCellCache< A extends VolatileAccess > implements Cache
+public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cache
 {
 	private final int numTimepoints;
 
@@ -47,7 +47,7 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess > implements Cache
 		{
 			if ( this == other )
 				return true;
-			if ( !( other instanceof Hdf5GlobalCellCache.Key ) )
+			if ( !( other instanceof VolatileGlobalCellCache.Key ) )
 				return false;
 			@SuppressWarnings( "unchecked" )
 			final Key that = ( Key ) other;
@@ -67,17 +67,17 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess > implements Cache
 	{
 		private final Key key;
 
-		private Hdf5Cell< A > data;
+		private VolatileCell< A > data;
 
 		/**
 		 * When was this entry last enqueued for loading (see
-		 * {@link Hdf5GlobalCellCache#currentQueueFrame}). This is initialized
+		 * {@link VolatileGlobalCellCache#currentQueueFrame}). This is initialized
 		 * to -1. When the entry's data becomes valid, it is set to
 		 * {@link Long#MAX_VALUE}.
 		 */
 		private long enqueueFrame;
 
-		public Entry( final Key key, final Hdf5Cell< A > data )
+		public Entry( final Key key, final VolatileCell< A > data )
 		{
 			this.key = key;
 			this.data = data;
@@ -146,9 +146,9 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess > implements Cache
 
 	private final ThreadManager threadManager;
 
-	private final Hdf5ArrayLoader< A > loader;
+	private final CqcheArrayLoader< A > loader;
 
-	public Hdf5GlobalCellCache( final Hdf5ArrayLoader< A > loader, final int numTimepoints, final int numSetups, final int maxNumLevels, final int[] maxLevels )
+	public VolatileGlobalCellCache( final CqcheArrayLoader< A > loader, final int numTimepoints, final int numSetups, final int maxNumLevels, final int[] maxLevels )
 	{
 		this.loader = loader;
 		this.numTimepoints = numTimepoints;
@@ -169,9 +169,9 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess > implements Cache
 	}
 
 	/**
-	 * Load the data for the {@link Hdf5Cell} referenced by k, if
+	 * Load the data for the {@link VolatileCell} referenced by k, if
 	 * <ul>
-	 * <li>the {@link Hdf5Cell} is in the cache, and
+	 * <li>the {@link VolatileCell} is in the cache, and
 	 * <li>the data is not yet loaded (valid).
 	 * </ul>
 	 *
@@ -193,7 +193,7 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess > implements Cache
 	 */
 	protected void loadEntryIfNotValid( final Entry entry )
 	{
-		final Hdf5Cell< A > c = entry.data;
+		final VolatileCell< A > c = entry.data;
 		if ( !c.getData().isValid() )
 		{
 			final int[] cellDims = c.getDimensions();
@@ -206,7 +206,7 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess > implements Cache
 			{
 				if ( !entry.data.getData().isValid() )
 				{
-					final Hdf5Cell< A > cell = new Hdf5Cell< A >( cellDims, cellMin, loader.loadArray( timepoint, setup, level, cellDims, cellMin ) );
+					final VolatileCell< A > cell = new VolatileCell< A >( cellDims, cellMin, loader.loadArray( timepoint, setup, level, cellDims, cellMin ) );
 					entry.data = cell; // TODO: need to synchronize or make entry.data volatile?
 					softReferenceCache.put( entry.key, new SoftReference< Entry >( entry ) );
 				}
@@ -284,7 +284,7 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess > implements Cache
 	 *
 	 * @return a cell with the specified coordinates or null.
 	 */
-	public Hdf5Cell< A > getGlobalIfCached( final int timepoint, final int setup, final int level, final int index, final LoadingStrategy loadingStrategy )
+	public VolatileCell< A > getGlobalIfCached( final int timepoint, final int setup, final int level, final int index, final LoadingStrategy loadingStrategy )
 	{
 		final Key k = new Key( timepoint, setup, level, index );
 		final Reference< Entry > ref = softReferenceCache.get( k );
@@ -330,7 +330,7 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess > implements Cache
 	 *
 	 * @return a cell with the specified coordinates.
 	 */
-	public synchronized Hdf5Cell< A > createGlobal( final int[] cellDims, final long[] cellMin, final int timepoint, final int setup, final int level, final int index, final LoadingStrategy loadingStrategy )
+	public synchronized VolatileCell< A > createGlobal( final int[] cellDims, final long[] cellMin, final int timepoint, final int setup, final int level, final int index, final LoadingStrategy loadingStrategy )
 	{
 		final Key k = new Key( timepoint, setup, level, index );
 		Entry entry = null;
@@ -341,7 +341,7 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess > implements Cache
 
 		if ( entry == null )
 		{
-			final Hdf5Cell< A > cell = new Hdf5Cell< A >( cellDims, cellMin, loader.emptyArray( cellDims ) );
+			final VolatileCell< A > cell = new VolatileCell< A >( cellDims, cellMin, loader.emptyArray( cellDims ) );
 			entry = new Entry( k, cell );
 			softReferenceCache.put( k, new WeakReference< Entry >( entry ) );
 		}
@@ -418,13 +418,13 @@ public class Hdf5GlobalCellCache< A extends VolatileAccess > implements Cache
 		}
 
 		@Override
-		public Hdf5Cell< A > get( final int index )
+		public VolatileCell< A > get( final int index )
 		{
 			return getGlobalIfCached( timepoint, setup, level, index, loadingStrategy );
 		}
 
 		@Override
-		public Hdf5Cell< A > load( final int index, final int[] cellDims, final long[] cellMin )
+		public VolatileCell< A > load( final int index, final int[] cellDims, final long[] cellMin )
 		{
 			return createGlobal( cellDims, cellMin, timepoint, setup, level, index, loadingStrategy );
 		}

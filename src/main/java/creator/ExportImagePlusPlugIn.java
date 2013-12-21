@@ -21,7 +21,7 @@ import mpicbg.spim.data.ViewRegistration;
 import mpicbg.spim.data.ViewRegistrations;
 import mpicbg.spim.data.ViewSetup;
 import net.imglib2.realtransform.AffineTransform3D;
-import viewer.hdf5.Hdf5ImageLoader;
+import viewer.img.hdf5.Hdf5ImageLoader;
 import creator.ij.ImagePlusImgLoader;
 import creator.ij.ImagePlusImgLoader.MinMaxOption;
 

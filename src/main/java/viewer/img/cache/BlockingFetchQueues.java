@@ -1,4 +1,4 @@
-package viewer.hdf5.img;
+package viewer.img.cache;
 
 import java.util.ArrayDeque;
 import java.util.concurrent.ArrayBlockingQueue;

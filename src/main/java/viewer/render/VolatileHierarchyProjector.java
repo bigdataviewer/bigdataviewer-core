@@ -24,8 +24,8 @@ import net.imglib2.type.numeric.integer.ByteType;
 import net.imglib2.ui.AbstractInterruptibleProjector;
 import net.imglib2.ui.util.StopWatch;
 import net.imglib2.view.Views;
-import viewer.hdf5.img.CacheIoTiming;
-import viewer.hdf5.img.CacheIoTiming.IoStatistics;
+import viewer.img.cache.CacheIoTiming;
+import viewer.img.cache.CacheIoTiming.IoStatistics;
 
 /**
  * {@link Projector} for a hierarchy of {@link Volatile} inputs.  After each

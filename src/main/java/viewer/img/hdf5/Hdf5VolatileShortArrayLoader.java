@@ -1,18 +1,19 @@
-package viewer.hdf5.img;
+package viewer.img.hdf5;
 
-import static viewer.hdf5.Util.getCellsPath;
-import static viewer.hdf5.Util.reorder;
+import static viewer.img.hdf5.Util.getCellsPath;
+import static viewer.img.hdf5.Util.reorder;
+import viewer.img.cache.CqcheArrayLoader;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
 import ch.systemsx.cisd.base.mdarray.MDShortArray;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
 
-public class VolatileShortArrayLoader implements Hdf5ArrayLoader< VolatileShortArray >
+public class Hdf5VolatileShortArrayLoader implements CqcheArrayLoader< VolatileShortArray >
 {
 	private final IHDF5Reader hdf5Reader;
 
 	private VolatileShortArray theEmptyArray;
 
-	public VolatileShortArrayLoader( final IHDF5Reader hdf5Reader )
+	public Hdf5VolatileShortArrayLoader( final IHDF5Reader hdf5Reader )
 	{
 		this.hdf5Reader = hdf5Reader;
 		theEmptyArray = new VolatileShortArray( 32 * 32 * 32, false );

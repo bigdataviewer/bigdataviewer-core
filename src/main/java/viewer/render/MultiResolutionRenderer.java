@@ -23,7 +23,7 @@ import net.imglib2.ui.Renderer;
 import net.imglib2.ui.SimpleInterruptibleProjector;
 import net.imglib2.ui.util.GuiUtil;
 import viewer.display.AccumulateProjectorARGB;
-import viewer.hdf5.img.Cache;
+import viewer.img.cache.Cache;
 
 /**
  * A {@link Renderer} that uses a coarse-to-fine rendering scheme. First, a

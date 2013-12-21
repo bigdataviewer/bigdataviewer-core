@@ -32,7 +32,7 @@ import viewer.gui.brightness.MinMaxGroup;
 import viewer.gui.brightness.RealARGBColorConverterSetup;
 import viewer.gui.brightness.SetupAssignments;
 import viewer.gui.visibility.ActiveSourcesDialog;
-import viewer.hdf5.Hdf5ImageLoader;
+import viewer.img.hdf5.Hdf5ImageLoader;
 import viewer.render.SourceAndConverter;
 import viewer.tools.HelpDialog;
 import viewer.tools.InitializeViewerState;
