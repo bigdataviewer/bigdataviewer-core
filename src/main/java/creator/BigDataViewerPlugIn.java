@@ -9,7 +9,7 @@ import javax.swing.filechooser.FileFilter;
 
 import bdv.BigDataViewer;
 
-public class ViewRegisteredAnglesPlugin implements PlugIn
+public class BigDataViewerPlugIn implements PlugIn
 {
 	@Override
 	public void run( final String arg )
