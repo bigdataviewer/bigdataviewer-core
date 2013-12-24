@@ -9,8 +9,6 @@ public class EmptyProjector< T extends NumericType< T> > implements VolatileProj
 {
 	private final RandomAccessibleInterval< T > target;
 
-	private volatile boolean valid = false;
-
     protected long lastFrameRenderNanoTime;
 
     public EmptyProjector( final RandomAccessibleInterval< T > screenImage )
@@ -30,8 +28,9 @@ public class EmptyProjector< T extends NumericType< T> > implements VolatileProj
 	{
 		final StopWatch stopWatch = new StopWatch();
 		stopWatch.start();
-		for ( final T t : Views.iterable( target ) )
-			t.setZero();
+		if ( clearUntouchedTargetPixels )
+			for ( final T t : Views.iterable( target ) )
+				t.setZero();
 		lastFrameRenderNanoTime = stopWatch.nanoTime();
 		return true;
 	}
@@ -49,6 +48,6 @@ public class EmptyProjector< T extends NumericType< T> > implements VolatileProj
 	@Override
 	public boolean isValid()
 	{
-		return valid;
+		return true;
 	}
 }
