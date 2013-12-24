@@ -27,7 +27,7 @@ import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 
 import bdv.img.hdf5.Hdf5ImageLoader;
-import bdv.tools.ActiveSourcesDialog;
+import bdv.tools.VisibilityAndGroupingDialog;
 import bdv.tools.HelpDialog;
 import bdv.tools.InitializeViewerState;
 import bdv.tools.RecordMovieDialog;
@@ -62,7 +62,7 @@ public class BigDataViewer
 
 	final RecordMovieDialog movieDialog;
 
-	final ActiveSourcesDialog activeSourcesDialog;
+	final VisibilityAndGroupingDialog activeSourcesDialog;
 
 	final HelpDialog helpDialog;
 
@@ -130,7 +130,7 @@ public class BigDataViewer
 		movieDialog = new RecordMovieDialog( viewerFrame, viewer );
 		viewer.getDisplay().addOverlayRenderer( movieDialog ); // this is just to get updates of window size
 
-		activeSourcesDialog = new ActiveSourcesDialog( viewerFrame, viewer.getVisibilityAndGrouping() );
+		activeSourcesDialog = new VisibilityAndGroupingDialog( viewerFrame, viewer.getVisibilityAndGrouping() );
 
 		helpDialog = new HelpDialog( viewerFrame );
 

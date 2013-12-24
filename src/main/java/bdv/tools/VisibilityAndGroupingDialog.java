@@ -42,7 +42,7 @@ import bdv.viewer.VisibilityAndGrouping;
 import bdv.viewer.VisibilityAndGrouping.Event;
 import bdv.viewer.state.SourceGroup;
 
-public class ActiveSourcesDialog extends JDialog
+public class VisibilityAndGroupingDialog extends JDialog
 {
 	private static final long serialVersionUID = 1L;
 
@@ -50,7 +50,7 @@ public class ActiveSourcesDialog extends JDialog
 
 	private final GroupingPanel groupingPanel;
 
-	public ActiveSourcesDialog( final Frame owner, final VisibilityAndGrouping visibilityAndGrouping )
+	public VisibilityAndGroupingDialog( final Frame owner, final VisibilityAndGrouping visibilityAndGrouping )
 	{
 		super( owner, "visibility and grouping", false );
 
