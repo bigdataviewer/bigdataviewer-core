@@ -1,4 +1,4 @@
-package creator;
+package bdv.ij.export;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,8 +11,6 @@ import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.ViewRegistrations;
 import mpicbg.spim.io.ConfigurationParserException;
 import net.imglib2.realtransform.AffineTransform3D;
-import creator.spim.FusionResult;
-import creator.spim.SpimRegistrationSequence;
 
 public class Scripting
 {

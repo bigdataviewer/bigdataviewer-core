@@ -1,4 +1,4 @@
-package creator.spim.imgloader;
+package bdv.ij.export.imgloader;
 
 import static mpicbg.spim.data.XmlHelpers.loadPath;
 import ij.ImagePlus;

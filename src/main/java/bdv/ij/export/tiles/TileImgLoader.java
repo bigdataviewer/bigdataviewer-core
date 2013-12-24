@@ -1,4 +1,4 @@
-package creator.tiles;
+package bdv.ij.export.tiles;
 
 import ij.ImagePlus;
 
@@ -30,7 +30,7 @@ import org.jdom2.JDOMException;
 import org.jdom2.Namespace;
 import org.jdom2.input.SAXBuilder;
 
-import creator.tiles.CellVoyagerDataExporter.ChannelInfo;
+import bdv.ij.export.tiles.CellVoyagerDataExporter.ChannelInfo;
 
 public class TileImgLoader implements ImgLoader
 {

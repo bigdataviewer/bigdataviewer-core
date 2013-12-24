@@ -1,4 +1,4 @@
-package creator.spim;
+package bdv.ij.export;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -8,6 +8,8 @@ import java.util.List;
 
 import javax.vecmath.Point3f;
 
+import bdv.ij.export.imgloader.HuiskenImageLoader;
+import bdv.ij.export.imgloader.StackImageLoader;
 import mpicbg.spim.data.ImgLoader;
 import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.ViewRegistration;
@@ -23,8 +25,6 @@ import net.imglib2.FinalRealInterval;
 import net.imglib2.RealInterval;
 import net.imglib2.realtransform.AffineTransform3D;
 import spimopener.SPIMExperiment;
-import creator.spim.imgloader.HuiskenImageLoader;
-import creator.spim.imgloader.StackImageLoader;
 
 public class SpimRegistrationSequence
 {

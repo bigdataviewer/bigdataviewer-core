@@ -1,4 +1,4 @@
-package creator;
+package bdv.ij;
 
 import fiji.plugin.Bead_Registration;
 import fiji.plugin.Multi_View_Fusion;
@@ -18,6 +18,10 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import bdv.ij.export.SpimRegistrationSequence;
+import bdv.ij.export.WriteSequenceToHdf5;
+import bdv.ij.export.WriteSequenceToXml;
+import bdv.ij.util.PluginHelper;
 import bdv.img.hdf5.Hdf5ImageLoader;
 import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.ViewRegistrations;
@@ -27,7 +31,6 @@ import mpicbg.spim.io.SPIMConfiguration;
 import mpicbg.spim.io.TextFileAccess;
 import mpicbg.spim.registration.ViewStructure;
 import spimopener.SPIMExperiment;
-import creator.spim.SpimRegistrationSequence;
 
 public class ExportSpimSequencePlugIn implements PlugIn
 {

@@ -1,4 +1,4 @@
-package creator;
+package bdv.ij;
 
 import fiji.plugin.Bead_Registration;
 import fiji.plugin.Multi_View_Fusion;
@@ -35,13 +35,17 @@ import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 
+import bdv.ij.export.FusionResult;
+import bdv.ij.export.SetupAggregator;
+import bdv.ij.export.SpimRegistrationSequence;
+import bdv.ij.export.WriteSequenceToHdf5;
+import bdv.ij.export.WriteSequenceToXml;
+import bdv.ij.util.PluginHelper;
+import bdv.ij.util.PluginHelper.ProgressListenerIJ;
 import bdv.img.hdf5.Hdf5ImageLoader;
 import bdv.img.hdf5.Partition;
 import bdv.img.hdf5.Util;
 import spimopener.SPIMExperiment;
-import creator.PluginHelper.ProgressListenerIJ;
-import creator.spim.FusionResult;
-import creator.spim.SpimRegistrationSequence;
 
 public class ExportSpimFusionPlugIn implements PlugIn
 {

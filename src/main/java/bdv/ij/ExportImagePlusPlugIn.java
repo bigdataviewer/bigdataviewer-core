@@ -1,4 +1,4 @@
-package creator;
+package bdv.ij;
 
 import fiji.util.gui.GenericDialogPlus;
 import ij.IJ;
@@ -15,6 +15,12 @@ import java.awt.event.ItemEvent;
 import java.io.File;
 import java.util.ArrayList;
 
+import bdv.ij.export.WriteSequenceToHdf5;
+import bdv.ij.export.WriteSequenceToXml;
+import bdv.ij.export.imgloader.ImagePlusImgLoader;
+import bdv.ij.export.imgloader.ImagePlusImgLoader.MinMaxOption;
+import bdv.ij.util.PluginHelper;
+import bdv.ij.util.ProgressListener;
 import bdv.img.hdf5.Hdf5ImageLoader;
 import mpicbg.spim.data.ImgLoader;
 import mpicbg.spim.data.SequenceDescription;
@@ -22,8 +28,6 @@ import mpicbg.spim.data.ViewRegistration;
 import mpicbg.spim.data.ViewRegistrations;
 import mpicbg.spim.data.ViewSetup;
 import net.imglib2.realtransform.AffineTransform3D;
-import creator.ij.ImagePlusImgLoader;
-import creator.ij.ImagePlusImgLoader.MinMaxOption;
 
 /**
  * ImageJ plugin to export the current image to xml/hdf5.

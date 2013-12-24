@@ -1,4 +1,4 @@
-package creator;
+package bdv.ij.util;
 
 import ij.IJ;
 
@@ -44,7 +44,7 @@ public class PluginHelper
 		dialog.add( panel );
 	}
 
-	static class ChooseXmlFileListener implements ActionListener
+	public static class ChooseXmlFileListener implements ActionListener
 	{
 		TextField text;
 
@@ -100,7 +100,7 @@ public class PluginHelper
 		}
 	}
 
-	static int[][] parseResolutionsString( final String s )
+	public static int[][] parseResolutionsString( final String s )
 	{
 		final String regex = "\\{\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*\\}";
 		final Pattern pattern = Pattern.compile( regex );

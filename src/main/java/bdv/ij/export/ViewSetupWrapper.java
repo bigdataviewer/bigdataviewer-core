@@ -1,4 +1,4 @@
-package creator;
+package bdv.ij.export;
 
 import mpicbg.spim.data.ImgLoader;
 import mpicbg.spim.data.SequenceDescription;

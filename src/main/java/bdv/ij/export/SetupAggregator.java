@@ -1,4 +1,4 @@
-package creator;
+package bdv.ij.export;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -17,8 +17,7 @@ import net.imglib2.type.numeric.real.FloatType;
 
 import org.jdom2.Element;
 
-import creator.spim.FusionResult;
-import creator.spim.SpimRegistrationSequence;
+import bdv.ij.util.PluginHelper;
 
 /**
  * Aggregate {@link ViewSetup setups}, i.e., SPIM source angles and fused

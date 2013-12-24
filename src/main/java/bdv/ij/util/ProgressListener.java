@@ -1,4 +1,4 @@
-package creator;
+package bdv.ij.util;
 
 public interface ProgressListener
 {

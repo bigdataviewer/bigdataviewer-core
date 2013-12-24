@@ -1,9 +1,10 @@
-package creator.spim;
+package bdv.ij.export;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import bdv.ij.export.imgloader.FusionImageLoader;
 import mpicbg.spim.data.ImgLoader;
 import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.ViewRegistration;
@@ -11,7 +12,6 @@ import mpicbg.spim.data.ViewRegistrations;
 import mpicbg.spim.data.ViewSetup;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.real.FloatType;
-import creator.spim.imgloader.FusionImageLoader;
 
 public class FusionResult
 {

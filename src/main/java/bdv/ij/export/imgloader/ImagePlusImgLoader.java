@@ -1,4 +1,4 @@
-package creator.ij;
+package bdv.ij.export.imgloader;
 
 import ij.ImagePlus;
 

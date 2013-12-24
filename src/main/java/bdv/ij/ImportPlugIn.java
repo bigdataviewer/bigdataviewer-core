@@ -1,4 +1,4 @@
-package creator;
+package bdv.ij;
 
 import fiji.util.gui.GenericDialogPlus;
 import ij.IJ;
