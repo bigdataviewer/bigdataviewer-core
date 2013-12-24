@@ -1,10 +1,13 @@
 package creator;
 
-import static viewer.img.hdf5.Util.reorder;
+import static bdv.img.hdf5.Util.reorder;
 
 import java.io.File;
 import java.util.ArrayList;
 
+import bdv.img.hdf5.Hdf5ImageLoader;
+import bdv.img.hdf5.Partition;
+import bdv.img.hdf5.Util;
 import mpicbg.spim.data.ImgLoader;
 import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.View;
@@ -21,9 +24,6 @@ import net.imglib2.img.cell.CellImg;
 import net.imglib2.iterator.LocalizingZeroMinIntervalIterator;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.view.Views;
-import viewer.img.hdf5.Hdf5ImageLoader;
-import viewer.img.hdf5.Partition;
-import viewer.img.hdf5.Util;
 import ch.systemsx.cisd.base.mdarray.MDShortArray;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.HDF5IntStorageFeatures;

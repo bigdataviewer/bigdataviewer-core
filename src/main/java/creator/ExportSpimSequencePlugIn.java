@@ -18,6 +18,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import bdv.img.hdf5.Hdf5ImageLoader;
 import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.ViewRegistrations;
 import mpicbg.spim.io.ConfigurationParserException;
@@ -26,7 +27,6 @@ import mpicbg.spim.io.SPIMConfiguration;
 import mpicbg.spim.io.TextFileAccess;
 import mpicbg.spim.registration.ViewStructure;
 import spimopener.SPIMExperiment;
-import viewer.img.hdf5.Hdf5ImageLoader;
 import creator.spim.SpimRegistrationSequence;
 
 public class ExportSpimSequencePlugIn implements PlugIn

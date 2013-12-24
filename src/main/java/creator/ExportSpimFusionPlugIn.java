@@ -35,10 +35,10 @@ import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 
+import bdv.img.hdf5.Hdf5ImageLoader;
+import bdv.img.hdf5.Partition;
+import bdv.img.hdf5.Util;
 import spimopener.SPIMExperiment;
-import viewer.img.hdf5.Hdf5ImageLoader;
-import viewer.img.hdf5.Partition;
-import viewer.img.hdf5.Util;
 import creator.PluginHelper.ProgressListenerIJ;
 import creator.spim.FusionResult;
 import creator.spim.SpimRegistrationSequence;

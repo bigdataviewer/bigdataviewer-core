@@ -20,7 +20,7 @@ import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 
-import viewer.img.hdf5.Hdf5ImageLoader;
+import bdv.img.hdf5.Hdf5ImageLoader;
 import creator.ProgressListener;
 import creator.WriteSequenceToHdf5;
 import creator.WriteSequenceToXml;

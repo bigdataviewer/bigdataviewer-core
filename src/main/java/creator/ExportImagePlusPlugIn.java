@@ -15,13 +15,13 @@ import java.awt.event.ItemEvent;
 import java.io.File;
 import java.util.ArrayList;
 
+import bdv.img.hdf5.Hdf5ImageLoader;
 import mpicbg.spim.data.ImgLoader;
 import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.ViewRegistration;
 import mpicbg.spim.data.ViewRegistrations;
 import mpicbg.spim.data.ViewSetup;
 import net.imglib2.realtransform.AffineTransform3D;
-import viewer.img.hdf5.Hdf5ImageLoader;
 import creator.ij.ImagePlusImgLoader;
 import creator.ij.ImagePlusImgLoader.MinMaxOption;
 

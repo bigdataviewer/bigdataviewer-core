@@ -5,12 +5,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import bdv.img.hdf5.Hdf5ImageLoader;
+import bdv.img.hdf5.Partition;
 import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.ViewRegistrations;
 import mpicbg.spim.io.ConfigurationParserException;
 import net.imglib2.realtransform.AffineTransform3D;
-import viewer.img.hdf5.Hdf5ImageLoader;
-import viewer.img.hdf5.Partition;
 import creator.spim.FusionResult;
 import creator.spim.SpimRegistrationSequence;
 
