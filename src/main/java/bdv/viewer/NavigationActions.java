@@ -1,13 +1,12 @@
 package bdv.viewer;
 
-import static bdv.util.AbstractNamedAction.put;
-
 import java.awt.event.ActionEvent;
 
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
 
 import bdv.util.AbstractNamedAction;
+import bdv.util.AbstractNamedAction.NamedActionAdder;
 import bdv.util.KeyProperties;
 import bdv.util.KeyProperties.KeyStrokeAdder;
 import bdv.viewer.ViewerPanel.AlignPlane;
@@ -75,27 +74,29 @@ public class NavigationActions
 
 	public static ActionMap createActionMap( final ViewerPanel viewer, final int numSourceKeys )
 	{
-		final ActionMap map = new ActionMap();
-		addToActionMap( map, viewer, numSourceKeys );
-		return map;
+		final ActionMap actionMap = new ActionMap();
+		addToActionMap( actionMap, viewer, numSourceKeys );
+		return actionMap;
 	}
 
-	public static void addToActionMap( final ActionMap map, final ViewerPanel viewer, final int numSourceKeys )
+	public static void addToActionMap( final ActionMap actionMap, final ViewerPanel viewer, final int numSourceKeys )
 	{
-		put( map, new ToggleInterPolationAction( viewer ) );
-		put( map, new ToggleFusedModeAction( viewer ) );
-		put( map, new ToggleGroupingAction( viewer ) );
-		put( map, new NextTimePointAction( viewer ) );
-		put( map, new PreviousTimePointAction( viewer ) );
+		final NamedActionAdder map = new NamedActionAdder( actionMap );
+
+		map.put( new ToggleInterPolationAction( viewer ) );
+		map.put( new ToggleFusedModeAction( viewer ) );
+		map.put( new ToggleGroupingAction( viewer ) );
+		map.put( new NextTimePointAction( viewer ) );
+		map.put( new PreviousTimePointAction( viewer ) );
 
 		for ( int i = 0; i < numSourceKeys; ++i )
 		{
-			put( map, new SetCurrentSourceOrGroupAction( viewer, i ) );
-			put( map, new ToggleSourceOrGroupVisibilityAction( viewer, i ) );
+			map.put( new SetCurrentSourceOrGroupAction( viewer, i ) );
+			map.put( new ToggleSourceOrGroupVisibilityAction( viewer, i ) );
 		}
 
 		for ( final AlignPlane plane : AlignPlane.values() )
-			put( map, new AlignPlaneAction( viewer, plane ) );
+			map.put( new AlignPlaneAction( viewer, plane ) );
 	}
 
 	private static abstract class NavigationAction extends AbstractNamedAction
