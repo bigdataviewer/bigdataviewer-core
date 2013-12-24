@@ -114,7 +114,10 @@ public class SequenceDescription
 	protected static ImgLoader createImgLoaderFromXml( final Element sequenceDescription, final File basePath ) throws InstantiationException, IllegalAccessException, ClassNotFoundException
 	{
 		final Element elem = sequenceDescription.getChild( "ImageLoader" );
-		final ImgLoader imgLoader = ( ImgLoader ) Class.forName( elem.getAttributeValue( "class" ) ).newInstance();
+		String classn = elem.getAttributeValue( "class" );
+		if ( classn.equals( "viewer.hdf5.Hdf5ImageLoader" ) )
+			classn = "bdv.img.hdf5.Hdf5ImageLoader";
+		final ImgLoader imgLoader = ( ImgLoader ) Class.forName( classn ).newInstance();
 		imgLoader.init( elem, basePath );
 		return imgLoader;
 	}
