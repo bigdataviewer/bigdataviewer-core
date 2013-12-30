@@ -6,10 +6,10 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
+import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 import bdv.img.cache.CacheIoTiming.IoStatistics;
 import bdv.img.cache.CacheIoTiming.IoTimeBudget;
 import bdv.img.cache.VolatileImgCells.CellCache;
-import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 
 public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cache
 {
@@ -159,7 +159,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 		queue = new BlockingFetchQueues< Key >( maxNumLevels );
 		threadManager = new ThreadManager();
 		fetchers = new ArrayList< Fetcher >();
-		for ( int i = 0; i < 2; ++i ) // TODO: add numFetcherThreads parameter
+		for ( int i = 0; i < 1; ++i ) // TODO: add numFetcherThreads parameter
 		{
 			final Fetcher f = new Fetcher();
 			fetchers.add( f );

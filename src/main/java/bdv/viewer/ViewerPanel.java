@@ -172,7 +172,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 		private boolean doubleBuffered = true;
 
-		private int numRenderingThreads = 5;
+		private int numRenderingThreads = 4;
 
 		public Options width( final int w )
 		{
