@@ -35,17 +35,18 @@ import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 
+import spimopener.SPIMExperiment;
+import bdv.export.SubTaskProgressListener;
+import bdv.export.WriteSequenceToHdf5;
+import bdv.export.WriteSequenceToXml;
 import bdv.ij.export.FusionResult;
 import bdv.ij.export.SetupAggregator;
 import bdv.ij.export.SpimRegistrationSequence;
-import bdv.ij.export.WriteSequenceToHdf5;
-import bdv.ij.export.WriteSequenceToXml;
 import bdv.ij.util.PluginHelper;
-import bdv.ij.util.PluginHelper.ProgressListenerIJ;
+import bdv.ij.util.ProgressListenerIJ;
 import bdv.img.hdf5.Hdf5ImageLoader;
 import bdv.img.hdf5.Partition;
 import bdv.img.hdf5.Util;
-import spimopener.SPIMExperiment;
 
 public class ExportSpimFusionPlugIn implements PlugIn
 {
@@ -82,7 +83,7 @@ public class ExportSpimFusionPlugIn implements PlugIn
 
 	public static void appendToExistingFile( final Parameters params ) throws JDOMException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
 	{
-		final ProgressListenerIJ progress = new PluginHelper.ProgressListenerIJ( 0, 0.95 );
+		final ProgressListenerIJ progress = new ProgressListenerIJ( 0, 0.95 );
 
 		final SpimRegistrationSequence spimseq = new SpimRegistrationSequence( params.conf );
 		final List< AffineTransform3D > fusionTransforms = spimseq.getFusionTransforms( params.cropOffsetX, params.cropOffsetY, params.cropOffsetZ, params.scale );
@@ -129,20 +130,21 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		final ArrayList< int[][] > perSetupSubdivisions = aggregator.getPerSetupSubdivisions();
 
 		double complete = 0.05;
-		progress.updateProgress( complete );
+		progress.setProgress( complete );
 
 		// write new data partitions
 		final double completionStep = ( 0.95 - complete ) / newPartitions.size();
 		for ( final Partition partition : newPartitions )
 		{
-			WriteSequenceToHdf5.writeHdf5PartitionFile( aggregateSeq, perSetupResolutions, perSetupSubdivisions, partition, progress.createSubTaskProgressListener( complete, complete + completionStep ) );
+			final SubTaskProgressListener subtaskProgress = new SubTaskProgressListener( progress, complete, complete + completionStep );
+			WriteSequenceToHdf5.writeHdf5PartitionFile( aggregateSeq, perSetupResolutions, perSetupSubdivisions, partition, subtaskProgress );
 			complete += completionStep;
 		}
 
 		// (re-)write hdf5 link file
 		final File newHdf5PartitionLinkFile = PluginHelper.createNewPartitionFile( existingDatasetXmlFile );
 		WriteSequenceToHdf5.writeHdf5PartitionLinkFile( aggregateSeq, perSetupResolutions, perSetupSubdivisions, partitions, newHdf5PartitionLinkFile );
-		progress.updateProgress( 1 );
+		progress.setProgress( 1 );
 
 		// re-write xml file
 		final Hdf5ImageLoader loader = new Hdf5ImageLoader( newHdf5PartitionLinkFile, partitions, false );
@@ -173,7 +175,7 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		final ArrayList< int[][] > perSetupSubdivisions = aggregator.getPerSetupSubdivisions();
 
 		// write single hdf5 file
-		WriteSequenceToHdf5.writeHdf5File( aggregateSeq, perSetupResolutions, perSetupSubdivisions, params.hdf5File, new PluginHelper.ProgressListenerIJ( 0, 0.95 ) );
+		WriteSequenceToHdf5.writeHdf5File( aggregateSeq, perSetupResolutions, perSetupSubdivisions, params.hdf5File, new ProgressListenerIJ( 0, 0.95 ) );
 
 		// re-write xml file
 		final Hdf5ImageLoader loader = new Hdf5ImageLoader( params.hdf5File, null, false );

@@ -1,15 +1,10 @@
-package bdv.ij.export;
+package bdv.export;
 
 import static bdv.img.hdf5.Util.reorder;
 
 import java.io.File;
 import java.util.ArrayList;
 
-import bdv.ij.util.PluginHelper;
-import bdv.ij.util.ProgressListener;
-import bdv.img.hdf5.Hdf5ImageLoader;
-import bdv.img.hdf5.Partition;
-import bdv.img.hdf5.Util;
 import mpicbg.spim.data.ImgLoader;
 import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.View;
@@ -26,6 +21,9 @@ import net.imglib2.img.cell.CellImg;
 import net.imglib2.iterator.LocalizingZeroMinIntervalIterator;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.view.Views;
+import bdv.img.hdf5.Hdf5ImageLoader;
+import bdv.img.hdf5.Partition;
+import bdv.img.hdf5.Util;
 import ch.systemsx.cisd.base.mdarray.MDShortArray;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.HDF5IntStorageFeatures;
@@ -154,7 +152,7 @@ public class WriteSequenceToHdf5
 	public static void writeHdf5PartitionFile( final SequenceDescription seq, final ArrayList< int[][] > perSetupResolutions, final ArrayList< int[][] > perSetupSubdivisions, final Partition partition, ProgressListener progressListener )
 	{
 		if ( progressListener == null )
-			progressListener = new PluginHelper.ProgressListenerSysOut();
+			progressListener = new ProgressListenerSysOut();
 
 		final int timepointOffsetSeq = partition.getTimepointOffset() + partition.getTimepointStart();
 		final int timepointOffsetFile = partition.getTimepointStart();
@@ -174,7 +172,7 @@ public class WriteSequenceToHdf5
 			numTasks += numTimepoints * ( numLevels + 1 );
 		}
 		int numCompletedTasks = 0;
-		progressListener.updateProgress( numCompletedTasks++, numTasks );
+		progressListener.setProgress( ( double ) numCompletedTasks++ / numTasks );
 
 		assert( perSetupResolutions.size() >= setupOffsetSeq + numSetups );
 		assert( perSetupSubdivisions.size() >= setupOffsetSeq + numSetups );
@@ -207,7 +205,7 @@ public class WriteSequenceToHdf5
 		hdf5Writer.writeInt( "numTimepoints", numTimepoints );
 		hdf5Writer.writeInt( "numSetups", numSetups );
 
-		progressListener.updateProgress( numCompletedTasks++, numTasks );
+		progressListener.setProgress( ( double ) numCompletedTasks++ / numTasks );
 
 		// write image data for all views to the HDF5 file
 		final int n = 3;
@@ -229,7 +227,7 @@ public class WriteSequenceToHdf5
 				final View view = new View( seq, timepointSeq, setupSeq, null );
 				progressListener.println( "loading image" );
 				final RandomAccessibleInterval< UnsignedShortType > img = imgLoader.getUnsignedShortImage( view );
-				progressListener.updateProgress( numCompletedTasks++, numTasks );
+				progressListener.setProgress( ( double ) numCompletedTasks++ / numTasks );
 
 				for ( int level = 0; level < numLevels; ++level )
 				{
@@ -290,7 +288,7 @@ public class WriteSequenceToHdf5
 						final MDShortArray array = new MDShortArray( ( ( ShortArray ) cell.update( null ) ).getCurrentStorageArray(), currentCellDimRM );
 						hdf5Writer.writeShortMDArrayBlockWithOffset( path, array, currentCellMinRM );
 					}
-					progressListener.updateProgress( numCompletedTasks++, numTasks );
+					progressListener.setProgress( ( double ) numCompletedTasks++ / numTasks );
 				}
 			}
 		}

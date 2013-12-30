@@ -17,6 +17,8 @@ import net.imglib2.type.numeric.real.FloatType;
 
 import org.jdom2.Element;
 
+import bdv.export.WriteSequenceToHdf5;
+import bdv.export.WriteSequenceToXml;
 import bdv.ij.util.PluginHelper;
 
 /**

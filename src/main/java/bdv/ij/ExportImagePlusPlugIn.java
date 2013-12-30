@@ -15,12 +15,13 @@ import java.awt.event.ItemEvent;
 import java.io.File;
 import java.util.ArrayList;
 
-import bdv.ij.export.WriteSequenceToHdf5;
-import bdv.ij.export.WriteSequenceToXml;
+import bdv.export.ProgressListener;
+import bdv.export.WriteSequenceToHdf5;
+import bdv.export.WriteSequenceToXml;
 import bdv.ij.export.imgloader.ImagePlusImgLoader;
 import bdv.ij.export.imgloader.ImagePlusImgLoader.MinMaxOption;
 import bdv.ij.util.PluginHelper;
-import bdv.ij.util.ProgressListener;
+import bdv.ij.util.ProgressListenerIJ;
 import bdv.img.hdf5.Hdf5ImageLoader;
 import mpicbg.spim.data.ImgLoader;
 import mpicbg.spim.data.SequenceDescription;
@@ -109,7 +110,7 @@ public class ExportImagePlusPlugIn implements PlugIn
 		final File hdf5File = params.hdf5File;
 		final int[][] resolutions = params.resolutions;
 		final int[][] subdivisions = params.subdivisions;
-		final ProgressListener progressListener = new PluginHelper.ProgressListenerIJ( 0, 0.95 );
+		final ProgressListener progressListener = new ProgressListenerIJ( 0, 0.95 );
 		final ArrayList< ViewSetup > setups = new ArrayList< ViewSetup >( numSetups );
 		for ( int s = 0; s < numSetups; ++s )
 			setups.add( new ViewSetup( s, 0, 0, s, w, h, d, pw, ph, pd ) );

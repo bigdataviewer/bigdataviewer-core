@@ -1,4 +1,4 @@
-package bdv.ij.export;
+package bdv.export;
 
 import net.imglib2.Cursor;
 import net.imglib2.FinalInterval;

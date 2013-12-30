@@ -1,4 +1,4 @@
-package bdv.ij.export;
+package bdv.export;
 
 import java.io.File;
 import java.io.FileWriter;

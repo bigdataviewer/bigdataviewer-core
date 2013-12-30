@@ -29,8 +29,8 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileFilter;
 
-import bdv.ij.export.WriteSequenceToHdf5;
-import bdv.ij.export.WriteSequenceToXml;
+import bdv.export.WriteSequenceToHdf5;
+import bdv.export.WriteSequenceToXml;
 import bdv.img.hdf5.Hdf5ImageLoader;
 import bdv.img.hdf5.Util;
 import bdv.viewer.Source;

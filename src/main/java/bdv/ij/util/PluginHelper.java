@@ -1,7 +1,5 @@
 package bdv.ij.util;
 
-import ij.IJ;
-
 import java.awt.Button;
 import java.awt.FlowLayout;
 import java.awt.GridBagConstraints;
@@ -133,81 +131,5 @@ public class PluginHelper
 					return hdf5File;
 		}
 		throw new RuntimeException( "could not generate new partition filename" );
-	}
-
-
-
-	public static class ProgressListenerIJ implements ProgressListener
-	{
-		final double min;
-
-		final double scale;
-
-		public ProgressListenerIJ( final double min, final double max )
-		{
-			this.min = min;
-			this.scale = 1.0 / ( max - min );
-		}
-
-		@Override
-		public ProgressListener createSubTaskProgressListener( final double startCompletionRatio, final double endCompletionRatio )
-		{
-			return new ProgressListenerIJ( startCompletionRatio, endCompletionRatio );
-		}
-
-		@Override
-		public ProgressListener createSubTaskProgressListener( final int taskToCompleteTasks, final int numTasks )
-		{
-			return createSubTaskProgressListener( ( double ) taskToCompleteTasks / numTasks, ( double ) ( taskToCompleteTasks + 1 ) / numTasks );
-		}
-
-		@Override
-		public void updateProgress( final double completionRatio )
-		{
-			IJ.showProgress( min + scale * completionRatio );
-		}
-
-		@Override
-		public void updateProgress( final int numCompletedTasks, final int numTasks )
-		{
-			updateProgress( ( double ) numCompletedTasks / numTasks );
-		}
-
-		@Override
-		public void println( final String s )
-		{
-			IJ.log( s );
-		}
-	}
-
-	public static class ProgressListenerSysOut implements ProgressListener
-	{
-		@Override
-		public ProgressListener createSubTaskProgressListener( final double startCompletionRatio, final double endCompletionRatio )
-		{
-			return this;
-		}
-
-		@Override
-		public ProgressListener createSubTaskProgressListener( final int taskToCompleteTasks, final int numTasks )
-		{
-			return this;
-		}
-
-		@Override
-		public void updateProgress( final double completionRatio )
-		{
-		}
-
-		@Override
-		public void updateProgress( final int numCompletedTasks, final int numTasks )
-		{
-		}
-
-		@Override
-		public void println( final String s )
-		{
-			System.out.println( s );
-		}
 	}
 }

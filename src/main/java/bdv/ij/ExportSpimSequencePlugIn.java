@@ -18,10 +18,11 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 
+import bdv.export.WriteSequenceToHdf5;
+import bdv.export.WriteSequenceToXml;
 import bdv.ij.export.SpimRegistrationSequence;
-import bdv.ij.export.WriteSequenceToHdf5;
-import bdv.ij.export.WriteSequenceToXml;
 import bdv.ij.util.PluginHelper;
+import bdv.ij.util.ProgressListenerIJ;
 import bdv.img.hdf5.Hdf5ImageLoader;
 import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.ViewRegistrations;
@@ -46,7 +47,7 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		IJ.log( "starting export..." );
 		final SpimRegistrationSequence sequence = new SpimRegistrationSequence( params.conf );
 		final SequenceDescription desc = sequence.getSequenceDescription();
-		WriteSequenceToHdf5.writeHdf5File( desc, params.perSetupResolutions, params.perSetupSubdivisions, params.hdf5File, new PluginHelper.ProgressListenerIJ( 0, 0.95 ) );
+		WriteSequenceToHdf5.writeHdf5File( desc, params.perSetupResolutions, params.perSetupSubdivisions, params.hdf5File, new ProgressListenerIJ( 0, 0.95 ) );
 
 		final Hdf5ImageLoader loader = new Hdf5ImageLoader( params.hdf5File, null, false );
 		final SequenceDescription sequenceDescription = new SequenceDescription( desc.setups, desc.timepoints, params.seqFile.getParentFile(), loader );

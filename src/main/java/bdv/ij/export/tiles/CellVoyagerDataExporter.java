@@ -20,9 +20,9 @@ import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 
-import bdv.ij.export.WriteSequenceToHdf5;
-import bdv.ij.export.WriteSequenceToXml;
-import bdv.ij.util.ProgressListener;
+import bdv.export.ProgressListener;
+import bdv.export.WriteSequenceToHdf5;
+import bdv.export.WriteSequenceToXml;
 import bdv.img.hdf5.Hdf5ImageLoader;
 
 public class CellVoyagerDataExporter
@@ -259,7 +259,7 @@ public class CellVoyagerDataExporter
 	public void export( final File seqFile, final File hdf5File, final int[][] resolutions, final int[][] chunks, final ProgressListener progressListener )
 	{
 
-		progressListener.updateProgress( 0d );
+		progressListener.setProgress( 0d );
 
 		final List< ChannelInfo > channelInfos = readInfo();
 		/*
@@ -340,7 +340,7 @@ public class CellVoyagerDataExporter
 			throw new RuntimeException( e );
 		}
 
-		progressListener.updateProgress( 1d );
+		progressListener.setProgress( 1d );
 
 	}
 
