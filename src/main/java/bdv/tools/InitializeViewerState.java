@@ -2,13 +2,6 @@ package bdv.tools;
 
 import java.awt.Dimension;
 
-import bdv.tools.brightness.MinMaxGroup;
-import bdv.tools.brightness.SetupAssignments;
-import bdv.util.Affine3DHelpers;
-import bdv.viewer.Source;
-import bdv.viewer.ViewerPanel;
-import bdv.viewer.state.SourceState;
-import bdv.viewer.state.ViewerState;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.histogram.DiscreteFrequencyDistribution;
@@ -18,6 +11,13 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.util.LinAlgHelpers;
 import net.imglib2.view.Views;
+import bdv.tools.brightness.MinMaxGroup;
+import bdv.tools.brightness.SetupAssignments;
+import bdv.util.Affine3DHelpers;
+import bdv.viewer.Source;
+import bdv.viewer.ViewerPanel;
+import bdv.viewer.state.SourceState;
+import bdv.viewer.state.ViewerState;
 
 public class InitializeViewerState
 {
@@ -39,9 +39,6 @@ public class InitializeViewerState
 	public static void initTransform( final ViewerPanel viewer )
 	{
 		final Dimension dim = viewer.getDisplay().getSize();
-		System.out.println();
-		System.out.println( dim );
-		System.out.println();
 		initTransform( dim.width, dim.height, viewer );
 	}
 

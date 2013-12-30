@@ -467,11 +467,11 @@ public class MultiResolutionRenderer
 						if ( rendertime < targetRenderNanos && maxScreenScaleIndex > 0 )
 							maxScreenScaleIndex--;
 					}
-					System.out.println( "created projector" );
-					System.out.println( String.format( "rendering:%4d ms", rendertime / 1000000 ) );
-					System.out.println( "scale = " + currentScreenScaleIndex );
-					System.out.println( "maxScreenScaleIndex = " + maxScreenScaleIndex + "  (" + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 0 ) + " x " + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 1 ) + ")" );
-					System.out.println();
+//					System.out.println( "created projector" );
+//					System.out.println( String.format( "rendering:%4d ms", rendertime / 1000000 ) );
+//					System.out.println( "scale = " + currentScreenScaleIndex );
+//					System.out.println( "maxScreenScaleIndex = " + maxScreenScaleIndex + "  (" + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 0 ) + " x " + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 1 ) + ")" );
+//					System.out.println();
 				}
 
 				if ( currentScreenScaleIndex > 0 )

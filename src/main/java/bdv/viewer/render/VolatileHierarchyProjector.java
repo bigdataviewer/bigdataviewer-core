@@ -9,8 +9,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import bdv.img.cache.CacheIoTiming;
-import bdv.img.cache.CacheIoTiming.IoStatistics;
 import net.imglib2.Cursor;
 import net.imglib2.FinalInterval;
 import net.imglib2.IterableInterval;
@@ -26,6 +24,8 @@ import net.imglib2.type.numeric.integer.ByteType;
 import net.imglib2.ui.AbstractInterruptibleProjector;
 import net.imglib2.ui.util.StopWatch;
 import net.imglib2.view.Views;
+import bdv.img.cache.CacheIoTiming;
+import bdv.img.cache.CacheIoTiming.IoStatistics;
 
 /**
  * {@link Projector} for a hierarchy of {@link Volatile} inputs.  After each
@@ -306,12 +306,12 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 			}
 			if ( interrupted.get() )
 			{
-				System.out.println( "interrupted" );
+//				System.out.println( "interrupted" );
 				if ( createExecutor )
 					ex.shutdown();
 				return false;
 			}
-			System.out.println( "numInvalidPixels(" + i + ") = " + numInvalidPixels );
+//			System.out.println( "numInvalidPixels(" + i + ") = " + numInvalidPixels );
 		}
 		if ( createExecutor )
 			ex.shutdown();
@@ -324,8 +324,8 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 		lastFrameIoNanoTime = iostat.getIoNanoTime() - startTimeIo;
 		lastFrameRenderNanoTime = lastFrameTime - ( iostat.getCumulativeIoNanoTime() - startTimeIoCumulative ) / numThreads;
 
-		System.out.println( "lastFrameTime = " + lastFrameTime / 1000000 );
-		System.out.println( "lastFrameRenderNanoTime = " + lastFrameRenderNanoTime / 1000000 );
+//		System.out.println( "lastFrameTime = " + lastFrameTime / 1000000 );
+//		System.out.println( "lastFrameRenderNanoTime = " + lastFrameRenderNanoTime / 1000000 );
 
 		if ( valid )
 			numInvalidLevels = i - 1;

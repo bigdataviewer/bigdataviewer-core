@@ -36,7 +36,6 @@ public class CacheIoTiming
 		public void reset()
 		{
 			System.arraycopy( initialBudget, 0, budget, 0, budget.length );
-			System.out.println( net.imglib2.util.Util.printCoordinates( budget ) );
 		}
 
 		public synchronized long timeLeft( final int level )
