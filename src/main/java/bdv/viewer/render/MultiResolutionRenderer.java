@@ -8,11 +8,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
-import bdv.img.cache.Cache;
-import bdv.viewer.Interpolation;
-import bdv.viewer.Source;
-import bdv.viewer.state.SourceState;
-import bdv.viewer.state.ViewerState;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
@@ -27,6 +22,11 @@ import net.imglib2.ui.RenderTarget;
 import net.imglib2.ui.Renderer;
 import net.imglib2.ui.SimpleInterruptibleProjector;
 import net.imglib2.ui.util.GuiUtil;
+import bdv.img.cache.Cache;
+import bdv.viewer.Interpolation;
+import bdv.viewer.Source;
+import bdv.viewer.state.SourceState;
+import bdv.viewer.state.ViewerState;
 
 /**
  * A {@link Renderer} that uses a coarse-to-fine rendering scheme. First, a
@@ -461,6 +461,8 @@ public class MultiResolutionRenderer
 					{
 						if ( rendertime > targetRenderNanos && maxScreenScaleIndex < screenScales.length - 1 )
 							maxScreenScaleIndex++;
+						else if ( rendertime < targetRenderNanos / 3 && maxScreenScaleIndex > 0 )
+							maxScreenScaleIndex--;
 					}
 					else if ( currentScreenScaleIndex == maxScreenScaleIndex - 1 )
 					{
