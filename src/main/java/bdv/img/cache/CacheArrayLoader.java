@@ -1,6 +1,6 @@
 package bdv.img.cache;
 
-public interface CqcheArrayLoader< A >
+public interface CacheArrayLoader< A >
 {
 	public int getBytesPerElement();
 

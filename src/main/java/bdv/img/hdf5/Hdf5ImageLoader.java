@@ -24,8 +24,8 @@ import org.jdom2.Element;
 import bdv.ViewerImgLoader;
 import bdv.img.cache.VolatileCell;
 import bdv.img.cache.VolatileGlobalCellCache;
-import bdv.img.cache.VolatileImgCells;
 import bdv.img.cache.VolatileGlobalCellCache.LoadingStrategy;
+import bdv.img.cache.VolatileImgCells;
 import bdv.img.cache.VolatileImgCells.CellCache;
 import ch.systemsx.cisd.hdf5.HDF5DataSetInformation;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
@@ -207,7 +207,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 
 	/**
 	 * (Almost) create a {@link CellImg} backed by the cache.
-	 * The created image needs a {@link NativeImg#setLinkedType(net.imglib2.type.Type) lined type} before it can be used.
+	 * The created image needs a {@link NativeImg#setLinkedType(net.imglib2.type.Type) linked type} before it can be used.
 	 * The type should be either {@link UnsignedShortType} and {@link VolatileUnsignedShortType}.
 	 */
 	protected < T extends NativeType< T > > CellImg< T, VolatileShortArray, VolatileCell< VolatileShortArray > > prepareCachedImage( final View view, final int level, final LoadingStrategy loadingStrategy )

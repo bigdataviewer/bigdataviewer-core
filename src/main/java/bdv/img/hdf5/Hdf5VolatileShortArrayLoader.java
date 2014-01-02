@@ -2,12 +2,12 @@ package bdv.img.hdf5;
 
 import static bdv.img.hdf5.Util.getCellsPath;
 import static bdv.img.hdf5.Util.reorder;
-import bdv.img.cache.CqcheArrayLoader;
+import bdv.img.cache.CacheArrayLoader;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
 import ch.systemsx.cisd.base.mdarray.MDShortArray;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
 
-public class Hdf5VolatileShortArrayLoader implements CqcheArrayLoader< VolatileShortArray >
+public class Hdf5VolatileShortArrayLoader implements CacheArrayLoader< VolatileShortArray >
 {
 	private final IHDF5Reader hdf5Reader;
 

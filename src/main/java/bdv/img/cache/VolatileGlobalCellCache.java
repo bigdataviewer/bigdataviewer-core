@@ -144,9 +144,9 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 
 	private final ArrayList< Fetcher > fetchers;
 
-	private final CqcheArrayLoader< A > loader;
+	private final CacheArrayLoader< A > loader;
 
-	public VolatileGlobalCellCache( final CqcheArrayLoader< A > loader, final int numTimepoints, final int numSetups, final int maxNumLevels, final int[] maxLevels )
+	public VolatileGlobalCellCache( final CacheArrayLoader< A > loader, final int numTimepoints, final int numSetups, final int maxNumLevels, final int[] maxLevels )
 	{
 		this.loader = loader;
 		this.numTimepoints = numTimepoints;
