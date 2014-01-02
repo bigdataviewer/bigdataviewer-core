@@ -12,6 +12,8 @@ import java.awt.BorderLayout;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseMotionListener;
 import java.util.ArrayList;
@@ -305,6 +307,16 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 		msgOverlay = new MessageOverlayAnimator( 800 );
 		animatedOverlay = new TextOverlayAnimator( "Press <F1> for help.", 3000, TextPosition.CENTER );
+
+		display.addComponentListener( new ComponentAdapter()
+		{
+			@Override
+			public void componentResized( final ComponentEvent e )
+			{
+				requestRepaint();
+				display.removeComponentListener( this );
+			}
+		} );
 
 		painterThread.start();
 	}
