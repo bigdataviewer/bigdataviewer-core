@@ -29,15 +29,14 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import bdv.img.cache.Cache;
-import bdv.img.cache.ThreadManager;
-import bdv.viewer.ViewerPanel;
-import bdv.viewer.render.MultiResolutionRenderer;
-import bdv.viewer.state.ViewerState;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
+import bdv.img.cache.Cache;
+import bdv.viewer.ViewerPanel;
+import bdv.viewer.render.MultiResolutionRenderer;
+import bdv.viewer.state.ViewerState;
 
 public class RecordMovieDialog extends JDialog implements OverlayRenderer
 {
@@ -270,12 +269,6 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 			@Override
 			public void initIoTimeBudget( final long[] partialBudget, final boolean reinitialize )
 			{}
-
-			@Override
-			public ThreadManager getThreadManager()
-			{
-				return null;
-			}
 
 			@Override
 			public void prepareNextFrame()

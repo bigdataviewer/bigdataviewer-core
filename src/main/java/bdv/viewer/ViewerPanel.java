@@ -262,7 +262,6 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		sourceInfoOverlayRenderer = new SourceInfoOverlayRenderer();
 
 		painterThread = new PainterThread( this );
-		cache.getThreadManager().addConsumer( painterThread );
 		viewerTransform = new AffineTransform3D();
 		display = new InteractiveDisplayCanvasComponent< AffineTransform3D >(
 				optional.width, optional.height, TransformEventHandler3D.factory() );
@@ -745,6 +744,5 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	{
 		painterThread.interrupt();
 		renderingExecutorService.shutdown();
-		cache.getThreadManager().removeConsumer( painterThread );
 	}
 }

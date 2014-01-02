@@ -144,8 +144,6 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 
 	private final ArrayList< Fetcher > fetchers;
 
-	private final ThreadManager threadManager;
-
 	private final CqcheArrayLoader< A > loader;
 
 	public VolatileGlobalCellCache( final CqcheArrayLoader< A > loader, final int numTimepoints, final int numSetups, final int maxNumLevels, final int[] maxLevels )
@@ -157,13 +155,12 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 		this.maxLevels = maxLevels;
 
 		queue = new BlockingFetchQueues< Key >( maxNumLevels );
-		threadManager = new ThreadManager();
 		fetchers = new ArrayList< Fetcher >();
 		for ( int i = 0; i < 1; ++i ) // TODO: add numFetcherThreads parameter
 		{
 			final Fetcher f = new Fetcher();
+			f.setDaemon( true );
 			fetchers.add( f );
-			threadManager.addThread( f );
 			f.start();
 		}
 	}
@@ -364,7 +361,12 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	}
 
 	/**
-	 * TODO
+	 * Prepare the cache for providing data for the "next frame":
+	 * <ul>
+	 * <li>the contents of fetch queues is moved to the prefetch.
+	 * <li>the internal frame counter is incremented, which will enable
+	 * previously enqueued requests to be enqueued again for the new frame.
+	 * </ul>
 	 */
 	@Override
 	public void prepareNextFrame()
@@ -374,16 +376,19 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	}
 
 	/**
-	 * TODO
-	 */
-	@Override
-	public ThreadManager getThreadManager()
-	{
-		return threadManager;
-	}
-
-	/**
-	 * TODO
+	 * (Re-)initialize the IO time budget, that is, the time that can be spent
+	 * in blocking IO per frame/
+	 *
+	 * @param partialBudget
+	 *            Initial budget (in nanoseconds) for priority levels 0 through
+	 *            <em>n</em>. The budget for level <em>i>j</em> must always be
+	 *            smaller-equal the budget for level <em>j</em>. If <em>n</em>
+	 *            is smaller than the maximum number of mipmap levels, the
+	 *            remaining priority levels are filled up with budget[n].
+	 * @param reinitialize
+	 *            If true, the IO time budget is initialized to the given
+	 *            partial budget. If false, the IO time budget is reset to the
+	 *            previous initial values.
 	 */
 	@Override
 	public void initIoTimeBudget( final long[] partialBudget, final boolean reinitialize )
