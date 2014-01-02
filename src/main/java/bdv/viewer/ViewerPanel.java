@@ -571,6 +571,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		if ( state.getCurrentTimepoint() != timepoint )
 		{
 			state.setCurrentTimepoint( timepoint );
+			sliderTime.setValue( timepoint );
 			requestRepaint();
 		}
 	}
