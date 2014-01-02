@@ -53,6 +53,11 @@ public final class KeyProperties
 	public static KeyProperties readPropertyFile()
 	{
 		final File file = new File( "spimviewer.properties" );
+		return readPropertyFile( file );
+	}
+
+	public static KeyProperties readPropertyFile( final File file )
+	{
 		try
 		{
 			final InputStream stream = new FileInputStream( file );
@@ -116,5 +121,17 @@ public final class KeyProperties
 				keys[ i++ ] = KeyStroke.getKeyStroke( s );
 			put( actionName, keys );
 		}
+	}
+
+	public static Properties createPropertiesFromInputMap( final InputMap inputMap )
+	{
+		final Properties properties = new Properties();
+		final KeyStroke[] keys = inputMap.allKeys();
+		for ( final KeyStroke key : keys )
+		{
+			final Object actionName = inputMap.get( key );
+			properties.put( key.toString(), actionName.toString() );
+		}
+		return properties;
 	}
 }
