@@ -10,9 +10,9 @@ import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
-import bdv.img.cache.VolatileGlobalCellCache;
-import bdv.viewer.ViewerPanel.Options;
 import net.imglib2.ui.util.GuiUtil;
+import bdv.img.cache.Cache;
+import bdv.viewer.ViewerPanel.Options;
 
 /**
  * A {@link JFrame} containing a {@link ViewerPanel} and associated
@@ -32,7 +32,7 @@ public class ViewerFrame extends JFrame
 			final int width, final int height,
 			final List< SourceAndConverter< ? > > sources,
 			final int numTimePoints,
-			final VolatileGlobalCellCache< ? > cache )
+			final Cache cache )
 	{
 		this( width, height, sources, numTimePoints, cache, ViewerPanel.options() );
 	}
@@ -59,7 +59,7 @@ public class ViewerFrame extends JFrame
 			final int width, final int height,
 			final List< SourceAndConverter< ? > > sources,
 			final int numTimePoints,
-			final VolatileGlobalCellCache< ? > cache,
+			final Cache cache,
 			final Options optional )
 	{
 //		super( "BigDataViewer", GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.ARGB_COLOR_MODEL ) );
