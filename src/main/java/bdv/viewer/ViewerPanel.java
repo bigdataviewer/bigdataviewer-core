@@ -461,7 +461,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 * The planes which can be aligned with the viewer coordinate system: XY,
 	 * ZY, and XZ plane.
 	 */
-	protected static enum AlignPlane
+	public static enum AlignPlane
 	{
 		XY( "XY", 2, new double[] { 1, 0, 0, 0 } ),
 		ZY( "ZY", 0, new double[] { c, 0, -c, 0 } ),
