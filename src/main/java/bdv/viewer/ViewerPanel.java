@@ -176,6 +176,8 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 		private int numRenderingThreads = 4;
 
+		private MessageOverlayAnimator msgOverlay = new MessageOverlayAnimator( 800 );
+
 		public Options width( final int w )
 		{
 			width = w;
@@ -209,6 +211,12 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		public Options numRenderingThreads( final int n )
 		{
 			numRenderingThreads = n;
+			return this;
+		}
+
+		public Options msgOverlay( final MessageOverlayAnimator o )
+		{
+			msgOverlay = o;
 			return this;
 		}
 	}
@@ -305,7 +313,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 		transformListeners = new CopyOnWriteArrayList< TransformListener< AffineTransform3D > >();
 
-		msgOverlay = new MessageOverlayAnimator( 800 );
+		msgOverlay = optional.msgOverlay;
 		animatedOverlay = new TextOverlayAnimator( "Press <F1> for help.", 3000, TextPosition.CENTER );
 
 		display.addComponentListener( new ComponentAdapter()
