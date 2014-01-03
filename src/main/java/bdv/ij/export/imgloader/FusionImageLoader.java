@@ -1,6 +1,8 @@
 package bdv.ij.export.imgloader;
 
 import ij.ImagePlus;
+import io.scif.img.ImgIOException;
+import io.scif.img.ImgOpener;
 
 import java.io.File;
 
@@ -15,8 +17,6 @@ import net.imglib2.img.ImgFactory;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.img.planar.PlanarImgFactory;
-import net.imglib2.io.ImgIOException;
-import net.imglib2.io.ImgOpener;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
