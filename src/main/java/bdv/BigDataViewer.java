@@ -27,10 +27,10 @@ import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 
 import bdv.img.hdf5.Hdf5ImageLoader;
-import bdv.tools.VisibilityAndGroupingDialog;
 import bdv.tools.HelpDialog;
 import bdv.tools.InitializeViewerState;
 import bdv.tools.RecordMovieDialog;
+import bdv.tools.VisibilityAndGroupingDialog;
 import bdv.tools.brightness.BrightnessDialog;
 import bdv.tools.brightness.ConverterSetup;
 import bdv.tools.brightness.MinMaxGroup;
@@ -189,12 +189,16 @@ public class BigDataViewer
 		miVisibility.setText( "Visibility & Grouping" );
 		menu.add( miVisibility );
 
-		menu = new JMenu( "Settings" );
+		menu = new JMenu( "Tools" );
 		menubar.add( menu );
 
 		final JMenuItem miCrop = new JMenuItem( actionMap.get( BigDataViewerActions.CROP ) );
 		miCrop.setText( "Crop" );
 		menu.add( miCrop );
+
+		final JMenuItem miMovie = new JMenuItem( actionMap.get( BigDataViewerActions.RECORD_MOVIE ) );
+		miMovie.setText( "Record Movie" );
+		menu.add( miMovie );
 
 		final JMenuItem miManualTransform = new JMenuItem( actionMap.get( BigDataViewerActions.MANUAL_TRANSFORM ) );
 		miManualTransform.setText( "Manual Transform" );
