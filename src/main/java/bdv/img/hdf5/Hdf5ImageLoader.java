@@ -10,14 +10,17 @@ import java.util.ArrayList;
 
 import mpicbg.spim.data.View;
 import mpicbg.spim.data.XmlHelpers;
+import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.NativeImg;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
 import net.imglib2.img.cell.CellImg;
+import net.imglib2.sampler.special.ConstantRandomAccessible;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.integer.VolatileUnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.view.Views;
 
 import org.jdom2.Element;
 
@@ -48,7 +51,22 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 	 */
 	protected final ArrayList< Partition > partitions;
 
+	protected int numTimepoints;
+
+	protected int numSetups;
+
 	protected int[] maxLevels;
+
+	protected int maxNumLevels;
+
+	/**
+	 * An array of long[] arrays with {@link #numTimepoints} *
+	 * {@link #numSetups} * {@link #maxNumLevels} entries. Every entry is either
+	 * null or the dimensions of one image (identified by flattened index of
+	 * level, setup, and timepoint). This is either loaded from XML if present
+	 * or otherwise filled in when an image is loaded for the first time.
+	 */
+	protected long[][] cachedDimensions;
 
 	protected final boolean isCoarsestLevelBlocking = true;
 
@@ -68,6 +86,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 		if ( hdf5Partitions != null )
 			partitions.addAll( hdf5Partitions );
 		maxLevels = null;
+		cachedDimensions = null;
 	}
 
 	public Hdf5ImageLoader( final File hdf5File, final ArrayList< Partition > hdf5Partitions )
@@ -90,10 +109,10 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 	private void open()
 	{
 		hdf5Reader = HDF5Factory.openForReading( hdf5File );
-		final int numTimepoints = hdf5Reader.readInt( "numTimepoints" );
-		final int numSetups = hdf5Reader.readInt( "numSetups" );
+		numTimepoints = hdf5Reader.readInt( "numTimepoints" );
+		numSetups = hdf5Reader.readInt( "numSetups" );
 
-		int maxNumLevels = 0;
+		maxNumLevels = 0;
 		maxLevels = new int[ numSetups ];
 		perSetupMipmapResolutions.clear();
 		perSetupSubdivisions.clear();
@@ -109,26 +128,27 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 			perSetupSubdivisions.add( subdivisions );
 		}
 
+		cachedDimensions = new long[ numTimepoints * numSetups * maxNumLevels ][];
+
 		cache = new VolatileGlobalCellCache< VolatileShortArray >( new Hdf5VolatileShortArrayLoader( hdf5Reader ), numTimepoints, numSetups, maxNumLevels, maxLevels );
 	}
 
 	@Override
 	public void init( final Element elem, final File basePath )
 	{
-		String path;
 		try
 		{
-			path = loadPath( elem, "hdf5", basePath ).toString();
+			final String path = loadPath( elem, "hdf5", basePath ).toString();
 			partitions.clear();
 			for ( final Element p : elem.getChildren( "partition" ) )
 				partitions.add( new Partition( p, basePath ) );
+			hdf5File = new File( path );
+			open();
 		}
 		catch ( final Exception e )
 		{
 			throw new RuntimeException( e );
 		}
-		hdf5File = new File( path );
-		open();
 	}
 
 	@Override
@@ -159,14 +179,19 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 	}
 
 	@Override
-	public CellImg< UnsignedShortType, VolatileShortArray, VolatileCell< VolatileShortArray > > getUnsignedShortImage( final View view )
+	public RandomAccessibleInterval< UnsignedShortType > getUnsignedShortImage( final View view )
 	{
 		return getUnsignedShortImage( view, 0 );
 	}
 
 	@Override
-	public CellImg< UnsignedShortType, VolatileShortArray, VolatileCell< VolatileShortArray > > getUnsignedShortImage( final View view, final int level )
+	public RandomAccessibleInterval< UnsignedShortType > getUnsignedShortImage( final View view, final int level )
 	{
+		if ( ! existsImageData( view, level ) )
+		{
+			System.err.println( "image data for " + view.getBasename() + " level " + level + " could not be found. Partition file missing?" );
+			return getMissingDataImage( view, level, new UnsignedShortType() );
+		}
 		final CellImg< UnsignedShortType, VolatileShortArray, VolatileCell< VolatileShortArray > >  img = prepareCachedImage( view, level, LoadingStrategy.BLOCKING );
 		final UnsignedShortType linkedType = new UnsignedShortType( img );
 		img.setLinkedType( linkedType );
@@ -174,8 +199,13 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 	}
 
 	@Override
-	public CellImg< VolatileUnsignedShortType, VolatileShortArray, VolatileCell< VolatileShortArray > > getVolatileUnsignedShortImage( final View view, final int level )
+	public RandomAccessibleInterval< VolatileUnsignedShortType > getVolatileUnsignedShortImage( final View view, final int level )
 	{
+		if ( ! existsImageData( view, level ) )
+		{
+			System.err.println( "image data for " + view.getBasename() + " level " + level + " could not be found. Partition file missing?" );
+			return getMissingDataImage( view, level, new VolatileUnsignedShortType() );
+		}
 //		final CellImg< VolatileUnsignedShortType, VolatileShortArray, Hdf5Cell< VolatileShortArray > >  img = prepareCachedImage( view, level, LoadingStrategy.VOLATILE );
 		final CellImg< VolatileUnsignedShortType, VolatileShortArray, VolatileCell< VolatileShortArray > >  img = prepareCachedImage( view, level, LoadingStrategy.BUDGETED );
 		final VolatileUnsignedShortType linkedType = new VolatileUnsignedShortType( img );
@@ -206,6 +236,64 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 	}
 
 	/**
+	 * Checks whether the given image data is present in the hdf5. Missing data
+	 * may be caused by missing partition files
+	 *
+	 * @return true, if the given image data is present.
+	 */
+	protected boolean existsImageData( final View view, final int level )
+	{
+		boolean exists = false;
+		final String cellsPath = Util.getCellsPath( view, level );
+		synchronized ( hdf5Reader )
+		{
+			try {
+				exists = hdf5Reader.exists( cellsPath );
+			} catch ( final Exception e ) {
+				exists = false;
+			}
+		}
+		return exists;
+	}
+
+	/**
+	 * For images that are missing in the hdf5, a constant image is created.
+	 * If the dimension of the missing image is present in {@link #cachedDimensions} then use that.
+	 * Otherwise create a 1x1x1 image.
+	 */
+	protected < T > RandomAccessibleInterval< T > getMissingDataImage( final View view, final int level, final T constant )
+	{
+		final int t = view.getTimepointIndex();
+		final int s = view.getSetupIndex();
+		final int index = getImageDimensionsIndex( t, s, level );
+		long[] d = cachedDimensions[ index ];
+		if ( d == null )
+			d = new long[] { 1, 1, 1 };
+		return Views.interval( new ConstantRandomAccessible< T >( constant, 3 ), new FinalInterval( d ) );
+	}
+
+	protected long[] getImageDimension( final int timepoint, final int setup, final int level )
+	{
+		final int index = getImageDimensionsIndex( timepoint, setup, level );
+		if ( cachedDimensions[ index ] == null )
+		{
+			final String cellsPath = Util.getCellsPath( timepoint, setup, level );
+			final HDF5DataSetInformation info;
+			synchronized ( hdf5Reader )
+			{
+				info = hdf5Reader.getDataSetInformation( cellsPath );
+			}
+			cachedDimensions[ index ] = reorder( info.getDimensions() );
+		}
+		return cachedDimensions[ index ];
+	}
+
+	private int getImageDimensionsIndex( final int timepoint, final int setup, final int level )
+	{
+		return level + maxNumLevels * ( setup + numSetups * timepoint );
+	}
+
+	/**
 	 * (Almost) create a {@link CellImg} backed by the cache.
 	 * The created image needs a {@link NativeImg#setLinkedType(net.imglib2.type.Type) linked type} before it can be used.
 	 * The type should be either {@link UnsignedShortType} and {@link VolatileUnsignedShortType}.
@@ -215,14 +303,8 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 		if ( hdf5Reader == null )
 			throw new RuntimeException( "no hdf5 file open" );
 
-		final String cellsPath = Util.getCellsPath( view, level );
-		final HDF5DataSetInformation info;
-		synchronized ( hdf5Reader )
-		{
-			info = hdf5Reader.getDataSetInformation( cellsPath );
-		}
-		final long[] dimensions = reorder( info.getDimensions() );
-		final int[] cellDimensions = reorder( info.tryGetChunkSizes() );
+		final long[] dimensions = getImageDimension( view.getTimepointIndex(), view.getSetupIndex(), level );
+		final int[] cellDimensions = perSetupSubdivisions.get( view.getSetupIndex() )[ level ];
 
 		final CellCache< VolatileShortArray > c = cache.new Hdf5CellCache( view.getTimepointIndex(), view.getSetupIndex(), level, loadingStrategy );
 		final VolatileImgCells< VolatileShortArray > cells = new VolatileImgCells< VolatileShortArray >( c, 1, dimensions, cellDimensions );
