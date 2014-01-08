@@ -144,6 +144,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 				partitions.add( new Partition( p, basePath ) );
 			hdf5File = new File( path );
 			open();
+			tryInitImageDimensions( elem );
 		}
 		catch ( final Exception e )
 		{
@@ -160,6 +161,29 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 		for ( final Partition partition : partitions )
 			elem.addContent( partition.toXml( basePath ) );
 		return elem;
+	}
+
+	/*
+	public void initCachedDimensionsFromHdf5()
+	{
+		for ( int t = 0; t < numTimepoints; ++t )
+			for ( int s = 0; s < numSetups; ++s )
+				for ( int l = 0; l <= maxLevels[ s ]; ++l )
+					getImageDimension( t, s, l );
+	}
+	*/
+
+	public void tryInitImageDimensions( final Element elem )
+	{
+		final Element dimsElem = elem.getChild( "ImageDimensions" );
+		if ( dimsElem == null )
+			return;
+		for ( final Element dimElem : dimsElem.getChildren( "dimension" ) )
+		{
+			final ImageDimension d = new ImageDimension( dimElem );
+			final int index = getImageDimensionsIndex( d.getTimepoint(), d.getSetup(), d.getLevel() );
+			cachedDimensions[ index ] = d.getDimensions();
+		}
 	}
 
 	public File getHdf5File()
