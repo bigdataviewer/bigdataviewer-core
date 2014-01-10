@@ -3,7 +3,7 @@ package bdv;
 import mpicbg.spim.data.View;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.type.numeric.integer.VolatileUnsignedShortType;
+import net.imglib2.type.volatiles.VolatileUnsignedShortType;
 import net.imglib2.view.Views;
 
 public class SpimSource extends AbstractSpimSource< UnsignedShortType >

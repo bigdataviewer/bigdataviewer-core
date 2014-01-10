@@ -18,8 +18,8 @@ import net.imglib2.img.cell.CellImg;
 import net.imglib2.sampler.special.ConstantRandomAccessible;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.type.numeric.integer.VolatileUnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.type.volatiles.VolatileUnsignedShortType;
 import net.imglib2.view.Views;
 
 import org.jdom2.Element;

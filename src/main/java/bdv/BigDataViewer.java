@@ -17,7 +17,7 @@ import mpicbg.spim.data.SequenceDescription;
 import net.imglib2.display.RealARGBColorConverter;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.type.numeric.integer.VolatileUnsignedShortType;
+import net.imglib2.type.volatiles.VolatileUnsignedShortType;
 
 import org.jdom2.Document;
 import org.jdom2.Element;

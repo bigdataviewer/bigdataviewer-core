@@ -4,7 +4,7 @@ import mpicbg.spim.data.ImgLoader;
 import mpicbg.spim.data.View;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.type.numeric.integer.VolatileUnsignedShortType;
+import net.imglib2.type.volatiles.VolatileUnsignedShortType;
 
 public interface ViewerImgLoader extends ImgLoader
 {
