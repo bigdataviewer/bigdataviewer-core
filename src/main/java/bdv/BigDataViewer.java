@@ -219,6 +219,8 @@ public class BigDataViewer
 
 		if( ! tryLoadSettings( xmlFilename ) )
 			InitializeViewerState.initBrightness( 0.001, 0.999, viewer, setupAssignments );
+
+		( ( Hdf5ImageLoader ) seq.imgLoader ).initCachedDimensionsFromHdf5( true );
 	}
 
 	boolean tryLoadSettings( final String xmlFilename )

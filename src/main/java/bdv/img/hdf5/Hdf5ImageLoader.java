@@ -68,6 +68,15 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 	 */
 	protected long[][] cachedDimensions;
 
+	/**
+	 * An array of Booleans with {@link #numTimepoints} *
+	 * {@link #numSetups} * {@link #maxNumLevels} entries. Every entry is either
+	 * null or the existence of one image (identified by flattened index of
+	 * level, setup, and timepoint). This is either loaded from XML if present
+	 * or otherwise filled in when an image is loaded for the first time.
+	 */
+	protected Boolean[] cachedExistence;
+
 	protected final boolean isCoarsestLevelBlocking = true;
 
 	public Hdf5ImageLoader()
@@ -87,6 +96,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 			partitions.addAll( hdf5Partitions );
 		maxLevels = null;
 		cachedDimensions = null;
+		cachedExistence = null;
 	}
 
 	public Hdf5ImageLoader( final File hdf5File, final ArrayList< Partition > hdf5Partitions )
@@ -129,6 +139,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 		}
 
 		cachedDimensions = new long[ numTimepoints * numSetups * maxNumLevels ][];
+		cachedExistence = new Boolean[ numTimepoints * numSetups * maxNumLevels ];
 
 		cache = new VolatileGlobalCellCache< VolatileShortArray >( new Hdf5VolatileShortArrayLoader( hdf5Reader ), numTimepoints, numSetups, maxNumLevels, maxLevels );
 	}
@@ -145,6 +156,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 			hdf5File = new File( path );
 			open();
 			tryInitImageDimensions( elem );
+//			initCachedDimensionsFromHdf5();
 		}
 		catch ( final Exception e )
 		{
@@ -163,15 +175,28 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 		return elem;
 	}
 
-	/*
-	public void initCachedDimensionsFromHdf5()
+	public void initCachedDimensionsFromHdf5( final boolean background )
 	{
+		final long t0 = System.currentTimeMillis();
 		for ( int t = 0; t < numTimepoints; ++t )
+		{
 			for ( int s = 0; s < numSetups; ++s )
 				for ( int l = 0; l <= maxLevels[ s ]; ++l )
 					getImageDimension( t, s, l );
+			if ( background )
+				synchronized ( this )
+				{
+					try
+					{
+						wait( 30 );
+					}
+					catch ( final InterruptedException e )
+					{}
+				}
+		}
+		final long t1 = System.currentTimeMillis() - t0;
+		System.out.println( "initCachedDimensionsFromHdf5 : " + t1 + " ms" );
 	}
-	*/
 
 	public void tryInitImageDimensions( final Element elem )
 	{
@@ -181,7 +206,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 		for ( final Element dimElem : dimsElem.getChildren( "dimension" ) )
 		{
 			final ImageDimension d = new ImageDimension( dimElem );
-			final int index = getImageDimensionsIndex( d.getTimepoint(), d.getSetup(), d.getLevel() );
+			final int index = getViewInfoCacheIndex( d.getTimepoint(), d.getSetup(), d.getLevel() );
 			cachedDimensions[ index ] = d.getDimensions();
 		}
 	}
@@ -267,17 +292,34 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 	 */
 	protected boolean existsImageData( final View view, final int level )
 	{
-		boolean exists = false;
-		final String cellsPath = Util.getCellsPath( view, level );
-		synchronized ( hdf5Reader )
+		return existsImageData( view.getTimepointIndex(), view.getSetupIndex(), level );
+	}
+
+	/**
+	 * Checks whether the given image data is present in the hdf5. Missing data
+	 * may be caused by missing partition files
+	 *
+	 * @return true, if the given image data is present.
+	 */
+	protected boolean existsImageData( final int timepoint, final int setup, final int level )
+	{
+		final int index = getViewInfoCacheIndex( timepoint, setup, level );
+		if ( cachedExistence[ index ] == null )
 		{
-			try {
-				exists = hdf5Reader.exists( cellsPath );
-			} catch ( final Exception e ) {
-				exists = false;
+			boolean exists = false;
+			final String cellsPath = Util.getCellsPath( timepoint, setup, level );
+			synchronized ( hdf5Reader )
+			{
+				cache.pauseFetcherThreads();
+				try {
+					exists = hdf5Reader.exists( cellsPath );
+				} catch ( final Exception e ) {
+					exists = false;
+				}
 			}
+			cachedExistence[ index ] = new Boolean( exists );
 		}
-		return exists;
+		return cachedExistence[ index ];
 	}
 
 	/**
@@ -289,7 +331,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 	{
 		final int t = view.getTimepointIndex();
 		final int s = view.getSetupIndex();
-		final int index = getImageDimensionsIndex( t, s, level );
+		final int index = getViewInfoCacheIndex( t, s, level );
 		long[] d = cachedDimensions[ index ];
 		if ( d == null )
 			d = new long[] { 1, 1, 1 };
@@ -298,21 +340,27 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 
 	protected long[] getImageDimension( final int timepoint, final int setup, final int level )
 	{
-		final int index = getImageDimensionsIndex( timepoint, setup, level );
+		final int index = getViewInfoCacheIndex( timepoint, setup, level );
 		if ( cachedDimensions[ index ] == null )
 		{
 			final String cellsPath = Util.getCellsPath( timepoint, setup, level );
 			final HDF5DataSetInformation info;
-			synchronized ( hdf5Reader )
+			if ( existsImageData( timepoint, setup, level ) )
 			{
-				info = hdf5Reader.getDataSetInformation( cellsPath );
+				synchronized ( hdf5Reader )
+				{
+					cache.pauseFetcherThreads();
+					info = hdf5Reader.getDataSetInformation( cellsPath );
+				}
+				cachedDimensions[ index ] = reorder( info.getDimensions() );
 			}
-			cachedDimensions[ index ] = reorder( info.getDimensions() );
+			else
+				cachedDimensions[ index ] = new long[] { 1, 1, 1 };
 		}
 		return cachedDimensions[ index ];
 	}
 
-	private int getImageDimensionsIndex( final int timepoint, final int setup, final int level )
+	private int getViewInfoCacheIndex( final int timepoint, final int setup, final int level )
 	{
 		return level + maxNumLevels * ( setup + numSetups * timepoint );
 	}
