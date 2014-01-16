@@ -279,7 +279,7 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 			renderState.setCurrentTimepoint( timepoint );
 			renderer.requestRepaint();
 			renderer.paint( renderState );
-			ImageIO.write( target.bi, "png", new File( String.format( "%s/img-%03d.tif", dir, timepoint ) ) );
+			ImageIO.write( target.bi, "png", new File( String.format( "%s/img-%03d.png", dir, timepoint ) ) );
 		}
 	}
 
