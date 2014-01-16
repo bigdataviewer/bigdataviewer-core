@@ -188,7 +188,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 				{
 					try
 					{
-						wait( 30 );
+						wait( 100 );
 					}
 					catch ( final InterruptedException e )
 					{}
