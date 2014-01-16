@@ -115,9 +115,11 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 					while ( pause )
 						synchronized ( this )
 						{
+//							System.out.println( "fetcher wait" );
 							pause = false;
-							wait( 1 );
+							wait( 5 );
 						}
+//					System.out.println( "fetcher load" );
 					loadIfNotValid( queue.take() );
 //					Thread.sleep(1);
 				}
@@ -246,6 +248,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 			stats.stop();
 			final long t = stats.getIoNanoTime() - t0;
 			budget.use( t, priority );
+			pauseFetcherThreads();
 		}
 		else
 			enqueueEntry( entry );
