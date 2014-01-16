@@ -216,9 +216,22 @@ public class MultiResolutionRenderer
 	 */
 	protected final Cache cache;
 
+	/**
+	 * Whether volatile versions of sources should be used if available.
+	 */
 	protected final boolean useVolatileIfAvailable;
 
+	/**
+	 * Whether a repaint was {@link #requestRepaint() requested}. This will
+	 * cause {@link Cache#prepareNextFrame()}.
+	 */
 	protected boolean newFrameRequest;
+
+	/**
+	 * The timepoint for which last a projector was
+	 * {@link #createProjector(ViewerState, int, ARGBScreenImage) created}.
+	 */
+	protected int previousTimepoint;
 
 	// TODO: should be settable
 	protected long[] iobudget = new long[] { 3000l * 1000000l, 20l * 1000000l, 10l * 1000000l };
@@ -288,6 +301,7 @@ public class MultiResolutionRenderer
 		this.useVolatileIfAvailable = useVolatileIfAvailable;
 		this.cache = cache;
 		newFrameRequest = false;
+		previousTimepoint = -1;
 	}
 
 	/**
@@ -414,8 +428,8 @@ public class MultiResolutionRenderer
 			renderingMayBeCancelled = ( requestedScreenScaleIndex < maxScreenScaleIndex );
 
 			clearQueue = newFrameRequest;
-
 			createProjector = newFrameRequest || resized || ( requestedScreenScaleIndex != currentScreenScaleIndex );
+			newFrameRequest = false;
 
 			if ( createProjector )
 			{
@@ -431,8 +445,6 @@ public class MultiResolutionRenderer
 				bufferedImage = null;
 				p = projector;
 			}
-
-			newFrameRequest = false;
 		}
 
 		// try rendering
@@ -523,12 +535,13 @@ public class MultiResolutionRenderer
 			cache.initIoTimeBudget( iobudget, false );
 			final List< SourceState< ? > > sources = viewerState.getSources();
 			final List< Integer > visibleSourceIndices = viewerState.getVisibleSourceIndices();
+			VolatileProjector projector;
 			if ( visibleSourceIndices.isEmpty() )
-				return new EmptyProjector< ARGBType >( screenImage );
+				projector = new EmptyProjector< ARGBType >( screenImage );
 			else if ( visibleSourceIndices.size() == 1 )
 			{
 				final int i = visibleSourceIndices.get( 0 );
-				return createSingleSourceProjector( viewerState, sources.get( i ), i, currentScreenScaleIndex, screenImage, renderMaskArrays[ 0 ] );
+				projector = createSingleSourceProjector( viewerState, sources.get( i ), i, currentScreenScaleIndex, screenImage, renderMaskArrays[ 0 ] );
 			}
 			else
 			{
@@ -546,8 +559,10 @@ public class MultiResolutionRenderer
 					sourceProjectors.add( p );
 					sourceImages.add( renderImage );
 				}
-				return new AccumulateProjectorARGB( sourceProjectors, sourceImages, screenImage, numRenderingThreads );
+				projector = new AccumulateProjectorARGB( sourceProjectors, sourceImages, screenImage, numRenderingThreads );
 			}
+			previousTimepoint = viewerState.getCurrentTimepoint();
+			return projector;
 		}
 	}
 
@@ -601,8 +616,6 @@ public class MultiResolutionRenderer
 		}
 	}
 
-	private final int previousTimepoint = -1;
-
 	private < T extends Volatile< ? > > VolatileProjector createSingleSourceVolatileProjector(
 			final ViewerState viewerState,
 			final SourceState< T > source,
@@ -619,9 +632,21 @@ public class MultiResolutionRenderer
 		final int t = viewerState.getCurrentTimepoint();
 		if ( t != previousTimepoint )
 		{
+			// When scrolling through time, we often get frames for which no
+			// data was loaded yet. To speed up rendering in these cases, use
+			// only two mipmap levels: the optimal and the coarsest. By doing
+			// this, we require at most two passes over the image at the expense
+			// of ignoring data present in intermediate mipmap levels. The
+			// assumption is, that we will either be moving back and forth
+			// between images that have all data present already or that we move
+			// to a new image with no data present at all.
 			levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, bestLevel ) );
 			if ( nLevels - 1 != bestLevel )
 				levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, nLevels - 1 ) );
+			// slight abuse of newFrameRequest: we only want this two-pass
+			// rendering to happen once then switch to normal multi-pass
+			// rendering if we remain longer on this frame.
+			newFrameRequest = true;
 		}
 		else
 		for ( int i = bestLevel; i < nLevels; ++i )
