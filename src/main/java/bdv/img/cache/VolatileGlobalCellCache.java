@@ -1,5 +1,6 @@
 package bdv.img.cache;
 
+import java.io.StringWriter;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
@@ -201,14 +202,51 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 			final int timepoint = k.timepoint;
 			final int setup = k.setup;
 			final int level = k.level;
-			synchronized( loader )
+			final long t0 = System.currentTimeMillis();
+			long t1;
+			synchronized ( entry )
 			{
+				t1 = System.currentTimeMillis() - t0;
 				if ( !entry.data.getData().isValid() )
 				{
 					final VolatileCell< A > cell = new VolatileCell< A >( cellDims, cellMin, loader.loadArray( timepoint, setup, level, cellDims, cellMin ) );
 					entry.data = cell; // TODO: need to synchronize or make entry.data volatile?
 					softReferenceCache.put( entry.key, new SoftReference< Entry >( entry ) );
 				}
+			}
+			if ( t1 > 200 )
+			{
+				final StringWriter sw = new StringWriter();
+				sw.write( "waited " + t1 + " ms for entry lock\n" );
+				final StackTraceElement[] trace = Thread.currentThread().getStackTrace();
+				boolean found = false;
+				for ( final StackTraceElement elem : trace )
+				{
+					if ( elem.getClassName().equals( "bdv.img.cache.VolatileGlobalCellCache$Hdf5CellCache" ) && elem.getMethodName().equals( "get" ) )
+					{
+						found = true;
+						sw.write( "Hdf5CellCache.get\n" );
+						break;
+					}
+					else if ( elem.getClassName().equals( "bdv.img.cache.VolatileGlobalCellCache$Hdf5CellCache" ) && elem.getMethodName().equals( "load" ) )
+					{
+						found = true;
+						sw.write( "Hdf5CellCache.load\n" );
+						break;
+					}
+					else if ( elem.getClassName().equals( "bdv.img.cache.VolatileGlobalCellCache$Fetcher" ) && elem.getMethodName().equals( "run" ) )
+					{
+						found = true;
+						sw.write( "Fetcher.run\n" );
+						break;
+					}
+				}
+				if ( !found )
+				{
+					for ( final StackTraceElement elem : trace )
+						sw.write( elem.getClassName() + "." + elem.getMethodName() + "\n" );
+				}
+				System.out.println( sw.toString() );
 			}
 		}
 	}

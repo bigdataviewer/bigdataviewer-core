@@ -308,9 +308,9 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 		{
 			boolean exists = false;
 			final String cellsPath = Util.getCellsPath( timepoint, setup, level );
+			cache.pauseFetcherThreads();
 			synchronized ( hdf5Reader )
 			{
-				cache.pauseFetcherThreads();
 				try {
 					exists = hdf5Reader.exists( cellsPath );
 				} catch ( final Exception e ) {
@@ -347,9 +347,9 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 			final HDF5DataSetInformation info;
 			if ( existsImageData( timepoint, setup, level ) )
 			{
+				cache.pauseFetcherThreads();
 				synchronized ( hdf5Reader )
 				{
-					cache.pauseFetcherThreads();
 					info = hdf5Reader.getDataSetInformation( cellsPath );
 				}
 				cachedDimensions[ index ] = reorder( info.getDimensions() );

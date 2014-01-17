@@ -421,7 +421,7 @@ public class MultiResolutionRenderer
 
 		final boolean createProjector;
 
-		synchronized( this )
+		synchronized ( this )
 		{
 			// Rendering may be cancelled unless we are rendering at coarsest
 			// screen scale and coarsest mipmap level.
