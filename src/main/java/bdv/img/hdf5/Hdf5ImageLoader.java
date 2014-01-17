@@ -320,7 +320,9 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 				t1 = System.currentTimeMillis() - t0;
 				t0 = System.currentTimeMillis();
 				try {
-					exists = hdf5Reader.exists( cellsPath );
+					hdf5Reader.getDataSetInformation( cellsPath );
+					exists = true;
+//					exists = hdf5Reader.exists( cellsPath );
 				} catch ( final Exception e ) {
 					exists = false;
 				}
