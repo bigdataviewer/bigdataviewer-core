@@ -6,6 +6,7 @@ import static bdv.img.hdf5.Util.reorder;
 import static mpicbg.spim.data.XmlHelpers.loadPath;
 
 import java.io.File;
+import java.io.StringWriter;
 import java.util.ArrayList;
 
 import mpicbg.spim.data.View;
@@ -303,19 +304,59 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 	 */
 	protected boolean existsImageData( final int timepoint, final int setup, final int level )
 	{
+//		return timepoint <= 20;
 		final int index = getViewInfoCacheIndex( timepoint, setup, level );
 		if ( cachedExistence[ index ] == null )
 		{
 			boolean exists = false;
 			final String cellsPath = Util.getCellsPath( timepoint, setup, level );
 			cache.pauseFetcherThreads();
+			long t0 = System.currentTimeMillis();
+			long t1;
+			long t2;
+			final String prevCellsPath;
 			synchronized ( hdf5Reader )
 			{
+				t1 = System.currentTimeMillis() - t0;
+				t0 = System.currentTimeMillis();
 				try {
 					exists = hdf5Reader.exists( cellsPath );
 				} catch ( final Exception e ) {
 					exists = false;
 				}
+				t2 = System.currentTimeMillis() - t0;
+				prevCellsPath = Hdf5VolatileShortArrayLoader.previousCellsPath;
+				Hdf5VolatileShortArrayLoader.previousCellsPath = cellsPath;
+			}
+			if ( t1 > 5 )
+			{
+				final StringWriter sw = new StringWriter();
+				sw.write( "(existsImageData) waited " + t1 + " ms for hdf5Reader lock\n" );
+				sw.write( "after   " + prevCellsPath + "\n" );
+				sw.write( "loading " + cellsPath + "\n" );
+				final StackTraceElement[] trace = Thread.currentThread().getStackTrace();
+				final boolean found = true;
+				if ( !found )
+				{
+					for ( final StackTraceElement elem : trace )
+						sw.write( elem.getClassName() + "." + elem.getMethodName() + "\n" );
+				}
+				System.out.println( sw.toString() );
+			}
+			if ( t2 > 20 )
+			{
+				final StringWriter sw = new StringWriter();
+				sw.write( "(existsImageData) waited " + t2 + " ms for hdf5 exists\n" );
+				sw.write( "after   " + prevCellsPath + "\n" );
+				sw.write( "loading " + cellsPath + "\n" );
+				final StackTraceElement[] trace = Thread.currentThread().getStackTrace();
+				final boolean found = true;
+				if ( !found )
+				{
+					for ( final StackTraceElement elem : trace )
+						sw.write( elem.getClassName() + "." + elem.getMethodName() + "\n" );
+				}
+				System.out.println( sw.toString() );
 			}
 			cachedExistence[ index ] = new Boolean( exists );
 		}
@@ -348,9 +389,48 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 			if ( existsImageData( timepoint, setup, level ) )
 			{
 				cache.pauseFetcherThreads();
+				long t0 = System.currentTimeMillis();
+				long t1;
+				long t2;
+				final String prevCellsPath;
 				synchronized ( hdf5Reader )
 				{
+					t1 = System.currentTimeMillis() - t0;
+					t0 = System.currentTimeMillis();
 					info = hdf5Reader.getDataSetInformation( cellsPath );
+					t2 = System.currentTimeMillis() - t0;
+					prevCellsPath = Hdf5VolatileShortArrayLoader.previousCellsPath;
+					Hdf5VolatileShortArrayLoader.previousCellsPath = cellsPath;
+				}
+				if ( t1 > 5 )
+				{
+					final StringWriter sw = new StringWriter();
+					sw.write( "(getImageDimension) waited " + t1 + " ms for hdf5Reader lock\n" );
+					sw.write( "after   " + prevCellsPath + "\n" );
+					sw.write( "loading " + cellsPath + "\n" );
+					final StackTraceElement[] trace = Thread.currentThread().getStackTrace();
+					final boolean found = true;
+					if ( !found )
+					{
+						for ( final StackTraceElement elem : trace )
+							sw.write( elem.getClassName() + "." + elem.getMethodName() + "\n" );
+					}
+					System.out.println( sw.toString() );
+				}
+				if ( t2 > 20 )
+				{
+					final StringWriter sw = new StringWriter();
+					sw.write( "(getImageDimension) waited " + t2 + " ms for hdf5 exists\n" );
+					sw.write( "after   " + prevCellsPath + "\n" );
+					sw.write( "loading " + cellsPath + "\n" );
+					final StackTraceElement[] trace = Thread.currentThread().getStackTrace();
+					final boolean found = true;
+					if ( !found )
+					{
+						for ( final StackTraceElement elem : trace )
+							sw.write( elem.getClassName() + "." + elem.getMethodName() + "\n" );
+					}
+					System.out.println( sw.toString() );
 				}
 				cachedDimensions[ index ] = reorder( info.getDimensions() );
 			}
