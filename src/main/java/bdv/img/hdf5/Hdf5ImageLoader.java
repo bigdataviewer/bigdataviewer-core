@@ -366,4 +366,27 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 		final CellImg< T, VolatileShortArray, VolatileCell< VolatileShortArray > > img = new CellImg< T, VolatileShortArray, VolatileCell< VolatileShortArray > >( null, cells );
 		return img;
 	}
+
+	public void printMipmapInfo()
+	{
+		for ( int setup = 0; setup < numSetups; ++setup )
+		{
+			System.out.println( "setup " + setup );
+			final double[][] reslevels = perSetupMipmapResolutions.get( setup );
+			final int[][] subdiv = perSetupSubdivisions.get( setup );
+			final int numLevels = reslevels.length;
+			System.out.println( "    resolutions:");
+			for ( int level = 0; level < numLevels; ++level )
+			{
+				final double[] res = reslevels[ level ];
+				System.out.println( "    " + level + ": " + net.imglib2.util.Util.printCoordinates( res ) );
+			}
+			System.out.println( "    subdivisions:");
+			for ( int level = 0; level < numLevels; ++level )
+			{
+				final int[] res = subdiv[ level ];
+				System.out.println( "    " + level + ": " + net.imglib2.util.Util.printCoordinates( res ) );
+			}
+		}
+	}
 }
