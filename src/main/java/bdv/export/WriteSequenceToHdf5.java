@@ -9,6 +9,7 @@ import mpicbg.spim.data.ImgLoader;
 import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.View;
 import mpicbg.spim.data.ViewSetup;
+import mpicbg.spim.data.XmlHelpers;
 import net.imglib2.Cursor;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessible;
@@ -96,6 +97,7 @@ public class WriteSequenceToHdf5
 		hdf5Writer.writeInt( "numTimepoints", seq.numTimepoints() );
 		hdf5Writer.writeInt( "numSetups", seq.numViewSetups() );
 
+		final File basePath = hdf5File.getParentFile();
 		for ( final Partition partition : partitions )
 		{
 			final int timepointOffsetSeq = partition.getTimepointOffset() + partition.getTimepointStart();
@@ -116,7 +118,10 @@ public class WriteSequenceToHdf5
 					final int setupFile = setup + setupOffsetFile;
 					final int numLevels = perSetupResolutions.get( setupSeq ).length;
 					for ( int level = 0; level < numLevels; ++level )
-						hdf5Writer.createOrUpdateExternalLink( partition.getPath(), Util.getCellsPath( timepointFile, setupFile, level ), Util.getCellsPath( timepointSeq, setupSeq, level ) );
+					{
+						final String relativePath = XmlHelpers.getRelativePath( new File( partition.getPath() ), basePath ).getPath();
+						hdf5Writer.createOrUpdateExternalLink( relativePath, Util.getCellsPath( timepointFile, setupFile, level ), Util.getCellsPath( timepointSeq, setupSeq, level ) );
+					}
 				}
 			}
 		}
