@@ -20,7 +20,7 @@ import org.jdom2.Element;
 import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 
-import bdv.export.ProgressListener;
+import bdv.export.ProgressWriter;
 import bdv.export.WriteSequenceToHdf5;
 import bdv.export.WriteSequenceToXml;
 import bdv.img.hdf5.Hdf5ImageLoader;
@@ -41,7 +41,7 @@ public class CellVoyagerDataExporter
 	/**
 	 * Creates a new exporter that will browse the specified measurement folder
 	 * to build the data to export.
-	 * 
+	 *
 	 * @param measurementSettingFile
 	 *            the CellVoyager measurement file to parse. It must be a XML
 	 *            file containing the information on the acquisition to export.
@@ -53,7 +53,7 @@ public class CellVoyagerDataExporter
 	 *            rebuild the whole dataset. The file is generally in the same
 	 *            folder that og the measurement setting file and named
 	 *            <code>ImageIndex.xml</code>.
-	 * 
+	 *
 	 */
 	public CellVoyagerDataExporter( final File measurementSettingFile, final File imageIndexFile )
 	{
@@ -243,7 +243,7 @@ public class CellVoyagerDataExporter
 
 	/**
 	 * Export the target dataset to a xml/hd5 file couple.
-	 * 
+	 *
 	 * @param seqFile
 	 *            the path to the target XML file to write.
 	 * @param hdf5File
@@ -252,14 +252,14 @@ public class CellVoyagerDataExporter
 	 *            the resolution definition for each level.
 	 * @param chunks
 	 *            the chunck size definition for each level.
-	 * @param progressListener
-	 *            a {@link ProgressListener} that will advance from 0 to 1 while
+	 * @param progressWriter
+	 *            a {@link ProgressWriter} that will advance from 0 to 1 while
 	 *            this method executes.
 	 */
-	public void export( final File seqFile, final File hdf5File, final int[][] resolutions, final int[][] chunks, final ProgressListener progressListener )
+	public void export( final File seqFile, final File hdf5File, final int[][] resolutions, final int[][] chunks, final ProgressWriter progressWriter )
 	{
 
-		progressListener.setProgress( 0d );
+		progressWriter.setProgress( 0d );
 
 		final List< ChannelInfo > channelInfos = readInfo();
 		/*
@@ -296,7 +296,7 @@ public class CellVoyagerDataExporter
 		 * Write to HDF5
 		 */
 
-		WriteSequenceToHdf5.writeHdf5File( sequenceDescriptionHDF5, resolutions, chunks, hdf5File, progressListener );
+		WriteSequenceToHdf5.writeHdf5File( sequenceDescriptionHDF5, resolutions, chunks, hdf5File, progressWriter );
 
 		/*
 		 * write XML sequence description
@@ -340,7 +340,7 @@ public class CellVoyagerDataExporter
 			throw new RuntimeException( e );
 		}
 
-		progressListener.setProgress( 1d );
+		progressWriter.setProgress( 1d );
 
 	}
 

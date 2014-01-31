@@ -146,13 +146,13 @@ public class WriteSequenceToHdf5
 	 *            mipmap level, the subdivision block sizes.
 	 * @param partition
 	 *            which part of the dataset to write, and to which file.
-	 * @param progressListener
+	 * @param progressWriter
 	 *            completion ratio and status output will be directed here.
 	 */
-	public static void writeHdf5PartitionFile( final SequenceDescription seq, final ArrayList< int[][] > perSetupResolutions, final ArrayList< int[][] > perSetupSubdivisions, final Partition partition, ProgressListener progressListener )
+	public static void writeHdf5PartitionFile( final SequenceDescription seq, final ArrayList< int[][] > perSetupResolutions, final ArrayList< int[][] > perSetupSubdivisions, final Partition partition, ProgressWriter progressWriter )
 	{
-		if ( progressListener == null )
-			progressListener = new ProgressListenerSysOut();
+		if ( progressWriter == null )
+			progressWriter = new ProgressWriterConsole();
 
 		final int timepointOffsetSeq = partition.getTimepointOffset() + partition.getTimepointStart();
 		final int timepointOffsetFile = partition.getTimepointStart();
@@ -162,7 +162,7 @@ public class WriteSequenceToHdf5
 		final int numSetups = partition.getSetupLength();
 		final ImgLoader imgLoader = seq.imgLoader;
 
-		// for progressListener
+		// for progressWriter
 		// initial 1 is for writing resolutions etc.
 		// (numLevels + 1) is for writing each of the levels plus reading the source image
 		int numTasks = 1;
@@ -172,7 +172,7 @@ public class WriteSequenceToHdf5
 			numTasks += numTimepoints * ( numLevels + 1 );
 		}
 		int numCompletedTasks = 0;
-		progressListener.setProgress( ( double ) numCompletedTasks++ / numTasks );
+		progressWriter.setProgress( ( double ) numCompletedTasks++ / numTasks );
 
 		assert( perSetupResolutions.size() >= setupOffsetSeq + numSetups );
 		assert( perSetupSubdivisions.size() >= setupOffsetSeq + numSetups );
@@ -205,7 +205,7 @@ public class WriteSequenceToHdf5
 		hdf5Writer.writeInt( "numTimepoints", numTimepoints );
 		hdf5Writer.writeInt( "numSetups", numSetups );
 
-		progressListener.setProgress( ( double ) numCompletedTasks++ / numTasks );
+		progressWriter.setProgress( ( double ) numCompletedTasks++ / numTasks );
 
 		// write image data for all views to the HDF5 file
 		final int n = 3;
@@ -214,7 +214,7 @@ public class WriteSequenceToHdf5
 		{
 			final int timepointSeq = timepoint + timepointOffsetSeq;
 			final int timepointFile = timepoint + timepointOffsetFile;
-			progressListener.println( String.format( "proccessing timepoint %d / %d", timepoint + 1, numTimepoints ) );
+			progressWriter.out().printf( "proccessing timepoint %d / %d\n", timepoint + 1, numTimepoints );
 			for ( int setup = 0; setup < numSetups; ++setup )
 			{
 				final int setupSeq = setup + setupOffsetSeq;
@@ -223,15 +223,15 @@ public class WriteSequenceToHdf5
 				final int[][] subdivisions = perSetupSubdivisions.get( setupSeq );
 				final int numLevels = resolutions.length;
 
-				progressListener.println( String.format( "proccessing setup %d / %d", setup + 1, numSetups ) );
+				progressWriter.out().printf( "proccessing setup %d / %d\n", setup + 1, numSetups );
 				final View view = new View( seq, timepointSeq, setupSeq, null );
-				progressListener.println( "loading image" );
+				progressWriter.out().println( "loading image" );
 				final RandomAccessibleInterval< UnsignedShortType > img = imgLoader.getUnsignedShortImage( view );
-				progressListener.setProgress( ( double ) numCompletedTasks++ / numTasks );
+				progressWriter.setProgress( ( double ) numCompletedTasks++ / numTasks );
 
 				for ( int level = 0; level < numLevels; ++level )
 				{
-					progressListener.println( "writing level " + level );
+					progressWriter.out().println( "writing level " + level );
 					img.dimensions( dimensions );
 					final RandomAccessible< UnsignedShortType > source;
 					final int[] factor = resolutions[ level ];
@@ -288,7 +288,7 @@ public class WriteSequenceToHdf5
 						final MDShortArray array = new MDShortArray( ( ( ShortArray ) cell.update( null ) ).getCurrentStorageArray(), currentCellDimRM );
 						hdf5Writer.writeShortMDArrayBlockWithOffset( path, array, currentCellMinRM );
 					}
-					progressListener.setProgress( ( double ) numCompletedTasks++ / numTasks );
+					progressWriter.setProgress( ( double ) numCompletedTasks++ / numTasks );
 				}
 			}
 		}
@@ -313,19 +313,19 @@ public class WriteSequenceToHdf5
 	 *            mipmap level, the subdivision block sizes.
 	 * @param hdf5File
 	 *            hdf5 file to which the image data is written.
-	 * @param progressListener
+	 * @param progressWriter
 	 *            completion ratio and status output will be directed here.
 	 */
-	public static void writeHdf5File( final SequenceDescription seq, final ArrayList< int[][] > perSetupResolutions, final ArrayList< int[][] > perSetupSubdivisions, final File hdf5File, final ProgressListener progressListener )
+	public static void writeHdf5File( final SequenceDescription seq, final ArrayList< int[][] > perSetupResolutions, final ArrayList< int[][] > perSetupSubdivisions, final File hdf5File, final ProgressWriter progressWriter )
 	{
 		final Partition partition = new Partition( hdf5File.getPath(), 0, 0, seq.numTimepoints(), 0, 0, seq.numViewSetups() );
-		writeHdf5PartitionFile( seq, perSetupResolutions, perSetupSubdivisions, partition, progressListener );
+		writeHdf5PartitionFile( seq, perSetupResolutions, perSetupSubdivisions, partition, progressWriter );
 	}
 
 	/**
 	 * Create a hdf5 file containing image data from all views and all
 	 * timepoints in a chunked, mipmaped representation. This is the same as
-	 * {@link WriteSequenceToHdf5#writeHdf5File(SequenceDescription, ArrayList, ArrayList, File, ProgressListener)}
+	 * {@link WriteSequenceToHdf5#writeHdf5File(SequenceDescription, ArrayList, ArrayList, File, ProgressWriter)}
 	 * except that only one set of supsampling factors and and subdivision
 	 * blocksizes is given, which is used for all {@link ViewSetup views}.
 	 *
@@ -343,10 +343,10 @@ public class WriteSequenceToHdf5
 	 *            block sizes.
 	 * @param hdf5File
 	 *            hdf5 file to which the image data is written.
-	 * @param progressListener
+	 * @param progressWriter
 	 *            completion ratio and status output will be directed here.
 	 */
-	public static void writeHdf5File( final SequenceDescription seq, final int[][] resolutions, final int[][] subdivisions, final File hdf5File, final ProgressListener progressListener )
+	public static void writeHdf5File( final SequenceDescription seq, final int[][] resolutions, final int[][] subdivisions, final File hdf5File, final ProgressWriter progressWriter )
 	{
 		final int numSetups = seq.numViewSetups();
 		final ArrayList< int[][] > perSetupResolutions = new ArrayList< int[][] >();
@@ -356,6 +356,6 @@ public class WriteSequenceToHdf5
 			perSetupResolutions.add( resolutions );
 			perSetupSubdivisions.add( subdivisions );
 		}
-		writeHdf5File( seq, perSetupResolutions, perSetupSubdivisions, hdf5File, progressListener );
+		writeHdf5File( seq, perSetupResolutions, perSetupSubdivisions, hdf5File, progressWriter );
 	}
 }

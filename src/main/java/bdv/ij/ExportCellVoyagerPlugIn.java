@@ -19,10 +19,10 @@ import java.io.FilenameFilter;
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileFilter;
 
-import bdv.export.ProgressListener;
+import bdv.export.ProgressWriter;
 import bdv.ij.export.tiles.CellVoyagerDataExporter;
 import bdv.ij.util.PluginHelper;
-import bdv.ij.util.ProgressListenerIJ;
+import bdv.ij.util.ProgressWriterIJ;
 
 public class ExportCellVoyagerPlugIn implements PlugIn
 {
@@ -70,8 +70,8 @@ public class ExportCellVoyagerPlugIn implements PlugIn
 		final File measurementSettingFile = new File( measurementFolder, "MeasurementSetting.xml" );
 
 		final CellVoyagerDataExporter exporter = new CellVoyagerDataExporter( measurementSettingFile, imageIndexFile );
-		final ProgressListener progressListener = new ProgressListenerIJ( 0, 1 );
-		exporter.export( params.seqFile, params.hdf5File, params.resolutions, params.subdivisions, progressListener );
+		final ProgressWriter progressWriter = new ProgressWriterIJ();
+		exporter.export( params.seqFile, params.hdf5File, params.resolutions, params.subdivisions, progressWriter );
 
 	}
 

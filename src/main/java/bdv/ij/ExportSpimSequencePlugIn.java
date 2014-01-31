@@ -18,12 +18,6 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import bdv.export.WriteSequenceToHdf5;
-import bdv.export.WriteSequenceToXml;
-import bdv.ij.export.SpimRegistrationSequence;
-import bdv.ij.util.PluginHelper;
-import bdv.ij.util.ProgressListenerIJ;
-import bdv.img.hdf5.Hdf5ImageLoader;
 import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.ViewRegistrations;
 import mpicbg.spim.io.ConfigurationParserException;
@@ -32,6 +26,14 @@ import mpicbg.spim.io.SPIMConfiguration;
 import mpicbg.spim.io.TextFileAccess;
 import mpicbg.spim.registration.ViewStructure;
 import spimopener.SPIMExperiment;
+import bdv.export.ProgressWriter;
+import bdv.export.SubTaskProgressWriter;
+import bdv.export.WriteSequenceToHdf5;
+import bdv.export.WriteSequenceToXml;
+import bdv.ij.export.SpimRegistrationSequence;
+import bdv.ij.util.PluginHelper;
+import bdv.ij.util.ProgressWriterIJ;
+import bdv.img.hdf5.Hdf5ImageLoader;
 
 public class ExportSpimSequencePlugIn implements PlugIn
 {
@@ -44,10 +46,11 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		if ( params == null )
 			return;
 
-		IJ.log( "starting export..." );
+		final ProgressWriter progress = new ProgressWriterIJ();
+		progress.out().println( "starting export..." );
 		final SpimRegistrationSequence sequence = new SpimRegistrationSequence( params.conf );
 		final SequenceDescription desc = sequence.getSequenceDescription();
-		WriteSequenceToHdf5.writeHdf5File( desc, params.perSetupResolutions, params.perSetupSubdivisions, params.hdf5File, new ProgressListenerIJ( 0, 0.95 ) );
+		WriteSequenceToHdf5.writeHdf5File( desc, params.perSetupResolutions, params.perSetupSubdivisions, params.hdf5File, new SubTaskProgressWriter( progress, 0, 0.95 ) );
 
 		final Hdf5ImageLoader loader = new Hdf5ImageLoader( params.hdf5File, null, false );
 		final SequenceDescription sequenceDescription = new SequenceDescription( desc.setups, desc.timepoints, params.seqFile.getParentFile(), loader );
@@ -55,14 +58,14 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		try
 		{
 			WriteSequenceToXml.writeSequenceToXml( sequenceDescription, viewRegistrations, params.seqFile.getAbsolutePath() );
-			IJ.showProgress( 1 );
+			progress.setProgress( 1 );
 		}
 		catch ( final Exception e )
 		{
-			IJ.error( "Failed to write xml file " + params.seqFile );
-			e.printStackTrace();
+			progress.err().println( "Failed to write xml file " + params.seqFile );
+			e.printStackTrace( progress.err() );
 		}
-		IJ.log( "done" );
+		progress.out().println( "done" );
 	}
 
 	public static String fusionType[] = new String[] { "Single-channel", "Multi-channel" };
