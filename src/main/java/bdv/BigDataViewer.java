@@ -26,6 +26,8 @@ import org.jdom2.input.SAXBuilder;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 
+import bdv.export.ProgressWriter;
+import bdv.export.ProgressWriterConsole;
 import bdv.img.hdf5.Hdf5ImageLoader;
 import bdv.tools.HelpDialog;
 import bdv.tools.InitializeViewerState;
@@ -77,7 +79,7 @@ public class BigDataViewer
 		manualTransformationEditor.toggle();
 	}
 
-	private BigDataViewer( final String xmlFilename ) throws InstantiationException, IllegalAccessException, ClassNotFoundException, JDOMException, IOException
+	private BigDataViewer( final String xmlFilename, final ProgressWriter progressWriter ) throws InstantiationException, IllegalAccessException, ClassNotFoundException, JDOMException, IOException
 	{
 		final int width = 800;
 		final int height = 600;
@@ -127,7 +129,7 @@ public class BigDataViewer
 
 		cropDialog = new CropDialog( viewerFrame, viewer, seq );
 
-		movieDialog = new RecordMovieDialog( viewerFrame, viewer );
+		movieDialog = new RecordMovieDialog( viewerFrame, viewer, progressWriter );
 		viewer.getDisplay().addOverlayRenderer( movieDialog ); // this is just to get updates of window size
 
 		activeSourcesDialog = new VisibilityAndGroupingDialog( viewerFrame, viewer.getVisibilityAndGrouping() );
@@ -305,9 +307,9 @@ public class BigDataViewer
 		viewer.requestRepaint();
 	}
 
-	public static void view( final String filename ) throws InstantiationException, IllegalAccessException, ClassNotFoundException, JDOMException, IOException
+	public static void view( final String filename, final ProgressWriter progressWriter ) throws InstantiationException, IllegalAccessException, ClassNotFoundException, JDOMException, IOException
 	{
-		new BigDataViewer( filename );
+		new BigDataViewer( filename, progressWriter );
 	}
 
 	public static void main( final String[] args )
@@ -323,7 +325,7 @@ public class BigDataViewer
 		try
 		{
 			System.setProperty("apple.laf.useScreenMenuBar", "true");
-			new BigDataViewer( fn );
+			new BigDataViewer( fn, new ProgressWriterConsole() );
 		}
 		catch ( final Exception e )
 		{

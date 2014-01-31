@@ -8,6 +8,7 @@ import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileFilter;
 
 import bdv.BigDataViewer;
+import bdv.ij.util.ProgressWriterIJ;
 
 public class BigDataViewerPlugIn implements PlugIn
 {
@@ -47,7 +48,7 @@ public class BigDataViewerPlugIn implements PlugIn
 			final File file = fileChooser.getSelectedFile();
 			try
 			{
-				BigDataViewer.view( file.getAbsolutePath() );
+				BigDataViewer.view( file.getAbsolutePath(), new ProgressWriterIJ() );
 			}
 			catch ( final Exception e )
 			{

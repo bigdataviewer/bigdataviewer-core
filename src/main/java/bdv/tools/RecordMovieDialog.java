@@ -33,6 +33,7 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
+import bdv.export.ProgressWriter;
 import bdv.img.cache.Cache;
 import bdv.viewer.ViewerPanel;
 import bdv.viewer.render.MultiResolutionRenderer;
@@ -46,6 +47,8 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 
 	private final int maxTimepoint;
 
+	private final ProgressWriter progressWriter;
+
 	private final JTextField pathTextField;
 
 	private final JSpinner spinnerMinTimepoint;
@@ -56,21 +59,12 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 
 	private final JSpinner spinnerHeight;
 
-	@Override
-	public void setVisible( final boolean b )
-	{
-		if ( b )
-		{
-//			width = viewer.getDisplay().getWidth();
-		}
-		super.setVisible( b );
-	}
-
-	public RecordMovieDialog( final Frame owner, final ViewerPanel viewer )
+	public RecordMovieDialog( final Frame owner, final ViewerPanel viewer, final ProgressWriter progressWriter )
 	{
 		super( owner, "record movie", false );
 		this.viewer = viewer;
 		maxTimepoint = viewer.getState().getNumTimePoints() - 1;
+		this.progressWriter = progressWriter;
 
 		final JPanel boxes = new JPanel();
 		getContentPane().add( boxes, BorderLayout.NORTH );
@@ -193,8 +187,9 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 					{
 						try
 						{
+							recordButton.setEnabled( false );
 							recordMovie( width, height, minTimepointIndex, maxTimepointIndex, dir );
-							setVisible( false );
+							recordButton.setEnabled( true );
 						}
 						catch ( final Exception ex )
 						{
@@ -274,12 +269,14 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 			public void prepareNextFrame()
 			{}
 		} );
+		progressWriter.setProgress( 0 );
 		for ( int timepoint = minTimepointIndex; timepoint <= maxTimepointIndex; ++timepoint )
 		{
 			renderState.setCurrentTimepoint( timepoint );
 			renderer.requestRepaint();
 			renderer.paint( renderState );
 			ImageIO.write( target.bi, "png", new File( String.format( "%s/img-%03d.png", dir, timepoint ) ) );
+			progressWriter.setProgress( ( double ) (timepoint - minTimepointIndex + 1) / (maxTimepointIndex - minTimepointIndex + 1) );
 		}
 	}
 
