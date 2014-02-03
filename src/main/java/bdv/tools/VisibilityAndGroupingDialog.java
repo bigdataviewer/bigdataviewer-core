@@ -3,6 +3,7 @@ package bdv.tools;
 import static bdv.viewer.VisibilityAndGrouping.Event.CURRENT_SOURCE_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.DISPLAY_MODE_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.GROUP_NAME_CHANGED;
+import static bdv.viewer.VisibilityAndGrouping.Event.NUM_SOURCES_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.SOURCE_ACTVITY_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.SOURCE_TO_GROUP_ASSIGNMENT_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.VISIBILITY_CHANGED;
@@ -240,6 +241,7 @@ public class VisibilityAndGroupingDialog extends JDialog
 				case CURRENT_SOURCE_CHANGED:
 				case SOURCE_ACTVITY_CHANGED:
 				case VISIBILITY_CHANGED:
+				case NUM_SOURCES_CHANGED:
 					update();
 					break;
 				}
