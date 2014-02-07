@@ -138,6 +138,37 @@ public class SetupAssignments
 	}
 
 	/**
+	 * Add the setup in a new group.
+	 * @param setup
+	 */
+	public void addSetup( final ConverterSetup setup )
+	{
+		final int fullRangeMin = minMaxGroups.get( 0 ).getFullRangeMin();
+		final int fullRangeMax = minMaxGroups.get( 0 ).getFullRangeMax();
+		final MinMaxGroup group = new MinMaxGroup( fullRangeMin, fullRangeMax, fullRangeMin, fullRangeMax, setup.getDisplayRangeMin(), setup.getDisplayRangeMax() );
+		minMaxGroups.add( group );
+		setupToGroup.put( setup, group );
+		group.addSetup( setup );
+		setups.add( setup );
+		if ( updateListener != null )
+			updateListener.update();
+	}
+
+	public void removeSetup( final ConverterSetup setup )
+	{
+		final MinMaxGroup group = setupToGroup.get( setup );
+		if ( group == null )
+			return;
+		final boolean groupIsEmpty = group.removeSetup( setup );
+		if ( groupIsEmpty )
+			minMaxGroups.remove( group );
+		setups.remove( setup );
+		setupToGroup.remove( setup );
+		if ( updateListener != null )
+			updateListener.update();
+	}
+
+	/**
 	 * Serialize the state of this {@link SetupAssignments} to XML.
 	 * @param doc
 	 * @return

@@ -9,6 +9,7 @@ import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -31,6 +32,7 @@ import javax.swing.JPanel;
 import javax.swing.JSpinner;
 import javax.swing.KeyStroke;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -77,6 +79,8 @@ public class BrightnessDialog extends JDialog
 			@Override
 			public void update()
 			{
+				colorsPanel.recreateContent();
+				minMaxPanels.recreateContent();
 				colorsPanel.update();
 				minMaxPanels.update();
 			}
@@ -128,19 +132,27 @@ public class BrightnessDialog extends JDialog
 
 		private final ArrayList< JButton > buttons;
 
+		private final JColorChooser colorChooser;
+
 		public ColorsPanel( final SetupAssignments assignments )
 		{
 			super();
 			this.setupAssignments = assignments;
 			buttons = new ArrayList< JButton >();
+			colorChooser = new JColorChooser();
 
 			setLayout( new BoxLayout( this, BoxLayout.LINE_AXIS ) );
 			setBorder( BorderFactory.createEmptyBorder( 2, 2, 2, 2 ) );
+			recreateContent();
+		}
 
-			final JColorChooser colorChooser = new JColorChooser();
+		protected void recreateContent()
+		{
+			removeAll();
+			buttons.clear();
 
 			add( new JLabel( "set view colors:" ) );
-			for ( final ConverterSetup setup : assignments.getConverterSetups() )
+			for ( final ConverterSetup setup : setupAssignments.getConverterSetups() )
 			{
 				final JButton button = new JButton( new ColorIcon( getColor( setup ) ) );
 				button.addActionListener( new ActionListener()
@@ -168,6 +180,11 @@ public class BrightnessDialog extends JDialog
 				buttons.add( button );
 				add( button );
 			}
+
+			invalidate();
+			final Window frame = SwingUtilities.getWindowAncestor( this );
+			if ( frame != null )
+				frame.pack();
 		}
 
 		@Override
@@ -204,11 +221,20 @@ public class BrightnessDialog extends JDialog
 		{
 			super();
 			this.setupAssignments = assignments;
+			minMaxPanels = new ArrayList< MinMaxPanel >();
 
 			setLayout( new BoxLayout( this, BoxLayout.PAGE_AXIS ) );
 			setBorder( BorderFactory.createEmptyBorder( 2, 2, 2, 2 ) );
+			recreateContent();
 
-			minMaxPanels = new ArrayList< MinMaxPanel >();
+			this.dialog = dialog;
+		}
+
+		protected void recreateContent()
+		{
+			removeAll();
+			minMaxPanels.clear();
+
 			for ( final MinMaxGroup group : setupAssignments.getMinMaxGroups() )
 			{
 				final MinMaxPanel panel = new MinMaxPanel( group, setupAssignments, this );
@@ -217,9 +243,15 @@ public class BrightnessDialog extends JDialog
 			}
 
 			for ( final MinMaxPanel panel : minMaxPanels )
+			{
 				panel.update();
+				panel.showAdvanced( isShowingAdvanced );
+			}
 
-			this.dialog = dialog;
+			invalidate();
+			final Window frame = SwingUtilities.getWindowAncestor( this );
+			if ( frame != null )
+				frame.pack();
 		}
 
 		@Override
@@ -272,6 +304,8 @@ A:			for ( final MinMaxGroup group : setupAssignments.getMinMaxGroups() )
 	 */
 	public static class MinMaxPanel extends JPanel implements MinMaxGroup.UpdateListener
 	{
+		private final SetupAssignments setupAssignments;
+
 		private final MinMaxGroup minMaxGroup;
 
 		private final ArrayList< JCheckBox > boxes;
@@ -287,6 +321,7 @@ A:			for ( final MinMaxGroup group : setupAssignments.getMinMaxGroups() )
 		public MinMaxPanel( final MinMaxGroup group, final SetupAssignments assignments, final MinMaxPanels minMaxPanels )
 		{
 			super();
+			setupAssignments = assignments;
 			minMaxGroup = group;
 //			setBorder( BorderFactory.createCompoundBorder( BorderFactory.createEmptyBorder( 2, 2, 2, 2 ), BorderFactory.createLineBorder( Color.black ) ) );
 			setBorder( BorderFactory.createCompoundBorder( BorderFactory.createEmptyBorder( 2, 2, 2, 2 ), BorderFactory.createEtchedBorder() ) );
@@ -444,9 +479,10 @@ A:			for ( final MinMaxGroup group : setupAssignments.getMinMaxGroups() )
 		{
 			for ( int i = 0; i < boxes.size(); ++i )
 			{
+				final int setupId = setupAssignments.getConverterSetups().get( i ).getSetupId();
 				boolean b = false;
 				for ( final ConverterSetup s : minMaxGroup.setups )
-					if ( s.getSetupId() == i )
+					if ( s.getSetupId() == setupId )
 					{
 						b = true;
 						break;
