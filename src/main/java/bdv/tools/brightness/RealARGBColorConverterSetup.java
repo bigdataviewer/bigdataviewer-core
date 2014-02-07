@@ -1,10 +1,11 @@
 package bdv.tools.brightness;
 
+import java.util.Arrays;
 import java.util.List;
 
-import bdv.viewer.ViewerPanel;
 import net.imglib2.display.RealARGBColorConverter;
 import net.imglib2.type.numeric.ARGBType;
+import bdv.viewer.ViewerPanel;
 
 public class RealARGBColorConverterSetup implements ConverterSetup
 {
@@ -13,6 +14,11 @@ public class RealARGBColorConverterSetup implements ConverterSetup
 	protected final List< RealARGBColorConverter< ? > > converters;
 
 	protected ViewerPanel viewer;
+
+	public RealARGBColorConverterSetup( final int setupId, final RealARGBColorConverter< ? > ... converters )
+	{
+		this( setupId, Arrays.< RealARGBColorConverter< ? > >asList( converters ) );
+	}
 
 	public RealARGBColorConverterSetup( final int setupId, final List< RealARGBColorConverter< ? > > converters )
 	{

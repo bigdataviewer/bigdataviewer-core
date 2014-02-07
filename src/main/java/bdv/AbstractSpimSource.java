@@ -1,7 +1,5 @@
 package bdv;
 
-import bdv.viewer.Interpolation;
-import bdv.viewer.Source;
 import mpicbg.spim.data.SequenceDescription;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
@@ -11,6 +9,8 @@ import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.NumericType;
+import bdv.viewer.Interpolation;
+import bdv.viewer.Source;
 
 public abstract class AbstractSpimSource< T extends NumericType< T > > implements Source< T >
 {
@@ -53,7 +53,7 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 		numTimepoints = seq.numTimepoints();
 		numMipmapLevels = imgLoader.numMipmapLevels( setup );
 		currentSources = new RandomAccessibleInterval[ numMipmapLevels ];
-		currentInterpolatedSources = new RealRandomAccessible[ numMipmapLevels ][ 2 ];
+		currentInterpolatedSources = new RealRandomAccessible[ numMipmapLevels ][ numInterpolationMethods ];
 		currentSourceTransforms = new AffineTransform3D[ numMipmapLevels ];
 		for ( int level = 0; level < numMipmapLevels; level++ )
 			currentSourceTransforms[ level ] = new AffineTransform3D();

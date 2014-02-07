@@ -4,7 +4,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 
 import javax.swing.ActionMap;
 import javax.swing.JFileChooser;
@@ -106,7 +105,7 @@ public class BigDataViewer
 			final SourceAndConverter< UnsignedShortType > soc = new SourceAndConverter< UnsignedShortType >( ts, converter, vsoc );
 
 			sources.add( soc );
-			converterSetups.add( new RealARGBColorConverterSetup( setup, Arrays.< RealARGBColorConverter< ? > >asList( converter, vconverter ) ) );
+			converterSetups.add( new RealARGBColorConverterSetup( setup, converter, vconverter ) );
 		}
 
 		viewerFrame = new ViewerFrame( width, height, sources, seq.numTimepoints(),
