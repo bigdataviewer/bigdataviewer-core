@@ -170,11 +170,11 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 		private double[] screenScales = new double[] { 1, 0.75, 0.5, 0.25, 0.125 };
 
-		private long targetRenderNanos = 30 * 1000000;
+		private long targetRenderNanos = 30 * 1000000l;
 
 		private boolean doubleBuffered = true;
 
-		private int numRenderingThreads = 4;
+		private int numRenderingThreads = 3;
 
 		private MessageOverlayAnimator msgOverlay = new MessageOverlayAnimator( 800 );
 

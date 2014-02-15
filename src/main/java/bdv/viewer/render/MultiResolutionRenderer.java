@@ -234,7 +234,7 @@ public class MultiResolutionRenderer
 	protected int previousTimepoint;
 
 	// TODO: should be settable
-	protected long[] iobudget = new long[] { 3000l * 1000000l, 20l * 1000000l, 10l * 1000000l };
+	protected long[] iobudget = new long[] { 500l * 1000000l,  0l * 1000000l };
 
 	/**
 	 * @param display
@@ -491,7 +491,15 @@ public class MultiResolutionRenderer
 				if ( currentScreenScaleIndex > 0 )
 					requestRepaint( currentScreenScaleIndex - 1 );
 				else if ( !p.isValid() )
+				{
+					try
+					{
+						Thread.sleep( 1 );
+					}
+					catch ( final InterruptedException e )
+					{}
 					requestRepaint( currentScreenScaleIndex );
+				}
 			}
 //			else
 //				System.out.println("! success");

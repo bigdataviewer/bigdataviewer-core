@@ -1,6 +1,5 @@
 package bdv.img.cache;
 
-import java.io.StringWriter;
 import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
@@ -102,47 +101,78 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 
 	protected final BlockingFetchQueues< Key > queue;
 
-	protected long currentQueueFrame = 0;
+	protected volatile long currentQueueFrame = 0;
 
 	class Fetcher extends Thread
 	{
 		@Override
 		public final void run()
 		{
-			while ( !isInterrupted() )
+			Key key = null;
+			while ( true )
 			{
+				while ( key == null )
+					try
+					{
+						key = queue.take();
+					}
+					catch ( final InterruptedException e )
+					{}
+				long waitMillis = pauseUntilTimeMillis - System.currentTimeMillis();
+				while ( waitMillis > 0 )
+				{
+					try
+					{
+						Thread.sleep( 1 );
+					}
+					catch ( final InterruptedException e )
+					{}
+					waitMillis = pauseUntilTimeMillis - System.currentTimeMillis();
+				}
 				try
 				{
-					while ( pause )
-						synchronized ( this )
-						{
-//							System.out.println( "fetcher wait" );
-							pause = false;
-							wait( 5 );
-						}
-//					System.out.println( "fetcher load" );
-					loadIfNotValid( queue.take() );
-//					Thread.sleep(1);
+					loadIfNotValid( key );
+					key = null;
 				}
 				catch ( final InterruptedException e )
-				{
-					break;
-				}
+				{}
 			}
 		}
 
-		private volatile boolean pause = false;
+		private volatile long pauseUntilTimeMillis = 0;
 
-		public void pause()
+		public void pauseUntil( final long timeMillis )
 		{
-			pause = true;
+			pauseUntilTimeMillis = timeMillis;
+			interrupt();
+		}
+
+		public void wakeUp()
+		{
+			pauseUntilTimeMillis = 0;
 		}
 	}
 
 	public void pauseFetcherThreads()
 	{
+		pauseFetcherThreadsUntil( System.currentTimeMillis() + 5 );
+	}
+
+	public void pauseFetcherThreads( final long ms )
+	{
+		pauseFetcherThreadsUntil( System.currentTimeMillis() + ms );
+	}
+
+	public void pauseFetcherThreadsUntil( final long timeMillis )
+	{
 		for ( final Fetcher f : fetchers )
-			f.pause();
+			f.pauseUntil( timeMillis );
+	}
+
+	public void wakeFetcherThreads()
+	{
+		for ( final Fetcher f : fetchers )
+			f.wakeUp();
 	}
 
 	private final ArrayList< Fetcher > fetchers;
@@ -176,8 +206,9 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	 * </ul>
 	 *
 	 * @param k
+	 * @throws InterruptedException
 	 */
-	protected void loadIfNotValid( final Key k )
+	protected void loadIfNotValid( final Key k ) throws InterruptedException
 	{
 		final Reference< Entry > ref = softReferenceCache.get( k );
 		if ( ref != null )
@@ -190,8 +221,9 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 
 	/**
 	 * Load the data for the {@link Entry}, if it is not yet loaded (valid).
+	 * @throws InterruptedException
 	 */
-	protected void loadEntryIfNotValid( final Entry entry )
+	protected void loadEntryIfNotValid( final Entry entry ) throws InterruptedException
 	{
 		final VolatileCell< A > c = entry.data;
 		if ( !c.getData().isValid() )
@@ -202,51 +234,14 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 			final int timepoint = k.timepoint;
 			final int setup = k.setup;
 			final int level = k.level;
-			final long t0 = System.currentTimeMillis();
-			long t1;
 			synchronized ( entry )
 			{
-				t1 = System.currentTimeMillis() - t0;
 				if ( !entry.data.getData().isValid() )
 				{
 					final VolatileCell< A > cell = new VolatileCell< A >( cellDims, cellMin, loader.loadArray( timepoint, setup, level, cellDims, cellMin ) );
-					entry.data = cell; // TODO: need to synchronize or make entry.data volatile?
+					entry.data = cell;
 					softReferenceCache.put( entry.key, new SoftReference< Entry >( entry ) );
 				}
-			}
-			if ( t1 > 200 )
-			{
-				final StringWriter sw = new StringWriter();
-				sw.write( "waited " + t1 + " ms for entry lock\n" );
-				final StackTraceElement[] trace = Thread.currentThread().getStackTrace();
-				boolean found = false;
-				for ( final StackTraceElement elem : trace )
-				{
-					if ( elem.getClassName().equals( "bdv.img.cache.VolatileGlobalCellCache$Hdf5CellCache" ) && elem.getMethodName().equals( "get" ) )
-					{
-						found = true;
-						sw.write( "Hdf5CellCache.get\n" );
-						break;
-					}
-					else if ( elem.getClassName().equals( "bdv.img.cache.VolatileGlobalCellCache$Hdf5CellCache" ) && elem.getMethodName().equals( "load" ) )
-					{
-						found = true;
-						sw.write( "Hdf5CellCache.load\n" );
-						break;
-					}
-					else if ( elem.getClassName().equals( "bdv.img.cache.VolatileGlobalCellCache$Fetcher" ) && elem.getMethodName().equals( "run" ) )
-					{
-						found = true;
-						sw.write( "Fetcher.run\n" );
-						break;
-					}
-				}
-				if ( !found )
-				{
-					for ( final StackTraceElement elem : trace )
-						sw.write( elem.getClassName() + "." + elem.getMethodName() + "\n" );
-				}
-				System.out.println( sw.toString() );
 			}
 		}
 	}
@@ -279,14 +274,24 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 		final int priority = maxLevels[ k.setup ] - k.level;
 		if ( budget.timeLeft( priority ) > 0 )
 		{
-			pauseFetcherThreads();
+			pauseFetcherThreads( 1000 );
 			final long t0 = stats.getIoNanoTime();
 			stats.start();
-			loadEntryIfNotValid( entry );
+			while( true )
+				try
+				{
+					loadEntryIfNotValid( entry );
+					break;
+				}
+				catch ( final InterruptedException e )
+				{}
 			stats.stop();
 			final long t = stats.getIoNanoTime() - t0;
 			budget.use( t, priority );
-			pauseFetcherThreads();
+			if ( budget.timeLeft( 0 ) <= 0 )
+				wakeFetcherThreads();
+			else
+				pauseFetcherThreads( 3 );
 		}
 		else
 			enqueueEntry( entry );
@@ -338,7 +343,14 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 					enqueueEntry( entry );
 					break;
 				case BLOCKING:
-					loadEntryIfNotValid( entry );
+					while ( true )
+						try
+						{
+							loadEntryIfNotValid( entry );
+							break;
+						}
+						catch ( final InterruptedException e )
+						{}
 					break;
 				case BUDGETED:
 					if ( !entry.data.getData().isValid() )
@@ -391,7 +403,14 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 			enqueueEntry( entry );
 			break;
 		case BLOCKING:
-			loadEntryIfNotValid( entry );
+			while ( true )
+				try
+				{
+					loadEntryIfNotValid( entry );
+					break;
+				}
+				catch ( final InterruptedException e )
+				{}
 			break;
 		case BUDGETED:
 			if ( !entry.data.getData().isValid() )

@@ -221,7 +221,7 @@ public class BigDataViewer
 		if( ! tryLoadSettings( xmlFilename ) )
 			InitializeViewerState.initBrightness( 0.001, 0.999, viewer, setupAssignments );
 
-		( ( Hdf5ImageLoader ) seq.imgLoader ).initCachedDimensionsFromHdf5( true );
+//		( ( Hdf5ImageLoader ) seq.imgLoader ).initCachedDimensionsFromHdf5( false );
 	}
 
 	boolean tryLoadSettings( final String xmlFilename )
@@ -313,7 +313,9 @@ public class BigDataViewer
 
 	public static void main( final String[] args )
 	{
-		final String fn = "/Users/pietzsch/workspace/data/fast fly/111010_weber/combined.xml";
+		final String fn = "/Users/pietzsch/desktop/data/BDV130418A325/BDV130418A325_NoTempReg.xml";
+//		final String fn = "/Users/pietzsch/Desktop/data/valia2/valia.xml";
+//		final String fn = "/Users/pietzsch/workspace/data/fast fly/111010_weber/combined.xml";
 //		final String fn = "/Users/pietzsch/workspace/data/mette/mette.xml";
 //		final String fn = "/Users/tobias/Desktop/openspim.xml";
 //		final String fn = "/Users/pietzsch/Desktop/data/fibsem.xml";

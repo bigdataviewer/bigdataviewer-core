@@ -19,14 +19,14 @@ public class Hdf5VolatileShortArrayLoader implements CacheArrayLoader< VolatileS
 		theEmptyArray = new VolatileShortArray( 32 * 32 * 32, false );
 	}
 
-	public static volatile String previousCellsPath = "";
-
 	@Override
-	public VolatileShortArray loadArray( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min )
+	public VolatileShortArray loadArray( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
 	{
 		final MDShortArray array;
 		synchronized ( hdf5Reader )
 		{
+			if ( Thread.interrupted() )
+				throw new InterruptedException();
 			array = hdf5Reader.readShortMDArrayBlockWithOffset( getCellsPath( timepoint, setup, level ), reorder( dimensions ), reorder( min ) );
 		}
 		return new VolatileShortArray( array.getAsFlatArray(), true );
