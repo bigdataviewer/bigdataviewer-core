@@ -8,12 +8,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
+import net.imglib2.Dimensions;
+import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.Volatile;
 import net.imglib2.converter.Converter;
 import net.imglib2.display.screenimage.awt.ARGBScreenImage;
+import net.imglib2.img.cell.CellImg;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.numeric.ARGBType;
@@ -428,6 +431,8 @@ public class MultiResolutionRenderer
 			renderingMayBeCancelled = ( requestedScreenScaleIndex < maxScreenScaleIndex );
 
 			clearQueue = newFrameRequest;
+			if ( clearQueue )
+				cache.prepareNextFrame();
 			createProjector = newFrameRequest || resized || ( requestedScreenScaleIndex != currentScreenScaleIndex );
 			newFrameRequest = false;
 
@@ -448,8 +453,19 @@ public class MultiResolutionRenderer
 		}
 
 		// try rendering
-		if ( clearQueue )
-			cache.prepareNextFrame();
+//		if ( clearQueue )
+//			cache.prepareNextFrame();
+
+//		if ( clearQueue )
+//			try
+//			{
+//				Thread.sleep( 100 );
+//			}
+//			catch ( final InterruptedException e1 )
+//			{
+//				// TODO Auto-generated catch block
+//				e1.printStackTrace();
+//			}
 		final boolean success = p.map( createProjector );
 		final long rendertime = p.getLastFrameRenderNanoTime();
 
@@ -651,14 +667,27 @@ public class MultiResolutionRenderer
 			levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, bestLevel ) );
 			if ( nLevels - 1 != bestLevel )
 				levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, nLevels - 1 ) );
+			final long t0 = System.currentTimeMillis();
+			if ( nLevels - 1 != bestLevel )
+				prefetch( viewerState, spimSource, screenScaleTransform, nLevels - 1, screenImage );
+			prefetch( viewerState, spimSource, screenScaleTransform, bestLevel, screenImage );
+			final long t1 = System.currentTimeMillis() - t0;
+			System.out.println( "prefetch: " + t1 + " ms" );
 			// slight abuse of newFrameRequest: we only want this two-pass
 			// rendering to happen once then switch to normal multi-pass
 			// rendering if we remain longer on this frame.
 			newFrameRequest = true;
 		}
 		else
-		for ( int i = bestLevel; i < nLevels; ++i )
-			levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, i ) );
+		{
+			for ( int i = bestLevel; i < nLevels; ++i )
+				levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, i ) );
+			final long t0 = System.currentTimeMillis();
+			for ( int i = nLevels - 1; i >= bestLevel; --i )
+				prefetch( viewerState, spimSource, screenScaleTransform, i, screenImage );
+			final long t1 = System.currentTimeMillis() - t0;
+			System.out.println( "prefetch: " + t1 + " ms" );
+		}
 //		for ( int i = bestLevel - 1; i >= 0; --i )
 //			levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, i ) );
 		return new VolatileHierarchyProjector< T, ARGBType >( levels, source.getConverter(), screenImage, numRenderingThreads, renderingExecutorService );
@@ -676,5 +705,41 @@ public class MultiResolutionRenderer
 		sourceToScreen.preConcatenate( screenScaleTransform );
 
 		return RealViews.constantAffine( img, sourceToScreen );
+	}
+
+	private static < T > void prefetch(
+			final ViewerState viewerState,
+			final Source< T > source,
+			final AffineTransform3D screenScaleTransform,
+			final int mipmapIndex,
+			final Dimensions screenInterval )
+	{
+//		if ( mipmapIndex != source.getNumMipmapLevels() - 1 )
+//			return;
+		final int timepoint = viewerState.getCurrentTimepoint();
+		final RandomAccessibleInterval< T > img = source.getSource( timepoint, mipmapIndex );
+		if ( CellImg.class.isInstance( img ) )
+		{
+//			System.out.println( "is CellImg" );
+			final CellImg< ?, ?, ? > cellImg = ( CellImg ) img;
+			final int[] cellDimensions = new int[ 3 ];
+			cellImg.getCells().cellDimensions( cellDimensions );
+			final long[] dimensions = new long[ 3 ];
+			cellImg.dimensions( dimensions );
+			final RandomAccess< ? > cellsRandomAccess = cellImg.getCells().randomAccess();
+
+//			System.out.println( net.imglib2.util.Util.printCoordinates( cellDimensions ) );
+//			System.out.println( net.imglib2.util.Util.printCoordinates( dimensions ) );
+//			System.out.println();
+
+//			final Interpolation interpolation = viewerState.getInterpolation();
+
+			final AffineTransform3D sourceToScreen = new AffineTransform3D();
+			viewerState.getViewerTransform( sourceToScreen );
+			sourceToScreen.concatenate( source.getSourceTransform( timepoint, mipmapIndex ) );
+			sourceToScreen.preConcatenate( screenScaleTransform );
+
+			PlayWithGeometry.scan( sourceToScreen, cellDimensions, dimensions, screenInterval, cellsRandomAccess );
+		}
 	}
 }

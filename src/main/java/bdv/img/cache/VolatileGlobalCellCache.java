@@ -92,7 +92,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 				// System.out.println( "finalizing..." );
 				softReferenceCache.remove( key );
 				// System.out.println( softReferenceCache.size() +
-				// " tiles chached." );
+				// " tiles cached." );
 			}
 		}
 	}

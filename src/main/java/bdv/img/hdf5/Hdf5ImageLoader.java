@@ -255,8 +255,8 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 			System.err.println( "image data for " + view.getBasename() + " level " + level + " could not be found. Partition file missing?" );
 			return getMissingDataImage( view, level, new VolatileUnsignedShortType() );
 		}
-//		final CellImg< VolatileUnsignedShortType, VolatileShortArray, Hdf5Cell< VolatileShortArray > >  img = prepareCachedImage( view, level, LoadingStrategy.VOLATILE );
-		final CellImg< VolatileUnsignedShortType, VolatileShortArray, VolatileCell< VolatileShortArray > >  img = prepareCachedImage( view, level, LoadingStrategy.BUDGETED );
+		final CellImg< VolatileUnsignedShortType, VolatileShortArray, VolatileCell< VolatileShortArray > >  img = prepareCachedImage( view, level, LoadingStrategy.VOLATILE );
+//		final CellImg< VolatileUnsignedShortType, VolatileShortArray, VolatileCell< VolatileShortArray > >  img = prepareCachedImage( view, level, LoadingStrategy.BUDGETED );
 		final VolatileUnsignedShortType linkedType = new VolatileUnsignedShortType( img );
 		img.setLinkedType( linkedType );
 		return img;
