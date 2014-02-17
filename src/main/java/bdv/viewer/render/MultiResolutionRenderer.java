@@ -732,14 +732,14 @@ public class MultiResolutionRenderer
 //			System.out.println( net.imglib2.util.Util.printCoordinates( dimensions ) );
 //			System.out.println();
 
-//			final Interpolation interpolation = viewerState.getInterpolation();
+			final Interpolation interpolation = viewerState.getInterpolation();
 
 			final AffineTransform3D sourceToScreen = new AffineTransform3D();
 			viewerState.getViewerTransform( sourceToScreen );
 			sourceToScreen.concatenate( source.getSourceTransform( timepoint, mipmapIndex ) );
 			sourceToScreen.preConcatenate( screenScaleTransform );
 
-			PlayWithGeometry.scan( sourceToScreen, cellDimensions, dimensions, screenInterval, cellsRandomAccess );
+			PlayWithGeometry.scan( sourceToScreen, cellDimensions, dimensions, screenInterval, interpolation, cellsRandomAccess );
 		}
 	}
 }
