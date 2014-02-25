@@ -45,6 +45,10 @@ public class Hdf5VolatileShortArrayLoader implements CacheArrayLoader< VolatileS
 
 	public static volatile long sLoad = 0;
 
+	private final int[] reorderedDimensions = new int[ 3 ];
+
+	private final long[] reorderedMin = new long[ 3 ];
+
 	@Override
 	public VolatileShortArray loadArray( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min )
 	{
@@ -66,7 +70,9 @@ public class Hdf5VolatileShortArrayLoader implements CacheArrayLoader< VolatileS
 //				log.println( sw.toString() );
 			}
 			final long t0 = System.currentTimeMillis();
-			array = hdf5Reader.readShortMDArrayBlockWithOffset( getCellsPath( timepoint, setup, level ), reorder( dimensions ), reorder( min ) );
+			reorder( dimensions, reorderedDimensions );
+			reorder( min, reorderedMin );
+			array = hdf5Reader.readShortMDArrayBlockWithOffset( getCellsPath( timepoint, setup, level ), reorderedDimensions, reorderedMin );
 			pEnd = System.currentTimeMillis();
 			final long t = pEnd - t0;
 			final long size = array.size();
