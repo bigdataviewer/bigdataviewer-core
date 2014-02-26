@@ -26,5 +26,5 @@ public interface Cache
 	/**
 	 * (Re-)initialize the IO time budget.
 	 */
-	public void initIoTimeBudget( final long[] partialBudget, final boolean reinitialize );
+	public void initIoTimeBudget( final long[] partialBudget );
 }

@@ -237,7 +237,10 @@ public class MultiResolutionRenderer
 	protected int previousTimepoint;
 
 	// TODO: should be settable
-	protected long[] iobudget = new long[] { 500l * 1000000l,  0l * 1000000l };
+	protected long[] iobudget = new long[] { 100l * 1000000l,  10l * 1000000l };
+
+	// TODO: should be settable
+	protected boolean prefetchCells = true;
 
 	/**
 	 * @param display
@@ -453,19 +456,6 @@ public class MultiResolutionRenderer
 		}
 
 		// try rendering
-//		if ( clearQueue )
-//			cache.prepareNextFrame();
-
-//		if ( clearQueue )
-//			try
-//			{
-//				Thread.sleep( 100 );
-//			}
-//			catch ( final InterruptedException e1 )
-//			{
-//				// TODO Auto-generated catch block
-//				e1.printStackTrace();
-//			}
 		final boolean success = p.map( createProjector );
 		final long rendertime = p.getLastFrameRenderNanoTime();
 
@@ -497,11 +487,9 @@ public class MultiResolutionRenderer
 						if ( rendertime < targetRenderNanos && maxScreenScaleIndex > 0 )
 							maxScreenScaleIndex--;
 					}
-//					System.out.println( "created projector" );
 //					System.out.println( String.format( "rendering:%4d ms", rendertime / 1000000 ) );
 //					System.out.println( "scale = " + currentScreenScaleIndex );
 //					System.out.println( "maxScreenScaleIndex = " + maxScreenScaleIndex + "  (" + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 0 ) + " x " + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 1 ) + ")" );
-//					System.out.println();
 				}
 
 				if ( currentScreenScaleIndex > 0 )
@@ -517,8 +505,6 @@ public class MultiResolutionRenderer
 					requestRepaint( currentScreenScaleIndex );
 				}
 			}
-//			else
-//				System.out.println("! success");
 		}
 
 		return success;
@@ -530,7 +516,6 @@ public class MultiResolutionRenderer
 	 */
 	public synchronized void requestRepaint()
 	{
-//		System.out.println("requestRepaint()");
 		newFrameRequest = true;
 		requestRepaint( maxScreenScaleIndex );
 	}
@@ -556,7 +541,7 @@ public class MultiResolutionRenderer
 	{
 		synchronized ( viewerState )
 		{
-			cache.initIoTimeBudget( iobudget, false );
+			cache.initIoTimeBudget( null ); // clear time budget such that prefetching doesn't wait for loading blocks.
 			final List< SourceState< ? > > sources = viewerState.getSources();
 			final List< Integer > visibleSourceIndices = viewerState.getVisibleSourceIndices();
 			VolatileProjector projector;
@@ -586,6 +571,7 @@ public class MultiResolutionRenderer
 				projector = new AccumulateProjectorARGB( sourceProjectors, sourceImages, screenImage, numRenderingThreads );
 			}
 			previousTimepoint = viewerState.getCurrentTimepoint();
+			cache.initIoTimeBudget( iobudget );
 			return projector;
 		}
 	}
@@ -667,12 +653,14 @@ public class MultiResolutionRenderer
 			levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, bestLevel ) );
 			if ( nLevels - 1 != bestLevel )
 				levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, nLevels - 1 ) );
-			final long t0 = System.currentTimeMillis();
-			if ( nLevels - 1 != bestLevel )
-				prefetch( viewerState, spimSource, screenScaleTransform, nLevels - 1, screenImage );
-			prefetch( viewerState, spimSource, screenScaleTransform, bestLevel, screenImage );
-			final long t1 = System.currentTimeMillis() - t0;
-			System.out.println( "prefetch: " + t1 + " ms" );
+
+			if ( prefetchCells )
+			{
+				if ( nLevels - 1 != bestLevel )
+					prefetch( viewerState, spimSource, screenScaleTransform, nLevels - 1, screenImage );
+				prefetch( viewerState, spimSource, screenScaleTransform, bestLevel, screenImage );
+			}
+
 			// slight abuse of newFrameRequest: we only want this two-pass
 			// rendering to happen once then switch to normal multi-pass
 			// rendering if we remain longer on this frame.
@@ -682,11 +670,10 @@ public class MultiResolutionRenderer
 		{
 			for ( int i = bestLevel; i < nLevels; ++i )
 				levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, i ) );
-			final long t0 = System.currentTimeMillis();
-			for ( int i = nLevels - 1; i >= bestLevel; --i )
-				prefetch( viewerState, spimSource, screenScaleTransform, i, screenImage );
-			final long t1 = System.currentTimeMillis() - t0;
-			System.out.println( "prefetch: " + t1 + " ms" );
+
+			if ( prefetchCells )
+				for ( int i = nLevels - 1; i >= bestLevel; --i )
+					prefetch( viewerState, spimSource, screenScaleTransform, i, screenImage );
 		}
 //		for ( int i = bestLevel - 1; i >= 0; --i )
 //			levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, i ) );
@@ -714,23 +701,16 @@ public class MultiResolutionRenderer
 			final int mipmapIndex,
 			final Dimensions screenInterval )
 	{
-//		if ( mipmapIndex != source.getNumMipmapLevels() - 1 )
-//			return;
 		final int timepoint = viewerState.getCurrentTimepoint();
 		final RandomAccessibleInterval< T > img = source.getSource( timepoint, mipmapIndex );
 		if ( CellImg.class.isInstance( img ) )
 		{
-//			System.out.println( "is CellImg" );
-			final CellImg< ?, ?, ? > cellImg = ( CellImg ) img;
+			final CellImg< ?, ?, ? > cellImg = ( CellImg< ?, ?, ? > ) img;
 			final int[] cellDimensions = new int[ 3 ];
 			cellImg.getCells().cellDimensions( cellDimensions );
 			final long[] dimensions = new long[ 3 ];
 			cellImg.dimensions( dimensions );
 			final RandomAccess< ? > cellsRandomAccess = cellImg.getCells().randomAccess();
-
-//			System.out.println( net.imglib2.util.Util.printCoordinates( cellDimensions ) );
-//			System.out.println( net.imglib2.util.Util.printCoordinates( dimensions ) );
-//			System.out.println();
 
 			final Interpolation interpolation = viewerState.getInterpolation();
 
@@ -739,7 +719,7 @@ public class MultiResolutionRenderer
 			sourceToScreen.concatenate( source.getSourceTransform( timepoint, mipmapIndex ) );
 			sourceToScreen.preConcatenate( screenScaleTransform );
 
-			PlayWithGeometry.scan( sourceToScreen, cellDimensions, dimensions, screenInterval, interpolation, cellsRandomAccess );
+			Prefetcher.fetchCells( sourceToScreen, cellDimensions, dimensions, screenInterval, interpolation, cellsRandomAccess );
 		}
 	}
 }

@@ -4,6 +4,8 @@ import java.lang.ref.Reference;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
@@ -99,6 +101,12 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 
 	protected final ConcurrentHashMap< Key, Reference< Entry > > softReferenceCache = new ConcurrentHashMap< Key, Reference< Entry > >();
 
+	/**
+	 * Keeps references to the {@link Entry entries} accessed in the current
+	 * frame, such that they cannot be cleared from the cache prematurely.
+	 */
+	protected final List< Entry > currentFrameEntries = Collections.synchronizedList( new ArrayList< Entry >() );
+
 	protected final BlockingFetchQueues< Key > queue;
 
 	protected volatile long currentQueueFrame = 0;
@@ -123,7 +131,10 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 				{
 					try
 					{
-						Thread.sleep( 1 );
+						synchronized ( lock )
+						{
+							lock.wait( waitMillis );
+						}
 					}
 					catch ( final InterruptedException e )
 					{}
@@ -139,6 +150,8 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 			}
 		}
 
+		private final Object lock = new Object();
+
 		private volatile long pauseUntilTimeMillis = 0;
 
 		public void pauseUntil( final long timeMillis )
@@ -150,25 +163,36 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 		public void wakeUp()
 		{
 			pauseUntilTimeMillis = 0;
+			synchronized ( lock )
+			{
+				lock.notify();
+			}
 		}
 	}
 
-	public void pauseFetcherThreads()
-	{
-		pauseFetcherThreadsUntil( System.currentTimeMillis() + 5 );
-	}
-
-	public void pauseFetcherThreads( final long ms )
+	/**
+	 * pause all {@link Fetcher} threads for the specified number of milliseconds.
+	 */
+	public void pauseFetcherThreadsFor( final long ms )
 	{
 		pauseFetcherThreadsUntil( System.currentTimeMillis() + ms );
 	}
 
+	/**
+	 * pause all {@link Fetcher} threads until the given time (see
+	 * {@link System#currentTimeMillis()}).
+	 */
 	public void pauseFetcherThreadsUntil( final long timeMillis )
 	{
 		for ( final Fetcher f : fetchers )
 			f.pauseUntil( timeMillis );
 	}
 
+	/**
+	 * Wake up all Fetcher threads immediately. This ends any
+	 * {@link #pauseFetcherThreadsFor(long)} and
+	 * {@link #pauseFetcherThreadsUntil(long)} set earlier.
+	 */
 	public void wakeFetcherThreads()
 	{
 		for ( final Fetcher f : fetchers )
@@ -179,7 +203,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 
 	private final CacheArrayLoader< A > loader;
 
-	public VolatileGlobalCellCache( final CacheArrayLoader< A > loader, final int numTimepoints, final int numSetups, final int maxNumLevels, final int[] maxLevels )
+	public VolatileGlobalCellCache( final CacheArrayLoader< A > loader, final int numTimepoints, final int numSetups, final int maxNumLevels, final int[] maxLevels, final int numFetcherThreads )
 	{
 		this.loader = loader;
 		this.numTimepoints = numTimepoints;
@@ -189,7 +213,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 
 		queue = new BlockingFetchQueues< Key >( maxNumLevels );
 		fetchers = new ArrayList< Fetcher >();
-		for ( int i = 0; i < 1; ++i ) // TODO: add numFetcherThreads parameter
+		for ( int i = 0; i < numFetcherThreads; ++i )
 		{
 			final Fetcher f = new Fetcher();
 			f.setDaemon( true );
@@ -240,7 +264,9 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 				{
 					final VolatileCell< A > cell = new VolatileCell< A >( cellDims, cellMin, loader.loadArray( timepoint, setup, level, cellDims, cellMin ) );
 					entry.data = cell;
+					entry.enqueueFrame = Long.MAX_VALUE;
 					softReferenceCache.put( entry.key, new SoftReference< Entry >( entry ) );
+					entry.notifyAll();
 				}
 			}
 		}
@@ -258,6 +284,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 			final Key k = entry.key;
 			final int priority = maxLevels[ k.setup ] - k.level;
 			queue.put( k, priority );
+			currentFrameEntries.add( entry );
 		}
 	}
 
@@ -272,26 +299,26 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 		final IoTimeBudget budget = stats.getIoTimeBudget();
 		final Key k = entry.key;
 		final int priority = maxLevels[ k.setup ] - k.level;
-		if ( budget.timeLeft( priority ) > 0 )
+		final long timeLeft = budget.timeLeft( priority );
+		if ( timeLeft > 0 )
 		{
-			pauseFetcherThreads( 1000 );
-			final long t0 = stats.getIoNanoTime();
-			stats.start();
-			while( true )
+			synchronized ( entry )
+			{
+				if ( entry.data.getData().isValid() )
+					return;
+				enqueueEntry( entry );
+				final long t0 = stats.getIoNanoTime();
+				stats.start();
 				try
 				{
-					loadEntryIfNotValid( entry );
-					break;
+					entry.wait( timeLeft  / 1000000l, 1 );
 				}
 				catch ( final InterruptedException e )
 				{}
-			stats.stop();
-			final long t = stats.getIoNanoTime() - t0;
-			budget.use( t, priority );
-			if ( budget.timeLeft( 0 ) <= 0 )
-				wakeFetcherThreads();
-			else
-				pauseFetcherThreads( 3 );
+				stats.stop();
+				final long t = stats.getIoNanoTime() - t0;
+				budget.use( t, priority );
+			}
 		}
 		else
 			enqueueEntry( entry );
@@ -432,6 +459,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	public void prepareNextFrame()
 	{
 		queue.clear();
+		currentFrameEntries.clear();
 		++currentQueueFrame;
 	}
 
@@ -445,23 +473,14 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	 *            smaller-equal the budget for level <em>j</em>. If <em>n</em>
 	 *            is smaller than the maximum number of mipmap levels, the
 	 *            remaining priority levels are filled up with budget[n].
-	 * @param reinitialize
-	 *            If true, the IO time budget is initialized to the given
-	 *            partial budget. If false, the IO time budget is reset to the
-	 *            previous initial values.
 	 */
 	@Override
-	public void initIoTimeBudget( final long[] partialBudget, final boolean reinitialize )
+	public void initIoTimeBudget( final long[] partialBudget )
 	{
 		final IoStatistics stats = CacheIoTiming.getThreadGroupIoStatistics();
-		if ( reinitialize || stats.getIoTimeBudget() == null )
-		{
-			final long[] budget = new long[ maxNumLevels ];
-			for ( int i = 0; i < budget.length; ++i )
-				budget[ i ] = partialBudget.length > i ? partialBudget[ i ] : partialBudget[ partialBudget.length - 1 ];
-			stats.setIoTimeBudget( new IoTimeBudget( budget ) );
-		}
-		stats.getIoTimeBudget().reset();
+		if ( stats.getIoTimeBudget() == null )
+			stats.setIoTimeBudget( new IoTimeBudget( maxNumLevels ) );
+		stats.getIoTimeBudget().reset( partialBudget );
 	}
 
 	public class Hdf5CellCache implements CellCache< A >

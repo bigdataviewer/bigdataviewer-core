@@ -141,7 +141,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 		cachedDimensions = new long[ numTimepoints * numSetups * maxNumLevels ][];
 		cachedExistence = new Boolean[ numTimepoints * numSetups * maxNumLevels ];
 
-		cache = new VolatileGlobalCellCache< VolatileShortArray >( new Hdf5VolatileShortArrayLoader( hdf5Reader ), numTimepoints, numSetups, maxNumLevels, maxLevels );
+		cache = new VolatileGlobalCellCache< VolatileShortArray >( new Hdf5VolatileShortArrayLoader( hdf5Reader ), numTimepoints, numSetups, maxNumLevels, maxLevels, 1 );
 	}
 
 	@Override
@@ -255,8 +255,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 			System.err.println( "image data for " + view.getBasename() + " level " + level + " could not be found. Partition file missing?" );
 			return getMissingDataImage( view, level, new VolatileUnsignedShortType() );
 		}
-		final CellImg< VolatileUnsignedShortType, VolatileShortArray, VolatileCell< VolatileShortArray > >  img = prepareCachedImage( view, level, LoadingStrategy.VOLATILE );
-//		final CellImg< VolatileUnsignedShortType, VolatileShortArray, VolatileCell< VolatileShortArray > >  img = prepareCachedImage( view, level, LoadingStrategy.BUDGETED );
+		final CellImg< VolatileUnsignedShortType, VolatileShortArray, VolatileCell< VolatileShortArray > >  img = prepareCachedImage( view, level, LoadingStrategy.BUDGETED );
 		final VolatileUnsignedShortType linkedType = new VolatileUnsignedShortType( img );
 		img.setLinkedType( linkedType );
 		return img;
@@ -325,7 +324,11 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 			final String cellsPath = Util.getCellsPath( timepoint, setup, level );
 			HDF5DataSetInformation info = null;
 			boolean exists = false;
-			cache.pauseFetcherThreads();
+			// pause Fetcher threads for 5 ms. There will be more calls to
+			// getImageDimension() because this happens when a timepoint is
+			// loaded, and all setups for the timepoint are loaded then. We
+			// don't want to interleave this with block loading operations.
+			cache.pauseFetcherThreadsFor( 5 );
 			synchronized ( hdf5Reader )
 			{
 				try {

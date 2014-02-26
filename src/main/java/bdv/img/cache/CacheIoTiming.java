@@ -20,22 +20,31 @@ public class CacheIoTiming
 	 */
 	public static class IoTimeBudget
 	{
-		private final long[] initialBudget;
-
 		private final long[] budget;
 
-		public IoTimeBudget( final long[] initBudget )
+		public IoTimeBudget( final int numLevels )
 		{
-			initialBudget = initBudget.clone();
-			for ( int l = 1; l < initialBudget.length; ++l )
-				if ( initialBudget[ l ] > initialBudget[ l - 1 ] )
-					initialBudget[ l ] = initialBudget[ l - 1 ];
-			budget = initialBudget.clone();
+			budget = new long[ numLevels ];
 		}
 
-		public void reset()
+		public synchronized void reset( final long[] partialBudget )
 		{
-			System.arraycopy( initialBudget, 0, budget, 0, budget.length );
+			if ( partialBudget == null )
+				clear();
+			else
+			{
+				for ( int i = 0; i < budget.length; ++i )
+					budget[ i ] = partialBudget.length > i ? partialBudget[ i ] : partialBudget[ partialBudget.length - 1 ];
+				for ( int i = 1; i < budget.length; ++i )
+					if ( budget[ i ] > budget[ i - 1 ] )
+						budget[ i ] = budget[ i - 1 ];
+			}
+		}
+
+		public synchronized void clear()
+		{
+			for ( int i = 0; i < budget.length; ++i )
+				budget[ i ] = 0;
 		}
 
 		public synchronized long timeLeft( final int level )
