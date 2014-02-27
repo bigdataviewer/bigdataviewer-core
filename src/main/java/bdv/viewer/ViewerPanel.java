@@ -375,6 +375,8 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	{
 		imageRenderer.paint( state );
 
+		display.repaint();
+
 		synchronized ( this )
 		{
 			if ( currentAnimator != null )
@@ -387,8 +389,6 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 					currentAnimator = null;
 			}
 		}
-
-		display.repaint();
 	}
 
 	/**
