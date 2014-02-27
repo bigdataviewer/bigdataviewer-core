@@ -213,7 +213,7 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 		final int numTasks;
 		if ( numThreads > 1 )
 		{
-			numTasks = Math.max( numThreads * 10, height );
+			numTasks = Math.min( numThreads * 10, height );
 		}
 		else
 			numTasks = 1;
