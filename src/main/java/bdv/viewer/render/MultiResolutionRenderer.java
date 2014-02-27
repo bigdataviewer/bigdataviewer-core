@@ -453,6 +453,8 @@ public class MultiResolutionRenderer
 				bufferedImage = null;
 				p = projector;
 			}
+
+			requestedScreenScaleIndex = 0;
 		}
 
 		// try rendering
@@ -530,7 +532,8 @@ public class MultiResolutionRenderer
 	{
 		if ( renderingMayBeCancelled && projector != null )
 			projector.cancel();
-		requestedScreenScaleIndex = screenScaleIndex;
+		if ( screenScaleIndex > requestedScreenScaleIndex )
+			requestedScreenScaleIndex = screenScaleIndex;
 		painterThread.requestRepaint();
 	}
 
