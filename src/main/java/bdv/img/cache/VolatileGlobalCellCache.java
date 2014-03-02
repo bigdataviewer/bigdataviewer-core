@@ -407,20 +407,23 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	 *
 	 * @return a cell with the specified coordinates.
 	 */
-	public synchronized VolatileCell< A > createGlobal( final int[] cellDims, final long[] cellMin, final int timepoint, final int setup, final int level, final int index, final LoadingStrategy loadingStrategy )
+	public VolatileCell< A > createGlobal( final int[] cellDims, final long[] cellMin, final int timepoint, final int setup, final int level, final int index, final LoadingStrategy loadingStrategy )
 	{
 		final Key k = new Key( timepoint, setup, level, index );
 		Entry entry = null;
 
-		final Reference< Entry > ref = softReferenceCache.get( k );
-		if ( ref != null )
-			entry = ref.get();
-
-		if ( entry == null )
+		synchronized ( softReferenceCache )
 		{
-			final VolatileCell< A > cell = new VolatileCell< A >( cellDims, cellMin, loader.emptyArray( cellDims ) );
-			entry = new Entry( k, cell );
-			softReferenceCache.put( k, new WeakReference< Entry >( entry ) );
+			final Reference< Entry > ref = softReferenceCache.get( k );
+			if ( ref != null )
+				entry = ref.get();
+
+			if ( entry == null )
+			{
+				final VolatileCell< A > cell = new VolatileCell< A >( cellDims, cellMin, loader.emptyArray( cellDims ) );
+				entry = new Entry( k, cell );
+				softReferenceCache.put( k, new WeakReference< Entry >( entry ) );
+			}
 		}
 
 		switch ( loadingStrategy )
