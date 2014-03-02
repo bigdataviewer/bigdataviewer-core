@@ -364,7 +364,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 		final long[] dimensions = getImageDimension( view.getTimepointIndex(), view.getSetupIndex(), level );
 		final int[] cellDimensions = perSetupSubdivisions.get( view.getSetupIndex() )[ level ];
 
-		final CellCache< VolatileShortArray > c = cache.new Hdf5CellCache( view.getTimepointIndex(), view.getSetupIndex(), level, loadingStrategy );
+		final CellCache< VolatileShortArray > c = cache.new VolatileCellCache( view.getTimepointIndex(), view.getSetupIndex(), level, loadingStrategy );
 		final VolatileImgCells< VolatileShortArray > cells = new VolatileImgCells< VolatileShortArray >( c, 1, dimensions, cellDimensions );
 		final CellImg< T, VolatileShortArray, VolatileCell< VolatileShortArray > > img = new CellImg< T, VolatileShortArray, VolatileCell< VolatileShortArray > >( null, cells );
 		return img;

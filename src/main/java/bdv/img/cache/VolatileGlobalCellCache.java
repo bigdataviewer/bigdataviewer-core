@@ -483,7 +483,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 		stats.getIoTimeBudget().reset( partialBudget );
 	}
 
-	public class Hdf5CellCache implements CellCache< A >
+	public class VolatileCellCache implements CellCache< A >
 	{
 		private final int timepoint;
 
@@ -493,7 +493,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 
 		private final LoadingStrategy loadingStrategy;
 
-		public Hdf5CellCache( final int timepoint, final int setup, final int level, final LoadingStrategy strategy )
+		public VolatileCellCache( final int timepoint, final int setup, final int level, final LoadingStrategy strategy )
 		{
 			this.timepoint = timepoint;
 			this.setup = setup;
