@@ -27,7 +27,7 @@ import org.jdom2.output.XMLOutputter;
 
 import bdv.export.ProgressWriter;
 import bdv.export.ProgressWriterConsole;
-import bdv.img.hdf5.Hdf5ImageLoader;
+import bdv.img.catmaid.CatmaidImageLoader;
 import bdv.tools.HelpDialog;
 import bdv.tools.InitializeViewerState;
 import bdv.tools.RecordMovieDialog;
@@ -109,7 +109,7 @@ public class BigDataViewer
 		}
 
 		viewerFrame = new ViewerFrame( width, height, sources, seq.numTimepoints(),
-				( ( Hdf5ImageLoader ) seq.imgLoader ).getCache() );
+				( ( CatmaidImageLoader ) seq.imgLoader ).getCache() );
 		viewer = viewerFrame.getViewerPanel();
 
 		for ( final ConverterSetup cs : converterSetups )
@@ -313,7 +313,8 @@ public class BigDataViewer
 
 	public static void main( final String[] args )
 	{
-		final String fn = "/Users/pietzsch/desktop/data/BDV130418A325/BDV130418A325_NoTempReg.xml";
+		final String fn = "/Users/pietzsch/desktop/data/catmaid.xml";
+//		final String fn = "/Users/pietzsch/desktop/data/BDV130418A325/BDV130418A325_NoTempReg.xml";
 //		final String fn = "/Users/pietzsch/Desktop/data/valia2/valia.xml";
 //		final String fn = "/Users/pietzsch/workspace/data/fast fly/111010_weber/combined.xml";
 //		final String fn = "/Users/pietzsch/workspace/data/mette/mette.xml";
