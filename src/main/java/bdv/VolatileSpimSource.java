@@ -31,8 +31,7 @@ public class VolatileSpimSource< T extends NumericType< T >, V extends Volatile<
 		if ( isPresent( timepoint ) )
 		{
 			final V zero = imgLoader.getVolatileImageType().createVariable();
-			// TODO: change to zero.setZero(); the following is just for debugging
-			( ( RealType< ? > ) zero ).setReal( 128 );
+			zero.setZero();
 			final View view = sequenceViews.getView( timepoint, setup );
 			final AffineTransform3D reg = view.getModel();
 			final AffineTransform3D mipmapTransform = new AffineTransform3D();

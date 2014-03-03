@@ -14,11 +14,13 @@ import javax.swing.filechooser.FileFilter;
 
 import mpicbg.spim.data.SequenceDescription;
 import net.imglib2.Volatile;
+import net.imglib2.converter.Converter;
 import net.imglib2.converter.TypeIdentity;
 import net.imglib2.display.RealARGBColorConverter;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.NumericType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.volatiles.VolatileARGBType;
 
 import org.jdom2.Document;
 import org.jdom2.Element;
@@ -120,20 +122,27 @@ public class BigDataViewer
 		final SequenceDescription seq = loader.getSequenceDescription();
 		for ( int setup = 0; setup < seq.numViewSetups(); ++setup )
 		{
-			final TypeIdentity< ARGBType > vconverter = new TypeIdentity< ARGBType >();
+			final Converter< VolatileARGBType, ARGBType > vconverter = new Converter< VolatileARGBType, ARGBType >()
+			{
+				@Override
+				public void convert( final VolatileARGBType input, final ARGBType output )
+				{
+					output.set( input.get() );
+				}
+			};
 			final TypeIdentity< ARGBType > converter = new TypeIdentity< ARGBType >();
 
-//			final VolatileSpimSource< ARGBType, VolatileARGBType > vs = new VolatileSpimSource< ARGBType, VolatileARGBType >( loader, setup, "angle " + seq.setups.get( setup ).getAngle() );
-//			final SpimSource< ARGBType > s = vs.nonVolatile();
-//
-//			// Decorate each source with an extra transformation, that can be edited manually in this viewer.
-//			final TransformedSource< VolatileARGBType > tvs = new TransformedSource< VolatileARGBType >( vs );
-//			final TransformedSource< ARGBType > ts = new TransformedSource< ARGBType >( s, tvs );
-//
-//			final SourceAndConverter< VolatileARGBType > vsoc = new SourceAndConverter< VolatileARGBType >( tvs, vconverter );
-//			final SourceAndConverter< ARGBType > soc = new SourceAndConverter< ARGBType >( ts, converter, vsoc );
-//
-//			sources.add( soc );
+			final VolatileSpimSource< ARGBType, VolatileARGBType > vs = new VolatileSpimSource< ARGBType, VolatileARGBType >( loader, setup, "angle " + seq.setups.get( setup ).getAngle() );
+			final SpimSource< ARGBType > s = vs.nonVolatile();
+
+			// Decorate each source with an extra transformation, that can be edited manually in this viewer.
+			final TransformedSource< VolatileARGBType > tvs = new TransformedSource< VolatileARGBType >( vs );
+			final TransformedSource< ARGBType > ts = new TransformedSource< ARGBType >( s, tvs );
+
+			final SourceAndConverter< VolatileARGBType > vsoc = new SourceAndConverter< VolatileARGBType >( tvs, vconverter );
+			final SourceAndConverter< ARGBType > soc = new SourceAndConverter< ARGBType >( ts, converter, vsoc );
+
+			sources.add( soc );
 		}
 	}
 
@@ -175,9 +184,12 @@ public class BigDataViewer
 		manualTransformationEditor = new ManualTransformationEditor( viewer, viewerFrame.getKeybindings() );
 
 		setupAssignments = new SetupAssignments( converterSetups, 0, 65535 );
-		final MinMaxGroup group = setupAssignments.getMinMaxGroups().get( 0 );
-		for ( final ConverterSetup setup : setupAssignments.getConverterSetups() )
-			setupAssignments.moveSetupToGroup( setup, group );
+		if ( setupAssignments.getMinMaxGroups().size() > 0 )
+		{
+			final MinMaxGroup group = setupAssignments.getMinMaxGroups().get( 0 );
+			for ( final ConverterSetup setup : setupAssignments.getConverterSetups() )
+				setupAssignments.moveSetupToGroup( setup, group );
+		}
 
 		brightnessDialog = new BrightnessDialog( viewerFrame, setupAssignments );
 
@@ -368,7 +380,7 @@ public class BigDataViewer
 
 	public static void main( final String[] args )
 	{
-		final String fn = "/Users/pietzsch/desktop/data/catmaid.xml";
+		final String fn = "/Users/pietzsch/desktop/data/catmaid-confocal.xml";
 //		final String fn = "/Users/pietzsch/desktop/data/BDV130418A325/BDV130418A325_NoTempReg.xml";
 //		final String fn = "/Users/pietzsch/Desktop/data/valia2/valia.xml";
 //		final String fn = "/Users/pietzsch/workspace/data/fast fly/111010_weber/combined.xml";
