@@ -5,12 +5,12 @@ import java.io.File;
 import mpicbg.spim.data.View;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.NativeImg;
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
+import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
 import net.imglib2.img.cell.CellImg;
 import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.type.volatiles.VolatileUnsignedShortType;
+import net.imglib2.type.volatiles.VolatileARGBType;
 
 import org.jdom2.Element;
 
@@ -22,7 +22,7 @@ import bdv.img.cache.VolatileGlobalCellCache.LoadingStrategy;
 import bdv.img.cache.VolatileImgCells;
 import bdv.img.cache.VolatileImgCells.CellCache;
 
-public class CatmaidImageLoader implements ViewerImgLoader< UnsignedShortType, VolatileUnsignedShortType >
+public class CatmaidImageLoader implements ViewerImgLoader< ARGBType, VolatileARGBType >
 {
 	private long width;
 
@@ -48,27 +48,28 @@ public class CatmaidImageLoader implements ViewerImgLoader< UnsignedShortType, V
 
 	private int[][] blockDimensions;
 
-	protected VolatileGlobalCellCache< VolatileShortArray > cache;
+	protected VolatileGlobalCellCache< VolatileIntArray > cache;
 
 	@Override
 	public void init( final Element elem, final File basePath )
 	{
-		width = 1987;
-		height = 1441;
-		depth = 460;
+		width = Long.parseLong( elem.getChildText( "width" ) );
+		height = Long.parseLong( elem.getChildText( "height" ) );
+		depth = Long.parseLong( elem.getChildText( "depth" ) );
 
-		resXY = 5.6;
-		resZ = 11.2;
+		resXY = Double.parseDouble( elem.getChildText( "resXY" ) );
+		resZ = Double.parseDouble( elem.getChildText( "resZ" ) );
 
-//		baseUrl = "file:/Users/pietzsch/Desktop/data/catmaid/xy/";
-		baseUrl = "http://fly.mpi-cbg.de/map/fib/aligned/xy/";
+		baseUrl = elem.getChildText( "baseUrl" );
 
-		tileWidth = 256;
-		tileHeight = 256;
+		tileWidth = Integer.parseInt( elem.getChildText( "tileWidth" ) );
+		tileHeight = Integer.parseInt( elem.getChildText( "tileHeight" ) );
 
-
-		numScales = getNumScales( width, height, tileWidth, tileHeight );
-		System.out.println( "numScales = " + numScales );
+		final String numScalesString = elem.getChildText( "numScales" );
+		if ( numScalesString == null )
+			numScales = getNumScales( width, height, tileWidth, tileHeight );
+		else
+			numScales = Integer.parseInt( numScalesString );
 
 		mipmapResolutions = new double[ numScales ][];
 		imageDimensions = new long[ numScales ][];
@@ -82,8 +83,8 @@ public class CatmaidImageLoader implements ViewerImgLoader< UnsignedShortType, V
 		}
 
 		final int[] maxLevels = new int[] { numScales - 1 };
-		cache = new VolatileGlobalCellCache< VolatileShortArray >(
-				new CatmaidVolatileShortArrayLoader( baseUrl, tileWidth, tileHeight ), 1, 1, numScales, maxLevels, 10 );
+		cache = new VolatileGlobalCellCache< VolatileIntArray >(
+				new CatmaidVolatileIntArrayLoader( baseUrl, tileWidth, tileHeight ), 1, 1, numScales, maxLevels, 10 );
 	}
 
 	final static public int getNumScales( long width, long height, final long tileWidth, final long tileHeight )
@@ -109,25 +110,25 @@ public class CatmaidImageLoader implements ViewerImgLoader< UnsignedShortType, V
 	}
 
 	@Override
-	public RandomAccessibleInterval< UnsignedShortType > getImage( final View view )
+	public RandomAccessibleInterval< ARGBType > getImage( final View view )
 	{
 		return getImage( view, 0 );
 	}
 
 	@Override
-	public RandomAccessibleInterval< UnsignedShortType > getImage( final View view, final int level )
+	public RandomAccessibleInterval< ARGBType > getImage( final View view, final int level )
 	{
-		final CellImg< UnsignedShortType, VolatileShortArray, VolatileCell< VolatileShortArray > >  img = prepareCachedImage( view, level, LoadingStrategy.BLOCKING );
-		final UnsignedShortType linkedType = new UnsignedShortType( img );
+		final CellImg< ARGBType, VolatileIntArray, VolatileCell< VolatileIntArray > >  img = prepareCachedImage( view, level, LoadingStrategy.BLOCKING );
+		final ARGBType linkedType = new ARGBType( img );
 		img.setLinkedType( linkedType );
 		return img;
 	}
 
 	@Override
-	public RandomAccessibleInterval< VolatileUnsignedShortType > getVolatileImage( final View view, final int level )
+	public RandomAccessibleInterval< VolatileARGBType > getVolatileImage( final View view, final int level )
 	{
-		final CellImg< VolatileUnsignedShortType, VolatileShortArray, VolatileCell< VolatileShortArray > >  img = prepareCachedImage( view, level, LoadingStrategy.VOLATILE );
-		final VolatileUnsignedShortType linkedType = new VolatileUnsignedShortType( img );
+		final CellImg< VolatileARGBType, VolatileIntArray, VolatileCell< VolatileIntArray > >  img = prepareCachedImage( view, level, LoadingStrategy.VOLATILE );
+		final VolatileARGBType linkedType = new VolatileARGBType( img );
 		img.setLinkedType( linkedType );
 		return img;
 	}
@@ -147,16 +148,16 @@ public class CatmaidImageLoader implements ViewerImgLoader< UnsignedShortType, V
 	/**
 	 * (Almost) create a {@link CellImg} backed by the cache.
 	 * The created image needs a {@link NativeImg#setLinkedType(net.imglib2.type.Type) linked type} before it can be used.
-	 * The type should be either {@link UnsignedShortType} and {@link VolatileUnsignedShortType}.
+	 * The type should be either {@link ARGBType} and {@link VolatileARGBType}.
 	 */
-	protected < T extends NativeType< T > > CellImg< T, VolatileShortArray, VolatileCell< VolatileShortArray > > prepareCachedImage( final View view, final int level, final LoadingStrategy loadingStrategy )
+	protected < T extends NativeType< T > > CellImg< T, VolatileIntArray, VolatileCell< VolatileIntArray > > prepareCachedImage( final View view, final int level, final LoadingStrategy loadingStrategy )
 	{
 		final long[] dimensions = imageDimensions[ level ];
 		final int[] cellDimensions = blockDimensions[ level ];
 
-		final CellCache< VolatileShortArray > c = cache.new VolatileCellCache( view.getTimepointIndex(), view.getSetupIndex(), level, loadingStrategy );
-		final VolatileImgCells< VolatileShortArray > cells = new VolatileImgCells< VolatileShortArray >( c, 1, dimensions, cellDimensions );
-		final CellImg< T, VolatileShortArray, VolatileCell< VolatileShortArray > > img = new CellImg< T, VolatileShortArray, VolatileCell< VolatileShortArray > >( null, cells );
+		final CellCache< VolatileIntArray > c = cache.new VolatileCellCache( view.getTimepointIndex(), view.getSetupIndex(), level, loadingStrategy );
+		final VolatileImgCells< VolatileIntArray > cells = new VolatileImgCells< VolatileIntArray >( c, 1, dimensions, cellDimensions );
+		final CellImg< T, VolatileIntArray, VolatileCell< VolatileIntArray > > img = new CellImg< T, VolatileIntArray, VolatileCell< VolatileIntArray > >( null, cells );
 		return img;
 	}
 
@@ -165,18 +166,18 @@ public class CatmaidImageLoader implements ViewerImgLoader< UnsignedShortType, V
 		return cache;
 	}
 
-	private final UnsignedShortType type = new UnsignedShortType();
+	private final ARGBType type = new ARGBType();
 
-	private final VolatileUnsignedShortType volatileType = new VolatileUnsignedShortType();
+	private final VolatileARGBType volatileType = new VolatileARGBType();
 
 	@Override
-	public UnsignedShortType getImageType()
+	public ARGBType getImageType()
 	{
 		return type;
 	}
 
 	@Override
-	public VolatileUnsignedShortType getVolatileImageType()
+	public VolatileARGBType getVolatileImageType()
 	{
 		return volatileType;
 	}
