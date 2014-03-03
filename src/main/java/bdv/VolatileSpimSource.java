@@ -21,7 +21,7 @@ public class VolatileSpimSource extends AbstractSpimSource< VolatileUnsignedShor
 		currentTimepoint = timepoint;
 		if ( isPresent( timepoint ) )
 		{
-			final VolatileUnsignedShortType zero = new VolatileUnsignedShortType( 0 );
+			final VolatileUnsignedShortType zero = new VolatileUnsignedShortType( 128 );
 			final View view = sequenceViews.getView( timepoint, setup );
 			final AffineTransform3D reg = view.getModel();
 			final AffineTransform3D mipmapTransform = new AffineTransform3D();
