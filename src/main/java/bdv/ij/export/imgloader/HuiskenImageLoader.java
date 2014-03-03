@@ -29,7 +29,7 @@ import spimopener.SPIMExperiment;
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
-public class HuiskenImageLoader implements ImgLoader
+public class HuiskenImageLoader implements ImgLoader< UnsignedShortType >
 {
 	private File expFile;
 
@@ -82,7 +82,7 @@ public class HuiskenImageLoader implements ImgLoader
 	}
 
 	@Override
-	public ImgPlus< UnsignedShortType > getUnsignedShortImage( final View view )
+	public ImgPlus< UnsignedShortType > getImage( final View view )
 	{
 		ensureExpIsOpen();
 
@@ -106,7 +106,7 @@ public class HuiskenImageLoader implements ImgLoader
 	}
 
 	@Override
-	public ImgPlus< FloatType > getImage( final View view )
+	public ImgPlus< FloatType > getFloatImage( final View view )
 	{
 		ensureExpIsOpen();
 

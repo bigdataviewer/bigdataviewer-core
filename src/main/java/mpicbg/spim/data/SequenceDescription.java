@@ -39,10 +39,10 @@ public class SequenceDescription
 	/**
 	 * load images for every view. might be null.
 	 */
-	public final ImgLoader imgLoader;
+	public final ImgLoader< ? > imgLoader;
 	// TODO: make protected and use getter
 
-	public SequenceDescription( final List< ? extends ViewSetup > setups, final List< Integer > timepoints, final File basePath, final ImgLoader imgLoader )
+	public SequenceDescription( final List< ? extends ViewSetup > setups, final List< Integer > timepoints, final File basePath, final ImgLoader< ? > imgLoader )
 	{
 		this.timepoints = new ArrayList< Integer >( timepoints );
 		this.setups = new ArrayList< ViewSetup >( setups );
@@ -111,13 +111,13 @@ public class SequenceDescription
 		return basePath;
 	}
 
-	protected static ImgLoader createImgLoaderFromXml( final Element sequenceDescription, final File basePath ) throws InstantiationException, IllegalAccessException, ClassNotFoundException
+	protected static ImgLoader< ? > createImgLoaderFromXml( final Element sequenceDescription, final File basePath ) throws InstantiationException, IllegalAccessException, ClassNotFoundException
 	{
 		final Element elem = sequenceDescription.getChild( "ImageLoader" );
 		String classn = elem.getAttributeValue( "class" );
 		if ( classn.equals( "viewer.hdf5.Hdf5ImageLoader" ) )
 			classn = "bdv.img.hdf5.Hdf5ImageLoader";
-		final ImgLoader imgLoader = ( ImgLoader ) Class.forName( classn ).newInstance();
+		final ImgLoader< ? > imgLoader = ( ImgLoader< ? > ) Class.forName( classn ).newInstance();
 		imgLoader.init( elem, basePath );
 		return imgLoader;
 	}

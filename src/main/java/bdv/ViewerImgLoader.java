@@ -3,14 +3,17 @@ package bdv;
 import mpicbg.spim.data.ImgLoader;
 import mpicbg.spim.data.View;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.type.volatiles.VolatileUnsignedShortType;
+import net.imglib2.Volatile;
 
-public interface ViewerImgLoader extends ImgLoader
+public interface ViewerImgLoader< T, V extends Volatile< T > > extends ImgLoader< T >
 {
-	public RandomAccessibleInterval< UnsignedShortType > getUnsignedShortImage( final View view, final int level );
+	public RandomAccessibleInterval< T > getImage( final View view, final int level );
 
-	public RandomAccessibleInterval< VolatileUnsignedShortType > getVolatileUnsignedShortImage( final View view, final int level );
+	public T getImageType();
+
+	public RandomAccessibleInterval< V > getVolatileImage( final View view, final int level );
+
+	public V getVolatileImageType();
 
 	public double[][] getMipmapResolutions( final int setup );
 

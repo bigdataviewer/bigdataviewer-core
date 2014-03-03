@@ -165,7 +165,8 @@ public class WriteSequenceToHdf5
 		final int setupOffsetSeq = partition.getSetupOffset() + partition.getSetupStart();
 		final int setupOffsetFile = partition.getSetupStart();
 		final int numSetups = partition.getSetupLength();
-		final ImgLoader imgLoader = seq.imgLoader;
+		@SuppressWarnings( "unchecked" )
+		final ImgLoader< UnsignedShortType > imgLoader = ( ImgLoader< UnsignedShortType > ) seq.imgLoader;
 
 		// for progressWriter
 		// initial 1 is for writing resolutions etc.
@@ -231,7 +232,7 @@ public class WriteSequenceToHdf5
 				progressWriter.out().printf( "proccessing setup %d / %d\n", setup + 1, numSetups );
 				final View view = new View( seq, timepointSeq, setupSeq, null );
 				progressWriter.out().println( "loading image" );
-				final RandomAccessibleInterval< UnsignedShortType > img = imgLoader.getUnsignedShortImage( view );
+				final RandomAccessibleInterval< UnsignedShortType > img = imgLoader.getImage( view );
 				progressWriter.setProgress( ( double ) numCompletedTasks++ / numTasks );
 
 				for ( int level = 0; level < numLevels; ++level )

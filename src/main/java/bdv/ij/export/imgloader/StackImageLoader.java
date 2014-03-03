@@ -26,12 +26,12 @@ import org.jdom2.Element;
  * <code>view.getSetupIndex() + numViewSetups * view.getTimepointIndex()</code>.
  *
  * This {@link ImgLoader} is used for exporting spim sequences to hdf5. Only the
- * {@link #getUnsignedShortImage(View)} method is implemented because this is
+ * {@link #getImage(View)} method is implemented because this is
  * the only method required for exporting to hdf5.
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
-public class StackImageLoader implements ImgLoader
+public class StackImageLoader implements ImgLoader< UnsignedShortType >
 {
 	private final ImgOpener opener;
 
@@ -77,13 +77,13 @@ public class StackImageLoader implements ImgLoader
 	 * not implemented.
 	 */
 	@Override
-	public ImgPlus< FloatType > getImage( final View view )
+	public ImgPlus< FloatType > getFloatImage( final View view )
 	{
 		throw new UnsupportedOperationException( "not implemented" );
 	}
 
 	@Override
-	public ImgPlus< UnsignedShortType > getUnsignedShortImage( final View view )
+	public ImgPlus< UnsignedShortType > getImage( final View view )
 	{
 		final int setup = view.getSetupIndex();
 		final int timepoint = view.getTimepointIndex();

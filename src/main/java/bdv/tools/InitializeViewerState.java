@@ -131,7 +131,10 @@ public class InitializeViewerState
 	{
 		final ViewerState state = viewer.getState();
 		final Source< ? > source = state.getSources().get( state.getCurrentSource() ).getSpimSource();
-		final RandomAccessibleInterval< UnsignedShortType > img = ( RandomAccessibleInterval ) source.getSource( state.getCurrentTimepoint(), source.getNumMipmapLevels() - 1 );
+		if ( ! UnsignedShortType.class.isInstance( source.getType() ) )
+			return;
+		@SuppressWarnings( "unchecked" )
+		final RandomAccessibleInterval< UnsignedShortType > img = ( RandomAccessibleInterval< UnsignedShortType > ) source.getSource( state.getCurrentTimepoint(), source.getNumMipmapLevels() - 1 );
 		final long z = ( img.min( 2 ) + img.max( 2 ) + 1 ) / 2;
 
 		final int numBins = 6535;

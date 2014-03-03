@@ -21,6 +21,7 @@ import mpicbg.spim.data.ViewRegistration;
 import mpicbg.spim.data.ViewRegistrations;
 import mpicbg.spim.data.ViewSetup;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
 import bdv.export.ProgressWriter;
 import bdv.export.SubTaskProgressWriter;
 import bdv.export.WriteSequenceToHdf5;
@@ -78,7 +79,7 @@ public class ExportImagePlusPlugIn implements PlugIn
 			return;
 
 		// create ImgLoader wrapping the image
-		final ImgLoader imgLoader;
+		final ImgLoader< UnsignedShortType > imgLoader;
 		switch ( imp.getType() )
 		{
 		case ImagePlus.GRAY8:

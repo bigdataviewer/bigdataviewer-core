@@ -35,12 +35,12 @@ import org.jdom2.Element;
  * template to get the slice filenames.
  *
  * This {@link ImgLoader} is used for exporting spim sequences to hdf5. Only the
- * {@link #getUnsignedShortImage(View)} method is implemented because this is
+ * {@link #getImage(View)} method is implemented because this is
  * the only method required for exporting to hdf5.
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
-public class FusionImageLoader< T extends RealType< T > > implements ImgLoader
+public class FusionImageLoader< T extends RealType< T > > implements ImgLoader< UnsignedShortType >
 {
 	private final String pattern;
 
@@ -96,13 +96,13 @@ public class FusionImageLoader< T extends RealType< T > > implements ImgLoader
 	 * not implemented.
 	 */
 	@Override
-	public RandomAccessibleInterval< FloatType > getImage( final View view )
+	public RandomAccessibleInterval< FloatType > getFloatImage( final View view )
 	{
 		throw new UnsupportedOperationException( "not implemented" );
 	}
 
 	@Override
-	public RandomAccessibleInterval< UnsignedShortType > getUnsignedShortImage( final View view )
+	public RandomAccessibleInterval< UnsignedShortType > getImage( final View view )
 	{
 		final int tp = view.getTimepoint();
 		final int c = view.getSetup().getChannel();

@@ -15,6 +15,7 @@ import java.awt.event.TextEvent;
 import java.io.File;
 import java.io.IOException;
 
+import mpicbg.spim.data.ImgLoader;
 import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.View;
 import net.imglib2.RandomAccessibleInterval;
@@ -134,7 +135,9 @@ public class ImportPlugIn implements PlugIn
 				final int numSetups = seq.numViewSetups();
 				timepoint = Math.max( Math.min( timepoint, numTimepoints - 1 ), 0 );
 				setup = Math.max( Math.min( setup, numSetups - 1 ), 0 );
-				final RandomAccessibleInterval< UnsignedShortType > img = seq.imgLoader.getUnsignedShortImage( new View( seq, timepoint, setup, null ) );
+				@SuppressWarnings( "unchecked" )
+				final ImgLoader< UnsignedShortType > il = ( ImgLoader< UnsignedShortType > ) seq.imgLoader;
+				final RandomAccessibleInterval< UnsignedShortType > img = il.getImage( new View( seq, timepoint, setup, null ) );
 				final ImagePlus imp = net.imglib2.img.display.imagej.ImageJFunctions.wrap( img, "" ).duplicate();
 				imp.setTitle( new File( xmlFile ).getName() + " " + timepoint + " " + setup );
 				imp.show();

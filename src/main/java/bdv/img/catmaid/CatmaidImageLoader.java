@@ -22,7 +22,7 @@ import bdv.img.cache.VolatileGlobalCellCache.LoadingStrategy;
 import bdv.img.cache.VolatileImgCells;
 import bdv.img.cache.VolatileImgCells.CellCache;
 
-public class CatmaidImageLoader implements ViewerImgLoader
+public class CatmaidImageLoader implements ViewerImgLoader< UnsignedShortType, VolatileUnsignedShortType >
 {
 	private long width;
 
@@ -103,19 +103,19 @@ public class CatmaidImageLoader implements ViewerImgLoader
 	}
 
 	@Override
-	public RandomAccessibleInterval< FloatType > getImage( final View view )
+	public RandomAccessibleInterval< FloatType > getFloatImage( final View view )
 	{
 		throw new UnsupportedOperationException( "not implemented" );
 	}
 
 	@Override
-	public RandomAccessibleInterval< UnsignedShortType > getUnsignedShortImage( final View view )
+	public RandomAccessibleInterval< UnsignedShortType > getImage( final View view )
 	{
-		return getUnsignedShortImage( view, 0 );
+		return getImage( view, 0 );
 	}
 
 	@Override
-	public RandomAccessibleInterval< UnsignedShortType > getUnsignedShortImage( final View view, final int level )
+	public RandomAccessibleInterval< UnsignedShortType > getImage( final View view, final int level )
 	{
 		final CellImg< UnsignedShortType, VolatileShortArray, VolatileCell< VolatileShortArray > >  img = prepareCachedImage( view, level, LoadingStrategy.BLOCKING );
 		final UnsignedShortType linkedType = new UnsignedShortType( img );
@@ -124,7 +124,7 @@ public class CatmaidImageLoader implements ViewerImgLoader
 	}
 
 	@Override
-	public RandomAccessibleInterval< VolatileUnsignedShortType > getVolatileUnsignedShortImage( final View view, final int level )
+	public RandomAccessibleInterval< VolatileUnsignedShortType > getVolatileImage( final View view, final int level )
 	{
 		final CellImg< VolatileUnsignedShortType, VolatileShortArray, VolatileCell< VolatileShortArray > >  img = prepareCachedImage( view, level, LoadingStrategy.VOLATILE );
 		final VolatileUnsignedShortType linkedType = new VolatileUnsignedShortType( img );
@@ -164,4 +164,21 @@ public class CatmaidImageLoader implements ViewerImgLoader
 	{
 		return cache;
 	}
+
+	private final UnsignedShortType type = new UnsignedShortType();
+
+	private final VolatileUnsignedShortType volatileType = new VolatileUnsignedShortType();
+
+	@Override
+	public UnsignedShortType getImageType()
+	{
+		return type;
+	}
+
+	@Override
+	public VolatileUnsignedShortType getVolatileImageType()
+	{
+		return volatileType;
+	}
+
 }

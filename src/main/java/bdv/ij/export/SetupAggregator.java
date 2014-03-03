@@ -54,7 +54,7 @@ public class SetupAggregator
 	/**
 	 * An {@link ImgLoader} that forwards to wrapped source sequences.
 	 */
-	protected final ImgLoader imgLoader;
+	protected final ImgLoader< UnsignedShortType > imgLoader;
 
 	/**
 	 * Create an empty aggregator.
@@ -67,7 +67,7 @@ public class SetupAggregator
 		setups = new ArrayList< ViewSetupWrapper >();
 		perSetupResolutions = new ArrayList< int[][] >();
 		perSetupSubdivisions = new ArrayList< int[][] >();
-		imgLoader = new ImgLoader()
+		imgLoader = new ImgLoader< UnsignedShortType >()
 		{
 			@Override
 			public void init( final Element elem, final File basePath )
@@ -82,16 +82,18 @@ public class SetupAggregator
 			}
 
 			@Override
-			public RandomAccessibleInterval< FloatType > getImage( final View view )
+			public RandomAccessibleInterval< FloatType > getFloatImage( final View view )
 			{
 				throw new UnsupportedOperationException( "not implemented" );
 			}
 
 			@Override
-			public RandomAccessibleInterval< UnsignedShortType > getUnsignedShortImage( final View view )
+			public RandomAccessibleInterval< UnsignedShortType > getImage( final View view )
 			{
 				final ViewSetupWrapper w = ( ViewSetupWrapper ) view.getSetup();
-				return w.getSourceSequence().imgLoader.getUnsignedShortImage( new View( w.getSourceSequence(), view.getTimepointIndex(), w.getSourceSetupIndex(), view.getModel() ) );
+				@SuppressWarnings( "unchecked" )
+				final ImgLoader< UnsignedShortType > il = ( ImgLoader< UnsignedShortType > ) w.getSourceSequence().imgLoader;
+				return il.getImage( new View( w.getSourceSequence(), view.getTimepointIndex(), w.getSourceSetupIndex(), view.getModel() ) );
 			}
 		};
 	}

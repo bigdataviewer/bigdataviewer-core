@@ -32,7 +32,7 @@ import org.jdom2.input.SAXBuilder;
 
 import bdv.ij.export.tiles.CellVoyagerDataExporter.ChannelInfo;
 
-public class TileImgLoader implements ImgLoader
+public class TileImgLoader implements ImgLoader< UnsignedShortType >
 {
 
 	private static final Namespace NAMESPACE = Namespace.getNamespace( "bts", "http://www.yokogawa.co.jp/BTS/BTSSchema/1.0" );
@@ -70,7 +70,7 @@ public class TileImgLoader implements ImgLoader
 	}
 
 	@Override
-	public RandomAccessibleInterval< UnsignedShortType > getUnsignedShortImage( final View view )
+	public RandomAccessibleInterval< UnsignedShortType > getImage( final View view )
 	{
 
 		final int setupIndex = view.getSetupIndex();
@@ -187,7 +187,7 @@ public class TileImgLoader implements ImgLoader
 	}
 
 	@Override
-	public RandomAccessibleInterval< FloatType > getImage( final View view )
+	public RandomAccessibleInterval< FloatType > getFloatImage( final View view )
 	{
 		throw new UnsupportedOperationException( "not implemented" );
 	}

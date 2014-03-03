@@ -13,10 +13,12 @@ import javax.swing.JMenuItem;
 import javax.swing.filechooser.FileFilter;
 
 import mpicbg.spim.data.SequenceDescription;
+import net.imglib2.Volatile;
+import net.imglib2.converter.TypeIdentity;
 import net.imglib2.display.RealARGBColorConverter;
 import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.type.volatiles.VolatileUnsignedShortType;
+import net.imglib2.type.numeric.NumericType;
+import net.imglib2.type.numeric.RealType;
 
 import org.jdom2.Document;
 import org.jdom2.Element;
@@ -78,6 +80,77 @@ public class BigDataViewer
 		manualTransformationEditor.toggle();
 	}
 
+	private static < T extends RealType< T >, V extends Volatile< T > & RealType< V > > void initSetupsRealType(
+			final SequenceViewsLoader loader,
+			final T type,
+			final ArrayList< ConverterSetup > converterSetups,
+			final ArrayList< SourceAndConverter< ? > > sources )
+	{
+		final double typeMin = type.getMinValue();
+		final double typeMax = type.getMaxValue();
+		final SequenceDescription seq = loader.getSequenceDescription();
+		for ( int setup = 0; setup < seq.numViewSetups(); ++setup )
+		{
+			final RealARGBColorConverter< V > vconverter = new RealARGBColorConverter< V >( typeMin, typeMax );
+			vconverter.setColor( new ARGBType( 0xffffffff ) );
+			final RealARGBColorConverter< T > converter = new RealARGBColorConverter< T >( typeMin, typeMax );
+			converter.setColor( new ARGBType( 0xffffffff ) );
+
+			final VolatileSpimSource< T, V > vs = new VolatileSpimSource< T, V >( loader, setup, "angle " + seq.setups.get( setup ).getAngle() );
+			final SpimSource< T > s = vs.nonVolatile();
+
+			// Decorate each source with an extra transformation, that can be edited manually in this viewer.
+			final TransformedSource< V > tvs = new TransformedSource< V >( vs );
+			final TransformedSource< T > ts = new TransformedSource< T >( s, tvs );
+
+			final SourceAndConverter< V > vsoc = new SourceAndConverter< V >( tvs, vconverter );
+			final SourceAndConverter< T > soc = new SourceAndConverter< T >( ts, converter, vsoc );
+
+			sources.add( soc );
+			converterSetups.add( new RealARGBColorConverterSetup( setup, converter, vconverter ) );
+		}
+	}
+
+	private static void initSetupsARGBType(
+			final SequenceViewsLoader loader,
+			final ARGBType type,
+			final ArrayList< ConverterSetup > converterSetups,
+			final ArrayList< SourceAndConverter< ? > > sources )
+	{
+		final SequenceDescription seq = loader.getSequenceDescription();
+		for ( int setup = 0; setup < seq.numViewSetups(); ++setup )
+		{
+			final TypeIdentity< ARGBType > vconverter = new TypeIdentity< ARGBType >();
+			final TypeIdentity< ARGBType > converter = new TypeIdentity< ARGBType >();
+
+//			final VolatileSpimSource< ARGBType, VolatileARGBType > vs = new VolatileSpimSource< ARGBType, VolatileARGBType >( loader, setup, "angle " + seq.setups.get( setup ).getAngle() );
+//			final SpimSource< ARGBType > s = vs.nonVolatile();
+//
+//			// Decorate each source with an extra transformation, that can be edited manually in this viewer.
+//			final TransformedSource< VolatileARGBType > tvs = new TransformedSource< VolatileARGBType >( vs );
+//			final TransformedSource< ARGBType > ts = new TransformedSource< ARGBType >( s, tvs );
+//
+//			final SourceAndConverter< VolatileARGBType > vsoc = new SourceAndConverter< VolatileARGBType >( tvs, vconverter );
+//			final SourceAndConverter< ARGBType > soc = new SourceAndConverter< ARGBType >( ts, converter, vsoc );
+//
+//			sources.add( soc );
+		}
+	}
+
+	@SuppressWarnings( { "unchecked", "rawtypes" } )
+	private static < T extends NumericType< T >, V extends Volatile< T > & NumericType< V > > void initSetups(
+			final SequenceViewsLoader loader,
+			final ArrayList< ConverterSetup > converterSetups,
+			final ArrayList< SourceAndConverter< ? > > sources )
+	{
+		final T type = ( ( ViewerImgLoader< T, V > ) loader.getSequenceDescription().imgLoader ).getImageType();
+		if ( RealType.class.isInstance( type ) )
+			initSetupsRealType( loader, ( RealType ) type, converterSetups, sources );
+		else if ( ARGBType.class.isInstance( type ) )
+			initSetupsARGBType( loader, ( ARGBType ) type, converterSetups, sources );
+		else throw new IllegalArgumentException( "ImgLoader of type " + type.getClass() + " not supported." );
+	}
+
 	private BigDataViewer( final String xmlFilename, final ProgressWriter progressWriter ) throws InstantiationException, IllegalAccessException, ClassNotFoundException, JDOMException, IOException
 	{
 		final int width = 800;
@@ -88,25 +161,7 @@ public class BigDataViewer
 
 		final ArrayList< ConverterSetup > converterSetups = new ArrayList< ConverterSetup >();
 		final ArrayList< SourceAndConverter< ? > > sources = new ArrayList< SourceAndConverter< ? > >();
-		for ( int setup = 0; setup < seq.numViewSetups(); ++setup )
-		{
-			final RealARGBColorConverter< VolatileUnsignedShortType > vconverter = new RealARGBColorConverter< VolatileUnsignedShortType >( 0, 65535 );
-			vconverter.setColor( new ARGBType( ARGBType.rgba( 255, 255, 255, 255 ) ) );
-			final RealARGBColorConverter< UnsignedShortType > converter = new RealARGBColorConverter< UnsignedShortType >( 0, 65535 );
-			converter.setColor( new ARGBType( ARGBType.rgba( 255, 255, 255, 255 ) ) );
-			final VolatileSpimSource vs = new VolatileSpimSource( loader, setup, "angle " + seq.setups.get( setup ).getAngle() );
-			final SpimSource s = vs.nonVolatile();
-
-			// Decorate each source with an extra transformation, that can be edited manually in this viewer.
-			final TransformedSource< VolatileUnsignedShortType > tvs = new TransformedSource< VolatileUnsignedShortType >( vs );
-			final TransformedSource< UnsignedShortType > ts = new TransformedSource< UnsignedShortType >( s, tvs );
-
-			final SourceAndConverter< VolatileUnsignedShortType > vsoc = new SourceAndConverter< VolatileUnsignedShortType >( tvs, vconverter );
-			final SourceAndConverter< UnsignedShortType > soc = new SourceAndConverter< UnsignedShortType >( ts, converter, vsoc );
-
-			sources.add( soc );
-			converterSetups.add( new RealARGBColorConverterSetup( setup, converter, vconverter ) );
-		}
+		initSetups( loader, converterSetups, sources );
 
 		viewerFrame = new ViewerFrame( width, height, sources, seq.numTimepoints(),
 				( ( CatmaidImageLoader ) seq.imgLoader ).getCache() );

@@ -34,7 +34,7 @@ import ch.systemsx.cisd.hdf5.HDF5DataSetInformation;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
 
-public class Hdf5ImageLoader implements ViewerImgLoader
+public class Hdf5ImageLoader implements ViewerImgLoader< UnsignedShortType, VolatileUnsignedShortType >
 {
 	protected File hdf5File;
 
@@ -222,19 +222,19 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 	}
 
 	@Override
-	public RandomAccessibleInterval< FloatType > getImage( final View view )
+	public RandomAccessibleInterval< FloatType > getFloatImage( final View view )
 	{
 		throw new UnsupportedOperationException( "currently not used" );
 	}
 
 	@Override
-	public RandomAccessibleInterval< UnsignedShortType > getUnsignedShortImage( final View view )
+	public RandomAccessibleInterval< UnsignedShortType > getImage( final View view )
 	{
-		return getUnsignedShortImage( view, 0 );
+		return getImage( view, 0 );
 	}
 
 	@Override
-	public RandomAccessibleInterval< UnsignedShortType > getUnsignedShortImage( final View view, final int level )
+	public RandomAccessibleInterval< UnsignedShortType > getImage( final View view, final int level )
 	{
 		if ( ! existsImageData( view, level ) )
 		{
@@ -248,7 +248,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 	}
 
 	@Override
-	public RandomAccessibleInterval< VolatileUnsignedShortType > getVolatileUnsignedShortImage( final View view, final int level )
+	public RandomAccessibleInterval< VolatileUnsignedShortType > getVolatileImage( final View view, final int level )
 	{
 		if ( ! existsImageData( view, level ) )
 		{
@@ -391,5 +391,21 @@ public class Hdf5ImageLoader implements ViewerImgLoader
 				System.out.println( "    " + level + ": " + net.imglib2.util.Util.printCoordinates( res ) );
 			}
 		}
+	}
+
+	private final UnsignedShortType type = new UnsignedShortType();
+
+	private final VolatileUnsignedShortType volatileType = new VolatileUnsignedShortType();
+
+	@Override
+	public UnsignedShortType getImageType()
+	{
+		return type;
+	}
+
+	@Override
+	public VolatileUnsignedShortType getVolatileImageType()
+	{
+		return volatileType;
 	}
 }

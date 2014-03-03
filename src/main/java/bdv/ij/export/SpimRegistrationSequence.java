@@ -8,8 +8,6 @@ import java.util.List;
 
 import javax.vecmath.Point3f;
 
-import bdv.ij.export.imgloader.HuiskenImageLoader;
-import bdv.ij.export.imgloader.StackImageLoader;
 import mpicbg.spim.data.ImgLoader;
 import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.ViewRegistration;
@@ -24,7 +22,10 @@ import mpicbg.spim.registration.bead.BeadRegistration;
 import net.imglib2.FinalRealInterval;
 import net.imglib2.RealInterval;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
 import spimopener.SPIMExperiment;
+import bdv.ij.export.imgloader.HuiskenImageLoader;
+import bdv.ij.export.imgloader.StackImageLoader;
 
 public class SpimRegistrationSequence
 {
@@ -38,7 +39,7 @@ public class SpimRegistrationSequence
 	{
 		this.conf = conf;
 		final ArrayList< ViewSetup > setups = createViewSetups( conf );
-		final ImgLoader imgLoader = createImageLoader( conf, setups );
+		final ImgLoader< UnsignedShortType > imgLoader = createImageLoader( conf, setups );
 
 		viewRegistrations = createViewRegistrations( conf, setups );
 		sequenceDescription = new SequenceDescription( setups, makeList( conf.timepoints ), new File( conf.inputdirectory ), imgLoader );
@@ -64,7 +65,7 @@ public class SpimRegistrationSequence
 		return viewRegistrations;
 	}
 
-	protected static ImgLoader createImageLoader( final SPIMConfiguration conf, final ArrayList< ViewSetup > setups )
+	protected static ImgLoader< UnsignedShortType > createImageLoader( final SPIMConfiguration conf, final ArrayList< ViewSetup > setups )
 	{
 		final int numTimepoints = conf.timepoints.length;
 		final int numSetups = setups.size();

@@ -8,7 +8,7 @@ import net.imglib2.type.numeric.real.FloatType;
 
 import org.jdom2.Element;
 
-public interface ImgLoader
+public interface ImgLoader< T >
 {
 	/**
 	 * initialize the loader from a "ImageLoader" DOM element.
@@ -27,7 +27,7 @@ public interface ImgLoader
 	 *            timepoint and setup for which to retrieve the image.
 	 * @return {@link FloatType} image normalized to range [0,1]
 	 */
-	public RandomAccessibleInterval< FloatType > getImage( View view );
+	public RandomAccessibleInterval< FloatType > getFloatImage( View view );
 
 	/**
 	 * Get {@link UnsignedShortType} un-normalized image.
@@ -36,5 +36,5 @@ public interface ImgLoader
 	 *            timepoint and setup for which to retrieve the image.
 	 * @return {@link UnsignedShortType} image.
 	 */
-	public RandomAccessibleInterval< UnsignedShortType > getUnsignedShortImage( View view );
+	public RandomAccessibleInterval< T > getImage( View view );
 }

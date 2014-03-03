@@ -28,8 +28,6 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 
 	protected final SequenceViewsLoader sequenceViews;
 
-	protected final ViewerImgLoader imgLoader;
-
 	protected final int numTimepoints;
 
 	protected final int numMipmapLevels;
@@ -49,9 +47,8 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 		this.name = name;
 		this.sequenceViews = loader;
 		final SequenceDescription seq = loader.getSequenceDescription();
-		imgLoader = ( ViewerImgLoader ) seq.imgLoader;
 		numTimepoints = seq.numTimepoints();
-		numMipmapLevels = imgLoader.numMipmapLevels( setup );
+		numMipmapLevels =  ( ( ViewerImgLoader< ?, ? > ) seq.imgLoader ).numMipmapLevels( setup );
 		currentSources = new RandomAccessibleInterval[ numMipmapLevels ];
 		currentInterpolatedSources = new RealRandomAccessible[ numMipmapLevels ][ numInterpolationMethods ];
 		currentSourceTransforms = new AffineTransform3D[ numMipmapLevels ];
@@ -60,7 +57,6 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 		interpolatorFactories = new InterpolatorFactory[ numInterpolationMethods ];
 		interpolatorFactories[ iNearestNeighborMethod ] = new NearestNeighborInterpolatorFactory< T >();
 		interpolatorFactories[ iNLinearMethod ] = new NLinearInterpolatorFactory< T >();
-		loadTimepoint( 0 );
 	}
 
 	protected abstract void loadTimepoint( final int timepoint );

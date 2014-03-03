@@ -22,12 +22,12 @@ import org.jdom2.Element;
 /**
  * This {@link ImgLoader} implementation returns a wrapped, converted
  * {@link ImagePlus}. It is used for exporting {@link ImagePlus} to hdf5. Only
- * the {@link #getUnsignedShortImage(View)} method is implemented because this
+ * the {@link #getImage(View)} method is implemented because this
  * is the only method required for exporting to hdf5.
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
-public class ImagePlusImgLoader< T extends RealType< T > > implements ImgLoader
+public class ImagePlusImgLoader< T extends RealType< T > > implements ImgLoader< UnsignedShortType >
 {
 	public static enum MinMaxOption
 	{
@@ -141,13 +141,13 @@ public class ImagePlusImgLoader< T extends RealType< T > > implements ImgLoader
 	 * not implemented.
 	 */
 	@Override
-	public RandomAccessibleInterval< FloatType > getImage( final View view )
+	public RandomAccessibleInterval< FloatType > getFloatImage( final View view )
 	{
 		throw new UnsupportedOperationException( "not implemented" );
 	}
 
 	@Override
-	public RandomAccessibleInterval< UnsignedShortType > getUnsignedShortImage( final View view )
+	public RandomAccessibleInterval< UnsignedShortType > getImage( final View view )
 	{
 		RandomAccessibleInterval< T > img = wrappedImp;
 		if ( isMultiFrame )

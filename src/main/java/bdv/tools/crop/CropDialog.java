@@ -29,13 +29,6 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileFilter;
 
-import bdv.export.WriteSequenceToHdf5;
-import bdv.export.WriteSequenceToXml;
-import bdv.img.hdf5.Hdf5ImageLoader;
-import bdv.img.hdf5.Util;
-import bdv.viewer.Source;
-import bdv.viewer.ViewerPanel;
-import bdv.viewer.state.SourceState;
 import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.View;
 import mpicbg.spim.data.ViewRegistration;
@@ -45,6 +38,13 @@ import net.imglib2.RealInterval;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.util.Intervals;
+import bdv.export.WriteSequenceToHdf5;
+import bdv.export.WriteSequenceToXml;
+import bdv.img.hdf5.Hdf5ImageLoader;
+import bdv.img.hdf5.Util;
+import bdv.viewer.Source;
+import bdv.viewer.ViewerPanel;
+import bdv.viewer.state.SourceState;
 
 public class CropDialog extends JDialog
 {
@@ -250,6 +250,7 @@ public class CropDialog extends JDialog
 	 * @param hdf5File
 	 * @param xmlFile
 	 */
+	@SuppressWarnings( "unchecked" )
 	public void cropGlobal( final int minTimepointIndex, final int maxTimepointIndex, final File hdf5File, final File xmlFile ) throws IOException
 	{
 		final AffineTransform3D globalToCropTransform = new AffineTransform3D();
@@ -265,7 +266,7 @@ public class CropDialog extends JDialog
 		final RealInterval cropInterval = Intervals.createMinSizeReal( x, y, z, w, h, d );
 		final ArrayList< Source< UnsignedShortType > > sources = new ArrayList< Source< UnsignedShortType > >();
 		for( final SourceState< ? > s : viewer.getState().getSources() )
-			sources.add( ( Source ) s.getSpimSource() );
+			sources.add( ( Source< UnsignedShortType > ) s.getSpimSource() );
 		final ArrayList< Integer > timepoints = new ArrayList< Integer >();
 		final ArrayList< Integer > cropperTimepointMap = new ArrayList< Integer >();
 		for ( int tp = minTimepointIndex; tp <= maxTimepointIndex; ++tp )

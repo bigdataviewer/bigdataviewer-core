@@ -33,7 +33,7 @@ import bdv.viewer.Source;
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
-public class CropImgLoader implements ImgLoader
+public class CropImgLoader implements ImgLoader< UnsignedShortType >
 {
 	private final ArrayList< Source< UnsignedShortType > > sources;
 
@@ -73,7 +73,7 @@ public class CropImgLoader implements ImgLoader
 	 * not implemented.
 	 */
 	@Override
-	public RandomAccessibleInterval< FloatType > getImage( final View view )
+	public RandomAccessibleInterval< FloatType > getFloatImage( final View view )
 	{
 		throw new UnsupportedOperationException( "not implemented" );
 	}
@@ -86,7 +86,7 @@ public class CropImgLoader implements ImgLoader
 	}
 
 	@Override
-	public RandomAccessibleInterval< UnsignedShortType > getUnsignedShortImage( final View view )
+	public RandomAccessibleInterval< UnsignedShortType > getImage( final View view )
 	{
 		final Pair< RandomAccessibleInterval< UnsignedShortType >, AffineTransform3D > pair = cropView( view );
 		return pair.getA();

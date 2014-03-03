@@ -1,16 +1,22 @@
 package bdv;
 
+import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.View;
 import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.type.volatiles.VolatileUnsignedShortType;
+import net.imglib2.type.numeric.NumericType;
 import net.imglib2.view.Views;
 
-public class SpimSource extends AbstractSpimSource< UnsignedShortType >
+public class SpimSource< T extends NumericType< T > > extends AbstractSpimSource< T >
 {
+	protected final ViewerImgLoader< T, ? > imgLoader;
+
+	@SuppressWarnings( "unchecked" )
 	public SpimSource( final SequenceViewsLoader loader, final int setup, final String name )
 	{
 		super( loader, setup, name );
+		final SequenceDescription seq = loader.getSequenceDescription();
+		imgLoader = ( ViewerImgLoader< T, ? > ) seq.imgLoader;
+		loadTimepoint( 0 );
 	}
 
 	@Override
@@ -19,7 +25,8 @@ public class SpimSource extends AbstractSpimSource< UnsignedShortType >
 		currentTimepoint = timepoint;
 		if ( isPresent( timepoint ) )
 		{
-			final UnsignedShortType zero = new VolatileUnsignedShortType( 0 ).get();
+			final T zero = imgLoader.getImageType().createVariable();
+			zero.setZero();
 			final View view = sequenceViews.getView( timepoint, setup );
 			final AffineTransform3D reg = view.getModel();
 			final AffineTransform3D mipmapTransform = new AffineTransform3D();
@@ -33,7 +40,7 @@ public class SpimSource extends AbstractSpimSource< UnsignedShortType >
 				}
 				currentSourceTransforms[ level ].set( reg );
 				currentSourceTransforms[ level ].concatenate( mipmapTransform );
-				currentSources[ level ] = imgLoader.getUnsignedShortImage( view, level );
+				currentSources[ level ] = imgLoader.getImage( view, level );
 				for ( int method = 0; method < numInterpolationMethods; ++method )
 					currentInterpolatedSources[ level ][ method ] = Views.interpolate( Views.extendValue( currentSources[ level ], zero ), interpolatorFactories[ method ] );
 			}
@@ -51,8 +58,8 @@ public class SpimSource extends AbstractSpimSource< UnsignedShortType >
 	}
 
 	@Override
-	public UnsignedShortType getType()
+	public T getType()
 	{
-		return new UnsignedShortType();
+		return imgLoader.getImageType();
 	}
 }
