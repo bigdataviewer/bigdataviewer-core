@@ -25,6 +25,7 @@ public class VolatileUnsignedShortType extends AbstractVolatileNativeRealType< U
 		{
 			super( img );
 		}
+		
 		public WrappedUnsignedShortType( final ShortAccess access )
 		{
 			super( access );
