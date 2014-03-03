@@ -185,13 +185,13 @@ public class Partition
 		if ( timepoint < t0 )
 			return false;
 		final int t1 = t0 + timepointLength;
-		if ( timepoint >= t0 )
+		if ( timepoint >= t1 )
 			return false;
 		final int s0 = setupOffset + setupStart;
 		if ( setup < s0 )
 			return false;
 		final int s1 = s0 + setupLength;
-		if ( setup >= s0 )
+		if ( setup >= s1 )
 			return false;
 		return true;
 	}
