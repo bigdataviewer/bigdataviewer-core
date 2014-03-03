@@ -4,12 +4,11 @@ import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.List;
 
-import bdv.viewer.DisplayMode;
-import bdv.viewer.state.SourceState;
-import bdv.viewer.state.ViewerState;
 import net.imglib2.Interval;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.Intervals;
+import bdv.viewer.state.SourceState;
+import bdv.viewer.state.ViewerState;
 
 /**
  * Render multibox overlay corresponding to a {@link ViewerState} into a
@@ -98,7 +97,6 @@ public class MultiBoxOverlayRenderer
 			final List< SourceState< ? > > sources = viewerState.getSources();
 			final List< Integer > visible = viewerState.getVisibleSourceIndices();
 			final int timepoint = viewerState.getCurrentTimepoint();
-			final DisplayMode displayMode = viewerState.getDisplayMode();
 
 			final int numSources = sources.size();
 			int numPresentSources = 0;
