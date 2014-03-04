@@ -84,7 +84,7 @@ public class CatmaidImageLoader implements ViewerImgLoader< ARGBType, VolatileAR
 
 		final int[] maxLevels = new int[] { numScales - 1 };
 		cache = new VolatileGlobalCellCache< VolatileIntArray >(
-				new CatmaidVolatileIntArrayLoader( baseUrl, tileWidth, tileHeight ), 1, 1, numScales, maxLevels, 10 );
+				new CatmaidVolatileIntArrayLoader( baseUrl + "%5$d/%8$d_%9$d_%1$d.jpg", tileWidth, tileHeight ), 1, 1, numScales, maxLevels, 10 );
 	}
 
 	final static public int getNumScales( long width, long height, final long tileWidth, final long tileHeight )
