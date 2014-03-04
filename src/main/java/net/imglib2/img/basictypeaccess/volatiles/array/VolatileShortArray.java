@@ -10,6 +10,8 @@ import net.imglib2.img.basictypeaccess.volatiles.VolatileShortAccess;
  */
 public class VolatileShortArray extends AbstractVolatileArray< VolatileShortArray > implements VolatileShortAccess
 {
+	private static final long serialVersionUID = -8460450507170281183L;
+
 	protected short data[];
 
 	public VolatileShortArray( final int numEntities, final boolean isValid )

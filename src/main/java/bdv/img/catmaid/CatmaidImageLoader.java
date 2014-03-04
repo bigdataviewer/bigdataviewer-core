@@ -34,7 +34,7 @@ public class CatmaidImageLoader implements ViewerImgLoader< ARGBType, VolatileAR
 
 	private double resZ;
 
-	private String baseUrl;
+	private String urlFormat;
 
 	private int tileWidth;
 
@@ -60,7 +60,7 @@ public class CatmaidImageLoader implements ViewerImgLoader< ARGBType, VolatileAR
 		resXY = Double.parseDouble( elem.getChildText( "resXY" ) );
 		resZ = Double.parseDouble( elem.getChildText( "resZ" ) );
 
-		baseUrl = elem.getChildText( "baseUrl" );
+		urlFormat = elem.getChildText( "urlFormat" );
 
 		tileWidth = Integer.parseInt( elem.getChildText( "tileWidth" ) );
 		tileHeight = Integer.parseInt( elem.getChildText( "tileHeight" ) );
@@ -76,7 +76,6 @@ public class CatmaidImageLoader implements ViewerImgLoader< ARGBType, VolatileAR
 		blockDimensions = new int[ numScales ][];
 		for ( int l = 0; l < numScales; ++l )
 		{
-
 			mipmapResolutions[ l ] = new double[] { 1 << l, 1 << l, 1 };
 			imageDimensions[ l ] = new long[] { width >> l, height >> l, depth };
 			blockDimensions[ l ] = new int[] { tileWidth, tileHeight, 1 };
@@ -84,7 +83,7 @@ public class CatmaidImageLoader implements ViewerImgLoader< ARGBType, VolatileAR
 
 		final int[] maxLevels = new int[] { numScales - 1 };
 		cache = new VolatileGlobalCellCache< VolatileIntArray >(
-				new CatmaidVolatileIntArrayLoader( baseUrl, tileWidth, tileHeight ), 1, 1, numScales, maxLevels, 10 );
+				new CatmaidVolatileIntArrayLoader( urlFormat, tileWidth, tileHeight ), 1, 1, numScales, maxLevels, 10 );
 	}
 
 	final static public int getNumScales( long width, long height, final long tileWidth, final long tileHeight )
