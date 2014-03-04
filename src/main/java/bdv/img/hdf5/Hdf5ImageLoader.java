@@ -77,8 +77,6 @@ public class Hdf5ImageLoader implements ViewerImgLoader< UnsignedShortType, Vola
 	 */
 	protected Boolean[] cachedExistence;
 
-	protected final boolean isCoarsestLevelBlocking = true;
-
 	public Hdf5ImageLoader()
 	{
 		this( null );
