@@ -14,14 +14,13 @@ import net.imglib2.img.cell.CellImg;
 import net.imglib2.sampler.special.ConstantRandomAccessible;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.type.volatiles.VolatileUnsignedShortType;
 import net.imglib2.util.IntervalIndexer;
 import net.imglib2.view.Views;
 
 import org.jdom2.Element;
 
-import bdv.ViewerImgLoader;
+import bdv.AbstractViewerImgLoader;
 import bdv.img.cache.VolatileCell;
 import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.img.cache.VolatileGlobalCellCache.LoadingStrategy;
@@ -30,7 +29,7 @@ import bdv.img.cache.VolatileImgCells.CellCache;
 
 import com.google.gson.Gson;
 
-public class RemoteImageLoader implements ViewerImgLoader< UnsignedShortType, VolatileUnsignedShortType >
+public class RemoteImageLoader extends AbstractViewerImgLoader< UnsignedShortType, VolatileUnsignedShortType >
 {
 	protected String baseUrl;
 
@@ -39,6 +38,11 @@ public class RemoteImageLoader implements ViewerImgLoader< UnsignedShortType, Vo
 	protected int[][] cellsDimensions;
 
 	protected VolatileGlobalCellCache< VolatileShortArray > cache;
+
+	public RemoteImageLoader()
+	{
+		super( new UnsignedShortType(), new VolatileUnsignedShortType() );
+	}
 
 	private void open() throws IOException
 	{
@@ -68,24 +72,6 @@ public class RemoteImageLoader implements ViewerImgLoader< UnsignedShortType, Vo
 		{
 			throw new RuntimeException( e );
 		}
-	}
-
-	@Override
-	public Element toXml( final File basePath )
-	{
-		throw new UnsupportedOperationException( "not implemented" );
-	}
-
-	@Override
-	public RandomAccessibleInterval< FloatType > getFloatImage( final View view )
-	{
-		throw new UnsupportedOperationException( "not implemented" );
-	}
-
-	@Override
-	public RandomAccessibleInterval< UnsignedShortType > getImage( final View view )
-	{
-		return getImage( view, 0 );
 	}
 
 	@Override
@@ -220,21 +206,5 @@ public class RemoteImageLoader implements ViewerImgLoader< UnsignedShortType, Vo
 		final VolatileImgCells< VolatileShortArray > cells = new VolatileImgCells< VolatileShortArray >( c, 1, dimensions, cellDimensions );
 		final CellImg< T, VolatileShortArray, VolatileCell< VolatileShortArray > > img = new CellImg< T, VolatileShortArray, VolatileCell< VolatileShortArray > >( null, cells );
 		return img;
-	}
-
-	private final UnsignedShortType type = new UnsignedShortType();
-
-	private final VolatileUnsignedShortType volatileType = new VolatileUnsignedShortType();
-
-	@Override
-	public UnsignedShortType getImageType()
-	{
-		return type;
-	}
-
-	@Override
-	public VolatileUnsignedShortType getVolatileImageType()
-	{
-		return volatileType;
 	}
 }

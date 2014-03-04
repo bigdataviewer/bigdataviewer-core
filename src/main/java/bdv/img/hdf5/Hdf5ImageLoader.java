@@ -18,13 +18,12 @@ import net.imglib2.img.cell.CellImg;
 import net.imglib2.sampler.special.ConstantRandomAccessible;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.type.volatiles.VolatileUnsignedShortType;
 import net.imglib2.view.Views;
 
 import org.jdom2.Element;
 
-import bdv.ViewerImgLoader;
+import bdv.AbstractViewerImgLoader;
 import bdv.img.cache.VolatileCell;
 import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.img.cache.VolatileGlobalCellCache.LoadingStrategy;
@@ -34,7 +33,7 @@ import ch.systemsx.cisd.hdf5.HDF5DataSetInformation;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
 
-public class Hdf5ImageLoader implements ViewerImgLoader< UnsignedShortType, VolatileUnsignedShortType >
+public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType, VolatileUnsignedShortType >
 {
 	protected File hdf5File;
 
@@ -84,6 +83,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader< UnsignedShortType, Vola
 
 	public Hdf5ImageLoader( final ArrayList< Partition > hdf5Partitions )
 	{
+		super( new UnsignedShortType(), new VolatileUnsignedShortType() );
 		hdf5File = null;
 		hdf5Reader = null;
 		cache = null;
@@ -104,6 +104,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader< UnsignedShortType, Vola
 
 	public Hdf5ImageLoader( final File hdf5File, final ArrayList< Partition > hdf5Partitions, final boolean doOpen )
 	{
+		super( new UnsignedShortType(), new VolatileUnsignedShortType() );
 		this.hdf5File = hdf5File;
 		perSetupMipmapResolutions = new ArrayList< double[][] >();
 		perSetupSubdivisions = new ArrayList< int[][] >();
@@ -217,18 +218,6 @@ public class Hdf5ImageLoader implements ViewerImgLoader< UnsignedShortType, Vola
 	public ArrayList< Partition > getPartitions()
 	{
 		return partitions;
-	}
-
-	@Override
-	public RandomAccessibleInterval< FloatType > getFloatImage( final View view )
-	{
-		throw new UnsupportedOperationException( "currently not used" );
-	}
-
-	@Override
-	public RandomAccessibleInterval< UnsignedShortType > getImage( final View view )
-	{
-		return getImage( view, 0 );
 	}
 
 	@Override
@@ -401,21 +390,5 @@ public class Hdf5ImageLoader implements ViewerImgLoader< UnsignedShortType, Vola
 				System.out.println( "    " + level + ": " + net.imglib2.util.Util.printCoordinates( res ) );
 			}
 		}
-	}
-
-	private final UnsignedShortType type = new UnsignedShortType();
-
-	private final VolatileUnsignedShortType volatileType = new VolatileUnsignedShortType();
-
-	@Override
-	public UnsignedShortType getImageType()
-	{
-		return type;
-	}
-
-	@Override
-	public VolatileUnsignedShortType getVolatileImageType()
-	{
-		return volatileType;
 	}
 }
