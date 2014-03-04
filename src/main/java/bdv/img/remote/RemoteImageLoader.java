@@ -116,6 +116,7 @@ public class RemoteImageLoader implements ViewerImgLoader< UnsignedShortType, Vo
 		return img;
 	}
 
+	@Override
 	public VolatileGlobalCellCache< VolatileShortArray > getCache()
 	{
 		return cache;

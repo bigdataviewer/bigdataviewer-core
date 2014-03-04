@@ -15,7 +15,6 @@ import net.imglib2.type.volatiles.VolatileARGBType;
 import org.jdom2.Element;
 
 import bdv.ViewerImgLoader;
-import bdv.img.cache.Cache;
 import bdv.img.cache.VolatileCell;
 import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.img.cache.VolatileGlobalCellCache.LoadingStrategy;
@@ -160,7 +159,8 @@ public class CatmaidImageLoader implements ViewerImgLoader< ARGBType, VolatileAR
 		return img;
 	}
 
-	public Cache getCache()
+	@Override
+	public VolatileGlobalCellCache< VolatileIntArray > getCache()
 	{
 		return cache;
 	}

@@ -259,6 +259,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader< UnsignedShortType, Vola
 		return img;
 	}
 
+	@Override
 	public VolatileGlobalCellCache< VolatileShortArray > getCache()
 	{
 		return cache;
