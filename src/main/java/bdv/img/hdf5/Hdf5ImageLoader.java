@@ -287,10 +287,21 @@ public class Hdf5ImageLoader implements ViewerImgLoader< UnsignedShortType, Vola
 	 *
 	 * @return true, if the given image data is present.
 	 */
-	protected boolean existsImageData( final View view, final int level )
+	public boolean existsImageData( final View view, final int level )
 	{
 		final int timepoint = view.getTimepointIndex();
 		final int setup = view.getSetupIndex();
+		return existsImageData( timepoint, setup, level );
+	}
+
+	/**
+	 * Checks whether the given image data is present in the hdf5. Missing data
+	 * may be caused by missing partition files
+	 *
+	 * @return true, if the given image data is present.
+	 */
+	public boolean existsImageData( final int timepoint, final int setup, final int level )
+	{
 		final int index = getViewInfoCacheIndex( timepoint, setup, level );
 		if ( cachedExistence[ index ] == null )
 			// will set cachedExistence[ index ] as a side effect
@@ -314,7 +325,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader< UnsignedShortType, Vola
 		return Views.interval( new ConstantRandomAccessible< T >( constant, 3 ), new FinalInterval( d ) );
 	}
 
-	protected long[] getImageDimension( final int timepoint, final int setup, final int level )
+	public long[] getImageDimension( final int timepoint, final int setup, final int level )
 	{
 		final int index = getViewInfoCacheIndex( timepoint, setup, level );
 		if ( cachedDimensions[ index ] == null )
