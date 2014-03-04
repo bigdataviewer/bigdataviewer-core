@@ -61,7 +61,7 @@ public class CatmaidImageLoader implements ViewerImgLoader< ARGBType, VolatileAR
 		resZ = Double.parseDouble( elem.getChildText( "resZ" ) );
 
 		urlFormat = elem.getChildText( "urlFormat" );
-		
+
 		tileWidth = Integer.parseInt( elem.getChildText( "tileWidth" ) );
 		tileHeight = Integer.parseInt( elem.getChildText( "tileHeight" ) );
 
@@ -76,7 +76,6 @@ public class CatmaidImageLoader implements ViewerImgLoader< ARGBType, VolatileAR
 		blockDimensions = new int[ numScales ][];
 		for ( int l = 0; l < numScales; ++l )
 		{
-
 			mipmapResolutions[ l ] = new double[] { 1 << l, 1 << l, 1 };
 			imageDimensions[ l ] = new long[] { width >> l, height >> l, depth };
 			blockDimensions[ l ] = new int[] { tileWidth, tileHeight, 1 };
