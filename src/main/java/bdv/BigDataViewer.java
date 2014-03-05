@@ -31,7 +31,7 @@ import org.jdom2.output.XMLOutputter;
 
 import bdv.export.ProgressWriter;
 import bdv.export.ProgressWriterConsole;
-import bdv.img.catmaid.CatmaidImageLoader;
+import bdv.img.openconnectome.OpenConnectomeImageLoader;
 import bdv.tools.HelpDialog;
 import bdv.tools.InitializeViewerState;
 import bdv.tools.RecordMovieDialog;
@@ -173,7 +173,7 @@ public class BigDataViewer
 		initSetups( loader, converterSetups, sources );
 
 		viewerFrame = new ViewerFrame( width, height, sources, seq.numTimepoints(),
-				( ( CatmaidImageLoader ) seq.imgLoader ).getCache() );
+				( ( OpenConnectomeImageLoader ) seq.imgLoader ).getCache() );
 		viewer = viewerFrame.getViewerPanel();
 
 		for ( final ConverterSetup cs : converterSetups )
@@ -381,7 +381,8 @@ public class BigDataViewer
 	public static void main( final String[] args )
 	{
 //		final String fn = "/Users/pietzsch/desktop/data/catmaid-confocal.xml";
-		final String fn = "/home/saalfeld/catmaid-confocal.xml";
+		final String fn = "/home/saalfeld/openconnectome-bock11-neariso.xml";
+//		final String fn = "/home/saalfeld/catmaid-confocal.xml";
 //		final String fn = "/Users/pietzsch/desktop/data/BDV130418A325/BDV130418A325_NoTempReg.xml";
 //		final String fn = "/Users/pietzsch/Desktop/data/valia2/valia.xml";
 //		final String fn = "/Users/pietzsch/workspace/data/fast fly/111010_weber/combined.xml";
