@@ -15,6 +15,7 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.NativeImg;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
 import net.imglib2.img.cell.CellImg;
+import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.sampler.special.ConstantRandomAccessible;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
@@ -42,6 +43,8 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 	protected VolatileGlobalCellCache< VolatileShortArray > cache;
 
 	protected final ArrayList< double[][] > perSetupMipmapResolutions;
+
+	protected final ArrayList< AffineTransform3D[] > perSetupMipmapTransforms;
 
 	protected final ArrayList< int[][] > perSetupSubdivisions;
 
@@ -88,6 +91,7 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 		hdf5Reader = null;
 		cache = null;
 		perSetupMipmapResolutions = new ArrayList< double[][] >();
+		perSetupMipmapTransforms = new ArrayList< AffineTransform3D[] >();
 		perSetupSubdivisions = new ArrayList< int[][] >();
 		partitions = new ArrayList< Partition >();
 		if ( hdf5Partitions != null )
@@ -106,6 +110,7 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 	{
 		super( new UnsignedShortType(), new VolatileUnsignedShortType() );
 		this.hdf5File = hdf5File;
+		perSetupMipmapTransforms = new ArrayList< AffineTransform3D[] >();
 		perSetupMipmapResolutions = new ArrayList< double[][] >();
 		perSetupSubdivisions = new ArrayList< int[][] >();
 		partitions = new ArrayList< Partition >();
@@ -127,13 +132,27 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 		perSetupSubdivisions.clear();
 		for ( int setup = 0; setup < numSetups; ++setup )
 		{
-			final double [][] mipmapResolutions = hdf5Reader.readDoubleMatrix( getResolutionsPath( setup ) );
+			final double[][] mipmapResolutions = hdf5Reader.readDoubleMatrix( getResolutionsPath( setup ) );
 			perSetupMipmapResolutions.add( mipmapResolutions );
 			if ( mipmapResolutions.length > maxNumLevels )
 				maxNumLevels = mipmapResolutions.length;
 			maxLevels[ setup ] = mipmapResolutions.length - 1;
 
-			final int [][] subdivisions = hdf5Reader.readIntMatrix( getSubdivisionsPath( setup ) );
+			final AffineTransform3D[] mipmapTransforms = new AffineTransform3D[ mipmapResolutions.length ];
+			for ( int level = 0; level < mipmapResolutions.length; level++ )
+			{
+				final AffineTransform3D mipmapTransform = new AffineTransform3D();
+				final double[] resolution = mipmapResolutions[ level ];
+				for ( int d = 0; d < 3; ++d )
+				{
+					mipmapTransform.set( resolution[ d ], d, d );
+					mipmapTransform.set( 0.5 * ( resolution[ d ] - 1 ), d, 3 );
+				}
+				mipmapTransforms[ level ] = mipmapTransform;
+			}
+			perSetupMipmapTransforms.add( mipmapTransforms );
+
+			final int[][] subdivisions = hdf5Reader.readIntMatrix( getSubdivisionsPath( setup ) );
 			perSetupSubdivisions.add( subdivisions );
 		}
 
@@ -258,6 +277,12 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 	public double[][] getMipmapResolutions( final int setup )
 	{
 		return perSetupMipmapResolutions.get( setup );
+	}
+
+	@Override
+	public AffineTransform3D[] getMipmapTransforms( final int setup )
+	{
+		return perSetupMipmapTransforms.get( setup );
 	}
 
 	public int[][] getSubdivisions( final int setup )

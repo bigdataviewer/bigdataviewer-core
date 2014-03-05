@@ -29,15 +29,9 @@ public class SpimSource< T extends NumericType< T > > extends AbstractSpimSource
 			zero.setZero();
 			final View view = sequenceViews.getView( timepoint, setup );
 			final AffineTransform3D reg = view.getModel();
-			final AffineTransform3D mipmapTransform = new AffineTransform3D();
 			for ( int level = 0; level < currentSources.length; level++ )
 			{
-				final double[] resolution = imgLoader.getMipmapResolutions( setup )[ level ];
-				for ( int d = 0; d < 3; ++d )
-				{
-					mipmapTransform.set( resolution[ d ], d, d );
-					mipmapTransform.set( 0.5 * ( resolution[ d ] - 1 ), d, 3 );
-				}
+				final AffineTransform3D mipmapTransform = imgLoader.getMipmapTransforms( setup )[ level ];
 				currentSourceTransforms[ level ].set( reg );
 				currentSourceTransforms[ level ].concatenate( mipmapTransform );
 				currentSources[ level ] = imgLoader.getImage( view, level );

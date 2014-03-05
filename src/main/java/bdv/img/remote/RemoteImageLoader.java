@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.util.ArrayList;
 
 import mpicbg.spim.data.View;
 import net.imglib2.FinalInterval;
@@ -11,6 +12,7 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.NativeImg;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
 import net.imglib2.img.cell.CellImg;
+import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.sampler.special.ConstantRandomAccessible;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
@@ -35,6 +37,8 @@ public class RemoteImageLoader extends AbstractViewerImgLoader< UnsignedShortTyp
 
 	protected RemoteImageLoaderMetaData metadata;
 
+	protected final ArrayList< AffineTransform3D[] > perSetupMipmapTransforms;
+
 	protected int[][] cellsDimensions;
 
 	protected VolatileGlobalCellCache< VolatileShortArray > cache;
@@ -42,6 +46,7 @@ public class RemoteImageLoader extends AbstractViewerImgLoader< UnsignedShortTyp
 	public RemoteImageLoader()
 	{
 		super( new UnsignedShortType(), new VolatileUnsignedShortType() );
+		perSetupMipmapTransforms = new ArrayList< AffineTransform3D[] >();
 	}
 
 	private void open() throws IOException
@@ -57,6 +62,23 @@ public class RemoteImageLoader extends AbstractViewerImgLoader< UnsignedShortTyp
 				metadata.maxNumLevels,
 				metadata.maxLevels,
 				10 );
+		for ( int setup = 0; setup < metadata.numSetups; ++setup )
+		{
+			final double[][] mipmapResolutions = metadata.perSetupMipmapResolutions.get( setup );
+			final AffineTransform3D[] mipmapTransforms = new AffineTransform3D[ mipmapResolutions.length ];
+			for ( int level = 0; level < mipmapResolutions.length; level++ )
+			{
+				final AffineTransform3D mipmapTransform = new AffineTransform3D();
+				final double[] resolution = mipmapResolutions[ level ];
+				for ( int d = 0; d < 3; ++d )
+				{
+					mipmapTransform.set( resolution[ d ], d, d );
+					mipmapTransform.set( 0.5 * ( resolution[ d ] - 1 ), d, 3 );
+				}
+				mipmapTransforms[ level ] = mipmapTransform;
+			}
+			perSetupMipmapTransforms.add( mipmapTransforms );
+		}
 		cellsDimensions = metadata.createCellsDimensions();
 	}
 
@@ -112,6 +134,12 @@ public class RemoteImageLoader extends AbstractViewerImgLoader< UnsignedShortTyp
 	public double[][] getMipmapResolutions( final int setup )
 	{
 		return metadata.perSetupMipmapResolutions.get( setup );
+	}
+
+	@Override
+	public AffineTransform3D[] getMipmapTransforms( final int setup )
+	{
+		return perSetupMipmapTransforms.get( setup );
 	}
 
 	public int[][] getSubdivisions( final int setup )
