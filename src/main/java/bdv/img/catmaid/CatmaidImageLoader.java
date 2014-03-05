@@ -43,11 +43,11 @@ public class CatmaidImageLoader extends AbstractViewerImgLoader< ARGBType, Volat
 
 	private double[][] mipmapResolutions;
 
+	private AffineTransform3D[] mipmapTransforms;
+
 	private long[][] imageDimensions;
 
 	private int[][] blockDimensions;
-	
-	private AffineTransform3D[] mipmapTransforms;
 
 	private VolatileGlobalCellCache< VolatileIntArray > cache;
 
@@ -163,7 +163,7 @@ public class CatmaidImageLoader extends AbstractViewerImgLoader< ARGBType, Volat
 	}
 
 	@Override
-	public AffineTransform3D[] getMipmapTransforms( int setup )
+	public AffineTransform3D[] getMipmapTransforms( final int setup )
 	{
 		return mipmapTransforms;
 	}

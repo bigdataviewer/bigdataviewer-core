@@ -1,6 +1,7 @@
 package bdv;
 
 import mpicbg.spim.data.SequenceDescription;
+import mpicbg.spim.data.View;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
@@ -9,6 +10,7 @@ import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.NumericType;
+import net.imglib2.view.Views;
 import bdv.viewer.Interpolation;
 import bdv.viewer.Source;
 
@@ -59,7 +61,40 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 		interpolatorFactories[ iNLinearMethod ] = new NLinearInterpolatorFactory< T >();
 	}
 
-	protected abstract void loadTimepoint( final int timepoint );
+	protected void loadTimepoint( final int timepoint )
+	{
+		currentTimepoint = timepoint;
+		if ( isPresent( timepoint ) )
+		{
+			final T zero = getType().createVariable();
+			zero.setZero();
+			final View view = sequenceViews.getView( timepoint, setup );
+			final AffineTransform3D reg = view.getModel();
+			for ( int level = 0; level < currentSources.length; level++ )
+			{
+				final AffineTransform3D mipmapTransform = getMipmapTransforms( setup )[ level ];
+				currentSourceTransforms[ level ].set( reg );
+				currentSourceTransforms[ level ].concatenate( mipmapTransform );
+				currentSources[ level ] = getImage( view, level );
+				for ( int method = 0; method < numInterpolationMethods; ++method )
+					currentInterpolatedSources[ level ][ method ] = Views.interpolate( Views.extendValue( currentSources[ level ], zero ), interpolatorFactories[ method ] );
+			}
+		}
+		else
+		{
+			for ( int level = 0; level < currentSources.length; level++ )
+			{
+				currentSourceTransforms[ level ].identity();
+				currentSources[ level ] = null;
+				for ( int method = 0; method < numInterpolationMethods; ++method )
+					currentInterpolatedSources[ level ][ method ] = null;
+			}
+		}
+	}
+
+	protected abstract AffineTransform3D[] getMipmapTransforms( final int setup );
+
+	protected abstract RandomAccessibleInterval< T > getImage( final View view, final int level );
 
 	@Override
 	public boolean isPresent( final int t )

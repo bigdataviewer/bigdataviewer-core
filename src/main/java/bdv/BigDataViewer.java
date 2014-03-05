@@ -31,7 +31,6 @@ import org.jdom2.output.XMLOutputter;
 
 import bdv.export.ProgressWriter;
 import bdv.export.ProgressWriterConsole;
-import bdv.img.openconnectome.OpenConnectomeImageLoader;
 import bdv.tools.HelpDialog;
 import bdv.tools.InitializeViewerState;
 import bdv.tools.RecordMovieDialog;
@@ -173,7 +172,7 @@ public class BigDataViewer
 		initSetups( loader, converterSetups, sources );
 
 		viewerFrame = new ViewerFrame( width, height, sources, seq.numTimepoints(),
-				( ( OpenConnectomeImageLoader ) seq.imgLoader ).getCache() );
+				( ( ViewerImgLoader< ?, ? > ) seq.imgLoader ).getCache() );
 		viewer = viewerFrame.getViewerPanel();
 
 		for ( final ConverterSetup cs : converterSetups )

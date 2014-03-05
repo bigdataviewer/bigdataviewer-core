@@ -30,6 +30,7 @@ import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.img.cache.VolatileGlobalCellCache.LoadingStrategy;
 import bdv.img.cache.VolatileImgCells;
 import bdv.img.cache.VolatileImgCells.CellCache;
+import bdv.util.MipmapTransforms;
 import ch.systemsx.cisd.hdf5.HDF5DataSetInformation;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
@@ -140,16 +141,7 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 
 			final AffineTransform3D[] mipmapTransforms = new AffineTransform3D[ mipmapResolutions.length ];
 			for ( int level = 0; level < mipmapResolutions.length; level++ )
-			{
-				final AffineTransform3D mipmapTransform = new AffineTransform3D();
-				final double[] resolution = mipmapResolutions[ level ];
-				for ( int d = 0; d < 3; ++d )
-				{
-					mipmapTransform.set( resolution[ d ], d, d );
-					mipmapTransform.set( 0.5 * ( resolution[ d ] - 1 ), d, 3 );
-				}
-				mipmapTransforms[ level ] = mipmapTransform;
-			}
+				mipmapTransforms[ level ] = MipmapTransforms.getMipmapTransformDefault( mipmapResolutions[ level ] );
 			perSetupMipmapTransforms.add( mipmapTransforms );
 
 			final int[][] subdivisions = hdf5Reader.readIntMatrix( getSubdivisionsPath( setup ) );

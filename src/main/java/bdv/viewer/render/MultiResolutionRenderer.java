@@ -371,12 +371,12 @@ public class MultiResolutionRenderer
 					( renderImages[ 0 ][ 0 ].dimension( 0 ) != screenImages[ 0 ][ 0 ].dimension( 0 ) ||
 					  renderImages[ 0 ][ 0 ].dimension( 1 ) != screenImages[ 0 ][ 0 ].dimension( 1 ) ) ) )
 		{
-			renderImages = new ARGBScreenImage[ screenScales.length ][ numVisibleSources ];
+			renderImages = new ARGBScreenImage[ screenScales.length ][ n ];
 			for ( int i = 0; i < screenScales.length; ++i )
 			{
 				final int w = ( int ) screenImages[ i ][ 0 ].dimension( 0 );
 				final int h = ( int ) screenImages[ i ][ 0 ].dimension( 1 );
-				for ( int j = 0; j < numVisibleSources; ++j )
+				for ( int j = 0; j < n; ++j )
 				{
 					renderImages[ i ][ j ] = ( i == 0 ) ?
 						new ARGBScreenImage( w, h ) :

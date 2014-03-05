@@ -2,9 +2,9 @@ package bdv;
 
 import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.View;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.NumericType;
-import net.imglib2.view.Views;
 
 public class SpimSource< T extends NumericType< T > > extends AbstractSpimSource< T >
 {
@@ -20,40 +20,20 @@ public class SpimSource< T extends NumericType< T > > extends AbstractSpimSource
 	}
 
 	@Override
-	protected void loadTimepoint( final int timepoint )
-	{
-		currentTimepoint = timepoint;
-		if ( isPresent( timepoint ) )
-		{
-			final T zero = imgLoader.getImageType().createVariable();
-			zero.setZero();
-			final View view = sequenceViews.getView( timepoint, setup );
-			final AffineTransform3D reg = view.getModel();
-			for ( int level = 0; level < currentSources.length; level++ )
-			{
-				final AffineTransform3D mipmapTransform = imgLoader.getMipmapTransforms( setup )[ level ];
-				currentSourceTransforms[ level ].set( reg );
-				currentSourceTransforms[ level ].concatenate( mipmapTransform );
-				currentSources[ level ] = imgLoader.getImage( view, level );
-				for ( int method = 0; method < numInterpolationMethods; ++method )
-					currentInterpolatedSources[ level ][ method ] = Views.interpolate( Views.extendValue( currentSources[ level ], zero ), interpolatorFactories[ method ] );
-			}
-		}
-		else
-		{
-			for ( int level = 0; level < currentSources.length; level++ )
-			{
-				currentSourceTransforms[ level ].identity();
-				currentSources[ level ] = null;
-				for ( int method = 0; method < numInterpolationMethods; ++method )
-					currentInterpolatedSources[ level ][ method ] = null;
-			}
-		}
-	}
-
-	@Override
 	public T getType()
 	{
 		return imgLoader.getImageType();
+	}
+
+	@Override
+	protected RandomAccessibleInterval< T > getImage( final View view, final int level )
+	{
+		return imgLoader.getImage( view, level );
+	}
+
+	@Override
+	protected AffineTransform3D[] getMipmapTransforms( final int setup )
+	{
+		return imgLoader.getMipmapTransforms( setup );
 	}
 }
