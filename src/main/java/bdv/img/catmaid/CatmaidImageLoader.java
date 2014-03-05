@@ -9,20 +9,18 @@ import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
 import net.imglib2.img.cell.CellImg;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.type.volatiles.VolatileARGBType;
 
 import org.jdom2.Element;
 
-import bdv.ViewerImgLoader;
-import bdv.img.cache.Cache;
+import bdv.AbstractViewerImgLoader;
 import bdv.img.cache.VolatileCell;
 import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.img.cache.VolatileGlobalCellCache.LoadingStrategy;
 import bdv.img.cache.VolatileImgCells;
 import bdv.img.cache.VolatileImgCells.CellCache;
 
-public class CatmaidImageLoader implements ViewerImgLoader< ARGBType, VolatileARGBType >
+public class CatmaidImageLoader extends AbstractViewerImgLoader< ARGBType, VolatileARGBType >
 {
 	private long width;
 
@@ -50,6 +48,11 @@ public class CatmaidImageLoader implements ViewerImgLoader< ARGBType, VolatileAR
 
 	protected VolatileGlobalCellCache< VolatileIntArray > cache;
 
+	public CatmaidImageLoader()
+	{
+		super( new ARGBType(), new VolatileARGBType() );
+	}
+
 	@Override
 	public void init( final Element elem, final File basePath )
 	{
@@ -61,7 +64,7 @@ public class CatmaidImageLoader implements ViewerImgLoader< ARGBType, VolatileAR
 		resZ = Double.parseDouble( elem.getChildText( "resZ" ) );
 
 		urlFormat = elem.getChildText( "urlFormat" );
-		
+
 		tileWidth = Integer.parseInt( elem.getChildText( "tileWidth" ) );
 		tileHeight = Integer.parseInt( elem.getChildText( "tileHeight" ) );
 
@@ -76,7 +79,6 @@ public class CatmaidImageLoader implements ViewerImgLoader< ARGBType, VolatileAR
 		blockDimensions = new int[ numScales ][];
 		for ( int l = 0; l < numScales; ++l )
 		{
-
 			mipmapResolutions[ l ] = new double[] { 1 << l, 1 << l, 1 };
 			imageDimensions[ l ] = new long[] { width >> l, height >> l, depth };
 			blockDimensions[ l ] = new int[] { tileWidth, tileHeight, 1 };
@@ -95,24 +97,6 @@ public class CatmaidImageLoader implements ViewerImgLoader< ARGBType, VolatileAR
 			++i;
 
 		return i;
-	}
-
-	@Override
-	public Element toXml( final File basePath )
-	{
-		throw new UnsupportedOperationException( "not implemented" );
-	}
-
-	@Override
-	public RandomAccessibleInterval< FloatType > getFloatImage( final View view )
-	{
-		throw new UnsupportedOperationException( "not implemented" );
-	}
-
-	@Override
-	public RandomAccessibleInterval< ARGBType > getImage( final View view )
-	{
-		return getImage( view, 0 );
 	}
 
 	@Override
@@ -161,25 +145,9 @@ public class CatmaidImageLoader implements ViewerImgLoader< ARGBType, VolatileAR
 		return img;
 	}
 
-	public Cache getCache()
+	@Override
+	public VolatileGlobalCellCache< VolatileIntArray > getCache()
 	{
 		return cache;
 	}
-
-	private final ARGBType type = new ARGBType();
-
-	private final VolatileARGBType volatileType = new VolatileARGBType();
-
-	@Override
-	public ARGBType getImageType()
-	{
-		return type;
-	}
-
-	@Override
-	public VolatileARGBType getVolatileImageType()
-	{
-		return volatileType;
-	}
-
 }

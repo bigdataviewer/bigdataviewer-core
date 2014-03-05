@@ -217,6 +217,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 		{
 			final Fetcher f = new Fetcher();
 			f.setDaemon( true );
+			f.setName( "Fetcher-" + i );
 			fetchers.add( f );
 			f.start();
 		}

@@ -31,7 +31,7 @@ public class CatmaidVolatileShortArrayLoader implements CacheArrayLoader< Volati
 	@Override
 	public int getBytesPerElement()
 	{
-		return 1;
+		return 2;
 	}
 
 	@Override

@@ -1,6 +1,7 @@
 package bdv.viewer.render;
 
 import java.util.ArrayList;
+import java.util.concurrent.ExecutorService;
 
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessible;
@@ -14,9 +15,10 @@ public class AccumulateProjectorARGB extends AccumulateProjector< ARGBType, ARGB
 			final ArrayList< VolatileProjector > sourceProjectors,
 			final ArrayList< ? extends RandomAccessible< ARGBType > > sources,
 			final RandomAccessibleInterval< ARGBType > target,
-			final int numThreads )
+			final int numThreads,
+			final ExecutorService executorService )
 	{
-		super( sourceProjectors, sources, null, target, numThreads );
+		super( sourceProjectors, sources, null, target, numThreads, executorService );
 	}
 
 	@Override

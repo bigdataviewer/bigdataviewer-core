@@ -1,9 +1,9 @@
 package bdv.viewer.render;
 
 import java.util.ArrayList;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import net.imglib2.Cursor;
@@ -43,6 +43,8 @@ public abstract class AccumulateProjector< A, B > implements VolatileProjector
      */
     protected final int numThreads;
 
+	protected final ExecutorService executorService;
+
     /**
      * Time needed for rendering the last frame, in nano-seconds.
      */
@@ -57,7 +59,8 @@ public abstract class AccumulateProjector< A, B > implements VolatileProjector
 			final ArrayList< ? extends RandomAccessible< A > > sources,
 			final Converter< ? super A, B > converter,
 			final RandomAccessibleInterval< B > target,
-			final int numThreads )
+			final int numThreads,
+			final ExecutorService executorService )
 	{
 		this.sourceProjectors = sourceProjectors;
 		this.sources = new ArrayList< IterableInterval< A > >();
@@ -67,6 +70,7 @@ public abstract class AccumulateProjector< A, B > implements VolatileProjector
 		this.target = target;
 		this.iterableTarget = Views.flatIterable( target );
 		this.numThreads = numThreads;
+		this.executorService = executorService;
 		lastFrameRenderNanoTime = -1;
 	}
 
@@ -96,23 +100,25 @@ public abstract class AccumulateProjector< A, B > implements VolatileProjector
 		final int height = ( int ) target.dimension( 1 );
 		final int length = width * height;
 
-		final ExecutorService ex = Executors.newFixedThreadPool( numThreads );
-		final int numTasks = Math.max( numThreads * 10, height );
+		final boolean createExecutor = ( executorService == null );
+		final ExecutorService ex = createExecutor ? Executors.newFixedThreadPool( numThreads ) : executorService;
+		final int numTasks = Math.min( numThreads * 10, height );
 		final double taskLength = ( double ) length / numTasks;
 		final int numSources = sources.size();
+		final ArrayList< Callable< Void > > tasks = new ArrayList< Callable< Void > >( numTasks );
 		for ( int taskNum = 0; taskNum < numTasks; ++taskNum )
 		{
 			final int myOffset = ( int ) ( taskNum * taskLength );
 			final int myLength = ( (taskNum == numTasks - 1 ) ? length : ( int ) ( ( taskNum + 1 ) * taskLength ) ) - myOffset;
 
-			final Runnable r = new Runnable()
+			final Callable< Void > r = new Callable< Void >()
 			{
 				@SuppressWarnings( "unchecked" )
 				@Override
-				public void run()
+				public Void call()
 				{
 					if ( interrupted.get() )
-						return;
+						return null;
 
 					final Cursor< A >[] sourceCursors = new Cursor[ numSources ];
 					for ( int s = 0; s < numSources; ++s )
@@ -130,19 +136,21 @@ public abstract class AccumulateProjector< A, B > implements VolatileProjector
 							sourceCursors[ s ].fwd();
 						accumulate( sourceCursors, targetCursor.next() );
 					}
+					return null;
 				}
 			};
-			ex.execute( r );
+			tasks.add( r );
 		}
-		ex.shutdown();
 		try
 		{
-			ex.awaitTermination( 1, TimeUnit.HOURS );
+			ex.invokeAll( tasks );
 		}
 		catch ( final InterruptedException e )
 		{
 			e.printStackTrace();
 		}
+		if ( createExecutor )
+			ex.shutdown();
 
 		lastFrameRenderNanoTime = stopWatch.nanoTime();
 

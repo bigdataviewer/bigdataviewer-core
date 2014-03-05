@@ -4,6 +4,8 @@ import mpicbg.spim.data.ImgLoader;
 import mpicbg.spim.data.View;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
+import net.imglib2.realtransform.AffineTransform3D;
+import bdv.img.cache.Cache;
 
 public interface ViewerImgLoader< T, V extends Volatile< T > > extends ImgLoader< T >
 {
@@ -17,5 +19,9 @@ public interface ViewerImgLoader< T, V extends Volatile< T > > extends ImgLoader
 
 	public double[][] getMipmapResolutions( final int setup );
 
+	public AffineTransform3D[] getMipmapTransforms( final int setup );
+
 	public int numMipmapLevels( final int setup );
+
+	public Cache getCache();
 }

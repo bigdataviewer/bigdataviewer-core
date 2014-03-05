@@ -15,16 +15,16 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.NativeImg;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
 import net.imglib2.img.cell.CellImg;
+import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.sampler.special.ConstantRandomAccessible;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.type.volatiles.VolatileUnsignedShortType;
 import net.imglib2.view.Views;
 
 import org.jdom2.Element;
 
-import bdv.ViewerImgLoader;
+import bdv.AbstractViewerImgLoader;
 import bdv.img.cache.VolatileCell;
 import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.img.cache.VolatileGlobalCellCache.LoadingStrategy;
@@ -34,7 +34,7 @@ import ch.systemsx.cisd.hdf5.HDF5DataSetInformation;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
 
-public class Hdf5ImageLoader implements ViewerImgLoader< UnsignedShortType, VolatileUnsignedShortType >
+public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType, VolatileUnsignedShortType >
 {
 	protected File hdf5File;
 
@@ -43,6 +43,8 @@ public class Hdf5ImageLoader implements ViewerImgLoader< UnsignedShortType, Vola
 	protected VolatileGlobalCellCache< VolatileShortArray > cache;
 
 	protected final ArrayList< double[][] > perSetupMipmapResolutions;
+
+	protected final ArrayList< AffineTransform3D[] > perSetupMipmapTransforms;
 
 	protected final ArrayList< int[][] > perSetupSubdivisions;
 
@@ -77,8 +79,6 @@ public class Hdf5ImageLoader implements ViewerImgLoader< UnsignedShortType, Vola
 	 */
 	protected Boolean[] cachedExistence;
 
-	protected final boolean isCoarsestLevelBlocking = true;
-
 	public Hdf5ImageLoader()
 	{
 		this( null );
@@ -86,10 +86,12 @@ public class Hdf5ImageLoader implements ViewerImgLoader< UnsignedShortType, Vola
 
 	public Hdf5ImageLoader( final ArrayList< Partition > hdf5Partitions )
 	{
+		super( new UnsignedShortType(), new VolatileUnsignedShortType() );
 		hdf5File = null;
 		hdf5Reader = null;
 		cache = null;
 		perSetupMipmapResolutions = new ArrayList< double[][] >();
+		perSetupMipmapTransforms = new ArrayList< AffineTransform3D[] >();
 		perSetupSubdivisions = new ArrayList< int[][] >();
 		partitions = new ArrayList< Partition >();
 		if ( hdf5Partitions != null )
@@ -106,7 +108,9 @@ public class Hdf5ImageLoader implements ViewerImgLoader< UnsignedShortType, Vola
 
 	public Hdf5ImageLoader( final File hdf5File, final ArrayList< Partition > hdf5Partitions, final boolean doOpen )
 	{
+		super( new UnsignedShortType(), new VolatileUnsignedShortType() );
 		this.hdf5File = hdf5File;
+		perSetupMipmapTransforms = new ArrayList< AffineTransform3D[] >();
 		perSetupMipmapResolutions = new ArrayList< double[][] >();
 		perSetupSubdivisions = new ArrayList< int[][] >();
 		partitions = new ArrayList< Partition >();
@@ -128,13 +132,27 @@ public class Hdf5ImageLoader implements ViewerImgLoader< UnsignedShortType, Vola
 		perSetupSubdivisions.clear();
 		for ( int setup = 0; setup < numSetups; ++setup )
 		{
-			final double [][] mipmapResolutions = hdf5Reader.readDoubleMatrix( getResolutionsPath( setup ) );
+			final double[][] mipmapResolutions = hdf5Reader.readDoubleMatrix( getResolutionsPath( setup ) );
 			perSetupMipmapResolutions.add( mipmapResolutions );
 			if ( mipmapResolutions.length > maxNumLevels )
 				maxNumLevels = mipmapResolutions.length;
 			maxLevels[ setup ] = mipmapResolutions.length - 1;
 
-			final int [][] subdivisions = hdf5Reader.readIntMatrix( getSubdivisionsPath( setup ) );
+			final AffineTransform3D[] mipmapTransforms = new AffineTransform3D[ mipmapResolutions.length ];
+			for ( int level = 0; level < mipmapResolutions.length; level++ )
+			{
+				final AffineTransform3D mipmapTransform = new AffineTransform3D();
+				final double[] resolution = mipmapResolutions[ level ];
+				for ( int d = 0; d < 3; ++d )
+				{
+					mipmapTransform.set( resolution[ d ], d, d );
+					mipmapTransform.set( 0.5 * ( resolution[ d ] - 1 ), d, 3 );
+				}
+				mipmapTransforms[ level ] = mipmapTransform;
+			}
+			perSetupMipmapTransforms.add( mipmapTransforms );
+
+			final int[][] subdivisions = hdf5Reader.readIntMatrix( getSubdivisionsPath( setup ) );
 			perSetupSubdivisions.add( subdivisions );
 		}
 
@@ -222,18 +240,6 @@ public class Hdf5ImageLoader implements ViewerImgLoader< UnsignedShortType, Vola
 	}
 
 	@Override
-	public RandomAccessibleInterval< FloatType > getFloatImage( final View view )
-	{
-		throw new UnsupportedOperationException( "currently not used" );
-	}
-
-	@Override
-	public RandomAccessibleInterval< UnsignedShortType > getImage( final View view )
-	{
-		return getImage( view, 0 );
-	}
-
-	@Override
 	public RandomAccessibleInterval< UnsignedShortType > getImage( final View view, final int level )
 	{
 		if ( ! existsImageData( view, level ) )
@@ -261,6 +267,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader< UnsignedShortType, Vola
 		return img;
 	}
 
+	@Override
 	public VolatileGlobalCellCache< VolatileShortArray > getCache()
 	{
 		return cache;
@@ -270,6 +277,12 @@ public class Hdf5ImageLoader implements ViewerImgLoader< UnsignedShortType, Vola
 	public double[][] getMipmapResolutions( final int setup )
 	{
 		return perSetupMipmapResolutions.get( setup );
+	}
+
+	@Override
+	public AffineTransform3D[] getMipmapTransforms( final int setup )
+	{
+		return perSetupMipmapTransforms.get( setup );
 	}
 
 	public int[][] getSubdivisions( final int setup )
@@ -289,10 +302,21 @@ public class Hdf5ImageLoader implements ViewerImgLoader< UnsignedShortType, Vola
 	 *
 	 * @return true, if the given image data is present.
 	 */
-	protected boolean existsImageData( final View view, final int level )
+	public boolean existsImageData( final View view, final int level )
 	{
 		final int timepoint = view.getTimepointIndex();
 		final int setup = view.getSetupIndex();
+		return existsImageData( timepoint, setup, level );
+	}
+
+	/**
+	 * Checks whether the given image data is present in the hdf5. Missing data
+	 * may be caused by missing partition files
+	 *
+	 * @return true, if the given image data is present.
+	 */
+	public boolean existsImageData( final int timepoint, final int setup, final int level )
+	{
 		final int index = getViewInfoCacheIndex( timepoint, setup, level );
 		if ( cachedExistence[ index ] == null )
 			// will set cachedExistence[ index ] as a side effect
@@ -316,7 +340,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader< UnsignedShortType, Vola
 		return Views.interval( new ConstantRandomAccessible< T >( constant, 3 ), new FinalInterval( d ) );
 	}
 
-	protected long[] getImageDimension( final int timepoint, final int setup, final int level )
+	public long[] getImageDimension( final int timepoint, final int setup, final int level )
 	{
 		final int index = getViewInfoCacheIndex( timepoint, setup, level );
 		if ( cachedDimensions[ index ] == null )
@@ -391,21 +415,5 @@ public class Hdf5ImageLoader implements ViewerImgLoader< UnsignedShortType, Vola
 				System.out.println( "    " + level + ": " + net.imglib2.util.Util.printCoordinates( res ) );
 			}
 		}
-	}
-
-	private final UnsignedShortType type = new UnsignedShortType();
-
-	private final VolatileUnsignedShortType volatileType = new VolatileUnsignedShortType();
-
-	@Override
-	public UnsignedShortType getImageType()
-	{
-		return type;
-	}
-
-	@Override
-	public VolatileUnsignedShortType getVolatileImageType()
-	{
-		return volatileType;
 	}
 }

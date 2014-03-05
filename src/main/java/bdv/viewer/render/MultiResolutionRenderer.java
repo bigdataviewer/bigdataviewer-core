@@ -571,7 +571,7 @@ public class MultiResolutionRenderer
 					sourceProjectors.add( p );
 					sourceImages.add( renderImage );
 				}
-				projector = new AccumulateProjectorARGB( sourceProjectors, sourceImages, screenImage, numRenderingThreads );
+				projector = new AccumulateProjectorARGB( sourceProjectors, sourceImages, screenImage, numRenderingThreads, renderingExecutorService );
 			}
 			previousTimepoint = viewerState.getCurrentTimepoint();
 			cache.initIoTimeBudget( iobudget );
@@ -680,7 +680,7 @@ public class MultiResolutionRenderer
 		}
 //		for ( int i = bestLevel - 1; i >= 0; --i )
 //			levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, i ) );
-		return new VolatileHierarchyProjector< T, ARGBType >( levels, source.getConverter(), screenImage, numRenderingThreads, renderingExecutorService );
+		return new VolatileHierarchyProjector< T, ARGBType >( levels, source.getConverter(), screenImage, maskArray, numRenderingThreads, renderingExecutorService );
 	}
 
 	private static < T > RandomAccessible< T > getTransformedSource( final ViewerState viewerState, final Source< T > source, final AffineTransform3D screenScaleTransform, final int mipmapIndex )
