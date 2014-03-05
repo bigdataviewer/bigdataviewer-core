@@ -7,6 +7,7 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.NativeImg;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
 import net.imglib2.img.cell.CellImg;
+import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.volatiles.VolatileARGBType;
@@ -19,6 +20,7 @@ import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.img.cache.VolatileGlobalCellCache.LoadingStrategy;
 import bdv.img.cache.VolatileImgCells;
 import bdv.img.cache.VolatileImgCells.CellCache;
+import bdv.util.MipmapTransforms;
 
 public class CatmaidImageLoader extends AbstractViewerImgLoader< ARGBType, VolatileARGBType >
 {
@@ -41,6 +43,8 @@ public class CatmaidImageLoader extends AbstractViewerImgLoader< ARGBType, Volat
 	private int numScales;
 
 	private double[][] mipmapResolutions;
+
+	private AffineTransform3D[] mipmapTransforms;
 
 	private long[][] imageDimensions;
 
@@ -75,11 +79,13 @@ public class CatmaidImageLoader extends AbstractViewerImgLoader< ARGBType, Volat
 			numScales = Integer.parseInt( numScalesString );
 
 		mipmapResolutions = new double[ numScales ][];
+		mipmapTransforms = new AffineTransform3D[ numScales ];
 		imageDimensions = new long[ numScales ][];
 		blockDimensions = new int[ numScales ][];
 		for ( int l = 0; l < numScales; ++l )
 		{
 			mipmapResolutions[ l ] = new double[] { 1 << l, 1 << l, 1 };
+			mipmapTransforms[ l ] = MipmapTransforms.getMipmapTransformDefault( mipmapResolutions[ l ] );
 			imageDimensions[ l ] = new long[] { width >> l, height >> l, depth };
 			blockDimensions[ l ] = new int[] { tileWidth, tileHeight, 1 };
 		}
@@ -149,5 +155,11 @@ public class CatmaidImageLoader extends AbstractViewerImgLoader< ARGBType, Volat
 	public VolatileGlobalCellCache< VolatileIntArray > getCache()
 	{
 		return cache;
+	}
+
+	@Override
+	public AffineTransform3D[] getMipmapTransforms( final int setup )
+	{
+		return mipmapTransforms;
 	}
 }
