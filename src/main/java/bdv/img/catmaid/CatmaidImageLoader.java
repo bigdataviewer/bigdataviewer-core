@@ -7,6 +7,7 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.NativeImg;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
 import net.imglib2.img.cell.CellImg;
+import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.volatiles.VolatileARGBType;
@@ -45,8 +46,10 @@ public class CatmaidImageLoader extends AbstractViewerImgLoader< ARGBType, Volat
 	private long[][] imageDimensions;
 
 	private int[][] blockDimensions;
+	
+	private AffineTransform3D[] mipmapTransforms;
 
-	protected VolatileGlobalCellCache< VolatileIntArray > cache;
+	private VolatileGlobalCellCache< VolatileIntArray > cache;
 
 	public CatmaidImageLoader()
 	{
@@ -77,11 +80,19 @@ public class CatmaidImageLoader extends AbstractViewerImgLoader< ARGBType, Volat
 		mipmapResolutions = new double[ numScales ][];
 		imageDimensions = new long[ numScales ][];
 		blockDimensions = new int[ numScales ][];
+		mipmapTransforms = new AffineTransform3D[ numScales ];
 		for ( int l = 0; l < numScales; ++l )
 		{
 			mipmapResolutions[ l ] = new double[] { 1 << l, 1 << l, 1 };
 			imageDimensions[ l ] = new long[] { width >> l, height >> l, depth };
 			blockDimensions[ l ] = new int[] { tileWidth, tileHeight, 1 };
+			
+			final AffineTransform3D mipmapTransform = new AffineTransform3D();
+			mipmapTransform.set( mipmapResolutions[ l ][ 0 ], 0, 0 );
+			mipmapTransform.set( mipmapResolutions[ l ][ 1 ], 1, 1 );
+			mipmapTransform.set( 0.5 * ( mipmapResolutions[ l ][ 0 ] - 1 ), 0, 3 );
+			mipmapTransform.set( 0.5 * ( mipmapResolutions[ l ][ 0 ] - 1 ), 1, 3 );
+			mipmapTransforms[ l ] = mipmapTransform;
 		}
 
 		final int[] maxLevels = new int[] { numScales - 1 };
@@ -149,5 +160,11 @@ public class CatmaidImageLoader extends AbstractViewerImgLoader< ARGBType, Volat
 	public VolatileGlobalCellCache< VolatileIntArray > getCache()
 	{
 		return cache;
+	}
+
+	@Override
+	public AffineTransform3D[] getMipmapTransforms( int setup )
+	{
+		return mipmapTransforms;
 	}
 }
