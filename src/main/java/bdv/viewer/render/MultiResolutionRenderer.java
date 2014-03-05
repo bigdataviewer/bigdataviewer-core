@@ -571,7 +571,7 @@ public class MultiResolutionRenderer
 					sourceProjectors.add( p );
 					sourceImages.add( renderImage );
 				}
-				projector = new AccumulateProjectorARGB( sourceProjectors, sourceImages, screenImage, numRenderingThreads );
+				projector = new AccumulateProjectorARGB( sourceProjectors, sourceImages, screenImage, numRenderingThreads, renderingExecutorService );
 			}
 			previousTimepoint = viewerState.getCurrentTimepoint();
 			cache.initIoTimeBudget( iobudget );
