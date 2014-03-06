@@ -380,8 +380,10 @@ public class BigDataViewer
 	public static void main( final String[] args )
 	{
 //		final String fn = "/Users/pietzsch/desktop/data/catmaid-confocal.xml";
-		final String fn = "/home/saalfeld/openconnectome-bock11-neariso.xml";
+//		final String fn = "/home/saalfeld/openconnectome-bock11-neariso.xml";
 //		final String fn = "/home/saalfeld/catmaid-confocal.xml";
+//		final String fn = "/home/saalfeld/trakem2-test.xml";
+		final String fn = "/home/saalfeld/trakem2-fly-test.xml";
 //		final String fn = "/Users/pietzsch/desktop/data/BDV130418A325/BDV130418A325_NoTempReg.xml";
 //		final String fn = "/Users/pietzsch/Desktop/data/valia2/valia.xml";
 //		final String fn = "/Users/pietzsch/workspace/data/fast fly/111010_weber/combined.xml";
