@@ -10,11 +10,11 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import net.imglib2.realtransform.AffineTransform3D;
 import bdv.viewer.DisplayMode;
 import bdv.viewer.Interpolation;
 import bdv.viewer.Source;
 import bdv.viewer.SourceAndConverter;
-import net.imglib2.realtransform.AffineTransform3D;
 
 /**
  * Description of everything required to render the current image, such as the
@@ -434,7 +434,6 @@ public class ViewerState
 
 	/**
 	 * Get the mipmap level that best matches the given screen scale for the given source.
-	 * If the source is invisible, returns the coarsest mipmap level.
 	 *
 	 * @param screenScaleTransform
 	 *            screen scale, transforms screen coordinates to viewer coordinates.
@@ -448,22 +447,19 @@ public class ViewerState
 
 		final SourceState< ? > source = sources.get( sourceIndex );
 		int targetLevel = source.getSpimSource().getNumMipmapLevels() - 1;
-		if ( isSourceVisible( sourceIndex ) )
+		for ( int level = targetLevel - 1; level >= 0; level-- )
 		{
-			for ( int level = targetLevel - 1; level >= 0; level-- )
-			{
-				if ( source.getVoxelScreenSize( screenTransform, currentTimepoint, level ) >= 0.99 /*1.0*/ )
-					targetLevel = level;
-				else
-					break;
-			}
-			if ( targetLevel > 0 )
-			{
-				final double size1 = source.getVoxelScreenSize( screenTransform, currentTimepoint, targetLevel );
-				final double size0 = source.getVoxelScreenSize( screenTransform, currentTimepoint, targetLevel - 1 );
-				if ( Math.abs( size1 - 1.0 ) / 2 > Math.abs( size0 - 1.0 ) )
-					targetLevel--;
-			}
+			if ( source.getVoxelScreenSize( screenTransform, currentTimepoint, level ) >= 0.99 /* 1.0 */)
+				targetLevel = level;
+			else
+				break;
+		}
+		if ( targetLevel > 0 )
+		{
+			final double size1 = source.getVoxelScreenSize( screenTransform, currentTimepoint, targetLevel );
+			final double size0 = source.getVoxelScreenSize( screenTransform, currentTimepoint, targetLevel - 1 );
+			if ( Math.abs( size1 - 1.0 ) / 2 > Math.abs( size0 - 1.0 ) )
+				targetLevel--;
 		}
 		return targetLevel;
 	}
