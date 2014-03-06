@@ -89,6 +89,11 @@
 			<artifactId>gson</artifactId>
 			<version>2.2.4</version>
 		</dependency>
+		<dependency>
+			<groupId>sc.fiji</groupId>
+			<artifactId>TrakEM2_</artifactId>
+			<version>1.0b-SNAPSHOT</version>
+		</dependency>
 	</dependencies>
 
 	<developers>
