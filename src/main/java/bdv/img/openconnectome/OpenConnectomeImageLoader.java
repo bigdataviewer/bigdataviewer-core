@@ -20,7 +20,7 @@ import net.imglib2.type.volatiles.VolatileUnsignedByteType;
 
 import org.jdom2.Element;
 
-import bdv.ViewerImgLoader;
+import bdv.AbstractViewerImgLoader;
 import bdv.img.cache.Cache;
 import bdv.img.cache.VolatileCell;
 import bdv.img.cache.VolatileGlobalCellCache;
@@ -32,7 +32,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 
-public class OpenConnectomeImageLoader implements ViewerImgLoader< UnsignedByteType, VolatileUnsignedByteType >
+public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< UnsignedByteType, VolatileUnsignedByteType >
 {
 	/**
 	 * URL of the 
@@ -54,7 +54,12 @@ public class OpenConnectomeImageLoader implements ViewerImgLoader< UnsignedByteT
 	private AffineTransform3D[] mipmapTransforms;
 
 	protected VolatileGlobalCellCache< VolatileByteArray > cache;
-	
+
+	public OpenConnectomeImageLoader( final UnsignedByteType type, final VolatileUnsignedByteType volatileType )
+	{
+		super( new UnsignedByteType(), new VolatileUnsignedByteType() );
+	}
+
 	/**
 	 * Fetch the list of public tokens from an OpenConnectome volume cutout
 	 * service, e.g.
@@ -182,24 +187,6 @@ public class OpenConnectomeImageLoader implements ViewerImgLoader< UnsignedByteT
 	}
 
 	@Override
-	public Element toXml( final File basePath )
-	{
-		throw new UnsupportedOperationException( "not implemented" );
-	}
-
-	@Override
-	public RandomAccessibleInterval< FloatType > getFloatImage( final View view )
-	{
-		throw new UnsupportedOperationException( "not implemented" );
-	}
-
-	@Override
-	public RandomAccessibleInterval< UnsignedByteType > getImage( final View view )
-	{
-		return getImage( view, 0 );
-	}
-
-	@Override
 	public RandomAccessibleInterval< UnsignedByteType > getImage( final View view, final int level )
 	{
 		final CellImg< UnsignedByteType, VolatileByteArray, VolatileCell< VolatileByteArray > >  img = prepareCachedImage( view, level, LoadingStrategy.BLOCKING );
@@ -251,22 +238,7 @@ public class OpenConnectomeImageLoader implements ViewerImgLoader< UnsignedByteT
 		return cache;
 	}
 
-	private final UnsignedByteType type = new UnsignedByteType();
-
-	private final VolatileUnsignedByteType volatileType = new VolatileUnsignedByteType();
-
 	@Override
-	public UnsignedByteType getImageType()
-	{
-		return type;
-	}
-
-	@Override
-	public VolatileUnsignedByteType getVolatileImageType()
-	{
-		return volatileType;
-	}
-
 	@Override
 	public AffineTransform3D[] getMipmapTransforms( int setup )
 	{
