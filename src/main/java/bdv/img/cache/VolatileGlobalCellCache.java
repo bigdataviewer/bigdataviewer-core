@@ -329,7 +329,8 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	{
 		VOLATILE,
 		BLOCKING,
-		BUDGETED
+		BUDGETED,
+		DONTLOAD
 	};
 
 	/**
@@ -366,6 +367,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 			{
 				switch ( loadingStrategy )
 				{
+				case DONTLOAD:
 				case VOLATILE:
 				default:
 					enqueueEntry( entry );
@@ -429,6 +431,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 
 		switch ( loadingStrategy )
 		{
+		case DONTLOAD:
 		case VOLATILE:
 		default:
 			enqueueEntry( entry );
@@ -495,7 +498,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 
 		private final int level;
 
-		private final LoadingStrategy loadingStrategy;
+		private LoadingStrategy loadingStrategy;
 
 		public VolatileCellCache( final int timepoint, final int setup, final int level, final LoadingStrategy strategy )
 		{
@@ -514,7 +517,14 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 		@Override
 		public VolatileCell< A > load( final int index, final int[] cellDims, final long[] cellMin )
 		{
+//			System.out.println( "VolatileCellCache.load(),  property=" + property );
 			return createGlobal( cellDims, cellMin, timepoint, setup, level, index, loadingStrategy );
+		}
+
+		@Override
+		public void setLoadingStrategy( final LoadingStrategy strategy )
+		{
+			this.loadingStrategy = strategy;
 		}
 	}
 }

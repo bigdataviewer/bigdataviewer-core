@@ -1,10 +1,10 @@
 package bdv.tools.transformation;
 
-import bdv.viewer.Interpolation;
-import bdv.viewer.Source;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.realtransform.AffineTransform3D;
+import bdv.viewer.Interpolation;
+import bdv.viewer.Source;
 
 /**
  * A {@link Source} that wraps another {@link Source} and allows to decorate it
@@ -20,7 +20,8 @@ import net.imglib2.realtransform.AffineTransform3D;
  */
 public class TransformedSource< T > implements Source< T >
 {
-	protected final Source< T > source;
+	// TODO: make protected. is only public for debugging.
+	public final Source< T > source;
 
 	/**
 	 * Incremental part of the extra transformation.

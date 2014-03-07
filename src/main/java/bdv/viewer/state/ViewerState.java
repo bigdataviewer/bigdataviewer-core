@@ -11,6 +11,7 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.util.LinAlgHelpers;
 import bdv.viewer.DisplayMode;
 import bdv.viewer.Interpolation;
 import bdv.viewer.Source;
@@ -433,35 +434,90 @@ public class ViewerState
 	 */
 
 	/**
-	 * Get the mipmap level that best matches the given screen scale for the given source.
+	 * Compute the projected voxel size at the given screen transform and mipmap
+	 * level of a {@link Source}. Take a source voxel (0,0,0)-(1,1,1) at the
+	 * given mipmap level and transform it to the screen image at the given
+	 * screen scale. Take the maximum of the screen extends of the transformed
+	 * projected voxel edges.
 	 *
-	 * @param screenScaleTransform
-	 *            screen scale, transforms screen coordinates to viewer coordinates.
-	 * @return mipmap level
+	 * @param screenTransform
+	 *            transforms screen coordinates to global coordinates.
+	 * @param source
+	 *            the source
+	 * @param timepoint
+	 *            for which timepoint to query the source
+	 * @param mipmapIndex
+	 *            mipmap level
+	 * @return pixel size
 	 */
-	public synchronized int getBestMipMapLevel( final AffineTransform3D screenScaleTransform, final int sourceIndex )
+	// TODO: move to util class
+	public static double getVoxelScreenSize( final AffineTransform3D screenTransform, final Source< ? > source, final int timepoint, final int mipmapIndex )
 	{
-		final AffineTransform3D screenTransform = new AffineTransform3D();
-		getViewerTransform( screenTransform );
-		screenTransform.preConcatenate( screenScaleTransform );
+		double pixelSize = 0;
+		final AffineTransform3D sourceToScreen = new AffineTransform3D();
+		sourceToScreen.set( screenTransform );
+		sourceToScreen.concatenate( source.getSourceTransform( timepoint, mipmapIndex ) );
+		final double[] zero = new double[] { 0, 0, 0 };
+		final double[] tzero = new double[ 3 ];
+		final double[] one = new double[ 3 ];
+		final double[] tone = new double[ 3 ];
+		final double[] diff = new double[ 2 ];
+		sourceToScreen.apply( zero, tzero );
+		for ( int i = 0; i < 3; ++i )
+		{
+			for ( int d = 0; d < 3; ++d )
+				one[ d ] = d == i ? 1 : 0;
+			sourceToScreen.apply( one, tone );
+			LinAlgHelpers.subtract( tone, tzero, tone );
+			diff[0] = tone[0];
+			diff[1] = tone[1];
+			final double l = LinAlgHelpers.length( diff );
+			if ( l > pixelSize )
+				pixelSize = l;
+		}
+		return pixelSize;
+	}
 
-		final SourceState< ? > source = sources.get( sourceIndex );
-		int targetLevel = source.getSpimSource().getNumMipmapLevels() - 1;
+	/**
+	 * Get the mipmap level that best matches the given screen scale for the given source.
+	 */
+	// TODO: move to util class
+	public static int getBestMipMapLevel( final AffineTransform3D screenTransform, final Source< ? > source, final int timepoint )
+	{
+		int targetLevel = source.getNumMipmapLevels() - 1;
 		for ( int level = targetLevel - 1; level >= 0; level-- )
 		{
-			if ( source.getVoxelScreenSize( screenTransform, currentTimepoint, level ) >= 0.99 /* 1.0 */)
+			if ( getVoxelScreenSize( screenTransform, source, timepoint, level ) >= 0.99 /* 1.0 */)
 				targetLevel = level;
 			else
 				break;
 		}
 		if ( targetLevel > 0 )
 		{
-			final double size1 = source.getVoxelScreenSize( screenTransform, currentTimepoint, targetLevel );
-			final double size0 = source.getVoxelScreenSize( screenTransform, currentTimepoint, targetLevel - 1 );
+			final double size1 = getVoxelScreenSize( screenTransform, source, timepoint, targetLevel );
+			final double size0 = getVoxelScreenSize( screenTransform, source, timepoint, targetLevel - 1 );
 			if ( Math.abs( size1 - 1.0 ) / 2 > Math.abs( size0 - 1.0 ) )
 				targetLevel--;
 		}
 		return targetLevel;
+	}
+
+	/**
+	 * Get the mipmap level that best matches the given screen scale for the given source.
+	 *
+	 * @param screenScaleTransform
+	 *            screen scale, transforms screen coordinates to viewer coordinates.
+	 * @return mipmap level
+	 */
+	public synchronized int getBestMipMapLevelX( final AffineTransform3D screenScaleTransform, final int sourceIndex )
+	{
+		final AffineTransform3D screenTransform = new AffineTransform3D();
+		getViewerTransform( screenTransform );
+		screenTransform.preConcatenate( screenScaleTransform );
+
+		final Source< ? > source = sources.get( sourceIndex ).getSpimSource();
+
+		return getBestMipMapLevel( screenTransform, source, currentTimepoint );
 	}
 
 	public int getNumTimePoints()

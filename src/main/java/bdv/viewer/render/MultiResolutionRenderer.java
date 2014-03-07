@@ -4,6 +4,7 @@ import java.awt.image.BufferedImage;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -16,7 +17,6 @@ import net.imglib2.RealRandomAccessible;
 import net.imglib2.Volatile;
 import net.imglib2.converter.Converter;
 import net.imglib2.display.screenimage.awt.ARGBScreenImage;
-import net.imglib2.img.cell.CellImg;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.numeric.ARGBType;
@@ -26,8 +26,13 @@ import net.imglib2.ui.Renderer;
 import net.imglib2.ui.SimpleInterruptibleProjector;
 import net.imglib2.ui.util.GuiUtil;
 import bdv.img.cache.Cache;
+import bdv.img.cache.CachedCellImg;
+import bdv.img.cache.VolatileGlobalCellCache.LoadingStrategy;
+import bdv.tools.transformation.TransformedSource;
 import bdv.viewer.Interpolation;
 import bdv.viewer.Source;
+import bdv.viewer.render.MipmapOrdering.Level;
+import bdv.viewer.render.MipmapOrdering.MipmapHints;
 import bdv.viewer.state.SourceState;
 import bdv.viewer.state.ViewerState;
 
@@ -622,7 +627,7 @@ public class MultiResolutionRenderer
 		else
 		{
 			final AffineTransform3D screenScaleTransform = screenScaleTransforms[ currentScreenScaleIndex ];
-			final int bestLevel = viewerState.getBestMipMapLevel( screenScaleTransform, sourceIndex );
+			final int bestLevel = viewerState.getBestMipMapLevelX( screenScaleTransform, sourceIndex );
 			return new SimpleVolatileProjector< T, ARGBType >(
 					getTransformedSource( viewerState, source.getSpimSource(), screenScaleTransform, bestLevel ),
 					source.getConverter(), screenImage, numRenderingThreads );
@@ -638,49 +643,54 @@ public class MultiResolutionRenderer
 			final byte[] maskArray )
 	{
 		final AffineTransform3D screenScaleTransform = screenScaleTransforms[ currentScreenScaleIndex ];
-		final ArrayList< RandomAccessible< T > > levels = new ArrayList< RandomAccessible< T > >();
-		final int bestLevel = viewerState.getBestMipMapLevel( screenScaleTransform, sourceIndex );
-		final int nLevels = source.getSpimSource().getNumMipmapLevels();
+		final ArrayList< RandomAccessible< T > > renderList = new ArrayList< RandomAccessible< T > >();
 		final Source< T > spimSource = source.getSpimSource();
 		final int t = viewerState.getCurrentTimepoint();
-		if ( t != previousTimepoint )
+
+		MipmapOrdering ordering = null;
+		if ( TransformedSource.class.isInstance( spimSource ) )
 		{
-			// When scrolling through time, we often get frames for which no
-			// data was loaded yet. To speed up rendering in these cases, use
-			// only two mipmap levels: the optimal and the coarsest. By doing
-			// this, we require at most two passes over the image at the expense
-			// of ignoring data present in intermediate mipmap levels. The
-			// assumption is, that we will either be moving back and forth
-			// between images that have all data present already or that we move
-			// to a new image with no data present at all.
-			levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, bestLevel ) );
-			if ( nLevels - 1 != bestLevel )
-				levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, nLevels - 1 ) );
+			final Source< ? > s = ( ( TransformedSource< ? > ) spimSource ).source;
+			if ( MipmapOrdering.class.isInstance( s ) )
+				ordering = ( MipmapOrdering ) s;
+		}
+		else if ( MipmapOrdering.class.isInstance( spimSource ) )
+			ordering = ( MipmapOrdering ) spimSource;
+
+		final SetLoadingStrategy sls = ( SetLoadingStrategy ) ordering;
+
+		if ( ordering != null )
+		{
+			final AffineTransform3D screenTransform = new AffineTransform3D();
+			viewerState.getViewerTransform( screenTransform );
+			screenTransform.preConcatenate( screenScaleTransform );
+			final MipmapHints hints = ordering.getMipmapHints( screenTransform, t, previousTimepoint );
+			final List< Level > levels = hints.getLevels();
 
 			if ( prefetchCells )
 			{
-				if ( nLevels - 1 != bestLevel )
-					prefetch( viewerState, spimSource, screenScaleTransform, nLevels - 1, screenImage );
-				prefetch( viewerState, spimSource, screenScaleTransform, bestLevel, screenImage );
+				Collections.sort( levels, MipmapOrdering.prefetchOrderComparator );
+				for ( final Level l : levels )
+				{
+					if ( l.getPrefetchLoadingStrategy() != LoadingStrategy.DONTLOAD )
+					{
+						sls.setLoadingStrategy( l.getMipmapLevel(), l.getPrefetchLoadingStrategy() );
+						prefetch( viewerState, spimSource, screenScaleTransform, l.getMipmapLevel(), screenImage );
+					}
+				}
 			}
 
-			// slight abuse of newFrameRequest: we only want this two-pass
-			// rendering to happen once then switch to normal multi-pass
-			// rendering if we remain longer on this frame.
-			newFrameRequest = true;
-		}
-		else
-		{
-			for ( int i = bestLevel; i < nLevels; ++i )
-				levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, i ) );
+			Collections.sort( levels, MipmapOrdering.renderOrderComparator );
+			for ( final Level l : levels )
+			{
+				sls.setLoadingStrategy( l.getMipmapLevel(), l.getRenderLoadingStrategy() );
+				renderList.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, l.getMipmapLevel() ) );
+			}
 
-			if ( prefetchCells )
-				for ( int i = nLevels - 1; i >= bestLevel; --i )
-					prefetch( viewerState, spimSource, screenScaleTransform, i, screenImage );
+			if ( hints.renewHintsAfterPaintingOnce() )
+				newFrameRequest = true;
 		}
-//		for ( int i = bestLevel - 1; i >= 0; --i )
-//			levels.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, i ) );
-		return new VolatileHierarchyProjector< T, ARGBType >( levels, source.getConverter(), screenImage, maskArray, numRenderingThreads, renderingExecutorService );
+		return new VolatileHierarchyProjector< T, ARGBType >( renderList, source.getConverter(), screenImage, maskArray, numRenderingThreads, renderingExecutorService );
 	}
 
 	private static < T > RandomAccessible< T > getTransformedSource( final ViewerState viewerState, final Source< T > source, final AffineTransform3D screenScaleTransform, final int mipmapIndex )
@@ -706,9 +716,9 @@ public class MultiResolutionRenderer
 	{
 		final int timepoint = viewerState.getCurrentTimepoint();
 		final RandomAccessibleInterval< T > img = source.getSource( timepoint, mipmapIndex );
-		if ( CellImg.class.isInstance( img ) )
+		if ( CachedCellImg.class.isInstance( img ) )
 		{
-			final CellImg< ?, ?, ? > cellImg = ( CellImg< ?, ?, ? > ) img;
+			final CachedCellImg< ?, ? > cellImg = (bdv.img.cache.CachedCellImg< ?, ? > ) img;
 			final int[] cellDimensions = new int[ 3 ];
 			cellImg.getCells().cellDimensions( cellDimensions );
 			final long[] dimensions = new long[ 3 ];
