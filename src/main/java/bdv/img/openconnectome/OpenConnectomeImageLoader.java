@@ -14,7 +14,6 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
-import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.type.volatiles.VolatileARGBType;
 import net.imglib2.type.volatiles.VolatileUnsignedByteType;
 
@@ -35,14 +34,14 @@ import com.google.gson.JsonSyntaxException;
 public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< UnsignedByteType, VolatileUnsignedByteType >
 {
 	/**
-	 * URL of the 
+	 * URL of the
 	 */
 	private String baseUrl;
-	
+
 	private String token;
-	
+
 	private String mode;
-	
+
 	private int numScales;
 
 	private double[][] mipmapResolutions;
@@ -50,7 +49,7 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 	private long[][] imageDimensions;
 
 	private int[][] blockDimensions;
-	
+
 	private AffineTransform3D[] mipmapTransforms;
 
 	protected VolatileGlobalCellCache< VolatileByteArray > cache;
@@ -62,32 +61,32 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 
 	/**
 	 * Fetch the list of public tokens from an OpenConnectome volume cutout
-	 * service, e.g.
-	 * {@linkplain http://openconnecto.me/emca/public_tokens/}.
-	 * 
-	 * @param baseUrl e.g. "http://openconnecto.me/emca"
+	 * service, e.g. {@linkplain http://openconnecto.me/emca/public_tokens/}.
+	 *
+	 * @param baseUrl
+	 *            e.g. "http://openconnecto.me/emca"
 	 * @return a list of {@link String Strings}
 	 * @throws JsonSyntaxException
 	 * @throws JsonIOException
 	 * @throws IOException
 	 */
-	final static public String[] fetchTokenList( final String baseUrl )
-			throws JsonSyntaxException, JsonIOException, IOException
+	final static public String[] fetchTokenList( final String baseUrl ) throws JsonSyntaxException, JsonIOException, IOException
 	{
 		final Gson gson = new Gson();
 		final URL url = new URL( baseUrl + "/public_tokens/" );
 		final String[] tokens = gson.fromJson( new InputStreamReader( url.openStream() ), String[].class );
 		return tokens;
 	}
-	
+
 	/**
 	 * Fetch information for a token from an OpenConnectome volume cutout
-	 * service, e.g.
-	 * {@linkplain http://openconnecto.me/emca/<token>/info/}.
-	 * 
-	 * @param baseUrl e.g. "http://openconnecto.me/emca"
+	 * service, e.g. {@linkplain http://openconnecto.me/emca/<token>/info/}.
+	 *
+	 * @param baseUrl
+	 *            e.g. "http://openconnecto.me/emca"
 	 * @param token
-	 * @return an {@link OpenConnectomeTokenInfo} instance that carries the token information
+	 * @return an {@link OpenConnectomeTokenInfo} instance that carries the
+	 *         token information
 	 * @throws JsonSyntaxException
 	 * @throws JsonIOException
 	 * @throws IOException
@@ -99,17 +98,19 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 		final URL url = new URL( baseUrl + "/" + token + "/info/" );
 		return gson.fromJson( new InputStreamReader( url.openStream() ), OpenConnectomeTokenInfo.class );
 	}
-	
+
 	/**
-	 * Try to fetch the list of public tokens from an OpenConnectome volume cutout
-	 * service, e.g.
+	 * Try to fetch the list of public tokens from an OpenConnectome volume
+	 * cutout service, e.g.
 	 * {@linkplain http://openconnecto.me/emca/public_tokens/}.
-	 * 
-	 * @param baseUrl e.g. "http://openconnecto.me/emca"
-	 * @param maxNumTrials the maximum number of trials
-	 * 
+	 *
+	 * @param baseUrl
+	 *            e.g. "http://openconnecto.me/emca"
+	 * @param maxNumTrials
+	 *            the maximum number of trials
+	 *
 	 * @return a list of {@link String Strings} or <code>null</code> if
-	 * 		<code>maxNumTrials</code> were executed without success
+	 *         <code>maxNumTrials</code> were executed without success
 	 */
 	final static public String[] tryFetchTokenList( final String baseUrl, final int maxNumTrials )
 	{
@@ -121,28 +122,29 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 				tokens = fetchTokenList( baseUrl );
 				break;
 			}
-			catch ( final Exception e ) {}
+			catch ( final Exception e )
+			{}
 			try
 			{
 				Thread.sleep( 100 );
 			}
-			catch ( final InterruptedException e ) {}
+			catch ( final InterruptedException e )
+			{}
 		}
 		return tokens;
 	}
-	
-	
+
 	/**
 	 * Try to fetch information for a token from an OpenConnectome volume cutout
-	 * service, e.g.
-	 * {@linkplain http://openconnecto.me/emca/<token>/info/}.
-	 * 
-	 * @param baseUrl e.g. "http://openconnecto.me/emca"
+	 * service, e.g. {@linkplain http://openconnecto.me/emca/<token>/info/}.
+	 *
+	 * @param baseUrl
+	 *            e.g. "http://openconnecto.me/emca"
 	 * @param token
 	 * @param maxNumTrials
 	 * @return an {@link OpenConnectomeTokenInfo} instance that carries the
-	 * 		token information or <code>null</code> if <code>maxNumTrials</code>
-	 * 		were executed without success
+	 *         token information or <code>null</code> if
+	 *         <code>maxNumTrials</code> were executed without success
 	 */
 	final static public OpenConnectomeTokenInfo tryFetchTokenInfo( final String baseUrl, final String token, final int maxNumTrials )
 	{
@@ -154,12 +156,14 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 				info = fetchTokenInfo( baseUrl, token );
 				break;
 			}
-			catch ( final Exception e ) {}
+			catch ( final Exception e )
+			{}
 			try
 			{
 				Thread.sleep( 100 );
 			}
-			catch ( final InterruptedException e ) {}
+			catch ( final InterruptedException e )
+			{}
 		}
 		return info;
 	}
@@ -170,18 +174,18 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 		baseUrl = elem.getChildText( "baseUrl" );
 		token = elem.getChildText( "token" );
 		mode = elem.getChildText( "mode" );
-		
+
 		final OpenConnectomeTokenInfo info = tryFetchTokenInfo( baseUrl, token, 20 );
-		
+
 		numScales = info.dataset.cube_dimension.size();
-		
+
 		mipmapResolutions = info.getLevelScales( mode );
 		imageDimensions = info.getLevelDimensions( mode );
 		blockDimensions = info.getLevelCellDimensions();
 		mipmapTransforms = info.getLevelTransforms( mode );
 
-		final int[] maxLevels = new int[]{ numScales - 1 };
-		
+		final int[] maxLevels = new int[] { numScales - 1 };
+
 		cache = new VolatileGlobalCellCache< VolatileByteArray >(
 				new OpenConnectomeVolatileArrayLoader( baseUrl, token, mode, info.getMinZ() ), 1, 1, numScales, maxLevels, 10 );
 	}
@@ -189,7 +193,7 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 	@Override
 	public RandomAccessibleInterval< UnsignedByteType > getImage( final View view, final int level )
 	{
-		final CellImg< UnsignedByteType, VolatileByteArray, VolatileCell< VolatileByteArray > >  img = prepareCachedImage( view, level, LoadingStrategy.BLOCKING );
+		final CellImg< UnsignedByteType, VolatileByteArray, VolatileCell< VolatileByteArray > > img = prepareCachedImage( view, level, LoadingStrategy.BLOCKING );
 		final UnsignedByteType linkedType = new UnsignedByteType( img );
 		img.setLinkedType( linkedType );
 		return img;
@@ -198,7 +202,7 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 	@Override
 	public RandomAccessibleInterval< VolatileUnsignedByteType > getVolatileImage( final View view, final int level )
 	{
-		final CellImg< VolatileUnsignedByteType, VolatileByteArray, VolatileCell< VolatileByteArray > >  img = prepareCachedImage( view, level, LoadingStrategy.VOLATILE );
+		final CellImg< VolatileUnsignedByteType, VolatileByteArray, VolatileCell< VolatileByteArray > > img = prepareCachedImage( view, level, LoadingStrategy.VOLATILE );
 		final VolatileUnsignedByteType linkedType = new VolatileUnsignedByteType( img );
 		img.setLinkedType( linkedType );
 		return img;
@@ -217,9 +221,10 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 	}
 
 	/**
-	 * (Almost) create a {@link CellImg} backed by the cache.
-	 * The created image needs a {@link NativeImg#setLinkedType(net.imglib2.type.Type) linked type} before it can be used.
-	 * The type should be either {@link ARGBType} and {@link VolatileARGBType}.
+	 * (Almost) create a {@link CellImg} backed by the cache. The created image
+	 * needs a {@link NativeImg#setLinkedType(net.imglib2.type.Type) linked
+	 * type} before it can be used. The type should be either {@link ARGBType}
+	 * and {@link VolatileARGBType}.
 	 */
 	protected < T extends NativeType< T > > CellImg< T, VolatileByteArray, VolatileCell< VolatileByteArray > > prepareCachedImage( final View view, final int level, final LoadingStrategy loadingStrategy )
 	{
@@ -239,10 +244,8 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 	}
 
 	@Override
-	@Override
-	public AffineTransform3D[] getMipmapTransforms( int setup )
+	public AffineTransform3D[] getMipmapTransforms( final int setup )
 	{
 		return mipmapTransforms;
 	}
-
 }
