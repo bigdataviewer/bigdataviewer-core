@@ -9,7 +9,6 @@ import mpicbg.spim.data.View;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.NativeImg;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileByteArray;
-import net.imglib2.img.cell.CellImg;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.ARGBType;
@@ -21,7 +20,7 @@ import org.jdom2.Element;
 
 import bdv.AbstractViewerImgLoader;
 import bdv.img.cache.Cache;
-import bdv.img.cache.VolatileCell;
+import bdv.img.cache.CachedCellImg;
 import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.img.cache.VolatileGlobalCellCache.LoadingStrategy;
 import bdv.img.cache.VolatileImgCells;
@@ -193,7 +192,7 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 	@Override
 	public RandomAccessibleInterval< UnsignedByteType > getImage( final View view, final int level )
 	{
-		final CellImg< UnsignedByteType, VolatileByteArray, VolatileCell< VolatileByteArray > > img = prepareCachedImage( view, level, LoadingStrategy.BLOCKING );
+		final CachedCellImg< UnsignedByteType, VolatileByteArray > img = prepareCachedImage( view, level, LoadingStrategy.BLOCKING );
 		final UnsignedByteType linkedType = new UnsignedByteType( img );
 		img.setLinkedType( linkedType );
 		return img;
@@ -202,7 +201,7 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 	@Override
 	public RandomAccessibleInterval< VolatileUnsignedByteType > getVolatileImage( final View view, final int level )
 	{
-		final CellImg< VolatileUnsignedByteType, VolatileByteArray, VolatileCell< VolatileByteArray > > img = prepareCachedImage( view, level, LoadingStrategy.VOLATILE );
+		final CachedCellImg< VolatileUnsignedByteType, VolatileByteArray > img = prepareCachedImage( view, level, LoadingStrategy.VOLATILE );
 		final VolatileUnsignedByteType linkedType = new VolatileUnsignedByteType( img );
 		img.setLinkedType( linkedType );
 		return img;
@@ -221,19 +220,19 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 	}
 
 	/**
-	 * (Almost) create a {@link CellImg} backed by the cache. The created image
+	 * (Almost) create a {@link CachedCellImg} backed by the cache. The created image
 	 * needs a {@link NativeImg#setLinkedType(net.imglib2.type.Type) linked
 	 * type} before it can be used. The type should be either {@link ARGBType}
 	 * and {@link VolatileARGBType}.
 	 */
-	protected < T extends NativeType< T > > CellImg< T, VolatileByteArray, VolatileCell< VolatileByteArray > > prepareCachedImage( final View view, final int level, final LoadingStrategy loadingStrategy )
+	protected < T extends NativeType< T > > CachedCellImg< T, VolatileByteArray > prepareCachedImage( final View view, final int level, final LoadingStrategy loadingStrategy )
 	{
 		final long[] dimensions = imageDimensions[ level ];
 		final int[] cellDimensions = blockDimensions[ level ];
 
 		final CellCache< VolatileByteArray > c = cache.new VolatileCellCache( view.getTimepointIndex(), view.getSetupIndex(), level, loadingStrategy );
 		final VolatileImgCells< VolatileByteArray > cells = new VolatileImgCells< VolatileByteArray >( c, 1, dimensions, cellDimensions );
-		final CellImg< T, VolatileByteArray, VolatileCell< VolatileByteArray > > img = new CellImg< T, VolatileByteArray, VolatileCell< VolatileByteArray > >( null, cells );
+		final CachedCellImg< T, VolatileByteArray > img = new CachedCellImg< T, VolatileByteArray >( cells );
 		return img;
 	}
 
