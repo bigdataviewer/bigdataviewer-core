@@ -3,8 +3,12 @@ package bdv.tools.transformation;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.realtransform.AffineTransform3D;
+import bdv.img.cache.VolatileGlobalCellCache.LoadingStrategy;
 import bdv.viewer.Interpolation;
 import bdv.viewer.Source;
+import bdv.viewer.render.DefaultMipmapOrdering;
+import bdv.viewer.render.MipmapOrdering;
+import bdv.viewer.render.SetLoadingStrategy;
 
 /**
  * A {@link Source} that wraps another {@link Source} and allows to decorate it
@@ -18,10 +22,22 @@ import bdv.viewer.Source;
  * @param <T>
  *            the type of the original source.
  */
-public class TransformedSource< T > implements Source< T >
+public class TransformedSource< T > implements Source< T >, MipmapOrdering, SetLoadingStrategy
 {
-	// TODO: make protected. is only public for debugging.
-	public final Source< T > source;
+	protected final Source< T > source;
+
+	/**
+	 * This is either the {@link #source} itself, if it implements
+	 * {@link MipmapOrdering}, or a {@link DefaultMipmapOrdering}.
+	 */
+	protected final MipmapOrdering sourceMipmapOrdering;
+
+	/**
+	 * This is either the {@link #source} itself, if it implements
+	 * {@link SetLoadingStrategy}, or a {@link SetLoadingStrategy} doing
+	 * nothing.
+	 */
+	protected final SetLoadingStrategy sourceSetLoadingStrategy;
 
 	/**
 	 * Incremental part of the extra transformation.
@@ -54,20 +70,41 @@ public class TransformedSource< T > implements Source< T >
 	 */
 	public TransformedSource( final Source< T > source )
 	{
-		this.source = source;
-		incrementalTransform = new AffineTransform3D();
-		fixedTransform = new AffineTransform3D();
-		sourceTransform = new AffineTransform3D();
-		composed = new AffineTransform3D();
+		this( source,
+				new AffineTransform3D(),
+				new AffineTransform3D(),
+				new AffineTransform3D(),
+				new AffineTransform3D() );
 	}
 
 	public TransformedSource( final Source< T > source, final TransformedSource< ? > shareTransform )
 	{
+		this( source,
+				shareTransform.incrementalTransform,
+				shareTransform.fixedTransform,
+				shareTransform.sourceTransform,
+				shareTransform.composed );
+	}
+
+	private TransformedSource(
+			final Source< T > source,
+			final AffineTransform3D incrementalTransform,
+			final AffineTransform3D fixedTransform,
+			final AffineTransform3D sourceTransform,
+			final AffineTransform3D composed )
+	{
 		this.source = source;
-		this.incrementalTransform = shareTransform.incrementalTransform;
-		this.fixedTransform = shareTransform.fixedTransform;
-		this.sourceTransform = shareTransform.sourceTransform;
-		this.composed = shareTransform.composed;
+
+		sourceMipmapOrdering = MipmapOrdering.class.isInstance( source ) ?
+				( MipmapOrdering ) source : new DefaultMipmapOrdering( source );
+
+		sourceSetLoadingStrategy = SetLoadingStrategy.class.isInstance( source ) ?
+				( SetLoadingStrategy ) source : SetLoadingStrategy.empty;
+
+		this.incrementalTransform = incrementalTransform;
+		this.fixedTransform = fixedTransform;
+		this.sourceTransform = sourceTransform;
+		this.composed = composed;
 	}
 
 	/*
@@ -190,6 +227,20 @@ public class TransformedSource< T > implements Source< T >
 	public int getNumMipmapLevels()
 	{
 		return source.getNumMipmapLevels();
+	}
+
+	@Override
+	public void setLoadingStrategy( final int level, final LoadingStrategy strategy )
+	{
+		sourceSetLoadingStrategy.setLoadingStrategy( level, strategy );
+	}
+
+	@Override
+	public synchronized MipmapHints getMipmapHints( final AffineTransform3D screenTransform, final int timepoint, final int previousTimepoint )
+	{
+		composed.set( screenTransform );
+		composed.concatenate( sourceTransform );
+		return sourceMipmapOrdering.getMipmapHints( composed, timepoint, previousTimepoint );
 	}
 
 }

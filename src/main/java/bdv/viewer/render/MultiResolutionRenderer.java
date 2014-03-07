@@ -28,7 +28,6 @@ import net.imglib2.ui.util.GuiUtil;
 import bdv.img.cache.Cache;
 import bdv.img.cache.CachedCellImg;
 import bdv.img.cache.VolatileGlobalCellCache.LoadingStrategy;
-import bdv.tools.transformation.TransformedSource;
 import bdv.viewer.Interpolation;
 import bdv.viewer.Source;
 import bdv.viewer.render.MipmapOrdering.Level;
@@ -647,17 +646,11 @@ public class MultiResolutionRenderer
 		final Source< T > spimSource = source.getSpimSource();
 		final int t = viewerState.getCurrentTimepoint();
 
-		MipmapOrdering ordering = null;
-		if ( TransformedSource.class.isInstance( spimSource ) )
-		{
-			final Source< ? > s = ( ( TransformedSource< ? > ) spimSource ).source;
-			if ( MipmapOrdering.class.isInstance( s ) )
-				ordering = ( MipmapOrdering ) s;
-		}
-		else if ( MipmapOrdering.class.isInstance( spimSource ) )
-			ordering = ( MipmapOrdering ) spimSource;
+		final MipmapOrdering ordering = MipmapOrdering.class.isInstance( spimSource ) ?
+			( MipmapOrdering ) spimSource :new DefaultMipmapOrdering( spimSource );
 
-		final SetLoadingStrategy sls = ( SetLoadingStrategy ) ordering;
+		final SetLoadingStrategy sls = SetLoadingStrategy.class.isInstance( spimSource ) ?
+				( SetLoadingStrategy ) spimSource : SetLoadingStrategy.empty;
 
 		if ( ordering != null )
 		{
