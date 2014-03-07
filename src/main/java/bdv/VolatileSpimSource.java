@@ -10,9 +10,9 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.NumericType;
 import bdv.img.cache.CachedCellImg;
 import bdv.img.cache.VolatileGlobalCellCache.LoadingStrategy;
+import bdv.util.MipmapTransforms;
 import bdv.viewer.render.MipmapOrdering;
 import bdv.viewer.render.SetLoadingStrategy;
-import bdv.viewer.state.ViewerState;
 
 public class VolatileSpimSource< T extends NumericType< T >, V extends Volatile< T > & NumericType< V > >
 		extends AbstractSpimSource< V >
@@ -61,7 +61,7 @@ public class VolatileSpimSource< T extends NumericType< T >, V extends Volatile<
 		if ( MipmapOrdering.class.isInstance( imgLoader ) )
 			return ( ( MipmapOrdering ) imgLoader ).getMipmapHints( screenTransform, timepoint, previousTimepoint );
 
-		final int bestLevel = ViewerState.getBestMipMapLevel( screenTransform, this, timepoint );
+		final int bestLevel = MipmapTransforms.getBestMipMapLevel( screenTransform, this, timepoint );
 		final int maxLevel = numMipmapLevels - 1;
 		boolean renewHintsAfterPaintingOnce = false;
 		final ArrayList< Level > levels = new ArrayList< Level >();

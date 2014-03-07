@@ -627,7 +627,7 @@ public class MultiResolutionRenderer
 		else
 		{
 			final AffineTransform3D screenScaleTransform = screenScaleTransforms[ currentScreenScaleIndex ];
-			final int bestLevel = viewerState.getBestMipMapLevelX( screenScaleTransform, sourceIndex );
+			final int bestLevel = viewerState.getBestMipMapLevel( screenScaleTransform, sourceIndex );
 			return new SimpleVolatileProjector< T, ARGBType >(
 					getTransformedSource( viewerState, source.getSpimSource(), screenScaleTransform, bestLevel ),
 					source.getConverter(), screenImage, numRenderingThreads );
