@@ -8,6 +8,17 @@ import bdv.img.cache.VolatileGlobalCellCache.LoadingStrategy;
 
 public interface MipmapOrdering
 {
+	/**
+	 * Evaluate mipmap levels such that they can be ordered for rendering and/or
+	 * prefetching.
+	 *
+	 * @param screenTransform
+	 *            transforms screen coordinates to global coordinates.
+	 * @param timepoint
+	 *            current timepoint index
+	 * @param previousTimepoint
+	 *            previous timepoint index
+	 */
 	public MipmapHints getMipmapHints( AffineTransform3D screenTransform, int timepoint, int previousTimepoint );
 
 	public static class Level
