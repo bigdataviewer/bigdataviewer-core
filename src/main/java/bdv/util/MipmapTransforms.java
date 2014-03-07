@@ -78,6 +78,7 @@ public class MipmapTransforms
 
 	/**
 	 * Get the mipmap level that best matches the given screen scale for the given source.
+	 * Assumes that mipmap indices in the source are ordered by decreasing resolution.
 	 */
 	public static int getBestMipMapLevel( final AffineTransform3D screenTransform, final Source< ? > source, final int timepoint )
 	{
