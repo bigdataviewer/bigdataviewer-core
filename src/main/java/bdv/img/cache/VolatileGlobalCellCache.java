@@ -352,6 +352,8 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	 *        {@link IoTimeBudget} left for the current thread group.
 	 *        Otherwise enqueue for asynchronous loading, if it has not been
 	 *        enqueued in the current frame already.
+	 *   <li> {@link LoadingStrategy#DONTLOAD}:
+	 *        Do nothing.
 	 * </ul>
 	 *
 	 * @return a cell with the specified coordinates or null.
@@ -367,7 +369,6 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 			{
 				switch ( loadingStrategy )
 				{
-				case DONTLOAD:
 				case VOLATILE:
 				default:
 					enqueueEntry( entry );
@@ -385,6 +386,8 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 				case BUDGETED:
 					if ( !entry.data.getData().isValid() )
 						loadOrEnqueue( entry );
+					break;
+				case DONTLOAD:
 					break;
 				}
 				return entry.data;
@@ -406,6 +409,8 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	 *        Load the cell data immediately if there is enough
 	 *        {@link IoTimeBudget} left for the current thread group.
 	 *        Otherwise enqueue for asynchronous loading.
+	 *   <li> {@link LoadingStrategy#DONTLOAD}:
+	 *        Do nothing.
 	 * </ul>
 	 *
 	 * @return a cell with the specified coordinates.
@@ -431,7 +436,6 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 
 		switch ( loadingStrategy )
 		{
-		case DONTLOAD:
 		case VOLATILE:
 		default:
 			enqueueEntry( entry );
@@ -449,6 +453,8 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 		case BUDGETED:
 			if ( !entry.data.getData().isValid() )
 				loadOrEnqueue( entry );
+			break;
+		case DONTLOAD:
 			break;
 		}
 		return entry.data;
@@ -517,7 +523,6 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 		@Override
 		public VolatileCell< A > load( final int index, final int[] cellDims, final long[] cellMin )
 		{
-//			System.out.println( "VolatileCellCache.load(),  property=" + property );
 			return createGlobal( cellDims, cellMin, timepoint, setup, level, index, loadingStrategy );
 		}
 
