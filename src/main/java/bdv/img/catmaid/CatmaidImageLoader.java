@@ -16,8 +16,8 @@ import org.jdom2.Element;
 import bdv.AbstractViewerImgLoader;
 import bdv.img.cache.CacheHints;
 import bdv.img.cache.CachedCellImg;
+import bdv.img.cache.LoadingStrategy;
 import bdv.img.cache.VolatileGlobalCellCache;
-import bdv.img.cache.VolatileGlobalCellCache.LoadingStrategy;
 import bdv.img.cache.VolatileImgCells;
 import bdv.img.cache.VolatileImgCells.CellCache;
 

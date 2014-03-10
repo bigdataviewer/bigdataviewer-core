@@ -27,7 +27,7 @@ import net.imglib2.ui.SimpleInterruptibleProjector;
 import net.imglib2.ui.util.GuiUtil;
 import bdv.img.cache.Cache;
 import bdv.img.cache.CachedCellImg;
-import bdv.img.cache.VolatileGlobalCellCache.LoadingStrategy;
+import bdv.img.cache.LoadingStrategy;
 import bdv.viewer.Interpolation;
 import bdv.viewer.Source;
 import bdv.viewer.render.MipmapOrdering.Level;

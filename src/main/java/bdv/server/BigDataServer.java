@@ -18,9 +18,9 @@ import org.jdom2.JDOMException;
 
 import bdv.SequenceViewsLoader;
 import bdv.img.cache.CacheHints;
+import bdv.img.cache.LoadingStrategy;
 import bdv.img.cache.VolatileCell;
 import bdv.img.cache.VolatileGlobalCellCache;
-import bdv.img.cache.VolatileGlobalCellCache.LoadingStrategy;
 import bdv.img.hdf5.Hdf5ImageLoader;
 import bdv.img.remote.RemoteImageLoaderMetaData;
 

@@ -1,6 +1,5 @@
 package bdv.img.cache;
 
-import bdv.img.cache.VolatileGlobalCellCache.LoadingStrategy;
 import bdv.img.cache.VolatileGlobalCellCache.VolatileCellCache;
 
 /**

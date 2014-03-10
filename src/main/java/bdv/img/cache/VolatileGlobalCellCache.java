@@ -325,14 +325,6 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 			enqueueEntry( entry, priority );
 	}
 
-	public static enum LoadingStrategy
-	{
-		VOLATILE,
-		BLOCKING,
-		BUDGETED,
-		DONTLOAD
-	};
-
 	/**
 	 * Get a cell if it is in the cache or null. Note, that a cell being in the
 	 * cache only means that here is a data array, but not necessarily that the
