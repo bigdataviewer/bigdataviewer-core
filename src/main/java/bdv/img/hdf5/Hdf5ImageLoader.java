@@ -25,6 +25,7 @@ import net.imglib2.view.Views;
 import org.jdom2.Element;
 
 import bdv.AbstractViewerImgLoader;
+import bdv.img.cache.CacheHints;
 import bdv.img.cache.CachedCellImg;
 import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.img.cache.VolatileGlobalCellCache.LoadingStrategy;
@@ -380,7 +381,11 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 		final long[] dimensions = getImageDimension( view.getTimepointIndex(), view.getSetupIndex(), level );
 		final int[] cellDimensions = perSetupSubdivisions.get( view.getSetupIndex() )[ level ];
 
-		final CellCache< VolatileShortArray > c = cache.new VolatileCellCache( view.getTimepointIndex(), view.getSetupIndex(), level, loadingStrategy );
+		final int timepoint = view.getTimepointIndex();
+		final int setup = view.getSetupIndex();
+		final int priority = maxLevels[ setup ] - level;
+		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
+		final CellCache< VolatileShortArray > c = cache.new VolatileCellCache( timepoint, setup, level, cacheHints );
 		final VolatileImgCells< VolatileShortArray > cells = new VolatileImgCells< VolatileShortArray >( c, 1, dimensions, cellDimensions );
 		final CachedCellImg< T, VolatileShortArray > img = new CachedCellImg< T, VolatileShortArray >( cells );
 		return img;

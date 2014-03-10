@@ -277,13 +277,13 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	 * Enqueue the {@link Entry} if it hasn't been enqueued for this frame
 	 * already.
 	 */
-	protected void enqueueEntry( final Entry entry )
+	protected void enqueueEntry( final Entry entry, final int priority )
 	{
 		if ( entry.enqueueFrame < currentQueueFrame )
 		{
 			entry.enqueueFrame = currentQueueFrame;
 			final Key k = entry.key;
-			final int priority = maxLevels[ k.setup ] - k.level;
+//			final int priority = maxLevels[ k.setup ] - k.level;
 			queue.put( k, priority );
 			currentFrameEntries.add( entry );
 		}
@@ -294,12 +294,12 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	 * there is enough {@link IoTimeBudget} left. Otherwise, enqueue the
 	 * {@link Entry} if it hasn't been enqueued for this frame already.
 	 */
-	protected void loadOrEnqueue( final Entry entry )
+	protected void loadOrEnqueue( final Entry entry, final int priority )
 	{
 		final IoStatistics stats = CacheIoTiming.getThreadGroupIoStatistics();
 		final IoTimeBudget budget = stats.getIoTimeBudget();
 		final Key k = entry.key;
-		final int priority = maxLevels[ k.setup ] - k.level;
+//		final int priority = maxLevels[ k.setup ] - k.level;
 		final long timeLeft = budget.timeLeft( priority );
 		if ( timeLeft > 0 )
 		{
@@ -307,7 +307,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 			{
 				if ( entry.data.getData().isValid() )
 					return;
-				enqueueEntry( entry );
+				enqueueEntry( entry, priority );
 				final long t0 = stats.getIoNanoTime();
 				stats.start();
 				try
@@ -322,7 +322,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 			}
 		}
 		else
-			enqueueEntry( entry );
+			enqueueEntry( entry, priority );
 	}
 
 	public static enum LoadingStrategy
@@ -340,7 +340,6 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	 *
 	 * If the cell data has not been loaded, do the following, depending on the
 	 * {@link LoadingStrategy}:
-	 *
 	 * <ul>
 	 *   <li> {@link LoadingStrategy#VOLATILE}:
 	 *        Enqueue the cell for asynchronous loading by a fetcher thread, if
@@ -356,9 +355,19 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	 *        Do nothing.
 	 * </ul>
 	 *
+	 * @param timepoint
+	 *            timepoint coordinate of the cell
+	 * @param setup
+	 *            setup coordinate of the cell
+	 * @param level
+	 *            level coordinate of the cell
+	 * @param index
+	 *            index of the cell (flattened spatial coordinate of the cell)
+	 * @param cacheHints
+	 *            {@link LoadingStrategy}, queue priority, and queue order.
 	 * @return a cell with the specified coordinates or null.
 	 */
-	public VolatileCell< A > getGlobalIfCached( final int timepoint, final int setup, final int level, final int index, final LoadingStrategy loadingStrategy )
+	public VolatileCell< A > getGlobalIfCached( final int timepoint, final int setup, final int level, final int index, final CacheHints cacheHints )
 	{
 		final Key k = new Key( timepoint, setup, level, index );
 		final Reference< Entry > ref = softReferenceCache.get( k );
@@ -367,11 +376,11 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 			final Entry entry = ref.get();
 			if ( entry != null )
 			{
-				switch ( loadingStrategy )
+				switch ( cacheHints.getLoadingStrategy() )
 				{
 				case VOLATILE:
 				default:
-					enqueueEntry( entry );
+					enqueueEntry( entry, cacheHints.getQueuePriority() );
 					break;
 				case BLOCKING:
 					while ( true )
@@ -385,7 +394,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 					break;
 				case BUDGETED:
 					if ( !entry.data.getData().isValid() )
-						loadOrEnqueue( entry );
+						loadOrEnqueue( entry, cacheHints.getQueuePriority() );
 					break;
 				case DONTLOAD:
 					break;
@@ -413,9 +422,23 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	 *        Do nothing.
 	 * </ul>
 	 *
+	 * @param cellDims
+	 *            dimensions of the cell in pixels
+	 * @param cellMin
+	 *            minimum spatial coordinates of the cell in pixels
+	 * @param timepoint
+	 *            timepoint coordinate of the cell
+	 * @param setup
+	 *            setup coordinate of the cell
+	 * @param level
+	 *            level coordinate of the cell
+	 * @param index
+	 *            index of the cell (flattened spatial coordinate of the cell)
+	 * @param cacheHints
+	 *            {@link LoadingStrategy}, queue priority, and queue order.
 	 * @return a cell with the specified coordinates.
 	 */
-	public VolatileCell< A > createGlobal( final int[] cellDims, final long[] cellMin, final int timepoint, final int setup, final int level, final int index, final LoadingStrategy loadingStrategy )
+	public VolatileCell< A > createGlobal( final int[] cellDims, final long[] cellMin, final int timepoint, final int setup, final int level, final int index, final CacheHints cacheHints )
 	{
 		final Key k = new Key( timepoint, setup, level, index );
 		Entry entry = null;
@@ -434,11 +457,11 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 			}
 		}
 
-		switch ( loadingStrategy )
+		switch ( cacheHints.getLoadingStrategy() )
 		{
 		case VOLATILE:
 		default:
-			enqueueEntry( entry );
+			enqueueEntry( entry, cacheHints.getQueuePriority() );
 			break;
 		case BLOCKING:
 			while ( true )
@@ -452,7 +475,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 			break;
 		case BUDGETED:
 			if ( !entry.data.getData().isValid() )
-				loadOrEnqueue( entry );
+				loadOrEnqueue( entry, cacheHints.getQueuePriority() );
 			break;
 		case DONTLOAD:
 			break;
@@ -504,32 +527,34 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 
 		private final int level;
 
-		private LoadingStrategy loadingStrategy;
+		private CacheHints cacheHints;
 
-		public VolatileCellCache( final int timepoint, final int setup, final int level, final LoadingStrategy strategy )
+		public VolatileCellCache( final int timepoint, final int setup, final int level, final CacheHints cacheHints )
 		{
 			this.timepoint = timepoint;
 			this.setup = setup;
 			this.level = level;
-			this.loadingStrategy = strategy;
+			this.cacheHints = cacheHints;
 		}
 
 		@Override
 		public VolatileCell< A > get( final int index )
 		{
-			return getGlobalIfCached( timepoint, setup, level, index, loadingStrategy );
+			// TODO getGlobalIfCached( timepoint, setup, level, index, cacheHints );
+			return getGlobalIfCached( timepoint, setup, level, index, cacheHints );
 		}
 
 		@Override
 		public VolatileCell< A > load( final int index, final int[] cellDims, final long[] cellMin )
 		{
-			return createGlobal( cellDims, cellMin, timepoint, setup, level, index, loadingStrategy );
+			// TODO createGlobal( cellDims, cellMin, timepoint, setup, level, index, cacheHints );
+			return createGlobal( cellDims, cellMin, timepoint, setup, level, index, cacheHints );
 		}
 
 		@Override
-		public void setLoadingStrategy( final LoadingStrategy strategy )
+		public void setCacheHints( final CacheHints cacheHints )
 		{
-			this.loadingStrategy = strategy;
+			this.cacheHints = cacheHints;
 		}
 	}
 }

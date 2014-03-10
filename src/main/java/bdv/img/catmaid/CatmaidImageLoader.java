@@ -14,6 +14,7 @@ import net.imglib2.type.volatiles.VolatileARGBType;
 import org.jdom2.Element;
 
 import bdv.AbstractViewerImgLoader;
+import bdv.img.cache.CacheHints;
 import bdv.img.cache.CachedCellImg;
 import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.img.cache.VolatileGlobalCellCache.LoadingStrategy;
@@ -149,7 +150,9 @@ public class CatmaidImageLoader extends AbstractViewerImgLoader< ARGBType, Volat
 		final long[] dimensions = imageDimensions[ level ];
 		final int[] cellDimensions = blockDimensions[ level ];
 
-		final CellCache< VolatileIntArray > c = cache.new VolatileCellCache( view.getTimepointIndex(), view.getSetupIndex(), level, loadingStrategy );
+		final int priority = numScales - 1 - level;
+		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
+		final CellCache< VolatileIntArray > c = cache.new VolatileCellCache( view.getTimepointIndex(), view.getSetupIndex(), level, cacheHints );
 		final VolatileImgCells< VolatileIntArray > cells = new VolatileImgCells< VolatileIntArray >( c, 1, dimensions, cellDimensions );
 		final CachedCellImg< T, VolatileIntArray > img = new CachedCellImg< T, VolatileIntArray >( cells );
 		return img;

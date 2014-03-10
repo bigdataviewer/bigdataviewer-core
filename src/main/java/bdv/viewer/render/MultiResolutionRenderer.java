@@ -647,10 +647,10 @@ public class MultiResolutionRenderer
 		final int t = viewerState.getCurrentTimepoint();
 
 		final MipmapOrdering ordering = MipmapOrdering.class.isInstance( spimSource ) ?
-			( MipmapOrdering ) spimSource :new DefaultMipmapOrdering( spimSource );
+			( MipmapOrdering ) spimSource : new DefaultMipmapOrdering( spimSource );
 
-		final SetLoadingStrategy sls = SetLoadingStrategy.class.isInstance( spimSource ) ?
-				( SetLoadingStrategy ) spimSource : SetLoadingStrategy.empty;
+		final SetCacheHints sls = SetCacheHints.class.isInstance( spimSource ) ?
+				( SetCacheHints ) spimSource : SetCacheHints.empty;
 
 		if ( ordering != null )
 		{
@@ -665,9 +665,9 @@ public class MultiResolutionRenderer
 				Collections.sort( levels, MipmapOrdering.prefetchOrderComparator );
 				for ( final Level l : levels )
 				{
-					if ( l.getPrefetchLoadingStrategy() != LoadingStrategy.DONTLOAD )
+					if ( l.getPrefetchCacheHints() == null || l.getPrefetchCacheHints().getLoadingStrategy() != LoadingStrategy.DONTLOAD )
 					{
-						sls.setLoadingStrategy( l.getMipmapLevel(), l.getPrefetchLoadingStrategy() );
+						sls.setCacheHints( l.getMipmapLevel(), l.getPrefetchCacheHints() );
 						prefetch( viewerState, spimSource, screenScaleTransform, l.getMipmapLevel(), screenImage );
 					}
 				}
@@ -676,7 +676,7 @@ public class MultiResolutionRenderer
 			Collections.sort( levels, MipmapOrdering.renderOrderComparator );
 			for ( final Level l : levels )
 			{
-				sls.setLoadingStrategy( l.getMipmapLevel(), l.getRenderLoadingStrategy() );
+				sls.setCacheHints( l.getMipmapLevel(), l.getRenderCacheHints() );
 				renderList.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, l.getMipmapLevel() ) );
 			}
 

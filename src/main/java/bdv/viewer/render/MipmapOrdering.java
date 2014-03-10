@@ -4,7 +4,7 @@ import java.util.Comparator;
 import java.util.List;
 
 import net.imglib2.realtransform.AffineTransform3D;
-import bdv.img.cache.VolatileGlobalCellCache.LoadingStrategy;
+import bdv.img.cache.CacheHints;
 
 public interface MipmapOrdering
 {
@@ -32,24 +32,24 @@ public interface MipmapOrdering
 		// smaller value means prefetch earlier
 		private final int prefetchOrder;
 
-		// which LoadingStrategy to use for rendering
-		private final LoadingStrategy renderLoadingStrategy;
+		// which CacheHints to use for rendering
+		private final CacheHints renderCacheHints;
 
-		// which LoadingStrategy to use for prefetching
-		private final LoadingStrategy prefetchLoadingStrategy;
+		// which CacheHints to use for prefetching
+		private final CacheHints prefetchCacheHints;
 
 		public Level(
 				final int mipmapLevel,
 				final int renderOrder,
 				final int prefetchOrder,
-				final LoadingStrategy renderLoadingStrategy,
-				final LoadingStrategy prefetchLoadingStrategy )
+				final CacheHints renderCacheHints,
+				final CacheHints prefetchCacheHints )
 		{
 			this.mipmapLevel = mipmapLevel;
 			this.renderOrder = renderOrder;
 			this.prefetchOrder = prefetchOrder;
-			this.renderLoadingStrategy = renderLoadingStrategy;
-			this.prefetchLoadingStrategy = prefetchLoadingStrategy;
+			this.renderCacheHints = renderCacheHints;
+			this.prefetchCacheHints = prefetchCacheHints;
 		}
 
 		public Level( final int mipmapLevel, final int renderOrder, final int prefetchOrder )
@@ -72,14 +72,14 @@ public interface MipmapOrdering
 			return prefetchOrder;
 		}
 
-		public LoadingStrategy getRenderLoadingStrategy()
+		public CacheHints getRenderCacheHints()
 		{
-			return renderLoadingStrategy;
+			return renderCacheHints;
 		}
 
-		public LoadingStrategy getPrefetchLoadingStrategy()
+		public CacheHints getPrefetchCacheHints()
 		{
-			return prefetchLoadingStrategy;
+			return prefetchCacheHints;
 		}
 	}
 

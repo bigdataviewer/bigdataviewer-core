@@ -17,6 +17,7 @@ import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.jdom2.JDOMException;
 
 import bdv.SequenceViewsLoader;
+import bdv.img.cache.CacheHints;
 import bdv.img.cache.VolatileCell;
 import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.img.cache.VolatileGlobalCellCache.LoadingStrategy;
@@ -44,6 +45,8 @@ public class BigDataServer
 
 		private final RemoteImageLoaderMetaData metadata;
 
+		private final CacheHints cacheHints;
+
 		public CellHandler( final String xmlFilename ) throws JDOMException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
 		{
 			final SequenceViewsLoader loader = new SequenceViewsLoader( xmlFilename );
@@ -52,6 +55,7 @@ public class BigDataServer
 			cache = imgLoader.getCache();
 			metadata = new RemoteImageLoaderMetaData( imgLoader, seq.numTimepoints(), seq.numViewSetups() );
 			metadataJson = new Gson().toJson( metadata );
+			cacheHints = new CacheHints( LoadingStrategy.BLOCKING, 0, false );
 		}
 
 		@Override
@@ -67,7 +71,7 @@ public class BigDataServer
 				final int timepoint = Integer.parseInt( parts[ 2 ] );
 				final int setup = Integer.parseInt( parts[ 3 ] );
 				final int level = Integer.parseInt( parts[ 4 ] );
-				VolatileCell< VolatileShortArray > cell = cache.getGlobalIfCached( timepoint, setup, level, index, LoadingStrategy.BLOCKING );
+				VolatileCell< VolatileShortArray > cell = cache.getGlobalIfCached( timepoint, setup, level, index, cacheHints );
 				if ( cell == null )
 				{
 					final int[] cellDims = new int[] {
@@ -78,7 +82,7 @@ public class BigDataServer
 							Long.parseLong( parts[ 8 ] ),
 							Long.parseLong( parts[ 9 ] ),
 							Long.parseLong( parts[ 10 ] ) };
-					cell = cache.createGlobal( cellDims, cellMin, timepoint, setup, level, index, LoadingStrategy.BLOCKING );
+					cell = cache.createGlobal( cellDims, cellMin, timepoint, setup, level, index, cacheHints );
 				}
 
 				final short[] data = cell.getData().getCurrentStorageArray();

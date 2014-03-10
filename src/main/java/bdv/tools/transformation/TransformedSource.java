@@ -3,12 +3,12 @@ package bdv.tools.transformation;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.realtransform.AffineTransform3D;
-import bdv.img.cache.VolatileGlobalCellCache.LoadingStrategy;
+import bdv.img.cache.CacheHints;
 import bdv.viewer.Interpolation;
 import bdv.viewer.Source;
 import bdv.viewer.render.DefaultMipmapOrdering;
 import bdv.viewer.render.MipmapOrdering;
-import bdv.viewer.render.SetLoadingStrategy;
+import bdv.viewer.render.SetCacheHints;
 
 /**
  * A {@link Source} that wraps another {@link Source} and allows to decorate it
@@ -22,7 +22,7 @@ import bdv.viewer.render.SetLoadingStrategy;
  * @param <T>
  *            the type of the original source.
  */
-public class TransformedSource< T > implements Source< T >, MipmapOrdering, SetLoadingStrategy
+public class TransformedSource< T > implements Source< T >, MipmapOrdering, SetCacheHints
 {
 	protected final Source< T > source;
 
@@ -34,10 +34,10 @@ public class TransformedSource< T > implements Source< T >, MipmapOrdering, SetL
 
 	/**
 	 * This is either the {@link #source} itself, if it implements
-	 * {@link SetLoadingStrategy}, or a {@link SetLoadingStrategy} doing
+	 * {@link SetCacheHints}, or a {@link SetCacheHints} doing
 	 * nothing.
 	 */
-	protected final SetLoadingStrategy sourceSetLoadingStrategy;
+	protected final SetCacheHints sourceSetCacheHints;
 
 	/**
 	 * Incremental part of the extra transformation.
@@ -98,8 +98,8 @@ public class TransformedSource< T > implements Source< T >, MipmapOrdering, SetL
 		sourceMipmapOrdering = MipmapOrdering.class.isInstance( source ) ?
 				( MipmapOrdering ) source : new DefaultMipmapOrdering( source );
 
-		sourceSetLoadingStrategy = SetLoadingStrategy.class.isInstance( source ) ?
-				( SetLoadingStrategy ) source : SetLoadingStrategy.empty;
+		sourceSetCacheHints = SetCacheHints.class.isInstance( source ) ?
+				( SetCacheHints ) source : SetCacheHints.empty;
 
 		this.incrementalTransform = incrementalTransform;
 		this.fixedTransform = fixedTransform;
@@ -230,9 +230,9 @@ public class TransformedSource< T > implements Source< T >, MipmapOrdering, SetL
 	}
 
 	@Override
-	public void setLoadingStrategy( final int level, final LoadingStrategy strategy )
+	public void setCacheHints( final int level, final CacheHints cacheHints )
 	{
-		sourceSetLoadingStrategy.setLoadingStrategy( level, strategy );
+		sourceSetCacheHints.setCacheHints( level, cacheHints );
 	}
 
 	@Override

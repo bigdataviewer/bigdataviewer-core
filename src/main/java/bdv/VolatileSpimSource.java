@@ -6,15 +6,15 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.NumericType;
+import bdv.img.cache.CacheHints;
 import bdv.img.cache.CachedCellImg;
-import bdv.img.cache.VolatileGlobalCellCache.LoadingStrategy;
 import bdv.viewer.render.DefaultMipmapOrdering;
 import bdv.viewer.render.MipmapOrdering;
-import bdv.viewer.render.SetLoadingStrategy;
+import bdv.viewer.render.SetCacheHints;
 
 public class VolatileSpimSource< T extends NumericType< T >, V extends Volatile< T > & NumericType< V > >
 		extends AbstractSpimSource< V >
-		implements MipmapOrdering, SetLoadingStrategy
+		implements MipmapOrdering, SetCacheHints
 {
 	protected final SpimSource< T > nonVolatileSource;
 
@@ -66,16 +66,16 @@ public class VolatileSpimSource< T extends NumericType< T >, V extends Volatile<
 	}
 
 	@Override
-	public void setLoadingStrategy( final int level, final LoadingStrategy strategy )
+	public void setCacheHints( final int level, final CacheHints cacheHints )
 	{
-		if ( strategy != null )
+		if ( cacheHints != null )
 		{
 			final RandomAccessibleInterval< V > source = currentSources[ level ];
 			// The type check is currently necessary because it might be a
 			// constant RandomAccessibleInterval (for missing images, see
 			// Hdf5ImageLoader#getMissingDataImage)
 			if ( CachedCellImg.class.isInstance( source ) )
-				( ( CachedCellImg< ?, ? > ) source ).setLoadingStrategy( strategy );
+				( ( CachedCellImg< ?, ? > ) source ).setCacheHints( cacheHints );
 		}
 	}
 }

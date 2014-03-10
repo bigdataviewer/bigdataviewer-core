@@ -20,6 +20,7 @@ import org.jdom2.Element;
 
 import bdv.AbstractViewerImgLoader;
 import bdv.img.cache.Cache;
+import bdv.img.cache.CacheHints;
 import bdv.img.cache.CachedCellImg;
 import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.img.cache.VolatileGlobalCellCache.LoadingStrategy;
@@ -230,7 +231,9 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 		final long[] dimensions = imageDimensions[ level ];
 		final int[] cellDimensions = blockDimensions[ level ];
 
-		final CellCache< VolatileByteArray > c = cache.new VolatileCellCache( view.getTimepointIndex(), view.getSetupIndex(), level, loadingStrategy );
+		final int priority = numScales - 1 - level;
+		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
+		final CellCache< VolatileByteArray > c = cache.new VolatileCellCache( view.getTimepointIndex(), view.getSetupIndex(), level, cacheHints );
 		final VolatileImgCells< VolatileByteArray > cells = new VolatileImgCells< VolatileByteArray >( c, 1, dimensions, cellDimensions );
 		final CachedCellImg< T, VolatileByteArray > img = new CachedCellImg< T, VolatileByteArray >( cells );
 		return img;

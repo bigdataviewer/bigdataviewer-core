@@ -3,6 +3,7 @@ package bdv.viewer.render;
 import java.util.ArrayList;
 
 import net.imglib2.realtransform.AffineTransform3D;
+import bdv.img.cache.CacheHints;
 import bdv.img.cache.VolatileGlobalCellCache.LoadingStrategy;
 import bdv.util.MipmapTransforms;
 import bdv.viewer.Source;
@@ -30,20 +31,58 @@ public class DefaultMipmapOrdering implements MipmapOrdering
 {
 	private final Source< ? > source;
 
-	private final LoadingStrategy renderStrategy;
+	private final LoadingStrategy renderLoadingStrategy;
 
-	private final LoadingStrategy prefetchStrategy;
+	private final LoadingStrategy prefetchLoadingStrategy;
 
-	public DefaultMipmapOrdering( final Source< ? > source, final LoadingStrategy renderStrategy, final LoadingStrategy prefetchStrategy )
+	private final boolean renderEnqueuToFront;
+
+	private final boolean prefetchEnqueuToFront;
+
+	private final ArrayList< Level > precomputedLevels;
+
+	/**
+	 * @param source
+	 * @param createHints
+	 *            If true, {@link Level}s are created with {@link CacheHints}
+	 *            computed as follows. {@link LoadingStrategy} and enqueue order
+	 *            are set as specified in the remaining parameters. Priority is
+	 *            set such that the coarsest mipmap level has highest priority.
+	 *            If false, {@link Level}s are created with {@code null}
+	 *            {@link CacheHints}.
+	 * @param renderLoadingStrategy
+	 * @param renderEnqueuToFront
+	 * @param prefetchLoadingStrategy
+	 * @param prefetchEnqueuToFront
+	 */
+	public DefaultMipmapOrdering( final Source< ? > source,
+			final boolean createHints,
+			final LoadingStrategy renderLoadingStrategy,
+			final boolean renderEnqueuToFront,
+			final LoadingStrategy prefetchLoadingStrategy,
+			final boolean prefetchEnqueuToFront )
 	{
 		this.source = source;
-		this.renderStrategy = renderStrategy;
-		this.prefetchStrategy = prefetchStrategy;
+		this.renderLoadingStrategy = renderLoadingStrategy;
+		this.renderEnqueuToFront = renderEnqueuToFront;
+		this.prefetchLoadingStrategy = prefetchLoadingStrategy;
+		this.prefetchEnqueuToFront = prefetchEnqueuToFront;
+
+		precomputedLevels = new ArrayList< Level >();
+		final int numMipmapLevels = source.getNumMipmapLevels();
+		final int maxLevel = numMipmapLevels - 1;
+		for ( int level = 0; level < numMipmapLevels; ++level )
+		{
+			final int priority = maxLevel - level;
+			final CacheHints renderCacheHints = createHints ? new CacheHints( renderLoadingStrategy, priority, renderEnqueuToFront ) : null;
+			final CacheHints prefetchCacheHints = createHints ? new CacheHints( prefetchLoadingStrategy, priority, prefetchEnqueuToFront ) : null;
+			precomputedLevels.add( new Level( level, 0, 0, renderCacheHints, prefetchCacheHints ) );
+		}
 	}
 
 	public DefaultMipmapOrdering( final Source< ? > source )
 	{
-		this( source, null, null );
+		this( source, false, null, false, null, false );
 	}
 
 	@Override
@@ -64,9 +103,9 @@ public class DefaultMipmapOrdering implements MipmapOrdering
 			// assumption is, that we will either be moving back and forth
 			// between images that have all data present already or that we move
 			// to a new image with no data present at all.
-			levels.add( new Level( bestLevel, 0, 1, renderStrategy, prefetchStrategy ) );
+			levels.add( getLevel( bestLevel, 0, 1 ) );
 			if ( maxLevel != bestLevel )
-				levels.add( new Level( maxLevel, 1, 0, renderStrategy, prefetchStrategy ) );
+				levels.add( getLevel( maxLevel, 1, 0 ) );
 
 			// slight abuse of newFrameRequest: we only want this two-pass
 			// rendering to happen once then switch to normal multi-pass
@@ -75,7 +114,13 @@ public class DefaultMipmapOrdering implements MipmapOrdering
 		}
 		else
 			for ( int i = bestLevel; i < numMipmapLevels; ++i )
-				levels.add( new Level( i, i, -i, renderStrategy, prefetchStrategy ) );
+				levels.add( getLevel( i, i, -i ) );
 		return new MipmapHints( levels, renewHintsAfterPaintingOnce );
+	}
+
+	private Level getLevel( final int mipmapLevel, final int renderOrder, final int prefetchOrder )
+	{
+		final Level l = precomputedLevels.get( mipmapLevel );
+		return new Level( mipmapLevel, renderOrder, prefetchOrder, l.getRenderCacheHints(), l.getPrefetchCacheHints() );
 	}
 }

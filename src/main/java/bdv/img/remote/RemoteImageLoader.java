@@ -22,6 +22,7 @@ import net.imglib2.view.Views;
 import org.jdom2.Element;
 
 import bdv.AbstractViewerImgLoader;
+import bdv.img.cache.CacheHints;
 import bdv.img.cache.CachedCellImg;
 import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.img.cache.VolatileGlobalCellCache.LoadingStrategy;
@@ -221,7 +222,10 @@ public class RemoteImageLoader extends AbstractViewerImgLoader< UnsignedShortTyp
 		final long[] dimensions = getImageDimension( timepoint, setup, level );
 		final int[] cellDimensions = metadata.perSetupSubdivisions.get( setup )[ level ];
 
-		final CellCache< VolatileShortArray > c = cache.new VolatileCellCache( timepoint, setup, level, loadingStrategy );
+		final int priority = numMipmapLevels( setup ) - 1 - level;
+		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
+
+		final CellCache< VolatileShortArray > c = cache.new VolatileCellCache( timepoint, setup, level, cacheHints );
 		final VolatileImgCells< VolatileShortArray > cells = new VolatileImgCells< VolatileShortArray >( c, 1, dimensions, cellDimensions );
 		final CachedCellImg< T, VolatileShortArray > img = new CachedCellImg< T, VolatileShortArray >( cells );
 		return img;

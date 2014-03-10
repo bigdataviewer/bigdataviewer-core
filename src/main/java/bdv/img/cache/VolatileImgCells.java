@@ -5,7 +5,6 @@ import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 import net.imglib2.img.cell.AbstractCells;
 import net.imglib2.img.list.AbstractListImg;
 import net.imglib2.util.IntervalIndexer;
-import bdv.img.cache.VolatileGlobalCellCache.LoadingStrategy;
 
 public class VolatileImgCells< A extends VolatileAccess > extends AbstractCells< A, VolatileCell< A >, VolatileImgCells< A >.CachedCells >
 {
@@ -34,7 +33,14 @@ public class VolatileImgCells< A extends VolatileAccess > extends AbstractCells<
 		 */
 		public VolatileCell< A > load( final int index, final int[] cellDims, final long[] cellMin );
 
-		public void setLoadingStrategy( LoadingStrategy strategy );
+		/**
+		 * Set {@link CacheHints hints} on how to handle cell requests for this
+		 * cache.
+		 *
+		 * @param cacheHints
+		 *            describe handling of cell requests for this cache.
+		 */
+		public void setCacheHints( CacheHints cacheHints );
 	}
 
 	protected final CachedCells cells;
