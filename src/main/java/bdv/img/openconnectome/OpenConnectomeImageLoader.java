@@ -54,7 +54,7 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 
 	protected VolatileGlobalCellCache< VolatileByteArray > cache;
 
-	public OpenConnectomeImageLoader( final UnsignedByteType type, final VolatileUnsignedByteType volatileType )
+	public OpenConnectomeImageLoader()
 	{
 		super( new UnsignedByteType(), new VolatileUnsignedByteType() );
 	}
