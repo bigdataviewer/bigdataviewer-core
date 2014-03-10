@@ -56,16 +56,27 @@ public class BlockingFetchQueues< E >
 	}
 
 	/**
+	 * Add element to the queue of the specified priority. The element can be
+	 * added to the front or back of the queue.
+	 *
+	 * @param element
+	 *            the element to enqueue
 	 * @param priority
 	 *            lower values mean higher priority
+	 * @param enqueuToFront
+	 *            if true, enqueu element at the front (LIFO). if false, enqueue
+	 *            element at the back (FIFO)
 	 */
-	public void put( final E element, final int priority )
+	public void put( final E element, final int priority, final boolean enqueuToFront )
 	{
 		final ReentrantLock lock = this.lock;
 		lock.lock();
 		try
 		{
-			queues[ priority ].add( element );
+			if ( enqueuToFront )
+				queues[ priority ].addFirst( element );
+			else
+				queues[ priority ].add( element );
 			++count;
 			notEmpty.signal();
 		}

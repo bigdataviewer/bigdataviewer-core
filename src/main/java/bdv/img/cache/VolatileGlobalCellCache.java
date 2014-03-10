@@ -277,14 +277,13 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	 * Enqueue the {@link Entry} if it hasn't been enqueued for this frame
 	 * already.
 	 */
-	protected void enqueueEntry( final Entry entry, final int priority )
+	protected void enqueueEntry( final Entry entry, final int priority, final boolean enqueuToFront )
 	{
 		if ( entry.enqueueFrame < currentQueueFrame )
 		{
 			entry.enqueueFrame = currentQueueFrame;
 			final Key k = entry.key;
-//			final int priority = maxLevels[ k.setup ] - k.level;
-			queue.put( k, priority );
+			queue.put( k, priority, enqueuToFront );
 			currentFrameEntries.add( entry );
 		}
 	}
@@ -294,7 +293,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	 * there is enough {@link IoTimeBudget} left. Otherwise, enqueue the
 	 * {@link Entry} if it hasn't been enqueued for this frame already.
 	 */
-	protected void loadOrEnqueue( final Entry entry, final int priority )
+	protected void loadOrEnqueue( final Entry entry, final int priority, final boolean enqueuToFront )
 	{
 		final IoStatistics stats = CacheIoTiming.getThreadGroupIoStatistics();
 		final IoTimeBudget budget = stats.getIoTimeBudget();
@@ -307,7 +306,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 			{
 				if ( entry.data.getData().isValid() )
 					return;
-				enqueueEntry( entry, priority );
+				enqueueEntry( entry, priority, enqueuToFront );
 				final long t0 = stats.getIoNanoTime();
 				stats.start();
 				try
@@ -322,7 +321,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 			}
 		}
 		else
-			enqueueEntry( entry, priority );
+			enqueueEntry( entry, priority, enqueuToFront );
 	}
 
 	/**
@@ -372,7 +371,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 				{
 				case VOLATILE:
 				default:
-					enqueueEntry( entry, cacheHints.getQueuePriority() );
+					enqueueEntry( entry, cacheHints.getQueuePriority(), cacheHints.isEnqueuToFront() );
 					break;
 				case BLOCKING:
 					while ( true )
@@ -386,7 +385,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 					break;
 				case BUDGETED:
 					if ( !entry.data.getData().isValid() )
-						loadOrEnqueue( entry, cacheHints.getQueuePriority() );
+						loadOrEnqueue( entry, cacheHints.getQueuePriority(), cacheHints.isEnqueuToFront() );
 					break;
 				case DONTLOAD:
 					break;
@@ -453,7 +452,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 		{
 		case VOLATILE:
 		default:
-			enqueueEntry( entry, cacheHints.getQueuePriority() );
+			enqueueEntry( entry, cacheHints.getQueuePriority(), cacheHints.isEnqueuToFront() );
 			break;
 		case BLOCKING:
 			while ( true )
@@ -467,7 +466,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 			break;
 		case BUDGETED:
 			if ( !entry.data.getData().isValid() )
-				loadOrEnqueue( entry, cacheHints.getQueuePriority() );
+				loadOrEnqueue( entry, cacheHints.getQueuePriority(), cacheHints.isEnqueuToFront() );
 			break;
 		case DONTLOAD:
 			break;
