@@ -83,10 +83,10 @@ public class Prefetcher
 
 		// compute bounding box
 		final RealPoint[] screenCorners = new RealPoint[ 4 ];
-		screenCorners[ 0 ] = new RealPoint( 0, 0, 0 );
-		screenCorners[ 1 ] = new RealPoint( w, 0, 0 );
-		screenCorners[ 2 ] = new RealPoint( w, h, 0 );
-		screenCorners[ 3 ] = new RealPoint( 0, h, 0 );
+		screenCorners[ 0 ] = new RealPoint( 0d, 0d, 0d );
+		screenCorners[ 1 ] = new RealPoint( w, 0d, 0d );
+		screenCorners[ 2 ] = new RealPoint( w, h, 0d );
+		screenCorners[ 3 ] = new RealPoint( 0d, h, 0d );
 		final RealPoint sourceCorner = new RealPoint( 3 );
 		final double[] bbMin = new double[] { Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY, Double.POSITIVE_INFINITY };
 		final double[] bbMax = new double[] { Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY, Double.NEGATIVE_INFINITY };
