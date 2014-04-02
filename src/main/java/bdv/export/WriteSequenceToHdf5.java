@@ -10,16 +10,20 @@ import mpicbg.spim.data.SequenceDescription;
 import mpicbg.spim.data.View;
 import mpicbg.spim.data.ViewSetup;
 import mpicbg.spim.data.XmlHelpers;
-import net.imglib2.Cursor;
 import net.imglib2.FinalInterval;
-import net.imglib2.RandomAccessible;
+import net.imglib2.Interval;
+import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.Img;
+import net.imglib2.algorithm.region.localneighborhood.Neighborhood;
+import net.imglib2.algorithm.region.localneighborhood.RectangleNeighborhoodFactory;
+import net.imglib2.algorithm.region.localneighborhood.RectangleNeighborhoodUnsafe;
+import net.imglib2.algorithm.region.localneighborhood.RectangleShape.NeighborhoodsAccessible;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.ShortArray;
 import net.imglib2.img.cell.CellImg;
 import net.imglib2.iterator.LocalizingZeroMinIntervalIterator;
+import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.view.Views;
 import bdv.img.hdf5.Hdf5ImageLoader;
@@ -239,19 +243,39 @@ public class WriteSequenceToHdf5
 				{
 					progressWriter.out().println( "writing level " + level );
 					img.dimensions( dimensions );
-					final RandomAccessible< UnsignedShortType > source;
 					final int[] factor = resolutions[ level ];
-					if ( factor[ 0 ] == 1 && factor[ 1 ] == 1 && factor[ 2 ] == 1 )
-						source = img;
-					else
+					final boolean fullResolution = ( factor[ 0 ] == 1 && factor[ 1 ] == 1 && factor[ 2 ] == 1 );
+					long size = 1;
+					if ( !fullResolution )
 					{
 						for ( int d = 0; d < n; ++d )
+						{
 							dimensions[ d ] = Math.max( dimensions[ d ] / factor[ d ], 1 );
-
-						final Img< UnsignedShortType > downsampled = ArrayImgs.unsignedShorts( dimensions );
-						Downsample.downsample( Views.extendBorder( img ), downsampled, factor );
-						source = downsampled;
+							size *= factor[ d ];
+						}
 					}
+					final double scale = 1.0 / size;
+
+					final RectangleNeighborhoodFactory< UnsignedShortType > f = RectangleNeighborhoodUnsafe.< UnsignedShortType >factory();
+					final long[] spanDim = new long[ n ];
+					for ( int d = 0; d < n; ++d )
+						spanDim[ d ] = factor[ d ];
+					final Interval spanInterval = new FinalInterval( spanDim );
+
+					final NeighborhoodsAccessible< UnsignedShortType > neighborhoods = new NeighborhoodsAccessible< UnsignedShortType >( img, spanInterval, f );
+					final RandomAccess< Neighborhood< UnsignedShortType > > block = neighborhoods.randomAccess();
+
+					final long[] minRequiredInput = new long[ n ];
+					final long[] maxRequiredInput = new long[ n ];
+					img.max( maxRequiredInput );
+					for ( int d = 0; d < n; ++d )
+						maxRequiredInput[ d ] += factor[ d ] - 1;
+					final RandomAccessibleInterval< UnsignedShortType > extendedImg = Views.interval( Views.extendBorder( img ), new FinalInterval( minRequiredInput, maxRequiredInput ) );
+
+					final NeighborhoodsAccessible< UnsignedShortType > extendedNeighborhoods = new NeighborhoodsAccessible< UnsignedShortType >( extendedImg, spanInterval, f );
+					final RandomAccess< Neighborhood< UnsignedShortType > > extendedBlock = extendedNeighborhoods.randomAccess();
+
+					final RandomAccess< UnsignedShortType > in = img.randomAccess();
 
 					final int[] cellDimensions = subdivisions[ level ];
 					hdf5Writer.createGroup( Util.getGroupPath( timepointFile, setupFile, level ) );
@@ -273,24 +297,40 @@ public class WriteSequenceToHdf5
 					final long[] currentCellPos = new long[ n ];
 					final long[] currentCellMinRM = new long[ n ];
 					final long[] currentCellDimRM = new long[ n ];
+					final long[] blockMin = new long[ n ];
 					while ( i.hasNext() )
 					{
 						i.fwd();
 						i.localize( currentCellPos );
+						boolean isBorderCell = false;
 						for ( int d = 0; d < n; ++d )
 						{
 							currentCellMin[ d ] = currentCellPos[ d ] * cellDimensions[ d ];
-							currentCellDim[ d ] = ( currentCellPos[ d ] + 1 == numCells[ d ] ) ? borderSize[ d ] : cellDimensions[ d ];
+							blockMin[ d ] = currentCellMin[ d ] * factor[ d ];
+							final boolean isBorderCellInThisDim = ( currentCellPos[ d ] + 1 == numCells[ d ] );
+							currentCellDim[ d ] = isBorderCellInThisDim ? borderSize[ d ] : cellDimensions[ d ];
 							currentCellMax[ d ] = currentCellMin[ d ] + currentCellDim[ d ] - 1;
+							isBorderCell |= isBorderCellInThisDim;
 						}
-						reorder( currentCellMin, currentCellMinRM );
-						reorder( currentCellDim, currentCellDimRM );
 
 						final ArrayImg< UnsignedShortType, ? > cell = ArrayImgs.unsignedShorts( currentCellDim );
-						final Cursor< UnsignedShortType > c = Views.flatIterable( Views.interval( source, new FinalInterval( currentCellMin, currentCellMax ) ) ).cursor();
-						for ( final UnsignedShortType t : cell )
-							t.set( c.next() );
+						final RandomAccess< UnsignedShortType > out = cell.randomAccess();
+						if ( fullResolution )
+						{
+							copyBlock( out, currentCellDim, in, blockMin );
+						}
+						else
+						{
+							boolean requiresExtension = false;
+							if ( isBorderCell )
+								for ( int d = 0; d < n; ++d )
+									if ( ( currentCellMax[ d ] + 1 ) * factor[ d ] > img.dimension( d ) )
+										requiresExtension = true;
+							downsampleBlock( out, currentCellDim, requiresExtension ? extendedBlock : block, blockMin, factor, scale );
+						}
 
+						reorder( currentCellMin, currentCellMinRM );
+						reorder( currentCellDim, currentCellDimRM );
 						final MDShortArray array = new MDShortArray( ( ( ShortArray ) cell.update( null ) ).getCurrentStorageArray(), currentCellDimRM );
 						hdf5Writer.writeShortMDArrayBlockWithOffset( path, array, currentCellMinRM );
 					}
@@ -299,6 +339,50 @@ public class WriteSequenceToHdf5
 			}
 		}
 		hdf5Writer.close();
+	}
+
+	private static < T extends RealType< T > > void copyBlock( final RandomAccess< T > out, final long[] outDim, final RandomAccess< T > in, final long[] blockMin )
+	{
+		out.setPosition( new int[] { 0, 0, 0 } );
+		in.setPosition( blockMin );
+		for ( out.setPosition( 0, 2 ); out.getLongPosition( 2 ) < outDim[ 2 ]; out.fwd( 2 ) )
+		{
+			for ( out.setPosition( 0, 1 ); out.getLongPosition( 1 ) < outDim[ 1 ]; out.fwd( 1 ) )
+			{
+				for ( out.setPosition( 0, 0 ); out.getLongPosition( 0 ) < outDim[ 0 ]; out.fwd( 0 ), in.fwd( 0 ) )
+				{
+					out.get().set( in.get() );
+				}
+				in.setPosition( blockMin[ 0 ], 0 );
+				in.fwd( 1 );
+			}
+			in.setPosition( blockMin[ 1 ], 1 );
+			in.fwd( 2 );
+		}
+	}
+
+	private static < T extends RealType< T > > void downsampleBlock( final RandomAccess< T > out, final long[] outDim, final RandomAccess< Neighborhood< T > > block, final long[] blockMin, final int[] blockSize, final double scale )
+	{
+		out.setPosition( new int[] {0,0,0} );
+		block.setPosition( blockMin );
+		for ( out.setPosition( 0, 2 ); out.getLongPosition( 2 ) < outDim[ 2 ]; out.fwd( 2 ) )
+		{
+			for ( out.setPosition( 0, 1 ); out.getLongPosition( 1 ) < outDim[ 1 ]; out.fwd( 1 ) )
+			{
+				for ( out.setPosition( 0, 0 ); out.getLongPosition( 0 ) < outDim[ 0 ]; out.fwd( 0 ) )
+				{
+					double sum = 0;
+					for ( final T in : block.get() )
+						sum += in.getRealDouble();
+					out.get().setReal( sum * scale );
+					block.move( blockSize[ 0 ], 0 );
+				}
+				block.setPosition( blockMin[ 0 ], 0 );
+				block.move( blockSize[ 1 ], 1 );
+			}
+			block.setPosition( blockMin[ 1 ], 1 );
+			block.move( blockSize[ 2 ], 2 );
+		}
 	}
 
 	/**
