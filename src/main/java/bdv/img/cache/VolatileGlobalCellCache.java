@@ -510,6 +510,18 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 		stats.getIoTimeBudget().reset( partialBudget );
 	}
 
+	/**
+	 * Remove all references to loaded data as well as all enqueued requests
+	 * from the cache.
+	 */
+	public void clearCache()
+	{
+		softReferenceCache.clear();
+		prepareNextFrame();
+		// TODO: add a full clear to BlockingFetchQueues.
+		// (BlockingFetchQueues.clear() moves stuff to the prefetchQueue.)
+	}
+
 	public class VolatileCellCache implements CellCache< A >
 	{
 		private final int timepoint;

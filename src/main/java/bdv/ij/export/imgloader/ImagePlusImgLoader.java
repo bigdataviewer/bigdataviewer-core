@@ -10,24 +10,28 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.algorithm.stats.ComputeMinMax;
 import net.imglib2.converter.Converters;
 import net.imglib2.converter.RealUnsignedShortConverter;
-import net.imglib2.img.display.imagej.ImageJFunctions;
+import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.view.Views;
 
 import org.jdom2.Element;
+
+import bdv.img.virtualstack.VirtualStackImageLoader;
 
 /**
  * This {@link ImgLoader} implementation returns a wrapped, converted
  * {@link ImagePlus}. It is used for exporting {@link ImagePlus} to hdf5. Only
- * the {@link #getImage(View)} method is implemented because this
- * is the only method required for exporting to hdf5.
+ * the {@link #getImage(View)} method is implemented because this is the only
+ * method required for exporting to hdf5.
+ *
+ * Internally it relies on {@link VirtualStackImageLoader} to be able to handle
+ * large virtual stacks.
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
-public class ImagePlusImgLoader< T extends RealType< T > > implements ImgLoader< UnsignedShortType >
+public class ImagePlusImgLoader< T extends RealType< T > & NativeType< T > > implements ImgLoader< UnsignedShortType >
 {
 	public static enum MinMaxOption
 	{
@@ -40,51 +44,56 @@ public class ImagePlusImgLoader< T extends RealType< T > > implements ImgLoader<
 	{
 		if( imp.getType() != ImagePlus.GRAY8 )
 			throw new RuntimeException( "expected ImagePlus type GRAY8" );
-		return new ImagePlusImgLoader< UnsignedByteType >( imp, ImageJFunctions.wrapByte( imp ), new UnsignedByteType(), minMaxOption, min, max );
+		return new ImagePlusImgLoader< UnsignedByteType >( imp, VirtualStackImageLoader.createUnsignedByteInstance( imp ), minMaxOption, min, max );
 	}
 
 	public static ImagePlusImgLoader< UnsignedShortType > createGray16( final ImagePlus imp, final MinMaxOption minMaxOption, final double min, final double max )
 	{
 		if( imp.getType() != ImagePlus.GRAY16 )
 			throw new RuntimeException( "expected ImagePlus type GRAY16" );
-		return new ImagePlusImgLoader< UnsignedShortType >( imp, ImageJFunctions.wrapShort( imp ), new UnsignedShortType(), minMaxOption, min, max );
+		return new ImagePlusImgLoader< UnsignedShortType >( imp, VirtualStackImageLoader.createUnsignedShortInstance( imp ), minMaxOption, min, max );
 	}
 
 	public static ImagePlusImgLoader< FloatType > createGray32( final ImagePlus imp, final MinMaxOption minMaxOption, final double min, final double max )
 	{
 		if( imp.getType() != ImagePlus.GRAY32 )
 			throw new RuntimeException( "expected ImagePlus type GRAY32" );
-		return new ImagePlusImgLoader< FloatType >( imp, ImageJFunctions.wrapFloat( imp ), new FloatType(), minMaxOption, min, max );
+		return new ImagePlusImgLoader< FloatType >( imp, VirtualStackImageLoader.createFloatInstance( imp ), minMaxOption, min, max );
 	}
 
 	protected final ImagePlus imp;
 
-	protected final RandomAccessibleInterval< T > wrappedImp;
+	protected final VirtualStackImageLoader< T, ?, ? > loader;
 
-	protected final double impMin;
+	protected double impMin;
 
-	protected final double impMax;
+	protected double impMax;
 
-	protected final boolean isMultiChannel;
-
-	protected final int channelDim;
-
-	protected final boolean isMultiFrame;
-
-	protected final int frameDim;
-
-	protected ImagePlusImgLoader( final ImagePlus imp, final RandomAccessibleInterval< T > wrappedImp, final T type, final MinMaxOption minMaxOption, final double min, final double max )
+	protected ImagePlusImgLoader( final ImagePlus imp,
+			final VirtualStackImageLoader< T, ?, ? > loader,
+			final MinMaxOption minMaxOption,
+			final double min,
+			final double max )
 	{
 		this.imp = imp;
-		this.wrappedImp = wrappedImp;
+		this.loader = loader;
 
 		if ( minMaxOption == MinMaxOption.COMPUTE )
 		{
-			final T minT = type.createVariable();
-			final T maxT = type.createVariable();
-			ComputeMinMax.computeMinMax( wrappedImp, minT, maxT );
-			impMin = minT.getRealDouble();
-			impMax = maxT.getRealDouble();
+			impMin = Double.POSITIVE_INFINITY;
+			impMax = Double.NEGATIVE_INFINITY;
+			final T minT = loader.getImageType().createVariable();
+			final T maxT = loader.getImageType().createVariable();
+			final int numSetups = imp.getNChannels();
+			final int numTimepoints = imp.getNFrames();
+			for ( int t = 0; t < numTimepoints; t++ )
+				for ( int s = 0; s < numSetups; ++s )
+				{
+					ComputeMinMax.computeMinMax( loader.getImage( new View( null, t, s, null ) ), minT, maxT );
+					impMin = Math.min( minT.getRealDouble(), impMin );
+					impMax = Math.max( maxT.getRealDouble(), impMax );
+					loader.getCache().clearCache();
+				}
 			System.out.println( "COMPUTE" );
 			System.out.println( impMin + "  " + impMax );
 		}
@@ -101,21 +110,6 @@ public class ImagePlusImgLoader< T extends RealType< T > > implements ImgLoader<
 			impMax = max;
 			System.out.println( "SET" );
 			System.out.println( impMin + "  " + impMax );
-		}
-
-		if ( imp.getNDimensions() <= 3 )
-		{
-			isMultiChannel = false;
-			channelDim = 0;
-			isMultiFrame = false;
-			frameDim = 0;
-		}
-		else
-		{
-			isMultiChannel = imp.getNChannels() > 1;
-			channelDim = isMultiChannel ? 2 : 0;
-			isMultiFrame = imp.getNFrames() > 1;
-			frameDim = isMultiFrame ? ( isMultiChannel ? 4 : 3 ) : 0;
 		}
 	}
 
@@ -149,17 +143,8 @@ public class ImagePlusImgLoader< T extends RealType< T > > implements ImgLoader<
 	@Override
 	public RandomAccessibleInterval< UnsignedShortType > getImage( final View view )
 	{
-		RandomAccessibleInterval< T > img = wrappedImp;
-		if ( isMultiFrame )
-		{
-			final int frame = view.getTimepointIndex();
-			img = Views.hyperSlice( img, frameDim, frame );
-		}
-		if ( isMultiChannel )
-		{
-			final int channel = view.getSetupIndex();
-			img = Views.hyperSlice( img, channelDim, channel );
-		}
+		loader.getCache().clearCache();
+		final RandomAccessibleInterval< T > img = loader.getImage( view );
 		return Converters.convert( img, new RealUnsignedShortConverter< T >( impMin, impMax ), new UnsignedShortType() );
 	}
 }
