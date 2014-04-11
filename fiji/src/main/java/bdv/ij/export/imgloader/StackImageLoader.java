@@ -9,9 +9,14 @@ import java.util.List;
 
 import mpicbg.spim.data.ImgLoader;
 import mpicbg.spim.data.View;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.converter.Converter;
+import net.imglib2.converter.Converters;
+import net.imglib2.img.ImgView;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.meta.ImgPlus;
+import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
 
@@ -43,7 +48,7 @@ public class StackImageLoader implements ImgLoader< UnsignedShortType >
 
 	private final int numViewSetups;
 
-	private final boolean useImageJOpener;
+	private boolean useImageJOpener;
 
 	public StackImageLoader( final List< String > filenames, final int numViewSetups, final boolean useImageJOpener )
 	{
@@ -91,18 +96,37 @@ public class StackImageLoader implements ImgLoader< UnsignedShortType >
 		final String fn = filenames.get( index );
 		if ( useImageJOpener )
 		{
-			return new ImgPlus< UnsignedShortType >( ImageJFunctions.wrapShort( new ImagePlus( fn ) ) );
+			final ImagePlus imp = new ImagePlus( fn );
+			if ( imp.getType() == ImagePlus.GRAY16 )
+				return new ImgPlus< UnsignedShortType >( ImageJFunctions.wrapShort( imp ) );
+			else if ( imp.getType() == ImagePlus.GRAY8 )
+			{
+				System.out.println( "wrapping" );
+				return new ImgPlus< UnsignedShortType >(
+					new ImgView< UnsignedShortType >(
+							Converters.convert(
+									( RandomAccessibleInterval<UnsignedByteType> ) ImageJFunctions.wrapByte( imp ),
+									new Converter< UnsignedByteType, UnsignedShortType >() {
+										@Override
+										public void convert( final UnsignedByteType input, final UnsignedShortType output )
+										{
+											output.set( input.get() );
+										}
+									},
+									new UnsignedShortType()
+							), null ) );
+			}
+			else
+				useImageJOpener = false;
 		}
-		else
+
+		try
 		{
-			try
-			{
-				return opener.openImg( fn, factory, type );
-			}
-			catch ( final ImgIOException e )
-			{
-				throw new RuntimeException( e );
-			}
+			return opener.openImg( fn, factory, type );
+		}
+		catch ( final ImgIOException e )
+		{
+			throw new RuntimeException( e );
 		}
 	}
 }
