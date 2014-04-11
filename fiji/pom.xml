@@ -6,33 +6,50 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>org.scijava</groupId>
-		<artifactId>pom-scijava</artifactId>
-		<version>1.155</version>
+		<groupId>sc.fiji</groupId>
+		<artifactId>bigdataviewer</artifactId>
+		<version>1.0.0-SNAPSHOT</version>
 	</parent>
 
-	<groupId>sc.fiji</groupId>
-	<artifactId>bigdataviewer</artifactId>
-	<version>1.0.0-SNAPSHOT</version>
-	<packaging>pom</packaging>
+	<artifactId>bigdataviewer_fiji</artifactId>
 
-	<name>BigDataViewer Projects</name>
-	<description>Umbrella project for BigDataViewer projects.</description>
+	<name>BigDataViewer Fiji</name>
+	<description>Fiji plugins for starting BigDataViewer and exporting data.</description>
 
-	<properties>
-		<imglib2.version>2.0.0-SNAPSHOT</imglib2.version>
-	</properties>
-
-	<modules>
-		<module>core</module>
-		<module>fiji</module>
-		<module>server</module>
-	</modules>
-
-	<organization>
-		<name>Fiji Is Just ImageJ</name>
-		<url>http://fiji.sc/</url>
-	</organization>
+	<dependencies>
+		<dependency>
+			<groupId>sc.fiji</groupId>
+			<artifactId>bigdataviewer-core</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>net.imglib2</groupId>
+			<artifactId>imglib2-meta</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>net.imglib2</groupId>
+			<artifactId>imglib2-ij</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>io.scif</groupId>
+			<artifactId>scifio</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>sc.fiji</groupId>
+			<artifactId>SPIM_Opener</artifactId>
+			<version>2.0.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>sc.fiji</groupId>
+			<artifactId>SPIM_Registration</artifactId>
+			<version>2.0.0-SNAPSHOT</version>
+		</dependency>
+		<dependency>
+			<groupId>java3d</groupId>
+			<artifactId>vecmath</artifactId>
+			<version>1.3.1</version>
+		</dependency>
+	</dependencies>
 
 	<developers>
 		<developer>
