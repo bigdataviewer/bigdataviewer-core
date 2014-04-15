@@ -18,7 +18,6 @@ import net.imglib2.converter.Converter;
 import net.imglib2.converter.TypeIdentity;
 import net.imglib2.display.RealARGBColorConverter;
 import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.type.numeric.NumericType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.volatiles.VolatileARGBType;
 
@@ -146,12 +145,12 @@ public class BigDataViewer
 	}
 
 	@SuppressWarnings( { "unchecked", "rawtypes" } )
-	private static < T extends NumericType< T >, V extends Volatile< T > & NumericType< V > > void initSetups(
+	private static void initSetups(
 			final SequenceViewsLoader loader,
 			final ArrayList< ConverterSetup > converterSetups,
 			final ArrayList< SourceAndConverter< ? > > sources )
 	{
-		final T type = ( ( ViewerImgLoader< T, V > ) loader.getSequenceDescription().imgLoader ).getImageType();
+		final Object type = ( ( ViewerImgLoader< ?, ? > ) loader.getSequenceDescription().imgLoader ).getImageType();
 		if ( RealType.class.isInstance( type ) )
 			initSetupsRealType( loader, ( RealType ) type, converterSetups, sources );
 		else if ( ARGBType.class.isInstance( type ) )
