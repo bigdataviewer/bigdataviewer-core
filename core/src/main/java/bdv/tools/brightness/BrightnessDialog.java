@@ -49,7 +49,7 @@ public class BrightnessDialog extends JDialog
 {
 	public BrightnessDialog( final Frame owner, final SetupAssignments setupAssignments )
 	{
-		super( owner, "display range", false );
+		super( owner, "brightness and color", false );
 
 		final Container content = getContentPane();
 
