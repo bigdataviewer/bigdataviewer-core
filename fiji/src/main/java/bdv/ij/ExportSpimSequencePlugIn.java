@@ -92,7 +92,7 @@ public class ExportSpimSequencePlugIn implements PlugIn
 
 	protected Parameters getParameters()
 	{
-		final GenericDialog gd0 = new GenericDialogPlus( "SpimViewer Import" );
+		final GenericDialog gd0 = new GenericDialogPlus( "Export for BigDataViewer" );
 		gd0.addChoice( "Select_channel type", fusionType, fusionType[ Multi_View_Fusion.defaultFusionType ] );
 		gd0.showDialog();
 		if ( gd0.wasCanceled() )
@@ -101,7 +101,7 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		Multi_View_Fusion.defaultFusionType = channelChoice;
 		final boolean multichannel = channelChoice == 1;
 
-		final GenericDialogPlus gd = new GenericDialogPlus( "SpimViewer Import" );
+		final GenericDialogPlus gd = new GenericDialogPlus( "Export for BigDataViewer" );
 
 		gd.addDirectoryOrFileField( "SPIM_data_directory", Bead_Registration.spimDataDirectory );
 		final TextField tfSpimDataDirectory = (TextField) gd.getStringFields().lastElement();
@@ -360,7 +360,7 @@ public class ExportSpimSequencePlugIn implements PlugIn
 			for ( final int i : timepoints.get( c ) )
 				IOFunctions.println( c + ": " + i );
 
-		final GenericDialogPlus gd2 = new GenericDialogPlus( "SpimViewer Import" );
+		final GenericDialogPlus gd2 = new GenericDialogPlus( "Export for BigDataViewer" );
 
 		// build up choices
 		final String[] choices = new String[ numChoices ];

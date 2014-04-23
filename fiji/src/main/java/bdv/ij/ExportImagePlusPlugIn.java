@@ -42,8 +42,6 @@ public class ExportImagePlusPlugIn implements PlugIn
 	@Override
 	public void run( final String arg )
 	{
-		IJ.log( "starting export..." );
-
 		// get the current image
 		final ImagePlus imp = WindowManager.getCurrentImage();
 
@@ -77,6 +75,9 @@ public class ExportImagePlusPlugIn implements PlugIn
 		final Parameters params = getParameters( imp.getDisplayRangeMin(), imp.getDisplayRangeMax() );
 		if ( params == null )
 			return;
+
+		final ProgressWriter progressWriter = new ProgressWriterIJ();
+		progressWriter.out().println( "starting export..." );
 
 		// create ImgLoader wrapping the image
 		final ImgLoader< UnsignedShortType > imgLoader;
@@ -112,7 +113,6 @@ public class ExportImagePlusPlugIn implements PlugIn
 		final File hdf5File = params.hdf5File;
 		final int[][] resolutions = params.resolutions;
 		final int[][] subdivisions = params.subdivisions;
-		final ProgressWriter progressWriter = new ProgressWriterIJ();
 		final ArrayList< ViewSetup > setups = new ArrayList< ViewSetup >( numSetups );
 		for ( int s = 0; s < numSetups; ++s )
 			setups.add( new ViewSetup( s, 0, 0, s, w, h, d, pw, ph, pd ) );
@@ -192,7 +192,7 @@ public class ExportImagePlusPlugIn implements PlugIn
 
 		while ( true )
 		{
-			final GenericDialogPlus gd = new GenericDialogPlus( "SpimViewer Import" );
+			final GenericDialogPlus gd = new GenericDialogPlus( "Export for BigDataViewer" );
 
 			gd.addStringField( "Subsampling factors", lastSubsampling, 25 );
 			gd.addStringField( "Hdf5 chunk sizes", lastChunkSizes, 25 );
