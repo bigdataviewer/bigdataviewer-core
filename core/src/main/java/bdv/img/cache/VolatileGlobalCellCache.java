@@ -21,6 +21,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 
 	private final int maxNumLevels;
 
+	// TODO: remove (unused)
 	private final int[] maxLevels;
 
 	class Key
