@@ -31,7 +31,7 @@ public class FixAbsolutePathsInHdf5Partitions
 	{
 		final SequenceViewsLoader loader = new SequenceViewsLoader( xmlFilename );
 		final SequenceDescription seq = loader.getSequenceDescription();
-		final Hdf5ImageLoader il = ( Hdf5ImageLoader) seq.imgLoader;
+		final Hdf5ImageLoader il = ( Hdf5ImageLoader) seq.getImgLoader();
 		final String outfn = il.getHdf5File().getCanonicalPath() + "FIXED";
 		final ArrayList< int[][] > perSetupResolutions = new ArrayList< int[][] >();
 		final ArrayList< int[][] > perSetupSubdivisions = new ArrayList< int[][] >();

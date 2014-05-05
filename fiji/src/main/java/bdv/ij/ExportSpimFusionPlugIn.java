@@ -102,15 +102,15 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		final File baseDirectory = existingDatasetXmlFile.getParentFile();
 		final SequenceDescription existingSequence = new SequenceDescription( root, baseDirectory != null ? baseDirectory : new File("."), true );
 		final ViewRegistrations existingRegistrations = new ViewRegistrations( root.getChild( "ViewRegistrations" ) );
-		final Hdf5ImageLoader hdf5Loader = ( Hdf5ImageLoader ) existingSequence.imgLoader;
+		final Hdf5ImageLoader hdf5Loader = ( Hdf5ImageLoader ) existingSequence.getImgLoader();
 
 		for ( int setup = 0; setup < existingSequence.numViewSetups(); ++setup )
-			aggregator.add( existingSequence.setups.get( setup ), existingSequence, existingRegistrations, Util.castToInts( hdf5Loader.getMipmapResolutions( setup ) ), hdf5Loader.getSubdivisions( setup ) );
+			aggregator.add( existingSequence.getViewSetups().get( setup ), existingSequence, existingRegistrations, Util.castToInts( hdf5Loader.getMipmapResolutions( setup ) ), hdf5Loader.getSubdivisions( setup ) );
 
 		// now add a new setup from the fusion result
 		final SequenceDescription fusionSeq = fusionResult.getSequenceDescription();
 		final ViewRegistrations fusionReg = fusionResult.getViewRegistrations();
-		final ViewSetup fusionSetup = fusionSeq.setups.get( 0 );
+		final ViewSetup fusionSetup = fusionSeq.getViewSetups().get( 0 );
 		final int fusionSetupWrapperId = aggregator.add( fusionSetup, fusionSeq, fusionReg, params.resolutions, params.subdivisions );
 
 		// setup the partitions
@@ -149,7 +149,7 @@ public class ExportSpimFusionPlugIn implements PlugIn
 
 		// re-write xml file
 		final Hdf5ImageLoader loader = new Hdf5ImageLoader( newHdf5PartitionLinkFile, partitions, false );
-		final SequenceDescription sequenceDescription = new SequenceDescription( aggregateSeq.setups, aggregateSeq.timepoints, baseDirectory, loader );
+		final SequenceDescription sequenceDescription = new SequenceDescription( aggregateSeq.getViewSetups(), aggregateSeq.getTimePoints(), baseDirectory, loader );
 		WriteSequenceToXml.writeSequenceToXml( sequenceDescription, aggregateRegs, params.seqFile.getAbsolutePath() );
 	}
 
@@ -182,7 +182,7 @@ public class ExportSpimFusionPlugIn implements PlugIn
 
 		// re-write xml file
 		final Hdf5ImageLoader loader = new Hdf5ImageLoader( params.hdf5File, null, false );
-		final SequenceDescription sequenceDescription = new SequenceDescription( aggregateSeq.setups, aggregateSeq.timepoints, baseDirectory, loader );
+		final SequenceDescription sequenceDescription = new SequenceDescription( aggregateSeq.getViewSetups(), aggregateSeq.getTimePoints(), baseDirectory, loader );
 		WriteSequenceToXml.writeSequenceToXml( sequenceDescription, aggregateRegs, params.seqFile.getAbsolutePath() );
 	}
 

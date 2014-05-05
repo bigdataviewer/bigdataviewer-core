@@ -23,10 +23,10 @@ public class FusionResult
 	public static FusionResult create(  final SpimRegistrationSequence spimseq, final String filepath, final String filepattern, final int numSlices, final double sliceValueMin, final double sliceValueMax, final List< AffineTransform3D > fusionTransforms )
 	{
 		final List< Integer > channels = new ArrayList< Integer >();
-		for ( final ViewSetup setup : spimseq.getSequenceDescription().setups )
+		for ( final ViewSetup setup : spimseq.getSequenceDescription().getViewSetups() )
 			if ( ! channels.contains( setup.getChannel() ) )
 				channels.add( setup.getChannel() );
-		final List< Integer > timepoints = spimseq.getSequenceDescription().timepoints;
+		final List< Integer > timepoints = spimseq.getSequenceDescription().getTimePoints();
 		final int referenceTimePoint = spimseq.getViewRegistrations().referenceTimePoint;
 		return new FusionResult( filepath, filepattern, channels, timepoints, referenceTimePoint, numSlices, sliceValueMin, sliceValueMax, fusionTransforms );
 	}

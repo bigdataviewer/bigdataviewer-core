@@ -15,7 +15,7 @@ public class SpimSource< T extends NumericType< T > > extends AbstractSpimSource
 	{
 		super( loader, setup, name );
 		final SequenceDescription seq = loader.getSequenceDescription();
-		imgLoader = ( ViewerImgLoader< T, ? > ) seq.imgLoader;
+		imgLoader = ( ViewerImgLoader< T, ? > ) seq.getImgLoader();
 		loadTimepoint( 0 );
 	}
 

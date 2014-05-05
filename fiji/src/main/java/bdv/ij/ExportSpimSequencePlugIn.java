@@ -53,7 +53,7 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		WriteSequenceToHdf5.writeHdf5File( desc, params.perSetupResolutions, params.perSetupSubdivisions, params.hdf5File, new SubTaskProgressWriter( progress, 0, 0.95 ) );
 
 		final Hdf5ImageLoader loader = new Hdf5ImageLoader( params.hdf5File, null, false );
-		final SequenceDescription sequenceDescription = new SequenceDescription( desc.setups, desc.timepoints, params.seqFile.getParentFile(), loader );
+		final SequenceDescription sequenceDescription = new SequenceDescription( desc.getViewSetups(), desc.getTimePoints(), params.seqFile.getParentFile(), loader );
 		final ViewRegistrations viewRegistrations = sequence.getViewRegistrations();
 		try
 		{

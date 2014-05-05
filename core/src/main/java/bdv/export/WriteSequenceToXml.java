@@ -36,10 +36,10 @@ public class WriteSequenceToXml
 		elem.addContent( XmlHelpers.pathElement( "BasePath", sequence.getBasePath(), xmlFileDirectory ) );
 
 		// add ImageLoader
-		elem.addContent( sequence.imgLoader.toXml( sequence.getBasePath() ) );
+		elem.addContent( sequence.getImgLoader().toXml( sequence.getBasePath() ) );
 
 		// add ViewSetups
-		for ( final ViewSetup setup : sequence.setups )
+		for ( final ViewSetup setup : sequence.getViewSetups() )
 			elem.addContent( setup.toXml() );
 
 		elem.addContent( timepointsToXml( sequence ) );
@@ -70,7 +70,7 @@ public class WriteSequenceToXml
 	 */
 	protected static Element timepointsToXml( final SequenceDescription sequence )
 	{
-		final ArrayList< Integer > timepoints = sequence.timepoints;
+		final ArrayList< Integer > timepoints = sequence.getTimePoints();
 		if ( timepoints.size() == 0 )
 			throw new IllegalArgumentException( "sequence must have at least one timepoint" );
 

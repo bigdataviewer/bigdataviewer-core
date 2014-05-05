@@ -50,7 +50,7 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 		this.sequenceViews = loader;
 		final SequenceDescription seq = loader.getSequenceDescription();
 		numTimepoints = seq.numTimepoints();
-		numMipmapLevels =  ( ( ViewerImgLoader< ?, ? > ) seq.imgLoader ).numMipmapLevels( setup );
+		numMipmapLevels =  ( ( ViewerImgLoader< ?, ? > ) seq.getImgLoader() ).numMipmapLevels( setup );
 		currentSources = new RandomAccessibleInterval[ numMipmapLevels ];
 		currentInterpolatedSources = new RealRandomAccessible[ numMipmapLevels ][ numInterpolationMethods ];
 		currentSourceTransforms = new AffineTransform3D[ numMipmapLevels ];

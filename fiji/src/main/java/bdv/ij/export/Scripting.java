@@ -229,7 +229,7 @@ public class Scripting
 		{
 			WriteSequenceToHdf5.writeHdf5PartitionLinkFile( seq, perSetupResolutions, perSetupSubdivisions, partitions, hdf5File );
 			final Hdf5ImageLoader loader = new Hdf5ImageLoader( hdf5File, partitions, false );
-			final SequenceDescription sequenceDescription = new SequenceDescription( seq.setups, seq.timepoints, seqFile.getParentFile(), loader );
+			final SequenceDescription sequenceDescription = new SequenceDescription( seq.getViewSetups(), seq.getTimePoints(), seqFile.getParentFile(), loader );
 			WriteSequenceToXml.writeSequenceToXml( sequenceDescription, regs, seqFile.getAbsolutePath() );
 		}
 	}

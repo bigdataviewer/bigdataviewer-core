@@ -136,7 +136,7 @@ public class ImportPlugIn implements PlugIn
 				timepoint = Math.max( Math.min( timepoint, numTimepoints - 1 ), 0 );
 				setup = Math.max( Math.min( setup, numSetups - 1 ), 0 );
 				@SuppressWarnings( "unchecked" )
-				final ImgLoader< UnsignedShortType > il = ( ImgLoader< UnsignedShortType > ) seq.imgLoader;
+				final ImgLoader< UnsignedShortType > il = ( ImgLoader< UnsignedShortType > ) seq.getImgLoader();
 				final RandomAccessibleInterval< UnsignedShortType > img = il.getImage( new View( seq, timepoint, setup, null ) );
 				final ImagePlus imp = net.imglib2.img.display.imagej.ImageJFunctions.wrap( img, "" ).duplicate();
 				imp.setTitle( new File( xmlFile ).getName() + " " + timepoint + " " + setup );

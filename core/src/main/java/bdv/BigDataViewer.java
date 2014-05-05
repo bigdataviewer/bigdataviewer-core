@@ -96,7 +96,7 @@ public class BigDataViewer
 			final RealARGBColorConverter< T > converter = new RealARGBColorConverter< T >( typeMin, typeMax );
 			converter.setColor( new ARGBType( 0xffffffff ) );
 
-			final VolatileSpimSource< T, V > vs = new VolatileSpimSource< T, V >( loader, setup, "angle " + seq.setups.get( setup ).getAngle() );
+			final VolatileSpimSource< T, V > vs = new VolatileSpimSource< T, V >( loader, setup, "angle " + seq.getViewSetups().get( setup ).getAngle() );
 			final SpimSource< T > s = vs.nonVolatile();
 
 			// Decorate each source with an extra transformation, that can be edited manually in this viewer.
@@ -130,7 +130,7 @@ public class BigDataViewer
 			};
 			final TypeIdentity< ARGBType > converter = new TypeIdentity< ARGBType >();
 
-			final VolatileSpimSource< ARGBType, VolatileARGBType > vs = new VolatileSpimSource< ARGBType, VolatileARGBType >( loader, setup, "angle " + seq.setups.get( setup ).getAngle() );
+			final VolatileSpimSource< ARGBType, VolatileARGBType > vs = new VolatileSpimSource< ARGBType, VolatileARGBType >( loader, setup, "angle " + seq.getViewSetups().get( setup ).getAngle() );
 			final SpimSource< ARGBType > s = vs.nonVolatile();
 
 			// Decorate each source with an extra transformation, that can be edited manually in this viewer.
@@ -150,7 +150,7 @@ public class BigDataViewer
 			final ArrayList< ConverterSetup > converterSetups,
 			final ArrayList< SourceAndConverter< ? > > sources )
 	{
-		final Object type = ( ( ViewerImgLoader< ?, ? > ) loader.getSequenceDescription().imgLoader ).getImageType();
+		final Object type = ( ( ViewerImgLoader< ?, ? > ) loader.getSequenceDescription().getImgLoader() ).getImageType();
 		if ( RealType.class.isInstance( type ) )
 			initSetupsRealType( loader, ( RealType ) type, converterSetups, sources );
 		else if ( ARGBType.class.isInstance( type ) )
@@ -171,7 +171,7 @@ public class BigDataViewer
 		initSetups( loader, converterSetups, sources );
 
 		viewerFrame = new ViewerFrame( width, height, sources, seq.numTimepoints(),
-				( ( ViewerImgLoader< ?, ? > ) seq.imgLoader ).getCache() );
+				( ( ViewerImgLoader< ?, ? > ) seq.getImgLoader() ).getCache() );
 		viewer = viewerFrame.getViewerPanel();
 
 		for ( final ConverterSetup cs : converterSetups )

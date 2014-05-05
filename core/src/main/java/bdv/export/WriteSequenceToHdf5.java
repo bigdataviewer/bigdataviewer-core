@@ -63,9 +63,9 @@ public class WriteSequenceToHdf5
 {
 	public static void writeHdf5PartitionLinkFile( final SequenceDescription seq, final ArrayList< int[][] > perSetupResolutions, final ArrayList< int[][] > perSetupSubdivisions )
 	{
-		if ( ! ( seq.imgLoader instanceof Hdf5ImageLoader ) )
-			throw new IllegalArgumentException( "sequence has " + seq.imgLoader.getClass() + " imgloader. Hdf5ImageLoader required." );
-		final Hdf5ImageLoader loader = ( Hdf5ImageLoader ) seq.imgLoader;
+		if ( ! ( seq.getImgLoader() instanceof Hdf5ImageLoader ) )
+			throw new IllegalArgumentException( "sequence has " + seq.getImgLoader().getClass() + " imgloader. Hdf5ImageLoader required." );
+		final Hdf5ImageLoader loader = ( Hdf5ImageLoader ) seq.getImgLoader();
 		writeHdf5PartitionLinkFile( seq, perSetupResolutions, perSetupSubdivisions, loader.getPartitions(), loader.getHdf5File() );
 	}
 
@@ -170,7 +170,7 @@ public class WriteSequenceToHdf5
 		final int setupOffsetFile = partition.getSetupStart();
 		final int numSetups = partition.getSetupLength();
 		@SuppressWarnings( "unchecked" )
-		final ImgLoader< UnsignedShortType > imgLoader = ( ImgLoader< UnsignedShortType > ) seq.imgLoader;
+		final ImgLoader< UnsignedShortType > imgLoader = ( ImgLoader< UnsignedShortType > ) seq.getImgLoader();
 
 		// for progressWriter
 		// initial 1 is for writing resolutions etc.

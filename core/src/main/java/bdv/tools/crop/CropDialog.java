@@ -276,12 +276,12 @@ public class CropDialog extends JDialog
 		}
 		final CropImgLoader cropper = new CropImgLoader( sources, globalToCropTransform, cropInterval, cropperTimepointMap );
 
-		final ArrayList< ViewSetup > setups = sequenceDescription.setups;
+		final ArrayList< ViewSetup > setups = sequenceDescription.getViewSetups();
 		final File basePath = xmlFile.getParentFile();
 		final SequenceDescription seq = new SequenceDescription( setups, timepoints, basePath, cropper );
 
 
-		final Hdf5ImageLoader loader = ( Hdf5ImageLoader ) sequenceDescription.imgLoader;
+		final Hdf5ImageLoader loader = ( Hdf5ImageLoader ) sequenceDescription.getImgLoader();
 		final ArrayList< int[][] > perSetupResolutions = new ArrayList< int[][] >();
 		final ArrayList< int[][] > perSetupSubdivisions = new ArrayList< int[][] >();
 		for ( int setup = 0; setup < sequenceDescription.numViewSetups(); ++setup )

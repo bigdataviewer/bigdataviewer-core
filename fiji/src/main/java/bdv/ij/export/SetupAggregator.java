@@ -92,7 +92,7 @@ public class SetupAggregator
 			{
 				final ViewSetupWrapper w = ( ViewSetupWrapper ) view.getSetup();
 				@SuppressWarnings( "unchecked" )
-				final ImgLoader< UnsignedShortType > il = ( ImgLoader< UnsignedShortType > ) w.getSourceSequence().imgLoader;
+				final ImgLoader< UnsignedShortType > il = ( ImgLoader< UnsignedShortType > ) w.getSourceSequence().getImgLoader();
 				return il.getImage( new View( w.getSourceSequence(), view.getTimepointIndex(), w.getSourceSetupIndex(), view.getModel() ) );
 			}
 		};
@@ -136,7 +136,7 @@ public class SetupAggregator
 		if ( setupIdx == 0 )
 		{
 			// if this is the first setup added, initialize the timepoints array and the reference timepoint
-			timepoints.addAll( sourceSequence.timepoints );
+			timepoints.addAll( sourceSequence.getTimePoints() );
 			referenceTimePoint = sourceRegs.referenceTimePoint;
 		}
 		final int s = sourceSetup.getId();
@@ -145,7 +145,7 @@ public class SetupAggregator
 			final int tp = timepoints.get( timepointIdx );
 			boolean found = false;
 			for( final ViewRegistration r : sourceRegs.registrations )
-				if ( s == r.getSetupIndex() && tp == sourceSequence.timepoints.get( r.getTimepointIndex() ) )
+				if ( s == r.getSetupIndex() && tp == sourceSequence.getTimePoints().get( r.getTimepointIndex() ) )
 				{
 					found = true;
 					registrations.add( new ViewRegistration( timepointIdx, setupIdx, r.getModel() ) );
@@ -242,7 +242,7 @@ public class SetupAggregator
 			throw new RuntimeException( "Cannot parse subdivisions " + subdivisionsString );
 		else if ( resolutions.length != subdivisions.length )
 			throw new RuntimeException( "mipmap resolutions and subdivisions must have the same number of elements" );
-		final ViewSetup setup = desc.setups.get( setupIndex );
+		final ViewSetup setup = desc.getViewSetups().get( setupIndex );
 			add( setup, desc, regs, resolutions, subdivisions );
 	}
 
@@ -277,7 +277,7 @@ public class SetupAggregator
 		final ViewRegistrations regs = sequence.getViewRegistrations();
 		if ( resolutions.length != subdivisions.length )
 			throw new RuntimeException( "mipmap resolutions and subdivisions must have the same number of elements" );
-		final ViewSetup setup = desc.setups.get( setupIndex );
+		final ViewSetup setup = desc.getViewSetups().get( setupIndex );
 			add( setup, desc, regs, resolutions, subdivisions );
 	}
 
@@ -308,7 +308,7 @@ public class SetupAggregator
 	 */
 	public void addSetups( final SpimRegistrationSequence sequence, final String resolutionsString, final String subdivisionsString )
 	{
-		for ( int s = 0; s < sequence.getSequenceDescription().setups.size(); ++s )
+		for ( int s = 0; s < sequence.getSequenceDescription().getViewSetups().size(); ++s )
 			addSetup( sequence, s, resolutionsString, subdivisionsString );
 	}
 
@@ -337,7 +337,7 @@ public class SetupAggregator
 	 */
 	public void addSetups( final SpimRegistrationSequence sequence, final int[][] resolutions, final int[][] subdivisions )
 	{
-		for ( int s = 0; s < sequence.getSequenceDescription().setups.size(); ++s )
+		for ( int s = 0; s < sequence.getSequenceDescription().getViewSetups().size(); ++s )
 			addSetup( sequence, s, resolutions, subdivisions );
 	}
 
@@ -376,7 +376,7 @@ public class SetupAggregator
 			throw new RuntimeException( "Cannot parse subdivisions " + subdivisionsString );
 		else if ( resolutions.length != subdivisions.length )
 			throw new RuntimeException( "mipmap resolutions and subdivisions must have the same number of elements" );
-		for ( final ViewSetup setup : fusionResult.getSequenceDescription().setups )
+		for ( final ViewSetup setup : fusionResult.getSequenceDescription().getViewSetups() )
 			add( setup, fusionResult.getSequenceDescription(), fusionResult.getViewRegistrations(), resolutions, subdivisions );
 	}
 
@@ -407,7 +407,7 @@ public class SetupAggregator
 	{
 		if ( resolutions.length != subdivisions.length )
 			throw new RuntimeException( "mipmap resolutions and subdivisions must have the same number of elements" );
-		for ( final ViewSetup setup : fusionResult.getSequenceDescription().setups )
+		for ( final ViewSetup setup : fusionResult.getSequenceDescription().getViewSetups() )
 			add( setup, fusionResult.getSequenceDescription(), fusionResult.getViewRegistrations(), resolutions, subdivisions );
 	}
 }

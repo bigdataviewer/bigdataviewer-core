@@ -28,7 +28,7 @@ public class VolatileSpimSource< T extends NumericType< T >, V extends Volatile<
 		super( loader, setup, name );
 		nonVolatileSource = new SpimSource< T >( loader, setup, name );
 		final SequenceDescription seq = loader.getSequenceDescription();
-		imgLoader = ( ViewerImgLoader< ?, V > ) seq.imgLoader;
+		imgLoader = ( ViewerImgLoader< ?, V > ) seq.getImgLoader();
 		if ( MipmapOrdering.class.isInstance( imgLoader ) )
 			mipmapOrdering = ( ( MipmapOrdering ) imgLoader );
 		else

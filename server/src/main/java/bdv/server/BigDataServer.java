@@ -52,7 +52,7 @@ public class BigDataServer
 		{
 			final SequenceViewsLoader loader = new SequenceViewsLoader( xmlFilename );
 			final SequenceDescription seq = loader.getSequenceDescription();
-			final Hdf5ImageLoader imgLoader = ( Hdf5ImageLoader ) seq.imgLoader;
+			final Hdf5ImageLoader imgLoader = ( Hdf5ImageLoader ) seq.getImgLoader();
 			cache = imgLoader.getCache();
 			metadata = new RemoteImageLoaderMetaData( imgLoader, seq.numTimepoints(), seq.numViewSetups() );
 			metadataJson = new Gson().toJson( metadata );
