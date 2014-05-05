@@ -7,7 +7,7 @@ import java.util.ArrayList;
 
 import mpicbg.spim.data.ImgLoader;
 import mpicbg.spim.data.SequenceDescription;
-import mpicbg.spim.data.View;
+import mpicbg.spim.data.ViewDescription;
 import mpicbg.spim.data.ViewSetup;
 import mpicbg.spim.data.XmlHelpers;
 import net.imglib2.FinalInterval;
@@ -234,7 +234,7 @@ public class WriteSequenceToHdf5
 				final int numLevels = resolutions.length;
 
 				progressWriter.out().printf( "proccessing setup %d / %d\n", setup + 1, numSetups );
-				final View view = new View( seq, timepointSeq, setupSeq, null );
+				final ViewDescription view = new ViewDescription( seq, timepointSeq, setupSeq, null );
 				progressWriter.out().println( "loading image" );
 				final RandomAccessibleInterval< UnsignedShortType > img = imgLoader.getImage( view );
 				progressWriter.setProgress( ( double ) numCompletedTasks++ / numTasks );

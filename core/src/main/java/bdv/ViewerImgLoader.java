@@ -1,7 +1,7 @@
 package bdv;
 
 import mpicbg.spim.data.ImgLoader;
-import mpicbg.spim.data.View;
+import mpicbg.spim.data.ViewDescription;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -9,11 +9,11 @@ import bdv.img.cache.Cache;
 
 public interface ViewerImgLoader< T, V extends Volatile< T > > extends ImgLoader< T >
 {
-	public RandomAccessibleInterval< T > getImage( final View view, final int level );
+	public RandomAccessibleInterval< T > getImage( final ViewDescription view, final int level );
 
 	public T getImageType();
 
-	public RandomAccessibleInterval< V > getVolatileImage( final View view, final int level );
+	public RandomAccessibleInterval< V > getVolatileImage( final ViewDescription view, final int level );
 
 	public V getVolatileImageType();
 

@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import mpicbg.spim.data.SequenceDescription;
-import mpicbg.spim.data.View;
+import mpicbg.spim.data.ViewDescription;
 import mpicbg.spim.data.ViewRegistration;
 import mpicbg.spim.data.ViewRegistrations;
 import mpicbg.spim.data.ViewSetup;
@@ -324,7 +324,7 @@ public class CellVoyagerDataExporter
 
 			for ( int timepointIndex = 0; timepointIndex < timePoints.size(); timepointIndex++ )
 			{
-				final View view = new View( sequenceDescriptionXML, timepointIndex, setupIndex, sourceTransform );
+				final ViewDescription view = new ViewDescription( sequenceDescriptionXML, timepointIndex, setupIndex, sourceTransform );
 				registrations.add( view );
 			}
 		}

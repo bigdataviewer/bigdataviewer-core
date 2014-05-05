@@ -13,11 +13,11 @@ import net.imglib2.realtransform.AffineTransform3D;
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
-public class View extends ViewRegistration implements Comparable< View >
+public class ViewDescription extends ViewRegistration implements Comparable< ViewDescription >
 {
 	protected final SequenceDescription sequenceDescription;
 
-	public View( final SequenceDescription sequenceDescription, final int timepointIndex, final int setupIndex, final AffineTransform3D model )
+	public ViewDescription( final SequenceDescription sequenceDescription, final int timepointIndex, final int setupIndex, final AffineTransform3D model )
 	{
 		super( timepointIndex, setupIndex, model );
 		this.sequenceDescription = sequenceDescription;
@@ -52,7 +52,7 @@ public class View extends ViewRegistration implements Comparable< View >
 	}
 
 	@Override
-	public int compareTo( final View o )
+	public int compareTo( final ViewDescription o )
 	{
 		if ( timepoint == o.timepoint )
 			return setup - o.setup;

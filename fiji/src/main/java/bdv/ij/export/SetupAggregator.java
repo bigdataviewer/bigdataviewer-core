@@ -5,7 +5,7 @@ import java.util.ArrayList;
 
 import mpicbg.spim.data.ImgLoader;
 import mpicbg.spim.data.SequenceDescription;
-import mpicbg.spim.data.View;
+import mpicbg.spim.data.ViewDescription;
 import mpicbg.spim.data.ViewRegistration;
 import mpicbg.spim.data.ViewRegistrations;
 import mpicbg.spim.data.ViewSetup;
@@ -82,18 +82,18 @@ public class SetupAggregator
 			}
 
 			@Override
-			public RandomAccessibleInterval< FloatType > getFloatImage( final View view )
+			public RandomAccessibleInterval< FloatType > getFloatImage( final ViewDescription view )
 			{
 				throw new UnsupportedOperationException( "not implemented" );
 			}
 
 			@Override
-			public RandomAccessibleInterval< UnsignedShortType > getImage( final View view )
+			public RandomAccessibleInterval< UnsignedShortType > getImage( final ViewDescription view )
 			{
 				final ViewSetupWrapper w = ( ViewSetupWrapper ) view.getSetup();
 				@SuppressWarnings( "unchecked" )
 				final ImgLoader< UnsignedShortType > il = ( ImgLoader< UnsignedShortType > ) w.getSourceSequence().getImgLoader();
-				return il.getImage( new View( w.getSourceSequence(), view.getTimepointIndex(), w.getSourceSetupIndex(), view.getModel() ) );
+				return il.getImage( new ViewDescription( w.getSourceSequence(), view.getTimepointIndex(), w.getSourceSetupIndex(), view.getModel() ) );
 			}
 		};
 	}

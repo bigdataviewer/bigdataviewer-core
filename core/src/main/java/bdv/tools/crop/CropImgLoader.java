@@ -6,7 +6,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import mpicbg.spim.data.ImgLoader;
-import mpicbg.spim.data.View;
+import mpicbg.spim.data.ViewDescription;
 import net.imglib2.FinalRealInterval;
 import net.imglib2.Interval;
 import net.imglib2.Pair;
@@ -73,12 +73,12 @@ public class CropImgLoader implements ImgLoader< UnsignedShortType >
 	 * not implemented.
 	 */
 	@Override
-	public RandomAccessibleInterval< FloatType > getFloatImage( final View view )
+	public RandomAccessibleInterval< FloatType > getFloatImage( final ViewDescription view )
 	{
 		throw new UnsupportedOperationException( "not implemented" );
 	}
 
-	private Pair< RandomAccessibleInterval< UnsignedShortType >, AffineTransform3D > cropView( final View view )
+	private Pair< RandomAccessibleInterval< UnsignedShortType >, AffineTransform3D > cropView( final ViewDescription view )
 	{
 		final int setup = view.getSetupIndex();
 		final int timepoint = timepointMap.get( view.getTimepointIndex() );
@@ -86,13 +86,13 @@ public class CropImgLoader implements ImgLoader< UnsignedShortType >
 	}
 
 	@Override
-	public RandomAccessibleInterval< UnsignedShortType > getImage( final View view )
+	public RandomAccessibleInterval< UnsignedShortType > getImage( final ViewDescription view )
 	{
 		final Pair< RandomAccessibleInterval< UnsignedShortType >, AffineTransform3D > pair = cropView( view );
 		return pair.getA();
 	}
 
-	public AffineTransform3D getCroppedTransform( final View view )
+	public AffineTransform3D getCroppedTransform( final ViewDescription view )
 	{
 		final Pair< RandomAccessibleInterval< UnsignedShortType >, AffineTransform3D > pair = cropView( view );
 		return pair.getB();

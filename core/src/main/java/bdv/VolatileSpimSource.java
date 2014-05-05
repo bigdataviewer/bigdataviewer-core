@@ -1,7 +1,7 @@
 package bdv;
 
 import mpicbg.spim.data.SequenceDescription;
-import mpicbg.spim.data.View;
+import mpicbg.spim.data.ViewDescription;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -48,7 +48,7 @@ public class VolatileSpimSource< T extends NumericType< T >, V extends Volatile<
 	}
 
 	@Override
-	protected RandomAccessibleInterval< V > getImage( final View view, final int level )
+	protected RandomAccessibleInterval< V > getImage( final ViewDescription view, final int level )
 	{
 		return imgLoader.getVolatileImage( view, level );
 	}

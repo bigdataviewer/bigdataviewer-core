@@ -5,7 +5,7 @@ import ij.ImagePlus;
 import java.io.File;
 
 import mpicbg.spim.data.ImgLoader;
-import mpicbg.spim.data.View;
+import mpicbg.spim.data.ViewDescription;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.algorithm.stats.ComputeMinMax;
 import net.imglib2.converter.Converters;
@@ -23,7 +23,7 @@ import bdv.img.virtualstack.VirtualStackImageLoader;
 /**
  * This {@link ImgLoader} implementation returns a wrapped, converted
  * {@link ImagePlus}. It is used for exporting {@link ImagePlus} to hdf5. Only
- * the {@link #getImage(View)} method is implemented because this is the only
+ * the {@link #getImage(ViewDescription)} method is implemented because this is the only
  * method required for exporting to hdf5.
  *
  * Internally it relies on {@link VirtualStackImageLoader} to be able to handle
@@ -89,7 +89,7 @@ public class ImagePlusImgLoader< T extends RealType< T > & NativeType< T > > imp
 			for ( int t = 0; t < numTimepoints; t++ )
 				for ( int s = 0; s < numSetups; ++s )
 				{
-					ComputeMinMax.computeMinMax( loader.getImage( new View( null, t, s, null ) ), minT, maxT );
+					ComputeMinMax.computeMinMax( loader.getImage( new ViewDescription( null, t, s, null ) ), minT, maxT );
 					impMin = Math.min( minT.getRealDouble(), impMin );
 					impMax = Math.max( maxT.getRealDouble(), impMax );
 					loader.getCache().clearCache();
@@ -135,13 +135,13 @@ public class ImagePlusImgLoader< T extends RealType< T > & NativeType< T > > imp
 	 * not implemented.
 	 */
 	@Override
-	public RandomAccessibleInterval< FloatType > getFloatImage( final View view )
+	public RandomAccessibleInterval< FloatType > getFloatImage( final ViewDescription view )
 	{
 		throw new UnsupportedOperationException( "not implemented" );
 	}
 
 	@Override
-	public RandomAccessibleInterval< UnsignedShortType > getImage( final View view )
+	public RandomAccessibleInterval< UnsignedShortType > getImage( final ViewDescription view )
 	{
 		loader.getCache().clearCache();
 		final RandomAccessibleInterval< T > img = loader.getImage( view );

@@ -2,7 +2,7 @@ package bdv.img.catmaid;
 
 import java.io.File;
 
-import mpicbg.spim.data.View;
+import mpicbg.spim.data.ViewDescription;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.NativeImg;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
@@ -111,7 +111,7 @@ public class CatmaidImageLoader extends AbstractViewerImgLoader< ARGBType, Volat
 	}
 
 	@Override
-	public RandomAccessibleInterval< ARGBType > getImage( final View view, final int level )
+	public RandomAccessibleInterval< ARGBType > getImage( final ViewDescription view, final int level )
 	{
 		final CachedCellImg< ARGBType, VolatileIntArray >  img = prepareCachedImage( view, level, LoadingStrategy.BLOCKING );
 		final ARGBType linkedType = new ARGBType( img );
@@ -120,7 +120,7 @@ public class CatmaidImageLoader extends AbstractViewerImgLoader< ARGBType, Volat
 	}
 
 	@Override
-	public RandomAccessibleInterval< VolatileARGBType > getVolatileImage( final View view, final int level )
+	public RandomAccessibleInterval< VolatileARGBType > getVolatileImage( final ViewDescription view, final int level )
 	{
 		final CachedCellImg< VolatileARGBType, VolatileIntArray >  img = prepareCachedImage( view, level, LoadingStrategy.VOLATILE );
 		final VolatileARGBType linkedType = new VolatileARGBType( img );
@@ -145,7 +145,7 @@ public class CatmaidImageLoader extends AbstractViewerImgLoader< ARGBType, Volat
 	 * The created image needs a {@link NativeImg#setLinkedType(net.imglib2.type.Type) linked type} before it can be used.
 	 * The type should be either {@link ARGBType} and {@link VolatileARGBType}.
 	 */
-	protected < T extends NativeType< T > > CachedCellImg< T, VolatileIntArray > prepareCachedImage( final View view, final int level, final LoadingStrategy loadingStrategy )
+	protected < T extends NativeType< T > > CachedCellImg< T, VolatileIntArray > prepareCachedImage( final ViewDescription view, final int level, final LoadingStrategy loadingStrategy )
 	{
 		final long[] dimensions = imageDimensions[ level ];
 		final int[] cellDimensions = blockDimensions[ level ];

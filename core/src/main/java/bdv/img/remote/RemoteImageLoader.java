@@ -6,7 +6,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.ArrayList;
 
-import mpicbg.spim.data.View;
+import mpicbg.spim.data.ViewDescription;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.NativeImg;
@@ -89,7 +89,7 @@ public class RemoteImageLoader extends AbstractViewerImgLoader< UnsignedShortTyp
 	}
 
 	@Override
-	public RandomAccessibleInterval< UnsignedShortType > getImage( final View view, final int level )
+	public RandomAccessibleInterval< UnsignedShortType > getImage( final ViewDescription view, final int level )
 	{
 		if ( ! existsImageData( view, level ) )
 		{
@@ -103,7 +103,7 @@ public class RemoteImageLoader extends AbstractViewerImgLoader< UnsignedShortTyp
 	}
 
 	@Override
-	public RandomAccessibleInterval< VolatileUnsignedShortType > getVolatileImage( final View view, final int level )
+	public RandomAccessibleInterval< VolatileUnsignedShortType > getVolatileImage( final ViewDescription view, final int level )
 	{
 		if ( ! existsImageData( view, level ) )
 		{
@@ -150,7 +150,7 @@ public class RemoteImageLoader extends AbstractViewerImgLoader< UnsignedShortTyp
 	 *
 	 * @return true, if the given image data is present.
 	 */
-	public boolean existsImageData( final View view, final int level )
+	public boolean existsImageData( final ViewDescription view, final int level )
 	{
 		final int timepoint = view.getTimepointIndex();
 		final int setup = view.getSetupIndex();
@@ -174,7 +174,7 @@ public class RemoteImageLoader extends AbstractViewerImgLoader< UnsignedShortTyp
 	 * {@link RemoteImageLoaderMetaData#dimensions} then use that. Otherwise
 	 * create a 1x1x1 image.
 	 */
-	protected < T > RandomAccessibleInterval< T > getMissingDataImage( final View view, final int level, final T constant )
+	protected < T > RandomAccessibleInterval< T > getMissingDataImage( final ViewDescription view, final int level, final T constant )
 	{
 		final int t = view.getTimepointIndex();
 		final int s = view.getSetupIndex();
@@ -212,7 +212,7 @@ public class RemoteImageLoader extends AbstractViewerImgLoader< UnsignedShortTyp
 	 * The created image needs a {@link NativeImg#setLinkedType(net.imglib2.type.Type) linked type} before it can be used.
 	 * The type should be either {@link UnsignedShortType} and {@link VolatileUnsignedShortType}.
 	 */
-	protected < T extends NativeType< T > > CachedCellImg< T, VolatileShortArray > prepareCachedImage( final View view, final int level, final LoadingStrategy loadingStrategy )
+	protected < T extends NativeType< T > > CachedCellImg< T, VolatileShortArray > prepareCachedImage( final ViewDescription view, final int level, final LoadingStrategy loadingStrategy )
 	{
 		if ( cache == null )
 			throw new RuntimeException( "no connection open" );

@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.TreeMap;
 
 import mpicbg.spim.data.ImgLoader;
-import mpicbg.spim.data.View;
+import mpicbg.spim.data.ViewDescription;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.Img;
@@ -70,7 +70,7 @@ public class TileImgLoader implements ImgLoader< UnsignedShortType >
 	}
 
 	@Override
-	public RandomAccessibleInterval< UnsignedShortType > getImage( final View view )
+	public RandomAccessibleInterval< UnsignedShortType > getImage( final ViewDescription view )
 	{
 
 		final int setupIndex = view.getSetupIndex();
@@ -187,7 +187,7 @@ public class TileImgLoader implements ImgLoader< UnsignedShortType >
 	}
 
 	@Override
-	public RandomAccessibleInterval< FloatType > getFloatImage( final View view )
+	public RandomAccessibleInterval< FloatType > getFloatImage( final ViewDescription view )
 	{
 		throw new UnsupportedOperationException( "not implemented" );
 	}

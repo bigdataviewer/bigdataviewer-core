@@ -4,7 +4,7 @@ import ij.ImagePlus;
 
 import java.io.File;
 
-import mpicbg.spim.data.View;
+import mpicbg.spim.data.ViewDescription;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
 import net.imglib2.img.NativeImg;
@@ -135,7 +135,7 @@ public abstract class VirtualStackImageLoader< T extends NativeType< T >, V exte
 	protected abstract void linkVolatileType( CachedCellImg< V, A > img );
 
 	@Override
-	public RandomAccessibleInterval< T > getImage( final View view, final int level )
+	public RandomAccessibleInterval< T > getImage( final ViewDescription view, final int level )
 	{
 		final CachedCellImg< T, A > img = prepareCachedImage( view, level, LoadingStrategy.BLOCKING );
 		linkType( img );
@@ -143,7 +143,7 @@ public abstract class VirtualStackImageLoader< T extends NativeType< T >, V exte
 	}
 
 	@Override
-	public RandomAccessibleInterval< V > getVolatileImage( final View view, final int level )
+	public RandomAccessibleInterval< V > getVolatileImage( final ViewDescription view, final int level )
 	{
 		final CachedCellImg< V, A > img = prepareCachedImage( view, level, LoadingStrategy.BUDGETED );
 		linkVolatileType( img );
@@ -186,7 +186,7 @@ public abstract class VirtualStackImageLoader< T extends NativeType< T >, V exte
 	 * linked type} before it can be used. The type should be either
 	 * {@link ARGBType} and {@link VolatileARGBType}.
 	 */
-	protected < T extends NativeType< T > > CachedCellImg< T, A > prepareCachedImage( final View view, final int level, final LoadingStrategy loadingStrategy )
+	protected < T extends NativeType< T > > CachedCellImg< T, A > prepareCachedImage( final ViewDescription view, final int level, final LoadingStrategy loadingStrategy )
 	{
 		final int priority = 0;
 		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );

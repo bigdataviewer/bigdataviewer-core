@@ -8,7 +8,7 @@ import java.util.Comparator;
 import java.util.Iterator;
 
 import mpicbg.spim.data.SequenceDescription;
-import mpicbg.spim.data.View;
+import mpicbg.spim.data.ViewDescription;
 import mpicbg.spim.data.ViewRegistration;
 import mpicbg.spim.data.ViewRegistrations;
 
@@ -19,7 +19,7 @@ import org.jdom2.input.SAXBuilder;
 
 /**
  * Loads SequenceDescription and ViewRegistrations from XML file.
- * Provides all {@link View views}, see {@link #getView(int, int)}.
+ * Provides all {@link ViewDescription views}, see {@link #getView(int, int)}.
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
@@ -27,7 +27,7 @@ public class SequenceViewsLoader
 {
 	private final SequenceDescription seq;
 
-	private final ArrayList< View > views;
+	private final ArrayList< ViewDescription > views;
 
 	public SequenceViewsLoader( final String xmlFilename ) throws JDOMException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
 	{
@@ -37,7 +37,7 @@ public class SequenceViewsLoader
 
 		final File baseDirectory = new File( xmlFilename ).getParentFile();
 		seq = new SequenceDescription( root, baseDirectory != null ? baseDirectory : new File("."), true );
-		views = new ArrayList< View >();
+		views = new ArrayList< ViewDescription >();
 		createViews( new ViewRegistrations( root.getChild( "ViewRegistrations" ) ) );
 	}
 
@@ -46,7 +46,7 @@ public class SequenceViewsLoader
 		return seq;
 	}
 
-	public View getView( final int timepoint, final int setup )
+	public ViewDescription getView( final int timepoint, final int setup )
 	{
 		return views.get( timepoint * seq.numViewSetups() + setup );
 	}
@@ -78,7 +78,7 @@ public class SequenceViewsLoader
 			{
 				final ViewRegistration reg = ri.next();
 				if ( reg.getTimepointIndex() == ti && reg.getSetupIndex() == si )
-					views.add( new View( seq, ti, si, reg.getModel() ) );
+					views.add( new ViewDescription( seq, ti, si, reg.getModel() ) );
 				else
 					throw new RuntimeException( "ViewRegistrations does not match SequenceDescription" );
 			}

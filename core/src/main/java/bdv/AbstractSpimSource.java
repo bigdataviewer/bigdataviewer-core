@@ -1,7 +1,7 @@
 package bdv;
 
 import mpicbg.spim.data.SequenceDescription;
-import mpicbg.spim.data.View;
+import mpicbg.spim.data.ViewDescription;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
@@ -68,7 +68,7 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 		{
 			final T zero = getType().createVariable();
 			zero.setZero();
-			final View view = sequenceViews.getView( timepoint, setup );
+			final ViewDescription view = sequenceViews.getView( timepoint, setup );
 			final AffineTransform3D reg = view.getModel();
 			for ( int level = 0; level < currentSources.length; level++ )
 			{
@@ -94,7 +94,7 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 
 	protected abstract AffineTransform3D[] getMipmapTransforms( final int setup );
 
-	protected abstract RandomAccessibleInterval< T > getImage( final View view, final int level );
+	protected abstract RandomAccessibleInterval< T > getImage( final ViewDescription view, final int level );
 
 	@Override
 	public boolean isPresent( final int t )

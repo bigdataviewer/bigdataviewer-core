@@ -30,7 +30,7 @@ import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileFilter;
 
 import mpicbg.spim.data.SequenceDescription;
-import mpicbg.spim.data.View;
+import mpicbg.spim.data.ViewDescription;
 import mpicbg.spim.data.ViewRegistration;
 import mpicbg.spim.data.ViewRegistrations;
 import mpicbg.spim.data.ViewSetup;
@@ -298,7 +298,7 @@ public class CropDialog extends JDialog
 			final int timepoint = tp - minTimepointIndex;
 			for ( int setup = 0; setup < sequenceDescription.numViewSetups(); ++setup )
 			{
-				final AffineTransform3D model = cropper.getCroppedTransform( new View( seq, timepoint, setup, null ) );
+				final AffineTransform3D model = cropper.getCroppedTransform( new ViewDescription( seq, timepoint, setup, null ) );
 				regs.add( new ViewRegistration( timepoint, setup, model ) );
 			}
 		}

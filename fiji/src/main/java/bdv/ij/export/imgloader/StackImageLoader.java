@@ -8,7 +8,7 @@ import java.io.File;
 import java.util.List;
 
 import mpicbg.spim.data.ImgLoader;
-import mpicbg.spim.data.View;
+import mpicbg.spim.data.ViewDescription;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.converter.Converter;
 import net.imglib2.converter.Converters;
@@ -27,11 +27,11 @@ import org.jdom2.Element;
  * This {@link ImgLoader} loads images that represent a 3D stack in a single
  * file, for example in tif, lsm, or czi format. It is constructed with a list
  * of image filenames and the number of setups (e.g. angles). Then, to laod the
- * image for a given {@link View}, its index in the filename list is computed as
+ * image for a given {@link ViewDescription}, its index in the filename list is computed as
  * <code>view.getSetupIndex() + numViewSetups * view.getTimepointIndex()</code>.
  *
  * This {@link ImgLoader} is used for exporting spim sequences to hdf5. Only the
- * {@link #getImage(View)} method is implemented because this is
+ * {@link #getImage(ViewDescription)} method is implemented because this is
  * the only method required for exporting to hdf5.
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
@@ -82,13 +82,13 @@ public class StackImageLoader implements ImgLoader< UnsignedShortType >
 	 * not implemented.
 	 */
 	@Override
-	public ImgPlus< FloatType > getFloatImage( final View view )
+	public ImgPlus< FloatType > getFloatImage( final ViewDescription view )
 	{
 		throw new UnsupportedOperationException( "not implemented" );
 	}
 
 	@Override
-	public ImgPlus< UnsignedShortType > getImage( final View view )
+	public ImgPlus< UnsignedShortType > getImage( final ViewDescription view )
 	{
 		final int setup = view.getSetupIndex();
 		final int timepoint = view.getTimepointIndex();

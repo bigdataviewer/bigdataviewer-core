@@ -7,7 +7,7 @@ import io.scif.img.ImgOpener;
 import java.io.File;
 
 import mpicbg.spim.data.ImgLoader;
-import mpicbg.spim.data.View;
+import mpicbg.spim.data.ViewDescription;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.converter.Converters;
@@ -30,12 +30,12 @@ import org.jdom2.Element;
  * This {@link ImgLoader} loads images that represent a 3D stack as a sequence
  * of slice with one image file per slice, such as created by Stephan
  * Preibisch's Multi-view fusion plugin. It is constructed with the pattern of
- * the image filenames. Then, to laod the image for a given {@link View}, its
+ * the image filenames. Then, to laod the image for a given {@link ViewDescription}, its
  * TODO timepoint? index?, channel, and slice indices are filled into the
  * template to get the slice filenames.
  *
  * This {@link ImgLoader} is used for exporting spim sequences to hdf5. Only the
- * {@link #getImage(View)} method is implemented because this is
+ * {@link #getImage(ViewDescription)} method is implemented because this is
  * the only method required for exporting to hdf5.
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
@@ -96,13 +96,13 @@ public class FusionImageLoader< T extends RealType< T > > implements ImgLoader< 
 	 * not implemented.
 	 */
 	@Override
-	public RandomAccessibleInterval< FloatType > getFloatImage( final View view )
+	public RandomAccessibleInterval< FloatType > getFloatImage( final ViewDescription view )
 	{
 		throw new UnsupportedOperationException( "not implemented" );
 	}
 
 	@Override
-	public RandomAccessibleInterval< UnsignedShortType > getImage( final View view )
+	public RandomAccessibleInterval< UnsignedShortType > getImage( final ViewDescription view )
 	{
 		final int tp = view.getTimepoint();
 		final int c = view.getSetup().getChannel();

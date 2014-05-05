@@ -1,6 +1,6 @@
 package bdv.img.hdf5;
 
-import mpicbg.spim.data.View;
+import mpicbg.spim.data.ViewDescription;
 
 public class Util
 {
@@ -17,7 +17,7 @@ public class Util
 		return String.format( groupFormatString, timepoint, setup, level );
 	}
 
-	public static String getGroupPath( final View view, final int level )
+	public static String getGroupPath( final ViewDescription view, final int level )
 	{
 		return String.format( groupFormatString, view.getTimepointIndex(), view.getSetupIndex(), level );
 	}
@@ -27,7 +27,7 @@ public class Util
 		return String.format( cellsFormatString, getGroupPath( timepoint, setup, level ) );
 	}
 
-	public static String getCellsPath( final View view, final int level )
+	public static String getCellsPath( final ViewDescription view, final int level )
 	{
 		return String.format( cellsFormatString, getGroupPath( view, level ) );
 	}

@@ -1,7 +1,7 @@
 package bdv;
 
 import mpicbg.spim.data.SequenceDescription;
-import mpicbg.spim.data.View;
+import mpicbg.spim.data.ViewDescription;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.NumericType;
@@ -26,7 +26,7 @@ public class SpimSource< T extends NumericType< T > > extends AbstractSpimSource
 	}
 
 	@Override
-	protected RandomAccessibleInterval< T > getImage( final View view, final int level )
+	protected RandomAccessibleInterval< T > getImage( final ViewDescription view, final int level )
 	{
 		return imgLoader.getImage( view, level );
 	}

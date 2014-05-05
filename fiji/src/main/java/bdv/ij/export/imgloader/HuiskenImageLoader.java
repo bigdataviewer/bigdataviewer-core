@@ -6,7 +6,7 @@ import ij.ImagePlus;
 import java.io.File;
 
 import mpicbg.spim.data.ImgLoader;
-import mpicbg.spim.data.View;
+import mpicbg.spim.data.ViewDescription;
 import mpicbg.spim.data.ViewSetup;
 import mpicbg.spim.data.XmlHelpers;
 import net.imglib2.algorithm.stats.Normalize;
@@ -82,7 +82,7 @@ public class HuiskenImageLoader implements ImgLoader< UnsignedShortType >
 	}
 
 	@Override
-	public ImgPlus< UnsignedShortType > getImage( final View view )
+	public ImgPlus< UnsignedShortType > getImage( final ViewDescription view )
 	{
 		ensureExpIsOpen();
 
@@ -106,7 +106,7 @@ public class HuiskenImageLoader implements ImgLoader< UnsignedShortType >
 	}
 
 	@Override
-	public ImgPlus< FloatType > getFloatImage( final View view )
+	public ImgPlus< FloatType > getFloatImage( final ViewDescription view )
 	{
 		ensureExpIsOpen();
 
@@ -139,7 +139,7 @@ public class HuiskenImageLoader implements ImgLoader< UnsignedShortType >
 		}
 	}
 
-	private ImagePlus getImagePlus( final View view )
+	private ImagePlus getImagePlus( final ViewDescription view )
 	{
 		final ViewSetup setup = view.getSetup();
 		final int channel = setup.getChannel();
