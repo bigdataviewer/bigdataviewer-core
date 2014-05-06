@@ -7,9 +7,14 @@ import static mpicbg.spim.data.XmlHelpers.loadPath;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 
-import mpicbg.spim.data.ViewDescription;
+import mpicbg.spim.data.SequenceDescription;
+import mpicbg.spim.data.ViewSetup;
 import mpicbg.spim.data.XmlHelpers;
+import mpicbg.spim.data.sequence.TimePoint;
+import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.NativeImg;
@@ -44,42 +49,90 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 
 	protected VolatileGlobalCellCache< VolatileShortArray > cache;
 
-	protected final ArrayList< double[][] > perSetupMipmapResolutions;
+	// TODO clean up after spim_data switch
+	public static class MipmapInfo
+	{
+		private final double[][] resolutions;
 
-	protected final ArrayList< AffineTransform3D[] > perSetupMipmapTransforms;
+		private final AffineTransform3D[] transforms;
 
-	protected final ArrayList< int[][] > perSetupSubdivisions;
+		private final int[][] subdivisions;
+
+		private final int maxLevel;
+
+		public MipmapInfo( final double[][] resolutions, final AffineTransform3D[] transforms, final int[][] subdivisions )
+		{
+			this.resolutions = resolutions;
+			this.transforms = transforms;
+			this.subdivisions = subdivisions;
+			this.maxLevel = resolutions.length - 1;
+		}
+
+		public double[][] getResolutions()
+		{
+			return resolutions;
+		}
+
+		public AffineTransform3D[] getTransforms()
+		{
+			return transforms;
+		}
+
+		public int[][] getSubdivisions()
+		{
+			return subdivisions;
+		}
+
+		public int getMaxLevel()
+		{
+			return maxLevel;
+		}
+
+		public int getNumLevels()
+		{
+			return maxLevel + 1;
+		}
+	}
+
+	// TODO clean up after spim_data switch
+	protected final HashMap< Integer, MipmapInfo > perSetupMipmapInfo;
 
 	/**
 	 * List of partitions if the dataset is split across several files
 	 */
 	protected final ArrayList< Partition > partitions;
 
-	protected int numTimepoints;
+//	protected int numTimepoints;
 
-	protected int numSetups;
-
-	protected int[] maxLevels;
+//	protected int numSetups;
 
 	protected int maxNumLevels;
 
 	/**
+	 * TODO adapt comment after spim_data switch
+	 *
+	 *
 	 * An array of long[] arrays with {@link #numTimepoints} *
 	 * {@link #numSetups} * {@link #maxNumLevels} entries. Every entry is either
 	 * null or the dimensions of one image (identified by flattened index of
 	 * level, setup, and timepoint). This is either loaded from XML if present
 	 * or otherwise filled in when an image is loaded for the first time.
 	 */
-	protected long[][] cachedDimensions;
+	protected final HashMap< ViewLevelId, long[] > cachedDimensions;
+// TODO spim_data. cachedDimensions and cachedExistence should be a single HashMap< ViewLevelId, DimAndExistence >
 
 	/**
+	 * TODO adapt comment after spim_data switch
+	 *
+	 *
+	 *
 	 * An array of Booleans with {@link #numTimepoints} *
 	 * {@link #numSetups} * {@link #maxNumLevels} entries. Every entry is either
 	 * null or the existence of one image (identified by flattened index of
 	 * level, setup, and timepoint). This is either loaded from XML if present
 	 * or otherwise filled in when an image is loaded for the first time.
 	 */
-	protected Boolean[] cachedExistence;
+	protected final HashMap< ViewLevelId, Boolean > cachedExistence;
 
 	public Hdf5ImageLoader()
 	{
@@ -92,15 +145,12 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 		hdf5File = null;
 		hdf5Reader = null;
 		cache = null;
-		perSetupMipmapResolutions = new ArrayList< double[][] >();
-		perSetupMipmapTransforms = new ArrayList< AffineTransform3D[] >();
-		perSetupSubdivisions = new ArrayList< int[][] >();
+		perSetupMipmapInfo = new HashMap< Integer, MipmapInfo >();
+		cachedDimensions = new HashMap< ViewLevelId, long[] >();
+		cachedExistence = new HashMap< ViewLevelId, Boolean >();
 		partitions = new ArrayList< Partition >();
 		if ( hdf5Partitions != null )
 			partitions.addAll( hdf5Partitions );
-		maxLevels = null;
-		cachedDimensions = null;
-		cachedExistence = null;
 	}
 
 	public Hdf5ImageLoader( final File hdf5File, final ArrayList< Partition > hdf5Partitions )
@@ -112,9 +162,9 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 	{
 		super( new UnsignedShortType(), new VolatileUnsignedShortType() );
 		this.hdf5File = hdf5File;
-		perSetupMipmapTransforms = new ArrayList< AffineTransform3D[] >();
-		perSetupMipmapResolutions = new ArrayList< double[][] >();
-		perSetupSubdivisions = new ArrayList< int[][] >();
+		perSetupMipmapInfo = new HashMap< Integer, MipmapInfo >();
+		cachedDimensions = new HashMap< ViewLevelId, long[] >();
+		cachedExistence = new HashMap< ViewLevelId, Boolean >();
 		partitions = new ArrayList< Partition >();
 		if ( hdf5Partitions != null )
 			partitions.addAll( hdf5Partitions );
@@ -122,37 +172,44 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 			open();
 	}
 
+
+	// TODO clean up after spim_data switch
+	private SequenceDescription sequenceDescription;
+
+	// TODO clean up after spim_data switch
+	public void setSequenceDescription( final SequenceDescription sequenceDescription )
+	{
+		this.sequenceDescription = sequenceDescription;
+	}
+
 	private void open()
 	{
 		hdf5Reader = HDF5Factory.openForReading( hdf5File );
-		numTimepoints = hdf5Reader.readInt( "numTimepoints" );
-		numSetups = hdf5Reader.readInt( "numSetups" );
+//		numTimepoints = hdf5Reader.readInt( "numTimepoints" );
+//		numSetups = hdf5Reader.readInt( "numSetups" );
 
 		maxNumLevels = 0;
-		maxLevels = new int[ numSetups ];
-		perSetupMipmapResolutions.clear();
-		perSetupSubdivisions.clear();
-		for ( int setup = 0; setup < numSetups; ++setup )
+		perSetupMipmapInfo.clear();
+		for ( final ViewSetup setup : sequenceDescription.getViewSetupsOrdered() )
 		{
-			final double[][] mipmapResolutions = hdf5Reader.readDoubleMatrix( getResolutionsPath( setup ) );
-			perSetupMipmapResolutions.add( mipmapResolutions );
-			if ( mipmapResolutions.length > maxNumLevels )
-				maxNumLevels = mipmapResolutions.length;
-			maxLevels[ setup ] = mipmapResolutions.length - 1;
+			final int setupId = setup.getId();
 
-			final AffineTransform3D[] mipmapTransforms = new AffineTransform3D[ mipmapResolutions.length ];
-			for ( int level = 0; level < mipmapResolutions.length; level++ )
-				mipmapTransforms[ level ] = MipmapTransforms.getMipmapTransformDefault( mipmapResolutions[ level ] );
-			perSetupMipmapTransforms.add( mipmapTransforms );
+			final double[][] resolutions = hdf5Reader.readDoubleMatrix( getResolutionsPath( setupId ) );
+			final AffineTransform3D[] transforms = new AffineTransform3D[ resolutions.length ];
+			for ( int level = 0; level < resolutions.length; level++ )
+				transforms[ level ] = MipmapTransforms.getMipmapTransformDefault( resolutions[ level ] );
+			final int[][] subdivisions = hdf5Reader.readIntMatrix( getSubdivisionsPath( setupId ) );
 
-			final int[][] subdivisions = hdf5Reader.readIntMatrix( getSubdivisionsPath( setup ) );
-			perSetupSubdivisions.add( subdivisions );
+			if ( resolutions.length > maxNumLevels )
+				maxNumLevels = resolutions.length;
+
+			perSetupMipmapInfo.put( setupId, new MipmapInfo( resolutions, transforms, subdivisions ) );
 		}
 
-		cachedDimensions = new long[ numTimepoints * numSetups * maxNumLevels ][];
-		cachedExistence = new Boolean[ numTimepoints * numSetups * maxNumLevels ];
+		cachedDimensions.clear();
+		cachedExistence.clear();
 
-		cache = new VolatileGlobalCellCache< VolatileShortArray >( new Hdf5VolatileShortArrayLoader( hdf5Reader ), numTimepoints, numSetups, maxNumLevels, maxLevels, 1 );
+		cache = new VolatileGlobalCellCache< VolatileShortArray >( new Hdf5VolatileShortArrayLoader( hdf5Reader ), numTimepoints, numSetups, maxNumLevels, 1 );
 	}
 
 	@Override
@@ -166,8 +223,6 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 				partitions.add( new Partition( p, basePath ) );
 			hdf5File = new File( path );
 			open();
-			tryInitImageDimensions( elem );
-//			initCachedDimensionsFromHdf5();
 		}
 		catch ( final Exception e )
 		{
@@ -189,11 +244,18 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 	public void initCachedDimensionsFromHdf5( final boolean background )
 	{
 		final long t0 = System.currentTimeMillis();
-		for ( int t = 0; t < numTimepoints; ++t )
+		final List< TimePoint > timepoints = sequenceDescription.getTimePoints().getTimePointsOrdered();
+		final List< ViewSetup > setups = sequenceDescription.getViewSetupsOrdered();
+		for ( final TimePoint timepoint : timepoints )
 		{
-			for ( int s = 0; s < numSetups; ++s )
-				for ( int l = 0; l <= maxLevels[ s ]; ++l )
-					getImageDimension( t, s, l );
+			final int t = timepoint.getId();
+			for ( final ViewSetup setup : setups )
+			{
+				final int s = setup.getId();
+				final int numLevels = perSetupMipmapInfo.get( s ).getNumLevels();
+				for ( int l = 0; l < numLevels; ++l )
+					getImageDimension( new ViewLevelId( t, s, l ) );
+			}
 			if ( background )
 				synchronized ( this )
 				{
@@ -209,19 +271,6 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 		System.out.println( "initCachedDimensionsFromHdf5 : " + t1 + " ms" );
 	}
 
-	public void tryInitImageDimensions( final Element elem )
-	{
-		final Element dimsElem = elem.getChild( "ImageDimensions" );
-		if ( dimsElem == null )
-			return;
-		for ( final Element dimElem : dimsElem.getChildren( "dimension" ) )
-		{
-			final ImageDimension d = new ImageDimension( dimElem );
-			final int index = getViewInfoCacheIndex( d.getTimepoint(), d.getSetup(), d.getLevel() );
-			cachedDimensions[ index ] = d.getDimensions();
-		}
-	}
-
 	public File getHdf5File()
 	{
 		return hdf5File;
@@ -233,28 +282,34 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 	}
 
 	@Override
-	public RandomAccessibleInterval< UnsignedShortType > getImage( final ViewDescription view, final int level )
+	public RandomAccessibleInterval< UnsignedShortType > getImage( final ViewId view, final int level )
 	{
-		if ( ! existsImageData( view, level ) )
+		final ViewLevelId id = new ViewLevelId( view, level );
+		if ( ! existsImageData( id ) )
 		{
-			System.err.println( "image data for " + view.getBasename() + " level " + level + " could not be found. Partition file missing?" );
-			return getMissingDataImage( view, level, new UnsignedShortType() );
+			System.err.println(	String.format(
+					"image data for timepoint %d setup %d level %d could not be found. Partition file missing?",
+					id.getTimePointId(), id.getViewSetupId(), id.getLevel() ) );
+			return getMissingDataImage( id, new UnsignedShortType() );
 		}
-		final CachedCellImg< UnsignedShortType, VolatileShortArray >  img = prepareCachedImage( view, level, LoadingStrategy.BLOCKING );
+		final CachedCellImg< UnsignedShortType, VolatileShortArray >  img = prepareCachedImage( id, LoadingStrategy.BLOCKING );
 		final UnsignedShortType linkedType = new UnsignedShortType( img );
 		img.setLinkedType( linkedType );
 		return img;
 	}
 
 	@Override
-	public RandomAccessibleInterval< VolatileUnsignedShortType > getVolatileImage( final ViewDescription view, final int level )
+	public RandomAccessibleInterval< VolatileUnsignedShortType > getVolatileImage( final ViewId view, final int level )
 	{
-		if ( ! existsImageData( view, level ) )
+		final ViewLevelId id = new ViewLevelId( view, level );
+		if ( ! existsImageData( id ) )
 		{
-			System.err.println( "image data for " + view.getBasename() + " level " + level + " could not be found. Partition file missing?" );
-			return getMissingDataImage( view, level, new VolatileUnsignedShortType() );
+			System.err.println(	String.format(
+					"image data for timepoint %d setup %d level %d could not be found. Partition file missing?",
+					id.getTimePointId(), id.getViewSetupId(), id.getLevel() ) );
+			return getMissingDataImage( id, new VolatileUnsignedShortType() );
 		}
-		final CachedCellImg< VolatileUnsignedShortType, VolatileShortArray >  img = prepareCachedImage( view, level, LoadingStrategy.BUDGETED );
+		final CachedCellImg< VolatileUnsignedShortType, VolatileShortArray >  img = prepareCachedImage( id, LoadingStrategy.BUDGETED );
 		final VolatileUnsignedShortType linkedType = new VolatileUnsignedShortType( img );
 		img.setLinkedType( linkedType );
 		return img;
@@ -266,27 +321,28 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 		return cache;
 	}
 
+	// TODO: spim_data. should this and the following methods be replaced by single method getMipmapInfo()?
 	@Override
-	public double[][] getMipmapResolutions( final int setup )
+	public double[][] getMipmapResolutions( final int setupId )
 	{
-		return perSetupMipmapResolutions.get( setup );
+		return perSetupMipmapInfo.get( setupId ).getResolutions();
 	}
 
 	@Override
-	public AffineTransform3D[] getMipmapTransforms( final int setup )
+	public AffineTransform3D[] getMipmapTransforms( final int setupId )
 	{
-		return perSetupMipmapTransforms.get( setup );
+		return perSetupMipmapInfo.get( setupId ).getTransforms();
 	}
 
-	public int[][] getSubdivisions( final int setup )
+	public int[][] getSubdivisions( final int setupId )
 	{
-		return perSetupSubdivisions.get( setup );
+		return perSetupMipmapInfo.get( setupId ).getSubdivisions();
 	}
 
 	@Override
-	public int numMipmapLevels( final int setup )
+	public int numMipmapLevels( final int setupId )
 	{
-		return getMipmapResolutions( setup ).length;
+		return perSetupMipmapInfo.get( setupId ).getNumLevels();
 	}
 
 	/**
@@ -295,26 +351,13 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 	 *
 	 * @return true, if the given image data is present.
 	 */
-	public boolean existsImageData( final ViewDescription view, final int level )
+	public boolean existsImageData( final ViewLevelId id )
 	{
-		final int timepoint = view.getTimepointIndex();
-		final int setup = view.getSetupIndex();
-		return existsImageData( timepoint, setup, level );
-	}
-
-	/**
-	 * Checks whether the given image data is present in the hdf5. Missing data
-	 * may be caused by missing partition files
-	 *
-	 * @return true, if the given image data is present.
-	 */
-	public boolean existsImageData( final int timepoint, final int setup, final int level )
-	{
-		final int index = getViewInfoCacheIndex( timepoint, setup, level );
-		if ( cachedExistence[ index ] == null )
+		final Boolean exists = cachedExistence.get( id );
+		if ( exists == null )
 			// will set cachedExistence[ index ] as a side effect
-			getImageDimension( timepoint, setup, level );
-		return cachedExistence[ index ];
+			getImageDimension( id );
+		return cachedExistence.get( id );
 	}
 
 	/**
@@ -322,23 +365,20 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 	 * If the dimension of the missing image is present in {@link #cachedDimensions} then use that.
 	 * Otherwise create a 1x1x1 image.
 	 */
-	protected < T > RandomAccessibleInterval< T > getMissingDataImage( final ViewDescription view, final int level, final T constant )
+	protected < T > RandomAccessibleInterval< T > getMissingDataImage( final ViewLevelId id, final T constant )
 	{
-		final int t = view.getTimepointIndex();
-		final int s = view.getSetupIndex();
-		final int index = getViewInfoCacheIndex( t, s, level );
-		long[] d = cachedDimensions[ index ];
+		long[] d = cachedDimensions.get( id );
 		if ( d == null )
 			d = new long[] { 1, 1, 1 };
 		return Views.interval( new ConstantRandomAccessible< T >( constant, 3 ), new FinalInterval( d ) );
 	}
 
-	public long[] getImageDimension( final int timepoint, final int setup, final int level )
+	public long[] getImageDimension( final ViewLevelId id )
 	{
-		final int index = getViewInfoCacheIndex( timepoint, setup, level );
-		if ( cachedDimensions[ index ] == null )
+		long[] dims = cachedDimensions.get( id );
+		if ( dims == null )
 		{
-			final String cellsPath = Util.getCellsPath( timepoint, setup, level );
+			final String cellsPath = Util.getCellsPath( id );
 			HDF5DataSetInformation info = null;
 			boolean exists = false;
 			// pause Fetcher threads for 5 ms. There will be more calls to
@@ -354,18 +394,14 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 				} catch ( final Exception e ) {
 				}
 			}
-			cachedExistence[ index ] = new Boolean( exists );
 			if ( exists )
-				cachedDimensions[ index ] = reorder( info.getDimensions() );
+				dims = reorder( info.getDimensions() );
 			else
-				cachedDimensions[ index ] = new long[] { 1, 1, 1 };
+				dims = new long[] { 1, 1, 1 };
+			cachedExistence.put( id, exists );
+			cachedDimensions.put( id, dims );
 		}
-		return cachedDimensions[ index ];
-	}
-
-	private int getViewInfoCacheIndex( final int timepoint, final int setup, final int level )
-	{
-		return level + maxNumLevels * ( setup + numSetups * timepoint );
+		return dims;
 	}
 
 	/**
@@ -373,19 +409,23 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 	 * The created image needs a {@link NativeImg#setLinkedType(net.imglib2.type.Type) linked type} before it can be used.
 	 * The type should be either {@link UnsignedShortType} and {@link VolatileUnsignedShortType}.
 	 */
-	protected < T extends NativeType< T > > CachedCellImg< T, VolatileShortArray > prepareCachedImage( final ViewDescription view, final int level, final LoadingStrategy loadingStrategy )
+	protected < T extends NativeType< T > > CachedCellImg< T, VolatileShortArray > prepareCachedImage( final ViewLevelId id, final LoadingStrategy loadingStrategy )
 	{
 		if ( hdf5Reader == null )
 			throw new RuntimeException( "no hdf5 file open" );
 
-		final long[] dimensions = getImageDimension( view.getTimepointIndex(), view.getSetupIndex(), level );
-		final int[] cellDimensions = perSetupSubdivisions.get( view.getSetupIndex() )[ level ];
 
-		final int timepoint = view.getTimepointIndex();
-		final int setup = view.getSetupIndex();
-		final int priority = maxLevels[ setup ] - level;
+		final int timepointId = id.getTimePointId();
+		final int setupId = id.getViewSetupId();
+		final int level = id.getLevel();
+		final MipmapInfo mipmapInfo = perSetupMipmapInfo.get( setupId );
+
+		final long[] dimensions = getImageDimension( id );
+		final int[] cellDimensions = mipmapInfo.getSubdivisions()[ level ];
+
+		final int priority = mipmapInfo.getMaxLevel() - level;
 		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
-		final CellCache< VolatileShortArray > c = cache.new VolatileCellCache( timepoint, setup, level, cacheHints );
+		final CellCache< VolatileShortArray > c = cache.new VolatileCellCache( timepointId, setupId, level, cacheHints );
 		final VolatileImgCells< VolatileShortArray > cells = new VolatileImgCells< VolatileShortArray >( c, 1, dimensions, cellDimensions );
 		final CachedCellImg< T, VolatileShortArray > img = new CachedCellImg< T, VolatileShortArray >( cells );
 		return img;
@@ -393,12 +433,14 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 
 	public void printMipmapInfo()
 	{
-		for ( int setup = 0; setup < numSetups; ++setup )
+		for ( final ViewSetup setup : sequenceDescription.getViewSetupsOrdered() )
 		{
-			System.out.println( "setup " + setup );
-			final double[][] reslevels = perSetupMipmapResolutions.get( setup );
-			final int[][] subdiv = perSetupSubdivisions.get( setup );
-			final int numLevels = reslevels.length;
+			final int setupId = setup.getId();
+			System.out.println( "setup " + setupId );
+			final MipmapInfo mipmapInfo = perSetupMipmapInfo.get( setupId );
+			final double[][] reslevels = mipmapInfo.getResolutions();
+			final int[][] subdiv = mipmapInfo.getSubdivisions();
+			final int numLevels = mipmapInfo.getNumLevels();
 			System.out.println( "    resolutions:");
 			for ( int level = 0; level < numLevels; ++level )
 			{

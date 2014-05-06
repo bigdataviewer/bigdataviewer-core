@@ -1,6 +1,6 @@
 package bdv.img.hdf5;
 
-import mpicbg.spim.data.ViewDescription;
+import mpicbg.spim.data.sequence.ViewId;
 
 public class Util
 {
@@ -12,14 +12,19 @@ public class Util
 
 	final static private String subdivisionsFormatString = "s%02d/subdivisions";
 
-	public static String getGroupPath( final int timepoint, final int setup, final int level )
+	public static String getGroupPath( final int timepointId, final int setupId, final int level )
 	{
-		return String.format( groupFormatString, timepoint, setup, level );
+		return String.format( groupFormatString, timepointId, setupId, level );
 	}
 
-	public static String getGroupPath( final ViewDescription view, final int level )
+	public static String getGroupPath( final ViewId viewId, final int level )
 	{
-		return String.format( groupFormatString, view.getTimepointIndex(), view.getSetupIndex(), level );
+		return String.format( groupFormatString, viewId.getTimePointId(), viewId.getViewSetupId(), level );
+	}
+
+	public static String getGroupPath( final ViewLevelId viewLevelId )
+	{
+		return String.format( groupFormatString, viewLevelId.getTimePointId(), viewLevelId.getViewSetupId(), viewLevelId.getLevel() );
 	}
 
 	public static String getCellsPath( final int timepoint, final int setup, final int level )
@@ -27,19 +32,24 @@ public class Util
 		return String.format( cellsFormatString, getGroupPath( timepoint, setup, level ) );
 	}
 
-	public static String getCellsPath( final ViewDescription view, final int level )
+	public static String getCellsPath( final ViewId viewId, final int level )
 	{
-		return String.format( cellsFormatString, getGroupPath( view, level ) );
+		return String.format( cellsFormatString, getGroupPath( viewId, level ) );
 	}
 
-	public static String getResolutionsPath( final int setup )
+	public static String getCellsPath( final ViewLevelId viewLevelId )
 	{
-		return String.format( resolutionsFormatString, setup );
+		return String.format( cellsFormatString, getGroupPath( viewLevelId ) );
 	}
 
-	public static String getSubdivisionsPath( final int setup )
+	public static String getResolutionsPath( final int setupId )
 	{
-		return String.format( subdivisionsFormatString, setup );
+		return String.format( resolutionsFormatString, setupId );
+	}
+
+	public static String getSubdivisionsPath( final int setupId )
+	{
+		return String.format( subdivisionsFormatString, setupId );
 	}
 
 	/**
