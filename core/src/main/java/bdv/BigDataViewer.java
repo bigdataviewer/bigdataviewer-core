@@ -4,6 +4,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.List;
 
 import javax.swing.ActionMap;
 import javax.swing.JFileChooser;
@@ -13,6 +14,8 @@ import javax.swing.JMenuItem;
 import javax.swing.filechooser.FileFilter;
 
 import mpicbg.spim.data.SequenceDescription;
+import mpicbg.spim.data.ViewSetup;
+import mpicbg.spim.data.sequence.TimePoint;
 import net.imglib2.Volatile;
 import net.imglib2.converter.Converter;
 import net.imglib2.converter.TypeIdentity;
@@ -89,14 +92,16 @@ public class BigDataViewer
 		final double typeMin = type.getMinValue();
 		final double typeMax = type.getMaxValue();
 		final SequenceDescription seq = loader.getSequenceDescription();
-		for ( int setup = 0; setup < seq.numViewSetups(); ++setup )
+		for ( final ViewSetup setup : seq.getViewSetupsOrdered() )
 		{
 			final RealARGBColorConverter< V > vconverter = new RealARGBColorConverter< V >( typeMin, typeMax );
 			vconverter.setColor( new ARGBType( 0xffffffff ) );
 			final RealARGBColorConverter< T > converter = new RealARGBColorConverter< T >( typeMin, typeMax );
 			converter.setColor( new ARGBType( 0xffffffff ) );
 
-			final VolatileSpimSource< T, V > vs = new VolatileSpimSource< T, V >( loader, setup, "angle " + seq.getViewSetups().get( setup ).getAngle() );
+			final int setupId = setup.getId();
+			final String setupName = setup.hasName() ? setup.getName() : "angle " + setup.getAngle();
+			final VolatileSpimSource< T, V > vs = new VolatileSpimSource< T, V >( loader, setupId, setupName );
 			final SpimSource< T > s = vs.nonVolatile();
 
 			// Decorate each source with an extra transformation, that can be edited manually in this viewer.
@@ -107,7 +112,7 @@ public class BigDataViewer
 			final SourceAndConverter< T > soc = new SourceAndConverter< T >( ts, converter, vsoc );
 
 			sources.add( soc );
-			converterSetups.add( new RealARGBColorConverterSetup( setup, converter, vconverter ) );
+			converterSetups.add( new RealARGBColorConverterSetup( setupId, converter, vconverter ) );
 		}
 	}
 
@@ -118,7 +123,7 @@ public class BigDataViewer
 			final ArrayList< SourceAndConverter< ? > > sources )
 	{
 		final SequenceDescription seq = loader.getSequenceDescription();
-		for ( int setup = 0; setup < seq.numViewSetups(); ++setup )
+		for ( final ViewSetup setup : seq.getViewSetupsOrdered() )
 		{
 			final Converter< VolatileARGBType, ARGBType > vconverter = new Converter< VolatileARGBType, ARGBType >()
 			{
@@ -130,7 +135,9 @@ public class BigDataViewer
 			};
 			final TypeIdentity< ARGBType > converter = new TypeIdentity< ARGBType >();
 
-			final VolatileSpimSource< ARGBType, VolatileARGBType > vs = new VolatileSpimSource< ARGBType, VolatileARGBType >( loader, setup, "angle " + seq.getViewSetups().get( setup ).getAngle() );
+			final int setupId = setup.getId();
+			final String setupName = setup.hasName() ? setup.getName() : "angle " + setup.getAngle();
+			final VolatileSpimSource< ARGBType, VolatileARGBType > vs = new VolatileSpimSource< ARGBType, VolatileARGBType >( loader, setupId, setupName );
 			final SpimSource< ARGBType > s = vs.nonVolatile();
 
 			// Decorate each source with an extra transformation, that can be edited manually in this viewer.
@@ -170,7 +177,8 @@ public class BigDataViewer
 		final ArrayList< SourceAndConverter< ? > > sources = new ArrayList< SourceAndConverter< ? > >();
 		initSetups( loader, converterSetups, sources );
 
-		viewerFrame = new ViewerFrame( width, height, sources, seq.numTimepoints(),
+		final List< TimePoint > timepoints = seq.getTimePoints().getTimePointsOrdered();
+		viewerFrame = new ViewerFrame( width, height, sources, timepoints.size(),
 				( ( ViewerImgLoader< ?, ? > ) seq.getImgLoader() ).getCache() );
 		viewer = viewerFrame.getViewerPanel();
 

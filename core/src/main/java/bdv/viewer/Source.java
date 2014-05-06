@@ -1,28 +1,35 @@
 package bdv.viewer;
 
+import mpicbg.spim.data.sequence.TimePoint;
+import mpicbg.spim.data.sequence.TimePoints;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.realtransform.AffineTransform3D;
 
 /**
- * Provides image data for all time-points of one view setup.
+ * Provides image data for all timepoints of one view setup.
+ *
+ * Note that (partly for convenience and partly for historical reasons) the
+ * time-point <em>index</em> is used here instead of the timepoint
+ * {@link TimePoint#getId() id}. This timepoint index is an index into the
+ * ordered list of timepoints {@link TimePoints#getTimePointsOrdered()}.
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
 public interface Source< T >
 {
 	/**
-	 * Is there a stack at timepoint t?
+	 * Is there a stack at timepoint index t?
 	 *
 	 * @param t
 	 *            timepoint index
-	 * @return true, if there is data for timepoint t.
+	 * @return true, if there is data for timepoint index t.
 	 */
 	public boolean isPresent( int t );
 
 	/**
-	 * Get the 3D stack at timepoint t.
+	 * Get the 3D stack at timepoint index t.
 	 *
 	 * @param t
 	 *            timepoint index
@@ -33,7 +40,7 @@ public interface Source< T >
 	public RandomAccessibleInterval< T > getSource( int t, int level );
 
 	/**
-	 * Get the 3D stack at timepoint t, extended to infinity and interpolated.
+	 * Get the 3D stack at timepoint index t, extended to infinity and interpolated.
 	 *
 	 * @param t
 	 *            timepoint index
@@ -46,7 +53,7 @@ public interface Source< T >
 	public RealRandomAccessible< T > getInterpolatedSource( final int t, final int level, final Interpolation method );
 
 	/**
-	 * Get the transform from the {@link #getSource(long) source} at timepoint t
+	 * Get the transform from the {@link #getSource(long) source} at timepoint index t
 	 * into the global coordinate system.
 	 *
 	 * @param t

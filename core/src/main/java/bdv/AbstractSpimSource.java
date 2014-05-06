@@ -1,7 +1,12 @@
 package bdv;
 
+import java.util.List;
+import java.util.Map;
+
 import mpicbg.spim.data.SequenceDescription;
-import mpicbg.spim.data.ViewDescription;
+import mpicbg.spim.data.registration.ViewRegistration;
+import mpicbg.spim.data.sequence.TimePoint;
+import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
@@ -16,7 +21,7 @@ import bdv.viewer.Source;
 
 public abstract class AbstractSpimSource< T extends NumericType< T > > implements Source< T >
 {
-	protected int currentTimepoint;
+	protected int currentTimePointIndex;
 
 	protected RandomAccessibleInterval< T >[] currentSources;
 
@@ -24,13 +29,13 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 
 	protected final AffineTransform3D[] currentSourceTransforms;
 
-	protected final int setup;
+	protected final int setupId;
 
 	protected final String name;
 
-	protected final SequenceViewsLoader sequenceViews;
+	protected final List< TimePoint > timePointsOrdered;
 
-	protected final int numTimepoints;
+	protected final Map< ViewId, ViewRegistration > viewRegistrations;
 
 	protected final int numMipmapLevels;
 
@@ -43,14 +48,14 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 	protected final InterpolatorFactory< T, RandomAccessible< T > >[] interpolatorFactories;
 
 	@SuppressWarnings( "unchecked" )
-	public AbstractSpimSource( final SequenceViewsLoader loader, final int setup, final String name )
+	public AbstractSpimSource( final SequenceViewsLoader loader, final int setupId, final String name )
 	{
-		this.setup = setup;
+		this.setupId = setupId;
 		this.name = name;
-		this.sequenceViews = loader;
 		final SequenceDescription seq = loader.getSequenceDescription();
-		numTimepoints = seq.numTimepoints();
-		numMipmapLevels =  ( ( ViewerImgLoader< ?, ? > ) seq.getImgLoader() ).numMipmapLevels( setup );
+		timePointsOrdered = seq.getTimePoints().getTimePointsOrdered();
+		viewRegistrations = loader.getViewRegistrations().getViewRegistrations();
+		numMipmapLevels =  ( ( ViewerImgLoader< ?, ? > ) seq.getImgLoader() ).numMipmapLevels( setupId );
 		currentSources = new RandomAccessibleInterval[ numMipmapLevels ];
 		currentInterpolatedSources = new RealRandomAccessible[ numMipmapLevels ][ numInterpolationMethods ];
 		currentSourceTransforms = new AffineTransform3D[ numMipmapLevels ];
@@ -61,21 +66,22 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 		interpolatorFactories[ iNLinearMethod ] = new NLinearInterpolatorFactory< T >();
 	}
 
-	protected void loadTimepoint( final int timepoint )
+	protected void loadTimepoint( final int timepointIndex )
 	{
-		currentTimepoint = timepoint;
-		if ( isPresent( timepoint ) )
+		currentTimePointIndex = timepointIndex;
+		if ( isPresent( timepointIndex ) )
 		{
 			final T zero = getType().createVariable();
 			zero.setZero();
-			final ViewDescription view = sequenceViews.getView( timepoint, setup );
-			final AffineTransform3D reg = view.getModel();
+			final int timepointId = timePointsOrdered.get( timepointIndex ).getId();
+			final ViewId viewId = new ViewId( timepointId, setupId );
+			final AffineTransform3D reg = viewRegistrations.get( viewId ).getModel();
 			for ( int level = 0; level < currentSources.length; level++ )
 			{
-				final AffineTransform3D mipmapTransform = getMipmapTransforms( setup )[ level ];
+				final AffineTransform3D mipmapTransform = getMipmapTransforms()[ level ];
 				currentSourceTransforms[ level ].set( reg );
 				currentSourceTransforms[ level ].concatenate( mipmapTransform );
-				currentSources[ level ] = getImage( view, level );
+				currentSources[ level ] = getImage( viewId, level );
 				for ( int method = 0; method < numInterpolationMethods; ++method )
 					currentInterpolatedSources[ level ][ method ] = Views.interpolate( Views.extendValue( currentSources[ level ], zero ), interpolatorFactories[ method ] );
 			}
@@ -92,20 +98,20 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 		}
 	}
 
-	protected abstract AffineTransform3D[] getMipmapTransforms( final int setup );
+	protected abstract AffineTransform3D[] getMipmapTransforms();
 
-	protected abstract RandomAccessibleInterval< T > getImage( final ViewDescription view, final int level );
+	protected abstract RandomAccessibleInterval< T > getImage( final ViewId viewId, final int level );
 
 	@Override
 	public boolean isPresent( final int t )
 	{
-		return t >= 0 && t < numTimepoints;
+		return t >= 0 && t < timePointsOrdered.size();
 	}
 
 	@Override
 	public synchronized RandomAccessibleInterval< T > getSource( final int t, final int level )
 	{
-		if ( t != currentTimepoint )
+		if ( t != currentTimePointIndex )
 			loadTimepoint( t );
 		return currentSources[ level ];
 	}
@@ -113,7 +119,7 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 	@Override
 	public synchronized RealRandomAccessible< T > getInterpolatedSource( final int t, final int level, final Interpolation method )
 	{
-		if ( t != currentTimepoint )
+		if ( t != currentTimePointIndex )
 			loadTimepoint( t );
 		return currentInterpolatedSources[ level ][ method == Interpolation.NLINEAR ? iNLinearMethod : iNearestNeighborMethod ];
 	}
@@ -121,7 +127,7 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 	@Override
 	public synchronized AffineTransform3D getSourceTransform( final int t, final int level )
 	{
-		if ( t != currentTimepoint )
+		if ( t != currentTimePointIndex )
 			loadTimepoint( t );
 		return currentSourceTransforms[ level ];
 	}

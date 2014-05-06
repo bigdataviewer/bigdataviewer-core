@@ -1,5 +1,6 @@
 package mpicbg.spim.data;
 
+import mpicbg.spim.data.sequence.TimePoint;
 import net.imglib2.realtransform.AffineTransform3D;
 
 /**
@@ -34,13 +35,13 @@ public class ViewDescription extends ViewRegistration implements Comparable< Vie
 	}
 
 	/**
-	 * get the timepoint id for this view.
+	 * get the timepoint for this view.
 	 *
 	 * @return timepoint
 	 */
-	public int getTimepoint()
+	public TimePoint getTimepoint()
 	{
-		return sequenceDescription.getTimePoints().get( timepoint );
+		return sequenceDescription.getTimePoints().getTimePoints().get( timepoint );
 	}
 
 	final static protected String basenameFormatString = "t%05d-a%03d-c%03d-i%01d";
