@@ -4,9 +4,15 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.xml.parsers.ParserConfigurationException;
+
+import mpicbg.spim.data.sequence.TimePoint;
+import mpicbg.spim.data.sequence.TimePoints;
 
 import org.jdom2.Element;
 import org.xml.sax.SAXException;
@@ -20,16 +26,14 @@ import org.xml.sax.SAXException;
 public class SequenceDescription
 {
 	/**
-	 * timepoint id for every timepoint index.
+	 * Contains all time-points.
 	 */
-	private final ArrayList< Integer > timepoints;
-	// TODO: make protected and use getter
+	private final TimePoints timepoints;
 
 	/**
-	 * angle and illumination setup for every view-setup index.
+	 * Maps setup id to setup.
 	 */
-	private final ArrayList< ViewSetup > setups;
-	// TODO: make protected and use getter
+	private final Map< Integer, ViewSetup > setups;
 
 	/**
 	 * Relative paths in the XML sequence description are interpreted with respect to this.
@@ -42,10 +46,15 @@ public class SequenceDescription
 	private final ImgLoader< ? > imgLoader;
 	// TODO: make protected and use getter
 
-	public SequenceDescription( final List< ? extends ViewSetup > setups, final List< Integer > timepoints, final File basePath, final ImgLoader< ? > imgLoader )
+	public SequenceDescription( final List< ViewSetup > setups, final List< Integer > timepoints, final File basePath, final ImgLoader< ? > imgLoader )
 	{
-		this.timepoints = new ArrayList< Integer >( timepoints );
-		this.setups = new ArrayList< ViewSetup >( setups );
+		final ArrayList< TimePoint > tplist = new ArrayList< TimePoint >();
+		for ( final int i : timepoints )
+			tplist.add( new TimePoint( i ) );
+		this.timepoints = new TimePoints( tplist );
+		this.setups = new HashMap< Integer, ViewSetup >();
+		for ( final ViewSetup setup : setups )
+			this.setups.put( setup.getId(), setup );
 		this.basePath = basePath;
 		this.imgLoader = imgLoader;
 	}
@@ -70,6 +79,7 @@ public class SequenceDescription
 		setups = createViewSetupsFromXml( elem );
 		basePath = XmlHelpers.loadPath( elem, "BasePath", ".", xmlFileParentDirectory );
 		imgLoader = createImageLoader ? createImgLoaderFromXml( elem, basePath ) : null;
+		viewSetupsOrderedDirty = true;
 	}
 
 	/**
@@ -78,6 +88,33 @@ public class SequenceDescription
 	public SequenceDescription( final Element elem, final File xmlFileParentDirectory ) throws ParserConfigurationException, SAXException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
 	{
 		this( elem, xmlFileParentDirectory, false );
+		viewSetupsOrderedDirty = true;
+	}
+
+	private boolean viewSetupsOrderedDirty;
+
+	private List< ViewSetup > viewSetupsOrdered;
+
+	public List< ViewSetup > getViewSetupsOrdered()
+	{
+		if ( viewSetupsOrderedDirty )
+		{
+			final ArrayList< ViewSetup > list = new ArrayList< ViewSetup >();
+			for ( final ViewSetup setup : setups.values() )
+				list.add( setup );
+//			Entity.sortById( viewSetupsOrdered );
+			Collections.sort( list, new Comparator< ViewSetup >()
+					{
+						@Override
+						public int compare( final ViewSetup o1, final ViewSetup o2 )
+						{
+							return o1.getId() - o2.getId();
+						}
+					} );
+			viewSetupsOrdered = list;
+			viewSetupsOrderedDirty = false;
+		}
+		return viewSetupsOrdered;
 	}
 
 	/**
@@ -85,20 +122,20 @@ public class SequenceDescription
 	 *
 	 * @return number of timepoints
 	 */
-	public final int numTimepoints()
-	{
-		return timepoints.size();
-	}
+//	public final int numTimepoints()
+//	{
+//		return timepoints.size();
+//	}
 
 	/**
 	 * Get number of view setups in this sequence.
 	 *
 	 * @return number of view setups
 	 */
-	public final int numViewSetups()
-	{
-		return setups.size();
-	}
+//	public final int numViewSetups()
+//	{
+//		return setups.size();
+//	}
 
 	/**
 	 * Get the base path of the sequence. Relative paths in the XML sequence
@@ -122,7 +159,7 @@ public class SequenceDescription
 		return imgLoader;
 	}
 
-	protected static ArrayList< Integer > createTimepointsFromXml( final Element sequenceDescription )
+	protected static TimePoints createTimepointsFromXml( final Element sequenceDescription )
 	{
 		final Element timepoints = sequenceDescription.getChild( "Timepoints" );
 		final String type = timepoints.getAttributeValue( "type" );
@@ -130,10 +167,10 @@ public class SequenceDescription
 		{
 			final int first = Integer.parseInt( timepoints.getChildText( "first" ) );
 			final int last = Integer.parseInt( timepoints.getChildText( "last" ) );
-			final ArrayList< Integer > tp = new ArrayList< Integer >();
+			final ArrayList< TimePoint > tp = new ArrayList< TimePoint >();
 			for ( int t = first; t <= last; ++t )
-				tp.add( t );
-			return tp;
+				tp.add( new TimePoint( t ) );
+			return new TimePoints( tp );
 		}
 		else
 		{
@@ -141,24 +178,27 @@ public class SequenceDescription
 		}
 	}
 
-	protected static ArrayList< ViewSetup > createViewSetupsFromXml( final Element sequenceDescription )
+	protected static HashMap< Integer, ViewSetup > createViewSetupsFromXml( final Element sequenceDescription )
 	{
-		final ArrayList< ViewSetup > setups = new ArrayList< ViewSetup >();
+		final HashMap< Integer, ViewSetup > setups = new HashMap< Integer, ViewSetup >();
 
 		for ( final Element elem : sequenceDescription.getChildren( "ViewSetup" ) )
-			setups.add( new ViewSetup( elem ) );
+		{
+			final ViewSetup setup = new ViewSetup( elem );
+			setups.put( setup.getId(), setup );
+		}
 
 		// sort by ViewSetup.id
-		Collections.sort( setups );
+//		Collections.sort( setups );
 		return setups;
 	}
 
-	public ArrayList< Integer > getTimePoints()
+	public TimePoints getTimePoints()
 	{
 		return timepoints;
 	}
 
-	public ArrayList< ViewSetup > getViewSetups()
+	public Map< Integer, ViewSetup > getViewSetups()
 	{
 		return setups;
 	}

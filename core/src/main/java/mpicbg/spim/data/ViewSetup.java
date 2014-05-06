@@ -98,6 +98,21 @@ public class ViewSetup implements Comparable< ViewSetup >
 		);
 	}
 
+	public boolean hasName()
+	{
+		return false;
+	}
+
+	/**
+	 * Get the name of this setup.
+	 *
+	 * @return the name of this setup or null if it is not set.
+	 */
+	public String getName()
+	{
+		return null;
+	}
+
 	/**
 	 * Get ViewSetup index.
 	 *
