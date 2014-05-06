@@ -2,7 +2,7 @@ package bdv;
 
 import java.io.File;
 
-import mpicbg.spim.data.ViewDescription;
+import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
 import net.imglib2.type.numeric.real.FloatType;
@@ -40,13 +40,13 @@ public abstract class AbstractViewerImgLoader< T, V extends Volatile< T > > impl
 	}
 
 	@Override
-	public RandomAccessibleInterval< FloatType > getFloatImage( final ViewDescription view )
+	public RandomAccessibleInterval< FloatType > getFloatImage( final ViewId view )
 	{
 		throw new UnsupportedOperationException( "not implemented" );
 	}
 
 	@Override
-	public RandomAccessibleInterval< T > getImage( final ViewDescription view )
+	public RandomAccessibleInterval< T > getImage( final ViewId view )
 	{
 		return getImage( view, 0 );
 	}

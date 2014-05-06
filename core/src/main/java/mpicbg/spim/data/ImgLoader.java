@@ -2,6 +2,7 @@ package mpicbg.spim.data;
 
 import java.io.File;
 
+import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
@@ -27,7 +28,7 @@ public interface ImgLoader< T >
 	 *            timepoint and setup for which to retrieve the image.
 	 * @return {@link FloatType} image normalized to range [0,1]
 	 */
-	public RandomAccessibleInterval< FloatType > getFloatImage( ViewDescription view );
+	public RandomAccessibleInterval< FloatType > getFloatImage( ViewId view );
 
 	/**
 	 * Get {@link UnsignedShortType} un-normalized image.
@@ -36,5 +37,5 @@ public interface ImgLoader< T >
 	 *            timepoint and setup for which to retrieve the image.
 	 * @return {@link UnsignedShortType} image.
 	 */
-	public RandomAccessibleInterval< T > getImage( ViewDescription view );
+	public RandomAccessibleInterval< T > getImage( ViewId view );
 }
