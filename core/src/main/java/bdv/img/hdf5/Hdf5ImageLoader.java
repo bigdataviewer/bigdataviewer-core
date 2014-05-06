@@ -190,7 +190,8 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 
 		maxNumLevels = 0;
 		perSetupMipmapInfo.clear();
-		for ( final ViewSetup setup : sequenceDescription.getViewSetupsOrdered() )
+		final List< ViewSetup > setups = sequenceDescription.getViewSetupsOrdered();
+		for ( final ViewSetup setup : setups )
 		{
 			final int setupId = setup.getId();
 
@@ -209,7 +210,10 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 		cachedDimensions.clear();
 		cachedExistence.clear();
 
-		cache = new VolatileGlobalCellCache< VolatileShortArray >( new Hdf5VolatileShortArrayLoader( hdf5Reader ), numTimepoints, numSetups, maxNumLevels, 1 );
+		final List< TimePoint > timepoints = sequenceDescription.getTimePoints().getTimePointsOrdered();
+		final int maxNumTimepoints = timepoints.get( timepoints.size() - 1 ).getId() + 1;
+		final int maxNumSetups = setups.get( setups.size() - 1 ).getId() + 1;
+		cache = new VolatileGlobalCellCache< VolatileShortArray >( new Hdf5VolatileShortArrayLoader( hdf5Reader ), maxNumTimepoints, maxNumSetups, maxNumLevels, 1 );
 	}
 
 	@Override

@@ -15,14 +15,11 @@ import bdv.img.cache.VolatileImgCells.CellCache;
 
 public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cache
 {
-	private final int numTimepoints;
+	private final int maxNumTimepoints;
 
-	private final int numSetups;
+	private final int maxNumSetups;
 
 	private final int maxNumLevels;
-
-	// TODO: remove (unused)
-	private final int[] maxLevels;
 
 	class Key
 	{
@@ -41,7 +38,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 			this.level = level;
 			this.index = index;
 
-			final long value = ( ( index * maxNumLevels + level ) * numSetups + setup ) * numTimepoints + timepoint;
+			final long value = ( ( index * maxNumLevels + level ) * maxNumSetups + setup ) * maxNumTimepoints + timepoint;
 			hashcode = ( int ) ( value ^ ( value >>> 32 ) );
 		}
 
@@ -204,13 +201,27 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 
 	private final CacheArrayLoader< A > loader;
 
-	public VolatileGlobalCellCache( final CacheArrayLoader< A > loader, final int numTimepoints, final int numSetups, final int maxNumLevels, final int[] maxLevels, final int numFetcherThreads )
+	/**
+	 *
+	 * @param loader
+	 * @param maxNumTimepoints
+	 *            the highest occurring timepoint id plus 1. This is only used to
+	 *            compute a hashcode, thus it can be initialized with a best
+	 *            guess if necessary.
+	 * @param maxNumSetups
+	 *            the highest occurring setup id plus 1. This is only used to
+	 *            compute a hashcode, thus it can be initialized with a best
+	 *            guess if necessary.
+	 * @param maxNumLevels
+	 *            the highest occurring mipmap level plus 1.
+	 * @param numFetcherThreads
+	 */
+	public VolatileGlobalCellCache( final CacheArrayLoader< A > loader, final int maxNumTimepoints, final int maxNumSetups, final int maxNumLevels, final int numFetcherThreads )
 	{
 		this.loader = loader;
-		this.numTimepoints = numTimepoints;
-		this.numSetups = numSetups;
+		this.maxNumTimepoints = maxNumTimepoints;
+		this.maxNumSetups = maxNumSetups;
 		this.maxNumLevels = maxNumLevels;
-		this.maxLevels = maxLevels;
 
 		queue = new BlockingFetchQueues< Key >( maxNumLevels );
 		fetchers = new ArrayList< Fetcher >();
