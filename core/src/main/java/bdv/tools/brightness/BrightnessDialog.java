@@ -36,12 +36,12 @@ import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import mpicbg.spim.data.ViewSetup;
+import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import net.imglib2.type.numeric.ARGBType;
 
 
 /**
- * Adjust brightness and colors for individual (or groups of) {@link ViewSetup setups}.
+ * Adjust brightness and colors for individual (or groups of) {@link BasicViewSetup setups}.
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */

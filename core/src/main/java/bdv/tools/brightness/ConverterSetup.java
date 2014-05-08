@@ -1,6 +1,6 @@
 package bdv.tools.brightness;
 
-import mpicbg.spim.data.ViewSetup;
+import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import net.imglib2.type.numeric.ARGBType;
 
 /**
@@ -13,9 +13,9 @@ import net.imglib2.type.numeric.ARGBType;
 public interface ConverterSetup
 {
 	/**
-	 * Get the id of the {@link ViewSetup} this converter acts on.
+	 * Get the id of the {@link BasicViewSetup} this converter acts on.
 	 *
-	 * @return the id of the {@link ViewSetup} this converter acts on.
+	 * @return the id of the {@link BasicViewSetup} this converter acts on.
 	 */
 	public int getSetupId();
 
