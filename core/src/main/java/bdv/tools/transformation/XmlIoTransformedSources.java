@@ -41,7 +41,7 @@ public class XmlIoTransformedSources
 
 	protected AffineTransform3D fromXmlAffine( final Element transform )
 	{
-		final AffineTransform3D affine = XmlHelpers.loadAffineTransform3D( transform.getChild( SOURCETRANSFORM_AFFINE_TAG ) );
+		final AffineTransform3D affine = XmlHelpers.getAffineTransform3D( transform, SOURCETRANSFORM_AFFINE_TAG );
 		return affine;
 	}
 
