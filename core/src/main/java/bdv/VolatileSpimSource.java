@@ -1,6 +1,7 @@
 package bdv;
 
-import mpicbg.spim.data.SequenceDescription;
+import mpicbg.spim.data.generic.AbstractSpimData;
+import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
@@ -23,11 +24,11 @@ public class VolatileSpimSource< T extends NumericType< T >, V extends Volatile<
 	protected final MipmapOrdering mipmapOrdering;
 
 	@SuppressWarnings( "unchecked" )
-	public VolatileSpimSource( final SequenceViewsLoader loader, final int setup, final String name )
+	public VolatileSpimSource( final AbstractSpimData< ? > spimData, final int setup, final String name )
 	{
-		super( loader, setup, name );
-		nonVolatileSource = new SpimSource< T >( loader, setup, name );
-		final SequenceDescription seq = loader.getSequenceDescription();
+		super( spimData, setup, name );
+		nonVolatileSource = new SpimSource< T >( spimData, setup, name );
+		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
 		imgLoader = ( ViewerImgLoader< ?, V > ) seq.getImgLoader();
 		if ( MipmapOrdering.class.isInstance( imgLoader ) )
 			mipmapOrdering = ( ( MipmapOrdering ) imgLoader );

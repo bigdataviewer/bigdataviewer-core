@@ -3,7 +3,8 @@ package bdv;
 import java.util.List;
 import java.util.Map;
 
-import mpicbg.spim.data.SequenceDescription;
+import mpicbg.spim.data.generic.AbstractSpimData;
+import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.registration.ViewRegistration;
 import mpicbg.spim.data.sequence.TimePoint;
 import mpicbg.spim.data.sequence.ViewId;
@@ -48,13 +49,13 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 	protected final InterpolatorFactory< T, RandomAccessible< T > >[] interpolatorFactories;
 
 	@SuppressWarnings( "unchecked" )
-	public AbstractSpimSource( final SequenceViewsLoader loader, final int setupId, final String name )
+	public AbstractSpimSource( final AbstractSpimData< ? > spimData, final int setupId, final String name )
 	{
 		this.setupId = setupId;
 		this.name = name;
-		final SequenceDescription seq = loader.getSequenceDescription();
+		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
 		timePointsOrdered = seq.getTimePoints().getTimePointsOrdered();
-		viewRegistrations = loader.getViewRegistrations().getViewRegistrations();
+		viewRegistrations = spimData.getViewRegistrations().getViewRegistrations();
 		numMipmapLevels =  ( ( ViewerImgLoader< ?, ? > ) seq.getImgLoader() ).numMipmapLevels( setupId );
 		currentSources = new RandomAccessibleInterval[ numMipmapLevels ];
 		currentInterpolatedSources = new RealRandomAccessible[ numMipmapLevels ][ numInterpolationMethods ];

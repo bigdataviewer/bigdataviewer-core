@@ -1,6 +1,7 @@
 package bdv;
 
-import mpicbg.spim.data.SequenceDescription;
+import mpicbg.spim.data.generic.AbstractSpimData;
+import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -11,10 +12,10 @@ public class SpimSource< T extends NumericType< T > > extends AbstractSpimSource
 	protected final ViewerImgLoader< T, ? > imgLoader;
 
 	@SuppressWarnings( "unchecked" )
-	public SpimSource( final SequenceViewsLoader loader, final int setup, final String name )
+	public SpimSource( final AbstractSpimData< ? > spimData, final int setup, final String name )
 	{
-		super( loader, setup, name );
-		final SequenceDescription seq = loader.getSequenceDescription();
+		super( spimData, setup, name );
+		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
 		imgLoader = ( ViewerImgLoader< T, ? > ) seq.getImgLoader();
 		loadTimepoint( 0 );
 	}
