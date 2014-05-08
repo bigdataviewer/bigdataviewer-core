@@ -1,13 +1,8 @@
 package bdv;
 
-import java.io.File;
-
 import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
-import net.imglib2.type.numeric.real.FloatType;
-
-import org.jdom2.Element;
 
 public abstract class AbstractViewerImgLoader< T, V extends Volatile< T > > implements ViewerImgLoader< T, V >
 {
@@ -31,18 +26,6 @@ public abstract class AbstractViewerImgLoader< T, V extends Volatile< T > > impl
 	public V getVolatileImageType()
 	{
 		return volatileType;
-	}
-
-	@Override
-	public Element toXml( final File basePath )
-	{
-		throw new UnsupportedOperationException( "not implemented" );
-	}
-
-	@Override
-	public RandomAccessibleInterval< FloatType > getFloatImage( final ViewId view )
-	{
-		throw new UnsupportedOperationException( "not implemented" );
 	}
 
 	@Override

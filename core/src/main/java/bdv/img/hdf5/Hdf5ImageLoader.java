@@ -3,16 +3,15 @@ package bdv.img.hdf5;
 import static bdv.img.hdf5.Util.getResolutionsPath;
 import static bdv.img.hdf5.Util.getSubdivisionsPath;
 import static bdv.img.hdf5.Util.reorder;
-import static mpicbg.spim.data.XmlHelpers.loadPath;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import mpicbg.spim.data.SequenceDescription;
-import mpicbg.spim.data.ViewSetup;
-import mpicbg.spim.data.XmlHelpers;
+import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
+import mpicbg.spim.data.generic.sequence.BasicViewSetup;
+import mpicbg.spim.data.sequence.Angle;
 import mpicbg.spim.data.sequence.TimePoint;
 import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.FinalInterval;
@@ -26,9 +25,6 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.volatiles.VolatileUnsignedShortType;
 import net.imglib2.view.Views;
-
-import org.jdom2.Element;
-
 import bdv.AbstractViewerImgLoader;
 import bdv.img.cache.CacheHints;
 import bdv.img.cache.CachedCellImg;
@@ -102,10 +98,6 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 	 */
 	protected final ArrayList< Partition > partitions;
 
-//	protected int numTimepoints;
-
-//	protected int numSetups;
-
 	protected int maxNumLevels;
 
 	/**
@@ -134,37 +126,31 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 	 */
 	protected final HashMap< ViewLevelId, Boolean > cachedExistence;
 
-	public Hdf5ImageLoader()
+	protected final AbstractSequenceDescription< ?, ?, ? > sequenceDescription;
+
+	/**
+	 *
+	 * @param hdf5File
+	 * @param hdf5Partitions
+	 * @param sequenceDescription
+	 *            the {@link AbstractSequenceDescription}. When
+	 *            {@link #getImage(ViewId) loading} images, this may be used to
+	 *            retrieve additional information for a {@link ViewId}, such as
+	 *            setup name, {@link Angle}, {@link Channel}, etc.
+	 */
+	public Hdf5ImageLoader( final File hdf5File, final ArrayList< Partition > hdf5Partitions, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
 	{
-		this( null );
+		this( hdf5File, hdf5Partitions, sequenceDescription, true );
 	}
 
-	public Hdf5ImageLoader( final ArrayList< Partition > hdf5Partitions )
-	{
-		super( new UnsignedShortType(), new VolatileUnsignedShortType() );
-		hdf5File = null;
-		hdf5Reader = null;
-		cache = null;
-		perSetupMipmapInfo = new HashMap< Integer, MipmapInfo >();
-		cachedDimensions = new HashMap< ViewLevelId, long[] >();
-		cachedExistence = new HashMap< ViewLevelId, Boolean >();
-		partitions = new ArrayList< Partition >();
-		if ( hdf5Partitions != null )
-			partitions.addAll( hdf5Partitions );
-	}
-
-	public Hdf5ImageLoader( final File hdf5File, final ArrayList< Partition > hdf5Partitions )
-	{
-		this( hdf5File, hdf5Partitions, true );
-	}
-
-	public Hdf5ImageLoader( final File hdf5File, final ArrayList< Partition > hdf5Partitions, final boolean doOpen )
+	public Hdf5ImageLoader( final File hdf5File, final ArrayList< Partition > hdf5Partitions, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription, final boolean doOpen )
 	{
 		super( new UnsignedShortType(), new VolatileUnsignedShortType() );
 		this.hdf5File = hdf5File;
 		perSetupMipmapInfo = new HashMap< Integer, MipmapInfo >();
 		cachedDimensions = new HashMap< ViewLevelId, long[] >();
 		cachedExistence = new HashMap< ViewLevelId, Boolean >();
+		this.sequenceDescription = sequenceDescription;
 		partitions = new ArrayList< Partition >();
 		if ( hdf5Partitions != null )
 			partitions.addAll( hdf5Partitions );
@@ -172,88 +158,60 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 			open();
 	}
 
-
-	// TODO clean up after spim_data switch
-	private SequenceDescription sequenceDescription;
-
-	// TODO clean up after spim_data switch
-	public void setSequenceDescription( final SequenceDescription sequenceDescription )
-	{
-		this.sequenceDescription = sequenceDescription;
-	}
+	private boolean isOpen = false;
 
 	private void open()
 	{
-		hdf5Reader = HDF5Factory.openForReading( hdf5File );
-//		numTimepoints = hdf5Reader.readInt( "numTimepoints" );
-//		numSetups = hdf5Reader.readInt( "numSetups" );
-
-		maxNumLevels = 0;
-		perSetupMipmapInfo.clear();
-		final List< ViewSetup > setups = sequenceDescription.getViewSetupsOrdered();
-		for ( final ViewSetup setup : setups )
+		if ( ! isOpen )
 		{
-			final int setupId = setup.getId();
+			synchronized ( this )
+			{
+				if ( isOpen )
+					return;
+				isOpen = true;
 
-			final double[][] resolutions = hdf5Reader.readDoubleMatrix( getResolutionsPath( setupId ) );
-			final AffineTransform3D[] transforms = new AffineTransform3D[ resolutions.length ];
-			for ( int level = 0; level < resolutions.length; level++ )
-				transforms[ level ] = MipmapTransforms.getMipmapTransformDefault( resolutions[ level ] );
-			final int[][] subdivisions = hdf5Reader.readIntMatrix( getSubdivisionsPath( setupId ) );
+				hdf5Reader = HDF5Factory.openForReading( hdf5File );
 
-			if ( resolutions.length > maxNumLevels )
-				maxNumLevels = resolutions.length;
+				maxNumLevels = 0;
+				perSetupMipmapInfo.clear();
+				final List< ? extends BasicViewSetup > setups = sequenceDescription.getViewSetupsOrdered();
+				for ( final BasicViewSetup setup : setups )
+				{
+					final int setupId = setup.getId();
 
-			perSetupMipmapInfo.put( setupId, new MipmapInfo( resolutions, transforms, subdivisions ) );
+					final double[][] resolutions = hdf5Reader.readDoubleMatrix( getResolutionsPath( setupId ) );
+					final AffineTransform3D[] transforms = new AffineTransform3D[ resolutions.length ];
+					for ( int level = 0; level < resolutions.length; level++ )
+						transforms[ level ] = MipmapTransforms.getMipmapTransformDefault( resolutions[ level ] );
+					final int[][] subdivisions = hdf5Reader.readIntMatrix( getSubdivisionsPath( setupId ) );
+
+					if ( resolutions.length > maxNumLevels )
+						maxNumLevels = resolutions.length;
+
+					perSetupMipmapInfo.put( setupId, new MipmapInfo( resolutions, transforms, subdivisions ) );
+				}
+
+				cachedDimensions.clear();
+				cachedExistence.clear();
+
+				final List< TimePoint > timepoints = sequenceDescription.getTimePoints().getTimePointsOrdered();
+				final int maxNumTimepoints = timepoints.get( timepoints.size() - 1 ).getId() + 1;
+				final int maxNumSetups = setups.get( setups.size() - 1 ).getId() + 1;
+				cache = new VolatileGlobalCellCache< VolatileShortArray >( new Hdf5VolatileShortArrayLoader( hdf5Reader ), maxNumTimepoints, maxNumSetups, maxNumLevels, 1 );
+			}
 		}
-
-		cachedDimensions.clear();
-		cachedExistence.clear();
-
-		final List< TimePoint > timepoints = sequenceDescription.getTimePoints().getTimePointsOrdered();
-		final int maxNumTimepoints = timepoints.get( timepoints.size() - 1 ).getId() + 1;
-		final int maxNumSetups = setups.get( setups.size() - 1 ).getId() + 1;
-		cache = new VolatileGlobalCellCache< VolatileShortArray >( new Hdf5VolatileShortArrayLoader( hdf5Reader ), maxNumTimepoints, maxNumSetups, maxNumLevels, 1 );
-	}
-
-	@Override
-	public void init( final Element elem, final File basePath )
-	{
-		try
-		{
-			final String path = loadPath( elem, "hdf5", basePath ).toString();
-			partitions.clear();
-			for ( final Element p : elem.getChildren( "partition" ) )
-				partitions.add( new Partition( p, basePath ) );
-			hdf5File = new File( path );
-			open();
-		}
-		catch ( final Exception e )
-		{
-			throw new RuntimeException( e );
-		}
-	}
-
-	@Override
-	public Element toXml( final File basePath )
-	{
-		final Element elem = new Element( "ImageLoader" );
-		elem.setAttribute( "class", getClass().getCanonicalName() );
-		elem.addContent( XmlHelpers.pathElement( "hdf5", hdf5File, basePath ) );
-		for ( final Partition partition : partitions )
-			elem.addContent( partition.toXml( basePath ) );
-		return elem;
 	}
 
 	public void initCachedDimensionsFromHdf5( final boolean background )
 	{
+		open();
 		final long t0 = System.currentTimeMillis();
 		final List< TimePoint > timepoints = sequenceDescription.getTimePoints().getTimePointsOrdered();
-		final List< ViewSetup > setups = sequenceDescription.getViewSetupsOrdered();
+		final List< ? extends BasicViewSetup > setups = sequenceDescription.getViewSetupsOrdered();
 		for ( final TimePoint timepoint : timepoints )
 		{
 			final int t = timepoint.getId();
-			for ( final ViewSetup setup : setups )
+			for ( final BasicViewSetup setup : setups )
 			{
 				final int s = setup.getId();
 				final int numLevels = perSetupMipmapInfo.get( s ).getNumLevels();
@@ -322,6 +280,7 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 	@Override
 	public VolatileGlobalCellCache< VolatileShortArray > getCache()
 	{
+		open();
 		return cache;
 	}
 
@@ -329,23 +288,27 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 	@Override
 	public double[][] getMipmapResolutions( final int setupId )
 	{
+		open();
 		return perSetupMipmapInfo.get( setupId ).getResolutions();
 	}
 
 	@Override
 	public AffineTransform3D[] getMipmapTransforms( final int setupId )
 	{
+		open();
 		return perSetupMipmapInfo.get( setupId ).getTransforms();
 	}
 
 	public int[][] getSubdivisions( final int setupId )
 	{
+		open();
 		return perSetupMipmapInfo.get( setupId ).getSubdivisions();
 	}
 
 	@Override
 	public int numMipmapLevels( final int setupId )
 	{
+		open();
 		return perSetupMipmapInfo.get( setupId ).getNumLevels();
 	}
 
@@ -379,6 +342,7 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 
 	public long[] getImageDimension( final ViewLevelId id )
 	{
+		open();
 		long[] dims = cachedDimensions.get( id );
 		if ( dims == null )
 		{
@@ -415,10 +379,7 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 	 */
 	protected < T extends NativeType< T > > CachedCellImg< T, VolatileShortArray > prepareCachedImage( final ViewLevelId id, final LoadingStrategy loadingStrategy )
 	{
-		if ( hdf5Reader == null )
-			throw new RuntimeException( "no hdf5 file open" );
-
-
+		open();
 		final int timepointId = id.getTimePointId();
 		final int setupId = id.getViewSetupId();
 		final int level = id.getLevel();
@@ -437,7 +398,8 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 
 	public void printMipmapInfo()
 	{
-		for ( final ViewSetup setup : sequenceDescription.getViewSetupsOrdered() )
+		open();
+		for ( final BasicViewSetup setup : sequenceDescription.getViewSetupsOrdered() )
 		{
 			final int setupId = setup.getId();
 			System.out.println( "setup " + setupId );
