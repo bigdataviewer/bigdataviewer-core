@@ -1,10 +1,12 @@
 package bdv.img.hdf5;
 
-import java.io.File;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 
-import mpicbg.spim.data.XmlHelpers;
-
-import org.jdom2.Element;
+import mpicbg.spim.data.generic.sequence.BasicViewSetup;
+import mpicbg.spim.data.sequence.TimePoint;
+import mpicbg.spim.data.sequence.ViewId;
 
 /**
  * Partition describes one partition file of a dataset that is split across
@@ -17,83 +19,55 @@ import org.jdom2.Element;
 public class Partition
 {
 	protected final String path;
-	protected final int timepointOffset;
-	protected final int timepointStart;
-	protected final int timepointLength;
-	protected final int setupOffset;
-	protected final int setupStart;
-	protected final int setupLength;
+
+	/**
+	 * maps {@link TimePoint#getId() timepoint ids} of the full sequence to
+	 * timepoint ids of the partition.
+	 */
+	private final Map< Integer, Integer > timepointIdSequenceToPartition;
+
+	/**
+	 * maps {@link BasicViewSetup#getId() setup ids} of the full sequence to
+	 * setup ids of the partition.
+	 */
+	private final Map< Integer, Integer > setupIdSequenceToPartition;
 
 	/**
 	 * Create a new Partition description.
 	 *
 	 * @param path
 	 *            path to the hdf5 file for this partition
-	 * @param timepointOffset
-	 *            The timepoint <em>t</em> in the partition corresponds to
-	 *            timepoint <em>t + <code>timepointOffset</code></em> in the
-	 *            full sequence.
-	 * @param timepointStart
-	 *            The first timepoint <em>t</em> contained in this partition
-	 *            (relative to the offset, not the full sequence).
-	 * @param timepointLength
-	 *            How many timepoints are contained in this partition.
-	 * @param setupOffset
-	 *            The setup <em>s</em> in the partition corresponds to
-	 *            setup <em>s + <code>setupOffset</code></em> in the
-	 *            full sequence.
-	 * @param setupStart
-	 *            The first setup <em>s</em> contained in this partition
-	 *            (relative to the offset, not the full sequence).
-	 * @param setupLength
-	 *            How many setups are contained in this partition.
+	 * @param timepointIdsSequence
+	 * @param setupIdsSequence
+	 * @param timepointIdsPartition
+	 * @param setupIdsPartition
 	 */
-	public Partition( final String path, final int timepointOffset, final int timepointStart, final int timepointLength, final int setupOffset, final int setupStart, final int setupLength )
+	public Partition( final String path, final int[] timepointIdsSequence, final int[] setupIdsSequence, final int[] timepointIdsPartition, final int[] setupIdsPartition )
 	{
 		this.path = path;
-		this.timepointOffset = timepointOffset;
-		this.timepointStart = timepointStart;
-		this.timepointLength = timepointLength;
-		this.setupOffset = setupOffset;
-		this.setupStart = setupStart;
-		this.setupLength = setupLength;
+		timepointIdSequenceToPartition = new HashMap< Integer, Integer >();
+		setupIdSequenceToPartition = new HashMap< Integer, Integer >();
+
+		for ( int i = 0; i < timepointIdsSequence.length; ++i )
+			timepointIdSequenceToPartition.put( timepointIdsSequence[ i ], timepointIdsPartition[ i ] );
+
+		for ( int i = 0; i < setupIdsSequence.length; ++i )
+			setupIdSequenceToPartition.put( setupIdsSequence[ i ], setupIdsPartition[ i ] );
 	}
 
 	/**
-	 * Load a Partition description from an XML file.
+	 * Create a new Partition description.
 	 *
-	 * @param elem
-	 *            The "partition" DOM element.
+	 * @param path
+	 *            path to the hdf5 file for this partition
+	 * @param timepointIdSequenceToPartition
+	 * @param setupIdSequenceToPartition
 	 */
-	public Partition( final Element elem, final File basePath )
+	public Partition( final String path, final Map< Integer, Integer > timepointIdSequenceToPartition, final Map< Integer, Integer > setupIdSequenceToPartition )
 	{
-		try
-		{
-			path = XmlHelpers.loadPath( elem, "path", basePath ).toString();
-		}
-		catch ( final Exception e )
-		{
-			throw new RuntimeException( e );
-		}
-		timepointOffset = Integer.parseInt( elem.getChildText( "timepointOffset" ) );
-		timepointStart = Integer.parseInt( elem.getChildText( "timepointStart" ) );
-		timepointLength = Integer.parseInt( elem.getChildText( "timepointLength" ) );
-		setupOffset = Integer.parseInt( elem.getChildText( "setupOffset" ) );
-		setupStart = Integer.parseInt( elem.getChildText( "setupStart" ) );
-		setupLength = Integer.parseInt( elem.getChildText( "setupLength" ) );
-	}
-
-	public Element toXml( final File basePath )
-	{
-		final Element elem = new Element( "partition" );
-		elem.addContent( XmlHelpers.pathElement( "path", new File( path ), basePath ) );
-		elem.addContent( XmlHelpers.intElement( "timepointOffset", getTimepointOffset() ) );
-		elem.addContent( XmlHelpers.intElement( "timepointStart", getTimepointStart() ) );
-		elem.addContent( XmlHelpers.intElement( "timepointLength", getTimepointLength() ) );
-		elem.addContent( XmlHelpers.intElement( "setupOffset", getSetupOffset() ) );
-		elem.addContent( XmlHelpers.intElement( "setupStart", getSetupStart() ) );
-		elem.addContent( XmlHelpers.intElement( "setupLength", getSetupLength() ) );
-		return elem;
+		this.path = path;
+		this.timepointIdSequenceToPartition = Collections.unmodifiableMap( timepointIdSequenceToPartition );
+		this.setupIdSequenceToPartition = Collections.unmodifiableMap( setupIdSequenceToPartition );
 	}
 
 	/**
@@ -107,92 +81,35 @@ public class Partition
 	}
 
 	/**
-	 * Get the timepoint offset. The timepoint <em>t</em> in the partition
-	 * corresponds to timepoint <em>t + <code>offset</code></em> in the full
-	 * sequence.
+	 * Get a map from {@link TimePoint#getId() timepoint ids} of the full
+	 * sequence to timepoint ids of this partition.
+	 */
+	public Map< Integer, Integer > getTimepointIdSequenceToPartition()
+	{
+		return timepointIdSequenceToPartition;
+	}
+
+	/**
+	 * Get a map from {@link BasicViewSetup#getId() setup ids} of the full
+	 * sequence to setup ids of this partition.
+	 */
+	public Map< Integer, Integer > getSetupIdSequenceToPartition()
+	{
+		return setupIdSequenceToPartition;
+	}
+
+	/**
+	 * Does this partition contain the given {@link ViewId view}
+	 * (timepoint-setup pair)?
 	 *
-	 * @return the timepoint offset.
+	 * @param viewId
+	 *            view (timepoint and setup id wrt. the full sequence)
+	 * @return whether this partition contains the given view.
 	 */
-	public int getTimepointOffset()
+	public boolean contains( final ViewId viewId )
 	{
-		return timepointOffset;
-	}
-
-	/**
-	 * Get the index of the first timepoint <em>t</em> contained in this
-	 * partition (relative to the offset, not the full sequence).
-	 *
-	 * @return index of the first timepoint in this partition.
-	 */
-	public int getTimepointStart()
-	{
-		return timepointStart;
-	}
-
-	/**
-	 * Get the number of timepoints in this partition.
-	 * @return how many timepoints are contained in this partition.
-	 */
-	public int getTimepointLength()
-	{
-		return timepointLength;
-	}
-
-	/**
-	 * Get the setup offset. The setup <em>t</em> in the partition
-	 * corresponds to setup <em>t + <code>offset</code></em> in the full
-	 * sequence.
-	 *
-	 * @return the setup offset.
-	 */
-	public int getSetupOffset()
-	{
-		return setupOffset;
-	}
-
-	/**
-	 * Get the index of the first setup <em>t</em> contained in this
-	 * partition (relative to the offset, not the full sequence).
-	 *
-	 * @return index of the first setup in this partition.
-	 */
-	public int getSetupStart()
-	{
-		return setupStart;
-	}
-
-	/**
-	 * Get the number of setups in this partition.
-	 * @return how many setups are contained in this partition.
-	 */
-	public int getSetupLength()
-	{
-		return setupLength;
-	}
-
-	/**
-	 * Does this partition contain the given timepoint and setup?
-	 *
-	 * @param timepoint
-	 *            timepoint index (in the full sequence)
-	 * @param setup
-	 *            setup index (in the full sequence)
-	 * @return
-	 */
-	public boolean contains( final int timepoint, final int setup )
-	{
-		final int t0 = timepointOffset + timepointStart;
-		if ( timepoint < t0 )
-			return false;
-		final int t1 = t0 + timepointLength;
-		if ( timepoint >= t1 )
-			return false;
-		final int s0 = setupOffset + setupStart;
-		if ( setup < s0 )
-			return false;
-		final int s1 = s0 + setupLength;
-		if ( setup >= s1 )
-			return false;
-		return true;
+		return
+				timepointIdSequenceToPartition.containsKey( viewId.getTimePointId() ) &&
+				setupIdSequenceToPartition.containsKey( viewId.getViewSetupId() );
 	}
 }

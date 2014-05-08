@@ -129,4 +129,20 @@ public class Util
 			ints[ l ] = castToInts( doubles[ l ] );
 		return ints;
 	}
+
+	public static double[] castToDoubles( final int[] ints )
+	{
+		final double[] doubles = new double[ ints.length ];
+		for ( int i = 0; i < ints.length; ++i )
+			doubles[ i ] = ints[ i ];
+		return doubles;
+	}
+
+	public static double[][] castToDoubles( final int[][] ints )
+	{
+		final double[][] doubles = new double[ ints.length ][];
+		for ( int l = 0; l < ints.length; ++l )
+			doubles[ l ] = castToDoubles( ints[ l ] );
+		return doubles;
+	}
 }

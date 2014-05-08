@@ -45,13 +45,26 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 
 	protected VolatileGlobalCellCache< VolatileShortArray > cache;
 
+	/**
+	 * Description of available mipmap levels for a {@link BasicViewSetup}.
+	 * Contains for each mipmap level, the subsampling factors and subdivision
+	 * block sizes.
+	 *
+	 * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+	 */
 	// TODO clean up after spim_data switch
 	public static class MipmapInfo
 	{
+		/**
+		 * subsampling factors. indexed by mipmap level, dimension.
+		 */
 		private final double[][] resolutions;
 
 		private final AffineTransform3D[] transforms;
 
+		/**
+		 * subdivision block sizes. indexed by mipmap level, dimension.
+		 */
 		private final int[][] subdivisions;
 
 		private final int maxLevel;
