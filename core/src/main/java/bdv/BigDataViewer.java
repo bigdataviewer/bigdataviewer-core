@@ -13,8 +13,11 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.filechooser.FileFilter;
 
-import mpicbg.spim.data.SequenceDescription;
-import mpicbg.spim.data.ViewSetup;
+import mpicbg.spim.data.generic.AbstractSpimData;
+import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
+import mpicbg.spim.data.generic.sequence.BasicViewSetup;
+import mpicbg.spim.data.sequence.Angle;
+import mpicbg.spim.data.sequence.Channel;
 import mpicbg.spim.data.sequence.TimePoint;
 import net.imglib2.Volatile;
 import net.imglib2.converter.Converter;
@@ -33,6 +36,8 @@ import org.jdom2.output.XMLOutputter;
 
 import bdv.export.ProgressWriter;
 import bdv.export.ProgressWriterConsole;
+import bdv.spimdata.SpimDataMinimal;
+import bdv.spimdata.XmlIoSpimDataMinimal;
 import bdv.tools.HelpDialog;
 import bdv.tools.InitializeViewerState;
 import bdv.tools.RecordMovieDialog;
@@ -83,16 +88,34 @@ public class BigDataViewer
 		manualTransformationEditor.toggle();
 	}
 
+	private static String createSetupName( final BasicViewSetup setup )
+	{
+		if ( setup.hasName() )
+			return setup.getName();
+
+		String name = "";
+
+		final Angle angle = setup.getAttribute( Angle.class );
+		if ( angle != null )
+			name += ( name.isEmpty() ? "" : " " ) + "a " + angle.getName();
+
+		final Channel channel = setup.getAttribute( Channel.class );
+		if ( channel != null )
+			name += ( name.isEmpty() ? "" : " " ) + "c " + channel.getName();
+
+		return name;
+	}
+
 	private static < T extends RealType< T >, V extends Volatile< T > & RealType< V > > void initSetupsRealType(
-			final SequenceViewsLoader loader,
+			final AbstractSpimData< ? > spimData,
 			final T type,
 			final ArrayList< ConverterSetup > converterSetups,
 			final ArrayList< SourceAndConverter< ? > > sources )
 	{
 		final double typeMin = type.getMinValue();
 		final double typeMax = type.getMaxValue();
-		final SequenceDescription seq = loader.getSequenceDescription();
-		for ( final ViewSetup setup : seq.getViewSetupsOrdered() )
+		final AbstractSequenceDescription< ?, ?, ?> seq = spimData.getSequenceDescription();
+		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
 		{
 			final RealARGBColorConverter< V > vconverter = new RealARGBColorConverter< V >( typeMin, typeMax );
 			vconverter.setColor( new ARGBType( 0xffffffff ) );
@@ -100,8 +123,8 @@ public class BigDataViewer
 			converter.setColor( new ARGBType( 0xffffffff ) );
 
 			final int setupId = setup.getId();
-			final String setupName = setup.hasName() ? setup.getName() : "angle " + setup.getAngle();
-			final VolatileSpimSource< T, V > vs = new VolatileSpimSource< T, V >( loader, setupId, setupName );
+			final String setupName = createSetupName( setup );
+			final VolatileSpimSource< T, V > vs = new VolatileSpimSource< T, V >( spimData, setupId, setupName );
 			final SpimSource< T > s = vs.nonVolatile();
 
 			// Decorate each source with an extra transformation, that can be edited manually in this viewer.
@@ -117,13 +140,13 @@ public class BigDataViewer
 	}
 
 	private static void initSetupsARGBType(
-			final SequenceViewsLoader loader,
+			final AbstractSpimData< ? > spimData,
 			final ARGBType type,
 			final ArrayList< ConverterSetup > converterSetups,
 			final ArrayList< SourceAndConverter< ? > > sources )
 	{
-		final SequenceDescription seq = loader.getSequenceDescription();
-		for ( final ViewSetup setup : seq.getViewSetupsOrdered() )
+		final AbstractSequenceDescription< ?, ?, ?> seq = spimData.getSequenceDescription();
+		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
 		{
 			final Converter< VolatileARGBType, ARGBType > vconverter = new Converter< VolatileARGBType, ARGBType >()
 			{
@@ -136,8 +159,8 @@ public class BigDataViewer
 			final TypeIdentity< ARGBType > converter = new TypeIdentity< ARGBType >();
 
 			final int setupId = setup.getId();
-			final String setupName = setup.hasName() ? setup.getName() : "angle " + setup.getAngle();
-			final VolatileSpimSource< ARGBType, VolatileARGBType > vs = new VolatileSpimSource< ARGBType, VolatileARGBType >( loader, setupId, setupName );
+			final String setupName = createSetupName( setup );
+			final VolatileSpimSource< ARGBType, VolatileARGBType > vs = new VolatileSpimSource< ARGBType, VolatileARGBType >( spimData, setupId, setupName );
 			final SpimSource< ARGBType > s = vs.nonVolatile();
 
 			// Decorate each source with an extra transformation, that can be edited manually in this viewer.
@@ -153,15 +176,15 @@ public class BigDataViewer
 
 	@SuppressWarnings( { "unchecked", "rawtypes" } )
 	private static void initSetups(
-			final SequenceViewsLoader loader,
+			final AbstractSpimData< ? > spimData,
 			final ArrayList< ConverterSetup > converterSetups,
 			final ArrayList< SourceAndConverter< ? > > sources )
 	{
-		final Object type = ( ( ViewerImgLoader< ?, ? > ) loader.getSequenceDescription().getImgLoader() ).getImageType();
+		final Object type = ( ( ViewerImgLoader< ?, ? > ) spimData.getSequenceDescription().getImgLoader() ).getImageType();
 		if ( RealType.class.isInstance( type ) )
-			initSetupsRealType( loader, ( RealType ) type, converterSetups, sources );
+			initSetupsRealType( spimData, ( RealType ) type, converterSetups, sources );
 		else if ( ARGBType.class.isInstance( type ) )
-			initSetupsARGBType( loader, ( ARGBType ) type, converterSetups, sources );
+			initSetupsARGBType( spimData, ( ARGBType ) type, converterSetups, sources );
 		else throw new IllegalArgumentException( "ImgLoader of type " + type.getClass() + " not supported." );
 	}
 
@@ -170,12 +193,20 @@ public class BigDataViewer
 		final int width = 800;
 		final int height = 600;
 
-		final SequenceViewsLoader loader = new SequenceViewsLoader( xmlFilename );
-		final SequenceDescription seq = loader.getSequenceDescription();
+		SpimDataMinimal spimData;
+		try
+		{
+			spimData = new XmlIoSpimDataMinimal().load( xmlFilename );
+		}
+		catch ( final Exception e )
+		{
+			throw new IOException( e );
+		}
+		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
 
 		final ArrayList< ConverterSetup > converterSetups = new ArrayList< ConverterSetup >();
 		final ArrayList< SourceAndConverter< ? > > sources = new ArrayList< SourceAndConverter< ? > >();
-		initSetups( loader, converterSetups, sources );
+		initSetups( spimData, converterSetups, sources );
 
 		final List< TimePoint > timepoints = seq.getTimePoints().getTimePointsOrdered();
 		viewerFrame = new ViewerFrame( width, height, sources, timepoints.size(),
@@ -199,7 +230,7 @@ public class BigDataViewer
 
 		brightnessDialog = new BrightnessDialog( viewerFrame, setupAssignments );
 
-		cropDialog = new CropDialog( viewerFrame, viewer, seq );
+		cropDialog = null; // TODO repair after spim_data migration    new CropDialog( viewerFrame, viewer, seq );
 
 		movieDialog = new RecordMovieDialog( viewerFrame, viewer, progressWriter );
 		viewer.getDisplay().addOverlayRenderer( movieDialog ); // this is just to get updates of window size
@@ -386,7 +417,7 @@ public class BigDataViewer
 
 	public static void main( final String[] args )
 	{
-		final String fn = "/Users/Pietzsch/Desktop/export.xml";
+		final String fn = "/Users/Pietzsch/Desktop/bdv example/drosophila 2.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/data/catmaid.xml";
 //		final String fn = "/home/saalfeld/openconnectome-bock11-neariso.xml";
 //		final String fn = "/home/saalfeld/catmaid-confocal.xml";
