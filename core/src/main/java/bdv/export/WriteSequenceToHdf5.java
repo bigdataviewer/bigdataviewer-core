@@ -11,11 +11,10 @@ import java.util.Map.Entry;
 
 import mpicbg.spim.data.XmlHelpers;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
+import mpicbg.spim.data.generic.sequence.BasicImgLoader;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
-import mpicbg.spim.data.sequence.ImgLoader;
 import mpicbg.spim.data.sequence.TimePoint;
 import mpicbg.spim.data.sequence.ViewId;
-import mpicbg.spim.data.sequence.ViewSetup;
 import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccess;
@@ -134,7 +133,7 @@ public class WriteSequenceToHdf5
 	 * @param seq
 	 *            description of the sequence to be stored as hdf5. (The
 	 *            {@link AbstractSequenceDescription} contains the number of
-	 *            setups and timepoints as well as an {@link ImgLoader} that
+	 *            setups and timepoints as well as an {@link BasicImgLoader} that
 	 *            provides the image data, Registration information is not
 	 *            needed here, that will go into the accompanying xml).
 	 * @param perSetupMipmapInfo
@@ -160,7 +159,7 @@ public class WriteSequenceToHdf5
 		final int numSetups = setupIdsSequence.size();
 
 		@SuppressWarnings( "unchecked" )
-		final ImgLoader< UnsignedShortType > imgLoader = ( ImgLoader< UnsignedShortType > ) seq.getImgLoader();
+		final BasicImgLoader< UnsignedShortType > imgLoader = ( BasicImgLoader< UnsignedShortType > ) seq.getImgLoader();
 
 		// for progressWriter
 		// initial 1 is for writing resolutions etc.
@@ -369,7 +368,7 @@ public class WriteSequenceToHdf5
 	 * @param seq
 	 *            description of the sequence to be stored as hdf5. (The
 	 *            {@link AbstractSequenceDescription} contains the number of
-	 *            setups and timepoints as well as an {@link ImgLoader} that
+	 *            setups and timepoints as well as an {@link BasicImgLoader} that
 	 *            provides the image data, Registration information is not
 	 *            needed here, that will go into the accompanying xml).
 	 * @param perSetupMipmapInfo
@@ -401,12 +400,12 @@ public class WriteSequenceToHdf5
 	 * timepoints in a chunked, mipmaped representation. This is the same as
 	 * {@link WriteSequenceToHdf5#writeHdf5File(AbstractSequenceDescription, ArrayList, ArrayList, File, ProgressWriter)}
 	 * except that only one set of supsampling factors and and subdivision
-	 * blocksizes is given, which is used for all {@link ViewSetup views}.
+	 * blocksizes is given, which is used for all {@link BasicViewSetup views}.
 	 *
 	 * @param seq
 	 *            description of the sequence to be stored as hdf5. (The
 	 *            {@link AbstractSequenceDescription} contains the number of setups and
-	 *            timepoints as well as an {@link ImgLoader} that provides the
+	 *            timepoints as well as an {@link BasicImgLoader} that provides the
 	 *            image data, Registration information is not needed here, that
 	 *            will go into the accompanying xml).
 	 * @param resolutions
