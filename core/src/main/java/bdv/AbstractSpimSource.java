@@ -144,4 +144,9 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 	{
 		return numMipmapLevels;
 	}
+
+	public int getSetupId()
+	{
+		return setupId;
+	}
 }

@@ -243,4 +243,8 @@ public class TransformedSource< T > implements Source< T >, MipmapOrdering, SetC
 		return sourceMipmapOrdering.getMipmapHints( composed, timepoint, previousTimepoint );
 	}
 
+	public Source< T > getWrappedSource()
+	{
+		return source;
+	}
 }

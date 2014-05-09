@@ -297,7 +297,6 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 		return cache;
 	}
 
-	// TODO: spim_data. should this and the following methods be replaced by single method getMipmapInfo()?
 	@Override
 	public double[][] getMipmapResolutions( final int setupId )
 	{
@@ -312,17 +311,17 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 		return perSetupMipmapInfo.get( setupId ).getTransforms();
 	}
 
-	public int[][] getSubdivisions( final int setupId )
-	{
-		open();
-		return perSetupMipmapInfo.get( setupId ).getSubdivisions();
-	}
-
 	@Override
 	public int numMipmapLevels( final int setupId )
 	{
 		open();
 		return perSetupMipmapInfo.get( setupId ).getNumLevels();
+	}
+
+	public MipmapInfo getMipmapInfo( final int setupId )
+	{
+		open();
+		return perSetupMipmapInfo.get( setupId );
 	}
 
 	/**

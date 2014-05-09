@@ -5,10 +5,12 @@ import java.awt.Frame;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.beans.Beans;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -29,19 +31,27 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileFilter;
 
-import mpicbg.spim.data.SequenceDescription;
-import mpicbg.spim.data.ViewDescription;
-import mpicbg.spim.data.ViewRegistration;
-import mpicbg.spim.data.ViewRegistrations;
-import mpicbg.spim.data.ViewSetup;
+import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
+import mpicbg.spim.data.generic.sequence.BasicViewSetup;
+import mpicbg.spim.data.registration.ViewRegistration;
+import mpicbg.spim.data.registration.ViewRegistrations;
+import mpicbg.spim.data.sequence.TimePoint;
+import mpicbg.spim.data.sequence.TimePoints;
+import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.RealInterval;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.util.Intervals;
+import bdv.AbstractSpimSource;
+import bdv.export.ExportMipmapInfo;
 import bdv.export.WriteSequenceToHdf5;
-import bdv.export.WriteSequenceToXml;
 import bdv.img.hdf5.Hdf5ImageLoader;
+import bdv.img.hdf5.Hdf5ImageLoader.MipmapInfo;
 import bdv.img.hdf5.Util;
+import bdv.spimdata.SequenceDescriptionMinimal;
+import bdv.spimdata.SpimDataMinimal;
+import bdv.spimdata.XmlIoSpimDataMinimal;
+import bdv.tools.transformation.TransformedSource;
 import bdv.viewer.Source;
 import bdv.viewer.ViewerPanel;
 import bdv.viewer.state.SourceState;
@@ -50,7 +60,7 @@ public class CropDialog extends JDialog
 {
 	private final ViewerPanel viewer;
 
-	private final SequenceDescription sequenceDescription;
+	private final AbstractSequenceDescription< ?, ?, ? > sequenceDescription;
 
 	private final JTextField pathTextField;
 
@@ -70,7 +80,7 @@ public class CropDialog extends JDialog
 		super.setVisible( b );
 	}
 
-	public CropDialog( final Frame owner, final ViewerPanel viewer, final SequenceDescription sequenceDescription )
+	public CropDialog( final Frame owner, final ViewerPanel viewer, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
 	{
 		super( owner, "crop and save", false );
 		this.viewer = viewer;
@@ -99,13 +109,14 @@ public class CropDialog extends JDialog
 		timepointsPanel.add( new JLabel( "timepoints from" ) );
 
 		spinnerMinTimepoint = new JSpinner();
-		spinnerMinTimepoint.setModel( new SpinnerNumberModel( 0, 0, sequenceDescription.numTimepoints() - 1, 1 ) );
+		final int maxTimePointIndex = sequenceDescription.getTimePoints().getTimePointsOrdered().size() - 1;
+		spinnerMinTimepoint.setModel( new SpinnerNumberModel( 0, 0, maxTimePointIndex, 1 ) );
 		timepointsPanel.add( spinnerMinTimepoint );
 
 		timepointsPanel.add( new JLabel( "to" ) );
 
 		spinnerMaxTimepoint = new JSpinner();
-		spinnerMaxTimepoint.setModel( new SpinnerNumberModel( 0, 0, sequenceDescription.numTimepoints() - 1, 1 ) );
+		spinnerMaxTimepoint.setModel( new SpinnerNumberModel( 0, 0, maxTimePointIndex, 1 ) );
 		timepointsPanel.add( spinnerMaxTimepoint );
 
 		final JPanel buttonsPanel = new JPanel();
@@ -115,114 +126,112 @@ public class CropDialog extends JDialog
 		final JButton cropButton = new JButton( "Crop and Save" );
 		buttonsPanel.add( cropButton, BorderLayout.EAST );
 
-		if ( ! Beans.isDesignTime() )
+		spinnerMinTimepoint.addChangeListener( new ChangeListener()
 		{
-			spinnerMinTimepoint.addChangeListener( new ChangeListener()
+			@Override
+			public void stateChanged( final ChangeEvent e )
 			{
-				@Override
-				public void stateChanged( final ChangeEvent e )
-				{
-					final int min = ( Integer ) spinnerMinTimepoint.getValue();
-					final int max = ( Integer ) spinnerMaxTimepoint.getValue();
-					if ( max < min )
-						spinnerMaxTimepoint.setValue( min );
-				}
-			} );
+				final int min = ( Integer ) spinnerMinTimepoint.getValue();
+				final int max = ( Integer ) spinnerMaxTimepoint.getValue();
+				if ( max < min )
+					spinnerMaxTimepoint.setValue( min );
+			}
+		} );
 
-			spinnerMaxTimepoint.addChangeListener( new ChangeListener()
+		spinnerMaxTimepoint.addChangeListener( new ChangeListener()
+		{
+			@Override
+			public void stateChanged( final ChangeEvent e )
 			{
-				@Override
-				public void stateChanged( final ChangeEvent e )
-				{
-					final int min = ( Integer ) spinnerMinTimepoint.getValue();
-					final int max = ( Integer ) spinnerMaxTimepoint.getValue();
-					if (min > max)
-						spinnerMinTimepoint.setValue( max );
-				}
-			} );
+				final int min = ( Integer ) spinnerMinTimepoint.getValue();
+				final int max = ( Integer ) spinnerMaxTimepoint.getValue();
+				if ( min > max )
+					spinnerMinTimepoint.setValue( max );
+			}
+		} );
 
-			final JFileChooser fileChooser = new JFileChooser();
-			fileChooser.setMultiSelectionEnabled( false );
-			fileChooser.setFileFilter( new FileFilter()
+		final JFileChooser fileChooser = new JFileChooser();
+		fileChooser.setMultiSelectionEnabled( false );
+		fileChooser.setFileFilter( new FileFilter()
+		{
+			@Override
+			public String getDescription()
 			{
-				@Override
-				public String getDescription()
-				{
-					return "xml files";
-				}
+				return "xml files";
+			}
 
-				@Override
-				public boolean accept( final File f )
+			@Override
+			public boolean accept( final File f )
+			{
+				if ( f.isDirectory() )
+					return true;
+				if ( f.isFile() )
 				{
-					if ( f.isDirectory() )
-						return true;
-					if ( f.isFile() )
+					final String s = f.getName();
+					final int i = s.lastIndexOf( '.' );
+					if ( i > 0 && i < s.length() - 1 )
 					{
-				        final String s = f.getName();
-				        final int i = s.lastIndexOf('.');
-				        if (i > 0 &&  i < s.length() - 1) {
-				            final String ext = s.substring(i+1).toLowerCase();
-				            return ext.equals( "xml" );
-				        }
-					}
-					return false;
-				}
-			} );
-
-			browseButton.addActionListener( new ActionListener()
-			{
-				@Override
-				public void actionPerformed( final ActionEvent e )
-				{
-					fileChooser.setSelectedFile( new File( pathTextField.getText() ) );
-					final int returnVal = fileChooser.showSaveDialog( null );
-					if ( returnVal == JFileChooser.APPROVE_OPTION )
-					{
-						final File file = fileChooser.getSelectedFile();
-						pathTextField.setText( file.getAbsolutePath() );
+						final String ext = s.substring( i + 1 ).toLowerCase();
+						return ext.equals( "xml" );
 					}
 				}
-			} );
+				return false;
+			}
+		} );
 
-			cropButton.addActionListener( new ActionListener()
+		browseButton.addActionListener( new ActionListener()
+		{
+			@Override
+			public void actionPerformed( final ActionEvent e )
 			{
-				@Override
-				public void actionPerformed( final ActionEvent e )
+				fileChooser.setSelectedFile( new File( pathTextField.getText() ) );
+				final int returnVal = fileChooser.showSaveDialog( null );
+				if ( returnVal == JFileChooser.APPROVE_OPTION )
 				{
-					String seqFilename = pathTextField.getText();
-					if ( !seqFilename.endsWith( ".xml" ) )
-						seqFilename += ".xml";
-					final File seqFile = new File( seqFilename );
-					final File parent = seqFile.getParentFile();
-					if ( parent == null || !parent.exists() || !parent.isDirectory() )
-					{
-						System.err.println( "Invalid export filename " + seqFilename );
-						return;
-					}
-					final String hdf5Filename = seqFilename.substring( 0, seqFilename.length() - 4 ) + ".h5";
-					final File hdf5File = new File( hdf5Filename );
+					final File file = fileChooser.getSelectedFile();
+					pathTextField.setText( file.getAbsolutePath() );
+				}
+			}
+		} );
 
-					final int minTimepointIndex = ( Integer ) spinnerMinTimepoint.getValue();
-					final int maxTimepointIndex = ( Integer ) spinnerMaxTimepoint.getValue();
+		cropButton.addActionListener( new ActionListener()
+		{
+			@Override
+			public void actionPerformed( final ActionEvent e )
+			{
+				String seqFilename = pathTextField.getText();
+				if ( !seqFilename.endsWith( ".xml" ) )
+					seqFilename += ".xml";
+				final File seqFile = new File( seqFilename );
+				final File parent = seqFile.getParentFile();
+				if ( parent == null || !parent.exists() || !parent.isDirectory() )
+				{
+					System.err.println( "Invalid export filename " + seqFilename );
+					return;
+				}
+				final String hdf5Filename = seqFilename.substring( 0, seqFilename.length() - 4 ) + ".h5";
+				final File hdf5File = new File( hdf5Filename );
 
-					new Thread()
+				final int minTimepointIndex = ( Integer ) spinnerMinTimepoint.getValue();
+				final int maxTimepointIndex = ( Integer ) spinnerMaxTimepoint.getValue();
+
+				new Thread()
+				{
+					@Override
+					public void run()
 					{
-						@Override
-						public void run()
+						try
 						{
-							try
-							{
-								cropGlobal( minTimepointIndex, maxTimepointIndex, hdf5File, seqFile );
-							}
-							catch ( final Exception ex )
-							{
-								ex.printStackTrace();
-							}
+							cropGlobal( minTimepointIndex, maxTimepointIndex, hdf5File, seqFile );
 						}
-					}.start();
-				}
-			} );
-		}
+						catch ( final Exception ex )
+						{
+							ex.printStackTrace();
+						}
+					}
+				}.start();
+			}
+		} );
 
 		final ActionMap am = getRootPane().getActionMap();
 		final InputMap im = getRootPane().getInputMap( JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT );
@@ -262,48 +271,122 @@ public class CropDialog extends JDialog
 		final int x = 0;
 		final int y = 0;
 		final int z = - d / 2;
-
 		final RealInterval cropInterval = Intervals.createMinSizeReal( x, y, z, w, h, d );
+
+		// list of timepoints of the original sequence
+		final List< TimePoint > sequenceTimepointsOrdered = sequenceDescription.getTimePoints().getTimePointsOrdered();
+
+		// list of setups of the original sequence
+		final List< ? extends BasicViewSetup > sequenceSetupsOrdered = sequenceDescription.getViewSetupsOrdered();
+		// next unused setup id, in case we need to create new BasicViewSetup for sources that are not AbstractSpimSources
+		int nextSetupIndex = sequenceSetupsOrdered.get( sequenceSetupsOrdered.size() - 1 ).getId() + 1;
+
+		// List of all sources. if they are not of UnsignedShortType, cropping
+		// will not work...
 		final ArrayList< Source< UnsignedShortType > > sources = new ArrayList< Source< UnsignedShortType > >();
+		// Map from setup id to BasicViewSetup. These are setups from the
+		// original sequence if available, or newly created ones otherwise.
+		// This contains all BasicViewSetups for the new cropped sequence.
+		final HashMap< Integer, BasicViewSetup > cropSetups = new HashMap< Integer, BasicViewSetup >();
+		// Map from setup id to index of corresponding source in sources list.
+		// This is needed because the CropImgLoader is asked for (timepointId,
+		// setupId) pair and needs to retrieve from corresponding source.
+		final HashMap< Integer, Integer > setupIdToSourceIndex = new HashMap< Integer, Integer >();
 		for( final SourceState< ? > s : viewer.getState().getSources() )
-			sources.add( ( Source< UnsignedShortType > ) s.getSpimSource() );
-		final ArrayList< Integer > timepoints = new ArrayList< Integer >();
-		final ArrayList< Integer > cropperTimepointMap = new ArrayList< Integer >();
-		for ( int tp = minTimepointIndex; tp <= maxTimepointIndex; ++tp )
 		{
-			timepoints.add( tp - minTimepointIndex );
-			cropperTimepointMap.add( tp );
-		}
-		final CropImgLoader cropper = new CropImgLoader( sources, globalToCropTransform, cropInterval, cropperTimepointMap );
+			if ( !( s.getSpimSource().getType() instanceof UnsignedShortType ) )
+				throw new RuntimeException( "cropping is only implemented for UnsignedShortType" );
 
-		final ArrayList< ViewSetup > setups = sequenceDescription.getViewSetups();
-		final File basePath = xmlFile.getParentFile();
-		final SequenceDescription seq = new SequenceDescription( setups, timepoints, basePath, cropper );
+			Source< UnsignedShortType > source = ( Source< UnsignedShortType > ) s.getSpimSource();
+			sources.add( source );
 
+			// try to find the BasicViewSetup for the source
+			final BasicViewSetup setup;
 
-		final Hdf5ImageLoader loader = ( Hdf5ImageLoader ) sequenceDescription.getImgLoader();
-		final ArrayList< int[][] > perSetupResolutions = new ArrayList< int[][] >();
-		final ArrayList< int[][] > perSetupSubdivisions = new ArrayList< int[][] >();
-		for ( int setup = 0; setup < sequenceDescription.numViewSetups(); ++setup )
-		{
-			perSetupResolutions.add( Util.castToInts( loader.getMipmapResolutions( setup ) ) );
-			perSetupSubdivisions.add( loader.getSubdivisions( setup ) );
-		}
+			// strip TransformedSource wrapper
+			while ( source instanceof TransformedSource )
+				source = ( ( TransformedSource< UnsignedShortType > ) source ).getWrappedSource();
 
-		WriteSequenceToHdf5.writeHdf5File( seq, perSetupResolutions, perSetupSubdivisions, hdf5File, null );
-
-		final ArrayList< ViewRegistration > regs = new ArrayList< ViewRegistration >();
-		for ( int tp = minTimepointIndex; tp <= maxTimepointIndex; ++tp )
-		{
-			final int timepoint = tp - minTimepointIndex;
-			for ( int setup = 0; setup < sequenceDescription.numViewSetups(); ++setup )
+			if ( source instanceof AbstractSpimSource )
 			{
-				final AffineTransform3D model = cropper.getCroppedTransform( new ViewDescription( seq, timepoint, setup, null ) );
-				regs.add( new ViewRegistration( timepoint, setup, model ) );
+				 final int setupId = ( ( AbstractSpimSource< ? > ) source ).getSetupId();
+				 setup = sequenceDescription.getViewSetups().get( setupId );
+			}
+			else
+			{
+				final int setupId = nextSetupIndex++;
+				setup = new BasicViewSetup( setupId, Integer.toString( setupId ), null, null );
+			}
+			cropSetups.put( setup.getId(), setup );
+			setupIdToSourceIndex.put( setup.getId(), sources.size() - 1 );
+		}
+
+		// Map from timepoint id to timepoint index (in the list of timepoints
+		// of the original sequence). This is needed because the CropImgLoader
+		// is asked for (timepointId, setupId) pair and needs to retrieve by
+		// timepoint index from its sources.
+		final HashMap< Integer, Integer > timepointIdToTimepointIndex = new HashMap< Integer, Integer >();
+		// This contains all TimePoints for the new cropped sequence.
+		final ArrayList< TimePoint > timepointsToCrop = new ArrayList< TimePoint >();
+		for ( int tp = minTimepointIndex; tp <= maxTimepointIndex; ++tp )
+		{
+			final TimePoint timepoint = sequenceTimepointsOrdered.get( tp );
+			timepointIdToTimepointIndex.put( timepoint.getId(), tp );
+			timepointsToCrop.add( timepoint );
+		}
+
+		final CropImgLoader cropper = new CropImgLoader( sources, globalToCropTransform, cropInterval, timepointIdToTimepointIndex, setupIdToSourceIndex );
+		// the new cropped sequence to be written to hdf5
+		final SequenceDescriptionMinimal seq = new SequenceDescriptionMinimal( new TimePoints( timepointsToCrop ), cropSetups, cropper, null );
+
+		// Gather ExportMipmapInfo for all setups of the cropped sequence.
+		// Re-use mipmapInfos for setups of the original sequence. Use default
+		// for newly created setups.
+		final HashMap< Integer, ExportMipmapInfo > perSetupMipmapInfo = new HashMap< Integer, ExportMipmapInfo >();
+		final Hdf5ImageLoader loader = ( Hdf5ImageLoader ) sequenceDescription.getImgLoader();
+		for ( final int setupId : cropSetups.keySet() )
+		{
+			final MipmapInfo info = loader.getMipmapInfo( setupId );
+			if ( info == null )
+				perSetupMipmapInfo.put( setupId, new ExportMipmapInfo(
+						new int[][] { { 1, 1, 1 } },
+						new int[][] { { 64, 64, 64 } } ) );
+			else
+				perSetupMipmapInfo.put( setupId, new ExportMipmapInfo(
+						Util.castToInts( info.getResolutions() ),
+						info.getSubdivisions() ) );
+		}
+
+		WriteSequenceToHdf5.writeHdf5File( seq, perSetupMipmapInfo, hdf5File, null );
+
+		// Build ViewRegistrations with adjusted transforms.
+		final Map< ViewId, ViewRegistration > registrations = new HashMap< ViewId, ViewRegistration >();
+		for ( final TimePoint timepoint : timepointsToCrop )
+		{
+			final int timepointId = timepoint.getId();
+			for ( final BasicViewSetup setup : cropSetups.values() )
+			{
+				final int setupId = setup.getId();
+				final AffineTransform3D model = cropper.getCroppedTransform( new ViewId( timepointId, setupId ) );
+				final ViewRegistration vr = new ViewRegistration( timepointId, setupId, model );
+				registrations.put( vr, vr );
 			}
 		}
-		final ViewRegistrations registrations = new ViewRegistrations( regs, 0 );
-		WriteSequenceToXml.writeSequenceToXml( new SequenceDescription( setups, timepoints, basePath, new Hdf5ImageLoader( hdf5File, null, false ) ), registrations, xmlFile.getAbsolutePath() );
+
+		// create SpimDataMinimal for cropped sequence, now with a Hdf5ImageLoader for the hdf5File that we just wrote.
+		final SequenceDescriptionMinimal seqn = new SequenceDescriptionMinimal( seq.getTimePoints(), seq.getViewSetups(), new Hdf5ImageLoader( hdf5File, null, null, false ), seq.getMissingViews() );
+		final File basePath = xmlFile.getParentFile();
+		final SpimDataMinimal spimData = new SpimDataMinimal( basePath, seqn, new ViewRegistrations( registrations ) );
+
+		try
+		{
+			new XmlIoSpimDataMinimal().save( spimData, xmlFile.getAbsolutePath() );
+		}
+		catch ( final Exception e )
+		{
+			throw new IOException( e );
+			// TODO: spim_data. exception handling.
+		}
 	}
 
 	private static final long serialVersionUID = 924395364255873920L;
