@@ -10,7 +10,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -360,7 +359,7 @@ public class CropDialog extends JDialog
 		WriteSequenceToHdf5.writeHdf5File( seq, perSetupMipmapInfo, hdf5File, null );
 
 		// Build ViewRegistrations with adjusted transforms.
-		final Map< ViewId, ViewRegistration > registrations = new HashMap< ViewId, ViewRegistration >();
+		final ArrayList< ViewRegistration > registrations = new ArrayList< ViewRegistration >();
 		for ( final TimePoint timepoint : timepointsToCrop )
 		{
 			final int timepointId = timepoint.getId();
@@ -368,8 +367,7 @@ public class CropDialog extends JDialog
 			{
 				final int setupId = setup.getId();
 				final AffineTransform3D model = cropper.getCroppedTransform( new ViewId( timepointId, setupId ) );
-				final ViewRegistration vr = new ViewRegistration( timepointId, setupId, model );
-				registrations.put( vr, vr );
+				registrations.add( new ViewRegistration( timepointId, setupId, model ) );
 			}
 		}
 
