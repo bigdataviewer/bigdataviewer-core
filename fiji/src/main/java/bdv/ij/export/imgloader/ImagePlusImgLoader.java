@@ -1,11 +1,8 @@
 package bdv.ij.export.imgloader;
 
 import ij.ImagePlus;
-
-import java.io.File;
-
-import mpicbg.spim.data.ImgLoader;
-import mpicbg.spim.data.ViewDescription;
+import mpicbg.spim.data.generic.sequence.BasicImgLoader;
+import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.algorithm.stats.ComputeMinMax;
 import net.imglib2.converter.Converters;
@@ -15,23 +12,22 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
-
-import org.jdom2.Element;
-
 import bdv.img.virtualstack.VirtualStackImageLoader;
 
 /**
- * This {@link ImgLoader} implementation returns a wrapped, converted
- * {@link ImagePlus}. It is used for exporting {@link ImagePlus} to hdf5. Only
- * the {@link #getImage(ViewDescription)} method is implemented because this is the only
- * method required for exporting to hdf5.
+ * This {@link BasicImgLoader} implementation returns a wrapped, converted
+ * {@link ImagePlus}. It is used for exporting {@link ImagePlus} to hdf5.
  *
  * Internally it relies on {@link VirtualStackImageLoader} to be able to handle
  * large virtual stacks.
  *
+ * When {@link #getImage(ViewId) loading images}, the provided setup id is used
+ * as the channel index of the {@link ImagePlus}, the provided timepoint id is
+ * used as the frame index of the {@link ImagePlus}.
+ *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
-public class ImagePlusImgLoader< T extends RealType< T > & NativeType< T > > implements ImgLoader< UnsignedShortType >
+public class ImagePlusImgLoader< T extends RealType< T > & NativeType< T > > implements BasicImgLoader< UnsignedShortType >
 {
 	public static enum MinMaxOption
 	{
@@ -89,7 +85,7 @@ public class ImagePlusImgLoader< T extends RealType< T > & NativeType< T > > imp
 			for ( int t = 0; t < numTimepoints; t++ )
 				for ( int s = 0; s < numSetups; ++s )
 				{
-					ComputeMinMax.computeMinMax( loader.getImage( new ViewDescription( null, t, s, null ) ), minT, maxT );
+					ComputeMinMax.computeMinMax( loader.getImage( new ViewId( t, s ) ), minT, maxT );
 					impMin = Math.min( minT.getRealDouble(), impMin );
 					impMax = Math.max( maxT.getRealDouble(), impMax );
 					loader.getCache().clearCache();
@@ -113,38 +109,17 @@ public class ImagePlusImgLoader< T extends RealType< T > & NativeType< T > > imp
 		}
 	}
 
-	/**
-	 * not implemented.
-	 */
 	@Override
-	public void init( final Element elem, final File basePath )
-	{
-		throw new UnsupportedOperationException( "not implemented" );
-	}
-
-	/**
-	 * not implemented.
-	 */
-	@Override
-	public Element toXml( final File basePath )
-	{
-		throw new UnsupportedOperationException( "not implemented" );
-	}
-
-	/**
-	 * not implemented.
-	 */
-	@Override
-	public RandomAccessibleInterval< FloatType > getFloatImage( final ViewDescription view )
-	{
-		throw new UnsupportedOperationException( "not implemented" );
-	}
-
-	@Override
-	public RandomAccessibleInterval< UnsignedShortType > getImage( final ViewDescription view )
+	public RandomAccessibleInterval< UnsignedShortType > getImage( final ViewId view )
 	{
 		loader.getCache().clearCache();
 		final RandomAccessibleInterval< T > img = loader.getImage( view );
 		return Converters.convert( img, new RealUnsignedShortConverter< T >( impMin, impMax ), new UnsignedShortType() );
+	}
+
+	@Override
+	public UnsignedShortType getImageType()
+	{
+		return new UnsignedShortType();
 	}
 }

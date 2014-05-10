@@ -14,23 +14,30 @@ import java.awt.TextField;
 import java.awt.event.ItemEvent;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
 
-import mpicbg.spim.data.ImgLoader;
-import mpicbg.spim.data.SequenceDescription;
-import mpicbg.spim.data.ViewRegistration;
-import mpicbg.spim.data.ViewRegistrations;
-import mpicbg.spim.data.ViewSetup;
+import mpicbg.spim.data.generic.sequence.BasicImgLoader;
+import mpicbg.spim.data.generic.sequence.BasicViewSetup;
+import mpicbg.spim.data.registration.ViewRegistration;
+import mpicbg.spim.data.registration.ViewRegistrations;
+import mpicbg.spim.data.sequence.Channel;
+import mpicbg.spim.data.sequence.FinalVoxelDimensions;
+import mpicbg.spim.data.sequence.TimePoint;
+import mpicbg.spim.data.sequence.TimePoints;
+import net.imglib2.FinalDimensions;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import bdv.export.ProgressWriter;
 import bdv.export.SubTaskProgressWriter;
 import bdv.export.WriteSequenceToHdf5;
-import bdv.export.WriteSequenceToXml;
 import bdv.ij.export.imgloader.ImagePlusImgLoader;
 import bdv.ij.export.imgloader.ImagePlusImgLoader.MinMaxOption;
 import bdv.ij.util.PluginHelper;
 import bdv.ij.util.ProgressWriterIJ;
 import bdv.img.hdf5.Hdf5ImageLoader;
+import bdv.spimdata.SequenceDescriptionMinimal;
+import bdv.spimdata.SpimDataMinimal;
+import bdv.spimdata.XmlIoSpimDataMinimal;
 
 /**
  * ImageJ plugin to export the current image to xml/hdf5.
@@ -80,7 +87,7 @@ public class ExportImagePlusPlugIn implements PlugIn
 		progressWriter.out().println( "starting export..." );
 
 		// create ImgLoader wrapping the image
-		final ImgLoader< UnsignedShortType > imgLoader;
+		final BasicImgLoader< UnsignedShortType > imgLoader;
 		switch ( imp.getType() )
 		{
 		case ImagePlus.GRAY8:
@@ -98,9 +105,14 @@ public class ExportImagePlusPlugIn implements PlugIn
 		final double pw = imp.getCalibration().pixelWidth;
 		final double ph = imp.getCalibration().pixelHeight;
 		final double pd = imp.getCalibration().pixelDepth;
+		String punit = imp.getCalibration().getUnit();
+		if ( punit == null || punit.isEmpty() )
+			punit = "px";
+		final FinalVoxelDimensions voxelSize = new FinalVoxelDimensions( punit, pw, ph, pd );
 		final int w = imp.getWidth();
 		final int h = imp.getHeight();
 		final int d = imp.getNSlices();
+		final FinalDimensions size = new FinalDimensions( w, h, d );
 		final int numTimepoints = imp.getNFrames();
 		final int numSetups = imp.getNChannels();
 
@@ -113,32 +125,42 @@ public class ExportImagePlusPlugIn implements PlugIn
 		final File hdf5File = params.hdf5File;
 		final int[][] resolutions = params.resolutions;
 		final int[][] subdivisions = params.subdivisions;
-		final ArrayList< ViewSetup > setups = new ArrayList< ViewSetup >( numSetups );
+
+		final HashMap< Integer, BasicViewSetup > setups = new HashMap< Integer, BasicViewSetup >( numSetups );
 		for ( int s = 0; s < numSetups; ++s )
-			setups.add( new ViewSetup( s, 0, 0, s, w, h, d, pw, ph, pd ) );
-		final ArrayList< Integer > timepoints = new ArrayList< Integer >( numTimepoints );
+		{
+			final BasicViewSetup setup = new BasicViewSetup( s, String.format( "channel %d", s + 1 ), size, voxelSize );
+			setup.setAttribute( new Channel( s + 1 ) );
+			setups.put( s, setup );
+		}
+		final ArrayList< TimePoint > timepoints = new ArrayList< TimePoint >( numTimepoints );
 		for ( int t = 0; t < numTimepoints; ++t )
-			timepoints.add( t );
-		WriteSequenceToHdf5.writeHdf5File( new SequenceDescription( setups, timepoints, null, imgLoader ), resolutions, subdivisions, hdf5File, new SubTaskProgressWriter( progressWriter, 0, 0.95 ) );
+			timepoints.add( new TimePoint( t ) );
+		final SequenceDescriptionMinimal seq = new SequenceDescriptionMinimal( new TimePoints( timepoints ), setups, imgLoader, null );
+
+		WriteSequenceToHdf5.writeHdf5File( seq, resolutions, subdivisions, hdf5File, new SubTaskProgressWriter( progressWriter, 0, 0.95 ) );
 
 		// write xml sequence description
-		final Hdf5ImageLoader hdf5Loader = new Hdf5ImageLoader( hdf5File, null );
-		final SequenceDescription sequenceDescription = new SequenceDescription( setups, timepoints, seqFile.getParentFile(), hdf5Loader );
+		final Hdf5ImageLoader hdf5Loader = new Hdf5ImageLoader( hdf5File, null, null, false );
+		final SequenceDescriptionMinimal seqh5 = new SequenceDescriptionMinimal( seq.getTimePoints(), seq.getViewSetups(), hdf5Loader, seq.getMissingViews() );
+
 		final ArrayList< ViewRegistration > registrations = new ArrayList< ViewRegistration >();
 		for ( int t = 0; t < numTimepoints; ++t )
 			for ( int s = 0; s < numSetups; ++s )
 				registrations.add( new ViewRegistration( t, s, sourceTransform ) );
-		final ViewRegistrations viewRegistrations = new ViewRegistrations( registrations, 0 );
+
+		final File basePath = seqFile.getParentFile();
+		final SpimDataMinimal spimData = new SpimDataMinimal( basePath, seqh5, new ViewRegistrations( registrations ) );
+
 		try
 		{
-			WriteSequenceToXml.writeSequenceToXml( sequenceDescription, viewRegistrations, seqFile.getAbsolutePath() );
+			new XmlIoSpimDataMinimal().save( spimData, seqFile.getAbsolutePath() );
 			progressWriter.setProgress( 1.0 );
 		}
 		catch ( final Exception e )
 		{
 			throw new RuntimeException( e );
 		}
-
 		progressWriter.out().println( "done" );
 	}
 

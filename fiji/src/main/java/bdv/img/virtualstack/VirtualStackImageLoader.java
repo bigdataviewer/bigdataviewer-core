@@ -1,10 +1,7 @@
 package bdv.img.virtualstack;
 
 import ij.ImagePlus;
-
-import java.io.File;
-
-import mpicbg.spim.data.ViewDescription;
+import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
 import net.imglib2.img.NativeImg;
@@ -22,9 +19,6 @@ import net.imglib2.type.volatiles.VolatileARGBType;
 import net.imglib2.type.volatiles.VolatileFloatType;
 import net.imglib2.type.volatiles.VolatileUnsignedByteType;
 import net.imglib2.type.volatiles.VolatileUnsignedShortType;
-
-import org.jdom2.Element;
-
 import bdv.AbstractViewerImgLoader;
 import bdv.img.cache.CacheArrayLoader;
 import bdv.img.cache.CacheHints;
@@ -44,9 +38,16 @@ import bdv.img.cache.VolatileImgCells.CellCache;
  * {@link #createUnsignedShortInstance(ImagePlus)} depending on the ImagePlus
  * pixel type. ARGB is currently not supported.
  *
- * @param <T> (non-volatile) pixel type
- * @param <V> volatile pixel type
- * @param <A> volatile array access type
+ * When {@link #getImage(ViewId) loading images}, the provided setup id is used
+ * as the channel index of the {@link ImagePlus}, the provided timepoint id is
+ * used as the frame index of the {@link ImagePlus}.
+ *
+ * @param <T>
+ *            (non-volatile) pixel type
+ * @param <V>
+ *            volatile pixel type
+ * @param <A>
+ *            volatile array access type
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
@@ -127,7 +128,7 @@ public abstract class VirtualStackImageLoader< T extends NativeType< T >, V exte
 		cellDimensions = new int[] { imp.getWidth(), imp.getHeight(), 1 };
 		final int numTimepoints = imp.getNFrames();
 		final int numSetups = imp.getNChannels();
-		cache = new VolatileGlobalCellCache< A >( loader, numTimepoints, numSetups, 1, new int[] { 0 }, 1 );
+		cache = new VolatileGlobalCellCache< A >( loader, numTimepoints, numSetups, 1, 1 );
 	}
 
 	protected abstract void linkType( CachedCellImg< T, A > img );
@@ -135,7 +136,7 @@ public abstract class VirtualStackImageLoader< T extends NativeType< T >, V exte
 	protected abstract void linkVolatileType( CachedCellImg< V, A > img );
 
 	@Override
-	public RandomAccessibleInterval< T > getImage( final ViewDescription view, final int level )
+	public RandomAccessibleInterval< T > getImage( final ViewId view, final int level )
 	{
 		final CachedCellImg< T, A > img = prepareCachedImage( view, level, LoadingStrategy.BLOCKING );
 		linkType( img );
@@ -143,7 +144,7 @@ public abstract class VirtualStackImageLoader< T extends NativeType< T >, V exte
 	}
 
 	@Override
-	public RandomAccessibleInterval< V > getVolatileImage( final ViewDescription view, final int level )
+	public RandomAccessibleInterval< V > getVolatileImage( final ViewId view, final int level )
 	{
 		final CachedCellImg< V, A > img = prepareCachedImage( view, level, LoadingStrategy.BUDGETED );
 		linkVolatileType( img );
@@ -174,23 +175,17 @@ public abstract class VirtualStackImageLoader< T extends NativeType< T >, V exte
 		return cache;
 	}
 
-	@Override
-	public void init( final Element elem, final File basePath )
-	{
-		throw new UnsupportedOperationException();
-	}
-
 	/**
 	 * (Almost) create a {@link CachedCellImg} backed by the cache. The created
 	 * image needs a {@link NativeImg#setLinkedType(net.imglib2.type.Type)
 	 * linked type} before it can be used. The type should be either
 	 * {@link ARGBType} and {@link VolatileARGBType}.
 	 */
-	protected < T extends NativeType< T > > CachedCellImg< T, A > prepareCachedImage( final ViewDescription view, final int level, final LoadingStrategy loadingStrategy )
+	protected < T extends NativeType< T > > CachedCellImg< T, A > prepareCachedImage( final ViewId view, final int level, final LoadingStrategy loadingStrategy )
 	{
 		final int priority = 0;
 		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
-		final CellCache< A > c = cache.new VolatileCellCache( view.getTimepointIndex(), view.getSetupIndex(), level, cacheHints );
+		final CellCache< A > c = cache.new VolatileCellCache( view.getTimePointId(), view.getViewSetupId(), level, cacheHints );
 		final VolatileImgCells< A > cells = new VolatileImgCells< A >( c, 1, dimensions, cellDimensions );
 		final CachedCellImg< T, A > img = new CachedCellImg< T, A >( cells );
 		return img;
