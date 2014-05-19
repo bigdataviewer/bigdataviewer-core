@@ -1,25 +1,20 @@
 package bdv.ij.export.imgloader;
 
-import static mpicbg.spim.data.XmlHelpers.loadPath;
 import ij.ImagePlus;
 
 import java.io.File;
+import java.util.HashMap;
 
-import mpicbg.spim.data.ImgLoader;
-import mpicbg.spim.data.ViewDescription;
-import mpicbg.spim.data.ViewSetup;
-import mpicbg.spim.data.XmlHelpers;
-import net.imglib2.algorithm.stats.Normalize;
+import mpicbg.spim.data.generic.sequence.BasicImgLoader;
+import mpicbg.spim.data.sequence.ImgLoader;
+import mpicbg.spim.data.sequence.ViewId;
+import mpicbg.spim.data.sequence.ViewSetup;
 import net.imglib2.img.Img;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.meta.Axes;
 import net.imglib2.meta.AxisType;
 import net.imglib2.meta.ImgPlus;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.type.numeric.real.FloatType;
-
-import org.jdom2.Element;
-
 import spimopener.SPIMExperiment;
 
 /**
@@ -29,68 +24,33 @@ import spimopener.SPIMExperiment;
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
-public class HuiskenImageLoader implements ImgLoader< UnsignedShortType >
+public class HuiskenImageLoader implements BasicImgLoader< UnsignedShortType >
 {
-	private File expFile;
+	private final File expFile;
 
 	private SPIMExperiment exp;
 
 	private boolean hasAlternatingIllumination;
 
-	public HuiskenImageLoader()
-	{
-		expFile = null;
-		exp = null;
-	}
+	private final HashMap< Integer, ViewSetup > setups;
 
-	public HuiskenImageLoader( final File file )
+	public HuiskenImageLoader( final File file, final HashMap< Integer, ViewSetup > setups )
 	{
+		this.setups = setups;
 		expFile = file;
 		exp = null;
 	}
 
 	@Override
-	public void init( final Element elem, final File basePath )
-	{
-		String path;
-		try
-		{
-			path = loadPath( elem, "path", basePath ).toString();
-		}
-		catch ( final Exception e )
-		{
-			throw new RuntimeException( e );
-		}
-		expFile = new File( path );
-		exp = null;
-	}
-
-	@Override
-	public Element toXml( final File basePath )
-	{
-		final Element elem = new Element( "ImageLoader" );
-		elem.setAttribute( "class", getClass().getCanonicalName() );
-		elem.addContent( XmlHelpers.pathElement( "path", expFile, basePath ) );
-		return elem;
-	}
-
-	public static HuiskenImageLoader fromXml( final Element elem, final File basePath )
-	{
-		final HuiskenImageLoader loader = new HuiskenImageLoader();
-		loader.init( elem, basePath );
-		return loader;
-	}
-
-	@Override
-	public ImgPlus< UnsignedShortType > getImage( final ViewDescription view )
+	public ImgPlus< UnsignedShortType > getImage( final ViewId view )
 	{
 		ensureExpIsOpen();
 
-		final ViewSetup setup = view.getSetup();
-		final int channel = setup.getChannel();
-		final int illumination = setup.getIllumination();
-		final int angle = setup.getAngle();
-		final int timepoint = view.getTimepoint();
+		final ViewSetup setup = setups.get( view.getViewSetupId() );
+		final int channel = setup.getChannel().getId();
+		final int illumination = setup.getIllumination().getId();
+		final int angle = setup.getAngle().getId();
+		final int timepoint = view.getTimePointId();
 
 		final ImagePlus imp = getImagePlus( view );
 		final Img< UnsignedShortType > img = ImageJFunctions.wrapShort( imp );
@@ -106,28 +66,9 @@ public class HuiskenImageLoader implements ImgLoader< UnsignedShortType >
 	}
 
 	@Override
-	public ImgPlus< FloatType > getFloatImage( final ViewDescription view )
+	public UnsignedShortType getImageType()
 	{
-		ensureExpIsOpen();
-
-		final ViewSetup setup = view.getSetup();
-		final int channel = setup.getChannel();
-		final int illumination = setup.getIllumination();
-		final int angle = setup.getAngle();
-		final int timepoint = view.getTimepoint();
-
-		final ImagePlus imp = getImagePlus( view );
-		final Img< FloatType > img = ImageJFunctions.convertFloat( imp );
-		Normalize.normalize( img, new FloatType( 0 ), new FloatType( 1 ) ); // normalize the image to 0...1
-
-		final String name = getBasename( timepoint, angle, channel, illumination );
-
-		final AxisType[] axes = new AxisType[] { Axes.X, Axes.Y, Axes.Z };
-
-		final float zStretching = ( float ) ( exp.pd / exp.pw );
-		final double[] calibration = new double[] { 1, 1, zStretching };
-
-		return new ImgPlus< FloatType >( img, name, axes, calibration );
+		return new UnsignedShortType();
 	}
 
 	private synchronized void ensureExpIsOpen()
@@ -139,14 +80,13 @@ public class HuiskenImageLoader implements ImgLoader< UnsignedShortType >
 		}
 	}
 
-	private ImagePlus getImagePlus( final ViewDescription view )
+	private ImagePlus getImagePlus( final ViewId view )
 	{
-		final ViewSetup setup = view.getSetup();
-		final int channel = setup.getChannel();
-		final int illumination = setup.getIllumination();
-		final int angle = setup.getAngle();
-
-		final int timepoint = view.getTimepoint();
+		final ViewSetup setup = setups.get( view.getViewSetupId() );
+		final int channel = setup.getChannel().getId();
+		final int illumination = setup.getIllumination().getId();
+		final int angle = setup.getAngle().getId();
+		final int timepoint = view.getTimePointId();
 
 		final int s = exp.sampleStart;
 		final int r = exp.regionStart;

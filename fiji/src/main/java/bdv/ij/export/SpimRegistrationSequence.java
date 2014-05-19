@@ -100,7 +100,7 @@ public class SpimRegistrationSequence
 		if ( conf.isHuiskenFormat() )
 		{
 			final String exp = conf.inputdirectory.endsWith( "/" ) ? conf.inputdirectory.substring( 0, conf.inputdirectory.length() - 1 ) : conf.inputdirectory;
-			return new HuiskenImageLoader( new File( exp + ".xml" ) );
+			return new HuiskenImageLoader( new File( exp + ".xml" ), Entity.idMap( setups ) );
 		}
 		else
 		{
