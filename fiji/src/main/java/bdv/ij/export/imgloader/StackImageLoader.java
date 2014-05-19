@@ -4,11 +4,12 @@ import ij.ImagePlus;
 import io.scif.img.ImgIOException;
 import io.scif.img.ImgOpener;
 
-import java.io.File;
-import java.util.List;
+import java.util.HashMap;
 
-import mpicbg.spim.data.ImgLoader;
-import mpicbg.spim.data.ViewDescription;
+import mpicbg.spim.data.generic.sequence.BasicImgLoader;
+import mpicbg.spim.data.sequence.ImgLoader;
+import mpicbg.spim.data.sequence.ViewDescription;
+import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.converter.Converter;
 import net.imglib2.converter.Converters;
@@ -18,9 +19,6 @@ import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.meta.ImgPlus;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.type.numeric.real.FloatType;
-
-import org.jdom2.Element;
 
 
 /**
@@ -30,13 +28,9 @@ import org.jdom2.Element;
  * image for a given {@link ViewDescription}, its index in the filename list is computed as
  * <code>view.getSetupIndex() + numViewSetups * view.getTimepointIndex()</code>.
  *
- * This {@link ImgLoader} is used for exporting spim sequences to hdf5. Only the
- * {@link #getImage(ViewDescription)} method is implemented because this is
- * the only method required for exporting to hdf5.
- *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
-public class StackImageLoader implements ImgLoader< UnsignedShortType >
+public class StackImageLoader implements BasicImgLoader< UnsignedShortType >
 {
 	private final ImgOpener opener;
 
@@ -44,56 +38,23 @@ public class StackImageLoader implements ImgLoader< UnsignedShortType >
 
 	private final UnsignedShortType type;
 
-	private final List< String > filenames;
-
-	private final int numViewSetups;
+	final HashMap< ViewId, String > filenames;
 
 	private boolean useImageJOpener;
 
-	public StackImageLoader( final List< String > filenames, final int numViewSetups, final boolean useImageJOpener )
+	public StackImageLoader( final HashMap< ViewId, String > filenames, final boolean useImageJOpener )
 	{
 		this.filenames = filenames;
-		this.numViewSetups = numViewSetups;
 		this.useImageJOpener = useImageJOpener;
 		opener = new ImgOpener();
 		factory = new ArrayImgFactory< UnsignedShortType >();
 		type = new UnsignedShortType();
 	}
 
-	/**
-	 * not implemented.
-	 */
 	@Override
-	public void init( final Element elem, final File basePath )
+	public RandomAccessibleInterval< UnsignedShortType > getImage( final ViewId view )
 	{
-		throw new UnsupportedOperationException( "not implemented" );
-	}
-
-	/**
-	 * not implemented.
-	 */
-	@Override
-	public Element toXml( final File basePath )
-	{
-		throw new UnsupportedOperationException( "not implemented" );
-	}
-
-	/**
-	 * not implemented.
-	 */
-	@Override
-	public ImgPlus< FloatType > getFloatImage( final ViewDescription view )
-	{
-		throw new UnsupportedOperationException( "not implemented" );
-	}
-
-	@Override
-	public ImgPlus< UnsignedShortType > getImage( final ViewDescription view )
-	{
-		final int setup = view.getSetupIndex();
-		final int timepoint = view.getTimepointIndex();
-		final int index = timepoint * numViewSetups + setup;
-		final String fn = filenames.get( index );
+		final String fn = filenames.get( view );
 		if ( useImageJOpener )
 		{
 			final ImagePlus imp = new ImagePlus( fn );
@@ -128,5 +89,11 @@ public class StackImageLoader implements ImgLoader< UnsignedShortType >
 		{
 			throw new RuntimeException( e );
 		}
+	}
+
+	@Override
+	public UnsignedShortType getImageType()
+	{
+		return type;
 	}
 }

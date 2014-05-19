@@ -18,8 +18,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import mpicbg.spim.data.SequenceDescription;
-import mpicbg.spim.data.ViewRegistrations;
+import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.io.ConfigurationParserException;
 import mpicbg.spim.io.IOFunctions;
 import mpicbg.spim.io.SPIMConfiguration;
@@ -29,11 +28,14 @@ import spimopener.SPIMExperiment;
 import bdv.export.ProgressWriter;
 import bdv.export.SubTaskProgressWriter;
 import bdv.export.WriteSequenceToHdf5;
-import bdv.export.WriteSequenceToXml;
 import bdv.ij.export.SpimRegistrationSequence;
 import bdv.ij.util.PluginHelper;
 import bdv.ij.util.ProgressWriterIJ;
 import bdv.img.hdf5.Hdf5ImageLoader;
+import bdv.img.hdf5.XmlIoHdf5ImageLoader;
+import bdv.spimdata.SequenceDescriptionMinimal;
+import bdv.spimdata.SpimDataMinimal;
+import bdv.spimdata.XmlIoSpimDataMinimal;
 
 public class ExportSpimSequencePlugIn implements PlugIn
 {
@@ -49,16 +51,19 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		final ProgressWriter progress = new ProgressWriterIJ();
 		progress.out().println( "starting export..." );
 		final SpimRegistrationSequence sequence = new SpimRegistrationSequence( params.conf );
-		final SequenceDescription desc = sequence.getSequenceDescription();
-		WriteSequenceToHdf5.writeHdf5File( desc, params.perSetupResolutions, params.perSetupSubdivisions, params.hdf5File, new SubTaskProgressWriter( progress, 0, 0.95 ) );
+		final AbstractSequenceDescription< ?, ?, ? > desc = sequence.getSequenceDescription();
+		WriteSequenceToHdf5.writeHdf5File( desc, params.resolutions, params.subdivisions, params.hdf5File, new SubTaskProgressWriter( progress, 0, 0.95 ) );
 
-		final Hdf5ImageLoader loader = new Hdf5ImageLoader( params.hdf5File, null, false );
-		final SequenceDescription sequenceDescription = new SequenceDescription( desc.getViewSetups(), desc.getTimePoints(), params.seqFile.getParentFile(), loader );
-		final ViewRegistrations viewRegistrations = sequence.getViewRegistrations();
+		final Hdf5ImageLoader loader = new Hdf5ImageLoader( params.hdf5File, null, null, false );
+		final SequenceDescriptionMinimal sequenceDescription = new SequenceDescriptionMinimal( desc.getTimePoints(), desc.getViewSetups(), loader, desc.getMissingViews() );
+
+		final File basePath = params.seqFile.getParentFile();
+		final SpimDataMinimal spimData = new SpimDataMinimal( basePath, sequenceDescription, sequence.getViewRegistrations() );
 		try
 		{
-			WriteSequenceToXml.writeSequenceToXml( sequenceDescription, viewRegistrations, params.seqFile.getAbsolutePath() );
-			progress.setProgress( 1 );
+			XmlIoHdf5ImageLoader.registerManually(); // TODO: spim_data: remove when everything is working
+			new XmlIoSpimDataMinimal().save( spimData, params.seqFile.getAbsolutePath() );
+			progress.setProgress( 1.0 );
 		}
 		catch ( final Exception e )
 		{
@@ -74,16 +79,16 @@ public class ExportSpimSequencePlugIn implements PlugIn
 	protected static class Parameters
 	{
 		final SPIMConfiguration conf;
-		final ArrayList< int[][] > perSetupResolutions;
-		final ArrayList< int[][] > perSetupSubdivisions;
+		final int[][] resolutions;
+		final int[][] subdivisions;
 		final File seqFile;
 		final File hdf5File;
 
-		public Parameters( final SPIMConfiguration conf, final ArrayList< int[][] > perSetupResolutions, final ArrayList< int[][] > perSetupSubdivisions, final File seqFile, final File hdf5File )
+		public Parameters( final SPIMConfiguration conf, final int[][] resolutions, final int[][] subdivisions, final File seqFile, final File hdf5File )
 		{
 			this.conf = conf;
-			this.perSetupResolutions = perSetupResolutions;
-			this.perSetupSubdivisions = perSetupSubdivisions;
+			this.resolutions = resolutions;
+			this.subdivisions = subdivisions;
 			this.seqFile = seqFile;
 			this.hdf5File = hdf5File;
 		}
@@ -490,13 +495,6 @@ public class ExportSpimSequencePlugIn implements PlugIn
 			IOFunctions.println( "subsampling factors and hdf5 chunk sizes must have the same number of elements" );
 			return null;
 		}
-		final ArrayList< int[][] > perSetupResolutions = new ArrayList< int[][] >();
-		final ArrayList< int[][] > perSetupSubdivisions = new ArrayList< int[][] >();
-		for ( int i = 0; i < viewStructure.getViews().size(); ++i )
-		{
-			perSetupResolutions.add( resolutions );
-			perSetupSubdivisions.add( subdivisions );
-		}
 
 		String seqFilename = gd2.getNextString();
 		if ( ! seqFilename.endsWith( ".xml" ) )
@@ -511,7 +509,7 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		final String hdf5Filename = seqFilename.substring( 0, seqFilename.length() - 4 ) + ".h5";
 		final File hdf5File = new File( hdf5Filename );
 
-		return new Parameters( conf, perSetupResolutions, perSetupSubdivisions, seqFile, hdf5File );
+		return new Parameters( conf, resolutions, subdivisions, seqFile, hdf5File );
 	}
 
 	protected static double loadZStretching( final String file )
