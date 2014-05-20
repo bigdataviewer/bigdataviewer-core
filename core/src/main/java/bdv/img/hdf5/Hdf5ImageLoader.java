@@ -297,27 +297,28 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 		return cache;
 	}
 
+	// TODO: spim_data: move to superclass?
 	@Override
 	public double[][] getMipmapResolutions( final int setupId )
 	{
-		open();
-		return perSetupMipmapInfo.get( setupId ).getResolutions();
+		return getMipmapInfo( setupId ).getResolutions();
 	}
 
+	// TODO: spim_data: move to superclass?
 	@Override
 	public AffineTransform3D[] getMipmapTransforms( final int setupId )
 	{
-		open();
-		return perSetupMipmapInfo.get( setupId ).getTransforms();
+		return getMipmapInfo( setupId ).getTransforms();
 	}
 
+	// TODO: spim_data: move to superclass?
 	@Override
 	public int numMipmapLevels( final int setupId )
 	{
-		open();
-		return perSetupMipmapInfo.get( setupId ).getNumLevels();
+		return getMipmapInfo( setupId ).getNumLevels();
 	}
 
+	// TODO: spim_data: move to superclass (abstract)
 	public MipmapInfo getMipmapInfo( final int setupId )
 	{
 		open();
