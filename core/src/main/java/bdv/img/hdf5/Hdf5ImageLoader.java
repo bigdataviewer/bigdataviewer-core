@@ -113,31 +113,37 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 
 	protected int maxNumLevels;
 
-	/**
-	 * TODO adapt comment after spim_data switch
-	 *
-	 *
-	 * An array of long[] arrays with {@link #numTimepoints} *
-	 * {@link #numSetups} * {@link #maxNumLevels} entries. Every entry is either
-	 * null or the dimensions of one image (identified by flattened index of
-	 * level, setup, and timepoint). This is either loaded from XML if present
-	 * or otherwise filled in when an image is loaded for the first time.
-	 */
-	protected final HashMap< ViewLevelId, long[] > cachedDimensions;
-// TODO spim_data. cachedDimensions and cachedExistence should be a single HashMap< ViewLevelId, DimAndExistence >
+	// TODO clean up after spim_data switch
+	public static class DimsAndExistence
+	{
+		private final long[] dimensions;
+
+		private final boolean exists;
+
+		public DimsAndExistence( final long[] dimensions, final boolean exists )
+		{
+			this.dimensions = dimensions;
+			this.exists = exists;
+		}
+
+		public long[] getDimensions()
+		{
+			return dimensions;
+		}
+
+		public boolean exists()
+		{
+			return exists;
+		}
+	}
 
 	/**
-	 * TODO adapt comment after spim_data switch
-	 *
-	 *
-	 *
-	 * An array of Booleans with {@link #numTimepoints} *
-	 * {@link #numSetups} * {@link #maxNumLevels} entries. Every entry is either
-	 * null or the existence of one image (identified by flattened index of
-	 * level, setup, and timepoint). This is either loaded from XML if present
-	 * or otherwise filled in when an image is loaded for the first time.
+	 * Maps {@link ViewLevelId} (timepoint, setup, level) to
+	 * {@link DimsAndExistence}. Every entry is either null or the existence and
+	 * dimensions of one image. This is filled in when an image is loaded for
+	 * the first time.
 	 */
-	protected final HashMap< ViewLevelId, Boolean > cachedExistence;
+	protected final HashMap< ViewLevelId, DimsAndExistence > cachedDimsAndExistence;
 
 	protected final AbstractSequenceDescription< ?, ?, ? > sequenceDescription;
 
@@ -161,8 +167,7 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 		super( new UnsignedShortType(), new VolatileUnsignedShortType() );
 		this.hdf5File = hdf5File;
 		perSetupMipmapInfo = new HashMap< Integer, MipmapInfo >();
-		cachedDimensions = new HashMap< ViewLevelId, long[] >();
-		cachedExistence = new HashMap< ViewLevelId, Boolean >();
+		cachedDimsAndExistence = new HashMap< ViewLevelId, DimsAndExistence >();
 		this.sequenceDescription = sequenceDescription;
 		partitions = new ArrayList< Partition >();
 		if ( hdf5Partitions != null )
@@ -204,8 +209,7 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 					perSetupMipmapInfo.put( setupId, new MipmapInfo( resolutions, transforms, subdivisions ) );
 				}
 
-				cachedDimensions.clear();
-				cachedExistence.clear();
+				cachedDimsAndExistence.clear();
 
 				final List< TimePoint > timepoints = sequenceDescription.getTimePoints().getTimePointsOrdered();
 				final int maxNumTimepoints = timepoints.get( timepoints.size() - 1 ).getId() + 1;
@@ -229,7 +233,7 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 				final int s = setup.getId();
 				final int numLevels = perSetupMipmapInfo.get( s ).getNumLevels();
 				for ( int l = 0; l < numLevels; ++l )
-					getImageDimension( new ViewLevelId( t, s, l ) );
+					getDimsAndExistence( new ViewLevelId( t, s, l ) );
 			}
 			if ( background )
 				synchronized ( this )
@@ -333,11 +337,7 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 	 */
 	public boolean existsImageData( final ViewLevelId id )
 	{
-		final Boolean exists = cachedExistence.get( id );
-		if ( exists == null )
-			// will set cachedExistence[ index ] as a side effect
-			getImageDimension( id );
-		return cachedExistence.get( id );
+		return getDimsAndExistence( id ).exists();
 	}
 
 	/**
@@ -347,16 +347,14 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 	 */
 	protected < T > RandomAccessibleInterval< T > getMissingDataImage( final ViewLevelId id, final T constant )
 	{
-		long[] d = cachedDimensions.get( id );
-		if ( d == null )
-			d = new long[] { 1, 1, 1 };
+		final long[] d = getDimsAndExistence( id ).getDimensions();
 		return Views.interval( new ConstantRandomAccessible< T >( constant, 3 ), new FinalInterval( d ) );
 	}
 
-	public long[] getImageDimension( final ViewLevelId id )
+	public DimsAndExistence getDimsAndExistence( final ViewLevelId id )
 	{
 		open();
-		long[] dims = cachedDimensions.get( id );
+		DimsAndExistence dims = cachedDimsAndExistence.get( id );
 		if ( dims == null )
 		{
 			final String cellsPath = Util.getCellsPath( id );
@@ -376,11 +374,10 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 				}
 			}
 			if ( exists )
-				dims = reorder( info.getDimensions() );
+				dims = new DimsAndExistence( reorder( info.getDimensions() ), true );
 			else
-				dims = new long[] { 1, 1, 1 };
-			cachedExistence.put( id, exists );
-			cachedDimensions.put( id, dims );
+				dims = new DimsAndExistence( new long[] { 1, 1, 1 }, false );
+			cachedDimsAndExistence.put( id, dims );
 		}
 		return dims;
 	}
@@ -398,7 +395,7 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 		final int level = id.getLevel();
 		final MipmapInfo mipmapInfo = perSetupMipmapInfo.get( setupId );
 
-		final long[] dimensions = getImageDimension( id );
+		final long[] dimensions = getDimsAndExistence( id ).getDimensions();
 		final int[] cellDimensions = mipmapInfo.getSubdivisions()[ level ];
 
 		final int priority = mipmapInfo.getMaxLevel() - level;

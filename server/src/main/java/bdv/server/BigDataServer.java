@@ -3,12 +3,12 @@ package bdv.server;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
+import java.lang.reflect.InvocationTargetException;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import mpicbg.spim.data.SequenceDescription;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
 
 import org.eclipse.jetty.server.Request;
@@ -16,13 +16,15 @@ import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
 import org.jdom2.JDOMException;
 
-import bdv.SequenceViewsLoader;
 import bdv.img.cache.CacheHints;
 import bdv.img.cache.LoadingStrategy;
 import bdv.img.cache.VolatileCell;
 import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.img.hdf5.Hdf5ImageLoader;
 import bdv.img.remote.RemoteImageLoaderMetaData;
+import bdv.spimdata.SequenceDescriptionMinimal;
+import bdv.spimdata.SpimDataMinimal;
+import bdv.spimdata.XmlIoSpimDataMinimal;
 
 import com.google.gson.Gson;
 
@@ -48,13 +50,13 @@ public class BigDataServer
 
 		private final CacheHints cacheHints;
 
-		public CellHandler( final String xmlFilename ) throws JDOMException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
+		public CellHandler( final String xmlFilename ) throws JDOMException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException, IllegalArgumentException, InvocationTargetException
 		{
-			final SequenceViewsLoader loader = new SequenceViewsLoader( xmlFilename );
-			final SequenceDescription seq = loader.getSequenceDescription();
+			final SpimDataMinimal spimData = new XmlIoSpimDataMinimal().load( xmlFilename );
+			final SequenceDescriptionMinimal seq = spimData.getSequenceDescription();
 			final Hdf5ImageLoader imgLoader = ( Hdf5ImageLoader ) seq.getImgLoader();
 			cache = imgLoader.getCache();
-			metadata = new RemoteImageLoaderMetaData( imgLoader, seq.numTimepoints(), seq.numViewSetups() );
+			metadata = new RemoteImageLoaderMetaData( imgLoader, seq );
 			metadataJson = new Gson().toJson( metadata );
 			cacheHints = new CacheHints( LoadingStrategy.BLOCKING, 0, false );
 		}
