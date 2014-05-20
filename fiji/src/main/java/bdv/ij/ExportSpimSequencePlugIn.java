@@ -18,7 +18,6 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.io.ConfigurationParserException;
 import mpicbg.spim.io.IOFunctions;
 import mpicbg.spim.io.SPIMConfiguration;
@@ -51,11 +50,11 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		final ProgressWriter progress = new ProgressWriterIJ();
 		progress.out().println( "starting export..." );
 		final SpimRegistrationSequence sequence = new SpimRegistrationSequence( params.conf );
-		final AbstractSequenceDescription< ?, ?, ? > desc = sequence.getSequenceDescription();
+		final SequenceDescriptionMinimal desc = sequence.getSequenceDescription();
 		WriteSequenceToHdf5.writeHdf5File( desc, params.resolutions, params.subdivisions, params.hdf5File, new SubTaskProgressWriter( progress, 0, 0.95 ) );
 
 		final Hdf5ImageLoader loader = new Hdf5ImageLoader( params.hdf5File, null, null, false );
-		final SequenceDescriptionMinimal sequenceDescription = new SequenceDescriptionMinimal( desc.getTimePoints(), desc.getViewSetups(), loader, desc.getMissingViews() );
+		final SequenceDescriptionMinimal sequenceDescription = new SequenceDescriptionMinimal( desc, loader );
 
 		final File basePath = params.seqFile.getParentFile();
 		final SpimDataMinimal spimData = new SpimDataMinimal( basePath, sequenceDescription, sequence.getViewRegistrations() );

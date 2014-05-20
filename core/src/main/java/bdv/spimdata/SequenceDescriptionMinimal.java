@@ -22,6 +22,14 @@ public class SequenceDescriptionMinimal extends AbstractSequenceDescription< Bas
 		return new BasicViewDescription< BasicViewSetup >( timepointId, setupId, true, this );
 	}
 
+	/**
+	 * create copy of a {@link SequenceDescriptionMinimal} with replaced {@link BasicImgLoader}
+	 */
+	public SequenceDescriptionMinimal( final SequenceDescriptionMinimal other, final BasicImgLoader< ? > imgLoader )
+	{
+		super( other.getTimePoints(), other.getViewSetups(), imgLoader, other.getMissingViews() );
+	}
+
 	protected SequenceDescriptionMinimal()
 	{}
 }

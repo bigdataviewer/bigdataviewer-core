@@ -372,7 +372,7 @@ public class CropDialog extends JDialog
 		}
 
 		// create SpimDataMinimal for cropped sequence, now with a Hdf5ImageLoader for the hdf5File that we just wrote.
-		final SequenceDescriptionMinimal seqn = new SequenceDescriptionMinimal( seq.getTimePoints(), seq.getViewSetups(), new Hdf5ImageLoader( hdf5File, null, null, false ), seq.getMissingViews() );
+		final SequenceDescriptionMinimal seqn = new SequenceDescriptionMinimal( seq, new Hdf5ImageLoader( hdf5File, null, null, false ) );
 		final File basePath = xmlFile.getParentFile();
 		final SpimDataMinimal spimData = new SpimDataMinimal( basePath, seqn, new ViewRegistrations( registrations ) );
 

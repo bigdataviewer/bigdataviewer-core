@@ -142,7 +142,7 @@ public class ExportImagePlusPlugIn implements PlugIn
 
 		// write xml sequence description
 		final Hdf5ImageLoader hdf5Loader = new Hdf5ImageLoader( hdf5File, null, null, false );
-		final SequenceDescriptionMinimal seqh5 = new SequenceDescriptionMinimal( seq.getTimePoints(), seq.getViewSetups(), hdf5Loader, seq.getMissingViews() );
+		final SequenceDescriptionMinimal seqh5 = new SequenceDescriptionMinimal( seq, hdf5Loader );
 
 		final ArrayList< ViewRegistration > registrations = new ArrayList< ViewRegistration >();
 		for ( int t = 0; t < numTimepoints; ++t )

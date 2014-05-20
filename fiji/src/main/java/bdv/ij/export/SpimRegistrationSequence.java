@@ -38,7 +38,7 @@ import bdv.spimdata.SequenceDescriptionMinimal;
 
 public class SpimRegistrationSequence
 {
-	private final AbstractSequenceDescription< ?, ?, ? > sequenceDescription;
+	private final SequenceDescriptionMinimal sequenceDescription;
 
 	private final ViewRegistrations viewRegistrations;
 
@@ -68,7 +68,7 @@ public class SpimRegistrationSequence
 		this( initExperimentConfiguration( inputDirectory, inputFilePattern, channels, angles, timepoints, referenceTimePoint, overrideImageZStretching, zStretching ) );
 	}
 
-	public AbstractSequenceDescription< ?, ?, ? > getSequenceDescription()
+	public SequenceDescriptionMinimal getSequenceDescription()
 	{
 		return sequenceDescription;
 	}
