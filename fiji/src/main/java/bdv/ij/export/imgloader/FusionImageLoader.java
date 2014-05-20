@@ -4,10 +4,12 @@ import ij.ImagePlus;
 import io.scif.img.ImgIOException;
 import io.scif.img.ImgOpener;
 
-import java.io.File;
+import java.util.HashMap;
 
-import mpicbg.spim.data.ImgLoader;
-import mpicbg.spim.data.ViewDescription;
+import mpicbg.spim.data.generic.sequence.BasicImgLoader;
+import mpicbg.spim.data.sequence.ImgLoader;
+import mpicbg.spim.data.sequence.ViewDescription;
+import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.converter.Converters;
@@ -24,8 +26,6 @@ import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.view.Views;
 
-import org.jdom2.Element;
-
 /**
  * This {@link ImgLoader} loads images that represent a 3D stack as a sequence
  * of slice with one image file per slice, such as created by Stephan
@@ -40,7 +40,7 @@ import org.jdom2.Element;
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
-public class FusionImageLoader< T extends RealType< T > > implements ImgLoader< UnsignedShortType >
+public class FusionImageLoader< T extends RealType< T > > implements BasicImgLoader< UnsignedShortType >
 {
 	private final String pattern;
 
@@ -54,14 +54,17 @@ public class FusionImageLoader< T extends RealType< T > > implements ImgLoader< 
 
 	private final UnsignedShortType type;
 
-	public FusionImageLoader( final String pattern, final int numSlices, final SliceLoader< T > sliceLoader, final double sliceValueMin, final double sliceValueMax )
+	private final HashMap< Integer, Integer > setupIdToChannelId;
+
+	public FusionImageLoader( final String pattern, final HashMap< Integer, Integer > setupIdToChannelId, final int numSlices, final SliceLoader< T > sliceLoader, final double sliceValueMin, final double sliceValueMax )
 	{
-		this( pattern, numSlices, sliceLoader, sliceValueMin, sliceValueMax, new PlanarImgFactory< UnsignedShortType >() );
+		this( pattern, setupIdToChannelId, numSlices, sliceLoader, sliceValueMin, sliceValueMax, new PlanarImgFactory< UnsignedShortType >() );
 	}
 
-	public FusionImageLoader( final String pattern, final int numSlices, final SliceLoader< T > sliceLoader, final double sliceValueMin, final double sliceValueMax, final ImgFactory< UnsignedShortType > factory )
+	public FusionImageLoader( final String pattern, final HashMap< Integer, Integer > setupIdToChannelId, final int numSlices, final SliceLoader< T > sliceLoader, final double sliceValueMin, final double sliceValueMax, final ImgFactory< UnsignedShortType > factory )
 	{
 		this.pattern = pattern;
+		this.setupIdToChannelId = setupIdToChannelId;
 		this.numSlices = numSlices;
 		this.sliceLoader = sliceLoader;
 		converter = new RealUnsignedShortConverter< T >( sliceValueMin, sliceValueMax );
@@ -74,38 +77,11 @@ public class FusionImageLoader< T extends RealType< T > > implements ImgLoader< 
 		public RandomAccessibleInterval< T > load( String fn );
 	}
 
-	/**
-	 * not implemented.
-	 */
 	@Override
-	public void init( final Element elem, final File basePath )
+	public RandomAccessibleInterval< UnsignedShortType > getImage( final ViewId view )
 	{
-		throw new UnsupportedOperationException( "not implemented" );
-	}
-
-	/**
-	 * not implemented.
-	 */
-	@Override
-	public Element toXml( final File basePath )
-	{
-		throw new UnsupportedOperationException( "not implemented" );
-	}
-
-	/**
-	 * not implemented.
-	 */
-	@Override
-	public RandomAccessibleInterval< FloatType > getFloatImage( final ViewDescription view )
-	{
-		throw new UnsupportedOperationException( "not implemented" );
-	}
-
-	@Override
-	public RandomAccessibleInterval< UnsignedShortType > getImage( final ViewDescription view )
-	{
-		final int tp = view.getTimepoint();
-		final int c = view.getSetup().getChannel();
+		final int tp = view.getTimePointId();
+		final int c = setupIdToChannelId.get( view.getViewSetupId() );
 
 		RandomAccessibleInterval< T > slice = sliceLoader.load( String.format( pattern, tp, c, 0 ) );
 		final long[] dimensions = new long[ 3 ];
@@ -123,6 +99,12 @@ public class FusionImageLoader< T extends RealType< T > > implements ImgLoader< 
 				d.next().set( t );
 		}
 		return img;
+	}
+
+	@Override
+	public UnsignedShortType getImageType()
+	{
+		return new UnsignedShortType();
 	}
 
 	public static class ArrayImgLoader< T extends RealType< T > & NativeType< T > > implements SliceLoader< T >

@@ -14,17 +14,21 @@ import java.awt.TextField;
 import java.awt.event.TextEvent;
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.util.List;
 
-import mpicbg.spim.data.ImgLoader;
-import mpicbg.spim.data.SequenceDescription;
-import mpicbg.spim.data.ViewDescription;
+import mpicbg.spim.data.generic.sequence.BasicImgLoader;
+import mpicbg.spim.data.generic.sequence.BasicViewSetup;
+import mpicbg.spim.data.sequence.TimePoint;
+import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 
-import org.jdom2.Document;
-import org.jdom2.Element;
 import org.jdom2.JDOMException;
-import org.jdom2.input.SAXBuilder;
+
+import bdv.spimdata.SequenceDescriptionMinimal;
+import bdv.spimdata.SpimDataMinimal;
+import bdv.spimdata.XmlIoSpimDataMinimal;
 
 /**
  * ImageJ plugin to import a raw image from xml/hdf5.
@@ -37,18 +41,13 @@ public class ImportPlugIn implements PlugIn
 	public static int timepoint = 0;
 	public static int setup = 0;
 
-	private SequenceDescription openSequence( final String xmlFilename ) throws InstantiationException, IllegalAccessException, ClassNotFoundException, JDOMException, IOException
+	private SequenceDescriptionMinimal openSequence( final String xmlFilename ) throws InstantiationException, IllegalAccessException, ClassNotFoundException, JDOMException, IOException, IllegalArgumentException, InvocationTargetException
 	{
 		final File f = new File( xmlFilename );
 		if ( f.exists() && f.isFile() && f.getName().endsWith( ".xml" ) )
 		{
-			final SAXBuilder sax = new SAXBuilder();
-			final Document doc = sax.build( xmlFilename );
-			final Element root = doc.getRootElement();
-
-			final File baseDirectory = new File( xmlFilename ).getParentFile();
-			final SequenceDescription seq = new SequenceDescription( root, baseDirectory != null ? baseDirectory : new File( "." ), true );
-			return seq;
+			final SpimDataMinimal spimData = new XmlIoSpimDataMinimal().load( xmlFilename );
+			return spimData.getSequenceDescription();
 		}
 		else
 			return null;
@@ -74,11 +73,11 @@ public class ImportPlugIn implements PlugIn
 				boolean enable = false;
 				try
 				{
-					final SequenceDescription seq = openSequence( xmlFilename );
+					final SequenceDescriptionMinimal seq = openSequence( xmlFilename );
 					if ( seq != null )
 					{
-						final int numTimepoints = seq.numTimepoints();
-						final int numSetups = seq.numViewSetups();
+						final int numTimepoints = seq.getTimePoints().getTimePointsOrdered().size();
+						final int numSetups = seq.getViewSetupsOrdered().size();
 
 						slTimepoint.setMaximum( numTimepoints );
 						slSetup.setMaximum( numSetups );
@@ -128,16 +127,20 @@ public class ImportPlugIn implements PlugIn
 		System.out.println( xmlFile + " " + timepoint + " " + setup );
 		try
 		{
-			final SequenceDescription seq = openSequence( xmlFile );
+			final SequenceDescriptionMinimal seq = openSequence( xmlFile );
 			if ( seq != null )
 			{
-				final int numTimepoints = seq.numTimepoints();
-				final int numSetups = seq.numViewSetups();
+				final List< TimePoint > timepointsOrdered = seq.getTimePoints().getTimePointsOrdered();
+				final List< BasicViewSetup > setupsOrdered = seq.getViewSetupsOrdered();
+				final int numTimepoints = timepointsOrdered.size();
+				final int numSetups = setupsOrdered.size();
 				timepoint = Math.max( Math.min( timepoint, numTimepoints - 1 ), 0 );
 				setup = Math.max( Math.min( setup, numSetups - 1 ), 0 );
+				final int timepointId = timepointsOrdered.get( timepoint ).getId();
+				final int setupId = setupsOrdered.get( setup ).getId();
 				@SuppressWarnings( "unchecked" )
-				final ImgLoader< UnsignedShortType > il = ( ImgLoader< UnsignedShortType > ) seq.getImgLoader();
-				final RandomAccessibleInterval< UnsignedShortType > img = il.getImage( new ViewDescription( seq, timepoint, setup, null ) );
+				final BasicImgLoader< UnsignedShortType > il = ( BasicImgLoader< UnsignedShortType > ) seq.getImgLoader();
+				final RandomAccessibleInterval< UnsignedShortType > img = il.getImage( new ViewId( timepointId, setupId ) );
 				final ImagePlus imp = net.imglib2.img.display.imagej.ImageJFunctions.wrap( img, "" ).duplicate();
 				imp.setTitle( new File( xmlFile ).getName() + " " + timepoint + " " + setup );
 				imp.show();

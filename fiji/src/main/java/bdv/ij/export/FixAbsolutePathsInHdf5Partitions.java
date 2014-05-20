@@ -2,16 +2,23 @@ package bdv.ij.export;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.HashMap;
 
-import mpicbg.spim.data.SequenceDescription;
+import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 
 import org.jdom2.JDOMException;
 
-import bdv.SequenceViewsLoader;
+import bdv.export.ExportMipmapInfo;
 import bdv.export.WriteSequenceToHdf5;
 import bdv.img.hdf5.Hdf5ImageLoader;
+import bdv.img.hdf5.Hdf5ImageLoader.MipmapInfo;
 import bdv.img.hdf5.Partition;
+import bdv.img.hdf5.Util;
+import bdv.spimdata.SequenceDescriptionMinimal;
+import bdv.spimdata.SpimDataMinimal;
+import bdv.spimdata.XmlIoSpimDataMinimal;
 
 /**
  * Older versions of multi-partition hdf5 export had a bug that caused absolute
@@ -27,26 +34,24 @@ import bdv.img.hdf5.Partition;
  */
 public class FixAbsolutePathsInHdf5Partitions
 {
-	public static void fix( final String xmlFilename ) throws JDOMException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
+	public static void fix( final String xmlFilename ) throws JDOMException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException, IllegalArgumentException, InvocationTargetException
 	{
-		final SequenceViewsLoader loader = new SequenceViewsLoader( xmlFilename );
-		final SequenceDescription seq = loader.getSequenceDescription();
+		final XmlIoSpimDataMinimal spimDataIo = new XmlIoSpimDataMinimal();
+		final SpimDataMinimal spimData = spimDataIo.load( xmlFilename );
+		final SequenceDescriptionMinimal seq = spimData.getSequenceDescription();
 		final Hdf5ImageLoader il = ( Hdf5ImageLoader) seq.getImgLoader();
 		final String outfn = il.getHdf5File().getCanonicalPath() + "FIXED";
-		final ArrayList< int[][] > perSetupResolutions = new ArrayList< int[][] >();
-		final ArrayList< int[][] > perSetupSubdivisions = new ArrayList< int[][] >();
-		for ( int setup = 0; setup < seq.numViewSetups(); ++setup )
+		final HashMap< Integer, ExportMipmapInfo > perSetupMipmapInfo = new HashMap< Integer, ExportMipmapInfo >();
+		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
 		{
-			final double[][] dr = il.getMipmapResolutions( setup );
-			final int[][] ir = new int[ dr.length ][ dr[0].length ];
-			for ( int i = 0; i < dr.length; ++i )
-				for ( int j = 0; j < dr[ 0 ].length; ++j )
-					ir[i][j] = ( int ) dr[i][j];
-			perSetupResolutions.add( ir );
-			perSetupSubdivisions.add( il.getSubdivisions( setup ) );
+			final int setupId = setup.getId();
+			final MipmapInfo info = il.getMipmapInfo( setupId );
+			perSetupMipmapInfo.put( setupId, new ExportMipmapInfo(
+					Util.castToInts( info.getResolutions() ),
+					info.getSubdivisions() ) );
 		}
 		final ArrayList< Partition > partitions = il.getPartitions();
-		WriteSequenceToHdf5.writeHdf5PartitionLinkFile( seq, perSetupResolutions, perSetupSubdivisions, partitions, new File( outfn ) );
+		WriteSequenceToHdf5.writeHdf5PartitionLinkFile( seq, perSetupMipmapInfo, partitions, new File( outfn ) );
 
 		System.out.println( "fixed hdf5 master file written to " + outfn );
 		System.out.println( "rename it to " + il.getHdf5File().getCanonicalPath() + " to use it." );

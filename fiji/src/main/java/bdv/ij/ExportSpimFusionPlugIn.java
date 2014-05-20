@@ -16,12 +16,15 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.List;
+import java.util.HashMap;
+import java.util.Map;
 
-import mpicbg.spim.data.SequenceDescription;
-import mpicbg.spim.data.ViewRegistrations;
-import mpicbg.spim.data.ViewSetup;
+import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
+import mpicbg.spim.data.generic.sequence.BasicViewSetup;
+import mpicbg.spim.data.registration.ViewRegistrations;
+import mpicbg.spim.data.sequence.TimePoint;
 import mpicbg.spim.io.ConfigurationParserException;
 import mpicbg.spim.io.IOFunctions;
 import mpicbg.spim.io.SPIMConfiguration;
@@ -30,24 +33,25 @@ import net.imglib2.Pair;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.ValuePair;
 
-import org.jdom2.Document;
-import org.jdom2.Element;
 import org.jdom2.JDOMException;
-import org.jdom2.input.SAXBuilder;
 
 import spimopener.SPIMExperiment;
+import bdv.export.ExportMipmapInfo;
 import bdv.export.ProgressWriter;
 import bdv.export.SubTaskProgressWriter;
 import bdv.export.WriteSequenceToHdf5;
-import bdv.export.WriteSequenceToXml;
 import bdv.ij.export.FusionResult;
 import bdv.ij.export.SetupAggregator;
 import bdv.ij.export.SpimRegistrationSequence;
 import bdv.ij.util.PluginHelper;
 import bdv.ij.util.ProgressWriterIJ;
 import bdv.img.hdf5.Hdf5ImageLoader;
+import bdv.img.hdf5.Hdf5ImageLoader.MipmapInfo;
 import bdv.img.hdf5.Partition;
 import bdv.img.hdf5.Util;
+import bdv.spimdata.SequenceDescriptionMinimal;
+import bdv.spimdata.SpimDataMinimal;
+import bdv.spimdata.XmlIoSpimDataMinimal;
 
 public class ExportSpimFusionPlugIn implements PlugIn
 {
@@ -82,53 +86,66 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		}
 	}
 
-	public static void appendToExistingFile( final Parameters params ) throws JDOMException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
+	public static void appendToExistingFile( final Parameters params ) throws JDOMException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException, IllegalArgumentException, InvocationTargetException
 	{
 		final ProgressWriter progress = new ProgressWriterIJ();
+		final XmlIoSpimDataMinimal spimDataIo = new XmlIoSpimDataMinimal();
 
 		final SpimRegistrationSequence spimseq = new SpimRegistrationSequence( params.conf );
-		final List< AffineTransform3D > fusionTransforms = spimseq.getFusionTransforms( params.cropOffsetX, params.cropOffsetY, params.cropOffsetZ, params.scale );
+		final Map< Integer, AffineTransform3D > fusionTransforms = spimseq.getFusionTransforms( params.cropOffsetX, params.cropOffsetY, params.cropOffsetZ, params.scale );
 		final FusionResult fusionResult = FusionResult.create( spimseq, params.fusionDirectory, params.filenamePattern, params.numSlices, params.sliceValueMin, params.sliceValueMax, fusionTransforms );
 
 		// aggregate the ViewSetups
 		final SetupAggregator aggregator = new SetupAggregator();
 
 		// first add the setups from the existing dataset
-		final SAXBuilder sax = new SAXBuilder();
-		final Document doc = sax.build( params.seqFile );
-		final Element root = doc.getRootElement();
-
 		final File existingDatasetXmlFile = params.seqFile;
 		final File baseDirectory = existingDatasetXmlFile.getParentFile();
-		final SequenceDescription existingSequence = new SequenceDescription( root, baseDirectory != null ? baseDirectory : new File("."), true );
-		final ViewRegistrations existingRegistrations = new ViewRegistrations( root.getChild( "ViewRegistrations" ) );
+		final SpimDataMinimal existingSpimData = spimDataIo.load( existingDatasetXmlFile.getAbsolutePath() );
+
+		final SequenceDescriptionMinimal existingSequence = existingSpimData.getSequenceDescription();
+		final ViewRegistrations existingRegistrations = existingSpimData.getViewRegistrations();
 		final Hdf5ImageLoader hdf5Loader = ( Hdf5ImageLoader ) existingSequence.getImgLoader();
 
-		for ( int setup = 0; setup < existingSequence.numViewSetups(); ++setup )
-			aggregator.add( existingSequence.getViewSetups().get( setup ), existingSequence, existingRegistrations, Util.castToInts( hdf5Loader.getMipmapResolutions( setup ) ), hdf5Loader.getSubdivisions( setup ) );
+		final Map< Integer, Integer > setupIdAggregatorToExisting = new HashMap< Integer, Integer >();
+		for ( final BasicViewSetup existingSetup : existingSequence.getViewSetupsOrdered() )
+		{
+			final MipmapInfo info = hdf5Loader.getMipmapInfo( existingSetup.getId() );
+			final int id = aggregator.add( existingSetup, existingSequence, existingRegistrations, Util.castToInts( info.getResolutions() ), info.getSubdivisions() );
+			setupIdAggregatorToExisting.put( id, existingSetup.getId() );
+		}
 
 		// now add a new setup from the fusion result
-		final SequenceDescription fusionSeq = fusionResult.getSequenceDescription();
+		final AbstractSequenceDescription< ?, ?, ? > fusionSeq = fusionResult.getSequenceDescription();
 		final ViewRegistrations fusionReg = fusionResult.getViewRegistrations();
-		final ViewSetup fusionSetup = fusionSeq.getViewSetups().get( 0 );
+		final BasicViewSetup fusionSetup = fusionSeq.getViewSetupsOrdered().get( 0 );
 		final int fusionSetupWrapperId = aggregator.add( fusionSetup, fusionSeq, fusionReg, params.resolutions, params.subdivisions );
+
+		// maps every timepoint id to itself, needed for partitions
+		final Map< Integer, Integer > timepointIdentityMap = new HashMap< Integer, Integer >();
+		for ( final TimePoint tp : existingSequence.getTimePoints().getTimePointsOrdered() )
+			timepointIdentityMap.put( tp.getId(), tp.getId() );
 
 		// setup the partitions
 		final ArrayList< Partition > partitions = new ArrayList< Partition >( hdf5Loader.getPartitions() );
 		final boolean notYetPartitioned = partitions.isEmpty();
 		if ( notYetPartitioned )
 			// add a new partition for the existing stuff
-			partitions.add( new Partition( hdf5Loader.getHdf5File().getAbsolutePath(), 0, 0, existingSequence.numTimepoints(), 0, 0, existingSequence.numViewSetups() ) );
+			partitions.add( new Partition( hdf5Loader.getHdf5File().getAbsolutePath(), timepointIdentityMap, setupIdAggregatorToExisting ) );
+
+		// TODO: spim_data: handle old partitions, fix setup id mapping to aggregated stuff...
+
 		// add partition for the fused data
 		final ArrayList< Partition > newPartitions = new ArrayList< Partition >();
 		final String newPartitionPath = PluginHelper.createNewPartitionFile( existingDatasetXmlFile ).getAbsolutePath();
-		newPartitions.add( new Partition( newPartitionPath, 0, 0, fusionSeq.numTimepoints(), 0, fusionSetupWrapperId, 1 ) );
+		final HashMap< Integer, Integer > setupIdSequenceToPartition = new HashMap< Integer, Integer >();
+		setupIdSequenceToPartition.put( fusionSetupWrapperId, fusionSetupWrapperId );
+		newPartitions.add( new Partition( newPartitionPath, timepointIdentityMap, setupIdSequenceToPartition ) );
 		partitions.addAll( newPartitions );
 
-		final SequenceDescription aggregateSeq = aggregator.createSequenceDescription( baseDirectory );
-		final ViewRegistrations aggregateRegs = aggregator.createViewRegistrations();
-		final ArrayList< int[][] > perSetupResolutions = aggregator.getPerSetupResolutions();
-		final ArrayList< int[][] > perSetupSubdivisions = aggregator.getPerSetupSubdivisions();
+		final SpimDataMinimal aggregateSpimData = aggregator.createSpimData( baseDirectory );
+		final SequenceDescriptionMinimal aggregateSeq = aggregateSpimData.getSequenceDescription();
+		final Map< Integer, ExportMipmapInfo > aggregateMipmapInfos = aggregator.getPerSetupMipmapInfo();
 
 		double complete = 0.05;
 		progress.setProgress( complete );
@@ -138,52 +155,48 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		for ( final Partition partition : newPartitions )
 		{
 			final SubTaskProgressWriter subtaskProgress = new SubTaskProgressWriter( progress, complete, complete + completionStep );
-			WriteSequenceToHdf5.writeHdf5PartitionFile( aggregateSeq, perSetupResolutions, perSetupSubdivisions, partition, subtaskProgress );
+			WriteSequenceToHdf5.writeHdf5PartitionFile( aggregateSeq, aggregateMipmapInfos, partition, subtaskProgress );
 			complete += completionStep;
 		}
 
 		// (re-)write hdf5 link file
 		final File newHdf5PartitionLinkFile = PluginHelper.createNewPartitionFile( existingDatasetXmlFile );
-		WriteSequenceToHdf5.writeHdf5PartitionLinkFile( aggregateSeq, perSetupResolutions, perSetupSubdivisions, partitions, newHdf5PartitionLinkFile );
+		WriteSequenceToHdf5.writeHdf5PartitionLinkFile( aggregateSeq, aggregateMipmapInfos, partitions, newHdf5PartitionLinkFile );
 		progress.setProgress( 1 );
 
 		// re-write xml file
-		final Hdf5ImageLoader loader = new Hdf5ImageLoader( newHdf5PartitionLinkFile, partitions, false );
-		final SequenceDescription sequenceDescription = new SequenceDescription( aggregateSeq.getViewSetups(), aggregateSeq.getTimePoints(), baseDirectory, loader );
-		WriteSequenceToXml.writeSequenceToXml( sequenceDescription, aggregateRegs, params.seqFile.getAbsolutePath() );
+		spimDataIo.save(
+				new SpimDataMinimal( aggregateSpimData, new Hdf5ImageLoader( newHdf5PartitionLinkFile, partitions, null ) ),
+				params.seqFile.getAbsolutePath() );
 	}
 
-	public static void saveAsNewFile( final Parameters params ) throws IOException
+	public static void saveAsNewFile( final Parameters params ) throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
 	{
 		final ProgressWriter progress = new ProgressWriterIJ();
+		final XmlIoSpimDataMinimal spimDataIo = new XmlIoSpimDataMinimal();
 
 		final SpimRegistrationSequence spimseq = new SpimRegistrationSequence( params.conf );
-		final List< AffineTransform3D > fusionTransforms = spimseq.getFusionTransforms( params.cropOffsetX, params.cropOffsetY, params.cropOffsetZ, params.scale );
+		final Map< Integer, AffineTransform3D > fusionTransforms = spimseq.getFusionTransforms( params.cropOffsetX, params.cropOffsetY, params.cropOffsetZ, params.scale );
 		final FusionResult fusionResult = FusionResult.create( spimseq, params.fusionDirectory, params.filenamePattern, params.numSlices, params.sliceValueMin, params.sliceValueMax, fusionTransforms );
 
 		// aggregate the ViewSetups
 		final SetupAggregator aggregator = new SetupAggregator();
 
 		// add the setups from the fusion result
-//		final SequenceDescription fusionSeq = fusionResult.getSequenceDescription();
-//		final ViewRegistrations fusionReg = fusionResult.getViewRegistrations();
-//		final ViewSetup fusionSetup = fusionSeq.setups.get( 0 );
-//		aggregator.add( fusionSetup, fusionSeq, fusionReg, params.resolutions, params.subdivisions );
 		aggregator.addSetups( fusionResult, params.resolutions, params.subdivisions );
 
 		final File baseDirectory = params.seqFile.getParentFile();
-		final SequenceDescription aggregateSeq = aggregator.createSequenceDescription( baseDirectory );
-		final ViewRegistrations aggregateRegs = aggregator.createViewRegistrations();
-		final ArrayList< int[][] > perSetupResolutions = aggregator.getPerSetupResolutions();
-		final ArrayList< int[][] > perSetupSubdivisions = aggregator.getPerSetupSubdivisions();
+		final SpimDataMinimal aggregateSpimData = aggregator.createSpimData( baseDirectory );
+		final SequenceDescriptionMinimal aggregateSeq = aggregateSpimData.getSequenceDescription();
+		final Map< Integer, ExportMipmapInfo > aggregateMipmapInfos = aggregator.getPerSetupMipmapInfo();
 
 		// write single hdf5 file
-		WriteSequenceToHdf5.writeHdf5File( aggregateSeq, perSetupResolutions, perSetupSubdivisions, params.hdf5File, new SubTaskProgressWriter( progress, 0, 0.95 ) );
+		WriteSequenceToHdf5.writeHdf5File( aggregateSeq, aggregateMipmapInfos, params.hdf5File, new SubTaskProgressWriter( progress, 0, 0.95 ) );
 
 		// re-write xml file
-		final Hdf5ImageLoader loader = new Hdf5ImageLoader( params.hdf5File, null, false );
-		final SequenceDescription sequenceDescription = new SequenceDescription( aggregateSeq.getViewSetups(), aggregateSeq.getTimePoints(), baseDirectory, loader );
-		WriteSequenceToXml.writeSequenceToXml( sequenceDescription, aggregateRegs, params.seqFile.getAbsolutePath() );
+		spimDataIo.save(
+				new SpimDataMinimal( aggregateSpimData, new Hdf5ImageLoader( params.hdf5File, null, null ) ),
+				params.seqFile.getAbsolutePath() );
 	}
 
 	public static String allChannels = "0, 1";

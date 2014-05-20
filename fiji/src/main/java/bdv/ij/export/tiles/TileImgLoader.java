@@ -10,8 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
-import mpicbg.spim.data.ImgLoader;
-import mpicbg.spim.data.ViewDescription;
+import mpicbg.spim.data.generic.sequence.BasicImgLoader;
+import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.Img;
@@ -21,7 +21,6 @@ import net.imglib2.img.array.ArrayRandomAccess;
 import net.imglib2.img.basictypeaccess.array.ShortArray;
 import net.imglib2.img.display.imagej.ImageJFunctions;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.type.numeric.real.FloatType;
 
 import org.jdom2.DataConversionException;
 import org.jdom2.Document;
@@ -32,7 +31,7 @@ import org.jdom2.input.SAXBuilder;
 
 import bdv.ij.export.tiles.CellVoyagerDataExporter.ChannelInfo;
 
-public class TileImgLoader implements ImgLoader< UnsignedShortType >
+public class TileImgLoader implements BasicImgLoader< UnsignedShortType >
 {
 
 	private static final Namespace NAMESPACE = Namespace.getNamespace( "bts", "http://www.yokogawa.co.jp/BTS/BTSSchema/1.0" );
@@ -70,11 +69,11 @@ public class TileImgLoader implements ImgLoader< UnsignedShortType >
 	}
 
 	@Override
-	public RandomAccessibleInterval< UnsignedShortType > getImage( final ViewDescription view )
+	public RandomAccessibleInterval< UnsignedShortType > getImage( final ViewId view )
 	{
 
-		final int setupIndex = view.getSetupIndex();
-		final int viewTimePoint = view.getTimepointIndex() + 1; // FIXME
+		final int setupIndex = view.getViewSetupId();
+		final int viewTimePoint = view.getTimePointId() + 1; // FIXME
 		final ChannelInfo channelInfo = channelInfos.get( setupIndex );
 
 		final int viewChannel = channelInfo.channelNumber;
@@ -130,7 +129,7 @@ public class TileImgLoader implements ImgLoader< UnsignedShortType >
 		 * Build stack
 		 */
 
-		final long[] dimensions = new long[] { view.getSetup().getWidth(), view.getSetup().getHeight(), view.getSetup().getDepth() };
+		final long[] dimensions = new long[] { channelInfo.width, channelInfo.height, channelInfo.nZSlices };
 		final ArrayImg< UnsignedShortType, ShortArray > stack = ArrayImgs.unsignedShorts( dimensions );
 		final ArrayRandomAccess< UnsignedShortType > randomAccess = stack.randomAccess();
 
@@ -176,26 +175,9 @@ public class TileImgLoader implements ImgLoader< UnsignedShortType >
 		return stack;
 	}
 
-	/*
-	 * UNUSED METHODS
-	 */
-
 	@Override
-	public Element toXml( final File basePath )
+	public UnsignedShortType getImageType()
 	{
-		throw new UnsupportedOperationException( "not implemented" );
+		return new UnsignedShortType();
 	}
-
-	@Override
-	public RandomAccessibleInterval< FloatType > getFloatImage( final ViewDescription view )
-	{
-		throw new UnsupportedOperationException( "not implemented" );
-	}
-
-	@Override
-	public void init( final Element elem, final File basePath )
-	{
-		throw new UnsupportedOperationException( "not implemented" );
-	}
-
 }

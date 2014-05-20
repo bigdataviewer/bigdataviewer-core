@@ -3,16 +3,20 @@ package bdv.ij.export;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-import bdv.export.WriteSequenceToHdf5;
-import bdv.export.WriteSequenceToXml;
-import bdv.img.hdf5.Hdf5ImageLoader;
-import bdv.img.hdf5.Partition;
-import mpicbg.spim.data.SequenceDescription;
-import mpicbg.spim.data.ViewRegistrations;
+import mpicbg.spim.data.sequence.TimePoint;
 import mpicbg.spim.io.ConfigurationParserException;
 import net.imglib2.realtransform.AffineTransform3D;
+import bdv.export.ExportMipmapInfo;
+import bdv.export.WriteSequenceToHdf5;
+import bdv.img.hdf5.Hdf5ImageLoader;
+import bdv.img.hdf5.Partition;
+import bdv.spimdata.SequenceDescriptionMinimal;
+import bdv.spimdata.SpimDataMinimal;
+import bdv.spimdata.XmlIoSpimDataMinimal;
 
 public class Scripting
 {
@@ -39,7 +43,12 @@ public class Scripting
 	 * @return an initialized {@link SpimRegistrationSequence} sequence.
 	 * @throws ConfigurationParserException
 	 */
-	public static SpimRegistrationSequence createSpimRegistrationSequence( final String huiskenExperimentXmlFile, final String channels, final String angles, final String timepoints, final int referenceTimePoint ) throws ConfigurationParserException
+	public static SpimRegistrationSequence createSpimRegistrationSequence(
+			final String huiskenExperimentXmlFile,
+			final String channels,
+			final String angles,
+			final String timepoints,
+			final int referenceTimePoint ) throws ConfigurationParserException
 	{
 		return new SpimRegistrationSequence( huiskenExperimentXmlFile, channels, angles, timepoints, referenceTimePoint );
 	}
@@ -77,7 +86,15 @@ public class Scripting
 	 * @return an initialized {@link SpimRegistrationSequence} sequence.
 	 * @throws ConfigurationParserException
 	 */
-	public static SpimRegistrationSequence createSpimRegistrationSequence( final String inputDirectory, final String inputFilePattern, final String channels, final String angles, final String timepoints, final int referenceTimePoint, final boolean overrideImageZStretching, final double zStretching ) throws ConfigurationParserException
+	public static SpimRegistrationSequence createSpimRegistrationSequence(
+			final String inputDirectory,
+			final String inputFilePattern,
+			final String channels,
+			final String angles,
+			final String timepoints,
+			final int referenceTimePoint,
+			final boolean overrideImageZStretching,
+			final double zStretching ) throws ConfigurationParserException
 	{
 		return new SpimRegistrationSequence( inputDirectory, inputFilePattern, channels, angles, timepoints, referenceTimePoint, overrideImageZStretching, zStretching );
 	}
@@ -92,7 +109,12 @@ public class Scripting
 	 * @param cropOffsetZ
 	 * @return
 	 */
-	public static List< AffineTransform3D > getFusionTransforms( final SpimRegistrationSequence spimseq, final int scale, final int cropOffsetX, final int cropOffsetY, final int cropOffsetZ )
+	public static Map< Integer, AffineTransform3D > getFusionTransforms(
+			final SpimRegistrationSequence spimseq,
+			final int scale,
+			final int cropOffsetX,
+			final int cropOffsetY,
+			final int cropOffsetZ )
 	{
 		return spimseq.getFusionTransforms( cropOffsetX, cropOffsetY, cropOffsetZ, scale );
 	}
@@ -109,7 +131,14 @@ public class Scripting
 	 * @param fusionTransform
 	 * @return
 	 */
-	public static FusionResult createFusionResult( final SpimRegistrationSequence spimseq, final String filepath, final String filepattern, final int numSlices, final double sliceValueMin, final double sliceValueMax, final List< AffineTransform3D > fusionTransforms )
+	public static FusionResult createFusionResult(
+			final SpimRegistrationSequence spimseq,
+			final String filepath,
+			final String filepattern,
+			final int numSlices,
+			final double sliceValueMin,
+			final double sliceValueMax,
+			final Map< Integer, AffineTransform3D > fusionTransforms )
 	{
 		return FusionResult.create( spimseq, filepath, filepattern, numSlices, sliceValueMin, sliceValueMax, fusionTransforms );
 	}
@@ -131,7 +160,11 @@ public class Scripting
 	 *            is used to generate paths for the partitions.
 	 * @return list of partitions.
 	 */
-	public static ArrayList< Partition > split( final SetupAggregator aggregator, final int timepointsPerPartition, final int setupsPerPartition, final String xmlFilename )
+	public static ArrayList< Partition > split(
+			final SetupAggregator aggregator,
+			final int timepointsPerPartition,
+			final int setupsPerPartition,
+			final String xmlFilename )
 	{
 		final String basename = xmlFilename.endsWith( ".xml" ) ? xmlFilename.substring( 0, xmlFilename.length() - 4 ) : xmlFilename;
 		final String partitionFilenameFormat = basename + "-%02d-%02d.h5";
@@ -145,6 +178,19 @@ public class Scripting
 				timepointSplits.add( t );
 		timepointSplits.add( numTimepoints );
 
+		final ArrayList< HashMap< Integer, Integer > > timepointMaps = new ArrayList< HashMap< Integer, Integer > >();
+		final List< TimePoint > timepoints = aggregator.timepoints.getTimePointsOrdered();
+		for ( int i = 0; i < timepointSplits.size() - 1; ++i )
+		{
+			final HashMap< Integer, Integer > timepointIdSequenceToPartition = new HashMap< Integer, Integer >();
+			for ( int t = timepointSplits.get( i ); t < timepointSplits.get( i + 1 ); ++t )
+			{
+				final int id = timepoints.get( t ).getId();
+				timepointIdSequenceToPartition.put( id, id );
+			}
+			timepointMaps.add( timepointIdSequenceToPartition );
+		}
+
 		final ArrayList< Integer > setupSplits = new ArrayList< Integer >();
 		setupSplits.add( 0 );
 		if ( setupsPerPartition > 0 )
@@ -152,47 +198,50 @@ public class Scripting
 				setupSplits.add( s );
 		setupSplits.add( numSetups );
 
-		final ArrayList< Partition > partitions = new ArrayList< Partition >();
-		final int timepointOffset = 0;
-		final int setupOffset = 0;
+		final ArrayList< HashMap< Integer, Integer > > setupMaps = new ArrayList< HashMap< Integer, Integer > >();
 		for ( int i = 0; i < timepointSplits.size() - 1; ++i )
 		{
-			final int timepointStart = timepointSplits.get( i );
-			final int timepointLength = timepointSplits.get( i + 1 ) - timepointStart;
-			for ( int j = 0; j < setupSplits.size() - 1; ++j )
+			final HashMap< Integer, Integer > setupIdSequenceToPartition = new HashMap< Integer, Integer >();
+			for ( int s = setupSplits.get( i ); s < setupSplits.get( i + 1 ); ++s )
 			{
-				final int setupStart = setupSplits.get( j );
-				final int setupLength = setupSplits.get( j + 1 ) - setupStart;
-				final String path = String.format( partitionFilenameFormat, i, j );
-				partitions.add( new Partition( path, timepointOffset, timepointStart, timepointLength, setupOffset, setupStart, setupLength ) );
+				final int id = aggregator.setups.get( s ).getId();
+				setupIdSequenceToPartition.put( id, id );
+			}
+			setupMaps.add( setupIdSequenceToPartition );
+		}
+
+		final ArrayList< Partition > partitions = new ArrayList< Partition >();
+		for ( int t = 0; t < timepointMaps.size(); ++t )
+		{
+			for ( int s = 0; s < setupMaps.size(); ++s )
+			{
+				final String path = String.format( partitionFilenameFormat, t, s );
+				partitions.add( new Partition( path, timepointMaps.get( t ),setupMaps.get( s ) ) );
 			}
 		}
 
 		return partitions;
 	}
 
-	/**
-	 * Get the partition from the given list that contains the given timepoint and setup.
-	 *
-	 * @return partition that contains given timepoint and setup or null if there is no such partition.
-	 */
-	Partition select( final List< Partition > partitions, final int timepoint, final int setup )
-	{
-		for ( final Partition p : partitions )
-			if ( p.contains( timepoint, setup ) )
-				return p;
-		return null;
-	}
+// TODO: spim_data: remove?
+//	/**
+//	 * Get the partition from the given list that contains the given timepoint and setup.
+//	 *
+//	 * @return partition that contains given timepoint and setup or null if there is no such partition.
+//	 */
+//	Partition select( final List< Partition > partitions, final int timepoint, final int setup )
+//	{
+//		for ( final Partition p : partitions )
+//			if ( p.contains( timepoint, setup ) )
+//				return p;
+//		return null;
+//	}
 
 	public static class PartitionedSequenceWriter
 	{
-		protected final SequenceDescription seq;
+		protected final SpimDataMinimal spimData;
 
-		protected final ViewRegistrations regs;
-
-		protected final ArrayList< int[][] > perSetupResolutions;
-
-		protected final ArrayList< int[][] > perSetupSubdivisions;
+		protected final Map< Integer, ExportMipmapInfo > perSetupMipmapInfo;
 
 		protected final ArrayList< Partition > partitions;
 
@@ -200,18 +249,16 @@ public class Scripting
 
 		protected final File hdf5File;
 
-		public PartitionedSequenceWriter( final SetupAggregator setupCollector, final String xmlFilename, final List< Partition > partitions )
+		public PartitionedSequenceWriter( final SetupAggregator aggregator, final String xmlFilename, final List< Partition > partitions )
 		{
-			seq = setupCollector.createSequenceDescription( null );
-			regs = setupCollector.createViewRegistrations();
-			perSetupResolutions = setupCollector.getPerSetupResolutions();
-			perSetupSubdivisions = setupCollector.getPerSetupSubdivisions();
-			this.partitions = new ArrayList< Partition >( partitions );
-
-			this.seqFile = new File( xmlFilename );
+			seqFile = new File( xmlFilename );
 
 			final String hdf5Filename = ( xmlFilename.endsWith( ".xml" ) ? xmlFilename.substring( 0, xmlFilename.length() - 4 ) : xmlFilename ) + ".h5";
-			this.hdf5File = new File( hdf5Filename );
+			hdf5File = new File( hdf5Filename );
+
+			spimData = aggregator.createSpimData( seqFile );
+			perSetupMipmapInfo = aggregator.getPerSetupMipmapInfo();
+			this.partitions = new ArrayList< Partition >( partitions );
 		}
 
 		public int numPartitions()
@@ -222,19 +269,20 @@ public class Scripting
 		public void writePartition( final int index )
 		{
 			if ( index >= 0 && index < partitions.size() )
-				WriteSequenceToHdf5.writeHdf5PartitionFile( seq, perSetupResolutions, perSetupSubdivisions, partitions.get( index ), null );
+				WriteSequenceToHdf5.writeHdf5PartitionFile( spimData.getSequenceDescription(), perSetupMipmapInfo, partitions.get( index ), null );
 		}
 
-		public void writeXmlAndLinks() throws IOException
+		public void writeXmlAndLinks() throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
 		{
-			WriteSequenceToHdf5.writeHdf5PartitionLinkFile( seq, perSetupResolutions, perSetupSubdivisions, partitions, hdf5File );
-			final Hdf5ImageLoader loader = new Hdf5ImageLoader( hdf5File, partitions, false );
-			final SequenceDescription sequenceDescription = new SequenceDescription( seq.getViewSetups(), seq.getTimePoints(), seqFile.getParentFile(), loader );
-			WriteSequenceToXml.writeSequenceToXml( sequenceDescription, regs, seqFile.getAbsolutePath() );
+			final SequenceDescriptionMinimal seq = spimData.getSequenceDescription();
+			WriteSequenceToHdf5.writeHdf5PartitionLinkFile( seq, perSetupMipmapInfo, partitions, hdf5File );
+			final Hdf5ImageLoader loader = new Hdf5ImageLoader( hdf5File, partitions, null );
+
+			new XmlIoSpimDataMinimal().save( new SpimDataMinimal( spimData, loader ), seqFile.getAbsolutePath() );
 		}
 	}
 
-	public static void main( final String[] args ) throws IOException, ConfigurationParserException
+	public static void example_main( final String[] args ) throws Exception
 	{
 		final SetupAggregator aggregator = new SetupAggregator();
 
@@ -256,7 +304,7 @@ public class Scripting
 		final int cropOffsetZ = 6;
 		final int scale = 1;
 
-		final List< AffineTransform3D > fusionTransforms = getFusionTransforms( spimseq, scale, cropOffsetX, cropOffsetY, cropOffsetZ );
+		final Map< Integer, AffineTransform3D > fusionTransforms = getFusionTransforms( spimseq, scale, cropOffsetX, cropOffsetY, cropOffsetZ );
 		final FusionResult fusion = createFusionResult( spimseq, filepath, filepattern, numSlices, sliceValueMin, sliceValueMax, fusionTransforms );
 
 		final int[][] spimresolutions = { { 1, 1, 1 }, { 2, 2, 1 }, { 4, 4, 2 } };

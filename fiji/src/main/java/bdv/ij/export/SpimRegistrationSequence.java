@@ -3,12 +3,11 @@ package bdv.ij.export;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
+import java.util.Map;
 
 import javax.vecmath.Point3f;
 
 import mpicbg.spim.data.generic.base.Entity;
-import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicImgLoader;
 import mpicbg.spim.data.registration.ViewRegistration;
 import mpicbg.spim.data.registration.ViewRegistrations;
@@ -209,14 +208,14 @@ public class SpimRegistrationSequence
 	}
 
 	// TODO: spim_data: should this be a Map< timepoint id, AffineTransform3D> ?
-	public List< AffineTransform3D > getFusionTransforms( final int cropOffsetX, final int cropOffsetY, final int cropOffsetZ, final int scale )
+	public Map< Integer, AffineTransform3D > getFusionTransforms( final int cropOffsetX, final int cropOffsetY, final int cropOffsetZ, final int scale )
 	{
 		conf.cropOffsetX = cropOffsetX;
 		conf.cropOffsetY = cropOffsetY;
 		conf.cropOffsetZ = cropOffsetZ;
 		conf.scale = scale;
 
-		final ArrayList< AffineTransform3D > transforms = new ArrayList< AffineTransform3D >();
+		final HashMap< Integer, AffineTransform3D > transforms = new HashMap< Integer, AffineTransform3D >();
 		if ( conf.timeLapseRegistration )
 		{
 			SPIMConfiguration refconf = conf;
@@ -248,16 +247,14 @@ public class SpimRegistrationSequence
 			System.out.println( "tx = " + tx + " ty = " + ty + " tz = " + tz + " scale = " + scale );
 			final AffineTransform3D transform = new AffineTransform3D();
 			transform.set( s, 0, 0, tx, 0, s, 0, ty, 0, 0, s, tz );
-			final int numTimepoints = sequenceDescription.getTimePoints().getTimePointsOrdered().size();
-			for ( int i = 0; i < numTimepoints; ++i )
-				transforms.add( transform );
+			for ( final int tp : conf.timepoints )
+				transforms.put( tp, transform );
 		}
 		else
 		{
-			final int numTimepoints = sequenceDescription.getTimePoints().getTimePointsOrdered().size();
-			for ( int i = 0; i < numTimepoints; ++i )
+			for ( final int tp : conf.timepoints )
 			{
-				final RealInterval interval = getFusionBoundingBox( conf, i );
+				final RealInterval interval = getFusionBoundingBox( conf, tp );
 				final double tx = interval.realMin( 0 );
 				final double ty = interval.realMin( 1 );
 				final double tz = interval.realMin( 2 );
@@ -265,19 +262,19 @@ public class SpimRegistrationSequence
 				System.out.println( "tx = " + tx + " ty = " + ty + " tz = " + tz + " scale = " + scale );
 				final AffineTransform3D transform = new AffineTransform3D();
 				transform.set( s, 0, 0, tx, 0, s, 0, ty, 0, 0, s, tz );
-				transforms.add( transform );
+				transforms.put( tp, transform );
 			}
 		}
 		return transforms;
 	}
 
-	protected static RealInterval getFusionBoundingBox( final SPIMConfiguration conf, final int timepointIndex )
+	protected static RealInterval getFusionBoundingBox( final SPIMConfiguration conf, final int timepointId )
 	{
 			final Point3f min = new Point3f();
 			final Point3f max = new Point3f();
 			final Point3f size = new Point3f();
 
-			final int tp = conf.timeLapseRegistration ? conf.getTimePointIndex( conf.referenceTimePoint ) : timepointIndex;
+			final int tp = conf.getTimePointIndex( conf.timeLapseRegistration ? conf.referenceTimePoint : timepointId );
 
 			@SuppressWarnings( "unchecked" )
 			final ViewStructure reference = ViewStructure.initViewStructure( conf, tp, conf.getModel(), "Reference ViewStructure Timepoint " + conf.referenceTimePoint, conf.debugLevelInt );

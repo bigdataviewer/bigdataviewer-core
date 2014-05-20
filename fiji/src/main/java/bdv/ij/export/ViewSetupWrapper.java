@@ -1,8 +1,10 @@
 package bdv.ij.export;
 
-import mpicbg.spim.data.ImgLoader;
-import mpicbg.spim.data.SequenceDescription;
-import mpicbg.spim.data.ViewSetup;
+import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
+import mpicbg.spim.data.generic.sequence.BasicViewSetup;
+import mpicbg.spim.data.sequence.ImgLoader;
+import mpicbg.spim.data.sequence.SequenceDescription;
+import mpicbg.spim.data.sequence.ViewSetup;
 
 /**
  * A copy of a {@link ViewSetup} with another id.
@@ -11,26 +13,26 @@ import mpicbg.spim.data.ViewSetup;
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
-public class ViewSetupWrapper extends ViewSetup
+public class ViewSetupWrapper extends BasicViewSetup
 {
-	private final SequenceDescription sourceSequence;
+	private final AbstractSequenceDescription< ?, ?, ? > sourceSequence;
 
-	private final int sourceSetupIndex;
+	private final int sourceSetupId;
 
-	protected ViewSetupWrapper( final int id, final SequenceDescription sourceSequence, final ViewSetup sourceSetup )
+	protected ViewSetupWrapper( final int id, final AbstractSequenceDescription< ?, ?, ? > sourceSequence, final BasicViewSetup sourceSetup )
 	{
-		super( id, sourceSetup.getAngle(), sourceSetup.getIllumination(), sourceSetup.getChannel(), sourceSetup.getWidth(), sourceSetup.getHeight(), sourceSetup.getDepth(), sourceSetup.getPixelWidth(), sourceSetup.getPixelHeight(), sourceSetup.getPixelDepth() );
+		super( id, sourceSetup.getName(), sourceSetup.getSize(), sourceSetup.getVoxelSize() );
 		this.sourceSequence = sourceSequence;
-		this.sourceSetupIndex = sourceSetup.getId();
+		this.sourceSetupId = sourceSetup.getId();
 	}
 
-	public SequenceDescription getSourceSequence()
+	public AbstractSequenceDescription< ?, ?, ? > getSourceSequence()
 	{
 		return sourceSequence;
 	}
 
-	public int getSourceSetupIndex()
+	public int getSourceSetupId()
 	{
-		return sourceSetupIndex;
+		return sourceSetupId;
 	}
 }

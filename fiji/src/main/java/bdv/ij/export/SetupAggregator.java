@@ -2,29 +2,37 @@ package bdv.ij.export;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
-import mpicbg.spim.data.ImgLoader;
-import mpicbg.spim.data.SequenceDescription;
-import mpicbg.spim.data.ViewDescription;
-import mpicbg.spim.data.ViewRegistration;
-import mpicbg.spim.data.ViewRegistrations;
-import mpicbg.spim.data.ViewSetup;
+import mpicbg.spim.data.generic.base.Entity;
+import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
+import mpicbg.spim.data.generic.sequence.BasicImgLoader;
+import mpicbg.spim.data.generic.sequence.BasicViewSetup;
+import mpicbg.spim.data.registration.ViewRegistration;
+import mpicbg.spim.data.registration.ViewRegistrations;
+import mpicbg.spim.data.sequence.ImgLoader;
+import mpicbg.spim.data.sequence.SequenceDescription;
+import mpicbg.spim.data.sequence.TimePoint;
+import mpicbg.spim.data.sequence.TimePoints;
+import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.cell.CellImg;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.type.numeric.real.FloatType;
-
-import org.jdom2.Element;
-
+import bdv.export.ExportMipmapInfo;
 import bdv.export.WriteSequenceToHdf5;
-import bdv.export.WriteSequenceToXml;
 import bdv.ij.util.PluginHelper;
+import bdv.spimdata.SequenceDescriptionMinimal;
+import bdv.spimdata.SpimDataMinimal;
+import bdv.spimdata.XmlIoSpimDataMinimal;
 
 /**
- * Aggregate {@link ViewSetup setups}, i.e., SPIM source angles and fused
+ * Aggregate {@link BasicViewSetup setups}, i.e., SPIM source angles and fused
  * datasets from multiple {@link SequenceDescription}s. Also keeps for each
  * setup the mipmap resolutions and subdivisions to be created.
+ *
+ * Note, that added setups are assigned new, consecutive ids starting from 0.
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
@@ -33,12 +41,7 @@ public class SetupAggregator
 	/**
 	 * timepoint id for every timepoint index.
 	 */
-	protected final ArrayList< Integer > timepoints;
-
-	/**
-	 * the id (not index!) of the reference timepoint.
-	 */
-	protected int referenceTimePoint;
+	protected TimePoints timepoints;
 
 	protected final ArrayList< ViewRegistration > registrations;
 
@@ -47,59 +50,43 @@ public class SetupAggregator
 	 */
 	protected final ArrayList< ViewSetupWrapper > setups;
 
-	protected final ArrayList< int[][] > perSetupResolutions;
-
-	protected final ArrayList< int[][] > perSetupSubdivisions;
+	protected final Map< Integer, ExportMipmapInfo > perSetupMipmapInfo;
 
 	/**
 	 * An {@link ImgLoader} that forwards to wrapped source sequences.
 	 */
-	protected final ImgLoader< UnsignedShortType > imgLoader;
+	protected final BasicImgLoader< UnsignedShortType > imgLoader;
 
 	/**
 	 * Create an empty aggregator.
 	 */
 	public SetupAggregator()
 	{
-		timepoints = new ArrayList< Integer >();
-		referenceTimePoint = 0;
+		timepoints = null;
 		registrations = new ArrayList< ViewRegistration >();
 		setups = new ArrayList< ViewSetupWrapper >();
-		perSetupResolutions = new ArrayList< int[][] >();
-		perSetupSubdivisions = new ArrayList< int[][] >();
-		imgLoader = new ImgLoader< UnsignedShortType >()
+		perSetupMipmapInfo = new HashMap< Integer, ExportMipmapInfo >();
+		imgLoader = new BasicImgLoader< UnsignedShortType >()
 		{
 			@Override
-			public void init( final Element elem, final File basePath )
+			public RandomAccessibleInterval< UnsignedShortType > getImage( final ViewId view )
 			{
-				throw new UnsupportedOperationException( "not implemented" );
-			}
-
-			@Override
-			public Element toXml( final File basePath )
-			{
-				throw new UnsupportedOperationException( "not implemented" );
-			}
-
-			@Override
-			public RandomAccessibleInterval< FloatType > getFloatImage( final ViewDescription view )
-			{
-				throw new UnsupportedOperationException( "not implemented" );
-			}
-
-			@Override
-			public RandomAccessibleInterval< UnsignedShortType > getImage( final ViewDescription view )
-			{
-				final ViewSetupWrapper w = ( ViewSetupWrapper ) view.getSetup();
+				final ViewSetupWrapper w = setups.get( view.getViewSetupId() );
 				@SuppressWarnings( "unchecked" )
-				final ImgLoader< UnsignedShortType > il = ( ImgLoader< UnsignedShortType > ) w.getSourceSequence().getImgLoader();
-				return il.getImage( new ViewDescription( w.getSourceSequence(), view.getTimepointIndex(), w.getSourceSetupIndex(), view.getModel() ) );
+				final BasicImgLoader< UnsignedShortType > il = ( BasicImgLoader< UnsignedShortType > ) w.getSourceSequence().getImgLoader();
+				return il.getImage( new ViewId( view.getTimePointId(), w.getSourceSetupId() ) );
+			}
+
+			@Override
+			public UnsignedShortType getImageType()
+			{
+				return new UnsignedShortType();
 			}
 		};
 	}
 
 	/**
-	 * Add a new {@link ViewSetup} to the aggregator.
+	 * Add a new {@link BasicViewSetup} to the aggregator.
 	 *
 	 * Adds a setup of the given source {@link SpimRegistrationSequence} to the
 	 * aggregator. A reference to the source sequence is kept and the source
@@ -127,80 +114,51 @@ public class SetupAggregator
 	 * @param subdivisions
 	 *            the set of subdivisions to store. each nested int[] array
 	 *            defines one subdivision.
-	 * @return the setup index of the new {@link ViewSetup} in the aggregator.
+	 * @return the setup id of the new {@link BasicViewSetup} in the aggregator.
 	 */
-	public int add( final ViewSetup sourceSetup, final SequenceDescription sourceSequence, final ViewRegistrations sourceRegs, final int[][] resolutions, final int[][] subdivisions )
+	public int add( final BasicViewSetup sourceSetup, final AbstractSequenceDescription< ?, ?, ? > sourceSequence, final ViewRegistrations sourceRegs, final int[][] resolutions, final int[][] subdivisions )
 	{
-		final int setupIdx = setups.size();
-		setups.add( new ViewSetupWrapper( setupIdx, sourceSequence, sourceSetup ) );
-		if ( setupIdx == 0 )
+		final int setupId = setups.size();
+		setups.add( new ViewSetupWrapper( setupId, sourceSequence, sourceSetup ) );
+		if ( setupId == 0 )
 		{
-			// if this is the first setup added, initialize the timepoints array and the reference timepoint
-			timepoints.addAll( sourceSequence.getTimePoints() );
-			referenceTimePoint = sourceRegs.referenceTimePoint;
+			// if this is the first setup added, initialize the timepoints
+			timepoints = sourceSequence.getTimePoints();
 		}
-		final int s = sourceSetup.getId();
-		for ( int timepointIdx = 0; timepointIdx < timepoints.size(); ++timepointIdx )
+		final int sourceSetupId = sourceSetup.getId();
+		for ( final TimePoint timepoint : timepoints.getTimePointsOrdered() )
 		{
-			final int tp = timepoints.get( timepointIdx );
-			boolean found = false;
-			for( final ViewRegistration r : sourceRegs.registrations )
-				if ( s == r.getSetupIndex() && tp == sourceSequence.getTimePoints().get( r.getTimepointIndex() ) )
-				{
-					found = true;
-					registrations.add( new ViewRegistration( timepointIdx, setupIdx, r.getModel() ) );
-					break;
-				}
-			if ( !found )
-				throw new RuntimeException( "could not find ViewRegistration for timepoint " + tp + " in the source sequence." );
+			final int timepointId = timepoint.getId();
+			final ViewRegistration r = sourceRegs.getViewRegistrations().get( new ViewId( timepointId, sourceSetupId ) );
+			if ( r == null )
+				throw new RuntimeException( "could not find ViewRegistration for timepoint " + timepointId + " in the source sequence." );
+			registrations.add( new ViewRegistration( timepointId, setupId, r.getModel() ) );
 		}
-		perSetupResolutions.add( resolutions );
-		perSetupSubdivisions.add( subdivisions );
-		return setupIdx;
+		perSetupMipmapInfo.put( setupId, new ExportMipmapInfo( resolutions, subdivisions ) );
+		return setupId;
 	}
 
 	/**
-	 * Create a {@link SequenceDescription} for the setups currently aggregated.
-	 * This {@link SequenceDescription} can be used to write the sequence (see
-	 * {@link WriteSequenceToHdf5} and {@link WriteSequenceToXml}).
+	 * Create a {@link SpimDataMinimal} for the setups currently aggregated.
+	 * This can be used to write the sequence (see {@link WriteSequenceToHdf5}
+	 * and
+	 * {@link XmlIoSpimDataMinimal#toXml(bdv.spimdata.SpimDataMinimal, File)}.
 	 *
 	 * @param basePath
-	 * @return a {@link SequenceDescription} with the currently aggregated
-	 *         setups.
+	 * @return a {@link SpimDataMinimal} with the currently aggregated setups.
 	 */
-	public SequenceDescription createSequenceDescription( final File basePath )
+	public SpimDataMinimal createSpimData( final File basePath )
 	{
-		return new SequenceDescription( setups, timepoints, basePath, imgLoader );
+		final SequenceDescriptionMinimal seq = new SequenceDescriptionMinimal( timepoints, Entity.idMap( setups ), imgLoader, null );
+		return new SpimDataMinimal( basePath, seq, new ViewRegistrations( registrations ) );
 	}
 
 	/**
-	 * Create {@link ViewRegistrations} for the setups currently aggregated.
-	 * This {@link ViewRegistrations} can be used to write the sequence (see
-	 * {@link WriteSequenceToXml}).
-	 *
-	 * @param basePath
-	 * @return {@link ViewRegistrations} for the currently aggregated
-	 *         setups.
+	 * Get the aggregated per-setup {@link ExportMipmapInfo}s.
 	 */
-	public ViewRegistrations createViewRegistrations()
+	public Map< Integer, ExportMipmapInfo > getPerSetupMipmapInfo()
 	{
-		return new ViewRegistrations( new ArrayList< ViewRegistration >( registrations ), referenceTimePoint );
-	}
-
-	/**
-	 * Get the aggregated per-setup mipmap resolutions.
-	 */
-	public ArrayList< int[][] > getPerSetupResolutions()
-	{
-		return perSetupResolutions;
-	}
-
-	/**
-	 * Get the aggregated per-setup mipmap level subdivisions.
-	 */
-	public ArrayList< int[][] > getPerSetupSubdivisions()
-	{
-		return perSetupSubdivisions;
+		return perSetupMipmapInfo;
 	}
 
 	/**
@@ -232,7 +190,7 @@ public class SetupAggregator
 	 */
 	public void addSetup( final SpimRegistrationSequence sequence, final int setupIndex, final String resolutionsString, final String subdivisionsString )
 	{
-		final SequenceDescription desc = sequence.getSequenceDescription();
+		final AbstractSequenceDescription< ?, ?, ? > desc = sequence.getSequenceDescription();
 		final ViewRegistrations regs = sequence.getViewRegistrations();
 		final int[][] resolutions = PluginHelper.parseResolutionsString( resolutionsString );
 		final int[][] subdivisions = PluginHelper.parseResolutionsString( subdivisionsString );
@@ -242,7 +200,7 @@ public class SetupAggregator
 			throw new RuntimeException( "Cannot parse subdivisions " + subdivisionsString );
 		else if ( resolutions.length != subdivisions.length )
 			throw new RuntimeException( "mipmap resolutions and subdivisions must have the same number of elements" );
-		final ViewSetup setup = desc.getViewSetups().get( setupIndex );
+		final BasicViewSetup setup = desc.getViewSetups().get( setupIndex );
 			add( setup, desc, regs, resolutions, subdivisions );
 	}
 
@@ -273,11 +231,11 @@ public class SetupAggregator
 	 */
 	public void addSetup( final SpimRegistrationSequence sequence, final int setupIndex, final int[][] resolutions, final int[][] subdivisions )
 	{
-		final SequenceDescription desc = sequence.getSequenceDescription();
+		final AbstractSequenceDescription< ?, ?, ? > desc = sequence.getSequenceDescription();
 		final ViewRegistrations regs = sequence.getViewRegistrations();
 		if ( resolutions.length != subdivisions.length )
 			throw new RuntimeException( "mipmap resolutions and subdivisions must have the same number of elements" );
-		final ViewSetup setup = desc.getViewSetups().get( setupIndex );
+		final BasicViewSetup setup = desc.getViewSetups().get( setupIndex );
 			add( setup, desc, regs, resolutions, subdivisions );
 	}
 
@@ -376,7 +334,7 @@ public class SetupAggregator
 			throw new RuntimeException( "Cannot parse subdivisions " + subdivisionsString );
 		else if ( resolutions.length != subdivisions.length )
 			throw new RuntimeException( "mipmap resolutions and subdivisions must have the same number of elements" );
-		for ( final ViewSetup setup : fusionResult.getSequenceDescription().getViewSetups() )
+		for( final BasicViewSetup setup : fusionResult.getSequenceDescription().getViewSetupsOrdered() )
 			add( setup, fusionResult.getSequenceDescription(), fusionResult.getViewRegistrations(), resolutions, subdivisions );
 	}
 
@@ -407,7 +365,7 @@ public class SetupAggregator
 	{
 		if ( resolutions.length != subdivisions.length )
 			throw new RuntimeException( "mipmap resolutions and subdivisions must have the same number of elements" );
-		for ( final ViewSetup setup : fusionResult.getSequenceDescription().getViewSetups() )
+		for( final BasicViewSetup setup : fusionResult.getSequenceDescription().getViewSetupsOrdered() )
 			add( setup, fusionResult.getSequenceDescription(), fusionResult.getViewRegistrations(), resolutions, subdivisions );
 	}
 }

@@ -8,11 +8,17 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import mpicbg.spim.data.SequenceDescription;
-import mpicbg.spim.data.ViewDescription;
-import mpicbg.spim.data.ViewRegistration;
-import mpicbg.spim.data.ViewRegistrations;
-import mpicbg.spim.data.ViewSetup;
+import mpicbg.spim.data.generic.base.Entity;
+import mpicbg.spim.data.generic.sequence.BasicViewSetup;
+import mpicbg.spim.data.registration.ViewRegistration;
+import mpicbg.spim.data.registration.ViewRegistrations;
+import mpicbg.spim.data.sequence.Channel;
+import mpicbg.spim.data.sequence.FinalVoxelDimensions;
+import mpicbg.spim.data.sequence.TimePoint;
+import mpicbg.spim.data.sequence.TimePoints;
+import mpicbg.spim.data.sequence.VoxelDimensions;
+import net.imglib2.Dimensions;
+import net.imglib2.FinalDimensions;
 import net.imglib2.realtransform.AffineTransform3D;
 
 import org.jdom2.Document;
@@ -22,8 +28,10 @@ import org.jdom2.input.SAXBuilder;
 
 import bdv.export.ProgressWriter;
 import bdv.export.WriteSequenceToHdf5;
-import bdv.export.WriteSequenceToXml;
 import bdv.img.hdf5.Hdf5ImageLoader;
+import bdv.spimdata.SequenceDescriptionMinimal;
+import bdv.spimdata.SpimDataMinimal;
+import bdv.spimdata.XmlIoSpimDataMinimal;
 
 public class CellVoyagerDataExporter
 {
@@ -221,17 +229,17 @@ public class CellVoyagerDataExporter
 		return channels;
 	}
 
-	public List< Integer > readTimePoints()
+	public TimePoints readTimePoints()
 	{
 		final Element root = document.getRootElement();
 		final int nTimePoints = Integer.parseInt( root.getChild( "TimelapsCondition" ).getChildText( "Iteration" ) );
 
-		final List< Integer > timepoints = new ArrayList< Integer >( nTimePoints );
+		final List< TimePoint > timepoints = new ArrayList< TimePoint >( nTimePoints );
 		for ( int i = 0; i < nTimePoints; i++ )
 		{
-			timepoints.add( Integer.valueOf( i ) );
+			timepoints.add( new TimePoint( Integer.valueOf( i ) ) );
 		}
-		return timepoints;
+		return new TimePoints( timepoints );
 	}
 
 	public double readFrameInterval()
@@ -266,11 +274,22 @@ public class CellVoyagerDataExporter
 		 * Create view setups
 		 */
 
-		final List< ViewSetup > setups = new ArrayList< ViewSetup >( channelInfos.size() );
+		final List< BasicViewSetup > setups = new ArrayList< BasicViewSetup >( channelInfos.size() );
 		int viewSetupIndex = 0;
 		for ( final ChannelInfo channelInfo : channelInfos )
 		{
-			final ViewSetup viewSetup = new ViewSetup( viewSetupIndex++, 0, 0, channelInfo.channelNumber, channelInfo.width, channelInfo.height, channelInfo.nZSlices, channelInfo.pixelWidth, channelInfo.pixelHeight, channelInfo.pixelDepth );
+			final Channel channel = new Channel( channelInfo.channelNumber );
+			final Dimensions size = new FinalDimensions(
+					channelInfo.width,
+					channelInfo.height,
+					channelInfo.nZSlices );
+			final VoxelDimensions voxelSize = new FinalVoxelDimensions(
+					channelInfo.spaceUnits,
+					channelInfo.pixelWidth,
+					channelInfo.pixelHeight,
+					channelInfo.pixelDepth );
+			final BasicViewSetup viewSetup = new BasicViewSetup( viewSetupIndex++, null, size, voxelSize );
+			viewSetup.setAttribute( channel );
 			setups.add( viewSetup );
 		}
 
@@ -284,13 +303,13 @@ public class CellVoyagerDataExporter
 		 * Time points
 		 */
 
-		final List< Integer > timePoints = readTimePoints();
+		final TimePoints timePoints = readTimePoints();
 
 		/*
 		 * Sequence description
 		 */
 
-		final SequenceDescription sequenceDescriptionHDF5 = new SequenceDescription( setups, timePoints, measurementSettingFile.getParentFile(), imgLoader );
+		final SequenceDescriptionMinimal sequenceDescriptionHDF5 = new SequenceDescriptionMinimal( timePoints, Entity.idMap( setups ), imgLoader, null );
 
 		/*
 		 * Write to HDF5
@@ -302,8 +321,8 @@ public class CellVoyagerDataExporter
 		 * write XML sequence description
 		 */
 
-		final Hdf5ImageLoader hdf5Loader = new Hdf5ImageLoader( hdf5File, null );
-		final SequenceDescription sequenceDescriptionXML = new SequenceDescription( setups, timePoints, seqFile.getParentFile(), hdf5Loader );
+		final Hdf5ImageLoader hdf5Loader = new Hdf5ImageLoader( hdf5File, null, null );
+		final SequenceDescriptionMinimal sequenceDescriptionXML = new SequenceDescriptionMinimal( sequenceDescriptionHDF5, hdf5Loader );
 
 		/*
 		 * Build views
@@ -313,26 +332,30 @@ public class CellVoyagerDataExporter
 
 		for ( int setupIndex = 0; setupIndex < setups.size(); setupIndex++ )
 		{
-			final ViewSetup viewSetup = setups.get( setupIndex );
+			final BasicViewSetup viewSetup = setups.get( setupIndex );
+			final int setupId = viewSetup.getId();
 
 			// A single transform for all the time points of a view
-			final double pw = viewSetup.getPixelWidth();
-			final double ph = viewSetup.getPixelHeight();
-			final double pd = viewSetup.getPixelDepth();
+			final VoxelDimensions voxelSize = viewSetup.getVoxelSize();
+			final double pw = voxelSize.dimension( 0 );
+			final double ph = voxelSize.dimension( 1 );
+			final double pd = voxelSize.dimension( 2 );
 			final AffineTransform3D sourceTransform = new AffineTransform3D();
 			sourceTransform.set( pw, 0, 0, 0, 0, ph, 0, 0, 0, 0, pd, 0 );
 
-			for ( int timepointIndex = 0; timepointIndex < timePoints.size(); timepointIndex++ )
+			for ( final TimePoint timepoint : timePoints.getTimePointsOrdered() )
 			{
-				final ViewDescription view = new ViewDescription( sequenceDescriptionXML, timepointIndex, setupIndex, sourceTransform );
+				final int timepointId = timepoint.getId();
+				final ViewRegistration view = new ViewRegistration( timepointId, setupId, sourceTransform );
 				registrations.add( view );
 			}
 		}
 
-		final ViewRegistrations viewRegistrations = new ViewRegistrations( registrations, 0 );
+		final ViewRegistrations viewRegistrations = new ViewRegistrations( registrations );
+		final SpimDataMinimal spimData = new SpimDataMinimal( seqFile.getParentFile(), sequenceDescriptionXML, viewRegistrations );
 		try
 		{
-			WriteSequenceToXml.writeSequenceToXml( sequenceDescriptionXML, viewRegistrations, seqFile.getAbsolutePath() );
+			new XmlIoSpimDataMinimal().save( spimData, seqFile.getAbsolutePath() );
 			IJ.showProgress( 1 );
 		}
 		catch ( final Exception e )
