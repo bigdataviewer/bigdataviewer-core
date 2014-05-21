@@ -31,7 +31,6 @@ import bdv.ij.export.SpimRegistrationSequence;
 import bdv.ij.util.PluginHelper;
 import bdv.ij.util.ProgressWriterIJ;
 import bdv.img.hdf5.Hdf5ImageLoader;
-import bdv.img.hdf5.XmlIoHdf5ImageLoader;
 import bdv.spimdata.SequenceDescriptionMinimal;
 import bdv.spimdata.SpimDataMinimal;
 import bdv.spimdata.XmlIoSpimDataMinimal;
@@ -60,7 +59,6 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		final SpimDataMinimal spimData = new SpimDataMinimal( basePath, sequenceDescription, sequence.getViewRegistrations() );
 		try
 		{
-			XmlIoHdf5ImageLoader.registerManually(); // TODO: spim_data: remove when everything is working
 			new XmlIoSpimDataMinimal().save( spimData, params.seqFile.getAbsolutePath() );
 			progress.setProgress( 1.0 );
 		}

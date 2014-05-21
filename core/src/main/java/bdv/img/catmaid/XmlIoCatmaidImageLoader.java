@@ -20,7 +20,6 @@ public class XmlIoCatmaidImageLoader implements XmlIoBasicImgLoader< CatmaidImag
 	@Override
 	public CatmaidImageLoader fromXml( final Element elem, final File basePath, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
 	{
-
 		final long width = Long.parseLong( elem.getChildText( "width" ) );
 		final long height = Long.parseLong( elem.getChildText( "height" ) );
 		final long depth = Long.parseLong( elem.getChildText( "depth" ) );

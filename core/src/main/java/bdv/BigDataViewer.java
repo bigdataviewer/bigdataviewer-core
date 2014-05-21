@@ -419,8 +419,8 @@ public class BigDataViewer
 	{
 		final String fn = "/Users/Pietzsch/Desktop/bdv example/drosophila 2.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/data/catmaid.xml";
-//		final String fn = "/home/saalfeld/openconnectome-bock11-neariso.xml";
-//		final String fn = "/home/saalfeld/catmaid-confocal.xml";
+//		final String fn = "/Users/Pietzsch/Desktop/data/openconnectome-bock11-neariso.xml";
+//		final String fn = "/Users/Pietzsch/Desktop/data/catmaid-confocal.xml";
 //		final String fn = "/Users/pietzsch/desktop/data/BDV130418A325/BDV130418A325_NoTempReg.xml";
 //		final String fn = "/Users/pietzsch/Desktop/data/valia2/valia.xml";
 //		final String fn = "/Users/pietzsch/workspace/data/fast fly/111010_weber/combined.xml";
