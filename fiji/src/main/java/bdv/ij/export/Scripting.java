@@ -276,7 +276,7 @@ public class Scripting
 		{
 			final SequenceDescriptionMinimal seq = spimData.getSequenceDescription();
 			WriteSequenceToHdf5.writeHdf5PartitionLinkFile( seq, perSetupMipmapInfo, partitions, hdf5File );
-			final Hdf5ImageLoader loader = new Hdf5ImageLoader( hdf5File, partitions, null );
+			final Hdf5ImageLoader loader = new Hdf5ImageLoader( hdf5File, partitions, null, false );
 
 			new XmlIoSpimDataMinimal().save( new SpimDataMinimal( spimData, loader ), seqFile.getAbsolutePath() );
 		}

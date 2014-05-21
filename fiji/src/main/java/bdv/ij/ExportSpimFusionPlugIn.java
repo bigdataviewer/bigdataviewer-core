@@ -166,7 +166,7 @@ public class ExportSpimFusionPlugIn implements PlugIn
 
 		// re-write xml file
 		spimDataIo.save(
-				new SpimDataMinimal( aggregateSpimData, new Hdf5ImageLoader( newHdf5PartitionLinkFile, partitions, null ) ),
+				new SpimDataMinimal( aggregateSpimData, new Hdf5ImageLoader( newHdf5PartitionLinkFile, partitions, null, false ) ),
 				params.seqFile.getAbsolutePath() );
 	}
 
@@ -195,7 +195,7 @@ public class ExportSpimFusionPlugIn implements PlugIn
 
 		// re-write xml file
 		spimDataIo.save(
-				new SpimDataMinimal( aggregateSpimData, new Hdf5ImageLoader( params.hdf5File, null, null ) ),
+				new SpimDataMinimal( aggregateSpimData, new Hdf5ImageLoader( params.hdf5File, null, null, false ) ),
 				params.seqFile.getAbsolutePath() );
 	}
 
