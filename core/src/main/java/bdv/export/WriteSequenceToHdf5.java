@@ -256,7 +256,8 @@ public class WriteSequenceToHdf5
 					final ViewId viewIdPartition = new ViewId( timepointIdPartition, setupIdPartition );
 					hdf5Writer.createGroup( Util.getGroupPath( viewIdPartition, level ) );
 					final String path = Util.getCellsPath( viewIdPartition, level );
-					hdf5Writer.createShortMDArray( path, reorder( dimensions ), reorder( cellDimensions ), HDF5IntStorageFeatures.INT_AUTO_SCALING );
+//					hdf5Writer.createShortMDArray( path, reorder( dimensions ), reorder( cellDimensions ), HDF5IntStorageFeatures.INT_AUTO_SCALING );
+					hdf5Writer.createShortMDArray( path, reorder( dimensions ), reorder( cellDimensions ), HDF5IntStorageFeatures.INT_AUTO_SCALING_DEFLATE );
 
 					final long[] numCells = new long[ n ];
 					final int[] borderSize = new int[ n ];
