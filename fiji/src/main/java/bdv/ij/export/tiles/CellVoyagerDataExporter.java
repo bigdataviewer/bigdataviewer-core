@@ -321,8 +321,8 @@ public class CellVoyagerDataExporter
 		 * write XML sequence description
 		 */
 
-		final Hdf5ImageLoader hdf5Loader = new Hdf5ImageLoader( hdf5File, null, null, false );
-		final SequenceDescriptionMinimal sequenceDescriptionXML = new SequenceDescriptionMinimal( sequenceDescriptionHDF5, hdf5Loader );
+		final SequenceDescriptionMinimal sequenceDescriptionXML = sequenceDescriptionHDF5;
+		sequenceDescriptionXML.setImgLoader( new Hdf5ImageLoader( hdf5File, null, sequenceDescriptionXML, false ) );
 
 		/*
 		 * Build views
