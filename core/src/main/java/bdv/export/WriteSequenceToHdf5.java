@@ -181,10 +181,10 @@ public class WriteSequenceToHdf5
 		final IHDF5Writer hdf5Writer = HDF5Factory.open( hdf5File );
 
 		// write Mipmap descriptions
-		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
+		for ( final Entry< Integer, Integer > entry : partition.getSetupIdSequenceToPartition().entrySet() )
 		{
-			final int setupIdSequence = setup.getId();
-			final int setupIdPartition = partition.getSetupIdSequenceToPartition().get( setupIdSequence );
+			final int setupIdSequence = entry.getKey();
+			final int setupIdPartition = entry.getValue();
 			final ExportMipmapInfo mipmapInfo = perSetupMipmapInfo.get( setupIdSequence );
 			hdf5Writer.writeDoubleMatrix( Util.getResolutionsPath( setupIdPartition ), mipmapInfo.getResolutions() );
 			hdf5Writer.writeIntMatrix( Util.getSubdivisionsPath( setupIdPartition ), mipmapInfo.getSubdivisions() );
