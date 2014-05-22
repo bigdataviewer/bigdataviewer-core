@@ -7,23 +7,35 @@ import java.util.Map.Entry;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.sequence.TimePoint;
+import bdv.img.hdf5.DimsAndExistence;
 import bdv.img.hdf5.Hdf5ImageLoader;
-import bdv.img.hdf5.Hdf5ImageLoader.DimsAndExistence;
 import bdv.img.hdf5.MipmapInfo;
 import bdv.img.hdf5.ViewLevelId;
 
 public class RemoteImageLoaderMetaData
 {
-	// TODO spim_data javadoc
+	/**
+	 * The highest occurring timepoint id + 1. This is the maximum number of
+	 * timepoints that could possibly exist.
+	 */
 	protected int maxNumTimepoints;
 
-	// TODO spim_data javadoc
+	/**
+	 * The highest occurring setup id + 1. This is the maximum number of setups
+	 * that could possibly exist.
+	 */
 	protected int maxNumSetups;
 
-	// TODO spim_data javadoc
+	/**
+	 * The maximum number of mipmap levels occuring in all setups.
+	 */
 	protected int maxNumLevels;
 
-	// TODO spim_data javadoc
+	/**
+	 * Description of available mipmap levels for each {@link BasicViewSetup}.
+	 * Contains for each mipmap level, the subsampling factors and subdivision
+	 * block sizes. The {@link HashMap} key is the setup id.
+	 */
 	protected final HashMap< Integer, MipmapInfo > perSetupMipmapInfo;
 
 	/**

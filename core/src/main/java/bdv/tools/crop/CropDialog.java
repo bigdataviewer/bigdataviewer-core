@@ -6,7 +6,6 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -30,6 +29,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileFilter;
 
+import mpicbg.spim.data.SpimDataException;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.registration.ViewRegistration;
@@ -259,7 +259,7 @@ public class CropDialog extends JDialog
 	 * @param xmlFile
 	 */
 	@SuppressWarnings( "unchecked" )
-	public void cropGlobal( final int minTimepointIndex, final int maxTimepointIndex, final File hdf5File, final File xmlFile ) throws IOException
+	public void cropGlobal( final int minTimepointIndex, final int maxTimepointIndex, final File hdf5File, final File xmlFile ) throws SpimDataException
 	{
 		final AffineTransform3D globalToCropTransform = new AffineTransform3D();
 		viewer.getState().getViewerTransform( globalToCropTransform );
@@ -376,15 +376,7 @@ public class CropDialog extends JDialog
 		final File basePath = xmlFile.getParentFile();
 		final SpimDataMinimal spimData = new SpimDataMinimal( basePath, seq, new ViewRegistrations( registrations ) );
 
-		try
-		{
-			new XmlIoSpimDataMinimal().save( spimData, xmlFile.getAbsolutePath() );
-		}
-		catch ( final Exception e )
-		{
-			throw new IOException( e );
-			// TODO: spim_data. exception handling.
-		}
+		new XmlIoSpimDataMinimal().save( spimData, xmlFile.getAbsolutePath() );
 	}
 
 	private static final long serialVersionUID = 924395364255873920L;

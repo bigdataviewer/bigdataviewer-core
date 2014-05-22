@@ -223,20 +223,6 @@ public class Scripting
 		return partitions;
 	}
 
-// TODO: spim_data: remove?
-//	/**
-//	 * Get the partition from the given list that contains the given timepoint and setup.
-//	 *
-//	 * @return partition that contains given timepoint and setup or null if there is no such partition.
-//	 */
-//	Partition select( final List< Partition > partitions, final int timepoint, final int setup )
-//	{
-//		for ( final Partition p : partitions )
-//			if ( p.contains( timepoint, setup ) )
-//				return p;
-//		return null;
-//	}
-
 	public static class PartitionedSequenceWriter
 	{
 		protected final SpimDataMinimal spimData;

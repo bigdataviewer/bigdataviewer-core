@@ -70,6 +70,8 @@ import bdv.viewer.state.XmlIoViewerState;
  */
 public class ViewerPanel extends JPanel implements OverlayRenderer, TransformListener< AffineTransform3D >, PainterThread.Paintable, VisibilityAndGrouping.UpdateListener
 {
+	private static final long serialVersionUID = 1L;
+
 	/**
 	 * Currently rendered state (visible sources, transformation, timepoint,
 	 * etc.) A copy can be obtained byt {@link #getState()}.

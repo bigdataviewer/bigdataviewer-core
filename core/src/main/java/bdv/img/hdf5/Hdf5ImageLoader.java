@@ -45,7 +45,11 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 
 	protected VolatileGlobalCellCache< VolatileShortArray > cache;
 
-	// TODO clean up after spim_data switch
+	/**
+	 * Description of available mipmap levels for each {@link BasicViewSetup}.
+	 * Contains for each mipmap level, the subsampling factors and subdivision
+	 * block sizes. The {@link HashMap} key is the setup id.
+	 */
 	protected final HashMap< Integer, MipmapInfo > perSetupMipmapInfo;
 
 	/**
@@ -54,30 +58,6 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 	protected final ArrayList< Partition > partitions;
 
 	protected int maxNumLevels;
-
-	// TODO clean up after spim_data switch
-	public static class DimsAndExistence
-	{
-		private final long[] dimensions;
-
-		private final boolean exists;
-
-		public DimsAndExistence( final long[] dimensions, final boolean exists )
-		{
-			this.dimensions = dimensions;
-			this.exists = exists;
-		}
-
-		public long[] getDimensions()
-		{
-			return dimensions;
-		}
-
-		public boolean exists()
-		{
-			return exists;
-		}
-	}
 
 	/**
 	 * Maps {@link ViewLevelId} (timepoint, setup, level) to
@@ -243,28 +223,24 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 		return cache;
 	}
 
-	// TODO: spim_data: move to superclass?
 	@Override
 	public double[][] getMipmapResolutions( final int setupId )
 	{
 		return getMipmapInfo( setupId ).getResolutions();
 	}
 
-	// TODO: spim_data: move to superclass?
 	@Override
 	public AffineTransform3D[] getMipmapTransforms( final int setupId )
 	{
 		return getMipmapInfo( setupId ).getTransforms();
 	}
 
-	// TODO: spim_data: move to superclass?
 	@Override
 	public int numMipmapLevels( final int setupId )
 	{
 		return getMipmapInfo( setupId ).getNumLevels();
 	}
 
-	// TODO: spim_data: move to superclass (abstract)
 	public MipmapInfo getMipmapInfo( final int setupId )
 	{
 		open();

@@ -207,7 +207,6 @@ public class SpimRegistrationSequence
 		return new TimePoints( timepoints );
 	}
 
-	// TODO: spim_data: should this be a Map< timepoint id, AffineTransform3D> ?
 	public Map< Integer, AffineTransform3D > getFusionTransforms( final int cropOffsetX, final int cropOffsetY, final int cropOffsetZ, final int scale )
 	{
 		conf.cropOffsetX = cropOffsetX;

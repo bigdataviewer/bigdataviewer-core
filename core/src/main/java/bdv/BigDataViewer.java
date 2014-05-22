@@ -230,7 +230,7 @@ public class BigDataViewer
 
 		brightnessDialog = new BrightnessDialog( viewerFrame, setupAssignments );
 
-		cropDialog = null; // TODO repair after spim_data migration    new CropDialog( viewerFrame, viewer, seq );
+		cropDialog = new CropDialog( viewerFrame, viewer, seq );
 
 		movieDialog = new RecordMovieDialog( viewerFrame, viewer, progressWriter );
 		viewer.getDisplay().addOverlayRenderer( movieDialog ); // this is just to get updates of window size

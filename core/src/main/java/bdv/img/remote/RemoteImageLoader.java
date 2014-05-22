@@ -24,7 +24,7 @@ import bdv.img.cache.LoadingStrategy;
 import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.img.cache.VolatileImgCells;
 import bdv.img.cache.VolatileImgCells.CellCache;
-import bdv.img.hdf5.Hdf5ImageLoader.DimsAndExistence;
+import bdv.img.hdf5.DimsAndExistence;
 import bdv.img.hdf5.MipmapInfo;
 import bdv.img.hdf5.ViewLevelId;
 
@@ -100,28 +100,24 @@ public class RemoteImageLoader extends AbstractViewerImgLoader< UnsignedShortTyp
 		return cache;
 	}
 
-	// TODO: spim_data: move to superclass?
 	@Override
 	public double[][] getMipmapResolutions( final int setupId )
 	{
 		return getMipmapInfo( setupId ).getResolutions();
 	}
 
-	// TODO: spim_data: move to superclass?
 	@Override
 	public AffineTransform3D[] getMipmapTransforms( final int setupId )
 	{
 		return getMipmapInfo( setupId ).getTransforms();
 	}
 
-	// TODO: spim_data: move to superclass?
 	@Override
 	public int numMipmapLevels( final int setupId )
 	{
 		return getMipmapInfo( setupId ).getNumLevels();
 	}
 
-	// TODO: spim_data: move to superclass (abstract)
 	public MipmapInfo getMipmapInfo( final int setupId )
 	{
 		return metadata.perSetupMipmapInfo.get( setupId );

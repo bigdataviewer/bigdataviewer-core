@@ -130,8 +130,6 @@ public class ExportSpimFusionPlugIn implements PlugIn
 			// add a new partition for the existing stuff
 			partitions.add( new Partition( hdf5Loader.getHdf5File().getAbsolutePath(), timepointIdentityMap, setupIdAggregatorToExisting ) );
 
-		// TODO: spim_data: handle old partitions, fix setup id mapping to aggregated stuff...
-
 		// add partition for the fused data
 		final ArrayList< Partition > newPartitions = new ArrayList< Partition >();
 		final String newPartitionPath = PluginHelper.createNewPartitionFile( existingDatasetXmlFile ).getAbsolutePath();

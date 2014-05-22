@@ -555,14 +555,12 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 		@Override
 		public VolatileCell< A > get( final int index )
 		{
-			// TODO getGlobalIfCached( timepoint, setup, level, index, cacheHints );
 			return getGlobalIfCached( timepoint, setup, level, index, cacheHints );
 		}
 
 		@Override
 		public VolatileCell< A > load( final int index, final int[] cellDims, final long[] cellMin )
 		{
-			// TODO createGlobal( cellDims, cellMin, timepoint, setup, level, index, cacheHints );
 			return createGlobal( cellDims, cellMin, timepoint, setup, level, index, cacheHints );
 		}
 
