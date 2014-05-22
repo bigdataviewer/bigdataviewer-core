@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
+import net.imglib2.realtransform.AffineTransform3D;
 
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
@@ -21,12 +22,13 @@ import bdv.img.cache.LoadingStrategy;
 import bdv.img.cache.VolatileCell;
 import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.img.hdf5.Hdf5ImageLoader;
+import bdv.img.remote.AffineTransform3DJsonSerializer;
 import bdv.img.remote.RemoteImageLoaderMetaData;
 import bdv.spimdata.SequenceDescriptionMinimal;
 import bdv.spimdata.SpimDataMinimal;
 import bdv.spimdata.XmlIoSpimDataMinimal;
 
-import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 public class BigDataServer
 {
@@ -57,7 +59,11 @@ public class BigDataServer
 			final Hdf5ImageLoader imgLoader = ( Hdf5ImageLoader ) seq.getImgLoader();
 			cache = imgLoader.getCache();
 			metadata = new RemoteImageLoaderMetaData( imgLoader, seq );
-			metadataJson = new Gson().toJson( metadata );
+
+			final GsonBuilder gsonBuilder = new GsonBuilder();
+			gsonBuilder.registerTypeAdapter( AffineTransform3D.class, new AffineTransform3DJsonSerializer() );
+			gsonBuilder.enableComplexMapKeySerialization();
+			metadataJson = gsonBuilder.create().toJson( metadata );
 			cacheHints = new CacheHints( LoadingStrategy.BLOCKING, 0, false );
 		}
 

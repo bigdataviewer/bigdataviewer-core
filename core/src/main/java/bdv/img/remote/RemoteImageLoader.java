@@ -25,10 +25,10 @@ import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.img.cache.VolatileImgCells;
 import bdv.img.cache.VolatileImgCells.CellCache;
 import bdv.img.hdf5.Hdf5ImageLoader.DimsAndExistence;
-import bdv.img.hdf5.Hdf5ImageLoader.MipmapInfo;
+import bdv.img.hdf5.MipmapInfo;
 import bdv.img.hdf5.ViewLevelId;
 
-import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 public class RemoteImageLoader extends AbstractViewerImgLoader< UnsignedShortType, VolatileUnsignedShortType >
 {
@@ -44,8 +44,11 @@ public class RemoteImageLoader extends AbstractViewerImgLoader< UnsignedShortTyp
 	{
 		super( new UnsignedShortType(), new VolatileUnsignedShortType() );
 
+		this.baseUrl = baseUrl;
 		final URL url = new URL( baseUrl + "?p=init" );
-		metadata = new Gson().fromJson(
+		final GsonBuilder gsonBuilder = new GsonBuilder();
+		gsonBuilder.registerTypeAdapter( AffineTransform3D.class, new AffineTransform3DJsonSerializer() );
+		metadata = gsonBuilder.create().fromJson(
 				new InputStreamReader( url.openStream() ),
 				RemoteImageLoaderMetaData.class );
 		cache = new VolatileGlobalCellCache< VolatileShortArray >(

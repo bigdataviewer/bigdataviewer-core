@@ -46,7 +46,7 @@ import bdv.ij.export.SpimRegistrationSequence;
 import bdv.ij.util.PluginHelper;
 import bdv.ij.util.ProgressWriterIJ;
 import bdv.img.hdf5.Hdf5ImageLoader;
-import bdv.img.hdf5.Hdf5ImageLoader.MipmapInfo;
+import bdv.img.hdf5.MipmapInfo;
 import bdv.img.hdf5.Partition;
 import bdv.img.hdf5.Util;
 import bdv.spimdata.SequenceDescriptionMinimal;

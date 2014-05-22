@@ -13,7 +13,7 @@ import org.jdom2.JDOMException;
 import bdv.export.ExportMipmapInfo;
 import bdv.export.WriteSequenceToHdf5;
 import bdv.img.hdf5.Hdf5ImageLoader;
-import bdv.img.hdf5.Hdf5ImageLoader.MipmapInfo;
+import bdv.img.hdf5.MipmapInfo;
 import bdv.img.hdf5.Partition;
 import bdv.img.hdf5.Util;
 import bdv.spimdata.SequenceDescriptionMinimal;

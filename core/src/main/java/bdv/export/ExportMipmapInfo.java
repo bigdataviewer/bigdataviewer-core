@@ -1,6 +1,6 @@
 package bdv.export;
 
-import bdv.img.hdf5.Hdf5ImageLoader.MipmapInfo;
+import bdv.img.hdf5.MipmapInfo;
 import bdv.img.hdf5.Util;
 
 public class ExportMipmapInfo extends MipmapInfo
