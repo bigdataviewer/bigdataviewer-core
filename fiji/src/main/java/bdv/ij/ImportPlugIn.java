@@ -13,19 +13,15 @@ import java.awt.Scrollbar;
 import java.awt.TextField;
 import java.awt.event.TextEvent;
 import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
+import mpicbg.spim.data.SpimDataException;
 import mpicbg.spim.data.generic.sequence.BasicImgLoader;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.sequence.TimePoint;
 import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
-
-import org.jdom2.JDOMException;
-
 import bdv.spimdata.SequenceDescriptionMinimal;
 import bdv.spimdata.SpimDataMinimal;
 import bdv.spimdata.XmlIoSpimDataMinimal;
@@ -41,7 +37,7 @@ public class ImportPlugIn implements PlugIn
 	public static int timepoint = 0;
 	public static int setup = 0;
 
-	private SequenceDescriptionMinimal openSequence( final String xmlFilename ) throws InstantiationException, IllegalAccessException, ClassNotFoundException, JDOMException, IOException, IllegalArgumentException, InvocationTargetException
+	private SequenceDescriptionMinimal openSequence( final String xmlFilename ) throws SpimDataException
 	{
 		final File f = new File( xmlFilename );
 		if ( f.exists() && f.isFile() && f.getName().endsWith( ".xml" ) )

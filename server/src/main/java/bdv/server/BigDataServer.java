@@ -3,19 +3,18 @@ package bdv.server;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.lang.reflect.InvocationTargetException;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import mpicbg.spim.data.SpimDataException;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
 import net.imglib2.realtransform.AffineTransform3D;
 
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.handler.AbstractHandler;
-import org.jdom2.JDOMException;
 
 import bdv.img.cache.CacheHints;
 import bdv.img.cache.LoadingStrategy;
@@ -52,7 +51,7 @@ public class BigDataServer
 
 		private final CacheHints cacheHints;
 
-		public CellHandler( final String xmlFilename ) throws JDOMException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException, IllegalArgumentException, InvocationTargetException
+		public CellHandler( final String xmlFilename ) throws SpimDataException
 		{
 			final SpimDataMinimal spimData = new XmlIoSpimDataMinimal().load( xmlFilename );
 			final SequenceDescriptionMinimal seq = spimData.getSequenceDescription();

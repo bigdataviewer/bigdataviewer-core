@@ -2,14 +2,11 @@ package bdv.ij.export;
 
 import java.io.File;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import mpicbg.spim.data.SpimDataException;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
-
-import org.jdom2.JDOMException;
-
 import bdv.export.ExportMipmapInfo;
 import bdv.export.WriteSequenceToHdf5;
 import bdv.img.hdf5.Hdf5ImageLoader;
@@ -34,7 +31,7 @@ import bdv.spimdata.XmlIoSpimDataMinimal;
  */
 public class FixAbsolutePathsInHdf5Partitions
 {
-	public static void fix( final String xmlFilename ) throws JDOMException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException, IllegalArgumentException, InvocationTargetException
+	public static void fix( final String xmlFilename ) throws SpimDataException, IOException
 	{
 		final XmlIoSpimDataMinimal spimDataIo = new XmlIoSpimDataMinimal();
 		final SpimDataMinimal spimData = spimDataIo.load( xmlFilename );

@@ -1,12 +1,12 @@
 package bdv.ij.export;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import mpicbg.spim.data.SpimDataException;
 import mpicbg.spim.data.sequence.TimePoint;
 import mpicbg.spim.io.ConfigurationParserException;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -272,7 +272,7 @@ public class Scripting
 				WriteSequenceToHdf5.writeHdf5PartitionFile( spimData.getSequenceDescription(), perSetupMipmapInfo, partitions.get( index ), null );
 		}
 
-		public void writeXmlAndLinks() throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
+		public void writeXmlAndLinks() throws SpimDataException
 		{
 			final SequenceDescriptionMinimal seq = spimData.getSequenceDescription();
 			WriteSequenceToHdf5.writeHdf5PartitionLinkFile( seq, perSetupMipmapInfo, partitions, hdf5File );

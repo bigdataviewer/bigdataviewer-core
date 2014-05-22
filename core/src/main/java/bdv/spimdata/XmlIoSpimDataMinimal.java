@@ -3,9 +3,9 @@ package bdv.spimdata;
 import static mpicbg.spim.data.XmlKeys.SPIMDATA_TAG;
 
 import java.io.File;
-import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 
+import mpicbg.spim.data.SpimDataException;
+import mpicbg.spim.data.SpimDataIOException;
 import mpicbg.spim.data.generic.XmlIoAbstractSpimData;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.generic.sequence.XmlIoAbstractSequenceDescription;
@@ -16,7 +16,6 @@ import mpicbg.spim.data.sequence.XmlIoTimePoints;
 
 import org.jdom2.Document;
 import org.jdom2.Element;
-import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 
 import bdv.spimdata.legacy.XmlIoSpimDataMinimalLegacy;
@@ -35,11 +34,18 @@ public class XmlIoSpimDataMinimal extends XmlIoAbstractSpimData< SequenceDescrip
 	}
 
 	@Override
-	public SpimDataMinimal load( final String xmlFilename )
-			throws JDOMException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException, IllegalArgumentException, InvocationTargetException
+	public SpimDataMinimal load( final String xmlFilename ) throws SpimDataException
 		{
 			final SAXBuilder sax = new SAXBuilder();
-			final Document doc = sax.build( xmlFilename );
+			Document doc;
+			try
+			{
+				doc = sax.build( xmlFilename );
+			}
+			catch ( final Exception e )
+			{
+				throw new SpimDataIOException( e );
+			}
 			final Element root = doc.getRootElement();
 
 			if ( root.getName().equals( "SequenceDescription" ) )

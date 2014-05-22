@@ -16,11 +16,11 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import mpicbg.spim.data.SpimDataException;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.registration.ViewRegistrations;
@@ -32,9 +32,6 @@ import mpicbg.spim.io.TextFileAccess;
 import net.imglib2.Pair;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.ValuePair;
-
-import org.jdom2.JDOMException;
-
 import spimopener.SPIMExperiment;
 import bdv.export.ExportMipmapInfo;
 import bdv.export.ProgressWriter;
@@ -86,7 +83,7 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		}
 	}
 
-	public static void appendToExistingFile( final Parameters params ) throws JDOMException, IOException, InstantiationException, IllegalAccessException, ClassNotFoundException, IllegalArgumentException, InvocationTargetException
+	public static void appendToExistingFile( final Parameters params ) throws SpimDataException, IOException
 	{
 		final ProgressWriter progress = new ProgressWriterIJ();
 		final XmlIoSpimDataMinimal spimDataIo = new XmlIoSpimDataMinimal();
@@ -170,7 +167,7 @@ public class ExportSpimFusionPlugIn implements PlugIn
 				params.seqFile.getAbsolutePath() );
 	}
 
-	public static void saveAsNewFile( final Parameters params ) throws IOException, InstantiationException, IllegalAccessException, ClassNotFoundException
+	public static void saveAsNewFile( final Parameters params ) throws SpimDataException
 	{
 		final ProgressWriter progress = new ProgressWriterIJ();
 		final XmlIoSpimDataMinimal spimDataIo = new XmlIoSpimDataMinimal();
