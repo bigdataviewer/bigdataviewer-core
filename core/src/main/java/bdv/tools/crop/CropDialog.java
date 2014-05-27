@@ -221,7 +221,9 @@ public class CropDialog extends JDialog
 					{
 						try
 						{
+							cropButton.setEnabled( false );
 							cropGlobal( minTimepointIndex, maxTimepointIndex, hdf5File, seqFile );
+							cropButton.setEnabled( true );
 						}
 						catch ( final Exception ex )
 						{
