@@ -74,7 +74,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 	/**
 	 * Currently rendered state (visible sources, transformation, timepoint,
-	 * etc.) A copy can be obtained byt {@link #getState()}.
+	 * etc.) A copy can be obtained by {@link #getState()}.
 	 */
 	protected final ViewerState state;
 

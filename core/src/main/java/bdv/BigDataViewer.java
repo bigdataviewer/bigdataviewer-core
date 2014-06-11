@@ -114,7 +114,7 @@ public class BigDataViewer
 	{
 		final double typeMin = type.getMinValue();
 		final double typeMax = type.getMaxValue();
-		final AbstractSequenceDescription< ?, ?, ?> seq = spimData.getSequenceDescription();
+		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
 		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
 		{
 			final RealARGBColorConverter< V > vconverter = new RealARGBColorConverter< V >( typeMin, typeMax );
@@ -145,7 +145,7 @@ public class BigDataViewer
 			final ArrayList< ConverterSetup > converterSetups,
 			final ArrayList< SourceAndConverter< ? > > sources )
 	{
-		final AbstractSequenceDescription< ?, ?, ?> seq = spimData.getSequenceDescription();
+		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
 		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
 		{
 			final Converter< VolatileARGBType, ARGBType > vconverter = new Converter< VolatileARGBType, ARGBType >()
@@ -180,7 +180,7 @@ public class BigDataViewer
 			final ArrayList< ConverterSetup > converterSetups,
 			final ArrayList< SourceAndConverter< ? > > sources )
 	{
-		final Object type = ( ( ViewerImgLoader< ?, ? > ) spimData.getSequenceDescription().getImgLoader() ).getImageType();
+		final Object type = spimData.getSequenceDescription().getImgLoader().getImageType();
 		if ( RealType.class.isInstance( type ) )
 			initSetupsRealType( spimData, ( RealType ) type, converterSetups, sources );
 		else if ( ARGBType.class.isInstance( type ) )
