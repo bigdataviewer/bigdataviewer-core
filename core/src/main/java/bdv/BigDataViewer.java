@@ -37,6 +37,7 @@ import org.jdom2.output.XMLOutputter;
 import bdv.export.ProgressWriter;
 import bdv.export.ProgressWriterConsole;
 import bdv.spimdata.SpimDataMinimal;
+import bdv.spimdata.WrapBasicImgLoader;
 import bdv.spimdata.XmlIoSpimDataMinimal;
 import bdv.tools.HelpDialog;
 import bdv.tools.InitializeViewerState;
@@ -112,6 +113,11 @@ public class BigDataViewer
 			final ArrayList< ConverterSetup > converterSetups,
 			final ArrayList< SourceAndConverter< ? > > sources )
 	{
+		if ( spimData.getSequenceDescription().getImgLoader() instanceof WrapBasicImgLoader )
+		{
+			initSetupsRealTypeNonVolatile( spimData, type, converterSetups, sources );
+			return;
+		}
 		final double typeMin = type.getMinValue();
 		final double typeMax = type.getMaxValue();
 		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
@@ -136,6 +142,33 @@ public class BigDataViewer
 
 			sources.add( soc );
 			converterSetups.add( new RealARGBColorConverterSetup( setupId, converter, vconverter ) );
+		}
+	}
+
+	private static < T extends RealType< T > > void initSetupsRealTypeNonVolatile(
+			final AbstractSpimData< ? > spimData,
+			final T type,
+			final ArrayList< ConverterSetup > converterSetups,
+			final ArrayList< SourceAndConverter< ? > > sources )
+	{
+		final double typeMin = type.getMinValue();
+		final double typeMax = type.getMaxValue();
+		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
+		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
+		{
+			final RealARGBColorConverter< T > converter = new RealARGBColorConverter< T >( typeMin, typeMax );
+			converter.setColor( new ARGBType( 0xffffffff ) );
+
+			final int setupId = setup.getId();
+			final String setupName = createSetupName( setup );
+			final SpimSource< T > s = new SpimSource< T >( spimData, setupId, setupName );
+
+			// Decorate each source with an extra transformation, that can be edited manually in this viewer.
+			final TransformedSource< T > ts = new TransformedSource< T >( s );
+			final SourceAndConverter< T > soc = new SourceAndConverter< T >( ts, converter );
+
+			sources.add( soc );
+			converterSetups.add( new RealARGBColorConverterSetup( setupId, converter ) );
 		}
 	}
 
@@ -201,6 +234,10 @@ public class BigDataViewer
 		catch ( final Exception e )
 		{
 			throw new IOException( e );
+		}
+		if ( WrapBasicImgLoader.wrapImgLoaderIfNecessary( spimData ) )
+		{
+			System.err.println( "WARNING:\nOpening <SpimData> dataset that is not suited for suited for interactive browsing.\nConsider resaving as HDF5 for better performance." );
 		}
 		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
 
@@ -417,7 +454,8 @@ public class BigDataViewer
 
 	public static void main( final String[] args )
 	{
-		final String fn = "/Users/Pietzsch/Desktop/bdv example/drosophila 2.xml";
+		final String fn = "/Users/Pietzsch/Desktop/spimrec2/dataset.xml";
+//		final String fn = "/Users/Pietzsch/Desktop/bdv example/drosophila 2.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/data/catmaid.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/data/openconnectome-bock11-neariso.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/data/catmaid-confocal.xml";
@@ -427,6 +465,7 @@ public class BigDataViewer
 //		final String fn = "/Users/pietzsch/workspace/data/mette/mette.xml";
 //		final String fn = "/Users/tobias/Desktop/openspim.xml";
 //		final String fn = "/Users/pietzsch/Desktop/data/fibsem.xml";
+//		final String fn = "/Users/pietzsch/Desktop/data/fibsem-remote.xml";
 //		final String fn = "/Users/pietzsch/Desktop/url-valia.xml";
 //		final String fn = "/Users/pietzsch/Desktop/data/Valia/valia.xml";
 //		final String fn = "/Users/pietzsch/workspace/data/111010_weber_full.xml";
