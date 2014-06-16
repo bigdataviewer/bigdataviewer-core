@@ -14,7 +14,7 @@ public class SubTaskProgressWriter implements ProgressWriter
 	{
 		this.progressWriter = progressWriter;
 		this.min = startCompletionRatio;
-		this.scale = 1.0 / ( endCompletionRatio - startCompletionRatio );
+		this.scale = endCompletionRatio - startCompletionRatio;
 	}
 
 	@Override
