@@ -158,6 +158,10 @@ public class WriteSequenceToHdf5
 		Collections.sort( setupIdsSequence );
 		final int numSetups = setupIdsSequence.size();
 
+		if ( ! ( seq.getImgLoader().getImageType() instanceof UnsignedShortType ) )
+			throw new IllegalArgumentException( "Expected BasicImgLoader<UnsignedShortTyp> but your dataset has BasicImgLoader<"
+					+ seq.getImgLoader().getImageType().getClass().getSimpleName() + ">.\nCurrently writing to HDF5 is only supported for UnsignedShortType." );
+
 		@SuppressWarnings( "unchecked" )
 		final BasicImgLoader< UnsignedShortType > imgLoader = ( BasicImgLoader< UnsignedShortType > ) seq.getImgLoader();
 
