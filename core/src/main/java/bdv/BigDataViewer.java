@@ -13,6 +13,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.filechooser.FileFilter;
 
+import mpicbg.spim.data.SpimDataException;
 import mpicbg.spim.data.generic.AbstractSpimData;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
@@ -221,20 +222,12 @@ public class BigDataViewer
 		else throw new IllegalArgumentException( "ImgLoader of type " + type.getClass() + " not supported." );
 	}
 
-	private BigDataViewer( final String xmlFilename, final ProgressWriter progressWriter ) throws InstantiationException, IllegalAccessException, ClassNotFoundException, JDOMException, IOException
+	private BigDataViewer( final String xmlFilename, final ProgressWriter progressWriter ) throws SpimDataException
 	{
 		final int width = 800;
 		final int height = 600;
 
-		SpimDataMinimal spimData;
-		try
-		{
-			spimData = new XmlIoSpimDataMinimal().load( xmlFilename );
-		}
-		catch ( final Exception e )
-		{
-			throw new IOException( e );
-		}
+		final SpimDataMinimal spimData = new XmlIoSpimDataMinimal().load( xmlFilename );
 		if ( WrapBasicImgLoader.wrapImgLoaderIfNecessary( spimData ) )
 		{
 			System.err.println( "WARNING:\nOpening <SpimData> dataset that is not suited for suited for interactive browsing.\nConsider resaving as HDF5 for better performance." );
@@ -447,7 +440,7 @@ public class BigDataViewer
 		viewer.requestRepaint();
 	}
 
-	public static void view( final String filename, final ProgressWriter progressWriter ) throws InstantiationException, IllegalAccessException, ClassNotFoundException, JDOMException, IOException
+	public static void view( final String filename, final ProgressWriter progressWriter ) throws SpimDataException
 	{
 		new BigDataViewer( filename, progressWriter );
 	}
