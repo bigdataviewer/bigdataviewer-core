@@ -72,7 +72,7 @@ public class XmlIoSpimDataMinimalLegacy
 			final int first = Integer.parseInt( timepoints.getChildText( "first" ) );
 			final int last = Integer.parseInt( timepoints.getChildText( "last" ) );
 			final ArrayList< TimePoint > tps = new ArrayList< TimePoint >();
-			for ( int t = first; t <= last; ++t )
+			for ( int i = first, t = 0; i <= last; ++i, ++t )
 				tps.add( new TimePoint( t ) );
 			return new TimePoints( tps );
 		}
