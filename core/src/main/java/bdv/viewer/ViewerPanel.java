@@ -155,13 +155,6 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	protected final MessageOverlayAnimator msgOverlay;
 
 	/**
-	 * Handle to the cache. This is used to control io timing. Also, is is used to
-	 * subscribe / {@link #stop() unsubscribe} to the cache as a consumer, so
-	 * that eventually the io fetcher threads can be shut down.
-	 */
-	protected final Cache cache;
-
-	/**
 	 * Optional parameters for {@link ViewerPanel}.
 	 */
 	public static class Options
@@ -243,17 +236,13 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 * @param numTimePoints
 	 *            number of available timepoints.
 	 * @param cache
-	 *            handle to cache. This is used to control io timing. Also, is
-	 *            is used to subscribe / {@link #stop() unsubscribe} to the
-	 *            cache as a consumer, so that eventually the io fetcher threads
-	 *            can be shut down.
+	 *            to control IO budgeting and fetcher queue.
 	 * @param optional
 	 *            optional parameters. See {@link #options()}.
 	 */
 	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimePoints, final Cache cache, final Options optional )
 	{
 		super( new BorderLayout(), false );
-		this.cache = cache;
 
 		final int numGroups = 10;
 		final ArrayList< SourceGroup > groups = new ArrayList< SourceGroup >( numGroups );
