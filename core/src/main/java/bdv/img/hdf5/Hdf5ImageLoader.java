@@ -12,10 +12,18 @@ import java.util.List;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.sequence.Angle;
+import mpicbg.spim.data.sequence.ImgLoader;
 import mpicbg.spim.data.sequence.TimePoint;
 import mpicbg.spim.data.sequence.ViewId;
+import mpicbg.spim.data.sequence.VoxelDimensions;
+import net.imglib2.Cursor;
+import net.imglib2.Dimensions;
+import net.imglib2.FinalDimensions;
 import net.imglib2.FinalInterval;
+import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.algorithm.stats.Normalize;
+import net.imglib2.img.Img;
 import net.imglib2.img.NativeImg;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
 import net.imglib2.img.cell.CellImg;
@@ -23,6 +31,7 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.sampler.special.ConstantRandomAccessible;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.type.volatiles.VolatileUnsignedShortType;
 import net.imglib2.view.Views;
 import bdv.AbstractViewerImgLoader;
@@ -37,7 +46,7 @@ import ch.systemsx.cisd.hdf5.HDF5DataSetInformation;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
 
-public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType, VolatileUnsignedShortType >
+public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType, VolatileUnsignedShortType > implements ImgLoader< UnsignedShortType >
 {
 	protected File hdf5File;
 
@@ -347,6 +356,58 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 				final int[] res = subdiv[ level ];
 				System.out.println( "    " + level + ": " + net.imglib2.util.Util.printCoordinates( res ) );
 			}
+			System.out.println( "    level sizes:" );
+			final int timepointId = sequenceDescription.getTimePoints().getTimePointsOrdered().get( 0 ).getId();
+			for ( int level = 0; level < numLevels; ++level )
+			{
+				final DimsAndExistence dims = getDimsAndExistence( new ViewLevelId( timepointId, setupId, level ) );
+				final long[] dimensions = dims.getDimensions();
+				System.out.println( "    " + level + ": " + net.imglib2.util.Util.printCoordinates( dimensions ) );
+			}
 		}
+	}
+
+//  ================================ mpicbg.spim.data.sequence.ImgLoader =============================== //
+
+	@Override
+	public RandomAccessibleInterval< FloatType > getFloatImage( final ViewId view, final boolean normalize )
+	{
+		final RandomAccessibleInterval< UnsignedShortType > ushortImg = getImage( view );
+
+		// copy unsigned short img to float img
+		final FloatType f = new FloatType();
+		final Img< FloatType > floatImg = net.imglib2.util.Util.getArrayOrCellImgFactory( ushortImg, f ).create( ushortImg, f );
+		final Cursor< UnsignedShortType > in = Views.iterable( ushortImg ).localizingCursor();
+		final RandomAccess< FloatType > out = floatImg.randomAccess();
+		while( in.hasNext() )
+		{
+			in.next();
+			out.setPosition( in );
+			out.get().set( in.get().getRealFloat() );
+		}
+
+		if ( normalize )
+			// normalize the image to 0...1
+			Normalize.normalize( floatImg, new FloatType( 0 ), new FloatType( 1 ) );
+
+		return floatImg;
+	}
+
+	@Override
+	public Dimensions getImageSize( final ViewId view )
+	{
+		final ViewLevelId id = new ViewLevelId( view, 0 );
+		final DimsAndExistence dims = getDimsAndExistence( id );
+		if ( dims.exists() )
+			return new FinalDimensions( dims.getDimensions() );
+		else
+			return null;
+	}
+
+	@Override
+	public VoxelDimensions getVoxelSize( final ViewId view )
+	{
+		// the voxel size is not stored in the hdf5
+		return null;
 	}
 }
