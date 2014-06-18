@@ -13,6 +13,7 @@ import mpicbg.spim.data.registration.ViewRegistration;
 import mpicbg.spim.data.registration.ViewRegistrations;
 import mpicbg.spim.data.sequence.Angle;
 import mpicbg.spim.data.sequence.Channel;
+import mpicbg.spim.data.sequence.FinalVoxelDimensions;
 import mpicbg.spim.data.sequence.Illumination;
 import mpicbg.spim.data.sequence.TimePoint;
 import mpicbg.spim.data.sequence.TimePoints;
@@ -26,6 +27,7 @@ import mpicbg.spim.registration.ViewDataBeads;
 import mpicbg.spim.registration.ViewStructure;
 import mpicbg.spim.registration.bead.BeadRegistration;
 import net.imglib2.Dimensions;
+import net.imglib2.FinalDimensions;
 import net.imglib2.FinalRealInterval;
 import net.imglib2.RealInterval;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -189,11 +191,25 @@ public class SpimRegistrationSequence
 					{
 						name += ( name.isEmpty() ? "" : " " ) + "i " + conf.illuminations[ illuminationIndex ];
 					}
-					final Dimensions size = null;
-					final VoxelDimensions voxelSize = null;
 					final Channel channel = new Channel( conf.channels[ channelIndex ] );
 					final Angle angle = new Angle( conf.angles[ angleIndex ] );
 					final Illumination illumination = new Illumination( conf.illuminations[ illuminationIndex ] );
+
+					Dimensions size = null;
+					VoxelDimensions voxelSize = null;
+					final ViewStructure viewStructure = ViewStructure.initViewStructure( conf, 0, new mpicbg.models.AffineModel3D(), "ViewStructure Timepoint " + 0, conf.debugLevelInt );
+					for ( final ViewDataBeads viewDataBeads : viewStructure.getViews() )
+					{
+						if ( angle.getId() == viewDataBeads.getAcqusitionAngle() &&
+								illumination.getId() == viewDataBeads.getIllumination() &&
+								channel.getId() == viewDataBeads.getChannel() )
+						{
+							voxelSize = new FinalVoxelDimensions( "px", 1.0, 1.0, viewDataBeads.getZStretching() );
+							size = new FinalDimensions( viewDataBeads.getImageSize() );
+							break;
+						}
+					}
+
 					setups.add( new ViewSetup( setup_id++, name, size, voxelSize, channel, angle, illumination ) );
 				}
 		return setups;

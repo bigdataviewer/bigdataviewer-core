@@ -4,27 +4,31 @@ import fiji.plugin.Bead_Registration;
 import fiji.plugin.Multi_View_Fusion;
 import fiji.util.gui.GenericDialogPlus;
 import ij.IJ;
-import ij.ImageJ;
 import ij.gui.DialogListener;
 import ij.gui.GenericDialog;
 import ij.plugin.PlugIn;
 
 import java.awt.AWTEvent;
+import java.awt.Checkbox;
 import java.awt.TextField;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.TextEvent;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Map;
 
 import mpicbg.spim.io.ConfigurationParserException;
 import mpicbg.spim.io.IOFunctions;
 import mpicbg.spim.io.SPIMConfiguration;
 import mpicbg.spim.io.TextFileAccess;
-import mpicbg.spim.registration.ViewStructure;
 import spimopener.SPIMExperiment;
+import bdv.export.ExportMipmapInfo;
 import bdv.export.ProgressWriter;
+import bdv.export.ProposeMipmaps;
 import bdv.export.SubTaskProgressWriter;
 import bdv.export.WriteSequenceToHdf5;
 import bdv.ij.export.SpimRegistrationSequence;
@@ -50,7 +54,15 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		progress.out().println( "starting export..." );
 		final SpimRegistrationSequence sequence = new SpimRegistrationSequence( params.conf );
 		final SequenceDescriptionMinimal desc = sequence.getSequenceDescription();
-		WriteSequenceToHdf5.writeHdf5File( desc, params.resolutions, params.subdivisions, params.hdf5File, new SubTaskProgressWriter( progress, 0, 0.95 ) );
+
+		final boolean setMipmapManual = params.setMipmapManual;
+		if ( setMipmapManual )
+			WriteSequenceToHdf5.writeHdf5File( desc, params.resolutions, params.subdivisions, params.hdf5File, new SubTaskProgressWriter( progress, 0, 0.95 ) );
+		else
+		{
+			final Map< Integer, ExportMipmapInfo > perSetupExportMipmapInfo = ProposeMipmaps.proposeMipmaps( desc );
+			WriteSequenceToHdf5.writeHdf5File( desc, perSetupExportMipmapInfo, params.hdf5File, new SubTaskProgressWriter( progress, 0, 0.95 ) );
+		}
 
 		final Hdf5ImageLoader loader = new Hdf5ImageLoader( params.hdf5File, null, null, false );
 		final SequenceDescriptionMinimal sequenceDescription = new SequenceDescriptionMinimal( desc, loader );
@@ -70,27 +82,40 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		progress.out().println( "done" );
 	}
 
+	static boolean lastSetMipmapManual = false;
+
+	static String lastSubsampling = "{1,1,1}, {2,2,1}, {4,4,2}";
+
+	static String lastChunkSizes = "{16,16,16}, {16,16,16}, {16,16,16}";
+
 	public static String fusionType[] = new String[] { "Single-channel", "Multi-channel" };
+
 	public static String allChannels = "0, 1";
 
 	protected static class Parameters
 	{
 		final SPIMConfiguration conf;
+
+		final boolean setMipmapManual;
+
 		final int[][] resolutions;
+
 		final int[][] subdivisions;
+
 		final File seqFile;
+
 		final File hdf5File;
 
-		public Parameters( final SPIMConfiguration conf, final int[][] resolutions, final int[][] subdivisions, final File seqFile, final File hdf5File )
+		public Parameters( final SPIMConfiguration conf, final boolean setMipmapManual, final int[][] resolutions, final int[][] subdivisions, final File seqFile, final File hdf5File )
 		{
 			this.conf = conf;
+			this.setMipmapManual = setMipmapManual;
 			this.resolutions = resolutions;
 			this.subdivisions = subdivisions;
 			this.seqFile = seqFile;
 			this.hdf5File = hdf5File;
 		}
 	}
-
 
 	protected Parameters getParameters()
 	{
@@ -106,19 +131,19 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		final GenericDialogPlus gd = new GenericDialogPlus( "Export for BigDataViewer" );
 
 		gd.addDirectoryOrFileField( "SPIM_data_directory", Bead_Registration.spimDataDirectory );
-		final TextField tfSpimDataDirectory = (TextField) gd.getStringFields().lastElement();
+		final TextField tfSpimDataDirectory = ( TextField ) gd.getStringFields().lastElement();
 		gd.addStringField( "Pattern_of_SPIM files", Bead_Registration.fileNamePattern, 25 );
-		final TextField tfFilePattern = (TextField) gd.getStringFields().lastElement();
+		final TextField tfFilePattern = ( TextField ) gd.getStringFields().lastElement();
 		gd.addStringField( "Timepoints_to_process", Bead_Registration.timepoints );
-		final TextField tfTimepoints = (TextField) gd.getStringFields().lastElement();
+		final TextField tfTimepoints = ( TextField ) gd.getStringFields().lastElement();
 		gd.addStringField( "Angles to process", Bead_Registration.angles );
-		final TextField tfAngles = (TextField) gd.getStringFields().lastElement();
+		final TextField tfAngles = ( TextField ) gd.getStringFields().lastElement();
 
 		final TextField tfChannels;
 		if ( multichannel )
 		{
 			gd.addStringField( "Channels to process", allChannels );
-			tfChannels = (TextField) gd.getStringFields().lastElement();
+			tfChannels = ( TextField ) gd.getStringFields().lastElement();
 		}
 		else
 			tfChannels = null;
@@ -218,7 +243,7 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		Bead_Registration.angles = gd.getNextString();
 
 		int numChannels = 0;
-		ArrayList<Integer> channels;
+		ArrayList< Integer > channels;
 
 		// verify this part
 		if ( multichannel )
@@ -230,7 +255,7 @@ public class ExportSpimSequencePlugIn implements PlugIn
 				channels = SPIMConfiguration.parseIntegerString( allChannels );
 				numChannels = channels.size();
 			}
-			catch (final ConfigurationParserException e)
+			catch ( final ConfigurationParserException e )
 			{
 				IOFunctions.printErr( "Cannot understand/parse the channels: " + allChannels );
 				return null;
@@ -245,7 +270,7 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		else
 		{
 			numChannels = 1;
-			channels = new ArrayList<Integer>();
+			channels = new ArrayList< Integer >();
 			channels.add( 0 );
 		}
 
@@ -280,21 +305,23 @@ public class ExportSpimSequencePlugIn implements PlugIn
 			conf.inputdirectory = Bead_Registration.spimDataDirectory;
 		}
 
-		conf.fuseOnly = true; // this is to avoid an exception in the multi-channel case
+		conf.fuseOnly = true; // this is to avoid an exception in the
+								// multi-channel case
 
 		// get filenames and so on...
-		if ( ! init( conf ) )
+		if ( !init( conf ) )
 			return null;
 
 		// test which registration files are there for each channel
-		// file = new File[ timepoints.length ][ channels.length ][ angles.length ];
-		final ArrayList<ArrayList<Integer>> timepoints = new ArrayList<ArrayList<Integer>>();
+		// file = new File[ timepoints.length ][ channels.length ][
+		// angles.length ];
+		final ArrayList< ArrayList< Integer >> timepoints = new ArrayList< ArrayList< Integer >>();
 		int numChoices = 0;
 		conf.zStretching = -1;
 
 		for ( int c = 0; c < channels.size(); ++c )
 		{
-			timepoints.add( new ArrayList<Integer>() );
+			timepoints.add( new ArrayList< Integer >() );
 
 			final String name = conf.file[ 0 ][ c ][ 0 ][ 0 ].getName();
 			final File regDir = new File( conf.registrationFiledirectory );
@@ -308,16 +335,17 @@ public class ExportSpimSequencePlugIn implements PlugIn
 				return null;
 			}
 
-			final String entries[] = regDir.list( new FilenameFilter() {
+			final String entries[] = regDir.list( new FilenameFilter()
+			{
 				@Override
-				public boolean accept(final File directory, final String filename)
+				public boolean accept( final File directory, final String filename )
 				{
 					if ( filename.contains( name ) && filename.contains( ".registration" ) )
 						return true;
 					else
 						return false;
 				}
-			});
+			} );
 
 			for ( final String e : entries )
 				IOFunctions.println( e );
@@ -372,7 +400,7 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		int index = 0;
 		for ( int c = 0; c < channels.size(); ++c )
 		{
-			final ArrayList<Integer> tps = timepoints.get( c );
+			final ArrayList< Integer > tps = timepoints.get( c );
 
 			// no suggestion yet
 			suggest[ c ] = -1;
@@ -399,21 +427,49 @@ public class ExportSpimSequencePlugIn implements PlugIn
 				suggest[ c ] = firstSuggestion;
 
 		for ( int c = 0; c < channels.size(); ++c )
-			gd2.addChoice( "Registration for channel " + channels.get( c ), choices, choices[ suggest[ c ] ]);
+			gd2.addChoice( "Registration for channel " + channels.get( c ), choices, choices[ suggest[ c ] ] );
 
-		gd2.addMessage("");
+		gd2.addMessage( "" );
 
-		final String defaultMipmapResolutions = "{1,1,1}, {2,2,1}, {4,4,2}";
-		final String defaultCellSizes = "{64,64,16}, {32,32,16}, {8,8,8}";
+		final SequenceDescriptionMinimal desc = new SpimRegistrationSequence( conf ).getSequenceDescription();
+		final Map< Integer, ExportMipmapInfo > proposedPerSetupExportMipmapInfo = ProposeMipmaps.proposeMipmaps( desc );
+		final ExportMipmapInfo autoMipmapSettings = proposedPerSetupExportMipmapInfo.get( desc.getViewSetupsOrdered().get( 0 ).getId() );
 
-		gd2.addMessage( "Mip-map definition:" );
-		gd2.addStringField( "Subsampling factors", defaultMipmapResolutions, 25 );
-		gd2.addStringField( "Hdf5 chunk sizes", defaultCellSizes, 25 );
-
-		final ViewStructure viewStructure = ViewStructure.initViewStructure( conf, 0, new mpicbg.models.AffineModel3D(), "ViewStructure Timepoint " + conf.timepoints[ 0 ], conf.debugLevelInt );
+		gd2.addCheckbox( "manual mipmap setup", lastSetMipmapManual );
+		final Checkbox cManualMipmap = ( Checkbox ) gd2.getCheckboxes().lastElement();
+		gd2.addStringField( "Subsampling factors", lastSubsampling, 25 );
+		final TextField tfSubsampling = ( TextField ) gd2.getStringFields().lastElement();
+		gd2.addStringField( "Hdf5 chunk sizes", lastChunkSizes, 25 );
+		final TextField tfChunkSizes = ( TextField ) gd2.getStringFields().lastElement();
 
 		gd2.addMessage( "" );
 		PluginHelper.addSaveAsFileField( gd2, "Export path", conf.inputdirectory + "export.xml", 25 );
+
+		final String autoSubsampling = ProposeMipmaps.getArrayString( autoMipmapSettings.getExportResolutions() );
+		final String autoChunkSizes = ProposeMipmaps.getArrayString( autoMipmapSettings.getSubdivisions() );
+		cManualMipmap.addItemListener( new ItemListener()
+		{
+			@Override
+			public void itemStateChanged( final ItemEvent arg0 )
+			{
+				final boolean useManual = cManualMipmap.getState();
+				tfSubsampling.setEnabled( useManual );
+				tfChunkSizes.setEnabled( useManual );
+				if ( !useManual )
+				{
+					tfSubsampling.setText( autoSubsampling );
+					tfChunkSizes.setText( autoChunkSizes );
+				}
+			}
+		} );
+
+		tfSubsampling.setEnabled( lastSetMipmapManual );
+		tfChunkSizes.setEnabled( lastSetMipmapManual );
+		if ( !lastSetMipmapManual )
+		{
+			tfSubsampling.setText( autoSubsampling );
+			tfChunkSizes.setText( autoChunkSizes );
+		}
 
 //		gd.addMessage("");
 //		gd.addMessage("This Plugin is developed by Tobias Pietzsch (pietzsch@mpi-cbg.de)\n");
@@ -424,7 +480,8 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		if ( gd2.wasCanceled() )
 			return null;
 
-		// which channel uses which registration file from which channel to be fused
+		// which channel uses which registration file from which channel to be
+		// fused
 		final int[][] registrationAssignment = new int[ channels.size() ][ 2 ];
 
 		for ( int c = 0; c < channels.size(); ++c )
@@ -434,7 +491,7 @@ public class ExportSpimSequencePlugIn implements PlugIn
 			index = 0;
 			for ( int c2 = 0; c2 < channels.size(); ++c2 )
 			{
-				final ArrayList<Integer> tps = timepoints.get( c2 );
+				final ArrayList< Integer > tps = timepoints.get( c2 );
 				for ( int i = 0; i < tps.size(); ++i )
 				{
 					if ( index == choice )
@@ -454,7 +511,7 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		{
 			if ( tp != registrationAssignment[ c ][ 0 ] )
 			{
-				IOFunctions.println( "Inconsistent choice of reference timeseries, only same reference timepoints or individual registration are allowed.");
+				IOFunctions.println( "Inconsistent choice of reference timeseries, only same reference timepoints or individual registration are allowed." );
 				return null;
 			}
 		}
@@ -473,18 +530,18 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		IOFunctions.println( "tp " + tp );
 
 		// parse mipmap resolutions and cell sizes
-		final String subsampling = gd2.getNextString();
-		final String chunksizes = gd2.getNextString();
-		final int[][] resolutions = PluginHelper.parseResolutionsString( subsampling );
-		final int[][] subdivisions = PluginHelper.parseResolutionsString( chunksizes );
+		lastSubsampling = gd2.getNextString();
+		lastChunkSizes = gd2.getNextString();
+		final int[][] resolutions = PluginHelper.parseResolutionsString( lastSubsampling );
+		final int[][] subdivisions = PluginHelper.parseResolutionsString( lastChunkSizes );
 		if ( resolutions.length == 0 )
 		{
-			IOFunctions.println( "Cannot parse subsampling factors " + subsampling );
+			IOFunctions.println( "Cannot parse subsampling factors " + lastSubsampling );
 			return null;
 		}
 		if ( subdivisions.length == 0 )
 		{
-			IOFunctions.println( "Cannot parse hdf5 chunk sizes " + chunksizes );
+			IOFunctions.println( "Cannot parse hdf5 chunk sizes " + lastChunkSizes );
 			return null;
 		}
 		else if ( resolutions.length != subdivisions.length )
@@ -494,7 +551,7 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		}
 
 		String seqFilename = gd2.getNextString();
-		if ( ! seqFilename.endsWith( ".xml" ) )
+		if ( !seqFilename.endsWith( ".xml" ) )
 			seqFilename += ".xml";
 		final File seqFile = new File( seqFilename );
 		final File parent = seqFile.getParentFile();
@@ -506,7 +563,7 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		final String hdf5Filename = seqFilename.substring( 0, seqFilename.length() - 4 ) + ".h5";
 		final File hdf5File = new File( hdf5Filename );
 
-		return new Parameters( conf, resolutions, subdivisions, seqFile, hdf5File );
+		return new Parameters( conf, lastSetMipmapManual, resolutions, subdivisions, seqFile, hdf5File );
 	}
 
 	protected static double loadZStretching( final String file )
@@ -519,13 +576,12 @@ public class ExportSpimSequencePlugIn implements PlugIn
 			{
 				final String line = in.readLine();
 
-				if ( line.contains( "z-scaling:") )
+				if ( line.contains( "z-scaling:" ) )
 					z = Double.parseDouble( line.substring( line.indexOf( "ing" ) + 4, line.length() ).trim() );
 			}
 		}
-		catch (final IOException e)
-		{
-		}
+		catch ( final IOException e )
+		{}
 
 		return z;
 	}
@@ -533,11 +589,11 @@ public class ExportSpimSequencePlugIn implements PlugIn
 	protected static boolean init( final SPIMConfiguration conf )
 	{
 		// check the directory string
-		conf.inputdirectory = conf.inputdirectory.replace('\\', '/');
+		conf.inputdirectory = conf.inputdirectory.replace( '\\', '/' );
 		conf.inputdirectory = conf.inputdirectory.replaceAll( "//", "/" );
 
 		conf.inputdirectory = conf.inputdirectory.trim();
-		if (conf.inputdirectory.length() > 0 && !conf.inputdirectory.endsWith("/"))
+		if ( conf.inputdirectory.length() > 0 && !conf.inputdirectory.endsWith( "/" ) )
 			conf.inputdirectory = conf.inputdirectory + "/";
 
 		conf.outputdirectory = conf.inputdirectory + "output/";
@@ -563,27 +619,8 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		return true;
 	}
 
-
-	/**
-	 * Main method for debugging.
-	 *
-	 * For debugging, it is convenient to have a method that starts ImageJ, loads an
-	 * image and calls the plugin, e.g. after setting breakpoints.
-	 *
-	 * @param args unused
-	 */
-	public static void main(final String[] args)
+	public static void main( final String[] args )
 	{
-		// set the plugins.dir property to make the plugin appear in the Plugins menu
-		final Class<?> clazz = ExportSpimSequencePlugIn.class;
-		final String url = clazz.getResource("/" + clazz.getName().replace('.', '/') + ".class").toString();
-		final String pluginsDir = url.substring(5, url.length() - clazz.getName().length() - 6);
-		System.setProperty("plugins.dir", pluginsDir);
-
-		// start ImageJ
-		new ImageJ();
-
-		// run the plugin
-		IJ.runPlugIn(clazz.getName(), "");
+		new ExportSpimSequencePlugIn().run( null );
 	}
 }

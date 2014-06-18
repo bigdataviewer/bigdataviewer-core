@@ -4,14 +4,18 @@ import fiji.plugin.Bead_Registration;
 import fiji.plugin.Multi_View_Fusion;
 import fiji.util.gui.GenericDialogPlus;
 import ij.IJ;
-import ij.ImageJ;
+import ij.ImagePlus;
 import ij.gui.DialogListener;
 import ij.gui.GenericDialog;
 import ij.plugin.PlugIn;
 
 import java.awt.AWTEvent;
+import java.awt.Checkbox;
 import java.awt.TextField;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.awt.event.TextEvent;
+import java.awt.event.TextListener;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FilenameFilter;
@@ -24,17 +28,22 @@ import mpicbg.spim.data.SpimDataException;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.registration.ViewRegistrations;
+import mpicbg.spim.data.sequence.FinalVoxelDimensions;
 import mpicbg.spim.data.sequence.TimePoint;
+import mpicbg.spim.data.sequence.VoxelDimensions;
 import mpicbg.spim.io.ConfigurationParserException;
 import mpicbg.spim.io.IOFunctions;
 import mpicbg.spim.io.SPIMConfiguration;
 import mpicbg.spim.io.TextFileAccess;
+import net.imglib2.Dimensions;
+import net.imglib2.FinalDimensions;
 import net.imglib2.Pair;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.ValuePair;
 import spimopener.SPIMExperiment;
 import bdv.export.ExportMipmapInfo;
 import bdv.export.ProgressWriter;
+import bdv.export.ProposeMipmaps;
 import bdv.export.SubTaskProgressWriter;
 import bdv.export.WriteSequenceToHdf5;
 import bdv.ij.export.FusionResult;
@@ -52,11 +61,19 @@ import bdv.spimdata.XmlIoSpimDataMinimal;
 
 public class ExportSpimFusionPlugIn implements PlugIn
 {
-	public static double minValueStatic = 0;
-	public static double maxValueStatic = 65535;
+	static double minValueStatic = 0;
 
-	public static String mipmapResolutionsStatic = "{1,1,1}, {2,2,2}, {4,4,4}";
-	public static String cellSizesStatic = "{32,32,32}, {16,16,16}, {8,8,8}";
+	static double maxValueStatic = 65535;
+
+	static boolean lastSetMipmapManual = false;
+
+	static String lastSubsampling = "{1,1,1}, {2,2,2}, {4,4,4}";
+
+	static String lastChunkSizes = "{32,32,32}, {16,16,16}, {8,8,8}";
+
+	static String autoSubsampling = "{1,1,1}";
+
+	static String autoChunkSizes = "{16,16,16}";
 
 	@Override
 	public void run( final String arg0 )
@@ -549,6 +566,7 @@ public class ExportSpimFusionPlugIn implements PlugIn
 
 		gd2.addMessage( "" );
 		gd2.addDirectoryField( "Fusion Output Directory", conf.outputdirectory, 25 );
+		final TextField tfDirectory = (TextField) gd2.getStringFields().lastElement();
 
 		gd2.addMessage( "" );
 		gd2.addMessage( "Enter the crop values you used to create the fused data:" );
@@ -562,9 +580,12 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		gd2.addNumericField( "max brightness value", maxValueStatic, 0 );
 
 		gd2.addMessage( "" );
-		gd2.addMessage( "Mip-map for output data" );
-		gd2.addStringField( "Subsampling factors", mipmapResolutionsStatic, 25 );
-		gd2.addStringField( "Hdf5 chunk sizes", cellSizesStatic, 25 );
+		gd2.addCheckbox( "manual mipmap setup", lastSetMipmapManual );
+		final Checkbox cManualMipmap = ( Checkbox ) gd2.getCheckboxes().lastElement();
+		gd2.addStringField( "Subsampling factors", lastSubsampling, 25 );
+		final TextField tfSubsampling = ( TextField ) gd2.getStringFields().lastElement();
+		gd2.addStringField( "Hdf5 chunk sizes", lastChunkSizes, 25 );
+		final TextField tfChunkSizes = ( TextField ) gd2.getStringFields().lastElement();
 
 		gd2.addMessage( "" );
 		PluginHelper.addSaveAsFileField( gd2, "Export path", conf.inputdirectory + "export.xml", 25 );
@@ -573,6 +594,54 @@ public class ExportSpimFusionPlugIn implements PlugIn
 //		gd.addMessage("");
 //		gd.addMessage("This Plugin is developed by Tobias Pietzsch (pietzsch@mpi-cbg.de)\n");
 //		Bead_Registration.addHyperLinkListener( (MultiLineLabel) gd.getMessage(), "mailto:pietzsch@mpi-cbg.de");
+
+		tfDirectory.addTextListener( new TextListener()
+		{
+			@Override
+			public void textValueChanged( final TextEvent t )
+			{
+				if ( t.getID() == TextEvent.TEXT_VALUE_CHANGED )
+				{
+					final String fusionDirectory = tfDirectory.getText();
+					if ( updateProposedMipmaps( fusionDirectory, conf ) )
+					{
+						final boolean useManual = cManualMipmap.getState();
+						tfSubsampling.setEnabled( useManual );
+						tfChunkSizes.setEnabled( useManual );
+						if ( !useManual )
+						{
+							tfSubsampling.setText( autoSubsampling );
+							tfChunkSizes.setText( autoChunkSizes );
+						}
+					}
+				}
+			}
+		});
+
+		cManualMipmap.addItemListener( new ItemListener()
+		{
+			@Override
+			public void itemStateChanged( final ItemEvent arg0 )
+			{
+				final boolean useManual = cManualMipmap.getState();
+				tfSubsampling.setEnabled( useManual );
+				tfChunkSizes.setEnabled( useManual );
+				if ( !useManual )
+				{
+					tfSubsampling.setText( autoSubsampling );
+					tfChunkSizes.setText( autoChunkSizes );
+				}
+			}
+		} );
+
+		updateProposedMipmaps( tfDirectory.getText(), conf );
+		tfSubsampling.setEnabled( lastSetMipmapManual );
+		tfChunkSizes.setEnabled( lastSetMipmapManual );
+		if ( !lastSetMipmapManual )
+		{
+			tfSubsampling.setText( autoSubsampling );
+			tfChunkSizes.setText( autoChunkSizes );
+		}
 
 		gd2.showDialog();
 
@@ -651,18 +720,18 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		maxValueStatic = gd2.getNextNumber();
 
 		// parse mipmap resolutions and cell sizes
-		mipmapResolutionsStatic = gd2.getNextString();
-		cellSizesStatic = gd2.getNextString();
-		final int[][] resolutions = PluginHelper.parseResolutionsString( mipmapResolutionsStatic );
-		final int[][] subdivisions = PluginHelper.parseResolutionsString( cellSizesStatic );
+		lastSubsampling = gd2.getNextString();
+		lastChunkSizes = gd2.getNextString();
+		final int[][] resolutions = PluginHelper.parseResolutionsString( lastSubsampling );
+		final int[][] subdivisions = PluginHelper.parseResolutionsString( lastChunkSizes );
 		if ( resolutions.length == 0 )
 		{
-			IOFunctions.println( "Cannot parse subsampling factors " + mipmapResolutionsStatic );
+			IOFunctions.println( "Cannot parse subsampling factors " + lastSubsampling );
 			return null;
 		}
 		if ( subdivisions.length == 0 )
 		{
-			IOFunctions.println( "Cannot parse hdf5 chunk sizes " + cellSizesStatic );
+			IOFunctions.println( "Cannot parse hdf5 chunk sizes " + lastChunkSizes );
 			return null;
 		}
 		else if ( resolutions.length != subdivisions.length )
@@ -692,6 +761,29 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		return new Parameters( conf, resolutions, subdivisions, cropOffsetX, cropOffsetY, cropOffsetZ, scale, fusionDirectory, filenamePattern, numSlices, minValueStatic, maxValueStatic, seqFile, hdf5File, appendToExistingFile );
 	}
 
+	protected boolean updateProposedMipmaps( final String fusionDirectory, final SPIMConfiguration conf )
+	{
+		final Pair< String, Integer > pair = detectPatternAndNumSlices( new File ( fusionDirectory ), conf.timepoints[0] );
+		if ( pair != null )
+		{
+			final String filenamePattern = pair.getA();
+			final int numSlices = pair.getB();
+			final String fn = fusionDirectory + "/" + String.format( filenamePattern, conf.timepoints[0], conf.channels[0], 0 );
+			final ImagePlus imp = new ImagePlus( fn );
+			final int width = imp.getWidth();
+			final int height = imp.getHeight();
+			imp.close();
+			final Dimensions size = new FinalDimensions( width, height, numSlices );
+			final VoxelDimensions voxelSize = new FinalVoxelDimensions( "px", 1, 1, 1 );
+			final ExportMipmapInfo info = ProposeMipmaps.proposeMipmaps( new BasicViewSetup( 0, "", size, voxelSize ) );
+			autoSubsampling = ProposeMipmaps.getArrayString( info.getExportResolutions() );
+			autoChunkSizes = ProposeMipmaps.getArrayString( info.getSubdivisions() );
+			return true;
+		}
+		else
+			return false;
+	}
+
 	public static Pair< String, Integer > detectPatternAndNumSlices( final File dir, final int someTimepoint )
 	{
 		final File subdir = new File( dir.getAbsolutePath() + "/" + someTimepoint );
@@ -717,7 +809,7 @@ public class ExportSpimFusionPlugIn implements PlugIn
 					return name.endsWith( suffixFusion ) || name.endsWith( suffixDeconvolution );
 				}
 			} );
-			if ( files.length > 0 )
+			if ( files != null && files.length > 0 )
 			{
 				final String name = files[ 0 ].getName();
 				int tStart = name.indexOf( "_t" ) + 2;
@@ -768,26 +860,8 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		return z;
 	}
 
-	/**
-	 * Main method for debugging.
-	 *
-	 * For debugging, it is convenient to have a method that starts ImageJ, loads an
-	 * image and calls the plugin, e.g. after setting breakpoints.
-	 *
-	 * @param args unused
-	 */
 	public static void main(final String[] args)
 	{
-		// set the plugins.dir property to make the plugin appear in the Plugins menu
-		final Class<?> clazz = ExportSpimFusionPlugIn.class;
-		final String url = clazz.getResource("/" + clazz.getName().replace('.', '/') + ".class").toString();
-		final String pluginsDir = url.substring(5, url.length() - clazz.getName().length() - 6);
-		System.setProperty("plugins.dir", pluginsDir);
-
-		// start ImageJ
-		new ImageJ();
-
-		// run the plugin
-		IJ.runPlugIn(clazz.getName(), "");
+		new ExportSpimFusionPlugIn().run( null );
 	}
 }

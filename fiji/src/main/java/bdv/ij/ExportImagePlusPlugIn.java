@@ -2,6 +2,7 @@ package bdv.ij;
 
 import fiji.util.gui.GenericDialogPlus;
 import ij.IJ;
+import ij.ImageJ;
 import ij.ImagePlus;
 import ij.WindowManager;
 import ij.gui.DialogListener;
@@ -9,6 +10,7 @@ import ij.gui.GenericDialog;
 import ij.plugin.PlugIn;
 
 import java.awt.AWTEvent;
+import java.awt.Checkbox;
 import java.awt.Choice;
 import java.awt.TextField;
 import java.awt.event.ItemEvent;
@@ -27,7 +29,9 @@ import mpicbg.spim.data.sequence.TimePoints;
 import net.imglib2.FinalDimensions;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
+import bdv.export.ExportMipmapInfo;
 import bdv.export.ProgressWriter;
+import bdv.export.ProposeMipmaps;
 import bdv.export.SubTaskProgressWriter;
 import bdv.export.WriteSequenceToHdf5;
 import bdv.ij.export.imgloader.ImagePlusImgLoader;
@@ -46,6 +50,13 @@ import bdv.spimdata.XmlIoSpimDataMinimal;
  */
 public class ExportImagePlusPlugIn implements PlugIn
 {
+	public static void main( final String[] args )
+	{
+		new ImageJ();
+		IJ.run("Confocal Series (2.2MB)");
+		new ExportImagePlusPlugIn().run( null );
+	}
+
 	@Override
 	public void run( final String arg )
 	{
@@ -78,8 +89,24 @@ public class ExportImagePlusPlugIn implements PlugIn
 			return;
 		}
 
+		// get calibration and image size
+		final double pw = imp.getCalibration().pixelWidth;
+		final double ph = imp.getCalibration().pixelHeight;
+		final double pd = imp.getCalibration().pixelDepth;
+		String punit = imp.getCalibration().getUnit();
+		if ( punit == null || punit.isEmpty() )
+			punit = "px";
+		final FinalVoxelDimensions voxelSize = new FinalVoxelDimensions( punit, pw, ph, pd );
+		final int w = imp.getWidth();
+		final int h = imp.getHeight();
+		final int d = imp.getNSlices();
+		final FinalDimensions size = new FinalDimensions( w, h, d );
+
+		// propose reasonable mipmap settings
+		final ExportMipmapInfo autoMipmapSettings = ProposeMipmaps.proposeMipmaps( new BasicViewSetup( 0, "", size, voxelSize ) );
+
 		// show dialog to get output paths, resolutions, subdivisions, min-max option
-		final Parameters params = getParameters( imp.getDisplayRangeMin(), imp.getDisplayRangeMax() );
+		final Parameters params = getParameters( imp.getDisplayRangeMin(), imp.getDisplayRangeMax(), autoMipmapSettings );
 		if ( params == null )
 			return;
 
@@ -102,17 +129,6 @@ public class ExportImagePlusPlugIn implements PlugIn
 			break;
 		}
 
-		final double pw = imp.getCalibration().pixelWidth;
-		final double ph = imp.getCalibration().pixelHeight;
-		final double pd = imp.getCalibration().pixelDepth;
-		String punit = imp.getCalibration().getUnit();
-		if ( punit == null || punit.isEmpty() )
-			punit = "px";
-		final FinalVoxelDimensions voxelSize = new FinalVoxelDimensions( punit, pw, ph, pd );
-		final int w = imp.getWidth();
-		final int h = imp.getHeight();
-		final int d = imp.getNSlices();
-		final FinalDimensions size = new FinalDimensions( w, h, d );
 		final int numTimepoints = imp.getNFrames();
 		final int numSetups = imp.getNChannels();
 
@@ -166,6 +182,8 @@ public class ExportImagePlusPlugIn implements PlugIn
 
 	protected static class Parameters
 	{
+		final boolean setMipmapManual;
+
 		final int[][] resolutions;
 
 		final int[][] subdivisions;
@@ -180,8 +198,9 @@ public class ExportImagePlusPlugIn implements PlugIn
 
 		final double rangeMax;
 
-		public Parameters( final int[][] resolutions, final int[][] subdivisions, final File seqFile, final File hdf5File, final MinMaxOption minMaxOption, final double rangeMin, final double rangeMax )
+		public Parameters( final boolean setMipmapManual, final int[][] resolutions, final int[][] subdivisions, final File seqFile, final File hdf5File, final MinMaxOption minMaxOption, final double rangeMin, final double rangeMax )
 		{
+			this.setMipmapManual = setMipmapManual;
 			this.resolutions = resolutions;
 			this.subdivisions = subdivisions;
 			this.seqFile = seqFile;
@@ -191,6 +210,8 @@ public class ExportImagePlusPlugIn implements PlugIn
 			this.rangeMax = rangeMax;
 		}
 	}
+
+	static boolean lastSetMipmapManual = false;
 
 	static String lastSubsampling = "{1,1,1}, {2,2,1}, {4,4,2}";
 
@@ -204,7 +225,7 @@ public class ExportImagePlusPlugIn implements PlugIn
 
 	static String lastExportPath = "./export.xml";
 
-	protected Parameters getParameters( final double impMin, final double impMax )
+	protected Parameters getParameters( final double impMin, final double impMax, final ExportMipmapInfo autoMipmapSettings  )
 	{
 		if ( lastMinMaxChoice == 0 ) // use ImageJs...
 		{
@@ -216,8 +237,12 @@ public class ExportImagePlusPlugIn implements PlugIn
 		{
 			final GenericDialogPlus gd = new GenericDialogPlus( "Export for BigDataViewer" );
 
+			gd.addCheckbox( "manual mipmap setup", lastSetMipmapManual );
+			final Checkbox cManualMipmap = ( Checkbox ) gd.getCheckboxes().lastElement();
 			gd.addStringField( "Subsampling factors", lastSubsampling, 25 );
+			final TextField tfSubsampling = ( TextField ) gd.getStringFields().lastElement();
 			gd.addStringField( "Hdf5 chunk sizes", lastChunkSizes, 25 );
+			final TextField tfChunkSizes = ( TextField ) gd.getStringFields().lastElement();
 
 			gd.addMessage( "" );
 			final String[] minMaxChoices = new String[] { "Use ImageJ's current min/max setting", "Compute min/max of the (hyper-)stack", "Use values specified below" };
@@ -234,6 +259,8 @@ public class ExportImagePlusPlugIn implements PlugIn
 //			gd.addMessage( "This Plugin is developed by Tobias Pietzsch (pietzsch@mpi-cbg.de)\n" );
 //			Bead_Registration.addHyperLinkListener( ( MultiLineLabel ) gd.getMessage(), "mailto:pietzsch@mpi-cbg.de" );
 
+			final String autoSubsampling = ProposeMipmaps.getArrayString( autoMipmapSettings.getExportResolutions() );
+			final String autoChunkSizes = ProposeMipmaps.getArrayString( autoMipmapSettings.getSubdivisions() );
 			gd.addDialogListener( new DialogListener()
 			{
 				@Override
@@ -245,6 +272,17 @@ public class ExportImagePlusPlugIn implements PlugIn
 						tfMin.setEnabled( enable );
 						tfMax.setEnabled( enable );
 					}
+					else if ( e instanceof ItemEvent && e.getID() == ItemEvent.ITEM_STATE_CHANGED && e.getSource() == cManualMipmap )
+					{
+						final boolean useManual = cManualMipmap.getState();
+						tfSubsampling.setEnabled( useManual );
+						tfChunkSizes.setEnabled( useManual );
+						if ( !useManual )
+						{
+							tfSubsampling.setText( autoSubsampling );
+							tfChunkSizes.setText( autoChunkSizes );
+						}
+					}
 					return true;
 				}
 			} );
@@ -253,10 +291,19 @@ public class ExportImagePlusPlugIn implements PlugIn
 			tfMin.setEnabled( enable );
 			tfMax.setEnabled( enable );
 
+			tfSubsampling.setEnabled( lastSetMipmapManual );
+			tfChunkSizes.setEnabled( lastSetMipmapManual );
+			if ( !lastSetMipmapManual )
+			{
+				tfSubsampling.setText( autoSubsampling );
+				tfChunkSizes.setText( autoChunkSizes );
+			}
+
 			gd.showDialog();
 			if ( gd.wasCanceled() )
 				return null;
 
+			lastSetMipmapManual = gd.getNextBoolean();
 			lastSubsampling = gd.getNextString();
 			lastChunkSizes = gd.getNextString();
 			lastMinMaxChoice = gd.getNextChoiceIndex();
@@ -304,7 +351,7 @@ public class ExportImagePlusPlugIn implements PlugIn
 			final String hdf5Filename = seqFilename.substring( 0, seqFilename.length() - 4 ) + ".h5";
 			final File hdf5File = new File( hdf5Filename );
 
-			return new Parameters( resolutions, subdivisions, seqFile, hdf5File, minMaxOption, lastMin, lastMax );
+			return new Parameters( lastSetMipmapManual, resolutions, subdivisions, seqFile, hdf5File, minMaxOption, lastMin, lastMax );
 		}
 	}
 }
