@@ -2,15 +2,24 @@ package bdv.ij;
 
 import fiji.util.gui.GenericDialogPlus;
 import ij.IJ;
+import ij.gui.DialogListener;
+import ij.gui.GenericDialog;
 import ij.plugin.PlugIn;
 
+import java.awt.AWTEvent;
+import java.awt.Checkbox;
+import java.awt.TextField;
+import java.awt.event.ItemEvent;
 import java.io.File;
+import java.util.Map;
 
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileFilter;
 
 import mpicbg.spim.data.SpimDataException;
+import bdv.export.ExportMipmapInfo;
 import bdv.export.ProgressWriter;
+import bdv.export.ProposeMipmaps;
 import bdv.export.SubTaskProgressWriter;
 import bdv.export.WriteSequenceToHdf5;
 import bdv.ij.util.PluginHelper;
@@ -29,6 +38,8 @@ public class ResavePlugin implements PlugIn
 
 	protected static class Parameters
 	{
+		final boolean setMipmapManual;
+
 		final int[][] resolutions;
 
 		final int[][] subdivisions;
@@ -37,8 +48,9 @@ public class ResavePlugin implements PlugIn
 
 		final File hdf5File;
 
-		public Parameters( final int[][] resolutions, final int[][] subdivisions, final File seqFile, final File hdf5File )
+		public Parameters( final boolean setMipmapManual, final int[][] resolutions, final int[][] subdivisions, final File seqFile, final File hdf5File )
 		{
+			this.setMipmapManual = setMipmapManual;
 			this.resolutions = resolutions;
 			this.subdivisions = subdivisions;
 			this.seqFile = seqFile;
@@ -91,7 +103,9 @@ public class ResavePlugin implements PlugIn
 				throw new RuntimeException( e );
 			}
 
-			final Parameters params = getParameters();
+			final Map< Integer, ExportMipmapInfo > perSetupExportMipmapInfo = ProposeMipmaps.proposeMipmaps( spimData.getSequenceDescription() );
+
+			final Parameters params = getParameters( perSetupExportMipmapInfo.get( 0 ) );
 			if ( params == null )
 				return;
 
@@ -101,11 +115,15 @@ public class ResavePlugin implements PlugIn
 			// write hdf5
 			final File seqFile = params.seqFile;
 			final File hdf5File = params.hdf5File;
-			final int[][] resolutions = params.resolutions;
-			final int[][] subdivisions = params.subdivisions;
+			final boolean setMipmapManual = params.setMipmapManual;
+			final int[][] manualResolutions = params.resolutions;
+			final int[][] manualSubdivisions = params.subdivisions;
 
 			final SequenceDescriptionMinimal seq = spimData.getSequenceDescription();
-			WriteSequenceToHdf5.writeHdf5File( seq, resolutions, subdivisions, hdf5File, new SubTaskProgressWriter( progressWriter, 0, 0.95 ) );
+			if ( setMipmapManual )
+				WriteSequenceToHdf5.writeHdf5File( seq, manualResolutions, manualSubdivisions, hdf5File, new SubTaskProgressWriter( progressWriter, 0, 0.95 ) );
+			else
+				WriteSequenceToHdf5.writeHdf5File( seq, perSetupExportMipmapInfo, hdf5File, new SubTaskProgressWriter( progressWriter, 0, 0.95 ) );
 
 			// write xml sequence description
 			final Hdf5ImageLoader hdf5Loader = new Hdf5ImageLoader( hdf5File, null, null, false );
@@ -127,27 +145,64 @@ public class ResavePlugin implements PlugIn
 		}
 	}
 
+	static boolean lastSetMipmapManual = false;
+
 	static String lastSubsampling = "{1,1,1}, {2,2,1}, {4,4,2}";
 
 	static String lastChunkSizes = "{16,16,16}, {16,16,16}, {16,16,16}";
 
-	static String lastExportPath = "./export.xml";
+	static String lastExportPath = "/Users/pietzsch/Desktop/spimrec2.xml";
 
-	protected Parameters getParameters()
+	protected Parameters getParameters( final ExportMipmapInfo autoMipmapSettings )
 	{
 		while ( true )
 		{
 			final GenericDialogPlus gd = new GenericDialogPlus( "Export for BigDataViewer" );
 
+			gd.addCheckbox( "manual mipmap setup", lastSetMipmapManual );
+			final Checkbox cManualMipmap = ( Checkbox ) gd.getCheckboxes().lastElement();
 			gd.addStringField( "Subsampling factors", lastSubsampling, 25 );
+			final TextField tfSubsampling = ( TextField ) gd.getStringFields().lastElement();
 			gd.addStringField( "Hdf5 chunk sizes", lastChunkSizes, 25 );
+			final TextField tfChunkSizes = ( TextField ) gd.getStringFields().lastElement();
 
 			PluginHelper.addSaveAsFileField( gd, "Export path", lastExportPath, 25 );
+
+			final String autoSubsampling = ProposeMipmaps.getArrayString( autoMipmapSettings.getExportResolutions() );
+			final String autoChunkSizes = ProposeMipmaps.getArrayString( autoMipmapSettings.getSubdivisions() );
+			gd.addDialogListener( new DialogListener()
+			{
+				@Override
+				public boolean dialogItemChanged( final GenericDialog dialog, final AWTEvent e )
+				{
+					if ( e instanceof ItemEvent && e.getID() == ItemEvent.ITEM_STATE_CHANGED && e.getSource() == cManualMipmap )
+					{
+						final boolean useManual = cManualMipmap.getState();
+						tfSubsampling.setEnabled( useManual );
+						tfChunkSizes.setEnabled( useManual );
+						if ( !useManual )
+						{
+							tfSubsampling.setText( autoSubsampling );
+							tfChunkSizes.setText( autoChunkSizes );
+						}
+					}
+					return true;
+				}
+			} );
+
+			tfSubsampling.setEnabled( lastSetMipmapManual );
+			tfChunkSizes.setEnabled( lastSetMipmapManual );
+			if ( !lastSetMipmapManual )
+			{
+				tfSubsampling.setText( autoSubsampling );
+				tfChunkSizes.setText( autoChunkSizes );
+			}
 
 			gd.showDialog();
 			if ( gd.wasCanceled() )
 				return null;
 
+			lastSetMipmapManual = gd.getNextBoolean();
 			lastSubsampling = gd.getNextString();
 			lastChunkSizes = gd.getNextString();
 			lastExportPath = gd.getNextString();
@@ -184,7 +239,7 @@ public class ResavePlugin implements PlugIn
 			final String hdf5Filename = seqFilename.substring( 0, seqFilename.length() - 4 ) + ".h5";
 			final File hdf5File = new File( hdf5Filename );
 
-			return new Parameters( resolutions, subdivisions, seqFile, hdf5File );
+			return new Parameters( lastSetMipmapManual, resolutions, subdivisions, seqFile, hdf5File );
 		}
 	}
 }
