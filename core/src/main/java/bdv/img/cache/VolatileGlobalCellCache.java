@@ -309,8 +309,6 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	{
 		final IoStatistics stats = CacheIoTiming.getThreadGroupIoStatistics();
 		final IoTimeBudget budget = stats.getIoTimeBudget();
-		final Key k = entry.key;
-//		final int priority = maxLevels[ k.setup ] - k.level;
 		final long timeLeft = budget.timeLeft( priority );
 		if ( timeLeft > 0 )
 		{

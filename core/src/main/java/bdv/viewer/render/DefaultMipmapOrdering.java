@@ -31,14 +31,6 @@ public class DefaultMipmapOrdering implements MipmapOrdering
 {
 	private final Source< ? > source;
 
-	private final LoadingStrategy renderLoadingStrategy;
-
-	private final LoadingStrategy prefetchLoadingStrategy;
-
-	private final boolean renderEnqueuToFront;
-
-	private final boolean prefetchEnqueuToFront;
-
 	private final ArrayList< Level > precomputedLevels;
 
 	/**
@@ -63,11 +55,6 @@ public class DefaultMipmapOrdering implements MipmapOrdering
 			final boolean prefetchEnqueuToFront )
 	{
 		this.source = source;
-		this.renderLoadingStrategy = renderLoadingStrategy;
-		this.renderEnqueuToFront = renderEnqueuToFront;
-		this.prefetchLoadingStrategy = prefetchLoadingStrategy;
-		this.prefetchEnqueuToFront = prefetchEnqueuToFront;
-
 		precomputedLevels = new ArrayList< Level >();
 		final int numMipmapLevels = source.getNumMipmapLevels();
 		final int maxLevel = numMipmapLevels - 1;
