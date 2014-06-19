@@ -124,9 +124,9 @@ public class BigDataViewer
 		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
 		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
 		{
-			final RealARGBColorConverter< V > vconverter = new RealARGBColorConverter< V >( typeMin, typeMax );
+			final RealARGBColorConverter< V > vconverter = new RealARGBColorConverter.Imp0< V >( typeMin, typeMax );
 			vconverter.setColor( new ARGBType( 0xffffffff ) );
-			final RealARGBColorConverter< T > converter = new RealARGBColorConverter< T >( typeMin, typeMax );
+			final RealARGBColorConverter< T > converter = new RealARGBColorConverter.Imp1< T >( typeMin, typeMax );
 			converter.setColor( new ARGBType( 0xffffffff ) );
 
 			final int setupId = setup.getId();
@@ -157,7 +157,7 @@ public class BigDataViewer
 		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
 		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
 		{
-			final RealARGBColorConverter< T > converter = new RealARGBColorConverter< T >( typeMin, typeMax );
+			final RealARGBColorConverter< T > converter = new RealARGBColorConverter.Imp1< T >( typeMin, typeMax );
 			converter.setColor( new ARGBType( 0xffffffff ) );
 
 			final int setupId = setup.getId();

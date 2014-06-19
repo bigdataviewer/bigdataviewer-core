@@ -4,26 +4,21 @@ import net.imglib2.converter.Converter;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.RealType;
 
-public class RealARGBColorConverter< R extends RealType< ? > > implements LinearRange, Converter< R, ARGBType >
+public abstract class RealARGBColorConverter< R extends RealType< ? > > implements LinearRange, Converter< R, ARGBType >
 {
-	private double min = 0;
+	protected double min = 0;
 
-	private double max = 1;
+	protected double max = 1;
 
-	private final ARGBType color = new ARGBType();
+	protected final ARGBType color = new ARGBType();
 
-	private int A;
+	protected int A;
 
-	private double scaleR;
+	protected double scaleR;
 
-	private double scaleG;
+	protected double scaleG;
 
-	private double scaleB;
-
-	public RealARGBColorConverter()
-	{
-		update();
-	}
+	protected double scaleB;
 
 	public RealARGBColorConverter( final double min, final double max )
 	{
@@ -32,18 +27,7 @@ public class RealARGBColorConverter< R extends RealType< ? > > implements Linear
 		update();
 	}
 
-	@Override
-	public void convert( final R input, final ARGBType output )
-	{
-		final double v = input.getRealDouble() - min;
-		final int r0 = ( int ) ( scaleR * v + 0.5 );
-		final int g0 = ( int ) ( scaleG * v + 0.5 );
-		final int b0 = ( int ) ( scaleB * v + 0.5 );
-		final int r = r0 > 255 ? 255 : r0 < 0 ? 0 : r0;
-		final int g = g0 > 255 ? 255 : g0 < 0 ? 0 : g0;
-		final int b = b0 > 255 ? 255 : b0 < 0 ? 0 : b0;
-		output.set( ARGBType.rgba( r, g, b, A) );
-	}
+	protected int black;
 
 	public ARGBType getColor()
 	{
@@ -90,5 +74,62 @@ public class RealARGBColorConverter< R extends RealType< ? > > implements Linear
 		scaleR = ARGBType.red( value ) * scale;
 		scaleG = ARGBType.green( value ) * scale;
 		scaleB = ARGBType.blue( value ) * scale;
+		black = ARGBType.rgba( 0, 0, 0, A );
+	}
+
+	public static class Imp0< R extends RealType< ? > > extends RealARGBColorConverter< R >
+	{
+		public Imp0( final double min, final double max )
+		{
+			super( min, max );
+		}
+
+		@Override
+		public void convert( final R input, final ARGBType output )
+		{
+			final double v = input.getRealDouble() - min;
+			if ( v < 0 )
+			{
+				output.set( black );
+			}
+			else
+			{
+				final int r0 = ( int ) ( scaleR * v + 0.5 );
+				final int g0 = ( int ) ( scaleG * v + 0.5 );
+				final int b0 = ( int ) ( scaleB * v + 0.5 );
+				final int r = Math.min( 255, r0 );
+				final int g = Math.min( 255, g0 );
+				final int b = Math.min( 255, b0 );
+				output.set( ARGBType.rgba( r, g, b, A) );
+			}
+		}
+	}
+
+	public static class Imp1< R extends RealType< ? > > extends RealARGBColorConverter< R >
+	{
+		public Imp1( final double min, final double max )
+		{
+			super( min, max );
+		}
+
+		@Override
+		public void convert( final R input, final ARGBType output )
+		{
+			final double v = input.getRealDouble() - min;
+			if ( v < 0 )
+			{
+				output.set( black );
+			}
+			else
+			{
+				final int r0 = ( int ) ( scaleR * v + 0.5 );
+				final int g0 = ( int ) ( scaleG * v + 0.5 );
+				final int b0 = ( int ) ( scaleB * v + 0.5 );
+				final int r = Math.min( 255, r0 );
+				final int g = Math.min( 255, g0 );
+				final int b = Math.min( 255, b0 );
+				output.set( ARGBType.rgba( r, g, b, A) );
+			}
+		}
 	}
 }
