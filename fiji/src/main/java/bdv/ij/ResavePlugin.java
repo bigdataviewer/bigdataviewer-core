@@ -20,7 +20,7 @@ import mpicbg.spim.data.SpimDataException;
 import mpicbg.spim.data.generic.AbstractSpimData;
 import mpicbg.spim.data.generic.XmlIoAbstractSpimData;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
-import mpicbg.spim.data.generic.sequence.BasicImgLoader;
+import mpicbg.spim.data.sequence.ImgLoader;
 import bdv.export.ExportMipmapInfo;
 import bdv.export.ProgressWriter;
 import bdv.export.ProposeMipmaps;
@@ -115,7 +115,7 @@ public class ResavePlugin implements PlugIn
 			WriteSequenceToHdf5.writeHdf5File( seq, perSetupExportMipmapInfo, params.hdf5File, new SubTaskProgressWriter( progressWriter, 0, 0.95 ) );
 	}
 	
-	public static < T extends AbstractSpimData< A >, A extends AbstractSequenceDescription< ?, ?, BasicImgLoader< ? > > > void writeXML(
+	public static < T extends AbstractSpimData< A >, A extends AbstractSequenceDescription< ?, ?, ? super ImgLoader< ? > > > void writeXML(
 			final T spimData,
 			final XmlIoAbstractSpimData< A, T > io,
 			final File seqFile,
@@ -146,7 +146,7 @@ public class ResavePlugin implements PlugIn
 
 	static String lastChunkSizes = "{16,16,16}, {16,16,16}, {16,16,16}";
 
-	static String lastExportPath = "/Users/pietzsch/Desktop/spimrec2.xml";
+	public static String lastExportPath = "/Users/pietzsch/Desktop/spimrec2.xml";
 
 	public static File getInputXML()
 	{
