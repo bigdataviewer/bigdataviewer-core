@@ -17,6 +17,10 @@ import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileFilter;
 
 import mpicbg.spim.data.SpimDataException;
+import mpicbg.spim.data.generic.AbstractSpimData;
+import mpicbg.spim.data.generic.XmlIoAbstractSpimData;
+import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
+import mpicbg.spim.data.sequence.ImgLoader;
 import bdv.export.ExportMipmapInfo;
 import bdv.export.ProgressWriter;
 import bdv.export.ProposeMipmaps;
@@ -25,7 +29,6 @@ import bdv.export.WriteSequenceToHdf5;
 import bdv.ij.util.PluginHelper;
 import bdv.ij.util.ProgressWriterIJ;
 import bdv.img.hdf5.Hdf5ImageLoader;
-import bdv.spimdata.SequenceDescriptionMinimal;
 import bdv.spimdata.SpimDataMinimal;
 import bdv.spimdata.XmlIoSpimDataMinimal;
 
@@ -36,17 +39,13 @@ public class ResavePlugin implements PlugIn
 		new ResavePlugin().run( null );
 	}
 
-	protected static class Parameters
+	public static class Parameters
 	{
-		final boolean setMipmapManual;
-
-		final int[][] resolutions;
-
-		final int[][] subdivisions;
-
-		final File seqFile;
-
-		final File hdf5File;
+		boolean setMipmapManual;
+		int[][] resolutions;
+		int[][] subdivisions;
+		File seqFile;
+		File hdf5File;
 
 		public Parameters( final boolean setMipmapManual, final int[][] resolutions, final int[][] subdivisions, final File seqFile, final File hdf5File )
 		{
@@ -56,10 +55,100 @@ public class ResavePlugin implements PlugIn
 			this.seqFile = seqFile;
 			this.hdf5File = hdf5File;
 		}
+		
+		public void setSeqFile( final File seqFile ) { this.seqFile = seqFile; }
+		public void setHDF5File( final File hdf5File ) { this.hdf5File = hdf5File; }
+		public void setResolutions( final int[][] resolutions ) { this.resolutions = resolutions; }
+		public void setSubdivisions( final int[][] subdivisions ) { this.subdivisions = subdivisions; }
+		public void setMipmapManual( final boolean setMipmapManual ) { this.setMipmapManual = setMipmapManual; }
+		
+		public File getSeqFile() { return seqFile; }
+		public File getHDF5File() { return hdf5File; }
+		public int[][] getResolutions() { return resolutions; }
+		public int[][] getSubdivisions() { return subdivisions; }
+		public boolean getMipmapManual() { return setMipmapManual; }
 	}
 
 	@Override
 	public void run( final String arg )
+	{
+		final File file = getInputXML();
+		if ( file == null )
+			return;
+		
+		final XmlIoSpimDataMinimal io = new XmlIoSpimDataMinimal();
+		SpimDataMinimal spimData;
+		try
+		{
+			spimData = io.load( file.getAbsolutePath() );
+		}
+		catch ( final SpimDataException e )
+		{
+			throw new RuntimeException( e );
+		}
+
+		final Map< Integer, ExportMipmapInfo > perSetupExportMipmapInfo = ProposeMipmaps.proposeMipmaps( spimData.getSequenceDescription() );
+
+		final Parameters params = getParameters( perSetupExportMipmapInfo.get( 0 ), true );
+		if ( params == null )
+			return;
+
+		final ProgressWriter progressWriter = new ProgressWriterIJ();
+		progressWriter.out().println( "starting export..." );
+
+		// write hdf5
+		writeHDF5( spimData.getSequenceDescription(), params, perSetupExportMipmapInfo, progressWriter );
+		
+		// write xml sequence description
+		writeXML( spimData, io, params.seqFile, params.hdf5File, progressWriter );
+	}
+	
+	public static void writeHDF5( final AbstractSequenceDescription< ?, ?, ? > seq, final Parameters params, final Map< Integer, ExportMipmapInfo > perSetupExportMipmapInfo, final ProgressWriter progressWriter )
+	{
+		final boolean setMipmapManual = params.setMipmapManual;
+		final int[][] manualResolutions = params.resolutions;
+		final int[][] manualSubdivisions = params.subdivisions;
+
+		if ( setMipmapManual )
+			WriteSequenceToHdf5.writeHdf5File( seq, manualResolutions, manualSubdivisions, params.hdf5File, new SubTaskProgressWriter( progressWriter, 0, 0.95 ) );
+		else
+			WriteSequenceToHdf5.writeHdf5File( seq, perSetupExportMipmapInfo, params.hdf5File, new SubTaskProgressWriter( progressWriter, 0, 0.95 ) );
+	}
+	
+	public static < T extends AbstractSpimData< A >, A extends AbstractSequenceDescription< ?, ?, ? super ImgLoader< ? > > > void writeXML(
+			final T spimData,
+			final XmlIoAbstractSpimData< A, T > io,
+			final File seqFile,
+			final File hdf5File,
+			final ProgressWriter progressWriter )
+	{
+		final A seq = spimData.getSequenceDescription();
+		final Hdf5ImageLoader hdf5Loader = new Hdf5ImageLoader( hdf5File, null, null, false );
+		seq.setImgLoader( hdf5Loader );
+		spimData.setBasePath( seqFile.getParentFile() );
+
+		try
+		{
+			io.save( spimData, seqFile.getAbsolutePath() );
+		}
+		catch ( final SpimDataException e )
+		{
+			throw new RuntimeException( e );
+		}
+		
+		progressWriter.setProgress( 1.0 );
+		progressWriter.out().println( "done" );
+	}
+
+	static boolean lastSetMipmapManual = false;
+
+	static String lastSubsampling = "{1,1,1}, {2,2,1}, {4,4,2}";
+
+	static String lastChunkSizes = "{16,16,16}, {16,16,16}, {16,16,16}";
+
+	public static String lastExportPath = "/Users/pietzsch/Desktop/spimrec2.xml";
+
+	public static File getInputXML()
 	{
 		final JFileChooser fileChooser = new JFileChooser();
 		fileChooser.setFileFilter( new FileFilter()
@@ -77,83 +166,24 @@ public class ResavePlugin implements PlugIn
 					return true;
 				if ( f.isFile() )
 				{
-			        final String s = f.getName();
-			        final int i = s.lastIndexOf('.');
-			        if (i > 0 &&  i < s.length() - 1) {
-			            final String ext = s.substring(i+1).toLowerCase();
-			            return ext.equals( "xml" );
-			        }
+					final String s = f.getName();
+					final int i = s.lastIndexOf('.');
+					if (i > 0 &&  i < s.length() - 1) {
+						final String ext = s.substring(i+1).toLowerCase();
+						return ext.equals( "xml" );
+					}
 				}
 				return false;
 			}
 		} );
 
-		final int returnVal = fileChooser.showOpenDialog( null );
-		if ( returnVal == JFileChooser.APPROVE_OPTION )
-		{
-			final File file = fileChooser.getSelectedFile();
-			final XmlIoSpimDataMinimal io = new XmlIoSpimDataMinimal();
-			SpimDataMinimal spimData;
-			try
-			{
-				spimData = io.load( file.getAbsolutePath() );
-			}
-			catch ( final SpimDataException e )
-			{
-				throw new RuntimeException( e );
-			}
-
-			final Map< Integer, ExportMipmapInfo > perSetupExportMipmapInfo = ProposeMipmaps.proposeMipmaps( spimData.getSequenceDescription() );
-
-			final Parameters params = getParameters( perSetupExportMipmapInfo.get( 0 ) );
-			if ( params == null )
-				return;
-
-			final ProgressWriter progressWriter = new ProgressWriterIJ();
-			progressWriter.out().println( "starting export..." );
-
-			// write hdf5
-			final File seqFile = params.seqFile;
-			final File hdf5File = params.hdf5File;
-			final boolean setMipmapManual = params.setMipmapManual;
-			final int[][] manualResolutions = params.resolutions;
-			final int[][] manualSubdivisions = params.subdivisions;
-
-			final SequenceDescriptionMinimal seq = spimData.getSequenceDescription();
-			if ( setMipmapManual )
-				WriteSequenceToHdf5.writeHdf5File( seq, manualResolutions, manualSubdivisions, hdf5File, new SubTaskProgressWriter( progressWriter, 0, 0.95 ) );
-			else
-				WriteSequenceToHdf5.writeHdf5File( seq, perSetupExportMipmapInfo, hdf5File, new SubTaskProgressWriter( progressWriter, 0, 0.95 ) );
-
-			// write xml sequence description
-			final Hdf5ImageLoader hdf5Loader = new Hdf5ImageLoader( hdf5File, null, null, false );
-			seq.setImgLoader( hdf5Loader );
-
-			final File basePath = seqFile.getParentFile();
-			final SpimDataMinimal spimData2 = new SpimDataMinimal( basePath, seq, spimData.getViewRegistrations() );
-
-			try
-			{
-				io.save( spimData2, seqFile.getAbsolutePath() );
-			}
-			catch ( final SpimDataException e )
-			{
-				throw new RuntimeException( e );
-			}
-			progressWriter.setProgress( 1.0 );
-			progressWriter.out().println( "done" );
-		}
+		if ( fileChooser.showOpenDialog( null ) == JFileChooser.APPROVE_OPTION )
+			return fileChooser.getSelectedFile();
+		else
+			return null;
 	}
-
-	static boolean lastSetMipmapManual = false;
-
-	static String lastSubsampling = "{1,1,1}, {2,2,1}, {4,4,2}";
-
-	static String lastChunkSizes = "{16,16,16}, {16,16,16}, {16,16,16}";
-
-	static String lastExportPath = "/Users/pietzsch/Desktop/spimrec2.xml";
-
-	protected Parameters getParameters( final ExportMipmapInfo autoMipmapSettings )
+	
+	public static Parameters getParameters( final ExportMipmapInfo autoMipmapSettings, final boolean askForXMLPath )
 	{
 		while ( true )
 		{
@@ -166,7 +196,8 @@ public class ResavePlugin implements PlugIn
 			gd.addStringField( "Hdf5 chunk sizes", lastChunkSizes, 25 );
 			final TextField tfChunkSizes = ( TextField ) gd.getStringFields().lastElement();
 
-			PluginHelper.addSaveAsFileField( gd, "Export path", lastExportPath, 25 );
+			if ( askForXMLPath )
+				PluginHelper.addSaveAsFileField( gd, "Export path", lastExportPath, 25 );
 
 			final String autoSubsampling = ProposeMipmaps.getArrayString( autoMipmapSettings.getExportResolutions() );
 			final String autoChunkSizes = ProposeMipmaps.getArrayString( autoMipmapSettings.getSubdivisions() );
@@ -226,18 +257,27 @@ public class ResavePlugin implements PlugIn
 				continue;
 			}
 
-			String seqFilename = lastExportPath;
-			if ( !seqFilename.endsWith( ".xml" ) )
-				seqFilename += ".xml";
-			final File seqFile = new File( seqFilename );
-			final File parent = seqFile.getParentFile();
-			if ( parent == null || !parent.exists() || !parent.isDirectory() )
+			final File seqFile, hdf5File;
+
+			if ( askForXMLPath )
 			{
-				IJ.showMessage( "Invalid export filename " + seqFilename );
-				continue;
+				String seqFilename = lastExportPath;
+				if ( !seqFilename.endsWith( ".xml" ) )
+					seqFilename += ".xml";
+				seqFile = new File( seqFilename );
+				final File parent = seqFile.getParentFile();
+				if ( parent == null || !parent.exists() || !parent.isDirectory() )
+				{
+					IJ.showMessage( "Invalid export filename " + seqFilename );
+					continue;
+				}
+				final String hdf5Filename = seqFilename.substring( 0, seqFilename.length() - 4 ) + ".h5";
+				hdf5File = new File( hdf5Filename );
 			}
-			final String hdf5Filename = seqFilename.substring( 0, seqFilename.length() - 4 ) + ".h5";
-			final File hdf5File = new File( hdf5Filename );
+			else
+			{
+				seqFile = hdf5File = null;
+			}
 
 			return new Parameters( lastSetMipmapManual, resolutions, subdivisions, seqFile, hdf5File );
 		}
