@@ -61,29 +61,29 @@ import bdv.viewer.ViewerPanel;
 
 public class BigDataViewer
 {
-	final ViewerFrame viewerFrame;
+	protected final ViewerFrame viewerFrame;
 
-	final ViewerPanel viewer;
+	protected final ViewerPanel viewer;
 
-	final SetupAssignments setupAssignments;
+	protected final SetupAssignments setupAssignments;
 
-	final ManualTransformation manualTransformation;
+	protected final ManualTransformation manualTransformation;
 
-	final BrightnessDialog brightnessDialog;
+	protected final BrightnessDialog brightnessDialog;
 
-	final CropDialog cropDialog;
+	protected final CropDialog cropDialog;
 
-	final RecordMovieDialog movieDialog;
+	protected final RecordMovieDialog movieDialog;
 
-	final VisibilityAndGroupingDialog activeSourcesDialog;
+	protected final VisibilityAndGroupingDialog activeSourcesDialog;
 
-	final HelpDialog helpDialog;
+	protected final HelpDialog helpDialog;
 
-	final ManualTransformationEditor manualTransformationEditor;
+	protected final ManualTransformationEditor manualTransformationEditor;
 
-	final JFileChooser fileChooser;
+	protected final JFileChooser fileChooser;
 
-	File proposedSettingsFile;
+	protected File proposedSettingsFile;
 
 	public void toggleManualTransformation()
 	{
@@ -209,7 +209,7 @@ public class BigDataViewer
 	}
 
 	@SuppressWarnings( { "unchecked", "rawtypes" } )
-	private static void initSetups(
+	public static void initSetups(
 			final AbstractSpimData< ? > spimData,
 			final ArrayList< ConverterSetup > converterSetups,
 			final ArrayList< SourceAndConverter< ? > > sources )
@@ -222,7 +222,7 @@ public class BigDataViewer
 		else throw new IllegalArgumentException( "ImgLoader of type " + type.getClass() + " not supported." );
 	}
 
-	private BigDataViewer( final String xmlFilename, final ProgressWriter progressWriter ) throws SpimDataException
+	protected BigDataViewer( final String xmlFilename, final ProgressWriter progressWriter ) throws SpimDataException
 	{
 		final int width = 800;
 		final int height = 600;
@@ -358,7 +358,7 @@ public class BigDataViewer
 //		( ( Hdf5ImageLoader ) seq.imgLoader ).initCachedDimensionsFromHdf5( false );
 	}
 
-	boolean tryLoadSettings( final String xmlFilename )
+	protected boolean tryLoadSettings( final String xmlFilename )
 	{
 		proposedSettingsFile = null;
 		if ( xmlFilename.endsWith( ".xml" ) )
@@ -381,7 +381,7 @@ public class BigDataViewer
 		return false;
 	}
 
-	void saveSettings()
+	protected void saveSettings()
 	{
 		fileChooser.setSelectedFile( proposedSettingsFile );
 		final int returnVal = fileChooser.showSaveDialog( null );
@@ -399,7 +399,7 @@ public class BigDataViewer
 		}
 	}
 
-	void saveSettings( final String xmlFilename ) throws IOException
+	protected void saveSettings( final String xmlFilename ) throws IOException
 	{
 		final Element root = new Element( "Settings" );
 		root.addContent( viewer.stateToXml() );
@@ -410,7 +410,7 @@ public class BigDataViewer
 		xout.output( doc, new FileWriter( xmlFilename ) );
 	}
 
-	void loadSettings()
+	protected void loadSettings()
 	{
 		fileChooser.setSelectedFile( proposedSettingsFile );
 		final int returnVal = fileChooser.showOpenDialog( null );
@@ -428,7 +428,7 @@ public class BigDataViewer
 		}
 	}
 
-	void loadSettings( final String xmlFilename ) throws IOException, JDOMException
+	protected void loadSettings( final String xmlFilename ) throws IOException, JDOMException
 	{
 		final SAXBuilder sax = new SAXBuilder();
 		final Document doc = sax.build( xmlFilename );
