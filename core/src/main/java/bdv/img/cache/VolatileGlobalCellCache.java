@@ -1,6 +1,7 @@
 package bdv.img.cache;
 
 import java.lang.ref.Reference;
+import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -83,21 +84,70 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 			this.data = data;
 			enqueueFrame = -1;
 		}
+	}
+
+	interface GetKey< K >
+	{
+		public K getKey();
+	}
+
+	class MySoftReference extends SoftReference< Entry > implements GetKey< Key >
+	{
+		private final Key key;
+
+		public MySoftReference( final Entry referent, final ReferenceQueue< ? super Entry > q )
+		{
+			super( referent, q );
+			key = referent.key;
+		}
 
 		@Override
-		public void finalize()
+		public Key getKey()
 		{
-			synchronized ( softReferenceCache )
+			return key;
+		}
+	}
+
+	class MyWeakReference extends WeakReference< Entry > implements GetKey< Key >
+	{
+		private final Key key;
+
+		public MyWeakReference( final Entry referent, final ReferenceQueue< ? super Entry > q )
+		{
+			super( referent, q );
+			key = referent.key;
+		}
+
+		@Override
+		public Key getKey()
+		{
+			return key;
+		}
+	}
+
+	protected static final int MAX_PER_FRAME_FINALIZE_ENTRIES = 500;
+
+	protected void finalizeRemovedCacheEntries()
+	{
+		synchronized ( softReferenceCache )
+		{
+			for ( int i = 0; i < MAX_PER_FRAME_FINALIZE_ENTRIES; ++i )
 			{
-				// System.out.println( "finalizing..." );
-				softReferenceCache.remove( key );
-				// System.out.println( softReferenceCache.size() +
-				// " tiles cached." );
+				final Reference< ? extends Entry > poll = finalizeQueue.poll();
+				if ( poll == null )
+					break;
+				@SuppressWarnings( "unchecked" )
+				final Key key = ( ( GetKey< Key > ) poll ).getKey();
+				final Reference< Entry > ref = softReferenceCache.get( key );
+				if ( ref == poll )
+					softReferenceCache.remove( key );
 			}
 		}
 	}
 
 	protected final ConcurrentHashMap< Key, Reference< Entry > > softReferenceCache = new ConcurrentHashMap< Key, Reference< Entry > >();
+
+	protected final ReferenceQueue< Entry > finalizeQueue = new ReferenceQueue< Entry >();
 
 	/**
 	 * Keeps references to the {@link Entry entries} accessed in the current
@@ -278,7 +328,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 					final VolatileCell< A > cell = new VolatileCell< A >( cellDims, cellMin, loader.loadArray( timepoint, setup, level, cellDims, cellMin ) );
 					entry.data = cell;
 					entry.enqueueFrame = Long.MAX_VALUE;
-					softReferenceCache.put( entry.key, new SoftReference< Entry >( entry ) );
+					softReferenceCache.put( entry.key, new MySoftReference( entry, finalizeQueue ) );
 					entry.notifyAll();
 				}
 			}
@@ -454,7 +504,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 			{
 				final VolatileCell< A > cell = new VolatileCell< A >( cellDims, cellMin, loader.emptyArray( cellDims ) );
 				entry = new Entry( k, cell );
-				softReferenceCache.put( k, new WeakReference< Entry >( entry ) );
+				softReferenceCache.put( k, new MyWeakReference( entry, finalizeQueue ) );
 			}
 		}
 
@@ -497,6 +547,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	{
 		queue.clear();
 		currentFrameEntries.clear();
+		finalizeRemovedCacheEntries();
 		++currentQueueFrame;
 	}
 
