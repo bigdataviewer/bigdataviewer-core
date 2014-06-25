@@ -143,7 +143,15 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 				final List< TimePoint > timepoints = sequenceDescription.getTimePoints().getTimePointsOrdered();
 				final int maxNumTimepoints = timepoints.get( timepoints.size() - 1 ).getId() + 1;
 				final int maxNumSetups = setups.get( setups.size() - 1 ).getId() + 1;
-				hdf5Access = new HDF5Access( hdf5Reader );
+				try
+				{
+					hdf5Access = new HDF5AccessHack( hdf5Reader );
+				}
+				catch ( final Exception e )
+				{
+					e.printStackTrace();
+					hdf5Access = new HDF5Access( hdf5Reader );
+				}
 				cache = new VolatileGlobalCellCache< VolatileShortArray >( new Hdf5VolatileShortArrayLoader( hdf5Access ), maxNumTimepoints, maxNumSetups, maxNumLevels, 1 );
 			}
 		}
