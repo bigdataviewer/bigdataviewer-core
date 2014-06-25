@@ -5,11 +5,11 @@ import bdv.img.cache.CacheArrayLoader;
 
 public class Hdf5VolatileShortArrayLoader implements CacheArrayLoader< VolatileShortArray >
 {
-	private final HDF5Access hdf5Access;
+	private final IHDF5Access hdf5Access;
 
 	private VolatileShortArray theEmptyArray;
 
-	public Hdf5VolatileShortArrayLoader( final HDF5Access hdf5Access )
+	public Hdf5VolatileShortArrayLoader( final IHDF5Access hdf5Access )
 	{
 		this.hdf5Access = hdf5Access;
 		theEmptyArray = new VolatileShortArray( 32 * 32 * 32, false );

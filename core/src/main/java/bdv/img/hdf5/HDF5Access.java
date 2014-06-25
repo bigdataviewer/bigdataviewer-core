@@ -4,7 +4,7 @@ import ch.systemsx.cisd.base.mdarray.MDShortArray;
 import ch.systemsx.cisd.hdf5.HDF5DataSetInformation;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
 
-public class HDF5Access
+public class HDF5Access implements IHDF5Access
 {
 	private final IHDF5Reader hdf5Reader;
 
@@ -17,12 +17,14 @@ public class HDF5Access
 		this.hdf5Reader = hdf5Reader;
 	}
 
+	@Override
 	public synchronized HDF5DataSetInformation getDataSetInformation( final ViewLevelId id )
 	{
 		final String cellsPath = Util.getCellsPath( id );
 		return hdf5Reader.getDataSetInformation( cellsPath );
 	}
 
+	@Override
 	public synchronized short[] readShortMDArrayBlockWithOffset( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
 	{
 		if ( Thread.interrupted() )

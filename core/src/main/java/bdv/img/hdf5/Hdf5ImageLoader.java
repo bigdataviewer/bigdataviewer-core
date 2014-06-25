@@ -50,7 +50,7 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 {
 	protected File hdf5File;
 
-	protected HDF5Access hdf5Access;
+	protected IHDF5Access hdf5Access;
 
 	protected VolatileGlobalCellCache< VolatileShortArray > cache;
 
