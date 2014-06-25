@@ -33,7 +33,7 @@ public class Hdf5VolatileShortArrayLoader implements CacheArrayLoader< VolatileS
 				throw new InterruptedException();
 			reorder( dimensions, reorderedDimensions );
 			reorder( min, reorderedMin );
-			array = hdf5Reader.readShortMDArrayBlockWithOffset( getCellsPath( timepoint, setup, level ), reorderedDimensions, reorderedMin );
+			array = hdf5Reader.int16().readMDArrayBlockWithOffset( getCellsPath( timepoint, setup, level ), reorderedDimensions, reorderedMin );
 		}
 		return new VolatileShortArray( array.getAsFlatArray(), true );
 	}
