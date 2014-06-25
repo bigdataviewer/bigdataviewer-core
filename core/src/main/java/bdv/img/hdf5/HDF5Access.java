@@ -1,5 +1,6 @@
 package bdv.img.hdf5;
 
+import static bdv.img.hdf5.Util.reorder;
 import ch.systemsx.cisd.base.mdarray.MDShortArray;
 import ch.systemsx.cisd.hdf5.HDF5DataSetInformation;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
@@ -18,10 +19,20 @@ public class HDF5Access implements IHDF5Access
 	}
 
 	@Override
-	public synchronized HDF5DataSetInformation getDataSetInformation( final ViewLevelId id )
+	public synchronized DimsAndExistence getDimsAndExistence( final ViewLevelId id )
 	{
 		final String cellsPath = Util.getCellsPath( id );
-		return hdf5Reader.getDataSetInformation( cellsPath );
+		HDF5DataSetInformation info = null;
+		boolean exists = false;
+		try {
+			info = hdf5Reader.getDataSetInformation( cellsPath );
+			exists = true;
+		} catch ( final Exception e ) {
+		}
+		if ( exists )
+			return new DimsAndExistence( reorder( info.getDimensions() ), true );
+		else
+			return new DimsAndExistence( new long[] { 1, 1, 1 }, false );
 	}
 
 	@Override

@@ -2,7 +2,6 @@ package bdv.img.hdf5;
 
 import static bdv.img.hdf5.Util.getResolutionsPath;
 import static bdv.img.hdf5.Util.getSubdivisionsPath;
-import static bdv.img.hdf5.Util.reorder;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -42,7 +41,6 @@ import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.img.cache.VolatileImgCells;
 import bdv.img.cache.VolatileImgCells.CellCache;
 import bdv.util.MipmapTransforms;
-import ch.systemsx.cisd.hdf5.HDF5DataSetInformation;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
 
@@ -285,22 +283,12 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 		DimsAndExistence dims = cachedDimsAndExistence.get( id );
 		if ( dims == null )
 		{
-			HDF5DataSetInformation info = null;
-			boolean exists = false;
 			// pause Fetcher threads for 5 ms. There will be more calls to
 			// getImageDimension() because this happens when a timepoint is
 			// loaded, and all setups for the timepoint are loaded then. We
 			// don't want to interleave this with block loading operations.
 			cache.pauseFetcherThreadsFor( 5 );
-			try {
-				info = hdf5Access.getDataSetInformation( id );
-				exists = true;
-			} catch ( final Exception e ) {
-			}
-			if ( exists )
-				dims = new DimsAndExistence( reorder( info.getDimensions() ), true );
-			else
-				dims = new DimsAndExistence( new long[] { 1, 1, 1 }, false );
+			dims = hdf5Access.getDimsAndExistence( id );
 			cachedDimsAndExistence.put( id, dims );
 		}
 		return dims;
