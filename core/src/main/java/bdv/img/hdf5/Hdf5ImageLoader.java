@@ -50,7 +50,7 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 {
 	protected File hdf5File;
 
-	protected IHDF5Reader hdf5Reader;
+	protected HDF5Access hdf5Access;
 
 	protected VolatileGlobalCellCache< VolatileShortArray > cache;
 
@@ -119,7 +119,7 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 					return;
 				isOpen = true;
 
-				hdf5Reader = HDF5Factory.openForReading( hdf5File );
+				final IHDF5Reader hdf5Reader = HDF5Factory.openForReading( hdf5File );
 
 				maxNumLevels = 0;
 				perSetupMipmapInfo.clear();
@@ -145,7 +145,8 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 				final List< TimePoint > timepoints = sequenceDescription.getTimePoints().getTimePointsOrdered();
 				final int maxNumTimepoints = timepoints.get( timepoints.size() - 1 ).getId() + 1;
 				final int maxNumSetups = setups.get( setups.size() - 1 ).getId() + 1;
-				cache = new VolatileGlobalCellCache< VolatileShortArray >( new Hdf5VolatileShortArrayLoader( hdf5Reader ), maxNumTimepoints, maxNumSetups, maxNumLevels, 1 );
+				hdf5Access = new HDF5Access( hdf5Reader );
+				cache = new VolatileGlobalCellCache< VolatileShortArray >( new Hdf5VolatileShortArrayLoader( hdf5Access ), maxNumTimepoints, maxNumSetups, maxNumLevels, 1 );
 			}
 		}
 	}
@@ -284,7 +285,6 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 		DimsAndExistence dims = cachedDimsAndExistence.get( id );
 		if ( dims == null )
 		{
-			final String cellsPath = Util.getCellsPath( id );
 			HDF5DataSetInformation info = null;
 			boolean exists = false;
 			// pause Fetcher threads for 5 ms. There will be more calls to
@@ -292,13 +292,10 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 			// loaded, and all setups for the timepoint are loaded then. We
 			// don't want to interleave this with block loading operations.
 			cache.pauseFetcherThreadsFor( 5 );
-			synchronized ( hdf5Reader )
-			{
-				try {
-					info = hdf5Reader.getDataSetInformation( cellsPath );
-					exists = true;
-				} catch ( final Exception e ) {
-				}
+			try {
+				info = hdf5Access.getDataSetInformation( id );
+				exists = true;
+			} catch ( final Exception e ) {
 			}
 			if ( exists )
 				dims = new DimsAndExistence( reorder( info.getDimensions() ), true );
