@@ -156,7 +156,6 @@ public class WriteSequenceToHdf5
 		final int numTimepoints = timepointIdsSequence.size();
 		final ArrayList< Integer > setupIdsSequence = new ArrayList< Integer >( partition.getSetupIdSequenceToPartition().keySet() );
 		Collections.sort( setupIdsSequence );
-		final int numSetups = setupIdsSequence.size();
 
 		if ( ! ( seq.getImgLoader().getImageType() instanceof UnsignedShortType ) )
 			throw new IllegalArgumentException( "Expected BasicImgLoader<UnsignedShortTyp> but your dataset has BasicImgLoader<"
@@ -203,8 +202,18 @@ public class WriteSequenceToHdf5
 		{
 			final int timepointIdPartition = partition.getTimepointIdSequenceToPartition().get( timepointIdSequence );
 			progressWriter.out().printf( "proccessing timepoint %d / %d\n", ++timepointIndex, numTimepoints );
-			int setupIndex = 0;
+
+			// assemble the viewsetups that are present in this timepoint
+			final ArrayList< Integer > setupsTimePoint = new ArrayList< Integer >();
+
 			for ( final int setupIdSequence : setupIdsSequence )
+				if ( seq.getViewDescriptions().get( new ViewId( timepointIdSequence, setupIdSequence ) ).isPresent() )
+					setupsTimePoint.add( setupIdSequence );
+
+			final int numSetups = setupsTimePoint.size();
+
+			int setupIndex = 0;
+			for ( final int setupIdSequence : setupsTimePoint )
 			{
 				final int setupIdPartition = partition.getSetupIdSequenceToPartition().get( setupIdSequence );
 				progressWriter.out().printf( "proccessing setup %d / %d\n", ++setupIndex, numSetups );
