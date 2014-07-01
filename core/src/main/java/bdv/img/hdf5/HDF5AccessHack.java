@@ -15,10 +15,21 @@ import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5S_SELECT_SET;
 import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5T_NATIVE_INT16;
 
 import java.lang.reflect.Field;
+import java.util.LinkedHashMap;
+import java.util.Map.Entry;
 
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
-import ch.systemsx.cisd.hdf5.hdf5lib.H5D;
 
+/**
+ * Access chunked data-sets through lower-level HDF5. This avoids opening and
+ * closing the dataset for each chunk when accessing through jhdf5 (This is a
+ * huge bottleneck when accessing many small chunks).
+ *
+ * The HDF5 fileId is extracted from a jhdf5 HDF5Reader using reflection to
+ * avoid having to do everything ourselves.
+ *
+ * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ */
 public class HDF5AccessHack implements IHDF5Access
 {
 	private final IHDF5Reader hdf5Reader;
@@ -30,6 +41,62 @@ public class HDF5AccessHack implements IHDF5Access
 	private final long[] reorderedDimensions = new long[ 3 ];
 
 	private final long[] reorderedMin = new long[ 3 ];
+
+	private static final int MAX_OPEN_DATASETS = 48;
+
+	private class OpenDataSet
+	{
+		final int dataSetId;
+
+		final int fileSpaceId;
+
+		public OpenDataSet( final String cellsPath )
+		{
+			dataSetId = H5Dopen( fileId, cellsPath, H5P_DEFAULT );
+			fileSpaceId = H5Dget_space( dataSetId );
+		}
+
+		public void close()
+		{
+			H5Sclose( fileSpaceId );
+			H5Dclose( dataSetId );
+		}
+	}
+
+	private class OpenDataSetCache extends LinkedHashMap< ViewLevelId, OpenDataSet >
+	{
+		private static final long serialVersionUID = 1L;
+
+		public OpenDataSetCache()
+		{
+			super( MAX_OPEN_DATASETS, 0.75f, true );
+		}
+
+		@Override
+		protected boolean removeEldestEntry( final Entry< ViewLevelId, OpenDataSet > eldest )
+		{
+			if ( size() > MAX_OPEN_DATASETS )
+			{
+				eldest.getValue().close();
+				return true;
+			}
+			else
+				return false;
+		}
+
+		public OpenDataSet getDataSet( final ViewLevelId id )
+		{
+			OpenDataSet openDataSet = super.get( id );
+			if ( openDataSet == null )
+			{
+				openDataSet = new OpenDataSet( Util.getCellsPath( id ) );
+				put( id, openDataSet );
+			}
+			return openDataSet;
+		}
+	}
+
+	private final OpenDataSetCache openDataSetCache;
 
 	public HDF5AccessHack( final IHDF5Reader hdf5Reader ) throws ClassNotFoundException, SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException
 	{
@@ -53,24 +120,22 @@ public class HDF5AccessHack implements IHDF5Access
 		final Field f4 = k4.getDeclaredField( "numericConversionXferPropertyListID" );
 		f4.setAccessible( true );
 		numericConversionXferPropertyListID = ( ( Integer ) f4.get( h5 ) ).intValue();
+
+		openDataSetCache = new OpenDataSetCache();
 	}
 
 	@Override
 	public synchronized DimsAndExistence getDimsAndExistence( final ViewLevelId id )
 	{
-		final String cellsPath = Util.getCellsPath( id );
 		final long[] realDimensions = new long[ 3 ];
 		boolean exists = false;
 		try
 		{
-			final int dataSetId = H5D.H5Dopen( fileId, cellsPath, H5P_DEFAULT );
-			final int fileSpaceId = H5Dget_space( dataSetId );
+			final OpenDataSet dataset = openDataSetCache.getDataSet( id );
 			final long[] dimensions = new long[ H5S_MAX_RANK ];
 			final long[] maxDimensions = new long[ H5S_MAX_RANK ];
-			final int rank = H5Sget_simple_extent_dims( fileSpaceId, dimensions, maxDimensions );
+			final int rank = H5Sget_simple_extent_dims( dataset.fileSpaceId, dimensions, maxDimensions );
 			System.arraycopy( dimensions, 0, realDimensions, 0, rank );
-			H5Sclose( fileSpaceId );
-			H5Dclose( dataSetId );
 			exists = true;
 		}
 		catch ( final Exception e )
@@ -86,20 +151,31 @@ public class HDF5AccessHack implements IHDF5Access
 	{
 		if ( Thread.interrupted() )
 			throw new InterruptedException();
-		final String cellsPath = Util.getCellsPath( timepoint, setup, level );
 		Util.reorder( dimensions, reorderedDimensions );
 		Util.reorder( min, reorderedMin );
 
-		final int dataSetId = H5Dopen( fileId, cellsPath, H5P_DEFAULT );
-		final int fileSpaceId = H5Dget_space( dataSetId );
+		final OpenDataSet dataset = openDataSetCache.getDataSet( new ViewLevelId( timepoint, setup, level ) );
 		final int memorySpaceId = H5Screate_simple( reorderedDimensions.length, reorderedDimensions, null );
 		final short[] dataBlock = new short[ dimensions[ 0 ] * dimensions[ 1 ] * dimensions[ 2 ] ];
-		H5Sselect_hyperslab( fileSpaceId, H5S_SELECT_SET, reorderedMin, null, reorderedDimensions, null );
-		H5Dread( dataSetId, H5T_NATIVE_INT16, memorySpaceId, fileSpaceId, numericConversionXferPropertyListID, dataBlock );
+		H5Sselect_hyperslab( dataset.fileSpaceId, H5S_SELECT_SET, reorderedMin, null, reorderedDimensions, null );
+		H5Dread( dataset.dataSetId, H5T_NATIVE_INT16, memorySpaceId, dataset.fileSpaceId, numericConversionXferPropertyListID, dataBlock );
 		H5Sclose( memorySpaceId );
-		H5Sclose( fileSpaceId );
-		H5Dclose( dataSetId );
 
 		return dataBlock;
+	}
+
+	@Override
+	protected void finalize() throws Throwable
+	{
+		try
+		{
+			for ( final OpenDataSet dataset : openDataSetCache.values() )
+				dataset.close();
+			hdf5Reader.close();
+		}
+		finally
+		{
+			super.finalize();
+		}
 	}
 }

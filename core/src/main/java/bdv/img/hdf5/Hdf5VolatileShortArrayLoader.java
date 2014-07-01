@@ -34,7 +34,8 @@ public class Hdf5VolatileShortArrayLoader implements CacheArrayLoader< VolatileS
 	}
 
 	@Override
-	public int getBytesPerElement() {
+	public int getBytesPerElement()
+	{
 		return 2;
 	}
 
@@ -45,38 +46,36 @@ public class Hdf5VolatileShortArrayLoader implements CacheArrayLoader< VolatileS
 //	public static volatile long sLoad = 0;
 //
 //	@Override
-//	public VolatileShortArray loadArray( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min )
+//	public VolatileShortArray loadArray( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
 //	{
-//		final MDShortArray array;
-//		synchronized ( hdf5Reader )
+//		final short[] array;
+//
+//		pStart = System.currentTimeMillis();
+//		final long msBetweenLoads = pStart - pEnd;
+//		if ( msBetweenLoads > 2 )
 //		{
-//			pStart = System.currentTimeMillis();
-//			final long msBetweenLoads = pStart - pEnd;
-//			if ( msBetweenLoads > 2 )
-//			{
-//				log.println( msBetweenLoads + " ms pause before this load." );
-//				final StringWriter sw = new StringWriter();
-//				final StackTraceElement[] trace = Thread.currentThread().getStackTrace();
-//				for ( final StackTraceElement elem : trace )
-//					sw.write( elem.getClassName() + "." + elem.getMethodName() + "\n" );
-//				log.println( sw.toString() );
-//			}
-//			final long t0 = System.currentTimeMillis();
-//			reorder( dimensions, reorderedDimensions );
-//			reorder( min, reorderedMin );
-//			array = hdf5Reader.readShortMDArrayBlockWithOffset( getCellsPath( timepoint, setup, level ), reorderedDimensions, reorderedMin );
-//			pEnd = System.currentTimeMillis();
-//			final long t = System.currentTimeMillis() - t0;
-//			final long size = array.size();
-//			tLoad += t;
-//			sLoad += size;
-//			if ( sLoad > 1000000 )
-//			{
-//				log.println( String.format( "%.0f k shorts/sec ", ( ( double ) sLoad / tLoad ) ) );
-//				tLoad = 1;
-//				sLoad = 1;
-//			}
+//			log.println( msBetweenLoads + " ms pause before this load." );
+//			final StringWriter sw = new StringWriter();
+//			final StackTraceElement[] trace = Thread.currentThread().getStackTrace();
+//			for ( final StackTraceElement elem : trace )
+//				sw.write( elem.getClassName() + "." + elem.getMethodName() + "\n" );
+//			log.println( sw.toString() );
 //		}
-//		return new VolatileShortArray( array.getAsFlatArray(), true );
+//		final long t0 = System.currentTimeMillis();
+//		array = hdf5Access.readShortMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min );
+//		pEnd = System.currentTimeMillis();
+//		final long t = System.currentTimeMillis() - t0;
+//		final long size = array.length;
+//		tLoad += t;
+//		sLoad += size;
+//		if ( sLoad > 10000000 )
+//		{
+//			final double megPerSec = sLoad * 2000.0 / ( 1024.0 * 1024.0 * tLoad ); // megabytes read per second
+//			log.println( String.format( "%.0f mb/sec ", megPerSec ) );
+//			tLoad = 1;
+//			sLoad = 1;
+//		}
+//
+//		return new VolatileShortArray( array, true );
 //	}
 }
