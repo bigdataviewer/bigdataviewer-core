@@ -266,6 +266,13 @@ public class ExportImagePlusPlugIn implements PlugIn
 				@Override
 				public boolean dialogItemChanged( final GenericDialog dialog, final AWTEvent e )
 				{
+					gd.getNextBoolean();
+					gd.getNextString();
+					gd.getNextString();
+					gd.getNextChoiceIndex();
+					gd.getNextNumber();
+					gd.getNextNumber();
+					gd.getNextString();
 					if ( e instanceof ItemEvent && e.getID() == ItemEvent.ITEM_STATE_CHANGED && e.getSource() == cMinMaxChoices )
 					{
 						final boolean enable = cMinMaxChoices.getSelectedIndex() == 2;
