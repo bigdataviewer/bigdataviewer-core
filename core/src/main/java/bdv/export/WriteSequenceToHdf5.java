@@ -113,7 +113,7 @@ public class WriteSequenceToHdf5
 					for ( int level = 0; level < numLevels; ++level )
 					{
 						final String relativePath = XmlHelpers.getRelativePath( new File( partition.getPath() ), basePath ).getPath();
-						hdf5Writer.createOrUpdateExternalLink( relativePath, Util.getCellsPath( idPartition, level ), Util.getCellsPath( idSequence, level ) );
+						hdf5Writer.object().createOrUpdateExternalLink( relativePath, Util.getCellsPath( idPartition, level ), Util.getCellsPath( idSequence, level ) );
 					}
 				}
 			}
@@ -258,10 +258,10 @@ public class WriteSequenceToHdf5
 
 					final int[] cellDimensions = subdivisions[ level ];
 					final ViewId viewIdPartition = new ViewId( timepointIdPartition, setupIdPartition );
-					hdf5Writer.createGroup( Util.getGroupPath( viewIdPartition, level ) );
+					hdf5Writer.object().createGroup( Util.getGroupPath( viewIdPartition, level ) );
 					final String path = Util.getCellsPath( viewIdPartition, level );
-//					hdf5Writer.createShortMDArray( path, reorder( dimensions ), reorder( cellDimensions ), HDF5IntStorageFeatures.INT_AUTO_SCALING );
-					hdf5Writer.createShortMDArray( path, reorder( dimensions ), reorder( cellDimensions ), HDF5IntStorageFeatures.INT_AUTO_SCALING_DEFLATE );
+//					hdf5Writer.int16().createMDArray( path, reorder( dimensions ), reorder( cellDimensions ), HDF5IntStorageFeatures.INT_AUTO_SCALING );
+					hdf5Writer.int16().createMDArray( path, reorder( dimensions ), reorder( cellDimensions ), HDF5IntStorageFeatures.INT_AUTO_SCALING_DEFLATE );
 
 					final long[] numCells = new long[ n ];
 					final int[] borderSize = new int[ n ];
@@ -313,7 +313,7 @@ public class WriteSequenceToHdf5
 						reorder( currentCellMin, currentCellMinRM );
 						reorder( currentCellDim, currentCellDimRM );
 						final MDShortArray array = new MDShortArray( ( ( ShortArray ) cell.update( null ) ).getCurrentStorageArray(), currentCellDimRM );
-						hdf5Writer.writeShortMDArrayBlockWithOffset( path, array, currentCellMinRM );
+						hdf5Writer.int16().writeMDArrayBlockWithOffset( path, array, currentCellMinRM );
 					}
 					progressWriter.setProgress( ( double ) numCompletedTasks++ / numTasks );
 				}
