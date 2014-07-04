@@ -11,7 +11,6 @@
 		<version>2.0.0-SNAPSHOT</version>
 	</parent>
 
-	<groupId>sc.fiji</groupId>
 	<artifactId>bigdataviewer</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
 	<packaging>pom</packaging>
@@ -19,10 +18,12 @@
 	<name>BigDataViewer Projects</name>
 	<description>Umbrella project for BigDataViewer projects.</description>
 
+<!--
 	<properties>
-		<imglib2.version>2.0.0-beta-26</imglib2.version>
-		<imglib2-ij.version>2.0.0-beta-26</imglib2-ij.version>
+		<imglib2.version>2.0.0-SNAPSHOT</imglib2.version>
+		<imglib2-ij.version>2.0.0-beta-27-SNAPSHOT</imglib2-ij.version>
 	</properties>
+-->
 
 	<modules>
 		<module>core</module>
