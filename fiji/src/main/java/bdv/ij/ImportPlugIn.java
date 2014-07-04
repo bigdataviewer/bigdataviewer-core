@@ -9,6 +9,7 @@ import ij.gui.GenericDialog;
 import ij.plugin.PlugIn;
 
 import java.awt.AWTEvent;
+import java.awt.Checkbox;
 import java.awt.Scrollbar;
 import java.awt.TextField;
 import java.awt.event.TextEvent;
@@ -36,8 +37,9 @@ public class ImportPlugIn implements PlugIn
 	public static String xmlFile = "";
 	public static int timepoint = 0;
 	public static int setup = 0;
+	public static boolean openAsVirtualStack = false;
 
-	private SequenceDescriptionMinimal openSequence( final String xmlFilename ) throws SpimDataException
+	private static SequenceDescriptionMinimal openSequence( final String xmlFilename ) throws SpimDataException
 	{
 		final File f = new File( xmlFilename );
 		if ( f.exists() && f.isFile() && f.getName().endsWith( ".xml" ) )
@@ -61,6 +63,8 @@ public class ImportPlugIn implements PlugIn
 		gd.addSlider( "setup index", 0, 0, setup );
 		final Scrollbar slSetup = (Scrollbar) gd.getSliders().lastElement();
 		final TextField tfSetup = (TextField) gd.getNumericFields().lastElement();
+		gd.addCheckbox( "open as virtual stack", openAsVirtualStack );
+		final Checkbox cVirtual = (Checkbox) gd.getCheckboxes().lastElement();
 
 		class TryOpen
 		{
@@ -89,6 +93,7 @@ public class ImportPlugIn implements PlugIn
 				tfTimepoint.setEnabled( enable );
 				slSetup.setEnabled( enable );
 				tfSetup.setEnabled( enable );
+				cVirtual.setEnabled( enable );
 			}
 		}
 		final TryOpen tryOpen = new TryOpen();
@@ -102,6 +107,7 @@ public class ImportPlugIn implements PlugIn
 				gd.getNextString();
 				gd.getNextNumber();
 				gd.getNextNumber();
+				gd.getNextBoolean();
 				if ( e instanceof TextEvent && e.getID() == TextEvent.TEXT_VALUE_CHANGED && e.getSource() == tfXmlFile )
 				{
 					final TextField tf = ( TextField ) e.getSource();
@@ -119,6 +125,7 @@ public class ImportPlugIn implements PlugIn
 		xmlFile = gd.getNextString();
 		timepoint = ( int ) gd.getNextNumber();
 		setup = ( int ) gd.getNextNumber();
+		openAsVirtualStack = gd.getNextBoolean();
 
 		System.out.println( xmlFile + " " + timepoint + " " + setup );
 		try
@@ -137,7 +144,20 @@ public class ImportPlugIn implements PlugIn
 				@SuppressWarnings( "unchecked" )
 				final BasicImgLoader< UnsignedShortType > il = ( BasicImgLoader< UnsignedShortType > ) seq.getImgLoader();
 				final RandomAccessibleInterval< UnsignedShortType > img = il.getImage( new ViewId( timepointId, setupId ) );
-				final ImagePlus imp = net.imglib2.img.display.imagej.ImageJFunctions.wrap( img, "" ).duplicate();
+
+//				final UnsignedShortType t = new UnsignedShortType();
+//				final Img< UnsignedShortType > copy = net.imglib2.util.Util.getArrayOrCellImgFactory( img, t ).create( img, t );
+//				final Cursor< UnsignedShortType > in = Views.flatIterable( img ).cursor();
+//				final Cursor< UnsignedShortType > out = Views.flatIterable( copy ).cursor();
+//				final long t0 = System.currentTimeMillis();
+//				while( in.hasNext() )
+//					out.next().set( in.next() );
+//				final long t1 = System.currentTimeMillis();
+//				System.out.println( t1 - t0 );
+
+				ImagePlus imp = net.imglib2.img.display.imagej.ImageJFunctions.wrap( img, "" );
+				if ( !openAsVirtualStack )
+					imp = imp.duplicate();
 				imp.setTitle( new File( xmlFile ).getName() + " " + timepoint + " " + setup );
 				imp.show();
 			}
@@ -154,5 +174,4 @@ public class ImportPlugIn implements PlugIn
 		new ImageJ();
 		new ImportPlugIn().run( null );
 	}
-
 }
