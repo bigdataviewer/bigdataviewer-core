@@ -72,12 +72,6 @@
 	</developers>
 
 	<repositories>
-		<!-- local repository for jhdf5 -->
-		<repository>
-			<id>project.local</id>
-			<name>project</name>
-			<url>file:${project.basedir}/repo</url>
-		</repository>
 		<!-- NB: for project parent -->
 		<repository>
 			<id>imagej.releases</id>
@@ -86,6 +80,10 @@
 		<repository>
 			<id>imagej.snapshots</id>
 			<url>http://maven.imagej.net/content/repositories/snapshots</url>
+		</repository>
+		<repository>
+			<id>imagej.thirdparty</id>
+			<url>http://maven.imagej.net/content/repositories/thirdparty</url>
 		</repository>
 	</repositories>
 
