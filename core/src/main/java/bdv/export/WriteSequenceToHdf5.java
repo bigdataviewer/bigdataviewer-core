@@ -1,8 +1,19 @@
 package bdv.export;
 
 import static bdv.img.hdf5.Util.reorder;
+import static ch.systemsx.cisd.hdf5.hdf5lib.H5D.H5Dclose;
+import static ch.systemsx.cisd.hdf5.hdf5lib.H5D.H5Dget_space;
+import static ch.systemsx.cisd.hdf5.hdf5lib.H5D.H5Dopen;
+import static ch.systemsx.cisd.hdf5.hdf5lib.H5D.H5Dwrite;
+import static ch.systemsx.cisd.hdf5.hdf5lib.H5S.H5Sclose;
+import static ch.systemsx.cisd.hdf5.hdf5lib.H5S.H5Screate_simple;
+import static ch.systemsx.cisd.hdf5.hdf5lib.H5S.H5Sselect_hyperslab;
+import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5P_DEFAULT;
+import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5S_SELECT_SET;
+import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5T_NATIVE_INT16;
 
 import java.io.File;
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -183,6 +194,16 @@ public class WriteSequenceToHdf5
 		if ( hdf5File.exists() )
 			hdf5File.delete();
 		final IHDF5Writer hdf5Writer = HDF5Factory.open( hdf5File );
+		IHDF5Access hdf5Access;
+		try
+		{
+			hdf5Access = new HDF5AccessHack( hdf5Writer );
+		}
+		catch ( final Exception e )
+		{
+			e.printStackTrace();
+			hdf5Access = new HDF5Access( hdf5Writer );
+		}
 
 		// write Mipmap descriptions
 		for ( final Entry< Integer, Integer > entry : partition.getSetupIdSequenceToPartition().entrySet() )
@@ -270,56 +291,153 @@ public class WriteSequenceToHdf5
 						numCells[ d ] = ( dimensions[ d ] - 1 ) / cellDimensions[ d ] + 1;
 						borderSize[ d ] = ( int ) ( dimensions[ d ] - ( numCells[ d ] - 1 ) * cellDimensions[ d ] );
 					}
-
 					final LocalizingZeroMinIntervalIterator i = new LocalizingZeroMinIntervalIterator( numCells );
 					final long[] currentCellMin = new long[ n ];
 					final long[] currentCellMax = new long[ n ];
 					final long[] currentCellDim = new long[ n ];
 					final long[] currentCellPos = new long[ n ];
-					final long[] currentCellMinRM = new long[ n ];
-					final long[] currentCellDimRM = new long[ n ];
 					final long[] blockMin = new long[ n ];
-					while ( i.hasNext() )
+					try
 					{
-						i.fwd();
-						i.localize( currentCellPos );
-						boolean isBorderCell = false;
-						for ( int d = 0; d < n; ++d )
+						hdf5Access.openDataset( path );
+						while ( i.hasNext() )
 						{
-							currentCellMin[ d ] = currentCellPos[ d ] * cellDimensions[ d ];
-							blockMin[ d ] = currentCellMin[ d ] * factor[ d ];
-							final boolean isBorderCellInThisDim = ( currentCellPos[ d ] + 1 == numCells[ d ] );
-							currentCellDim[ d ] = isBorderCellInThisDim ? borderSize[ d ] : cellDimensions[ d ];
-							currentCellMax[ d ] = currentCellMin[ d ] + currentCellDim[ d ] - 1;
-							isBorderCell |= isBorderCellInThisDim;
-						}
+							i.fwd();
+							i.localize( currentCellPos );
+							boolean isBorderCell = false;
+							for ( int d = 0; d < n; ++d )
+							{
+								currentCellMin[ d ] = currentCellPos[ d ] * cellDimensions[ d ];
+								blockMin[ d ] = currentCellMin[ d ] * factor[ d ];
+								final boolean isBorderCellInThisDim = ( currentCellPos[ d ] + 1 == numCells[ d ] );
+								currentCellDim[ d ] = isBorderCellInThisDim ? borderSize[ d ] : cellDimensions[ d ];
+								currentCellMax[ d ] = currentCellMin[ d ] + currentCellDim[ d ] - 1;
+								isBorderCell |= isBorderCellInThisDim;
+							}
 
-						final ArrayImg< UnsignedShortType, ? > cell = ArrayImgs.unsignedShorts( currentCellDim );
-						final RandomAccess< UnsignedShortType > out = cell.randomAccess();
-						if ( fullResolution )
-						{
-							copyBlock( out, currentCellDim, in, blockMin );
-						}
-						else
-						{
-							boolean requiresExtension = false;
-							if ( isBorderCell )
-								for ( int d = 0; d < n; ++d )
-									if ( ( currentCellMax[ d ] + 1 ) * factor[ d ] > img.dimension( d ) )
-										requiresExtension = true;
-							downsampleBlock( out, currentCellDim, requiresExtension ? extendedBlock : block, blockMin, factor, scale );
-						}
+							final ArrayImg< UnsignedShortType, ? > cell = ArrayImgs.unsignedShorts( currentCellDim );
+							final RandomAccess< UnsignedShortType > out = cell.randomAccess();
+							if ( fullResolution )
+							{
+								copyBlock( out, currentCellDim, in, blockMin );
+							}
+							else
+							{
+								boolean requiresExtension = false;
+								if ( isBorderCell )
+									for ( int d = 0; d < n; ++d )
+										if ( ( currentCellMax[ d ] + 1 ) * factor[ d ] > img.dimension( d ) )
+											requiresExtension = true;
+								downsampleBlock( out, currentCellDim, requiresExtension ? extendedBlock : block, blockMin, factor, scale );
+							}
 
-						reorder( currentCellMin, currentCellMinRM );
-						reorder( currentCellDim, currentCellDimRM );
-						final MDShortArray array = new MDShortArray( ( ( ShortArray ) cell.update( null ) ).getCurrentStorageArray(), currentCellDimRM );
-						hdf5Writer.int16().writeMDArrayBlockWithOffset( path, array, currentCellMinRM );
+							hdf5Access.writeShortMDArrayBlockWithOffset( ( ( ShortArray ) cell.update( null ) ).getCurrentStorageArray(), currentCellDim, currentCellMin );
+						}
+					}
+					finally
+					{
+						hdf5Access.closeDataset();
 					}
 					progressWriter.setProgress( ( double ) numCompletedTasks++ / numTasks );
 				}
 			}
 		}
 		hdf5Writer.close();
+	}
+
+	private static interface IHDF5Access
+	{
+		public void openDataset( final String datasetPath );
+
+		public void closeDataset();
+
+		public void writeShortMDArrayBlockWithOffset( final short[] data, final long[] dimensions, final long[] min );
+	}
+
+	private static class HDF5Access implements IHDF5Access
+	{
+		private final IHDF5Writer hdf5Writer;
+
+		private final long[] reorderedDimensions = new long[ 3 ];
+
+		private final long[] reorderedMin = new long[ 3 ];
+
+		private String datasetPath;
+
+		public HDF5Access( final IHDF5Writer hdf5Writer )
+		{
+			this.hdf5Writer = hdf5Writer;
+		}
+
+		@Override
+		public void writeShortMDArrayBlockWithOffset( final short[] data, final long[] dimensions, final long[] min )
+		{
+			reorder( dimensions, reorderedDimensions );
+			reorder( min, reorderedMin );
+			final MDShortArray array = new MDShortArray( data, reorderedDimensions );
+			hdf5Writer.int16().writeMDArrayBlockWithOffset( datasetPath, array, reorderedMin );
+		}
+
+		@Override
+		public void openDataset( final String datasetPath )
+		{
+			this.datasetPath = datasetPath;
+		}
+
+		@Override
+		public void closeDataset()
+		{}
+	}
+
+	private static class HDF5AccessHack implements IHDF5Access
+	{
+		private final int fileId;
+
+		private final long[] reorderedDimensions = new long[ 3 ];
+
+		private final long[] reorderedMin = new long[ 3 ];
+
+		private int dataSetId;
+
+		private int fileSpaceId;
+
+		public HDF5AccessHack( final IHDF5Writer hdf5Writer ) throws ClassNotFoundException, SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException
+		{
+			final Class< ? > k = Class.forName( "ch.systemsx.cisd.hdf5.HDF5Writer" );
+			final Field f = k.getDeclaredField( "baseWriter" );
+			f.setAccessible( true );
+			final Object baseWriter = f.get( hdf5Writer );
+
+			final Class< ? > k2 = Class.forName( "ch.systemsx.cisd.hdf5.HDF5BaseReader" );
+			final Field f2 = k2.getDeclaredField( "fileId" );
+			f2.setAccessible( true );
+			fileId = ( ( Integer ) f2.get( baseWriter ) ).intValue();
+		}
+
+		@Override
+		public void openDataset( final String datasetPath )
+		{
+			dataSetId = H5Dopen( fileId, datasetPath, H5P_DEFAULT );
+			fileSpaceId = H5Dget_space( dataSetId );
+		}
+
+		@Override
+		public void closeDataset()
+		{
+			H5Sclose( fileSpaceId );
+			H5Dclose( dataSetId );
+		}
+
+		@Override
+		public void writeShortMDArrayBlockWithOffset( final short[] data, final long[] dimensions, final long[] min )
+		{
+			reorder( dimensions, reorderedDimensions );
+			reorder( min, reorderedMin );
+			final int memorySpaceId = H5Screate_simple( reorderedDimensions.length, reorderedDimensions, null );
+			H5Sselect_hyperslab( fileSpaceId, H5S_SELECT_SET, reorderedMin, null, reorderedDimensions, null );
+			H5Dwrite( dataSetId, H5T_NATIVE_INT16, memorySpaceId, fileSpaceId, H5P_DEFAULT, data );
+			H5Sclose( memorySpaceId );
+		}
 	}
 
 	private static < T extends RealType< T > > void copyBlock( final RandomAccess< T > out, final long[] outDim, final RandomAccess< T > in, final long[] blockMin )
