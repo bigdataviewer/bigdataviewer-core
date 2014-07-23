@@ -2,6 +2,7 @@ package bdv;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import mpicbg.spim.data.generic.AbstractSpimData;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
@@ -38,6 +39,8 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 
 	protected final Map< ViewId, ViewRegistration > viewRegistrations;
 
+	protected final Set< ViewId > missingViews;
+
 	protected final int numMipmapLevels;
 
 	protected final static int numInterpolationMethods = 2;
@@ -56,6 +59,7 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
 		timePointsOrdered = seq.getTimePoints().getTimePointsOrdered();
 		viewRegistrations = spimData.getViewRegistrations().getViewRegistrations();
+		missingViews = seq.getMissingViews().getMissingViews();
 		numMipmapLevels =  ( ( ViewerImgLoader< ?, ? > ) seq.getImgLoader() ).numMipmapLevels( setupId );
 		currentSources = new RandomAccessibleInterval[ numMipmapLevels ];
 		currentInterpolatedSources = new RealRandomAccessible[ numMipmapLevels ][ numInterpolationMethods ];
@@ -106,7 +110,7 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 	@Override
 	public boolean isPresent( final int t )
 	{
-		return t >= 0 && t < timePointsOrdered.size();
+		return t >= 0 && t < timePointsOrdered.size() && !missingViews.contains( new ViewId( t, setupId ) );
 	}
 
 	@Override
