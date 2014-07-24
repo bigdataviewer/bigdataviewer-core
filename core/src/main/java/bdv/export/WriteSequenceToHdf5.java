@@ -81,6 +81,95 @@ import ch.systemsx.cisd.hdf5.IHDF5Writer;
  */
 public class WriteSequenceToHdf5
 {
+
+	/**
+	 * Create a hdf5 file containing image data from all views and all
+	 * timepoints in a chunked, mipmaped representation.
+	 *
+	 * @param seq
+	 *            description of the sequence to be stored as hdf5. (The
+	 *            {@link AbstractSequenceDescription} contains the number of
+	 *            setups and timepoints as well as an {@link BasicImgLoader} that
+	 *            provides the image data, Registration information is not
+	 *            needed here, that will go into the accompanying xml).
+	 * @param perSetupMipmapInfo
+	 *            this maps from setup {@link BasicViewSetup#getId() id} to
+	 *            {@link ExportMipmapInfo} for that setup. The
+	 *            {@link ExportMipmapInfo} contains for each mipmap level, the
+	 *            subsampling factors and subdivision block sizes.
+	 * @param hdf5File
+	 *            hdf5 file to which the image data is written.
+	 * @param progressWriter
+	 *            completion ratio and status output will be directed here.
+	 */
+	public static void writeHdf5File( final AbstractSequenceDescription< ?, ?, ? > seq, final Map< Integer, ExportMipmapInfo > perSetupMipmapInfo, final File hdf5File, final ProgressWriter progressWriter )
+	{
+		final HashMap< Integer, Integer > timepointIdSequenceToPartition = new HashMap< Integer, Integer >();
+		for ( final TimePoint timepoint : seq.getTimePoints().getTimePointsOrdered() )
+			timepointIdSequenceToPartition.put( timepoint.getId(), timepoint.getId() );
+
+		final HashMap< Integer, Integer > setupIdSequenceToPartition = new HashMap< Integer, Integer >();
+		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
+			setupIdSequenceToPartition.put( setup.getId(), setup.getId() );
+
+		final Partition partition = new Partition( hdf5File.getPath(), timepointIdSequenceToPartition, setupIdSequenceToPartition );
+		writeHdf5PartitionFile( seq, perSetupMipmapInfo, partition, progressWriter );
+	}
+
+	/**
+	 * Create a hdf5 file containing image data from all views and all
+	 * timepoints in a chunked, mipmaped representation. This is the same as
+	 * {@link WriteSequenceToHdf5#writeHdf5File(AbstractSequenceDescription, ArrayList, ArrayList, File, ProgressWriter)}
+	 * except that only one set of supsampling factors and and subdivision
+	 * blocksizes is given, which is used for all {@link BasicViewSetup views}.
+	 *
+	 * @param seq
+	 *            description of the sequence to be stored as hdf5. (The
+	 *            {@link AbstractSequenceDescription} contains the number of setups and
+	 *            timepoints as well as an {@link BasicImgLoader} that provides the
+	 *            image data, Registration information is not needed here, that
+	 *            will go into the accompanying xml).
+	 * @param resolutions
+	 *            this nested arrays contains per mipmap level, the subsampling
+	 *            factors.
+	 * @param subdivisions
+	 *            this nested arrays contains per mipmap level, the subdivision
+	 *            block sizes.
+	 * @param hdf5File
+	 *            hdf5 file to which the image data is written.
+	 * @param progressWriter
+	 *            completion ratio and status output will be directed here.
+	 */
+	public static void writeHdf5File( final AbstractSequenceDescription< ?, ?, ? > seq, final int[][] resolutions, final int[][] subdivisions, final File hdf5File, final ProgressWriter progressWriter )
+	{
+		final HashMap< Integer, ExportMipmapInfo > perSetupMipmapInfo = new HashMap< Integer, ExportMipmapInfo >();
+		final ExportMipmapInfo mipmapInfo = new ExportMipmapInfo( resolutions, subdivisions );
+		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
+			perSetupMipmapInfo.put( setup.getId(), mipmapInfo );
+		writeHdf5File( seq, perSetupMipmapInfo, hdf5File, progressWriter );
+	}
+
+	/**
+	 * Create a hdf5 master file linking to image data from all views and all
+	 * timepoints. This is the same as
+	 * {@link #writeHdf5PartitionLinkFile(AbstractSequenceDescription, Map, ArrayList, File)},
+	 * except that the information about the partition files as well as the
+	 * path of the master file to be written is obtained from the
+	 * {@link BasicImgLoader} of the sequence, which must be a
+	 * {@link Hdf5ImageLoader}.
+	 *
+	 * @param seq
+	 *            description of the sequence to be stored as hdf5. (The
+	 *            {@link AbstractSequenceDescription} contains the number of
+	 *            setups and timepoints as well as an {@link BasicImgLoader}
+	 *            that provides the image data, Registration information is not
+	 *            needed here, that will go into the accompanying xml).
+	 * @param perSetupMipmapInfo
+	 *            this maps from setup {@link BasicViewSetup#getId() id} to
+	 *            {@link ExportMipmapInfo} for that setup. The
+	 *            {@link ExportMipmapInfo} contains for each mipmap level, the
+	 *            subsampling factors and subdivision block sizes.
+	 */
 	public static void writeHdf5PartitionLinkFile( final AbstractSequenceDescription< ?, ?, ? > seq, final Map< Integer, ExportMipmapInfo > perSetupMipmapInfo )
 	{
 		if ( ! ( seq.getImgLoader() instanceof Hdf5ImageLoader ) )
@@ -89,6 +178,32 @@ public class WriteSequenceToHdf5
 		writeHdf5PartitionLinkFile( seq, perSetupMipmapInfo, loader.getPartitions(), loader.getHdf5File() );
 	}
 
+	/**
+	 * Create a hdf5 master file linking to image data from all views and all
+	 * timepoints. Which hdf5 files contain which part of the image data is
+	 * specified in the {@code portitions} parameter.
+	 *
+	 * Note that this method only writes the master file containing links. The
+	 * individual partitions need to be written with
+	 * {@link #writeHdf5PartitionFile(AbstractSequenceDescription, Map, Partition, ProgressWriter)}.
+	 *
+	 * @param seq
+	 *            description of the sequence to be stored as hdf5. (The
+	 *            {@link AbstractSequenceDescription} contains the number of
+	 *            setups and timepoints as well as an {@link BasicImgLoader}
+	 *            that provides the image data, Registration information is not
+	 *            needed here, that will go into the accompanying xml).
+	 * @param perSetupMipmapInfo
+	 *            this maps from setup {@link BasicViewSetup#getId() id} to
+	 *            {@link ExportMipmapInfo} for that setup. The
+	 *            {@link ExportMipmapInfo} contains for each mipmap level, the
+	 *            subsampling factors and subdivision block sizes.
+	 * @param partitions
+	 *            which parts of the dataset are stored in which files.
+	 * @param hdf5File
+	 *            hdf5 master file to which the image data from the partition
+	 *            files is linked.
+	 */
 	public static void writeHdf5PartitionLinkFile( final AbstractSequenceDescription< ?, ?, ? > seq, final Map< Integer, ExportMipmapInfo > perSetupMipmapInfo, final ArrayList< Partition > partitions, final File hdf5File )
 	{
 		// open HDF5 output file
@@ -710,72 +825,5 @@ public class WriteSequenceToHdf5
 			block.setPosition( blockMin[ 1 ], 1 );
 			block.move( blockSize[ 2 ], 2 );
 		}
-	}
-
-	/**
-	 * Create a hdf5 file containing image data from all views and all
-	 * timepoints in a chunked, mipmaped representation.
-	 *
-	 * @param seq
-	 *            description of the sequence to be stored as hdf5. (The
-	 *            {@link AbstractSequenceDescription} contains the number of
-	 *            setups and timepoints as well as an {@link BasicImgLoader} that
-	 *            provides the image data, Registration information is not
-	 *            needed here, that will go into the accompanying xml).
-	 * @param perSetupMipmapInfo
-	 *            this maps from setup {@link BasicViewSetup#getId() id} to
-	 *            {@link ExportMipmapInfo} for that setup. The
-	 *            {@link ExportMipmapInfo} contains for each mipmap level, the
-	 *            subsampling factors and subdivision block sizes.
-	 * @param hdf5File
-	 *            hdf5 file to which the image data is written.
-	 * @param progressWriter
-	 *            completion ratio and status output will be directed here.
-	 */
-	public static void writeHdf5File( final AbstractSequenceDescription< ?, ?, ? > seq, final Map< Integer, ExportMipmapInfo > perSetupMipmapInfo, final File hdf5File, final ProgressWriter progressWriter )
-	{
-		final HashMap< Integer, Integer > timepointIdSequenceToPartition = new HashMap< Integer, Integer >();
-		for ( final TimePoint timepoint : seq.getTimePoints().getTimePointsOrdered() )
-			timepointIdSequenceToPartition.put( timepoint.getId(), timepoint.getId() );
-
-		final HashMap< Integer, Integer > setupIdSequenceToPartition = new HashMap< Integer, Integer >();
-		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
-			setupIdSequenceToPartition.put( setup.getId(), setup.getId() );
-
-		final Partition partition = new Partition( hdf5File.getPath(), timepointIdSequenceToPartition, setupIdSequenceToPartition );
-		writeHdf5PartitionFile( seq, perSetupMipmapInfo, partition, progressWriter );
-	}
-
-	/**
-	 * Create a hdf5 file containing image data from all views and all
-	 * timepoints in a chunked, mipmaped representation. This is the same as
-	 * {@link WriteSequenceToHdf5#writeHdf5File(AbstractSequenceDescription, ArrayList, ArrayList, File, ProgressWriter)}
-	 * except that only one set of supsampling factors and and subdivision
-	 * blocksizes is given, which is used for all {@link BasicViewSetup views}.
-	 *
-	 * @param seq
-	 *            description of the sequence to be stored as hdf5. (The
-	 *            {@link AbstractSequenceDescription} contains the number of setups and
-	 *            timepoints as well as an {@link BasicImgLoader} that provides the
-	 *            image data, Registration information is not needed here, that
-	 *            will go into the accompanying xml).
-	 * @param resolutions
-	 *            this nested arrays contains per mipmap level, the subsampling
-	 *            factors.
-	 * @param subdivisions
-	 *            this nested arrays contains per mipmap level, the subdivision
-	 *            block sizes.
-	 * @param hdf5File
-	 *            hdf5 file to which the image data is written.
-	 * @param progressWriter
-	 *            completion ratio and status output will be directed here.
-	 */
-	public static void writeHdf5File( final AbstractSequenceDescription< ?, ?, ? > seq, final int[][] resolutions, final int[][] subdivisions, final File hdf5File, final ProgressWriter progressWriter )
-	{
-		final HashMap< Integer, ExportMipmapInfo > perSetupMipmapInfo = new HashMap< Integer, ExportMipmapInfo >();
-		final ExportMipmapInfo mipmapInfo = new ExportMipmapInfo( resolutions, subdivisions );
-		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
-			perSetupMipmapInfo.put( setup.getId(), mipmapInfo );
-		writeHdf5File( seq, perSetupMipmapInfo, hdf5File, progressWriter );
 	}
 }
