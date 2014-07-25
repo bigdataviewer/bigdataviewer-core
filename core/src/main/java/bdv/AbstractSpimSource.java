@@ -1,5 +1,6 @@
 package bdv;
 
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -59,7 +60,9 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
 		timePointsOrdered = seq.getTimePoints().getTimePointsOrdered();
 		viewRegistrations = spimData.getViewRegistrations().getViewRegistrations();
-		missingViews = seq.getMissingViews().getMissingViews();
+		missingViews = seq.getMissingViews() == null
+				? new HashSet< ViewId >()
+				: seq.getMissingViews().getMissingViews();
 		numMipmapLevels =  ( ( ViewerImgLoader< ?, ? > ) seq.getImgLoader() ).numMipmapLevels( setupId );
 		currentSources = new RandomAccessibleInterval[ numMipmapLevels ];
 		currentInterpolatedSources = new RealRandomAccessible[ numMipmapLevels ][ numInterpolationMethods ];
