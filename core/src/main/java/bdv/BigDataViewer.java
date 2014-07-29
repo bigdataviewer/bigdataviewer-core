@@ -111,8 +111,8 @@ public class BigDataViewer
 	private static < T extends RealType< T >, V extends Volatile< T > & RealType< V > > void initSetupsRealType(
 			final AbstractSpimData< ? > spimData,
 			final T type,
-			final ArrayList< ConverterSetup > converterSetups,
-			final ArrayList< SourceAndConverter< ? > > sources )
+			final List< ConverterSetup > converterSetups,
+			final List< SourceAndConverter< ? > > sources )
 	{
 		if ( spimData.getSequenceDescription().getImgLoader() instanceof WrapBasicImgLoader )
 		{
@@ -149,8 +149,8 @@ public class BigDataViewer
 	private static < T extends RealType< T > > void initSetupsRealTypeNonVolatile(
 			final AbstractSpimData< ? > spimData,
 			final T type,
-			final ArrayList< ConverterSetup > converterSetups,
-			final ArrayList< SourceAndConverter< ? > > sources )
+			final List< ConverterSetup > converterSetups,
+			final List< SourceAndConverter< ? > > sources )
 	{
 		final double typeMin = type.getMinValue();
 		final double typeMax = type.getMaxValue();
@@ -176,8 +176,8 @@ public class BigDataViewer
 	private static void initSetupsARGBType(
 			final AbstractSpimData< ? > spimData,
 			final ARGBType type,
-			final ArrayList< ConverterSetup > converterSetups,
-			final ArrayList< SourceAndConverter< ? > > sources )
+			final List< ConverterSetup > converterSetups,
+			final List< SourceAndConverter< ? > > sources )
 	{
 		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
 		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
@@ -211,8 +211,8 @@ public class BigDataViewer
 	@SuppressWarnings( { "unchecked", "rawtypes" } )
 	public static void initSetups(
 			final AbstractSpimData< ? > spimData,
-			final ArrayList< ConverterSetup > converterSetups,
-			final ArrayList< SourceAndConverter< ? > > sources )
+			final List< ConverterSetup > converterSetups,
+			final List< SourceAndConverter< ? > > sources )
 	{
 		final Object type = spimData.getSequenceDescription().getImgLoader().getImageType();
 		if ( RealType.class.isInstance( type ) )
