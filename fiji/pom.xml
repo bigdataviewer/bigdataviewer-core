@@ -44,6 +44,21 @@
 			<artifactId>vecmath</artifactId>
 			<version>1.3.1</version>
 		</dependency>
+		<!--
+		The following dependencies are added to deal with old SPIM_Registration version currently deployed in maven.imagej.net.
+		They will be removed, once the new spimreconstruction stuff (currently in branch revised-spimdata) is deployed -->
+		<dependency>
+			<groupId>sc.fiji</groupId>
+			<artifactId>SPIM_Opener</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>mpicbg</groupId>
+			<artifactId>mpicbg</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>sc.fiji</groupId>
+			<artifactId>legacy-imglib1</artifactId>
+		</dependency>
 	</dependencies>
 
 	<developers>
