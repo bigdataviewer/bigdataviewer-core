@@ -279,10 +279,10 @@ public class CellVoyagerDataExporter
 		for ( final ChannelInfo channelInfo : channelInfos )
 		{
 			final Channel channel = new Channel( channelInfo.channelNumber );
-			final Dimensions size = new FinalDimensions(
+			final Dimensions size = new FinalDimensions( new int[] {
 					channelInfo.width,
 					channelInfo.height,
-					channelInfo.nZSlices );
+					channelInfo.nZSlices } );
 			final VoxelDimensions voxelSize = new FinalVoxelDimensions(
 					channelInfo.spaceUnits,
 					channelInfo.pixelWidth,

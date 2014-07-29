@@ -773,7 +773,7 @@ public class ExportSpimFusionPlugIn implements PlugIn
 			final int width = imp.getWidth();
 			final int height = imp.getHeight();
 			imp.close();
-			final Dimensions size = new FinalDimensions( width, height, numSlices );
+			final Dimensions size = new FinalDimensions( new int[] { width, height, numSlices } );
 			final VoxelDimensions voxelSize = new FinalVoxelDimensions( "px", 1, 1, 1 );
 			final ExportMipmapInfo info = ProposeMipmaps.proposeMipmaps( new BasicViewSetup( 0, "", size, voxelSize ) );
 			autoSubsampling = ProposeMipmaps.getArrayString( info.getExportResolutions() );

@@ -100,7 +100,7 @@ public class ExportImagePlusPlugIn implements PlugIn
 		final int w = imp.getWidth();
 		final int h = imp.getHeight();
 		final int d = imp.getNSlices();
-		final FinalDimensions size = new FinalDimensions( w, h, d );
+		final FinalDimensions size = new FinalDimensions( new int[] { w, h, d } );
 
 		// propose reasonable mipmap settings
 		final ExportMipmapInfo autoMipmapSettings = ProposeMipmaps.proposeMipmaps( new BasicViewSetup( 0, "", size, voxelSize ) );
