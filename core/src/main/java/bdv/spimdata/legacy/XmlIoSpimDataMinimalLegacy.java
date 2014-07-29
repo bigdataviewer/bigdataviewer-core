@@ -117,9 +117,9 @@ public class XmlIoSpimDataMinimalLegacy
 				channels.put( channelId, channel );
 			}
 
-			final int w = XmlHelpers.getInt( elem, "width" );
-			final int h = XmlHelpers.getInt( elem, "height" );
-			final int d = XmlHelpers.getInt( elem, "depth" );
+			final long w = XmlHelpers.getInt( elem, "width" );
+			final long h = XmlHelpers.getInt( elem, "height" );
+			final long d = XmlHelpers.getInt( elem, "depth" );
 			final Dimensions size = new FinalDimensions( w, h, d );
 
 			final double pw = XmlHelpers.getDouble( elem, "pixelWidth" );
