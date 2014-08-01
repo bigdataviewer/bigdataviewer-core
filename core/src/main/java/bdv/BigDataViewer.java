@@ -222,7 +222,7 @@ public class BigDataViewer
 		else throw new IllegalArgumentException( "ImgLoader of type " + type.getClass() + " not supported." );
 	}
 
-	protected BigDataViewer( final String xmlFilename, final ProgressWriter progressWriter ) throws SpimDataException
+	protected BigDataViewer( final String xmlFilename, final String windowTitle, final ProgressWriter progressWriter ) throws SpimDataException
 	{
 		final int width = 800;
 		final int height = 600;
@@ -241,6 +241,8 @@ public class BigDataViewer
 		final List< TimePoint > timepoints = seq.getTimePoints().getTimePointsOrdered();
 		viewerFrame = new ViewerFrame( width, height, sources, timepoints.size(),
 				( ( ViewerImgLoader< ?, ? > ) seq.getImgLoader() ).getCache() );
+		if ( windowTitle != null )
+			viewerFrame.setTitle( windowTitle );
 		viewer = viewerFrame.getViewerPanel();
 
 		for ( final ConverterSetup cs : converterSetups )
@@ -442,7 +444,7 @@ public class BigDataViewer
 
 	public static void view( final String filename, final ProgressWriter progressWriter ) throws SpimDataException
 	{
-		new BigDataViewer( filename, progressWriter );
+		new BigDataViewer( filename, new File( filename ).getName(), progressWriter );
 	}
 
 	public static void main( final String[] args )
@@ -466,7 +468,8 @@ public class BigDataViewer
 		try
 		{
 			System.setProperty("apple.laf.useScreenMenuBar", "true");
-			new BigDataViewer( fn, new ProgressWriterConsole() );
+			view( fn, new ProgressWriterConsole() );
+//			new BigDataViewer( fn, "BigDataViewer", new ProgressWriterConsole() );
 		}
 		catch ( final Exception e )
 		{
