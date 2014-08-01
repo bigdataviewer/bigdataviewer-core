@@ -1,7 +1,11 @@
 package bdv.ij.util;
 
+import ij.Prefs;
+
 import java.awt.Button;
+import java.awt.FileDialog;
 import java.awt.FlowLayout;
+import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Panel;
@@ -9,6 +13,7 @@ import java.awt.TextField;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.File;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.regex.Matcher;
@@ -42,6 +47,8 @@ public class PluginHelper
 		dialog.add( panel );
 	}
 
+	public static boolean useFileDialog = true;
+
 	public static class ChooseXmlFileListener implements ActionListener
 	{
 		TextField text;
@@ -55,45 +62,80 @@ public class PluginHelper
 		public void actionPerformed( final ActionEvent e )
 		{
 			File directory = new File( text.getText() );
+			final String fn = directory.getName();
 			while ( directory != null && !directory.exists() )
 				directory = directory.getParentFile();
 
-			final JFileChooser fc = new JFileChooser( directory );
-			fc.setFileFilter( new FileFilter()
+			if ( Prefs.useJFileChooser )
 			{
-				@Override
-				public String getDescription()
+				final JFileChooser fc = new JFileChooser( directory );
+				fc.setSelectedFile( new File( fn ) );
+				fc.setFileFilter( new FileFilter()
 				{
-					return "xml files";
-				}
-
-				@Override
-				public boolean accept( final File f )
-				{
-					if ( f.isDirectory() )
-						return true;
-					if ( f.isFile() )
+					@Override
+					public String getDescription()
 					{
-				        final String s = f.getName();
-				        final int i = s.lastIndexOf('.');
-				        if (i > 0 &&  i < s.length() - 1) {
-				            final String ext = s.substring(i+1).toLowerCase();
-				            return ext.equals( "xml" );
-				        }
+						return "xml files";
 					}
-					return false;
+
+					@Override
+					public boolean accept( final File f )
+					{
+						if ( f.isDirectory() )
+							return true;
+						if ( f.isFile() )
+						{
+							final String s = f.getName();
+							final int i = s.lastIndexOf( '.' );
+							if ( i > 0 && i < s.length() - 1 )
+							{
+								final String ext = s.substring( i + 1 ).toLowerCase();
+								return ext.equals( "xml" );
+							}
+						}
+						return false;
+					}
+				} );
+
+				fc.setFileSelectionMode( JFileChooser.FILES_ONLY );
+
+				final int returnVal = fc.showSaveDialog( null );
+				if ( returnVal == JFileChooser.APPROVE_OPTION )
+				{
+					String f = fc.getSelectedFile().getAbsolutePath();
+					if ( !f.endsWith( ".xml" ) )
+						f += ".xml";
+					text.setText( f );
 				}
-			} );
-
-			fc.setFileSelectionMode( JFileChooser.FILES_ONLY );
-
-			final int returnVal = fc.showSaveDialog( null );
-			if ( returnVal == JFileChooser.APPROVE_OPTION )
+			}
+			else // use FileDialog
 			{
-				String f = fc.getSelectedFile().getAbsolutePath();
-				if ( ! f.endsWith( ".xml" ) )
-					f += ".xml";
-				text.setText( f );
+				final FileDialog fd = new FileDialog( ( Frame ) null, "Save", FileDialog.SAVE );
+				fd.setDirectory( directory.getAbsolutePath() );
+				fd.setFile( fn );
+				fd.setFilenameFilter( new FilenameFilter()
+				{
+					@Override
+					public boolean accept( final File dir, final String name )
+					{
+						final int i = name.lastIndexOf( '.' );
+						if ( i > 0 && i < name.length() - 1 )
+						{
+							final String ext = name.substring( i + 1 ).toLowerCase();
+							return ext.equals( "xml" );
+						}
+						return false;
+					}
+				} );
+				fd.setVisible( true );
+				final String filename = fd.getFile();
+				if ( filename != null )
+				{
+					String f = new File( fd.getDirectory() + filename ).getAbsolutePath();
+					if ( !f.endsWith( ".xml" ) )
+						f += ".xml";
+					text.setText( f );
+				}
 			}
 		}
 	}
