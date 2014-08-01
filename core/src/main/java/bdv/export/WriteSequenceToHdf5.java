@@ -97,12 +97,14 @@ public class WriteSequenceToHdf5
 	 *            {@link ExportMipmapInfo} for that setup. The
 	 *            {@link ExportMipmapInfo} contains for each mipmap level, the
 	 *            subsampling factors and subdivision block sizes.
+	 * @param deflate
+	 *            whether to compress the data with the HDF5 DEFLATE filter.
 	 * @param hdf5File
 	 *            hdf5 file to which the image data is written.
 	 * @param progressWriter
 	 *            completion ratio and status output will be directed here.
 	 */
-	public static void writeHdf5File( final AbstractSequenceDescription< ?, ?, ? > seq, final Map< Integer, ExportMipmapInfo > perSetupMipmapInfo, final File hdf5File, final ProgressWriter progressWriter )
+	public static void writeHdf5File( final AbstractSequenceDescription< ?, ?, ? > seq, final Map< Integer, ExportMipmapInfo > perSetupMipmapInfo, final boolean deflate, final File hdf5File, final ProgressWriter progressWriter )
 	{
 		final HashMap< Integer, Integer > timepointIdSequenceToPartition = new HashMap< Integer, Integer >();
 		for ( final TimePoint timepoint : seq.getTimePoints().getTimePointsOrdered() )
@@ -113,7 +115,7 @@ public class WriteSequenceToHdf5
 			setupIdSequenceToPartition.put( setup.getId(), setup.getId() );
 
 		final Partition partition = new Partition( hdf5File.getPath(), timepointIdSequenceToPartition, setupIdSequenceToPartition );
-		writeHdf5PartitionFile( seq, perSetupMipmapInfo, partition, progressWriter );
+		writeHdf5PartitionFile( seq, perSetupMipmapInfo, deflate, partition, progressWriter );
 	}
 
 	/**
@@ -135,18 +137,20 @@ public class WriteSequenceToHdf5
 	 * @param subdivisions
 	 *            this nested arrays contains per mipmap level, the subdivision
 	 *            block sizes.
+	 * @param deflate
+	 *            whether to compress the data with the HDF5 DEFLATE filter.
 	 * @param hdf5File
 	 *            hdf5 file to which the image data is written.
 	 * @param progressWriter
 	 *            completion ratio and status output will be directed here.
 	 */
-	public static void writeHdf5File( final AbstractSequenceDescription< ?, ?, ? > seq, final int[][] resolutions, final int[][] subdivisions, final File hdf5File, final ProgressWriter progressWriter )
+	public static void writeHdf5File( final AbstractSequenceDescription< ?, ?, ? > seq, final int[][] resolutions, final int[][] subdivisions, final boolean deflate, final File hdf5File, final ProgressWriter progressWriter )
 	{
 		final HashMap< Integer, ExportMipmapInfo > perSetupMipmapInfo = new HashMap< Integer, ExportMipmapInfo >();
 		final ExportMipmapInfo mipmapInfo = new ExportMipmapInfo( resolutions, subdivisions );
 		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
 			perSetupMipmapInfo.put( setup.getId(), mipmapInfo );
-		writeHdf5File( seq, perSetupMipmapInfo, hdf5File, progressWriter );
+		writeHdf5File( seq, perSetupMipmapInfo, deflate, hdf5File, progressWriter );
 	}
 
 	/**
@@ -271,13 +275,16 @@ public class WriteSequenceToHdf5
 	 *            {@link ExportMipmapInfo} for that setup. The
 	 *            {@link ExportMipmapInfo} contains for each mipmap level, the
 	 *            subsampling factors and subdivision block sizes.
+	 * @param deflate
+	 *            whether to compress the data with the HDF5 DEFLATE filter.
 	 * @param partition
 	 *            which part of the dataset to write, and to which file.
 	 * @param progressWriter
 	 *            completion ratio and status output will be directed here.
 	 */
-	public static void writeHdf5PartitionFile( final AbstractSequenceDescription< ?, ?, ? > seq, final Map< Integer, ExportMipmapInfo > perSetupMipmapInfo, final Partition partition, ProgressWriter progressWriter )
+	public static void writeHdf5PartitionFile( final AbstractSequenceDescription< ?, ?, ? > seq, final Map< Integer, ExportMipmapInfo > perSetupMipmapInfo, final boolean deflate, final Partition partition, ProgressWriter progressWriter )
 	{
+		final HDF5IntStorageFeatures storage = deflate ? HDF5IntStorageFeatures.INT_AUTO_SCALING_DEFLATE : HDF5IntStorageFeatures.INT_AUTO_SCALING;
 		final int numThreads = Math.max( 1, Runtime.getRuntime().availableProcessors() - 2 );
 		final int blockWriterQueueLength = 100;
 
@@ -418,8 +425,7 @@ public class WriteSequenceToHdf5
 					final ViewId viewIdPartition = new ViewId( timepointIdPartition, setupIdPartition );
 					hdf5Writer.object().createGroup( Util.getGroupPath( viewIdPartition, level ) );
 					final String path = Util.getCellsPath( viewIdPartition, level );
-//					writerQueue.createAndOpenDataset( path, dimensions.clone(), cellDimensions.clone(), HDF5IntStorageFeatures.INT_AUTO_SCALING );
-					writerQueue.createAndOpenDataset( path, dimensions.clone(), cellDimensions.clone(), HDF5IntStorageFeatures.INT_AUTO_SCALING_DEFLATE );
+					writerQueue.createAndOpenDataset( path, dimensions.clone(), cellDimensions.clone(), storage );
 
 					final long[] numCells = new long[ n ];
 					final int[] borderSize = new int[ n ];

@@ -229,13 +229,15 @@ public class Scripting
 
 		protected final Map< Integer, ExportMipmapInfo > perSetupMipmapInfo;
 
+		protected final boolean deflate;
+
 		protected final ArrayList< Partition > partitions;
 
 		protected final File seqFile;
 
 		protected final File hdf5File;
 
-		public PartitionedSequenceWriter( final SetupAggregator aggregator, final String xmlFilename, final List< Partition > partitions )
+		public PartitionedSequenceWriter( final SetupAggregator aggregator, final String xmlFilename, final boolean deflate, final List< Partition > partitions )
 		{
 			seqFile = new File( xmlFilename );
 
@@ -244,6 +246,7 @@ public class Scripting
 
 			spimData = aggregator.createSpimData( seqFile );
 			perSetupMipmapInfo = aggregator.getPerSetupMipmapInfo();
+			this.deflate = deflate;
 			this.partitions = new ArrayList< Partition >( partitions );
 		}
 
@@ -255,7 +258,7 @@ public class Scripting
 		public void writePartition( final int index )
 		{
 			if ( index >= 0 && index < partitions.size() )
-				WriteSequenceToHdf5.writeHdf5PartitionFile( spimData.getSequenceDescription(), perSetupMipmapInfo, partitions.get( index ), null );
+				WriteSequenceToHdf5.writeHdf5PartitionFile( spimData.getSequenceDescription(), perSetupMipmapInfo, deflate, partitions.get( index ), null );
 		}
 
 		public void writeXmlAndLinks() throws SpimDataException
@@ -309,7 +312,7 @@ public class Scripting
 		final int setupsPerPartition = 2;
 		final ArrayList< Partition > partitions = split( aggregator, timepointsPerPartition, setupsPerPartition, xmlFilename );
 
-		final PartitionedSequenceWriter writer = new PartitionedSequenceWriter( aggregator,xmlFilename, partitions );
+		final PartitionedSequenceWriter writer = new PartitionedSequenceWriter( aggregator,xmlFilename, true, partitions );
 		System.out.println( writer.numPartitions() );
 		for ( int i = 0; i < writer.numPartitions(); ++i )
 			writer.writePartition( i );

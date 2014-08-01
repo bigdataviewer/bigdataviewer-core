@@ -57,11 +57,11 @@ public class ExportSpimSequencePlugIn implements PlugIn
 
 		final boolean setMipmapManual = params.setMipmapManual;
 		if ( setMipmapManual )
-			WriteSequenceToHdf5.writeHdf5File( desc, params.resolutions, params.subdivisions, params.hdf5File, new SubTaskProgressWriter( progress, 0, 0.95 ) );
+			WriteSequenceToHdf5.writeHdf5File( desc, params.resolutions, params.subdivisions, params.deflate, params.hdf5File, new SubTaskProgressWriter( progress, 0, 0.95 ) );
 		else
 		{
 			final Map< Integer, ExportMipmapInfo > perSetupExportMipmapInfo = ProposeMipmaps.proposeMipmaps( desc );
-			WriteSequenceToHdf5.writeHdf5File( desc, perSetupExportMipmapInfo, params.hdf5File, new SubTaskProgressWriter( progress, 0, 0.95 ) );
+			WriteSequenceToHdf5.writeHdf5File( desc, perSetupExportMipmapInfo, params.deflate, params.hdf5File, new SubTaskProgressWriter( progress, 0, 0.95 ) );
 		}
 
 		final Hdf5ImageLoader loader = new Hdf5ImageLoader( params.hdf5File, null, null, false );
@@ -88,6 +88,8 @@ public class ExportSpimSequencePlugIn implements PlugIn
 
 	static String lastChunkSizes = "{16,16,16}, {16,16,16}, {16,16,16}";
 
+	static boolean lastDeflate = true;
+
 	public static String fusionType[] = new String[] { "Single-channel", "Multi-channel" };
 
 	public static String allChannels = "0, 1";
@@ -106,7 +108,9 @@ public class ExportSpimSequencePlugIn implements PlugIn
 
 		final File hdf5File;
 
-		public Parameters( final SPIMConfiguration conf, final boolean setMipmapManual, final int[][] resolutions, final int[][] subdivisions, final File seqFile, final File hdf5File )
+		final boolean deflate;
+
+		public Parameters( final SPIMConfiguration conf, final boolean setMipmapManual, final int[][] resolutions, final int[][] subdivisions, final File seqFile, final File hdf5File, final boolean deflate )
 		{
 			this.conf = conf;
 			this.setMipmapManual = setMipmapManual;
@@ -114,6 +118,7 @@ public class ExportSpimSequencePlugIn implements PlugIn
 			this.subdivisions = subdivisions;
 			this.seqFile = seqFile;
 			this.hdf5File = hdf5File;
+			this.deflate = deflate;
 		}
 	}
 
@@ -443,6 +448,9 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		final TextField tfChunkSizes = ( TextField ) gd2.getStringFields().lastElement();
 
 		gd2.addMessage( "" );
+		gd2.addCheckbox( "use deflate compression", lastDeflate );
+
+		gd2.addMessage( "" );
 		PluginHelper.addSaveAsFileField( gd2, "Export path", conf.inputdirectory + "export.xml", 25 );
 
 		final String autoSubsampling = ProposeMipmaps.getArrayString( autoMipmapSettings.getExportResolutions() );
@@ -532,6 +540,7 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		// parse mipmap resolutions and cell sizes
 		lastSubsampling = gd2.getNextString();
 		lastChunkSizes = gd2.getNextString();
+		lastDeflate = gd.getNextBoolean();
 		final int[][] resolutions = PluginHelper.parseResolutionsString( lastSubsampling );
 		final int[][] subdivisions = PluginHelper.parseResolutionsString( lastChunkSizes );
 		if ( resolutions.length == 0 )
@@ -563,7 +572,7 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		final String hdf5Filename = seqFilename.substring( 0, seqFilename.length() - 4 ) + ".h5";
 		final File hdf5File = new File( hdf5Filename );
 
-		return new Parameters( conf, lastSetMipmapManual, resolutions, subdivisions, seqFile, hdf5File );
+		return new Parameters( conf, lastSetMipmapManual, resolutions, subdivisions, seqFile, hdf5File, lastDeflate );
 	}
 
 	protected static double loadZStretching( final String file )

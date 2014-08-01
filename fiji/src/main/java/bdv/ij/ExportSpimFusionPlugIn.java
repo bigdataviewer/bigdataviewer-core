@@ -71,6 +71,8 @@ public class ExportSpimFusionPlugIn implements PlugIn
 
 	static String lastChunkSizes = "{32,32,32}, {16,16,16}, {8,8,8}";
 
+	static boolean lastDeflate = true;
+
 	static String autoSubsampling = "{1,1,1}";
 
 	static String autoChunkSizes = "{16,16,16}";
@@ -167,7 +169,7 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		for ( final Partition partition : newPartitions )
 		{
 			final SubTaskProgressWriter subtaskProgress = new SubTaskProgressWriter( progress, complete, complete + completionStep );
-			WriteSequenceToHdf5.writeHdf5PartitionFile( aggregateSeq, aggregateMipmapInfos, partition, subtaskProgress );
+			WriteSequenceToHdf5.writeHdf5PartitionFile( aggregateSeq, aggregateMipmapInfos, params.deflate, partition, subtaskProgress );
 			complete += completionStep;
 		}
 
@@ -203,7 +205,7 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		final Map< Integer, ExportMipmapInfo > aggregateMipmapInfos = aggregator.getPerSetupMipmapInfo();
 
 		// write single hdf5 file
-		WriteSequenceToHdf5.writeHdf5File( aggregateSeq, aggregateMipmapInfos, params.hdf5File, new SubTaskProgressWriter( progress, 0, 0.95 ) );
+		WriteSequenceToHdf5.writeHdf5File( aggregateSeq, aggregateMipmapInfos, params.deflate, params.hdf5File, new SubTaskProgressWriter( progress, 0, 0.95 ) );
 
 		// re-write xml file
 		spimDataIo.save(
@@ -230,12 +232,13 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		final File seqFile;
 		final File hdf5File;
 		final boolean appendToExistingFile;
+		final boolean deflate;
 
 		public Parameters( final SPIMConfiguration conf, final int[][] resolutions, final int[][] subdivisions,
 				final int cropOffsetX, final int cropOffsetY, final int cropOffsetZ, final int scale,
 				final String fusionDirectory, final String filenamePattern, final int numSlices,
 				final double sliceValueMin, final double sliceValueMax,
-				final File seqFile, final File hdf5File, final boolean appendToExistingFile )
+				final File seqFile, final File hdf5File, final boolean appendToExistingFile, final boolean deflate )
 		{
 			this.conf = conf;
 			this.resolutions = resolutions;
@@ -252,6 +255,7 @@ public class ExportSpimFusionPlugIn implements PlugIn
 			this.seqFile = seqFile;
 			this.hdf5File = hdf5File;
 			this.appendToExistingFile = appendToExistingFile;
+			this.deflate = deflate;
 		}
 	}
 
@@ -588,6 +592,9 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		final TextField tfChunkSizes = ( TextField ) gd2.getStringFields().lastElement();
 
 		gd2.addMessage( "" );
+		gd2.addCheckbox( "use deflate compression", lastDeflate );
+
+		gd2.addMessage( "" );
 		PluginHelper.addSaveAsFileField( gd2, "Export path", conf.inputdirectory + "export.xml", 25 );
 		gd2.addCheckbox( "add to existing file", true );
 
@@ -740,6 +747,8 @@ public class ExportSpimFusionPlugIn implements PlugIn
 			return null;
 		}
 
+		lastDeflate = gd2.getNextBoolean();
+
 		String seqFilename = gd2.getNextString();
 		if ( ! seqFilename.endsWith( ".xml" ) )
 			seqFilename += ".xml";
@@ -758,7 +767,7 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		final int cropOffsetY = Multi_View_Fusion.cropOffsetYStatic;
 		final int cropOffsetZ = Multi_View_Fusion.cropOffsetZStatic;
 		final int scale = Multi_View_Fusion.outputImageScalingStatic;
-		return new Parameters( conf, resolutions, subdivisions, cropOffsetX, cropOffsetY, cropOffsetZ, scale, fusionDirectory, filenamePattern, numSlices, minValueStatic, maxValueStatic, seqFile, hdf5File, appendToExistingFile );
+		return new Parameters( conf, resolutions, subdivisions, cropOffsetX, cropOffsetY, cropOffsetZ, scale, fusionDirectory, filenamePattern, numSlices, minValueStatic, maxValueStatic, seqFile, hdf5File, appendToExistingFile, lastDeflate );
 	}
 
 	protected boolean updateProposedMipmaps( final String fusionDirectory, final SPIMConfiguration conf )

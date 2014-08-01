@@ -141,6 +141,7 @@ public class ExportImagePlusPlugIn implements PlugIn
 		final File hdf5File = params.hdf5File;
 		final int[][] resolutions = params.resolutions;
 		final int[][] subdivisions = params.subdivisions;
+		final boolean deflate = params.deflate;
 
 		final HashMap< Integer, BasicViewSetup > setups = new HashMap< Integer, BasicViewSetup >( numSetups );
 		for ( int s = 0; s < numSetups; ++s )
@@ -154,7 +155,7 @@ public class ExportImagePlusPlugIn implements PlugIn
 			timepoints.add( new TimePoint( t ) );
 		final SequenceDescriptionMinimal seq = new SequenceDescriptionMinimal( new TimePoints( timepoints ), setups, imgLoader, null );
 
-		WriteSequenceToHdf5.writeHdf5File( seq, resolutions, subdivisions, hdf5File, new SubTaskProgressWriter( progressWriter, 0, 0.95 ) );
+		WriteSequenceToHdf5.writeHdf5File( seq, resolutions, subdivisions, deflate, hdf5File, new SubTaskProgressWriter( progressWriter, 0, 0.95 ) );
 
 		// write xml sequence description
 		final Hdf5ImageLoader hdf5Loader = new Hdf5ImageLoader( hdf5File, null, null, false );
@@ -198,7 +199,9 @@ public class ExportImagePlusPlugIn implements PlugIn
 
 		final double rangeMax;
 
-		public Parameters( final boolean setMipmapManual, final int[][] resolutions, final int[][] subdivisions, final File seqFile, final File hdf5File, final MinMaxOption minMaxOption, final double rangeMin, final double rangeMax )
+		final boolean deflate;
+
+		public Parameters( final boolean setMipmapManual, final int[][] resolutions, final int[][] subdivisions, final File seqFile, final File hdf5File, final MinMaxOption minMaxOption, final double rangeMin, final double rangeMax, final boolean deflate )
 		{
 			this.setMipmapManual = setMipmapManual;
 			this.resolutions = resolutions;
@@ -208,6 +211,7 @@ public class ExportImagePlusPlugIn implements PlugIn
 			this.minMaxOption = minMaxOption;
 			this.rangeMin = rangeMin;
 			this.rangeMax = rangeMax;
+			this.deflate = deflate;
 		}
 	}
 
@@ -222,6 +226,8 @@ public class ExportImagePlusPlugIn implements PlugIn
 	static double lastMin = 0;
 
 	static double lastMax = 65535;
+
+	static boolean lastDeflate = true;
 
 	static String lastExportPath = "./export.xml";
 
@@ -252,6 +258,10 @@ public class ExportImagePlusPlugIn implements PlugIn
 			final TextField tfMin = (TextField) gd.getNumericFields().lastElement();
 			gd.addNumericField( "Max", lastMax, 0 );
 			final TextField tfMax = (TextField) gd.getNumericFields().lastElement();
+
+			gd.addMessage( "" );
+			gd.addCheckbox( "use deflate compression", lastDeflate );
+
 			gd.addMessage( "" );
 			PluginHelper.addSaveAsFileField( gd, "Export path", lastExportPath, 25 );
 
@@ -272,6 +282,7 @@ public class ExportImagePlusPlugIn implements PlugIn
 					gd.getNextChoiceIndex();
 					gd.getNextNumber();
 					gd.getNextNumber();
+					gd.getNextBoolean();
 					gd.getNextString();
 					if ( e instanceof ItemEvent && e.getID() == ItemEvent.ITEM_STATE_CHANGED && e.getSource() == cMinMaxChoices )
 					{
@@ -316,6 +327,7 @@ public class ExportImagePlusPlugIn implements PlugIn
 			lastMinMaxChoice = gd.getNextChoiceIndex();
 			lastMin = gd.getNextNumber();
 			lastMax = gd.getNextNumber();
+			lastDeflate = gd.getNextBoolean();
 			lastExportPath = gd.getNextString();
 
 			// parse mipmap resolutions and cell sizes
@@ -358,7 +370,7 @@ public class ExportImagePlusPlugIn implements PlugIn
 			final String hdf5Filename = seqFilename.substring( 0, seqFilename.length() - 4 ) + ".h5";
 			final File hdf5File = new File( hdf5Filename );
 
-			return new Parameters( lastSetMipmapManual, resolutions, subdivisions, seqFile, hdf5File, minMaxOption, lastMin, lastMax );
+			return new Parameters( lastSetMipmapManual, resolutions, subdivisions, seqFile, hdf5File, minMaxOption, lastMin, lastMax, lastDeflate );
 		}
 	}
 }
