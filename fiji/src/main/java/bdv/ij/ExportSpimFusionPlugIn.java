@@ -727,6 +727,7 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		maxValueStatic = gd2.getNextNumber();
 
 		// parse mipmap resolutions and cell sizes
+		lastSetMipmapManual = gd2.getNextBoolean();
 		lastSubsampling = gd2.getNextString();
 		lastChunkSizes = gd2.getNextString();
 		final int[][] resolutions = PluginHelper.parseResolutionsString( lastSubsampling );

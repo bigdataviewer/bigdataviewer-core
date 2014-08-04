@@ -538,9 +538,9 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		IOFunctions.println( "tp " + tp );
 
 		// parse mipmap resolutions and cell sizes
+		lastSetMipmapManual = gd2.getNextBoolean();
 		lastSubsampling = gd2.getNextString();
 		lastChunkSizes = gd2.getNextString();
-		lastDeflate = gd.getNextBoolean();
 		final int[][] resolutions = PluginHelper.parseResolutionsString( lastSubsampling );
 		final int[][] subdivisions = PluginHelper.parseResolutionsString( lastChunkSizes );
 		if ( resolutions.length == 0 )
@@ -558,6 +558,8 @@ public class ExportSpimSequencePlugIn implements PlugIn
 			IOFunctions.println( "subsampling factors and hdf5 chunk sizes must have the same number of elements" );
 			return null;
 		}
+
+		lastDeflate = gd2.getNextBoolean();
 
 		String seqFilename = gd2.getNextString();
 		if ( !seqFilename.endsWith( ".xml" ) )
