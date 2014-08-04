@@ -76,7 +76,7 @@ public class ImportPlugIn implements PlugIn
 					final SequenceDescriptionMinimal seq = openSequence( xmlFilename );
 					if ( seq != null )
 					{
-						final int numTimepoints = seq.getTimePoints().getTimePointsOrdered().size();
+						final int numTimepoints = seq.getTimePoints().size();
 						final int numSetups = seq.getViewSetupsOrdered().size();
 
 						slTimepoint.setMaximum( numTimepoints );

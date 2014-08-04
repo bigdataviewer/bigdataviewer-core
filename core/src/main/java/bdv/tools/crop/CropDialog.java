@@ -108,7 +108,7 @@ public class CropDialog extends JDialog
 		timepointsPanel.add( new JLabel( "timepoints from" ) );
 
 		spinnerMinTimepoint = new JSpinner();
-		final int maxTimePointIndex = sequenceDescription.getTimePoints().getTimePointsOrdered().size() - 1;
+		final int maxTimePointIndex = sequenceDescription.getTimePoints().size() - 1;
 		spinnerMinTimepoint.setModel( new SpinnerNumberModel( 0, 0, maxTimePointIndex, 1 ) );
 		timepointsPanel.add( spinnerMinTimepoint );
 
