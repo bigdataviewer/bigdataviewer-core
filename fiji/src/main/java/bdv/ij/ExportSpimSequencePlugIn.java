@@ -19,8 +19,12 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import mpicbg.spim.data.generic.sequence.BasicViewSetup;
+import mpicbg.spim.data.sequence.TimePoint;
 import mpicbg.spim.io.ConfigurationParserException;
 import mpicbg.spim.io.IOFunctions;
 import mpicbg.spim.io.SPIMConfiguration;
@@ -35,6 +39,7 @@ import bdv.ij.export.SpimRegistrationSequence;
 import bdv.ij.util.PluginHelper;
 import bdv.ij.util.ProgressWriterIJ;
 import bdv.img.hdf5.Hdf5ImageLoader;
+import bdv.img.hdf5.Partition;
 import bdv.spimdata.SequenceDescriptionMinimal;
 import bdv.spimdata.SpimDataMinimal;
 import bdv.spimdata.XmlIoSpimDataMinimal;
@@ -55,16 +60,43 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		final SpimRegistrationSequence sequence = new SpimRegistrationSequence( params.conf );
 		final SequenceDescriptionMinimal desc = sequence.getSequenceDescription();
 
-		final boolean setMipmapManual = params.setMipmapManual;
-		if ( setMipmapManual )
-			WriteSequenceToHdf5.writeHdf5File( desc, params.resolutions, params.subdivisions, params.deflate, params.hdf5File, new SubTaskProgressWriter( progress, 0, 0.95 ) );
+		Map< Integer, ExportMipmapInfo > perSetupExportMipmapInfo;
+		if ( params.setMipmapManual )
+		{
+			perSetupExportMipmapInfo = new HashMap< Integer, ExportMipmapInfo >();
+			final ExportMipmapInfo mipmapInfo = new ExportMipmapInfo( params.resolutions, params.subdivisions );
+			for ( final BasicViewSetup setup : desc.getViewSetupsOrdered() )
+				perSetupExportMipmapInfo.put( setup.getId(), mipmapInfo );
+		}
 		else
 		{
-			final Map< Integer, ExportMipmapInfo > perSetupExportMipmapInfo = ProposeMipmaps.proposeMipmaps( desc );
+			perSetupExportMipmapInfo = ProposeMipmaps.proposeMipmaps( desc );
+		}
+
+		final ArrayList< Partition > partitions;
+		if ( params.split )
+		{
+			final String xmlFilename = params.seqFile.getAbsolutePath();
+			final String basename = xmlFilename.endsWith( ".xml" ) ? xmlFilename.substring( 0, xmlFilename.length() - 4 ) : xmlFilename;
+			final List< TimePoint > timepoints = desc.getTimePoints().getTimePointsOrdered();
+			final List< BasicViewSetup > setups = desc.getViewSetupsOrdered();
+			partitions = Partition.split( timepoints, setups, params.timepointsPerPartition, params.setupsPerPartition, basename );
+
+			for ( int i = 0; i < partitions.size(); ++i )
+			{
+				final Partition partition = partitions.get( i );
+				final ProgressWriter p = new SubTaskProgressWriter( progress, 0, 0.95 * i / partitions.size() );
+				WriteSequenceToHdf5.writeHdf5PartitionFile( desc, perSetupExportMipmapInfo, params.deflate, partition, p );
+			}
+			WriteSequenceToHdf5.writeHdf5PartitionLinkFile( desc, perSetupExportMipmapInfo, partitions, params.hdf5File );
+		}
+		else
+		{
+			partitions = null;
 			WriteSequenceToHdf5.writeHdf5File( desc, perSetupExportMipmapInfo, params.deflate, params.hdf5File, new SubTaskProgressWriter( progress, 0, 0.95 ) );
 		}
 
-		final Hdf5ImageLoader loader = new Hdf5ImageLoader( params.hdf5File, null, null, false );
+		final Hdf5ImageLoader loader = new Hdf5ImageLoader( params.hdf5File, partitions, null, false );
 		final SequenceDescriptionMinimal sequenceDescription = new SequenceDescriptionMinimal( desc, loader );
 
 		final File basePath = params.seqFile.getParentFile();
@@ -88,6 +120,12 @@ public class ExportSpimSequencePlugIn implements PlugIn
 
 	static String lastChunkSizes = "{16,16,16}, {16,16,16}, {16,16,16}";
 
+	static boolean lastSplit = false;
+
+	static int lastTimepointsPerPartition = 0;
+
+	static int lastSetupsPerPartition = 0;
+
 	static boolean lastDeflate = true;
 
 	public static String fusionType[] = new String[] { "Single-channel", "Multi-channel" };
@@ -110,7 +148,17 @@ public class ExportSpimSequencePlugIn implements PlugIn
 
 		final boolean deflate;
 
-		public Parameters( final SPIMConfiguration conf, final boolean setMipmapManual, final int[][] resolutions, final int[][] subdivisions, final File seqFile, final File hdf5File, final boolean deflate )
+		final boolean split;
+
+		final int timepointsPerPartition;
+
+		final int setupsPerPartition;
+
+		public Parameters(
+				final SPIMConfiguration conf,
+				final boolean setMipmapManual, final int[][] resolutions, final int[][] subdivisions,
+				final File seqFile, final File hdf5File, final boolean deflate,
+				final boolean split, final int timepointsPerPartition, final int setupsPerPartition )
 		{
 			this.conf = conf;
 			this.setMipmapManual = setMipmapManual;
@@ -119,6 +167,9 @@ public class ExportSpimSequencePlugIn implements PlugIn
 			this.seqFile = seqFile;
 			this.hdf5File = hdf5File;
 			this.deflate = deflate;
+			this.split = split;
+			this.timepointsPerPartition = timepointsPerPartition;
+			this.setupsPerPartition = setupsPerPartition;
 		}
 	}
 
@@ -448,6 +499,14 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		final TextField tfChunkSizes = ( TextField ) gd2.getStringFields().lastElement();
 
 		gd2.addMessage( "" );
+		gd2.addCheckbox( "split hdf5", lastSplit );
+		final Checkbox cSplit = ( Checkbox ) gd2.getCheckboxes().lastElement();
+		gd2.addNumericField( "timepoints per partition", lastTimepointsPerPartition, 0, 25, "" );
+		final TextField tfSplitTimepoints = ( TextField ) gd2.getNumericFields().lastElement();
+		gd2.addNumericField( "setups per partition", lastSetupsPerPartition, 0, 25, "" );
+		final TextField tfSplitSetups = ( TextField ) gd2.getNumericFields().lastElement();
+
+		gd2.addMessage( "" );
 		gd2.addCheckbox( "use deflate compression", lastDeflate );
 
 		gd2.addMessage( "" );
@@ -478,6 +537,20 @@ public class ExportSpimSequencePlugIn implements PlugIn
 			tfSubsampling.setText( autoSubsampling );
 			tfChunkSizes.setText( autoChunkSizes );
 		}
+
+		cSplit.addItemListener( new ItemListener()
+		{
+			@Override
+			public void itemStateChanged( final ItemEvent arg0 )
+			{
+				final boolean split = cSplit.getState();
+				tfSplitTimepoints.setEnabled( split );
+				tfSplitSetups.setEnabled( split );
+			}
+		} );
+
+		tfSplitTimepoints.setEnabled( lastSplit );
+		tfSplitSetups.setEnabled( lastSplit );
 
 //		gd.addMessage("");
 //		gd.addMessage("This Plugin is developed by Tobias Pietzsch (pietzsch@mpi-cbg.de)\n");
@@ -559,6 +632,10 @@ public class ExportSpimSequencePlugIn implements PlugIn
 			return null;
 		}
 
+		lastSplit = gd2.getNextBoolean();
+		lastTimepointsPerPartition = ( int ) gd2.getNextNumber();
+		lastSetupsPerPartition = ( int ) gd2.getNextNumber();
+
 		lastDeflate = gd2.getNextBoolean();
 
 		String seqFilename = gd2.getNextString();
@@ -574,7 +651,7 @@ public class ExportSpimSequencePlugIn implements PlugIn
 		final String hdf5Filename = seqFilename.substring( 0, seqFilename.length() - 4 ) + ".h5";
 		final File hdf5File = new File( hdf5Filename );
 
-		return new Parameters( conf, lastSetMipmapManual, resolutions, subdivisions, seqFile, hdf5File, lastDeflate );
+		return new Parameters( conf, lastSetMipmapManual, resolutions, subdivisions, seqFile, hdf5File, lastDeflate, lastSplit, lastTimepointsPerPartition, lastSetupsPerPartition );
 	}
 
 	protected static double loadZStretching( final String file )
