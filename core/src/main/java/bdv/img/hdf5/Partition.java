@@ -1,7 +1,9 @@
 package bdv.img.hdf5;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
@@ -111,5 +113,87 @@ public class Partition
 		return
 				timepointIdSequenceToPartition.containsKey( viewId.getTimePointId() ) &&
 				setupIdSequenceToPartition.containsKey( viewId.getViewSetupId() );
+	}
+
+	/**
+	 * Split a sequence into partitions, each containing a specified number of
+	 * timepoints and setups.
+	 *
+	 * @param timepoints
+	 *            list of all {@link TimePoint}s.
+	 * @param setups
+	 *            list of all {@link BasicViewSetup}s.
+	 * @param timepointsPerPartition
+	 *            how many timepoints should each partition contain (if this is
+	 *            &leq;0, put do not split timepoints across partitions).
+	 * @param setupsPerPartition
+	 *            how many setups should each partition contain (if this is
+	 *            &leq;0, put do not split setups across partitions).
+	 * @param basename
+	 *            This is used to generate paths for the partitions. Partitions
+	 *            are named "basename-TT-SS.h5" where TT and SS are the index of
+	 *            the timepoint and setup batch, respectively.
+	 * @return list of partitions.
+	 */
+	public static ArrayList< Partition > split(
+			final List< TimePoint > timepoints,
+			final List< ? extends BasicViewSetup > setups,
+			final int timepointsPerPartition,
+			final int setupsPerPartition,
+			final String basename )
+	{
+		final String partitionFilenameFormat = basename + "-%02d-%02d.h5";
+		final int numTimepoints = timepoints.size();
+		final int numSetups = setups.size();
+
+		final ArrayList< Integer > timepointSplits = new ArrayList< Integer >();
+		timepointSplits.add( 0 );
+		if ( timepointsPerPartition > 0 )
+			for ( int t = timepointsPerPartition; t < numTimepoints; t += timepointsPerPartition )
+				timepointSplits.add( t );
+		timepointSplits.add( numTimepoints );
+
+		final ArrayList< HashMap< Integer, Integer > > timepointMaps = new ArrayList< HashMap< Integer, Integer > >();
+		for ( int i = 0; i < timepointSplits.size() - 1; ++i )
+		{
+			final HashMap< Integer, Integer > timepointIdSequenceToPartition = new HashMap< Integer, Integer >();
+			for ( int t = timepointSplits.get( i ); t < timepointSplits.get( i + 1 ); ++t )
+			{
+				final int id = timepoints.get( t ).getId();
+				timepointIdSequenceToPartition.put( id, id );
+			}
+			timepointMaps.add( timepointIdSequenceToPartition );
+		}
+
+		final ArrayList< Integer > setupSplits = new ArrayList< Integer >();
+		setupSplits.add( 0 );
+		if ( setupsPerPartition > 0 )
+			for ( int s = setupsPerPartition; s < numSetups; s += setupsPerPartition )
+				setupSplits.add( s );
+		setupSplits.add( numSetups );
+
+		final ArrayList< HashMap< Integer, Integer > > setupMaps = new ArrayList< HashMap< Integer, Integer > >();
+		for ( int i = 0; i < setupSplits.size() - 1; ++i )
+		{
+			final HashMap< Integer, Integer > setupIdSequenceToPartition = new HashMap< Integer, Integer >();
+			for ( int s = setupSplits.get( i ); s < setupSplits.get( i + 1 ); ++s )
+			{
+				final int id = setups.get( s ).getId();
+				setupIdSequenceToPartition.put( id, id );
+			}
+			setupMaps.add( setupIdSequenceToPartition );
+		}
+
+		final ArrayList< Partition > partitions = new ArrayList< Partition >();
+		for ( int t = 0; t < timepointMaps.size(); ++t )
+		{
+			for ( int s = 0; s < setupMaps.size(); ++s )
+			{
+				final String path = String.format( partitionFilenameFormat, t, s );
+				partitions.add( new Partition( path, timepointMaps.get( t ), setupMaps.get( s ) ) );
+			}
+		}
+
+		return partitions;
 	}
 }

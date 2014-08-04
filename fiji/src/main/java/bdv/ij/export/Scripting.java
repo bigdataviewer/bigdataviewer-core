@@ -2,12 +2,10 @@ package bdv.ij.export;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import mpicbg.spim.data.SpimDataException;
-import mpicbg.spim.data.sequence.TimePoint;
 import mpicbg.spim.io.ConfigurationParserException;
 import net.imglib2.realtransform.AffineTransform3D;
 import bdv.export.ExportMipmapInfo;
@@ -167,60 +165,7 @@ public class Scripting
 			final String xmlFilename )
 	{
 		final String basename = xmlFilename.endsWith( ".xml" ) ? xmlFilename.substring( 0, xmlFilename.length() - 4 ) : xmlFilename;
-		final String partitionFilenameFormat = basename + "-%02d-%02d.h5";
-		final int numTimepoints = aggregator.timepoints.size();
-		final int numSetups = aggregator.setups.size();
-
-		final ArrayList< Integer > timepointSplits = new ArrayList< Integer >();
-		timepointSplits.add( 0 );
-		if ( timepointsPerPartition > 0 )
-			for ( int t = timepointsPerPartition; t < numTimepoints; t += timepointsPerPartition )
-				timepointSplits.add( t );
-		timepointSplits.add( numTimepoints );
-
-		final ArrayList< HashMap< Integer, Integer > > timepointMaps = new ArrayList< HashMap< Integer, Integer > >();
-		final List< TimePoint > timepoints = aggregator.timepoints.getTimePointsOrdered();
-		for ( int i = 0; i < timepointSplits.size() - 1; ++i )
-		{
-			final HashMap< Integer, Integer > timepointIdSequenceToPartition = new HashMap< Integer, Integer >();
-			for ( int t = timepointSplits.get( i ); t < timepointSplits.get( i + 1 ); ++t )
-			{
-				final int id = timepoints.get( t ).getId();
-				timepointIdSequenceToPartition.put( id, id );
-			}
-			timepointMaps.add( timepointIdSequenceToPartition );
-		}
-
-		final ArrayList< Integer > setupSplits = new ArrayList< Integer >();
-		setupSplits.add( 0 );
-		if ( setupsPerPartition > 0 )
-			for ( int s = setupsPerPartition; s < numSetups; s += setupsPerPartition )
-				setupSplits.add( s );
-		setupSplits.add( numSetups );
-
-		final ArrayList< HashMap< Integer, Integer > > setupMaps = new ArrayList< HashMap< Integer, Integer > >();
-		for ( int i = 0; i < timepointSplits.size() - 1; ++i )
-		{
-			final HashMap< Integer, Integer > setupIdSequenceToPartition = new HashMap< Integer, Integer >();
-			for ( int s = setupSplits.get( i ); s < setupSplits.get( i + 1 ); ++s )
-			{
-				final int id = aggregator.setups.get( s ).getId();
-				setupIdSequenceToPartition.put( id, id );
-			}
-			setupMaps.add( setupIdSequenceToPartition );
-		}
-
-		final ArrayList< Partition > partitions = new ArrayList< Partition >();
-		for ( int t = 0; t < timepointMaps.size(); ++t )
-		{
-			for ( int s = 0; s < setupMaps.size(); ++s )
-			{
-				final String path = String.format( partitionFilenameFormat, t, s );
-				partitions.add( new Partition( path, timepointMaps.get( t ),setupMaps.get( s ) ) );
-			}
-		}
-
-		return partitions;
+		return Partition.split( aggregator.timepoints.getTimePointsOrdered(), aggregator.setups, timepointsPerPartition, setupsPerPartition, basename );
 	}
 
 	public static class PartitionedSequenceWriter
