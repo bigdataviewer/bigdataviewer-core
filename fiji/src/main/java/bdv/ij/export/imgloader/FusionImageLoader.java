@@ -6,11 +6,14 @@ import io.scif.img.ImgOpener;
 
 import java.util.HashMap;
 
-import mpicbg.spim.data.generic.sequence.BasicImgLoader;
+import mpicbg.spim.data.sequence.FinalVoxelDimensions;
 import mpicbg.spim.data.sequence.ImgLoader;
 import mpicbg.spim.data.sequence.ViewDescription;
 import mpicbg.spim.data.sequence.ViewId;
+import mpicbg.spim.data.sequence.VoxelDimensions;
 import net.imglib2.Cursor;
+import net.imglib2.Dimensions;
+import net.imglib2.FinalDimensions;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.converter.Converters;
 import net.imglib2.converter.RealUnsignedShortConverter;
@@ -40,7 +43,7 @@ import net.imglib2.view.Views;
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
-public class FusionImageLoader< T extends RealType< T > > implements BasicImgLoader< UnsignedShortType >
+public class FusionImageLoader< T extends RealType< T > > implements ImgLoader< UnsignedShortType >
 {
 	private final String pattern;
 
@@ -83,16 +86,12 @@ public class FusionImageLoader< T extends RealType< T > > implements BasicImgLoa
 		final int tp = view.getTimePointId();
 		final int c = setupIdToChannelId.get( view.getViewSetupId() );
 
-		RandomAccessibleInterval< T > slice = sliceLoader.load( String.format( pattern, tp, c, 0 ) );
-		final long[] dimensions = new long[ 3 ];
-		dimensions[ 0 ] = slice.dimension( 0 );
-		dimensions[ 1 ] = slice.dimension( 1 );
-		dimensions[ 2 ] = numSlices;
+		final Dimensions dimensions = getImageSize( view );
 		final Img< UnsignedShortType > img = factory.create( dimensions, type );
 
 		for ( int z = 0; z < numSlices; ++z )
 		{
-			slice = sliceLoader.load( String.format( pattern, tp, c, z ) );
+			final RandomAccessibleInterval< T > slice = sliceLoader.load( String.format( pattern, tp, c, z ) );
 
 			final Cursor< UnsignedShortType > d = Views.flatIterable( Views.hyperSlice( img, 2, z ) ).cursor();
 			for ( final UnsignedShortType t : Converters.convert( Views.flatIterable( slice ), converter, type ) )
@@ -128,7 +127,7 @@ public class FusionImageLoader< T extends RealType< T > > implements BasicImgLoa
 			try
 			{
 				System.out.println( fn );
-				return opener.openImg( fn, factory, type );
+				return opener.openImgs( fn, factory, type ).get( 0 );
 			}
 			catch ( final ImgIOException e )
 			{
@@ -163,5 +162,30 @@ public class FusionImageLoader< T extends RealType< T > > implements BasicImgLoa
 		{
 			return ImageJFunctions.wrapByte( new ImagePlus( fn ) );
 		}
+	}
+
+	@Override
+	public RandomAccessibleInterval< FloatType > getFloatImage( final ViewId view, final boolean normalize )
+	{
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public Dimensions getImageSize( final ViewId view )
+	{
+		final int tp = view.getTimePointId();
+		final int c = setupIdToChannelId.get( view.getViewSetupId() );
+
+		final RandomAccessibleInterval< T > slice = sliceLoader.load( String.format( pattern, tp, c, 0 ) );
+		return new FinalDimensions(
+				slice.dimension( 0 ),
+				slice.dimension( 1 ),
+				numSlices );
+	}
+
+	@Override
+	public VoxelDimensions getVoxelSize( final ViewId view )
+	{
+		return new FinalVoxelDimensions( "px", 1, 1, 1 );
 	}
 }
