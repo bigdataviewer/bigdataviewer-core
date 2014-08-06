@@ -19,7 +19,7 @@ public class ViewSetupWrapper extends BasicViewSetup
 
 	private final int sourceSetupId;
 
-	protected ViewSetupWrapper( final int id, final AbstractSequenceDescription< ?, ?, ? > sourceSequence, final BasicViewSetup sourceSetup )
+	public ViewSetupWrapper( final int id, final AbstractSequenceDescription< ?, ?, ? > sourceSequence, final BasicViewSetup sourceSetup )
 	{
 		super( id, sourceSetup.getName(), sourceSetup.getSize(), sourceSetup.getVoxelSize() );
 		this.sourceSequence = sourceSequence;

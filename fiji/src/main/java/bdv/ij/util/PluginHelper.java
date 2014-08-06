@@ -159,19 +159,21 @@ public class PluginHelper
 		return resolutions;
 	}
 
-	public static File createNewPartitionFile( final File xmlSequenceFile ) throws IOException
+	public static File createNewPartitionFile( final String baseFilename ) throws IOException
 	{
-		final String seqFilename = xmlSequenceFile.getAbsolutePath();
-		if ( !seqFilename.endsWith( ".xml" ) )
-			throw new IllegalArgumentException();
-		final String baseFilename = seqFilename.substring( 0, seqFilename.length() - 4 );
+		File hdf5File = new File( String.format( "%s.h5", baseFilename ) );
+		if ( ! hdf5File.exists() )
+			if ( hdf5File.createNewFile() )
+				return hdf5File;
+
 		for ( int i = 0; i < Integer.MAX_VALUE; ++i )
 		{
-			final File hdf5File = new File( String.format( "%s-%d.h5", baseFilename, i ) );
+			hdf5File = new File( String.format( "%s-%d.h5", baseFilename, i ) );
 			if ( ! hdf5File.exists() )
 				if ( hdf5File.createNewFile() )
 					return hdf5File;
 		}
+
 		throw new RuntimeException( "could not generate new partition filename" );
 	}
 }

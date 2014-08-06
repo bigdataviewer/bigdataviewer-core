@@ -7,7 +7,6 @@ import java.util.List;
 import java.util.Map;
 
 import mpicbg.spim.data.generic.base.Entity;
-import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.registration.ViewRegistration;
 import mpicbg.spim.data.registration.ViewRegistrations;
@@ -26,7 +25,7 @@ import bdv.spimdata.SequenceDescriptionMinimal;
 
 public class FusionResult
 {
-	private final AbstractSequenceDescription< ?, ?, ? > desc;
+	private final SequenceDescriptionMinimal desc;
 
 	private final ViewRegistrations regs;
 
@@ -111,7 +110,7 @@ public class FusionResult
 		regs = new ViewRegistrations( registrations );
 	}
 
-	public AbstractSequenceDescription< ?, ?, ? > getSequenceDescription()
+	public SequenceDescriptionMinimal getSequenceDescription()
 	{
 		return desc;
 	}
