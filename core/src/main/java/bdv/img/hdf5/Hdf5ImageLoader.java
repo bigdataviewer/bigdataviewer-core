@@ -377,9 +377,9 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 		// set up executor service
 		final int numProcessors = Runtime.getRuntime().availableProcessors();
 		final ExecutorService taskExecutor = Executors.newFixedThreadPool( numProcessors );
-		final ArrayList< Callable< Boolean > > tasks = new ArrayList< Callable< Boolean > >();
+		final ArrayList< Callable< Void > > tasks = new ArrayList< Callable< Void > >();
 
-		// set up all threads
+		// set up all tasks
 		final int numPortions = numProcessors * 2;
 		final long threadChunkSize = floatImg.size() / numPortions;
 		final long threadChunkMod = floatImg.size() % numPortions;
@@ -392,24 +392,24 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 			// the last thread may has to run longer if the number of pixels cannot be divided by the number of threads
 			final long loopSize = ( portionID == numPortions - 1 ) ? threadChunkSize + threadChunkMod : threadChunkSize;
 
-			tasks.add( new Callable< Boolean >()
+			tasks.add( new Callable< Void >()
 			{
 				@Override
-				public Boolean call() throws Exception
+				public Void call() throws Exception
 				{
 					final Cursor< UnsignedShortType > in = Views.iterable( ushortImg ).localizingCursor();
 					final RandomAccess< FloatType > out = floatImg.randomAccess();
-					
+
 					in.jumpFwd( startPosition );
-					
+
 					for ( long j = 0; j < loopSize; ++j )
 					{
 						final UnsignedShortType vin = in.next();
 						out.setPosition( in );
 						out.get().set( vin.getRealFloat() );
 					}
-					
-					return true;
+
+					return null;
 				}
 			});
 		}
@@ -418,6 +418,7 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 		{
 			// invokeAll() returns when all tasks are complete
 			taskExecutor.invokeAll( tasks );
+			taskExecutor.shutdown();
 		}
 		catch ( final InterruptedException e )
 		{

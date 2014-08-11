@@ -22,14 +22,20 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 
 import mpicbg.spim.data.SpimDataException;
-import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
+import mpicbg.spim.data.generic.sequence.BasicImgLoader;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
+import mpicbg.spim.data.registration.ViewRegistration;
 import mpicbg.spim.data.registration.ViewRegistrations;
 import mpicbg.spim.data.sequence.FinalVoxelDimensions;
+import mpicbg.spim.data.sequence.MissingViews;
 import mpicbg.spim.data.sequence.TimePoint;
+import mpicbg.spim.data.sequence.TimePoints;
+import mpicbg.spim.data.sequence.ViewId;
 import mpicbg.spim.data.sequence.VoxelDimensions;
 import mpicbg.spim.io.ConfigurationParserException;
 import mpicbg.spim.io.IOFunctions;
@@ -38,7 +44,9 @@ import mpicbg.spim.io.TextFileAccess;
 import net.imglib2.Dimensions;
 import net.imglib2.FinalDimensions;
 import net.imglib2.Pair;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.util.ValuePair;
 import spimopener.SPIMExperiment;
 import bdv.export.ExportMipmapInfo;
@@ -47,8 +55,8 @@ import bdv.export.ProposeMipmaps;
 import bdv.export.SubTaskProgressWriter;
 import bdv.export.WriteSequenceToHdf5;
 import bdv.ij.export.FusionResult;
-import bdv.ij.export.SetupAggregator;
 import bdv.ij.export.SpimRegistrationSequence;
+import bdv.ij.export.ViewSetupWrapper;
 import bdv.ij.util.PluginHelper;
 import bdv.ij.util.ProgressWriterIJ;
 import bdv.img.hdf5.Hdf5ImageLoader;
@@ -70,6 +78,12 @@ public class ExportSpimFusionPlugIn implements PlugIn
 	static String lastSubsampling = "{1,1,1}, {2,2,2}, {4,4,4}";
 
 	static String lastChunkSizes = "{32,32,32}, {16,16,16}, {8,8,8}";
+
+	static boolean lastSplit = false;
+
+	static int lastTimepointsPerPartition = 0;
+
+	static int lastSetupsPerPartition = 0;
 
 	static boolean lastDeflate = true;
 
@@ -110,56 +124,167 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		final SpimRegistrationSequence spimseq = new SpimRegistrationSequence( params.conf );
 		final Map< Integer, AffineTransform3D > fusionTransforms = spimseq.getFusionTransforms( params.cropOffsetX, params.cropOffsetY, params.cropOffsetZ, params.scale );
 		final FusionResult fusionResult = FusionResult.create( spimseq, params.fusionDirectory, params.filenamePattern, params.numSlices, params.sliceValueMin, params.sliceValueMax, fusionTransforms );
+		SequenceDescriptionMinimal fusionSeq = fusionResult.getSequenceDescription();
+		ViewRegistrations fusionReg = fusionResult.getViewRegistrations();
 
-		// aggregate the ViewSetups
-		final SetupAggregator aggregator = new SetupAggregator();
 
-		// first add the setups from the existing dataset
+
+		// open existing dataset
 		final File existingDatasetXmlFile = params.seqFile;
 		final File baseDirectory = existingDatasetXmlFile.getParentFile();
 		final SpimDataMinimal existingSpimData = spimDataIo.load( existingDatasetXmlFile.getAbsolutePath() );
-
 		final SequenceDescriptionMinimal existingSequence = existingSpimData.getSequenceDescription();
 		final ViewRegistrations existingRegistrations = existingSpimData.getViewRegistrations();
-		final Hdf5ImageLoader hdf5Loader = ( Hdf5ImageLoader ) existingSequence.getImgLoader();
+		final Hdf5ImageLoader existingHdf5Loader = ( Hdf5ImageLoader ) existingSequence.getImgLoader();
 
-		final Map< Integer, Integer > setupIdAggregatorToExisting = new HashMap< Integer, Integer >();
-		for ( final BasicViewSetup existingSetup : existingSequence.getViewSetupsOrdered() )
-		{
-			final MipmapInfo info = hdf5Loader.getMipmapInfo( existingSetup.getId() );
-			final int id = aggregator.add( existingSetup, existingSequence, existingRegistrations, Util.castToInts( info.getResolutions() ), info.getSubdivisions() );
-			setupIdAggregatorToExisting.put( id, existingSetup.getId() );
-		}
-
-		// now add a new setup from the fusion result
-		final AbstractSequenceDescription< ?, ?, ? > fusionSeq = fusionResult.getSequenceDescription();
-		final ViewRegistrations fusionReg = fusionResult.getViewRegistrations();
-		final BasicViewSetup fusionSetup = fusionSeq.getViewSetupsOrdered().get( 0 );
-		final int fusionSetupWrapperId = aggregator.add( fusionSetup, fusionSeq, fusionReg, params.resolutions, params.subdivisions );
-
-		// maps every timepoint id to itself, needed for partitions
+		// maps every existing timepoint id to itself, needed for partitions
 		final Map< Integer, Integer > timepointIdentityMap = new HashMap< Integer, Integer >();
 		for ( final TimePoint tp : existingSequence.getTimePoints().getTimePointsOrdered() )
 			timepointIdentityMap.put( tp.getId(), tp.getId() );
 
-		// setup the partitions
-		final ArrayList< Partition > partitions = new ArrayList< Partition >( hdf5Loader.getPartitions() );
+		// maps every existing setup id to itself, needed for partitions
+		final Map< Integer, Integer > setupIdentityMap = new HashMap< Integer, Integer >();
+		for ( final int s : existingSequence.getViewSetups().keySet() )
+			setupIdentityMap.put( s, s );
+
+		// create partition list for existing dataset
+		final ArrayList< Partition > partitions = new ArrayList< Partition >( existingHdf5Loader.getPartitions() );
 		final boolean notYetPartitioned = partitions.isEmpty();
 		if ( notYetPartitioned )
-			// add a new partition for the existing stuff
-			partitions.add( new Partition( hdf5Loader.getHdf5File().getAbsolutePath(), timepointIdentityMap, setupIdAggregatorToExisting ) );
+			// add one partition for the unpartitioned existing dataset
+			partitions.add( new Partition( existingHdf5Loader.getHdf5File().getAbsolutePath(), timepointIdentityMap, setupIdentityMap ) );
 
-		// add partition for the fused data
+
+
+		// wrap fused data setups with unused setup ids
+		final HashSet< Integer > usedSetupIds = new HashSet< Integer >( existingSequence.getViewSetups().keySet() );
+		final HashMap< Integer, ViewSetupWrapper > fusionSetups = new HashMap< Integer, ViewSetupWrapper >();
+		final ArrayList< ViewRegistration > fusionRegistrations = new ArrayList< ViewRegistration >();
+		for ( final BasicViewSetup s : fusionSeq.getViewSetupsOrdered() )
+		{
+			int fusionSetupId = 0;
+			while ( usedSetupIds.contains( fusionSetupId ) )
+				++fusionSetupId;
+			fusionSetups.put( fusionSetupId, new ViewSetupWrapper( fusionSetupId, fusionSeq, s ) );
+			usedSetupIds.add( fusionSetupId );
+
+			final int sourceSetupId = s.getId();
+			for ( final TimePoint timepoint : fusionSeq.getTimePoints().getTimePointsOrdered() )
+			{
+				final int timepointId = timepoint.getId();
+				final ViewRegistration r = fusionReg.getViewRegistrations().get( new ViewId( timepointId, sourceSetupId ) );
+				if ( r == null )
+					throw new RuntimeException( "could not find ViewRegistration for timepoint " + timepointId + " in the fused sequence." );
+				fusionRegistrations.add( new ViewRegistration( timepointId, fusionSetupId, r.getModel() ) );
+			}
+
+		}
+		final BasicImgLoader< UnsignedShortType > wrappedFusionImgLoader = new BasicImgLoader< UnsignedShortType >()
+		{
+			@Override
+			public RandomAccessibleInterval< UnsignedShortType > getImage( final ViewId view )
+			{
+				final ViewSetupWrapper w = fusionSetups.get( view.getViewSetupId() );
+				@SuppressWarnings( "unchecked" )
+				final BasicImgLoader< UnsignedShortType > il = ( BasicImgLoader< UnsignedShortType > ) w.getSourceSequence().getImgLoader();
+				return il.getImage( new ViewId( view.getTimePointId(), w.getSourceSetupId() ) );
+			}
+
+			@Override
+			public UnsignedShortType getImageType()
+			{
+				return new UnsignedShortType();
+			}
+		};
+		fusionSeq = new SequenceDescriptionMinimal( fusionSeq.getTimePoints(), fusionSetups, wrappedFusionImgLoader, fusionSeq.getMissingViews() );
+		fusionReg = new ViewRegistrations( fusionRegistrations );
+
+		// add partitions for the fused data and split if desired
 		final ArrayList< Partition > newPartitions = new ArrayList< Partition >();
-		final String newPartitionPath = PluginHelper.createNewPartitionFile( existingDatasetXmlFile ).getAbsolutePath();
-		final HashMap< Integer, Integer > setupIdSequenceToPartition = new HashMap< Integer, Integer >();
-		setupIdSequenceToPartition.put( fusionSetupWrapperId, fusionSetupWrapperId );
-		newPartitions.add( new Partition( newPartitionPath, timepointIdentityMap, setupIdSequenceToPartition ) );
-		partitions.addAll( newPartitions );
+		final String xmlFilename = params.seqFile.getAbsolutePath();
+		final String basename = xmlFilename.endsWith( ".xml" ) ? xmlFilename.substring( 0, xmlFilename.length() - 4 ) : xmlFilename;
+		if ( params.split )
+		{
+			final List< TimePoint > timepoints = fusionSeq.getTimePoints().getTimePointsOrdered();
+			final List< BasicViewSetup > setups = fusionSeq.getViewSetupsOrdered();
+			for ( final Partition p : Partition.split( timepoints, setups, params.timepointsPerPartition, params.setupsPerPartition, basename ) )
+			{
+				final String baseFilename = p.getPath().substring( 0, p.getPath().length() - 3 ); // strip ".h5" extension
+				final String path = PluginHelper.createNewPartitionFile( baseFilename ).getAbsolutePath();
+				final Partition partition = new Partition( path, p.getTimepointIdSequenceToPartition(), p.getSetupIdSequenceToPartition() );
+				newPartitions.add( partition );
+				partitions.add( partition );
+			}
+		}
+		else
+		{
+			final String path = PluginHelper.createNewPartitionFile( basename ).getAbsolutePath();
+			final HashMap< Integer, Integer > setupIdSequenceToPartition = new HashMap< Integer, Integer >();
+			for ( final BasicViewSetup s : fusionSeq.getViewSetupsOrdered() )
+				setupIdSequenceToPartition.put( s.getId(), s.getId() );
+			final Partition partition = new Partition( path, timepointIdentityMap, setupIdSequenceToPartition );
+			newPartitions.add( partition );
+			partitions.add( partition );
+		}
 
-		final SpimDataMinimal aggregateSpimData = aggregator.createSpimData( baseDirectory );
-		final SequenceDescriptionMinimal aggregateSeq = aggregateSpimData.getSequenceDescription();
-		final Map< Integer, ExportMipmapInfo > aggregateMipmapInfos = aggregator.getPerSetupMipmapInfo();
+		// create ExportMipmapInfos for the fused data setups
+		final Map< Integer, ExportMipmapInfo > perSetupExportMipmapInfo = new HashMap< Integer, ExportMipmapInfo >();
+		final ExportMipmapInfo mipmapInfo = new ExportMipmapInfo( params.resolutions, params.subdivisions );
+		for ( final BasicViewSetup setup : fusionSeq.getViewSetupsOrdered() )
+			perSetupExportMipmapInfo.put( setup.getId(), mipmapInfo );
+
+
+
+
+		// determine filename for hdf5 link file
+		final File newHdf5PartitionLinkFile;
+		if ( notYetPartitioned )
+			newHdf5PartitionLinkFile = PluginHelper.createNewPartitionFile( basename );
+		else
+			// if the existing dataset is already partitioned, override the old link file
+			newHdf5PartitionLinkFile = params.hdf5File;
+
+
+
+		// create aggregate SequenceDescription
+		// TODO: For now the timepoints are just taken from the fusionSeq.
+		// To do it properly, timepoints from existing dataset and fusionSeq should be combined.
+		final TimePoints aggregateTimePoints = fusionSeq.getTimePoints();
+		final HashMap< Integer, BasicViewSetup > aggregateSetups = new HashMap< Integer, BasicViewSetup >();
+		for ( final BasicViewSetup s : existingSequence.getViewSetupsOrdered() )
+			aggregateSetups.put( s.getId(), s );
+		for ( final BasicViewSetup s : fusionSeq.getViewSetupsOrdered() )
+			aggregateSetups.put( s.getId(), s );
+		// TODO: For now the missingviews are just taken from the existingSequence.
+		// To do it properly, missingviews from existing dataset and fusionSeq should be combined,
+		// and new missingviews added for timepoints that are not present in one of existingSequence or fusionSeq.
+		final MissingViews aggregateMissingViews = existingSequence.getMissingViews();
+		final SequenceDescriptionMinimal aggregateSeq = new SequenceDescriptionMinimal(
+				aggregateTimePoints,
+				aggregateSetups,
+				new Hdf5ImageLoader( newHdf5PartitionLinkFile, partitions, null, false ),
+				aggregateMissingViews );
+
+		// create aggregate ExportMipmapInfos
+		final HashMap< Integer, ExportMipmapInfo > aggregateMipmapInfos = new HashMap< Integer, ExportMipmapInfo >( perSetupExportMipmapInfo );
+		for ( final BasicViewSetup s : existingSequence.getViewSetupsOrdered() )
+		{
+			final MipmapInfo info = existingHdf5Loader.getMipmapInfo( s.getId() );
+			aggregateMipmapInfos.put(
+					s.getId(),
+					new ExportMipmapInfo( Util.castToInts( info.getResolutions() ), info.getSubdivisions() ) );
+		}
+
+		// create aggregate ViewRegistrations
+		final ArrayList< ViewRegistration > regs = new ArrayList< ViewRegistration >();
+		regs.addAll( existingSpimData.getViewRegistrations().getViewRegistrationsOrdered() );
+		regs.addAll( fusionReg.getViewRegistrationsOrdered() );
+		final ViewRegistrations aggregateViewRegistrstions = new ViewRegistrations( regs );
+
+		// create aggregate SpimData
+		final SpimDataMinimal aggregateSpimData = new SpimDataMinimal( baseDirectory, aggregateSeq, aggregateViewRegistrstions );
+
+
 
 		double complete = 0.05;
 		progress.setProgress( complete );
@@ -169,12 +294,11 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		for ( final Partition partition : newPartitions )
 		{
 			final SubTaskProgressWriter subtaskProgress = new SubTaskProgressWriter( progress, complete, complete + completionStep );
-			WriteSequenceToHdf5.writeHdf5PartitionFile( aggregateSeq, aggregateMipmapInfos, params.deflate, partition, subtaskProgress );
+			WriteSequenceToHdf5.writeHdf5PartitionFile( fusionSeq, perSetupExportMipmapInfo, params.deflate, partition, subtaskProgress );
 			complete += completionStep;
 		}
 
 		// (re-)write hdf5 link file
-		final File newHdf5PartitionLinkFile = PluginHelper.createNewPartitionFile( existingDatasetXmlFile );
 		WriteSequenceToHdf5.writeHdf5PartitionLinkFile( aggregateSeq, aggregateMipmapInfos, partitions, newHdf5PartitionLinkFile );
 		progress.setProgress( 1 );
 
@@ -193,24 +317,60 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		final Map< Integer, AffineTransform3D > fusionTransforms = spimseq.getFusionTransforms( params.cropOffsetX, params.cropOffsetY, params.cropOffsetZ, params.scale );
 		final FusionResult fusionResult = FusionResult.create( spimseq, params.fusionDirectory, params.filenamePattern, params.numSlices, params.sliceValueMin, params.sliceValueMax, fusionTransforms );
 
-		// aggregate the ViewSetups
-		final SetupAggregator aggregator = new SetupAggregator();
+		// sequence description (no ImgLoader yet)
+		final SequenceDescriptionMinimal desc = fusionResult.getSequenceDescription();
 
-		// add the setups from the fusion result
-		aggregator.addSetups( fusionResult, params.resolutions, params.subdivisions );
+		// create ExportMipmapInfos
+		final Map< Integer, ExportMipmapInfo > perSetupExportMipmapInfo = new HashMap< Integer, ExportMipmapInfo >();
+		final ExportMipmapInfo mipmapInfo = new ExportMipmapInfo( params.resolutions, params.subdivisions );
+		for ( final BasicViewSetup setup : desc.getViewSetupsOrdered() )
+			perSetupExportMipmapInfo.put( setup.getId(), mipmapInfo );
 
-		final File baseDirectory = params.seqFile.getParentFile();
-		final SpimDataMinimal aggregateSpimData = aggregator.createSpimData( baseDirectory );
-		final SequenceDescriptionMinimal aggregateSeq = aggregateSpimData.getSequenceDescription();
-		final Map< Integer, ExportMipmapInfo > aggregateMipmapInfos = aggregator.getPerSetupMipmapInfo();
+		// create partitions if desired
+		final ArrayList< Partition > partitions;
+		if ( params.split )
+		{
+			final String xmlFilename = params.seqFile.getAbsolutePath();
+			final String basename = xmlFilename.endsWith( ".xml" ) ? xmlFilename.substring( 0, xmlFilename.length() - 4 ) : xmlFilename;
+			final List< TimePoint > timepoints = desc.getTimePoints().getTimePointsOrdered();
+			final List< BasicViewSetup > setups = desc.getViewSetupsOrdered();
+			partitions = Partition.split( timepoints, setups, params.timepointsPerPartition, params.setupsPerPartition, basename );
+		}
+		else
+			partitions = null;
 
-		// write single hdf5 file
-		WriteSequenceToHdf5.writeHdf5File( aggregateSeq, aggregateMipmapInfos, params.deflate, params.hdf5File, new SubTaskProgressWriter( progress, 0, 0.95 ) );
+		// write to hdf5
+		if ( params.split )
+		{
+			for ( int i = 0; i < partitions.size(); ++i )
+			{
+				final Partition partition = partitions.get( i );
+				final ProgressWriter p = new SubTaskProgressWriter( progress, 0, 0.95 * i / partitions.size() );
+				WriteSequenceToHdf5.writeHdf5PartitionFile( desc, perSetupExportMipmapInfo, params.deflate, partition, p );
+			}
+			WriteSequenceToHdf5.writeHdf5PartitionLinkFile( desc, perSetupExportMipmapInfo, partitions, params.hdf5File );
+		}
+		else
+		{
+			WriteSequenceToHdf5.writeHdf5File( desc, perSetupExportMipmapInfo, params.deflate, params.hdf5File, new SubTaskProgressWriter( progress, 0, 0.95 ) );
+		}
 
-		// re-write xml file
-		spimDataIo.save(
-				new SpimDataMinimal( aggregateSpimData, new Hdf5ImageLoader( params.hdf5File, null, null, false ) ),
-				params.seqFile.getAbsolutePath() );
+		// write xml file
+		final Hdf5ImageLoader loader = new Hdf5ImageLoader( params.hdf5File, partitions, null, false );
+		final SequenceDescriptionMinimal sequenceDescription = new SequenceDescriptionMinimal( desc, loader );
+
+		final File basePath = params.seqFile.getParentFile();
+		final SpimDataMinimal spimData = new SpimDataMinimal( basePath, sequenceDescription, fusionResult.getViewRegistrations() );
+		try
+		{
+			spimDataIo.save( spimData, params.seqFile.getAbsolutePath() );
+			progress.setProgress( 1.0 );
+		}
+		catch ( final Exception e )
+		{
+			progress.err().println( "Failed to write xml file " + params.seqFile );
+			e.printStackTrace( progress.err() );
+		}
 	}
 
 	public static String allChannels = "0, 1";
@@ -233,12 +393,16 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		final File hdf5File;
 		final boolean appendToExistingFile;
 		final boolean deflate;
+		final boolean split;
+		final int timepointsPerPartition;
+		final int setupsPerPartition;
 
 		public Parameters( final SPIMConfiguration conf, final int[][] resolutions, final int[][] subdivisions,
 				final int cropOffsetX, final int cropOffsetY, final int cropOffsetZ, final int scale,
 				final String fusionDirectory, final String filenamePattern, final int numSlices,
 				final double sliceValueMin, final double sliceValueMax,
-				final File seqFile, final File hdf5File, final boolean appendToExistingFile, final boolean deflate )
+				final File seqFile, final File hdf5File, final boolean appendToExistingFile, final boolean deflate,
+				final boolean split, final int timepointsPerPartition, final int setupsPerPartition )
 		{
 			this.conf = conf;
 			this.resolutions = resolutions;
@@ -256,6 +420,9 @@ public class ExportSpimFusionPlugIn implements PlugIn
 			this.hdf5File = hdf5File;
 			this.appendToExistingFile = appendToExistingFile;
 			this.deflate = deflate;
+			this.split = split;
+			this.timepointsPerPartition = timepointsPerPartition;
+			this.setupsPerPartition = setupsPerPartition;
 		}
 	}
 
@@ -592,6 +759,14 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		final TextField tfChunkSizes = ( TextField ) gd2.getStringFields().lastElement();
 
 		gd2.addMessage( "" );
+		gd2.addCheckbox( "split hdf5", lastSplit );
+		final Checkbox cSplit = ( Checkbox ) gd2.getCheckboxes().lastElement();
+		gd2.addNumericField( "timepoints per partition", lastTimepointsPerPartition, 0, 25, "" );
+		final TextField tfSplitTimepoints = ( TextField ) gd2.getNumericFields().lastElement();
+		gd2.addNumericField( "setups per partition", lastSetupsPerPartition, 0, 25, "" );
+		final TextField tfSplitSetups = ( TextField ) gd2.getNumericFields().lastElement();
+
+		gd2.addMessage( "" );
 		gd2.addCheckbox( "use deflate compression", lastDeflate );
 
 		gd2.addMessage( "" );
@@ -649,6 +824,20 @@ public class ExportSpimFusionPlugIn implements PlugIn
 			tfSubsampling.setText( autoSubsampling );
 			tfChunkSizes.setText( autoChunkSizes );
 		}
+
+		cSplit.addItemListener( new ItemListener()
+		{
+			@Override
+			public void itemStateChanged( final ItemEvent arg0 )
+			{
+				final boolean split = cSplit.getState();
+				tfSplitTimepoints.setEnabled( split );
+				tfSplitSetups.setEnabled( split );
+			}
+		} );
+
+		tfSplitTimepoints.setEnabled( lastSplit );
+		tfSplitSetups.setEnabled( lastSplit );
 
 		gd2.showDialog();
 
@@ -748,6 +937,10 @@ public class ExportSpimFusionPlugIn implements PlugIn
 			return null;
 		}
 
+		lastSplit = gd2.getNextBoolean();
+		lastTimepointsPerPartition = ( int ) gd2.getNextNumber();
+		lastSetupsPerPartition = ( int ) gd2.getNextNumber();
+
 		lastDeflate = gd2.getNextBoolean();
 
 		String seqFilename = gd2.getNextString();
@@ -768,7 +961,7 @@ public class ExportSpimFusionPlugIn implements PlugIn
 		final int cropOffsetY = Multi_View_Fusion.cropOffsetYStatic;
 		final int cropOffsetZ = Multi_View_Fusion.cropOffsetZStatic;
 		final int scale = Multi_View_Fusion.outputImageScalingStatic;
-		return new Parameters( conf, resolutions, subdivisions, cropOffsetX, cropOffsetY, cropOffsetZ, scale, fusionDirectory, filenamePattern, numSlices, minValueStatic, maxValueStatic, seqFile, hdf5File, appendToExistingFile, lastDeflate );
+		return new Parameters( conf, resolutions, subdivisions, cropOffsetX, cropOffsetY, cropOffsetZ, scale, fusionDirectory, filenamePattern, numSlices, minValueStatic, maxValueStatic, seqFile, hdf5File, appendToExistingFile, lastDeflate, lastSplit, lastTimepointsPerPartition, lastSetupsPerPartition );
 	}
 
 	protected boolean updateProposedMipmaps( final String fusionDirectory, final SPIMConfiguration conf )

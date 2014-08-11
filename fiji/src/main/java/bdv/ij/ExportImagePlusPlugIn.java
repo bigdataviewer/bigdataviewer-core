@@ -17,6 +17,7 @@ import java.awt.event.ItemEvent;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Map;
 
 import mpicbg.spim.data.generic.sequence.BasicImgLoader;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
@@ -39,6 +40,7 @@ import bdv.ij.export.imgloader.ImagePlusImgLoader.MinMaxOption;
 import bdv.ij.util.PluginHelper;
 import bdv.ij.util.ProgressWriterIJ;
 import bdv.img.hdf5.Hdf5ImageLoader;
+import bdv.img.hdf5.Partition;
 import bdv.spimdata.SequenceDescriptionMinimal;
 import bdv.spimdata.SpimDataMinimal;
 import bdv.spimdata.XmlIoSpimDataMinimal;
@@ -137,12 +139,6 @@ public class ExportImagePlusPlugIn implements PlugIn
 		sourceTransform.set( pw, 0, 0, 0, 0, ph, 0, 0, 0, 0, pd, 0 );
 
 		// write hdf5
-		final File seqFile = params.seqFile;
-		final File hdf5File = params.hdf5File;
-		final int[][] resolutions = params.resolutions;
-		final int[][] subdivisions = params.subdivisions;
-		final boolean deflate = params.deflate;
-
 		final HashMap< Integer, BasicViewSetup > setups = new HashMap< Integer, BasicViewSetup >( numSetups );
 		for ( int s = 0; s < numSetups; ++s )
 		{
@@ -155,10 +151,35 @@ public class ExportImagePlusPlugIn implements PlugIn
 			timepoints.add( new TimePoint( t ) );
 		final SequenceDescriptionMinimal seq = new SequenceDescriptionMinimal( new TimePoints( timepoints ), setups, imgLoader, null );
 
-		WriteSequenceToHdf5.writeHdf5File( seq, resolutions, subdivisions, deflate, hdf5File, new SubTaskProgressWriter( progressWriter, 0, 0.95 ) );
+		Map< Integer, ExportMipmapInfo > perSetupExportMipmapInfo;
+		perSetupExportMipmapInfo = new HashMap< Integer, ExportMipmapInfo >();
+		final ExportMipmapInfo mipmapInfo = new ExportMipmapInfo( params.resolutions, params.subdivisions );
+		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
+			perSetupExportMipmapInfo.put( setup.getId(), mipmapInfo );
+
+		final ArrayList< Partition > partitions;
+		if ( params.split )
+		{
+			final String xmlFilename = params.seqFile.getAbsolutePath();
+			final String basename = xmlFilename.endsWith( ".xml" ) ? xmlFilename.substring( 0, xmlFilename.length() - 4 ) : xmlFilename;
+			partitions = Partition.split( timepoints, seq.getViewSetupsOrdered(), params.timepointsPerPartition, params.setupsPerPartition, basename );
+
+			for ( int i = 0; i < partitions.size(); ++i )
+			{
+				final Partition partition = partitions.get( i );
+				final ProgressWriter p = new SubTaskProgressWriter( progressWriter, 0, 0.95 * i / partitions.size() );
+				WriteSequenceToHdf5.writeHdf5PartitionFile( seq, perSetupExportMipmapInfo, params.deflate, partition, p );
+			}
+			WriteSequenceToHdf5.writeHdf5PartitionLinkFile( seq, perSetupExportMipmapInfo, partitions, params.hdf5File );
+		}
+		else
+		{
+			partitions = null;
+			WriteSequenceToHdf5.writeHdf5File( seq, perSetupExportMipmapInfo, params.deflate, params.hdf5File, new SubTaskProgressWriter( progressWriter, 0, 0.95 ) );
+		}
 
 		// write xml sequence description
-		final Hdf5ImageLoader hdf5Loader = new Hdf5ImageLoader( hdf5File, null, null, false );
+		final Hdf5ImageLoader hdf5Loader = new Hdf5ImageLoader( params.hdf5File, partitions, null, false );
 		final SequenceDescriptionMinimal seqh5 = new SequenceDescriptionMinimal( seq, hdf5Loader );
 
 		final ArrayList< ViewRegistration > registrations = new ArrayList< ViewRegistration >();
@@ -166,12 +187,12 @@ public class ExportImagePlusPlugIn implements PlugIn
 			for ( int s = 0; s < numSetups; ++s )
 				registrations.add( new ViewRegistration( t, s, sourceTransform ) );
 
-		final File basePath = seqFile.getParentFile();
+		final File basePath = params.seqFile.getParentFile();
 		final SpimDataMinimal spimData = new SpimDataMinimal( basePath, seqh5, new ViewRegistrations( registrations ) );
 
 		try
 		{
-			new XmlIoSpimDataMinimal().save( spimData, seqFile.getAbsolutePath() );
+			new XmlIoSpimDataMinimal().save( spimData, params.seqFile.getAbsolutePath() );
 			progressWriter.setProgress( 1.0 );
 		}
 		catch ( final Exception e )
@@ -201,7 +222,17 @@ public class ExportImagePlusPlugIn implements PlugIn
 
 		final boolean deflate;
 
-		public Parameters( final boolean setMipmapManual, final int[][] resolutions, final int[][] subdivisions, final File seqFile, final File hdf5File, final MinMaxOption minMaxOption, final double rangeMin, final double rangeMax, final boolean deflate )
+		final boolean split;
+
+		final int timepointsPerPartition;
+
+		final int setupsPerPartition;
+
+		public Parameters(
+				final boolean setMipmapManual, final int[][] resolutions, final int[][] subdivisions,
+				final File seqFile, final File hdf5File,
+				final MinMaxOption minMaxOption, final double rangeMin, final double rangeMax, final boolean deflate,
+				final boolean split, final int timepointsPerPartition, final int setupsPerPartition )
 		{
 			this.setMipmapManual = setMipmapManual;
 			this.resolutions = resolutions;
@@ -212,6 +243,9 @@ public class ExportImagePlusPlugIn implements PlugIn
 			this.rangeMin = rangeMin;
 			this.rangeMax = rangeMax;
 			this.deflate = deflate;
+			this.split = split;
+			this.timepointsPerPartition = timepointsPerPartition;
+			this.setupsPerPartition = setupsPerPartition;
 		}
 	}
 
@@ -226,6 +260,12 @@ public class ExportImagePlusPlugIn implements PlugIn
 	static double lastMin = 0;
 
 	static double lastMax = 65535;
+
+	static boolean lastSplit = false;
+
+	static int lastTimepointsPerPartition = 0;
+
+	static int lastSetupsPerPartition = 0;
 
 	static boolean lastDeflate = true;
 
@@ -260,6 +300,14 @@ public class ExportImagePlusPlugIn implements PlugIn
 			final TextField tfMax = (TextField) gd.getNumericFields().lastElement();
 
 			gd.addMessage( "" );
+			gd.addCheckbox( "split hdf5", lastSplit );
+			final Checkbox cSplit = ( Checkbox ) gd.getCheckboxes().lastElement();
+			gd.addNumericField( "timepoints per partition", lastTimepointsPerPartition, 0, 25, "" );
+			final TextField tfSplitTimepoints = ( TextField ) gd.getNumericFields().lastElement();
+			gd.addNumericField( "setups per partition", lastSetupsPerPartition, 0, 25, "" );
+			final TextField tfSplitSetups = ( TextField ) gd.getNumericFields().lastElement();
+
+			gd.addMessage( "" );
 			gd.addCheckbox( "use deflate compression", lastDeflate );
 
 			gd.addMessage( "" );
@@ -283,6 +331,9 @@ public class ExportImagePlusPlugIn implements PlugIn
 					gd.getNextNumber();
 					gd.getNextNumber();
 					gd.getNextBoolean();
+					gd.getNextNumber();
+					gd.getNextNumber();
+					gd.getNextBoolean();
 					gd.getNextString();
 					if ( e instanceof ItemEvent && e.getID() == ItemEvent.ITEM_STATE_CHANGED && e.getSource() == cMinMaxChoices )
 					{
@@ -301,6 +352,12 @@ public class ExportImagePlusPlugIn implements PlugIn
 							tfChunkSizes.setText( autoChunkSizes );
 						}
 					}
+					else if ( e instanceof ItemEvent && e.getID() == ItemEvent.ITEM_STATE_CHANGED && e.getSource() == cSplit )
+					{
+						final boolean split = cSplit.getState();
+						tfSplitTimepoints.setEnabled( split );
+						tfSplitSetups.setEnabled( split );
+					}
 					return true;
 				}
 			} );
@@ -317,6 +374,9 @@ public class ExportImagePlusPlugIn implements PlugIn
 				tfChunkSizes.setText( autoChunkSizes );
 			}
 
+			tfSplitTimepoints.setEnabled( lastSplit );
+			tfSplitSetups.setEnabled( lastSplit );
+
 			gd.showDialog();
 			if ( gd.wasCanceled() )
 				return null;
@@ -327,6 +387,9 @@ public class ExportImagePlusPlugIn implements PlugIn
 			lastMinMaxChoice = gd.getNextChoiceIndex();
 			lastMin = gd.getNextNumber();
 			lastMax = gd.getNextNumber();
+			lastSplit = gd.getNextBoolean();
+			lastTimepointsPerPartition = ( int ) gd.getNextNumber();
+			lastSetupsPerPartition = ( int ) gd.getNextNumber();
 			lastDeflate = gd.getNextBoolean();
 			lastExportPath = gd.getNextString();
 
@@ -370,7 +433,6 @@ public class ExportImagePlusPlugIn implements PlugIn
 			final String hdf5Filename = seqFilename.substring( 0, seqFilename.length() - 4 ) + ".h5";
 			final File hdf5File = new File( hdf5Filename );
 
-			return new Parameters( lastSetMipmapManual, resolutions, subdivisions, seqFile, hdf5File, minMaxOption, lastMin, lastMax, lastDeflate );
-		}
+			return new Parameters( lastSetMipmapManual, resolutions, subdivisions, seqFile, hdf5File, minMaxOption, lastMin, lastMax, lastDeflate, lastSplit, lastTimepointsPerPartition, lastSetupsPerPartition );		}
 	}
 }
