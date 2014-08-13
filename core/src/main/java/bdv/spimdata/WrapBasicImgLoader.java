@@ -51,16 +51,7 @@ public class WrapBasicImgLoader< T > implements ViewerImgLoader< T, Volatile< T 
 
 	private static final AffineTransform3D[] mipmapTransforms = new AffineTransform3D[] { new AffineTransform3D() };
 
-	private static final Cache cache = new Cache()
-	{
-		@Override
-		public void prepareNextFrame()
-		{}
-
-		@Override
-		public void initIoTimeBudget( final long[] partialBudget )
-		{}
-	};
+	private static final Cache cache = new Cache.Dummy();
 
 	public WrapBasicImgLoader( final BasicImgLoader< T > source )
 	{

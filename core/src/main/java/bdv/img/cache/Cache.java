@@ -27,4 +27,15 @@ public interface Cache
 	 * (Re-)initialize the IO time budget.
 	 */
 	public void initIoTimeBudget( final long[] partialBudget );
+
+	public static class Dummy implements Cache
+	{
+		@Override
+		public void prepareNextFrame()
+		{}
+
+		@Override
+		public void initIoTimeBudget( final long[] partialBudget )
+		{}
+	}
 }
