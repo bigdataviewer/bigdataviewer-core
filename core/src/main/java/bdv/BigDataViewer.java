@@ -44,6 +44,7 @@ import bdv.tools.HelpDialog;
 import bdv.tools.InitializeViewerState;
 import bdv.tools.RecordMovieDialog;
 import bdv.tools.VisibilityAndGroupingDialog;
+import bdv.tools.bookmarks.BookmarkEditor;
 import bdv.tools.brightness.BrightnessDialog;
 import bdv.tools.brightness.ConverterSetup;
 import bdv.tools.brightness.MinMaxGroup;
@@ -81,6 +82,8 @@ public class BigDataViewer
 
 	protected final ManualTransformationEditor manualTransformationEditor;
 
+	protected final BookmarkEditor bookmarkEditor;
+
 	protected final JFileChooser fileChooser;
 
 	protected File proposedSettingsFile;
@@ -88,6 +91,16 @@ public class BigDataViewer
 	public void toggleManualTransformation()
 	{
 		manualTransformationEditor.toggle();
+	}
+
+	public void initSetBookmark()
+	{
+		bookmarkEditor.initSetBookmark();
+	}
+
+	public void initGoToBookmark()
+	{
+		bookmarkEditor.initGoToBookmark();
 	}
 
 	private static String createSetupName( final BasicViewSetup setup )
@@ -251,6 +264,8 @@ public class BigDataViewer
 
 		manualTransformation = new ManualTransformation( viewer );
 		manualTransformationEditor = new ManualTransformationEditor( viewer, viewerFrame.getKeybindings() );
+
+		bookmarkEditor = new BookmarkEditor( viewer, viewerFrame.getKeybindings() );
 
 		setupAssignments = new SetupAssignments( converterSetups, 0, 65535 );
 		if ( setupAssignments.getMinMaxGroups().size() > 0 )
@@ -449,8 +464,9 @@ public class BigDataViewer
 
 	public static void main( final String[] args )
 	{
-		final String fn = "/Users/Pietzsch/Desktop/spimrec2/dataset.xml";
+//		final String fn = "/Users/Pietzsch/Desktop/spimrec2/dataset.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/bdv example/drosophila 2.xml";
+		final String fn = "/Users/pietzsch/Desktop/data/clusterValia/140219-1/valia-140219-1.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/data/catmaid.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/data/openconnectome-bock11-neariso.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/data/catmaid-confocal.xml";
@@ -462,7 +478,7 @@ public class BigDataViewer
 //		final String fn = "/Users/pietzsch/Desktop/data/fibsem.xml";
 //		final String fn = "/Users/pietzsch/Desktop/data/fibsem-remote.xml";
 //		final String fn = "/Users/pietzsch/Desktop/url-valia.xml";
-//		final String fn = "/Users/pietzsch/Desktop/data/Valia/valia.xml";
+//		final String fn = "/Users/pietzsch/Desktop/data/clusterValia/140219-1/valia-140219-1.xml";
 //		final String fn = "/Users/pietzsch/workspace/data/111010_weber_full.xml";
 //		final String fn = "/Volumes/projects/tomancak_lightsheet/Mette/ZeissZ1SPIM/Maritigrella/021013_McH2BsGFP_CAAX-mCherry/11-use/hdf5/021013_McH2BsGFP_CAAX-mCherry-11-use.xml";
 		try

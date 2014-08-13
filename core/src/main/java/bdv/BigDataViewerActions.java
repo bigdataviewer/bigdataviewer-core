@@ -7,8 +7,8 @@ import javax.swing.InputMap;
 
 import bdv.tools.ToggleDialogAction;
 import bdv.util.AbstractNamedAction;
-import bdv.util.KeyProperties;
 import bdv.util.AbstractNamedAction.NamedActionAdder;
+import bdv.util.KeyProperties;
 import bdv.util.KeyProperties.KeyStrokeAdder;
 import bdv.viewer.InputActionBindings;
 
@@ -22,6 +22,8 @@ public class BigDataViewerActions
 	public static final String SAVE_SETTINGS = "save settings";
 	public static final String LOAD_SETTINGS = "load settings";
 	public static final String RECORD_MOVIE = "record movie";
+	public static final String SET_BOOKMARK = "set bookmark";
+	public static final String GO_TO_BOOKMARK = "go to bookmark";
 
 	/**
 	 * Create BigDataViewer actions and install them in the specified
@@ -56,6 +58,8 @@ public class BigDataViewerActions
 		map.put( RECORD_MOVIE, "F10" );
 		map.put( SAVE_SETTINGS, "F11" );
 		map.put( LOAD_SETTINGS, "F12" );
+		map.put( GO_TO_BOOKMARK, "B" );
+		map.put( SET_BOOKMARK, "shift B" );
 
 		return inputMap;
 	}
@@ -71,6 +75,8 @@ public class BigDataViewerActions
 		map.put( new ToggleDialogAction( RECORD_MOVIE, bdv.movieDialog ) );
 		map.put( new ToggleDialogAction( SHOW_HELP, bdv.helpDialog ) );
 		map.put( new ManualTransformAction( bdv ) );
+		map.put( new SetBookmarkAction( bdv ) );
+		map.put( new GoToBookmarkAction( bdv ) );
 		map.put( new SaveSettingsAction( bdv ) );
 		map.put( new LoadSettingsAction( bdv ) );
 
@@ -101,6 +107,38 @@ public class BigDataViewerActions
 		public void actionPerformed( final ActionEvent e )
 		{
 			bdv.toggleManualTransformation();
+		}
+
+		private static final long serialVersionUID = 1L;
+	}
+
+	public static class SetBookmarkAction extends ViewerAction
+	{
+		public SetBookmarkAction( final BigDataViewer bdv )
+		{
+			super( SET_BOOKMARK, bdv );
+		}
+
+		@Override
+		public void actionPerformed( final ActionEvent e )
+		{
+			bdv.initSetBookmark();
+		}
+
+		private static final long serialVersionUID = 1L;
+	}
+
+	public static class GoToBookmarkAction extends ViewerAction
+	{
+		public GoToBookmarkAction( final BigDataViewer bdv )
+		{
+			super( GO_TO_BOOKMARK, bdv );
+		}
+
+		@Override
+		public void actionPerformed( final ActionEvent e )
+		{
+			bdv.initGoToBookmark();
 		}
 
 		private static final long serialVersionUID = 1L;
