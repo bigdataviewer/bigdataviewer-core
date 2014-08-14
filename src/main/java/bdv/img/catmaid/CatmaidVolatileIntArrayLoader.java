@@ -14,11 +14,12 @@ public class CatmaidVolatileIntArrayLoader implements CacheArrayLoader< Volatile
 {
 	private VolatileIntArray theEmptyArray;
 
-	private final String urlFormat;
+	final private String urlFormat;
 	
-	private final int tileWidth;
-
-	private final int tileHeight;
+	final private int tileWidth;
+	final private int tileHeight;
+	
+	final private int[] zScales;
 
 	/**
 	 * <p>Create a {@link CacheArrayLoader} for a CATMAID source.  Tiles are
@@ -50,12 +51,13 @@ public class CatmaidVolatileIntArrayLoader implements CacheArrayLoader< Volatile
 	 * @param tileWidth
 	 * @param tileHeight
 	 */
-	public CatmaidVolatileIntArrayLoader( final String urlFormat, final int tileWidth, final int tileHeight )
+	public CatmaidVolatileIntArrayLoader( final String urlFormat, final int tileWidth, final int tileHeight, final int[] zScales )
 	{
 		theEmptyArray = new VolatileIntArray( tileWidth * tileHeight, false );
 		this.urlFormat = urlFormat;
 		this.tileWidth = tileWidth;
 		this.tileHeight = tileHeight;
+		this.zScales = zScales;
 	}
 	
 	@Override
@@ -72,37 +74,76 @@ public class CatmaidVolatileIntArrayLoader implements CacheArrayLoader< Volatile
 			final int[] dimensions,
 			final long[] min ) throws InterruptedException
 	{
-		final int c = ( int ) min[ 0 ] / tileWidth;
-		final int r = ( int ) min[ 1 ] / tileHeight;
+		final int col = ( int ) min[ 0 ] / tileWidth;
+		final int row = ( int ) min[ 1 ] / tileHeight;
 		final double scale = 1.0 / Math.pow(2.0, level);
-		
-		final String urlString = String.format( urlFormat, level, scale, min[ 0 ], min[ 1 ], min[ 2 ], tileWidth, tileHeight, r, c );
 		
 		final int w = dimensions[ 0 ];
 		final int h = dimensions[ 1 ];
 		final int[] data = new int[ w * h ];
 		try
 		{
-			final URL url = new URL( urlString );
-//			final Image image = toolkit.createImage( url );
-		    final BufferedImage jpg = ImageIO.read( url );
-
-			/* This gymnastic is necessary to get reproducible gray
-			 * values, just opening a JPG or PNG, even when saved by
-			 * ImageIO, and grabbing its pixels results in gray values
-			 * with a non-matching gamma transfer function, I cannot tell
-			 * why... */
-		    final BufferedImage image = new BufferedImage( w, h, BufferedImage.TYPE_INT_RGB );
-			image.createGraphics().drawImage( jpg, 0, 0, null );
-			final PixelGrabber pg = new PixelGrabber( image, 0, 0, w, h, data, 0, w );
-			pg.grabPixels();
+			if ( zScales[ level ] > 1 )
+			{
+				final long[] rs = new long[ data.length ], gs = new long[ data.length ], bs = new long[ data.length ];
+				
+				for ( int z = ( int )min[ 2 ] * zScales[ level ], dz = 0; dz < zScales[ level ]; ++dz )
+				{
+					final String urlString = String.format( urlFormat, level, scale, min[ 0 ], min[ 1 ], z + dz, tileWidth, tileHeight, row, col );
+					
+					final URL url = new URL( urlString );
+					final BufferedImage jpg = ImageIO.read( url );
+					
+					/* This gymnastic is necessary to get reproducible gray
+					 * values, just opening a JPG or PNG, even when saved by
+					 * ImageIO, and grabbing its pixels results in gray values
+					 * with a non-matching gamma transfer function, I cannot tell
+					 * why... */
+					final BufferedImage image = new BufferedImage( w, h, BufferedImage.TYPE_INT_RGB );
+					image.createGraphics().drawImage( jpg, 0, 0, null );
+					final PixelGrabber pg = new PixelGrabber( image, 0, 0, w, h, data, 0, w );
+					pg.grabPixels();
+					for ( int i = 0; i < data.length; ++i )
+					{
+						rs[ i ] += ( data[ i ] >> 16 ) & 0xff;
+						gs[ i ] += ( data[ i ] >> 8 ) & 0xff;
+						bs[ i ] += data[ i ] & 0xff;
+					}
+				}
+				for ( int i = 0; i < data.length; ++i )
+				{
+					final int r = ( int )( rs[ i ] / zScales[ level ] );
+					final int g = ( int )( gs[ i ] / zScales[ level ] );
+					final int b = ( int )( bs[ i ] / zScales[ level ] );
+					
+					data[ i ] = ( ( ( ( r << 8 ) | g ) << 8 ) | b ) | 0xff000000;
+				}
+			}
+			else
+			{
+				final String urlString = String.format( urlFormat, level, scale, min[ 0 ], min[ 1 ], min[ 2 ], tileWidth, tileHeight, row, col );
+				
+				final URL url = new URL( urlString );
+	//			final Image image = toolkit.createImage( url );
+			    final BufferedImage jpg = ImageIO.read( url );
+	
+				/* This gymnastic is necessary to get reproducible gray
+				 * values, just opening a JPG or PNG, even when saved by
+				 * ImageIO, and grabbing its pixels results in gray values
+				 * with a non-matching gamma transfer function, I cannot tell
+				 * why... */
+			    final BufferedImage image = new BufferedImage( w, h, BufferedImage.TYPE_INT_RGB );
+				image.createGraphics().drawImage( jpg, 0, 0, null );
+				final PixelGrabber pg = new PixelGrabber( image, 0, 0, w, h, data, 0, w );
+				pg.grabPixels();
+			}
 
 //			System.out.println( "success loading r=" + entry.key.r + " c=" + entry.key.c + " url(" + urlString + ")" );
 
 		}
 		catch (final IOException e)
 		{
-			System.out.println( "failed loading r=" + r + " c=" + c + " url(" + urlString + ")" );
+			System.out.println( "failed loading r=" + row + " c=" + col );
 		}
 		catch (final InterruptedException e)
 		{

@@ -91,7 +91,9 @@ public class OpenConnectomeImageLoader implements ViewerImgLoader< UnsignedByteT
 			throws JsonSyntaxException, JsonIOException, IOException
 	{
 		final Gson gson = new Gson();
-		final URL url = new URL( baseUrl + "/" + token + "/info/" );
+		final String urlString = baseUrl + "/" + token + "/info/";
+		System.out.println( "Attempting to open " + urlString );
+		final URL url = new URL( urlString );
 		return gson.fromJson( new InputStreamReader( url.openStream() ), OpenConnectomeTokenInfo.class );
 	}
 	

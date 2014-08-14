@@ -23,31 +23,23 @@ import bdv.img.cache.VolatileImgCells.CellCache;
 
 public class CatmaidImageLoader extends AbstractViewerImgLoader< ARGBType, VolatileARGBType >
 {
-	private long width;
-
-	private long height;
-
-	private long depth;
-
-	private double resXY;
-
-	private double resZ;
-
 	private String urlFormat;
 
-	private int tileWidth;
+	private long width;
+	private long height;
+	private long depth;
 
+	private int tileWidth;
 	private int tileHeight;
 
 	private int numScales;
 
 	private double[][] mipmapResolutions;
-
 	private AffineTransform3D[] mipmapTransforms;
-
 	private long[][] imageDimensions;
-
-	private int[][] blockDimensions;
+	
+	private double zScale;
+	private int[] zScales;
 
 	private VolatileGlobalCellCache< VolatileIntArray > cache;
 
@@ -63,8 +55,10 @@ public class CatmaidImageLoader extends AbstractViewerImgLoader< ARGBType, Volat
 		height = Long.parseLong( elem.getChildText( "height" ) );
 		depth = Long.parseLong( elem.getChildText( "depth" ) );
 
-		resXY = Double.parseDouble( elem.getChildText( "resXY" ) );
-		resZ = Double.parseDouble( elem.getChildText( "resZ" ) );
+		final double resXY = Double.parseDouble( elem.getChildText( "resXY" ) );
+		final double resZ = Double.parseDouble( elem.getChildText( "resZ" ) );
+		
+		zScale = resZ / resXY;
 
 		urlFormat = elem.getChildText( "urlFormat" );
 
@@ -79,25 +73,34 @@ public class CatmaidImageLoader extends AbstractViewerImgLoader< ARGBType, Volat
 
 		mipmapResolutions = new double[ numScales ][];
 		imageDimensions = new long[ numScales ][];
-		blockDimensions = new int[ numScales ][];
 		mipmapTransforms = new AffineTransform3D[ numScales ];
+		zScales = new int[ numScales ];
 		for ( int l = 0; l < numScales; ++l )
 		{
-			mipmapResolutions[ l ] = new double[] { 1 << l, 1 << l, 1 };
-			imageDimensions[ l ] = new long[] { width >> l, height >> l, depth };
-			blockDimensions[ l ] = new int[] { tileWidth, tileHeight, 1 };
+			final int sixy = 1 << l;
+			int siz = Math.max( 1, ( int )Math.round( sixy / zScale ) );
+			
+			mipmapResolutions[ l ] = new double[] { sixy, sixy, siz };
+			imageDimensions[ l ] = new long[] { width >> l, height >> l, depth / siz };
+			zScales[ l ] = siz;
 			
 			final AffineTransform3D mipmapTransform = new AffineTransform3D();
-			mipmapTransform.set( mipmapResolutions[ l ][ 0 ], 0, 0 );
-			mipmapTransform.set( mipmapResolutions[ l ][ 1 ], 1, 1 );
-			mipmapTransform.set( 0.5 * ( mipmapResolutions[ l ][ 0 ] - 1 ), 0, 3 );
-			mipmapTransform.set( 0.5 * ( mipmapResolutions[ l ][ 0 ] - 1 ), 1, 3 );
+			
+			mipmapTransform.set( sixy, 0, 0 );
+			mipmapTransform.set( sixy, 1, 1 );
+			mipmapTransform.set( zScale * siz, 2, 2 );
+			
+			mipmapTransform.set( 0.5 * ( sixy - 1 ), 0, 3 );
+			mipmapTransform.set( 0.5 * ( sixy - 1 ), 1, 3 );
+			mipmapTransform.set( 0.5 * ( zScale * siz - 1 ), 2, 3 );
+			
 			mipmapTransforms[ l ] = mipmapTransform;
 		}
 
 		final int[] maxLevels = new int[] { numScales - 1 };
+		
 		cache = new VolatileGlobalCellCache< VolatileIntArray >(
-				new CatmaidVolatileIntArrayLoader( urlFormat, tileWidth, tileHeight ), 1, 1, numScales, maxLevels, 10 );
+				new CatmaidVolatileIntArrayLoader( urlFormat, tileWidth, tileHeight, zScales ), 1, 1, numScales, maxLevels, 10 );
 	}
 
 	final static public int getNumScales( long width, long height, final long tileWidth, final long tileHeight )
@@ -148,7 +151,7 @@ public class CatmaidImageLoader extends AbstractViewerImgLoader< ARGBType, Volat
 	protected < T extends NativeType< T > > CellImg< T, VolatileIntArray, VolatileCell< VolatileIntArray > > prepareCachedImage( final View view, final int level, final LoadingStrategy loadingStrategy )
 	{
 		final long[] dimensions = imageDimensions[ level ];
-		final int[] cellDimensions = blockDimensions[ level ];
+		final int[] cellDimensions = new int[]{ tileWidth, tileHeight, 1 };
 
 		final CellCache< VolatileIntArray > c = cache.new VolatileCellCache( view.getTimepointIndex(), view.getSetupIndex(), level, loadingStrategy );
 		final VolatileImgCells< VolatileIntArray > cells = new VolatileImgCells< VolatileIntArray >( c, 1, dimensions, cellDimensions );

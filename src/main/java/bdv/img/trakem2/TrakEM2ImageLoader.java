@@ -38,10 +38,10 @@ public class TrakEM2ImageLoader extends AbstractViewerImgLoader< ARGBType, Volat
 	private int height;
 	private int depth;
 	
-	private double zScale;
-
 	private int tileWidth;
 	private int tileHeight;
+	
+	private double zScale;
 
 	private int numScales;
 
@@ -51,7 +51,7 @@ public class TrakEM2ImageLoader extends AbstractViewerImgLoader< ARGBType, Volat
 
 	private long[][] imageDimensions;
 
-	private int[][] blockDimensions;
+	private int[] zScales;
 
 	private VolatileGlobalCellCache< VolatileIntArray > cache;
 
@@ -59,14 +59,14 @@ public class TrakEM2ImageLoader extends AbstractViewerImgLoader< ARGBType, Volat
 	{
 		super( new ARGBType(), new VolatileARGBType() );
 	}
-
-	@Override
-	public void init( final Element elem, final File basePath )
+	
+	public void init( final Project project, final int tileWidth, final int tileHeight, final int numScales )
 	{
-		final String projectPath = elem.getChildText( "projectPath" );
+		this.project = project;
+		this.tileWidth = tileWidth;
+		this.tileHeight = tileHeight;
+		this.numScales = numScales;
 		
-		ControlWindow.setGUIEnabled( false );
-		project = Project.openFSProject( projectPath, false);
 		loader = project.getLoader();
 		layerset = project.getRootLayerSet();
 		layerset.setSnapshotsMode(1);
@@ -79,37 +79,53 @@ public class TrakEM2ImageLoader extends AbstractViewerImgLoader< ARGBType, Volat
 		final Calibration calibration = layerset.getCalibration();
 		zScale = calibration.pixelDepth / calibration.pixelWidth;
 		
-		tileWidth = Integer.parseInt( elem.getChildText( "tileWidth" ) );
-		tileHeight = Integer.parseInt( elem.getChildText( "tileHeight" ) );
+		mipmapResolutions = new double[ numScales ][];
+		imageDimensions = new long[ numScales ][];
+		mipmapTransforms = new AffineTransform3D[ numScales ];
+		zScales = new int[ numScales ];
+		for ( int l = 0; l < numScales; ++l )
+		{
+			final int sixy = 1 << l;
+			int siz = Math.max( 1, ( int )Math.round( sixy / zScale ) );
+			
+			mipmapResolutions[ l ] = new double[] { sixy, sixy, siz };
+			imageDimensions[ l ] = new long[] { width >> l, height >> l, depth / siz };
+			zScales[ l ] = siz;
+			
+			final AffineTransform3D mipmapTransform = new AffineTransform3D();
+			
+			mipmapTransform.set( sixy, 0, 0 );
+			mipmapTransform.set( sixy, 1, 1 );
+			mipmapTransform.set( zScale * siz, 2, 2 );
+			
+			mipmapTransform.set( 0.5 * ( sixy - 1 ), 0, 3 );
+			mipmapTransform.set( 0.5 * ( sixy - 1 ), 1, 3 );
+			mipmapTransform.set( 0.5 * ( zScale * siz - 1 ), 2, 3 );
+			
+			mipmapTransforms[ l ] = mipmapTransform;
+		}
 
+		final int[] maxLevels = new int[] { numScales - 1 };
+		cache = new VolatileGlobalCellCache< VolatileIntArray >(
+				new TrakEM2VolatileIntArrayLoader( loader, layerset, zScales ), 1, 1, numScales, maxLevels, 10 );
+	}
+
+	@Override
+	public void init( final Element elem, final File basePath )
+	{
+		final String projectPath = elem.getChildText( "projectPath" );
+		final int tileWidth = Integer.parseInt( elem.getChildText( "tileWidth" ) );
+		final int tileHeight = Integer.parseInt( elem.getChildText( "tileHeight" ) );
 		final String numScalesString = elem.getChildText( "numScales" );
 		if ( numScalesString == null )
 			numScales = getNumScales( width, height, tileWidth, tileHeight );
 		else
 			numScales = Integer.parseInt( numScalesString );
 
-		mipmapResolutions = new double[ numScales ][];
-		imageDimensions = new long[ numScales ][];
-		blockDimensions = new int[ numScales ][];
-		mipmapTransforms = new AffineTransform3D[ numScales ];
-		for ( int l = 0; l < numScales; ++l )
-		{
-			mipmapResolutions[ l ] = new double[] { 1 << l, 1 << l, 1 };
-			imageDimensions[ l ] = new long[] { width >> l, height >> l, depth };
-			blockDimensions[ l ] = new int[] { tileWidth, tileHeight, 1 };
-			
-			final AffineTransform3D mipmapTransform = new AffineTransform3D();
-			mipmapTransform.set( mipmapResolutions[ l ][ 0 ], 0, 0 );
-			mipmapTransform.set( mipmapResolutions[ l ][ 1 ], 1, 1 );
-			mipmapTransform.set( zScale, 2, 2 );
-			mipmapTransform.set( 0.5 * ( mipmapResolutions[ l ][ 0 ] - 1 ), 0, 3 );
-			mipmapTransform.set( 0.5 * ( mipmapResolutions[ l ][ 0 ] - 1 ), 1, 3 );
-			mipmapTransforms[ l ] = mipmapTransform;
-		}
-
-		final int[] maxLevels = new int[] { numScales - 1 };
-		cache = new VolatileGlobalCellCache< VolatileIntArray >(
-				new TrakEM2VolatileIntArrayLoader( loader, layerset ), 1, 1, numScales, maxLevels, 10 );
+		ControlWindow.setGUIEnabled( false );
+		project = Project.openFSProject( projectPath, false);
+		
+		init( project, tileWidth, tileHeight, numScales );
 	}
 
 	final static public int getNumScales( long width, long height, final long tileWidth, final long tileHeight )
@@ -160,7 +176,7 @@ public class TrakEM2ImageLoader extends AbstractViewerImgLoader< ARGBType, Volat
 	protected < T extends NativeType< T > > CellImg< T, VolatileIntArray, VolatileCell< VolatileIntArray > > prepareCachedImage( final View view, final int level, final LoadingStrategy loadingStrategy )
 	{
 		final long[] dimensions = imageDimensions[ level ];
-		final int[] cellDimensions = blockDimensions[ level ];
+		final int[] cellDimensions = new int[]{ tileWidth, tileHeight, 1 };
 
 		final CellCache< VolatileIntArray > c = cache.new VolatileCellCache( view.getTimepointIndex(), view.getSetupIndex(), level, loadingStrategy );
 		final VolatileImgCells< VolatileIntArray > cells = new VolatileImgCells< VolatileIntArray >( c, 1, dimensions, cellDimensions );
