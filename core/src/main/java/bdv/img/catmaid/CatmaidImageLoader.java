@@ -19,6 +19,10 @@ import bdv.img.cache.VolatileImgCells.CellCache;
 public class CatmaidImageLoader extends AbstractViewerImgLoader< ARGBType, VolatileARGBType >
 {
 	private final int numScales;
+	
+	private final int tileWidth;
+	
+	private final int tileHeight;
 
 	private final double[][] mipmapResolutions;
 
@@ -26,14 +30,13 @@ public class CatmaidImageLoader extends AbstractViewerImgLoader< ARGBType, Volat
 
 	private final long[][] imageDimensions;
 
-	private final int[][] blockDimensions;
-
 	private final VolatileGlobalCellCache< VolatileIntArray > cache;
 
 	public CatmaidImageLoader(
 			final long width,
 			final long height,
 			final long depth,
+			final double zScale,
 			final int numScales,
 			final String urlFormat,
 			final int tileWidth,
@@ -41,27 +44,37 @@ public class CatmaidImageLoader extends AbstractViewerImgLoader< ARGBType, Volat
 	{
 		super( new ARGBType(), new VolatileARGBType() );
 		this.numScales = numScales;
+		this.tileWidth = tileWidth;
+		this.tileHeight = tileHeight;
 
 		mipmapResolutions = new double[ numScales ][];
 		imageDimensions = new long[ numScales ][];
-		blockDimensions = new int[ numScales ][];
 		mipmapTransforms = new AffineTransform3D[ numScales ];
+		final int[] zScales = new int[ numScales ];
 		for ( int l = 0; l < numScales; ++l )
 		{
-			mipmapResolutions[ l ] = new double[] { 1 << l, 1 << l, 1 };
-			imageDimensions[ l ] = new long[] { width >> l, height >> l, depth };
-			blockDimensions[ l ] = new int[] { tileWidth, tileHeight, 1 };
+			final int sixy = 1 << l;
+			int siz = Math.max( 1, ( int )Math.round( sixy / zScale ) );
+			
+			mipmapResolutions[ l ] = new double[] { sixy, sixy, siz };
+			imageDimensions[ l ] = new long[] { width >> l, height >> l, depth / siz };
+			zScales[ l ] = siz;
 
 			final AffineTransform3D mipmapTransform = new AffineTransform3D();
-			mipmapTransform.set( mipmapResolutions[ l ][ 0 ], 0, 0 );
-			mipmapTransform.set( mipmapResolutions[ l ][ 1 ], 1, 1 );
-			mipmapTransform.set( 0.5 * ( mipmapResolutions[ l ][ 0 ] - 1 ), 0, 3 );
-			mipmapTransform.set( 0.5 * ( mipmapResolutions[ l ][ 0 ] - 1 ), 1, 3 );
+			
+			mipmapTransform.set( sixy, 0, 0 );
+			mipmapTransform.set( sixy, 1, 1 );
+			mipmapTransform.set( zScale * siz, 2, 2 );
+			
+			mipmapTransform.set( 0.5 * ( sixy - 1 ), 0, 3 );
+			mipmapTransform.set( 0.5 * ( sixy - 1 ), 1, 3 );
+			mipmapTransform.set( 0.5 * ( zScale * siz - 1 ), 2, 3 );
+			
 			mipmapTransforms[ l ] = mipmapTransform;
 		}
 
 		cache = new VolatileGlobalCellCache< VolatileIntArray >(
-				new CatmaidVolatileIntArrayLoader( urlFormat, tileWidth, tileHeight ), 1, 1, numScales, 10 );
+				new CatmaidVolatileIntArrayLoader( urlFormat, tileWidth, tileHeight, zScales ), 1, 1, numScales, 10 );
 	}
 
 	final static public int getNumScales( long width, long height, final long tileWidth, final long tileHeight )
@@ -112,7 +125,7 @@ public class CatmaidImageLoader extends AbstractViewerImgLoader< ARGBType, Volat
 	protected < T extends NativeType< T > > CachedCellImg< T, VolatileIntArray > prepareCachedImage( final ViewId view, final int level, final LoadingStrategy loadingStrategy )
 	{
 		final long[] dimensions = imageDimensions[ level ];
-		final int[] cellDimensions = blockDimensions[ level ];
+		final int[] cellDimensions = new int[]{ tileWidth, tileHeight, 1 };
 
 		final int priority = numScales - 1 - level;
 		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
