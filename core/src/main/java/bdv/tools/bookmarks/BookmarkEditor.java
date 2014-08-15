@@ -31,6 +31,8 @@ public class BookmarkEditor
 
 	private final HashMap< String, AffineTransform3D > bookmarks;
 
+	private BookmarkTextOverlayAnimator animator;
+
 	public BookmarkEditor( final ViewerPanel viewer, final InputActionBindings inputActionBindings )
 	{
 		this.viewer = viewer;
@@ -67,14 +69,15 @@ public class BookmarkEditor
 						final AffineTransform3D t = new AffineTransform3D();
 						viewer.getState().getViewerTransform( t );
 						bookmarks.put( key, t );
-						viewer.showMessage( "set bookmark " + key );
+						animator.fadeOut( "set bookmark: " + key, 500 );
+						viewer.requestRepaint();
 					}
 					else
 					{
 						final AffineTransform3D t = bookmarks.get( key );
 						if ( t != null )
 							viewer.setCurrentViewerTransform( t );
-						viewer.showMessage( "go to bookmark " + key );
+						animator.fadeOut( "go to bookmark: " + key, 500 );
 					}
 					done();
 				}
@@ -84,11 +87,10 @@ public class BookmarkEditor
 
 	public synchronized void abort()
 	{
+		if ( animator != null )
+			animator.clear();
 		if ( active )
-		{
-			viewer.showMessage( "aborted" );
 			done();
-		}
 	}
 
 	public synchronized void initSetBookmark()
@@ -96,7 +98,11 @@ public class BookmarkEditor
 		active = true;
 		setBookmark = true;
 		bindings.addInputMap( "bookmarks", inputMap, "bdv", "navigation" );
-		viewer.showMessage( " bookmark" );
+		if ( animator != null )
+			animator.clear();
+		animator = new BookmarkTextOverlayAnimator( viewer );
+		viewer.addOverlayAnimator( animator );
+		animator.fadeIn( "set bookmark: ", 100 );
 	}
 
 	public synchronized void initGoToBookmark()
@@ -104,7 +110,11 @@ public class BookmarkEditor
 		active = true;
 		setBookmark = false;
 		bindings.addInputMap( "bookmarks", inputMap, "bdv", "navigation" );
-		viewer.showMessage( "go to bookmark" );
+		if ( animator != null )
+			animator.clear();
+		animator = new BookmarkTextOverlayAnimator( viewer );
+		viewer.addOverlayAnimator( animator );
+		animator.fadeIn( "go to bookmark: ", 100 );
 	}
 
 	public synchronized void done()
