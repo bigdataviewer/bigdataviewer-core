@@ -536,6 +536,13 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		transformChanged( transform );
 	}
 
+	public synchronized void setTransformAnimator( final AbstractTransformAnimator animator )
+	{
+		currentAnimator = animator;
+		currentAnimator.setTime( System.currentTimeMillis() );
+		requestRepaint();
+	}
+
 	/**
 	 * Switch to next interpolation mode. (Currently, there are two
 	 * interpolation modes: nearest-neighbor and N-linear.

@@ -14,12 +14,21 @@ import javax.swing.KeyStroke;
 import net.imglib2.realtransform.AffineTransform3D;
 import bdv.viewer.InputActionBindings;
 import bdv.viewer.ViewerPanel;
+import bdv.viewer.animate.RigidTransformAnimator;
 
 public class BookmarkEditor
 {
-	private boolean active = false;
+	static enum Mode
+	{
+		INACTIVE,
+		SET,
+		RECALL_TRANSFORM,
+		RECALL_ORIENTATION
+	}
 
-	private boolean setBookmark = false;
+	private Mode mode = Mode.INACTIVE;
+
+	private volatile boolean initialKey = false;
 
 	private final ViewerPanel viewer;
 
@@ -61,25 +70,49 @@ public class BookmarkEditor
 			@Override
 			public void keyTyped( final KeyEvent e )
 			{
-				if ( active && e.getKeyChar() != 'b' && e.getKeyChar() != 'B' )
+				if ( mode != Mode.INACTIVE )
 				{
-					final String key = String.valueOf( e.getKeyChar() );
-					if ( setBookmark )
-					{
-						final AffineTransform3D t = new AffineTransform3D();
-						viewer.getState().getViewerTransform( t );
-						bookmarks.put( key, t );
-						animator.fadeOut( "set bookmark: " + key, 500 );
-						viewer.requestRepaint();
-					}
+					if ( initialKey )
+						initialKey = false;
 					else
 					{
-						final AffineTransform3D t = bookmarks.get( key );
-						if ( t != null )
-							viewer.setCurrentViewerTransform( t );
-						animator.fadeOut( "go to bookmark: " + key, 500 );
+						final String key = String.valueOf( e.getKeyChar() );
+						switch ( mode )
+						{
+						case SET:
+						{
+							final AffineTransform3D t = new AffineTransform3D();
+							viewer.getState().getViewerTransform( t );
+							final double cX = viewer.getDisplay().getWidth() / 2.0;
+							final double cY = viewer.getDisplay().getHeight() / 2.0;
+							t.set( t.get( 0, 3 ) - cX, 0, 3 );
+							t.set( t.get( 1, 3 ) - cY, 1, 3 );
+							bookmarks.put( key, t );
+							animator.fadeOut( "set bookmark: " + key, 500 );
+							viewer.requestRepaint();
+						}
+							break;
+						case RECALL_TRANSFORM:
+						{
+							final AffineTransform3D t = bookmarks.get( key );
+							if ( t != null )
+							{
+								final AffineTransform3D c = new AffineTransform3D();
+								viewer.getState().getViewerTransform( c );
+								final double cX = viewer.getDisplay().getWidth() / 2.0;
+								final double cY = viewer.getDisplay().getHeight() / 2.0;
+								c.set( c.get( 0, 3 ) - cX, 0, 3 );
+								c.set( c.get( 1, 3 ) - cY, 1, 3 );
+								viewer.setTransformAnimator( new RigidTransformAnimator( c, t, cX, cY, 300 ) );
+							}
+							animator.fadeOut( "go to bookmark: " + key, 500 );
+						}
+							break;
+						default:
+							break;
+						}
+						done();
 					}
-					done();
 				}
 			}
 		} );
@@ -89,14 +122,13 @@ public class BookmarkEditor
 	{
 		if ( animator != null )
 			animator.clear();
-		if ( active )
-			done();
+		done();
 	}
 
 	public synchronized void initSetBookmark()
 	{
-		active = true;
-		setBookmark = true;
+		initialKey = true;
+		mode = Mode.SET;
 		bindings.addInputMap( "bookmarks", inputMap, "bdv", "navigation" );
 		if ( animator != null )
 			animator.clear();
@@ -107,8 +139,8 @@ public class BookmarkEditor
 
 	public synchronized void initGoToBookmark()
 	{
-		active = true;
-		setBookmark = false;
+		initialKey = true;
+		mode = Mode.RECALL_TRANSFORM;
 		bindings.addInputMap( "bookmarks", inputMap, "bdv", "navigation" );
 		if ( animator != null )
 			animator.clear();
@@ -119,7 +151,8 @@ public class BookmarkEditor
 
 	public synchronized void done()
 	{
-		active = false;
+		mode = Mode.INACTIVE;
+		initialKey = false;
 		bindings.removeInputMap( "bookmarks" );
 	}
 }
