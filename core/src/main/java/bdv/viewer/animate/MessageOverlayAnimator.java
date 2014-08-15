@@ -17,7 +17,7 @@ import java.util.List;
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
-public class MessageOverlayAnimator
+public class MessageOverlayAnimator implements OverlayAnimator
 {
 	protected static class TextAnimator extends AbstractAnimator
 	{
@@ -64,14 +64,24 @@ public class MessageOverlayAnimator
 		texts.add( 0, new TextAnimator( text, duration ) );
 	}
 
+	@Override
 	public boolean isComplete()
 	{
-		return texts.isEmpty();
+		// We this animator should not be removed, ever.
+		return false;
 	}
 
+
+	@Override
+	public boolean requiresRepaint()
+	{
+		return !texts.isEmpty();
+	}
+
+	@Override
 	public void paint( final Graphics2D g, final long time )
 	{
-		if ( isComplete() )
+		if ( !requiresRepaint() )
 			return;
 
 		final double ox = g.getClipBounds().getWidth() - 10;

@@ -12,7 +12,7 @@ import bdv.viewer.ViewerFrame;
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  * @author Jean-Yves Tinevez <jeanyves.tinevez@gmail.com>
  */
-public abstract class AbstractAnimator
+public class AbstractAnimator
 {
 	/** Expected duration length of the animation (in time units). */
 	private final long duration;

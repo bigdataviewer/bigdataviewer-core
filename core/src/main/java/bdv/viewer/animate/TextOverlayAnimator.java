@@ -13,7 +13,7 @@ import java.awt.geom.Rectangle2D;
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
-public class TextOverlayAnimator extends AbstractAnimator
+public class TextOverlayAnimator extends AbstractAnimator implements OverlayAnimator
 {
 	protected final Font font;
 
@@ -56,6 +56,7 @@ public class TextOverlayAnimator extends AbstractAnimator
 		this.position = position;
 	}
 
+	@Override
 	public void paint( final Graphics2D g, final long time )
 	{
 		setTime( time );
@@ -86,5 +87,11 @@ public class TextOverlayAnimator extends AbstractAnimator
 
 		g.setColor( new Color( 1f, 1f, 1f, alpha ) );
 		layout.draw( g, x, y );
+	}
+
+	@Override
+	public boolean requiresRepaint()
+	{
+		return !isComplete();
 	}
 }

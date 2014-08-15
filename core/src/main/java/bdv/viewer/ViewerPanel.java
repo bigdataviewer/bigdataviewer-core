@@ -46,6 +46,7 @@ import bdv.img.cache.Cache;
 import bdv.util.Affine3DHelpers;
 import bdv.viewer.animate.AbstractTransformAnimator;
 import bdv.viewer.animate.MessageOverlayAnimator;
+import bdv.viewer.animate.OverlayAnimator;
 import bdv.viewer.animate.RotationAnimator;
 import bdv.viewer.animate.TextOverlayAnimator;
 import bdv.viewer.animate.TextOverlayAnimator.TextPosition;
@@ -145,9 +146,11 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	protected AbstractTransformAnimator currentAnimator = null;
 
 	/**
-	 * Currently only used to show initial "press F1 for help" message.
+	 * A list of currently incomplete (see {@link OverlayAnimator#isComplete()})
+	 * animators. Initially, this contains a {@link TextOverlayAnimator} showing
+	 * the "press F1 for help" message.
 	 */
-	protected TextOverlayAnimator animatedOverlay;
+	protected ArrayList< OverlayAnimator > overlayAnimators;
 
 	/**
 	 * Fade-out overlay of recent messages. See {@link #showMessage(String)}.
@@ -305,7 +308,10 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		transformListeners = new CopyOnWriteArrayList< TransformListener< AffineTransform3D > >();
 
 		msgOverlay = optional.msgOverlay;
-		animatedOverlay = new TextOverlayAnimator( "Press <F1> for help.", 3000, TextPosition.CENTER );
+
+		overlayAnimators = new ArrayList< OverlayAnimator >();
+		overlayAnimators.add( msgOverlay );
+		overlayAnimators.add( new TextOverlayAnimator( "Press <F1> for help.", 3000, TextPosition.CENTER ) );
 
 		display.addComponentListener( new ComponentAdapter()
 		{
@@ -407,23 +413,20 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		g.setFont( new Font( "Monospaced", Font.PLAIN, 12 ) );
 		g.drawString( mousePosGlobalString, ( int ) g.getClipBounds().getWidth() - 170, 25 );
 
-		if ( animatedOverlay != null )
-		{
-			animatedOverlay.paint( ( Graphics2D ) g, System.currentTimeMillis() );
-			if ( animatedOverlay.isComplete() )
-				animatedOverlay = null;
-			else
-				display.repaint();
-		}
+		boolean requiresRepaint = multiBoxOverlayRenderer.isHighlightInProgress();
 
-		if ( !msgOverlay.isComplete() )
+		final long currentTimeMillis = System.currentTimeMillis();
+		final ArrayList< OverlayAnimator > overlayAnimatorsToRemove = new ArrayList< OverlayAnimator >();
+		for ( final OverlayAnimator animator : overlayAnimators )
 		{
-			msgOverlay.paint( ( Graphics2D ) g, System.currentTimeMillis() );
-			if ( !msgOverlay.isComplete() )
-				display.repaint();
+			animator.paint( ( Graphics2D ) g, currentTimeMillis );
+			requiresRepaint |= animator.requiresRepaint();
+			if ( animator.isComplete() )
+				overlayAnimatorsToRemove.add( animator );
 		}
+		overlayAnimators.removeAll( overlayAnimatorsToRemove );
 
-		if ( multiBoxOverlayRenderer.isHighlightInProgress() )
+		if ( requiresRepaint )
 			display.repaint();
 	}
 
@@ -633,6 +636,20 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	public void showMessage( final String msg )
 	{
 		msgOverlay.add( msg );
+		display.repaint();
+	}
+
+	/**
+	 * Add a new {@link OverlayAnimator} to the list of animators. The animation
+	 * is immediately started. The new {@link OverlayAnimator} will remain in
+	 * the list of animators until it {@link OverlayAnimator#isComplete()}.å
+	 *
+	 * @param animator
+	 *            animator to add.
+	 */
+	public void addOverlayAnimator( final OverlayAnimator animator )
+	{
+		overlayAnimators.add( animator );
 		display.repaint();
 	}
 
