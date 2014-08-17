@@ -367,6 +367,16 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		viewerTransform.applyInverse( gPos, lPos );
 	}
 
+	/**
+	 * TODO
+	 * @param p
+	 */
+	public synchronized void getMouseCoordinates( final Positionable p )
+	{
+		assert p.numDimensions() == 2;
+		mouseCoordinates.getMouseCoordinates( p );
+	}
+
 	@Override
 	public void paint()
 	{

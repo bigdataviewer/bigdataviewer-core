@@ -103,6 +103,11 @@ public class BigDataViewer
 		bookmarkEditor.initGoToBookmark();
 	}
 
+	public void initGoToBookmarkRotation()
+	{
+		bookmarkEditor.initGoToBookmarkRotation();
+	}
+
 	private static String createSetupName( final BasicViewSetup setup )
 	{
 		if ( setup.hasName() )
@@ -465,8 +470,8 @@ public class BigDataViewer
 	public static void main( final String[] args )
 	{
 //		final String fn = "/Users/Pietzsch/Desktop/spimrec2/dataset.xml";
-//		final String fn = "/Users/Pietzsch/Desktop/bdv example/drosophila 2.xml";
-		final String fn = "/Users/pietzsch/Desktop/data/clusterValia/140219-1/valia-140219-1.xml";
+		final String fn = "/Users/Pietzsch/Desktop/bdv example/drosophila 2.xml";
+//		final String fn = "/Users/pietzsch/Desktop/data/clusterValia/140219-1/valia-140219-1.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/data/catmaid.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/data/openconnectome-bock11-neariso.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/data/catmaid-confocal.xml";

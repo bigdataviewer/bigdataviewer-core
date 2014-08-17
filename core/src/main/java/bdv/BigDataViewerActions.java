@@ -24,6 +24,7 @@ public class BigDataViewerActions
 	public static final String RECORD_MOVIE = "record movie";
 	public static final String SET_BOOKMARK = "set bookmark";
 	public static final String GO_TO_BOOKMARK = "go to bookmark";
+	public static final String GO_TO_BOOKMARK_ROTATION = "go to bookmark rotation";
 
 	/**
 	 * Create BigDataViewer actions and install them in the specified
@@ -59,6 +60,7 @@ public class BigDataViewerActions
 		map.put( SAVE_SETTINGS, "F11" );
 		map.put( LOAD_SETTINGS, "F12" );
 		map.put( GO_TO_BOOKMARK, "B" );
+		map.put( GO_TO_BOOKMARK_ROTATION, "O" );
 		map.put( SET_BOOKMARK, "shift B" );
 
 		return inputMap;
@@ -77,6 +79,7 @@ public class BigDataViewerActions
 		map.put( new ManualTransformAction( bdv ) );
 		map.put( new SetBookmarkAction( bdv ) );
 		map.put( new GoToBookmarkAction( bdv ) );
+		map.put( new GoToBookmarkRotationAction( bdv ) );
 		map.put( new SaveSettingsAction( bdv ) );
 		map.put( new LoadSettingsAction( bdv ) );
 
@@ -139,6 +142,22 @@ public class BigDataViewerActions
 		public void actionPerformed( final ActionEvent e )
 		{
 			bdv.initGoToBookmark();
+		}
+
+		private static final long serialVersionUID = 1L;
+	}
+
+	public static class GoToBookmarkRotationAction extends ViewerAction
+	{
+		public GoToBookmarkRotationAction( final BigDataViewer bdv )
+		{
+			super( GO_TO_BOOKMARK_ROTATION, bdv );
+		}
+
+		@Override
+		public void actionPerformed( final ActionEvent e )
+		{
+			bdv.initGoToBookmarkRotation();
 		}
 
 		private static final long serialVersionUID = 1L;

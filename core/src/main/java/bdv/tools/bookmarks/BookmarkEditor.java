@@ -11,10 +11,13 @@ import javax.swing.ActionMap;
 import javax.swing.InputMap;
 import javax.swing.KeyStroke;
 
+import net.imglib2.Point;
 import net.imglib2.realtransform.AffineTransform3D;
+import bdv.util.Affine3DHelpers;
 import bdv.viewer.InputActionBindings;
 import bdv.viewer.ViewerPanel;
-import bdv.viewer.animate.RigidTransformAnimator;
+import bdv.viewer.animate.SimilarityTransformAnimator;
+import bdv.viewer.animate.RotationAnimator;
 
 public class BookmarkEditor
 {
@@ -103,9 +106,26 @@ public class BookmarkEditor
 								final double cY = viewer.getDisplay().getHeight() / 2.0;
 								c.set( c.get( 0, 3 ) - cX, 0, 3 );
 								c.set( c.get( 1, 3 ) - cY, 1, 3 );
-								viewer.setTransformAnimator( new RigidTransformAnimator( c, t, cX, cY, 300 ) );
+								viewer.setTransformAnimator( new SimilarityTransformAnimator( c, t, cX, cY, 300 ) );
 							}
 							animator.fadeOut( "go to bookmark: " + key, 500 );
+						}
+							break;
+						case RECALL_ORIENTATION:
+						{
+							final AffineTransform3D t = bookmarks.get( key );
+							if ( t != null )
+							{
+								final AffineTransform3D c = new AffineTransform3D();
+								viewer.getState().getViewerTransform( c );
+								final Point p = new Point( 2 );
+								viewer.getMouseCoordinates( p );
+								final double[] qTarget = new double[ 4 ];
+								Affine3DHelpers.extractRotation( t, qTarget );
+								viewer.setTransformAnimator(
+										new RotationAnimator( c, p.getDoublePosition( 0 ), p.getDoublePosition( 1 ), qTarget, 300 ) );
+							}
+							animator.fadeOut( "go to bookmark orientation: " + key, 500 );
 						}
 							break;
 						default:
@@ -125,28 +145,31 @@ public class BookmarkEditor
 		done();
 	}
 
-	public synchronized void initSetBookmark()
+	protected synchronized void init( final Mode mode, final String message )
 	{
 		initialKey = true;
-		mode = Mode.SET;
+		this.mode = mode;
 		bindings.addInputMap( "bookmarks", inputMap, "bdv", "navigation" );
 		if ( animator != null )
 			animator.clear();
 		animator = new BookmarkTextOverlayAnimator( viewer );
 		viewer.addOverlayAnimator( animator );
-		animator.fadeIn( "set bookmark: ", 100 );
+		animator.fadeIn( message, 100 );
+	}
+
+	public synchronized void initSetBookmark()
+	{
+		init( Mode.SET, "set bookmark: " );
 	}
 
 	public synchronized void initGoToBookmark()
 	{
-		initialKey = true;
-		mode = Mode.RECALL_TRANSFORM;
-		bindings.addInputMap( "bookmarks", inputMap, "bdv", "navigation" );
-		if ( animator != null )
-			animator.clear();
-		animator = new BookmarkTextOverlayAnimator( viewer );
-		viewer.addOverlayAnimator( animator );
-		animator.fadeIn( "go to bookmark: ", 100 );
+		init( Mode.RECALL_TRANSFORM, "go to bookmark: " );
+	}
+
+	public void initGoToBookmarkRotation()
+	{
+		init( Mode.RECALL_ORIENTATION, "go to bookmark orientation: " );
 	}
 
 	public synchronized void done()
