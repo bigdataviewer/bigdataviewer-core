@@ -27,11 +27,14 @@ public abstract class RealRandomAccessibleSource< T extends Type< T > > implemen
 
 	protected final String name;
 
+	protected final AffineTransform3D identity;
+
 	public RealRandomAccessibleSource( final RealRandomAccessible< T > accessible, final String name )
 	{
 		this.accessible = accessible;
 		this.type = Util.getTypeFromRealRandomAccess( accessible ).createVariable();
 		this.name = name;
+		this.identity = new AffineTransform3D();
 	}
 
 	@Override
@@ -63,7 +66,7 @@ public abstract class RealRandomAccessibleSource< T extends Type< T > > implemen
 	@Override
 	public AffineTransform3D getSourceTransform( final int t, final int level )
 	{
-		return new AffineTransform3D();
+		return identity;
 	}
 
 	@Override
