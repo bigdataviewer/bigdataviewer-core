@@ -2,26 +2,24 @@ package bdv.tools.crop;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 
 import mpicbg.spim.data.generic.sequence.BasicImgLoader;
 import mpicbg.spim.data.sequence.ImgLoader;
 import mpicbg.spim.data.sequence.ViewId;
-import net.imglib2.FinalRealInterval;
 import net.imglib2.Interval;
 import net.imglib2.Pair;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealInterval;
 import net.imglib2.RealLocalizable;
 import net.imglib2.RealPoint;
-import net.imglib2.iterator.LocalizingZeroMinIntervalIterator;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.NumericType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.util.Intervals;
 import net.imglib2.util.ValuePair;
 import net.imglib2.view.Views;
+import bdv.util.IntervalBoundingBox;
 import bdv.viewer.Source;
 
 /**
@@ -115,14 +113,14 @@ public class CropImgLoader implements BasicImgLoader< UnsignedShortType >
 		cropToSource.concatenate( cropToGlobal );
 
 		final ArrayList< RealPoint > sourceCorners = new ArrayList< RealPoint >();
-		for ( final RealLocalizable corner : getCorners( interval ) )
+		for ( final RealLocalizable corner : IntervalBoundingBox.getCorners( interval ) )
 		{
 			final RealPoint sourceCorner = new RealPoint( n );
 			cropToSource.apply( corner, sourceCorner );
 			sourceCorners.add( sourceCorner );
 		}
 		final RandomAccessibleInterval< T > sourceImg = source.getSource( timepoint, 0 );
-		final Interval cropBoundingBox = Intervals.smallestContainingInterval( getBoundingBox( sourceCorners ) );
+		final Interval cropBoundingBox = Intervals.smallestContainingInterval( IntervalBoundingBox.getBoundingBox( sourceCorners ) );
 		Interval sourceInterval = Intervals.intersect( cropBoundingBox, sourceImg );
 
 		final RandomAccessibleInterval< T > croppedSourceImg;
@@ -145,52 +143,5 @@ public class CropImgLoader implements BasicImgLoader< UnsignedShortType >
 		croppedSourceTransform.preConcatenate( sourceToGlobal );
 
 		return new ValuePair< RandomAccessibleInterval<T>, AffineTransform3D >( croppedSourceImg, croppedSourceTransform );
-	}
-
-	/**
-	 * get bounding box of a list of points.
-	 */
-	public static < P extends RealLocalizable > RealInterval getBoundingBox( final List< P > points )
-	{
-		assert !points.isEmpty();
-
-		final P p0 = points.get( 0 );
-		final int n = p0.numDimensions();
-		final double[] min = new double[ n ];
-		p0.localize( min );
-		final double[] max = min.clone();
-		for ( final P point : points )
-		{
-			for ( int d = 0; d < n; ++d )
-			{
-				final double p = point.getDoublePosition( d );
-				if (p < min[ d ])
-					min[ d ] = p;
-				else if (p > max[ d ])
-					max[ d ] = p;
-			}
-		}
-		return new FinalRealInterval( min, max );
-	}
-
-	/**
-	 * get "corners" of an interval as a list of points.
-	 */
-	public static List< RealLocalizable > getCorners( final RealInterval interval )
-	{
-		final ArrayList< RealLocalizable > corners = new ArrayList< RealLocalizable >();
-		final int n = interval.numDimensions();
-		final int[] tmp = new int[ n ];
-		Arrays.fill( tmp, 2 );
-		final LocalizingZeroMinIntervalIterator i = new LocalizingZeroMinIntervalIterator( tmp );
-		while ( i.hasNext() )
-		{
-			i.fwd();
-			final RealPoint p = new RealPoint( n );
-			for ( int d = 0; d < n; ++d )
-				p.setPosition( i.getIntPosition( d ) == 0 ? interval.realMin( d ) : interval.realMax( d ), d );
-			corners.add( p );
-		}
-		return corners;
 	}
 }
