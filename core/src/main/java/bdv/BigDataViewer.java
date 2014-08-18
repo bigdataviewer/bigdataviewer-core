@@ -240,7 +240,7 @@ public class BigDataViewer
 		else throw new IllegalArgumentException( "ImgLoader of type " + type.getClass() + " not supported." );
 	}
 
-	protected BigDataViewer( final String xmlFilename, final String windowTitle, final ProgressWriter progressWriter ) throws SpimDataException
+	public BigDataViewer( final String xmlFilename, final String windowTitle, final ProgressWriter progressWriter ) throws SpimDataException
 	{
 		final int width = 800;
 		final int height = 600;
@@ -378,6 +378,16 @@ public class BigDataViewer
 			InitializeViewerState.initBrightness( 0.001, 0.999, viewer, setupAssignments );
 
 //		( ( Hdf5ImageLoader ) seq.imgLoader ).initCachedDimensionsFromHdf5( false );
+	}
+
+	public ViewerPanel getViewer()
+	{
+		return viewer;
+	}
+
+	public SetupAssignments getSetupAssignments()
+	{
+		return setupAssignments;
 	}
 
 	protected boolean tryLoadSettings( final String xmlFilename )
