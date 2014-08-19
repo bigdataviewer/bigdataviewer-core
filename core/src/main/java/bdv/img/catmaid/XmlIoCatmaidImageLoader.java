@@ -24,8 +24,8 @@ public class XmlIoCatmaidImageLoader implements XmlIoBasicImgLoader< CatmaidImag
 		final long height = Long.parseLong( elem.getChildText( "height" ) );
 		final long depth = Long.parseLong( elem.getChildText( "depth" ) );
 
-//		double resXY = Double.parseDouble( elem.getChildText( "resXY" ) );
-//		double resZ = Double.parseDouble( elem.getChildText( "resZ" ) );
+		double resXY = Double.parseDouble( elem.getChildText( "resXY" ) );
+		double resZ = Double.parseDouble( elem.getChildText( "resZ" ) );
 
 		final String urlFormat = elem.getChildText( "urlFormat" );
 
@@ -39,6 +39,6 @@ public class XmlIoCatmaidImageLoader implements XmlIoBasicImgLoader< CatmaidImag
 		else
 			numScales = Integer.parseInt( numScalesString );
 
-		return new CatmaidImageLoader( width, height, depth, numScales, urlFormat, tileWidth, tileHeight );
+		return new CatmaidImageLoader( width, height, depth, resZ / resXY, numScales, urlFormat, tileWidth, tileHeight );
 	}
 }
