@@ -302,7 +302,7 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 			}
 			catch ( final InterruptedException e )
 			{
-				e.printStackTrace();
+				Thread.currentThread().interrupt();
 			}
 			if ( interrupted.get() )
 			{

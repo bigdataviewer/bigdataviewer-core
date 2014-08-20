@@ -147,7 +147,7 @@ public abstract class AccumulateProjector< A, B > implements VolatileProjector
 		}
 		catch ( final InterruptedException e )
 		{
-			e.printStackTrace();
+			Thread.currentThread().interrupt();
 		}
 		if ( createExecutor )
 			ex.shutdown();
