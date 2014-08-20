@@ -385,6 +385,11 @@ public class BigDataViewer
 		return viewer;
 	}
 
+	public ViewerFrame getViewerFrame()
+	{
+		return viewerFrame;
+	}
+
 	public SetupAssignments getSetupAssignments()
 	{
 		return setupAssignments;
@@ -480,7 +485,8 @@ public class BigDataViewer
 	public static void main( final String[] args )
 	{
 //		final String fn = "/Users/Pietzsch/Desktop/spimrec2/dataset.xml";
-		final String fn = "/Users/Pietzsch/Desktop/bdv example/drosophila 2.xml";
+		final String fn = "/Users/pietzsch/Desktop/HisYFP-SPIM-TIFF/dataset-hdf5.xml";
+//		final String fn = "/Users/Pietzsch/Desktop/bdv example/drosophila 2.xml";
 //		final String fn = "/Users/pietzsch/Desktop/data/clusterValia/140219-1/valia-140219-1.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/data/catmaid.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/data/openconnectome-bock11-neariso.xml";
