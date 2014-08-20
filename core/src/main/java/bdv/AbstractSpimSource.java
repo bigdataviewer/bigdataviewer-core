@@ -113,7 +113,7 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 	@Override
 	public boolean isPresent( final int t )
 	{
-		return t >= 0 && t < timePointsOrdered.size() && !missingViews.contains( new ViewId( t, setupId ) );
+		return t >= 0 && t < timePointsOrdered.size() && !missingViews.contains( new ViewId( timePointsOrdered.get( t ).getId(), setupId ) );
 	}
 
 	@Override
