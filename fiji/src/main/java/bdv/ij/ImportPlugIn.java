@@ -6,6 +6,7 @@ import ij.ImageJ;
 import ij.ImagePlus;
 import ij.gui.DialogListener;
 import ij.gui.GenericDialog;
+import ij.measure.Calibration;
 import ij.plugin.PlugIn;
 
 import java.awt.AWTEvent;
@@ -21,6 +22,7 @@ import mpicbg.spim.data.generic.sequence.BasicImgLoader;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.sequence.TimePoint;
 import mpicbg.spim.data.sequence.ViewId;
+import mpicbg.spim.data.sequence.VoxelDimensions;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import bdv.spimdata.SequenceDescriptionMinimal;
@@ -159,6 +161,15 @@ public class ImportPlugIn implements PlugIn
 				if ( !openAsVirtualStack )
 					imp = imp.duplicate();
 				imp.setTitle( new File( xmlFile ).getName() + " " + timepoint + " " + setup );
+				final VoxelDimensions voxelSize = setupsOrdered.get( setup ).getVoxelSize();
+				if ( voxelSize != null )
+				{
+					final Calibration calibration = imp.getCalibration();
+					calibration.setUnit( voxelSize.unit() );
+					calibration.pixelWidth = voxelSize.dimension( 0 );
+					calibration.pixelHeight = voxelSize.dimension( 1 );
+					calibration.pixelDepth = voxelSize.dimension( 2 );
+				}
 				imp.show();
 			}
 		}
