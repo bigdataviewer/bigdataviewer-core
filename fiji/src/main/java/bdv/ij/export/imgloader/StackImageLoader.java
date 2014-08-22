@@ -1,7 +1,7 @@
 package bdv.ij.export.imgloader;
 
-import ij.IJ;
 import ij.ImagePlus;
+import io.scif.SCIFIOService;
 import io.scif.img.ImgIOException;
 import io.scif.img.ImgOpener;
 
@@ -21,6 +21,10 @@ import net.imglib2.meta.ImgPlus;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 
+import org.scijava.Context;
+import org.scijava.app.AppService;
+import org.scijava.app.StatusService;
+
 
 /**
  * This {@link ImgLoader} loads images that represent a 3D stack in a single
@@ -33,7 +37,7 @@ import net.imglib2.type.numeric.integer.UnsignedShortType;
  */
 public class StackImageLoader implements BasicImgLoader< UnsignedShortType >
 {
-	private ImgOpener opener;
+	private final ImgOpener opener;
 
 	private final ArrayImgFactory< UnsignedShortType > factory;
 
@@ -47,14 +51,7 @@ public class StackImageLoader implements BasicImgLoader< UnsignedShortType >
 	{
 		this.filenames = filenames;
 		this.useImageJOpener = useImageJOpener;
-		try
-		{
-			opener = new ImgOpener();
-		}
-		catch ( final Exception e )
-		{
-			e.printStackTrace();
-		}
+		opener = useImageJOpener ? null : new ImgOpener( new Context( SCIFIOService.class, AppService.class, StatusService.class ) );
 		factory = new ArrayImgFactory< UnsignedShortType >();
 		type = new UnsignedShortType();
 	}
@@ -65,11 +62,6 @@ public class StackImageLoader implements BasicImgLoader< UnsignedShortType >
 		final String fn = filenames.get( view );
 		if ( useImageJOpener )
 		{
-			if ( opener == null )
-			{
-				IJ.showMessage( "Error", "Error: Could not create io.scif.img.ImgOpener" );
-				return null;
-			}
 			final ImagePlus imp = new ImagePlus( fn );
 			if ( imp.getType() == ImagePlus.GRAY16 )
 				return new ImgPlus< UnsignedShortType >( ImageJFunctions.wrapShort( imp ) );

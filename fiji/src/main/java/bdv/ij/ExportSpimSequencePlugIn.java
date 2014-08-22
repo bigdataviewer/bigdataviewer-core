@@ -709,6 +709,10 @@ public class ExportSpimSequencePlugIn implements PlugIn
 
 	public static void main( final String[] args )
 	{
+		Bead_Registration.spimDataDirectory = "/Users/pietzsch/workspace/data/openspim";
+		Bead_Registration.fileNamePattern = "spim_TL{tt}_Angle{a}.tif";
+		Bead_Registration.timepoints = "0";
+		Bead_Registration.angles = "0";
 		new ExportSpimSequencePlugIn().run( null );
 	}
 }
