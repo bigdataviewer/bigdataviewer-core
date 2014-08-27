@@ -352,10 +352,10 @@ A:			for ( final MinMaxGroup group : setupAssignments.getMinMaxGroups() )
 			for ( final ConverterSetup setup : assignments.getConverterSetups() )
 			{
 				final JCheckBox box = new JCheckBox();
-				box.addChangeListener( new ChangeListener()
+				box.addActionListener( new ActionListener()
 				{
 					@Override
-					public void stateChanged( final ChangeEvent e )
+					public void actionPerformed( final ActionEvent arg0 )
 					{
 						if ( box.isSelected() )
 							assignments.moveSetupToGroup( setup, minMaxGroup );
