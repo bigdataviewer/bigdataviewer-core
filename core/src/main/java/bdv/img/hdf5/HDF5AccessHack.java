@@ -149,6 +149,14 @@ public class HDF5AccessHack implements IHDF5Access
 	@Override
 	public synchronized short[] readShortMDArrayBlockWithOffset( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
 	{
+		final short[] dataBlock = new short[ dimensions[ 0 ] * dimensions[ 1 ] * dimensions[ 2 ] ];
+		readShortMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min, dataBlock );
+		return dataBlock;
+	}
+
+	@Override
+	public synchronized short[] readShortMDArrayBlockWithOffset( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final short[] dataBlock ) throws InterruptedException
+	{
 		if ( Thread.interrupted() )
 			throw new InterruptedException();
 		Util.reorder( dimensions, reorderedDimensions );
@@ -156,7 +164,6 @@ public class HDF5AccessHack implements IHDF5Access
 
 		final OpenDataSet dataset = openDataSetCache.getDataSet( new ViewLevelId( timepoint, setup, level ) );
 		final int memorySpaceId = H5Screate_simple( reorderedDimensions.length, reorderedDimensions, null );
-		final short[] dataBlock = new short[ dimensions[ 0 ] * dimensions[ 1 ] * dimensions[ 2 ] ];
 		H5Sselect_hyperslab( dataset.fileSpaceId, H5S_SELECT_SET, reorderedMin, null, reorderedDimensions, null );
 		H5Dread( dataset.dataSetId, H5T_NATIVE_INT16, memorySpaceId, dataset.fileSpaceId, numericConversionXferPropertyListID, dataBlock );
 		H5Sclose( memorySpaceId );

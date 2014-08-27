@@ -42,7 +42,15 @@ public class HDF5Access implements IHDF5Access
 			throw new InterruptedException();
 		Util.reorder( dimensions, reorderedDimensions );
 		Util.reorder( min, reorderedMin );
+		hdf5Reader.int16().readMDArray( Util.getCellsPath( timepoint, setup, level ) );
 		final MDShortArray array = hdf5Reader.int16().readMDArrayBlockWithOffset( Util.getCellsPath( timepoint, setup, level ), reorderedDimensions, reorderedMin );
 		return array.getAsFlatArray();
+	}
+
+	@Override
+	public short[] readShortMDArrayBlockWithOffset( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final short[] dataBlock ) throws InterruptedException
+	{
+		System.arraycopy( readShortMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min ), 0, dataBlock, 0, dataBlock.length );
+		return dataBlock;
 	}
 }

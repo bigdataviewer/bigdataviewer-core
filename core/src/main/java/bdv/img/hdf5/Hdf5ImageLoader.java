@@ -27,14 +27,19 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.algorithm.stats.Normalize;
 import net.imglib2.img.Img;
 import net.imglib2.img.NativeImg;
+import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.basictypeaccess.array.ShortArray;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
 import net.imglib2.img.cell.CellImg;
+import net.imglib2.img.cell.CellImgFactory;
+import net.imglib2.img.cell.DefaultCell;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.sampler.special.ConstantRandomAccessible;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.type.volatiles.VolatileUnsignedShortType;
+import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
 import bdv.AbstractViewerImgLoader;
 import bdv.img.cache.CacheHints;
@@ -361,6 +366,167 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 				System.out.println( "    " + level + ": " + net.imglib2.util.Util.printCoordinates( dimensions ) );
 			}
 		}
+	}
+
+	public MonolithicImageLoader getMonolithicImageLoader()
+	{
+		return new MonolithicImageLoader();
+	}
+
+	public class MonolithicImageLoader implements ImgLoader< UnsignedShortType >
+	{
+
+		@Override
+		public RandomAccessibleInterval< UnsignedShortType > getImage( final ViewId view )
+		{
+			final int timepoint = view.getTimePointId();
+			final int setup = view.getViewSetupId();
+			final int level = 0;
+			final Dimensions dims = getImageSize( view );
+			final int n = dims.numDimensions();
+			final long[] dimsLong = new long[ n ];
+			dims.dimensions( dimsLong );
+			final int[] dimsInt = new int[ n ];
+			final long[] min = new long[ n ];
+			if ( Intervals.numElements( dims ) <= Integer.MAX_VALUE )
+			{
+				// use ArrayImg
+				for ( int d = 0; d < dimsInt.length; ++d )
+					dimsInt[ d ] = ( int ) dimsLong[ d ];
+				short[] data = null;
+				try
+				{
+					data = hdf5Access.readShortMDArrayBlockWithOffset( timepoint, setup, level, dimsInt, min );
+				}
+				catch ( final InterruptedException e )
+				{}
+				return ArrayImgs.unsignedShorts( data, dimsLong );
+			}
+			else
+			{
+				// TODO
+				final int[] cellDimensions = new int[ n ];
+				long s = Integer.MAX_VALUE;
+				for ( int d = 0; d < n; ++d )
+				{
+					final long ns = s / dimsLong[ d ];
+					if ( ns > 0 )
+						cellDimensions[ d ] = ( int ) dimsLong[ d ];
+					else
+					{
+						cellDimensions[ d ] = ( int ) ( s % dimsLong[ d ] );
+						for ( ++d; d < n; ++d )
+							cellDimensions[ d ] = 1;
+					}
+					s = ns;
+				}
+				final CellImgFactory< UnsignedShortType > factory = new CellImgFactory< UnsignedShortType >( cellDimensions );
+				@SuppressWarnings( "unchecked" )
+				final CellImg< UnsignedShortType, ShortArray, DefaultCell< ShortArray > > img =
+					( CellImg< UnsignedShortType, ShortArray, DefaultCell< ShortArray > > ) factory.create( dimsLong, new UnsignedShortType() );
+				final Cursor< DefaultCell< ShortArray > > cursor = img.getCells().cursor();
+				while ( cursor.hasNext() )
+				{
+					final DefaultCell< ShortArray > cell = cursor.next();
+					final short[] dataBlock = cell.getData().getCurrentStorageArray();
+					cell.dimensions( dimsInt );
+					cell.min( min );
+					try
+					{
+						hdf5Access.readShortMDArrayBlockWithOffset( timepoint, setup, level, dimsInt, min, dataBlock );
+					}
+					catch ( final InterruptedException e )
+					{}
+				}
+				return img;
+			}
+		}
+
+		@Override
+		public RandomAccessibleInterval< FloatType > getFloatImage( final ViewId view, final boolean normalize )
+		{
+			final RandomAccessibleInterval< UnsignedShortType > ushortImg = getImage( view );
+
+			// copy unsigned short img to float img
+			final FloatType f = new FloatType();
+			final Img< FloatType > floatImg = net.imglib2.util.Util.getArrayOrCellImgFactory( ushortImg, f ).create( ushortImg, f );
+
+			// set up executor service
+			final int numProcessors = Runtime.getRuntime().availableProcessors();
+			final ExecutorService taskExecutor = Executors.newFixedThreadPool( numProcessors );
+			final ArrayList< Callable< Void > > tasks = new ArrayList< Callable< Void > >();
+
+			// set up all tasks
+			final int numPortions = numProcessors * 2;
+			final long threadChunkSize = floatImg.size() / numPortions;
+			final long threadChunkMod = floatImg.size() % numPortions;
+
+			for ( int portionID = 0; portionID < numPortions; ++portionID )
+			{
+				// move to the starting position of the current thread
+				final long startPosition = portionID * threadChunkSize;
+
+				// the last thread may has to run longer if the number of pixels cannot be divided by the number of threads
+				final long loopSize = ( portionID == numPortions - 1 ) ? threadChunkSize + threadChunkMod : threadChunkSize;
+
+				tasks.add( new Callable< Void >()
+				{
+					@Override
+					public Void call() throws Exception
+					{
+						final Cursor< UnsignedShortType > in = Views.iterable( ushortImg ).localizingCursor();
+						final RandomAccess< FloatType > out = floatImg.randomAccess();
+
+						in.jumpFwd( startPosition );
+
+						for ( long j = 0; j < loopSize; ++j )
+						{
+							final UnsignedShortType vin = in.next();
+							out.setPosition( in );
+							out.get().set( vin.getRealFloat() );
+						}
+
+						return null;
+					}
+				});
+			}
+
+			try
+			{
+				// invokeAll() returns when all tasks are complete
+				taskExecutor.invokeAll( tasks );
+				taskExecutor.shutdown();
+			}
+			catch ( final InterruptedException e )
+			{
+				return null;
+			}
+
+			if ( normalize )
+				// normalize the image to 0...1
+				Normalize.normalize( floatImg, new FloatType( 0 ), new FloatType( 1 ) );
+
+			return floatImg;
+		}
+
+		@Override
+		public UnsignedShortType getImageType()
+		{
+			return Hdf5ImageLoader.this.getImageType();
+		}
+
+		@Override
+		public Dimensions getImageSize( final ViewId view )
+		{
+			return Hdf5ImageLoader.this.getImageSize( view );
+		}
+
+		@Override
+		public VoxelDimensions getVoxelSize( final ViewId view )
+		{
+			return Hdf5ImageLoader.this.getVoxelSize( view );
+		}
+
 	}
 
 //  ================================ mpicbg.spim.data.sequence.ImgLoader =============================== //
