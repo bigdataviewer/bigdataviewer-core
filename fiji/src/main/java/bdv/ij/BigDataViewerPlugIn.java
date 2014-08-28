@@ -16,6 +16,8 @@ import bdv.ij.util.ProgressWriterIJ;
 
 public class BigDataViewerPlugIn implements PlugIn
 {
+	static String lastDatasetPath = "./export.xml";
+
 	@Override
 	public void run( final String arg )
 	{
@@ -24,6 +26,7 @@ public class BigDataViewerPlugIn implements PlugIn
 		if ( Prefs.useJFileChooser )
 		{
 			final JFileChooser fileChooser = new JFileChooser();
+			fileChooser.setSelectedFile( new File( lastDatasetPath ) );
 			fileChooser.setFileFilter( new FileFilter()
 			{
 				@Override
@@ -57,6 +60,8 @@ public class BigDataViewerPlugIn implements PlugIn
 		else // use FileDialog
 		{
 			final FileDialog fd = new FileDialog( ( Frame ) null, "Open", FileDialog.LOAD );
+			fd.setDirectory( new File( lastDatasetPath ).getParent() );
+			fd.setFile( new File( lastDatasetPath ).getName() );
 			fd.setFilenameFilter( new FilenameFilter()
 			{
 				@Override
@@ -83,6 +88,7 @@ public class BigDataViewerPlugIn implements PlugIn
 		{
 			try
 			{
+				lastDatasetPath = file.getAbsolutePath();
 				BigDataViewer.view( file.getAbsolutePath(), new ProgressWriterIJ() );
 			}
 			catch ( final Exception e )
