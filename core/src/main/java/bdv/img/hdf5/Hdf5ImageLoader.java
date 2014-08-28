@@ -22,12 +22,13 @@ import net.imglib2.Cursor;
 import net.imglib2.Dimensions;
 import net.imglib2.FinalDimensions;
 import net.imglib2.FinalInterval;
+import net.imglib2.IterableInterval;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.algorithm.stats.Normalize;
 import net.imglib2.img.Img;
 import net.imglib2.img.NativeImg;
 import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.basictypeaccess.array.FloatArray;
 import net.imglib2.img.basictypeaccess.array.ShortArray;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
 import net.imglib2.img.cell.CellImg;
@@ -375,10 +376,10 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 
 	public class MonolithicImageLoader implements ImgLoader< UnsignedShortType >
 	{
-
 		@Override
 		public RandomAccessibleInterval< UnsignedShortType > getImage( final ViewId view )
 		{
+			Img< UnsignedShortType > img = null;
 			final int timepoint = view.getTimePointId();
 			final int setup = view.getViewSetupId();
 			final int level = 0;
@@ -400,31 +401,18 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 				}
 				catch ( final InterruptedException e )
 				{}
-				return ArrayImgs.unsignedShorts( data, dimsLong );
+				img = ArrayImgs.unsignedShorts( data, dimsLong );
 			}
 			else
 			{
-				// TODO
-				final int[] cellDimensions = new int[ n ];
-				long s = Integer.MAX_VALUE;
-				for ( int d = 0; d < n; ++d )
-				{
-					final long ns = s / dimsLong[ d ];
-					if ( ns > 0 )
-						cellDimensions[ d ] = ( int ) dimsLong[ d ];
-					else
-					{
-						cellDimensions[ d ] = ( int ) ( s % dimsLong[ d ] );
-						for ( ++d; d < n; ++d )
-							cellDimensions[ d ] = 1;
-					}
-					s = ns;
-				}
+				final int[] cellDimensions = computeCellDimensions(
+						dimsLong,
+						perSetupMipmapInfo.get( setup ).getSubdivisions()[ level ] );
 				final CellImgFactory< UnsignedShortType > factory = new CellImgFactory< UnsignedShortType >( cellDimensions );
 				@SuppressWarnings( "unchecked" )
-				final CellImg< UnsignedShortType, ShortArray, DefaultCell< ShortArray > > img =
+				final CellImg< UnsignedShortType, ShortArray, DefaultCell< ShortArray > > cellImg =
 					( CellImg< UnsignedShortType, ShortArray, DefaultCell< ShortArray > > ) factory.create( dimsLong, new UnsignedShortType() );
-				final Cursor< DefaultCell< ShortArray > > cursor = img.getCells().cursor();
+				final Cursor< DefaultCell< ShortArray > > cursor = cellImg.getCells().cursor();
 				while ( cursor.hasNext() )
 				{
 					final DefaultCell< ShortArray > cell = cursor.next();
@@ -438,75 +426,99 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 					catch ( final InterruptedException e )
 					{}
 				}
-				return img;
+				img = cellImg;
 			}
+			return img;
 		}
 
 		@Override
 		public RandomAccessibleInterval< FloatType > getFloatImage( final ViewId view, final boolean normalize )
 		{
-			final RandomAccessibleInterval< UnsignedShortType > ushortImg = getImage( view );
-
-			// copy unsigned short img to float img
-			final FloatType f = new FloatType();
-			final Img< FloatType > floatImg = net.imglib2.util.Util.getArrayOrCellImgFactory( ushortImg, f ).create( ushortImg, f );
-
-			// set up executor service
-			final int numProcessors = Runtime.getRuntime().availableProcessors();
-			final ExecutorService taskExecutor = Executors.newFixedThreadPool( numProcessors );
-			final ArrayList< Callable< Void > > tasks = new ArrayList< Callable< Void > >();
-
-			// set up all tasks
-			final int numPortions = numProcessors * 2;
-			final long threadChunkSize = floatImg.size() / numPortions;
-			final long threadChunkMod = floatImg.size() % numPortions;
-
-			for ( int portionID = 0; portionID < numPortions; ++portionID )
+			Img< FloatType > img = null;
+			final int timepoint = view.getTimePointId();
+			final int setup = view.getViewSetupId();
+			final int level = 0;
+			final Dimensions dims = getImageSize( view );
+			final int n = dims.numDimensions();
+			final long[] dimsLong = new long[ n ];
+			dims.dimensions( dimsLong );
+			final int[] dimsInt = new int[ n ];
+			final long[] min = new long[ n ];
+			if ( Intervals.numElements( dims ) <= Integer.MAX_VALUE )
 			{
-				// move to the starting position of the current thread
-				final long startPosition = portionID * threadChunkSize;
-
-				// the last thread may has to run longer if the number of pixels cannot be divided by the number of threads
-				final long loopSize = ( portionID == numPortions - 1 ) ? threadChunkSize + threadChunkMod : threadChunkSize;
-
-				tasks.add( new Callable< Void >()
+				// use ArrayImg
+				for ( int d = 0; d < dimsInt.length; ++d )
+					dimsInt[ d ] = ( int ) dimsLong[ d ];
+				float[] data = null;
+				try
 				{
-					@Override
-					public Void call() throws Exception
+					data = hdf5Access.readShortMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimsInt, min );
+				}
+				catch ( final InterruptedException e )
+				{}
+				img = ArrayImgs.floats( data, dimsLong );
+			}
+			else
+			{
+				final int[] cellDimensions = computeCellDimensions(
+						dimsLong,
+						perSetupMipmapInfo.get( setup ).getSubdivisions()[ level ] );
+				final CellImgFactory< FloatType > factory = new CellImgFactory< FloatType >( cellDimensions );
+				@SuppressWarnings( "unchecked" )
+				final CellImg< FloatType, FloatArray, DefaultCell< FloatArray > > cellImg =
+					( CellImg< FloatType, FloatArray, DefaultCell< FloatArray > > ) factory.create( dimsLong, new FloatType() );
+				final Cursor< DefaultCell< FloatArray > > cursor = cellImg.getCells().cursor();
+				while ( cursor.hasNext() )
+				{
+					final DefaultCell< FloatArray > cell = cursor.next();
+					final float[] dataBlock = cell.getData().getCurrentStorageArray();
+					cell.dimensions( dimsInt );
+					cell.min( min );
+					try
 					{
-						final Cursor< UnsignedShortType > in = Views.iterable( ushortImg ).localizingCursor();
-						final RandomAccess< FloatType > out = floatImg.randomAccess();
-
-						in.jumpFwd( startPosition );
-
-						for ( long j = 0; j < loopSize; ++j )
-						{
-							final UnsignedShortType vin = in.next();
-							out.setPosition( in );
-							out.get().set( vin.getRealFloat() );
-						}
-
-						return null;
+						hdf5Access.readShortMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimsInt, min, dataBlock );
 					}
-				});
-			}
-
-			try
-			{
-				// invokeAll() returns when all tasks are complete
-				taskExecutor.invokeAll( tasks );
-				taskExecutor.shutdown();
-			}
-			catch ( final InterruptedException e )
-			{
-				return null;
+					catch ( final InterruptedException e )
+					{}
+				}
+				img = cellImg;
 			}
 
 			if ( normalize )
 				// normalize the image to 0...1
-				Normalize.normalize( floatImg, new FloatType( 0 ), new FloatType( 1 ) );
+				normalize( img );
 
-			return floatImg;
+			return img;
+		}
+
+		private int[] computeCellDimensions( final long[] dimsLong, final int[] chunkSize )
+		{
+			final int n = dimsLong.length;
+
+			final long[] dimsInChunks = new long[ n ];
+			int elementsPerChunk = 1;
+			for ( int d = 0; d < n; ++d )
+			{
+				dimsInChunks[ d ] = ( dimsLong[ d ] + chunkSize[ d ] - 1 ) / chunkSize[ d ];
+				elementsPerChunk *= chunkSize[ d ];
+			}
+
+			final int[] cellDimensions = new int[ n ];
+			long s = Integer.MAX_VALUE / elementsPerChunk;
+			for ( int d = 0; d < n; ++d )
+			{
+				final long ns = s / dimsInChunks[ d ];
+				if ( ns > 0 )
+					cellDimensions[ d ] = chunkSize[ d ] * ( int ) ( dimsInChunks[ d ] );
+				else
+				{
+					cellDimensions[ d ] = chunkSize[ d ] * ( int ) ( s % dimsInChunks[ d ] );
+					for ( ++d; d < n; ++d )
+						cellDimensions[ d ] = chunkSize[ d ];
+				}
+				s = ns;
+			}
+			return cellDimensions;
 		}
 
 		@Override
@@ -593,9 +605,30 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 
 		if ( normalize )
 			// normalize the image to 0...1
-			Normalize.normalize( floatImg, new FloatType( 0 ), new FloatType( 1 ) );
+			normalize( floatImg );
 
 		return floatImg;
+	}
+
+	/**
+	 * normalize img to 0...1
+	 */
+	protected static void normalize( final IterableInterval< FloatType > img )
+	{
+		float currentMax = img.firstElement().get();
+		float currentMin = currentMax;
+		for ( final FloatType t : img )
+		{
+			final float f = t.get();
+			if ( f > currentMax )
+				currentMax = f;
+			else if ( f < currentMin )
+				currentMin = f;
+		}
+
+		final float scale = ( float ) ( 1.0 / ( currentMax - currentMin ) );
+		for ( final FloatType t : img )
+			t.set( ( t.get() - currentMin ) * scale );
 	}
 
 	@Override
