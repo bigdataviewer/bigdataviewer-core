@@ -137,7 +137,7 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 	{
 		if ( t != currentTimePointIndex )
 			loadTimepoint( t );
-		return currentSourceTransforms[ level ];
+		return currentSourceTransforms[ level ].copy();
 	}
 
 	@Override
