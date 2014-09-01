@@ -336,7 +336,7 @@ public class MultiResolutionRenderer
 				final int h = ( int ) ( screenToViewerScale * componentH );
 				if ( doubleBuffered )
 				{
-					for ( int b = 0; b < ( doubleBuffered ? 3 : 1 ); ++b )
+					for ( int b = 0; b < 3; ++b )
 					{
 						// reuse storage arrays of level 0 (highest resolution)
 						screenImages[ i ][ b ] = ( i == 0 ) ?
