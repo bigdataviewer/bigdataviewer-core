@@ -44,7 +44,8 @@ import bdv.tools.HelpDialog;
 import bdv.tools.InitializeViewerState;
 import bdv.tools.RecordMovieDialog;
 import bdv.tools.VisibilityAndGroupingDialog;
-import bdv.tools.bookmarks.BookmarkEditor;
+import bdv.tools.bookmarks.Bookmarks;
+import bdv.tools.bookmarks.BookmarksEditor;
 import bdv.tools.brightness.BrightnessDialog;
 import bdv.tools.brightness.ConverterSetup;
 import bdv.tools.brightness.MinMaxGroup;
@@ -70,6 +71,8 @@ public class BigDataViewer
 
 	protected final ManualTransformation manualTransformation;
 
+	protected final Bookmarks bookmarks;
+
 	protected final BrightnessDialog brightnessDialog;
 
 	protected final CropDialog cropDialog;
@@ -82,7 +85,7 @@ public class BigDataViewer
 
 	protected final ManualTransformationEditor manualTransformationEditor;
 
-	protected final BookmarkEditor bookmarkEditor;
+	protected final BookmarksEditor bookmarkEditor;
 
 	protected final JFileChooser fileChooser;
 
@@ -270,7 +273,8 @@ public class BigDataViewer
 		manualTransformation = new ManualTransformation( viewer );
 		manualTransformationEditor = new ManualTransformationEditor( viewer, viewerFrame.getKeybindings() );
 
-		bookmarkEditor = new BookmarkEditor( viewer, viewerFrame.getKeybindings() );
+		bookmarks = new Bookmarks();
+		bookmarkEditor = new BookmarksEditor( viewer, viewerFrame.getKeybindings(), bookmarks );
 
 		setupAssignments = new SetupAssignments( converterSetups, 0, 65535 );
 		if ( setupAssignments.getMinMaxGroups().size() > 0 )
@@ -442,6 +446,7 @@ public class BigDataViewer
 		root.addContent( viewer.stateToXml() );
 		root.addContent( setupAssignments.toXml() );
 		root.addContent( manualTransformation.toXml() );
+		root.addContent( bookmarks.toXml() );
 		final Document doc = new Document( root );
 		final XMLOutputter xout = new XMLOutputter( Format.getPrettyFormat() );
 		xout.output( doc, new FileWriter( xmlFilename ) );
@@ -473,6 +478,7 @@ public class BigDataViewer
 		viewer.stateFromXml( root );
 		setupAssignments.restoreFromXml( root );
 		manualTransformation.restoreFromXml( root );
+		bookmarks.restoreFromXml( root );
 		activeSourcesDialog.update();
 		viewer.requestRepaint();
 	}
@@ -485,7 +491,7 @@ public class BigDataViewer
 	public static void main( final String[] args )
 	{
 //		final String fn = "/Users/Pietzsch/Desktop/spimrec2/dataset.xml";
-		final String fn = "/Users/pietzsch/Desktop/HisYFP-SPIM-TIFF/dataset-hdf5.xml";
+		final String fn = "/Users/pietzsch/Desktop/HisYFP-SPIM/dataset.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/bdv example/drosophila 2.xml";
 //		final String fn = "/Users/pietzsch/Desktop/data/clusterValia/140219-1/valia-140219-1.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/data/catmaid.xml";

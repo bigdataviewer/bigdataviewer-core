@@ -3,7 +3,6 @@ package bdv.tools.bookmarks;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
-import java.util.HashMap;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -16,10 +15,10 @@ import net.imglib2.realtransform.AffineTransform3D;
 import bdv.util.Affine3DHelpers;
 import bdv.viewer.InputActionBindings;
 import bdv.viewer.ViewerPanel;
-import bdv.viewer.animate.SimilarityTransformAnimator;
 import bdv.viewer.animate.RotationAnimator;
+import bdv.viewer.animate.SimilarityTransformAnimator;
 
-public class BookmarkEditor
+public class BookmarksEditor
 {
 	static enum Mode
 	{
@@ -41,15 +40,15 @@ public class BookmarkEditor
 
 	private final InputMap inputMap;
 
-	private final HashMap< String, AffineTransform3D > bookmarks;
+	private final Bookmarks bookmarks;
 
 	private BookmarkTextOverlayAnimator animator;
 
-	public BookmarkEditor( final ViewerPanel viewer, final InputActionBindings inputActionBindings )
+	public BookmarksEditor( final ViewerPanel viewer, final InputActionBindings inputActionBindings, final Bookmarks bookmarks )
 	{
 		this.viewer = viewer;
 		bindings = inputActionBindings;
-		bookmarks = new HashMap< String, AffineTransform3D >();
+		this.bookmarks = bookmarks;
 
 		final KeyStroke abortKey = KeyStroke.getKeyStroke( KeyEvent.VK_ESCAPE, 0 );
 		final Action abortAction = new AbstractAction( "abort bookmark" )
