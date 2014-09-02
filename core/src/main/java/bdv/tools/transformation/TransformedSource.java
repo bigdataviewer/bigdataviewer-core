@@ -73,7 +73,6 @@ public class TransformedSource< T > implements Source< T >, MipmapOrdering, SetC
 		this( source,
 				new AffineTransform3D(),
 				new AffineTransform3D(),
-				new AffineTransform3D(),
 				new AffineTransform3D() );
 	}
 
@@ -82,16 +81,14 @@ public class TransformedSource< T > implements Source< T >, MipmapOrdering, SetC
 		this( source,
 				shareTransform.incrementalTransform,
 				shareTransform.fixedTransform,
-				shareTransform.sourceTransform,
-				shareTransform.composed );
+				shareTransform.sourceTransform );
 	}
 
 	private TransformedSource(
 			final Source< T > source,
 			final AffineTransform3D incrementalTransform,
 			final AffineTransform3D fixedTransform,
-			final AffineTransform3D sourceTransform,
-			final AffineTransform3D composed )
+			final AffineTransform3D sourceTransform )
 	{
 		this.source = source;
 
@@ -104,7 +101,7 @@ public class TransformedSource< T > implements Source< T >, MipmapOrdering, SetC
 		this.incrementalTransform = incrementalTransform;
 		this.fixedTransform = fixedTransform;
 		this.sourceTransform = sourceTransform;
-		this.composed = composed;
+		this.composed = new AffineTransform3D();
 	}
 
 	/*
@@ -190,7 +187,7 @@ public class TransformedSource< T > implements Source< T >, MipmapOrdering, SetC
 	{
 		composed.set( sourceTransform );
 		composed.concatenate( source.getSourceTransform( t, level ) );
-		return composed;
+		return composed.copy();
 	}
 
 	@Override
