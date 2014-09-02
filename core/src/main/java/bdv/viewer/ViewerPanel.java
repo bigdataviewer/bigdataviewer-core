@@ -15,6 +15,7 @@ import java.awt.Graphics2D;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.util.ArrayList;
 import java.util.List;
@@ -541,7 +542,19 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		LinAlgHelpers.quaternionInvert( qTmpSource, qTarget );
 
 		final AffineTransform3D transform = display.getTransformEventHandler().getTransform();
-		currentAnimator = new RotationAnimator( transform, mouseCoordinates.getX(), mouseCoordinates.getY(), qTarget, 300 );
+		double centerX;
+		double centerY;
+		if ( mouseCoordinates.isMouseInsidePanel() )
+		{
+			centerX = mouseCoordinates.getX();
+			centerY = mouseCoordinates.getY();
+		}
+		else
+		{
+			centerY = getHeight() / 2.0;
+			centerX = getWidth() / 2.0;
+		}
+		currentAnimator = new RotationAnimator( transform, centerX, centerY, qTarget, 300 );
 		currentAnimator.setTime( System.currentTimeMillis() );
 		transformChanged( transform );
 	}
@@ -716,11 +729,13 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		}
 	}
 
-	protected class MouseCoordinateListener implements MouseMotionListener
+	protected class MouseCoordinateListener implements MouseMotionListener, MouseListener
 	{
 		private int x;
 
 		private int y;
+
+		private boolean isInside;
 
 		public synchronized void getMouseCoordinates( final Positionable p )
 		{
@@ -752,6 +767,35 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		{
 			return y;
 		}
+
+		public synchronized boolean isMouseInsidePanel()
+		{
+			return isInside;
+		}
+
+		@Override
+		public synchronized void mouseEntered( final MouseEvent e )
+		{
+			isInside = true;
+		}
+
+		@Override
+		public synchronized void mouseExited( final MouseEvent e )
+		{
+			isInside = false;
+		}
+
+		@Override
+		public void mouseClicked( final MouseEvent e )
+		{}
+
+		@Override
+		public void mousePressed( final MouseEvent e )
+		{}
+
+		@Override
+		public void mouseReleased( final MouseEvent e )
+		{}
 	}
 
 	public synchronized Element stateToXml()
