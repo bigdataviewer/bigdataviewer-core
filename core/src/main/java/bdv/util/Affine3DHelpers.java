@@ -171,4 +171,22 @@ public class Affine3DHelpers
 		}
 		return Math.sqrt( sqSum );
 	}
+	
+	
+	/**
+	 * Pretty-print the matrix content of an affine transform.
+	 * 
+	 * @param transform
+	 *            the transform to print.
+	 * @return a string representation of the specified transform.
+	 */
+	public static final String toString( final AffineTransform3D transform )
+	{
+		return String.format( "(% 7.2f, % 7.2f, % 7.2f, % 7.2f\n"
+						+ " % 7.2f, % 7.2f, % 7.2f, % 7.2f\n"
+						+ " % 7.2f, % 7.2f, % 7.2f, % 7.2f)",
+						transform.get( 0, 0 ), transform.get( 0, 1 ), transform.get( 0, 2 ), transform.get( 0, 3 ),
+						transform.get( 1, 0 ), transform.get( 1, 1 ), transform.get( 1, 2 ), transform.get( 1, 3 ),
+						transform.get( 2, 0 ), transform.get( 2, 1 ), transform.get( 2, 2 ), +transform.get( 2, 3 ) );
+	}
 }
