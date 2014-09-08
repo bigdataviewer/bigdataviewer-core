@@ -1,5 +1,6 @@
 package bdv.tools.transformation;
 
+import mpicbg.spim.data.sequence.VoxelDimensions;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -218,6 +219,12 @@ public class TransformedSource< T > implements Source< T >, MipmapOrdering, SetC
 	public String getName()
 	{
 		return source.getName();
+	}
+
+	@Override
+	public VoxelDimensions getVoxelDimensions()
+	{
+		return source.getVoxelDimensions();
 	}
 
 	@Override

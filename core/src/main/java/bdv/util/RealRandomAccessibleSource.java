@@ -1,5 +1,6 @@
 package bdv.util;
 
+import mpicbg.spim.data.sequence.VoxelDimensions;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
@@ -27,13 +28,21 @@ public abstract class RealRandomAccessibleSource< T extends Type< T > > implemen
 
 	protected final String name;
 
+	protected final VoxelDimensions voxelDimensions;
+
 	protected final AffineTransform3D identity;
 
 	public RealRandomAccessibleSource( final RealRandomAccessible< T > accessible, final String name )
 	{
+		this( accessible, name, null );
+	}
+
+	public RealRandomAccessibleSource( final RealRandomAccessible< T > accessible, final String name, final VoxelDimensions voxelDimensions )
+	{
 		this.accessible = accessible;
 		this.type = Util.getTypeFromRealRandomAccess( accessible ).createVariable();
 		this.name = name;
+		this.voxelDimensions = voxelDimensions;
 		this.identity = new AffineTransform3D();
 	}
 
@@ -79,6 +88,12 @@ public abstract class RealRandomAccessibleSource< T extends Type< T > > implemen
 	public String getName()
 	{
 		return name;
+	}
+
+	@Override
+	public VoxelDimensions getVoxelDimensions()
+	{
+		return voxelDimensions;
 	}
 
 	@Override

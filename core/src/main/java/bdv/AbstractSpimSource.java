@@ -10,6 +10,7 @@ import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.registration.ViewRegistration;
 import mpicbg.spim.data.sequence.TimePoint;
 import mpicbg.spim.data.sequence.ViewId;
+import mpicbg.spim.data.sequence.VoxelDimensions;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
@@ -42,6 +43,8 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 
 	protected final Set< ViewId > missingViews;
 
+	protected final VoxelDimensions voxelDimensions;
+
 	protected final int numMipmapLevels;
 
 	protected final static int numInterpolationMethods = 2;
@@ -63,7 +66,8 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 		missingViews = seq.getMissingViews() == null
 				? new HashSet< ViewId >()
 				: seq.getMissingViews().getMissingViews();
-		numMipmapLevels =  ( ( ViewerImgLoader< ?, ? > ) seq.getImgLoader() ).numMipmapLevels( setupId );
+		voxelDimensions = seq.getViewSetups().get( setupId ).getVoxelSize();
+		numMipmapLevels = ( ( ViewerImgLoader< ?, ? > ) seq.getImgLoader() ).numMipmapLevels( setupId );
 		currentSources = new RandomAccessibleInterval[ numMipmapLevels ];
 		currentInterpolatedSources = new RealRandomAccessible[ numMipmapLevels ][ numInterpolationMethods ];
 		currentSourceTransforms = new AffineTransform3D[ numMipmapLevels ];
@@ -144,6 +148,12 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 	public String getName()
 	{
 		return name;
+	}
+
+	@Override
+	public VoxelDimensions getVoxelDimensions()
+	{
+		return voxelDimensions;
 	}
 
 	@Override

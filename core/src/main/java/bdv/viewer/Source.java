@@ -2,6 +2,7 @@ package bdv.viewer;
 
 import mpicbg.spim.data.sequence.TimePoint;
 import mpicbg.spim.data.sequence.TimePoints;
+import mpicbg.spim.data.sequence.VoxelDimensions;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
@@ -64,15 +65,24 @@ public interface Source< T >
 	 */
 	public AffineTransform3D getSourceTransform( int t, int level );
 
-//	public VoxelDimensions getVoxelDimensions();
-
 	/**
 	 * Get an instance of the pixel type.
 	 * @return instance of pixel type.
 	 */
 	public T getType();
 
+	/**
+	 * Get the name of the source.
+	 * @return the name of the source.
+	 */
 	public String getName();
+
+	/**
+	 * Get voxel size and unit for this source. May return null.
+	 *
+	 * @return voxel size and unit or {@code null}.
+	 */
+	public VoxelDimensions getVoxelDimensions();
 
 	public int getNumMipmapLevels();
 }
