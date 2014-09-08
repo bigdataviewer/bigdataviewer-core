@@ -183,11 +183,19 @@ public class TransformedSource< T > implements Source< T >, MipmapOrdering, SetC
 	 */
 
 	@Override
-	public synchronized AffineTransform3D getSourceTransform( final int t, final int level )
+	public synchronized void getSourceTransform( final int t, final int level, final AffineTransform3D transform )
 	{
-		composed.set( sourceTransform );
-		composed.concatenate( source.getSourceTransform( t, level ) );
-		return composed.copy();
+		source.getSourceTransform( t, level, transform );
+		transform.preConcatenate( sourceTransform );
+	}
+
+	@Override
+	@Deprecated
+	public AffineTransform3D getSourceTransform( final int t, final int level )
+	{
+		final AffineTransform3D transform = new AffineTransform3D();
+		getSourceTransform( t, level, transform );
+		return transform;
 	}
 
 	@Override
