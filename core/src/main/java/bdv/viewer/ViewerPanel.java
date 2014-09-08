@@ -52,6 +52,7 @@ import bdv.viewer.animate.RotationAnimator;
 import bdv.viewer.animate.TextOverlayAnimator;
 import bdv.viewer.animate.TextOverlayAnimator.TextPosition;
 import bdv.viewer.overlay.MultiBoxOverlayRenderer;
+import bdv.viewer.overlay.ScaleBarOverlayRenderer;
 import bdv.viewer.overlay.SourceInfoOverlayRenderer;
 import bdv.viewer.render.MultiResolutionRenderer;
 import bdv.viewer.state.SourceGroup;
@@ -96,6 +97,11 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 */
 	// TODO: move to specialized class
 	protected final SourceInfoOverlayRenderer sourceInfoOverlayRenderer;
+
+	/**
+	 * TODO
+	 */
+	protected final ScaleBarOverlayRenderer scaleBarOverlayRenderer;
 
 	/**
 	 * Transformation set by the interactive viewer.
@@ -265,6 +271,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 			state.setCurrentSource( 0 );
 		multiBoxOverlayRenderer = new MultiBoxOverlayRenderer();
 		sourceInfoOverlayRenderer = new SourceInfoOverlayRenderer();
+		scaleBarOverlayRenderer = new ScaleBarOverlayRenderer();
 
 		painterThread = new PainterThread( this );
 		viewerTransform = new AffineTransform3D();
@@ -416,6 +423,9 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 		sourceInfoOverlayRenderer.setViewerState( state );
 		sourceInfoOverlayRenderer.paint( ( Graphics2D ) g );
+
+		scaleBarOverlayRenderer.setViewerState( state );
+		scaleBarOverlayRenderer.paint( ( Graphics2D ) g );
 
 		final RealPoint gPos = new RealPoint( 3 );
 		getGlobalMouseCoordinates( gPos );

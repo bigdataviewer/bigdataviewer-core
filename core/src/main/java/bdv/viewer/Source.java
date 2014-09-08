@@ -64,6 +64,8 @@ public interface Source< T >
 	 */
 	public AffineTransform3D getSourceTransform( int t, int level );
 
+//	public VoxelDimensions getVoxelDimensions();
+
 	/**
 	 * Get an instance of the pixel type.
 	 * @return instance of pixel type.
