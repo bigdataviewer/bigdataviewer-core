@@ -107,7 +107,8 @@ public class CropImgLoader implements BasicImgLoader< UnsignedShortType >
 		final int n = interval.numDimensions();
 		final AffineTransform3D cropToGlobal = globalToCropTransform.inverse();
 
-		final AffineTransform3D sourceToGlobal = source.getSourceTransform( timepoint, 0 );
+		final AffineTransform3D sourceToGlobal = new AffineTransform3D();
+		source.getSourceTransform( timepoint, 0, sourceToGlobal );
 		final AffineTransform3D globalToSource = sourceToGlobal.inverse();
 		final AffineTransform3D cropToSource = globalToSource.copy();
 		cropToSource.concatenate( cropToGlobal );

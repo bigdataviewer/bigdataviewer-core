@@ -67,7 +67,8 @@ public class InitializeViewerState
 		final ViewerState state = viewer.getState();
 		final SourceState< ? > source = state.getSources().get( state.getCurrentSource() );
 		final int timepoint = state.getCurrentTimepoint();
-		final AffineTransform3D sourceTransform = source.getSpimSource().getSourceTransform( timepoint, 0 );
+		final AffineTransform3D sourceTransform = new AffineTransform3D();
+		source.getSpimSource().getSourceTransform( timepoint, 0, sourceTransform );
 
 		final Interval sourceInterval = source.getSpimSource().getSource( timepoint, 0 );
 		final double sX0 = sourceInterval.min( 0 );
