@@ -353,6 +353,8 @@ public class ViewerState
 		sources.remove( index );
 		if ( currentSource == index )
 			currentSource = 0;
+		else if ( currentSource > index )
+			--currentSource;
 		for( final SourceGroup group : groups )
 		{
 			final SortedSet< Integer > ids = group.getSourceIds();
