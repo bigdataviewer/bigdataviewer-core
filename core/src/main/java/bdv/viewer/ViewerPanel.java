@@ -9,6 +9,7 @@ import static bdv.viewer.VisibilityAndGrouping.Event.SOURCE_ACTVITY_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.VISIBILITY_CHANGED;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -45,6 +46,7 @@ import org.jdom2.Element;
 
 import bdv.img.cache.Cache;
 import bdv.util.Affine3DHelpers;
+import bdv.util.Prefs;
 import bdv.viewer.animate.AbstractTransformAnimator;
 import bdv.viewer.animate.MessageOverlayAnimator;
 import bdv.viewer.animate.OverlayAnimator;
@@ -271,7 +273,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 			state.setCurrentSource( 0 );
 		multiBoxOverlayRenderer = new MultiBoxOverlayRenderer();
 		sourceInfoOverlayRenderer = new SourceInfoOverlayRenderer();
-		scaleBarOverlayRenderer = new ScaleBarOverlayRenderer();
+		scaleBarOverlayRenderer = Prefs.showScaleBar() ? new ScaleBarOverlayRenderer() : null;
 
 		painterThread = new PainterThread( this );
 		viewerTransform = new AffineTransform3D();
@@ -424,14 +426,18 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		sourceInfoOverlayRenderer.setViewerState( state );
 		sourceInfoOverlayRenderer.paint( ( Graphics2D ) g );
 
-		scaleBarOverlayRenderer.setViewerState( state );
-		scaleBarOverlayRenderer.paint( ( Graphics2D ) g );
+		if ( Prefs.showScaleBar() )
+		{
+			scaleBarOverlayRenderer.setViewerState( state );
+			scaleBarOverlayRenderer.paint( ( Graphics2D ) g );
+		}
 
 		final RealPoint gPos = new RealPoint( 3 );
 		getGlobalMouseCoordinates( gPos );
 		final String mousePosGlobalString = String.format( "(%6.1f,%6.1f,%6.1f)", gPos.getDoublePosition( 0 ), gPos.getDoublePosition( 1 ), gPos.getDoublePosition( 2 ) );
 
 		g.setFont( new Font( "Monospaced", Font.PLAIN, 12 ) );
+		g.setColor( Color.white );
 		g.drawString( mousePosGlobalString, ( int ) g.getClipBounds().getWidth() - 170, 25 );
 
 		boolean requiresRepaint = multiBoxOverlayRenderer.isHighlightInProgress();

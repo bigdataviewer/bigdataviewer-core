@@ -1,5 +1,6 @@
 package bdv.viewer.overlay;
 
+import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.font.FontRenderContext;
@@ -11,6 +12,7 @@ import java.util.List;
 import mpicbg.spim.data.sequence.VoxelDimensions;
 import net.imglib2.realtransform.AffineTransform3D;
 import bdv.util.Affine3DHelpers;
+import bdv.util.Prefs;
 import bdv.viewer.Source;
 import bdv.viewer.state.SourceState;
 import bdv.viewer.state.ViewerState;
@@ -18,6 +20,12 @@ import bdv.viewer.state.ViewerState;
 public class ScaleBarOverlayRenderer
 {
 	private final Font font = new Font( "SansSerif", Font.PLAIN, 12 );
+
+	private final Color color = new Color( Prefs.scaleBarColor() );
+
+	private final AffineTransform3D transform = new AffineTransform3D();
+
+	private final AffineTransform3D sourceTransform = new AffineTransform3D();
 
 	/**
 	 * Try to keep the scale bar as close to this length (in pixels) as possible.
@@ -46,6 +54,7 @@ public class ScaleBarOverlayRenderer
 		// draw scalebar
 		final int x = 20;
 		final int y = ( int ) g.getClipBounds().getHeight() - 30;
+		g.setColor( color );
 		g.fillRect( x, y, ( int ) scaleBarLength, 10 );
 
 		// draw label
@@ -74,11 +83,11 @@ public class ScaleBarOverlayRenderer
 				if ( voxelDimensions == null )
 					return;
 
-				final AffineTransform3D transform = new AffineTransform3D();
 				state.getViewerTransform( transform );
 
 				final int t = state.getCurrentTimepoint();
-				transform.concatenate( spimSource.getSourceTransform( t, 0 ) );
+				spimSource.getSourceTransform( t, 0, sourceTransform );
+				transform.concatenate( sourceTransform );
 				final double sizeOfOnePixel = voxelDimensions.dimension( 0 ) / Affine3DHelpers.extractScale( transform, 0 );
 
 				// find good scaleBarLength and corresponding scale value
