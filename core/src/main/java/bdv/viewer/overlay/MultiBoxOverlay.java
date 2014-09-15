@@ -31,17 +31,7 @@ public class MultiBoxOverlay
 
 	private final Color canvasColor = new Color( 0xb0bbbbbb, true );
 
-	/**
-	 * distance from the eye to the projection plane z=0.
-	 */
-	private double depth = 10.0;
-
-	/**
-	 * scale the 2D projection of the overlay box by this factor.
-	 */
-	private double scale = 0.1;
-
-	private final double[] origin = new double[ 3 ];
+	private final RenderBoxHelper renderBoxHelper = new RenderBoxHelper();
 
 	public interface IntervalAndTransform
 	{
@@ -79,7 +69,6 @@ public class MultiBoxOverlay
 	 */
 	public < I extends IntervalAndTransform > void paint( final Graphics2D graphics, final List< I > sources, final Interval targetInterval, final Interval boxScreen )
 	{
-//		assert ( sourceInterval.numDimensions() >= 3 );
 		assert ( targetInterval.numDimensions() >= 2 );
 
 		if ( sources.isEmpty() )
@@ -99,15 +88,16 @@ public class MultiBoxOverlay
 		final double vy = transform.get( 1, 0 );
 		final double vz = transform.get( 2, 0 );
 		final double transformScale = Math.sqrt( vx*vx + vy*vy + vz*vz );
-		setDepth( perspective * sourceSize * transformScale );
+		renderBoxHelper.setDepth( perspective * sourceSize * transformScale );
 
 		final double bw = screenBoxRatio * boxScreen.dimension( 0 );
 		final double bh = screenBoxRatio * boxScreen.dimension( 1 );
-		scale = Math.min( bw / targetInterval.dimension( 0 ), bh / targetInterval.dimension( 1 ) );
+		double scale = Math.min( bw / targetInterval.dimension( 0 ), bh / targetInterval.dimension( 1 ) );
 
 		final double tsScale = transformScale * sourceSize / targetSize;
 		if ( tsScale > 1.0 )
 			scale /= tsScale;
+		renderBoxHelper.setScale( scale );
 
 		final long x = boxScreen.min( 0 ) + boxScreen.dimension( 0 ) / 2;
 		final long y = boxScreen.min( 1 ) + boxScreen.dimension( 1 ) / 2;
@@ -119,144 +109,6 @@ public class MultiBoxOverlay
 		paint( graphics, sources, targetInterval );
 		graphics.setTransform( t );
 	}
-
-	public void setScale( final double scale )
-	{
-		this.scale = scale;
-	}
-
-	public void setDepth( final double depth )
-	{
-		this.depth = depth;
-		origin[ 2 ] = -depth;
-	}
-
-	/**
-	 *
-	 * @param p point to project
-	 * @return X coordinate of projected point
-	 */
-	private double perspectiveX( final double[] p )
-	{
-		return scale * ( p[ 0 ] - origin[ 0 ] ) / ( p[ 2 ] - origin[ 2 ] ) * depth;
-	}
-
-	/**
-	 *
-	 * @param p point to project
-	 * @return Y coordinate of projected point
-	 */
-	private double perspectiveY( final double[] p )
-	{
-		return scale * ( p[ 1 ] - origin[ 1 ] ) / ( p[ 2 ] - origin[ 2 ] ) * depth;
-	}
-
-	private void splitEdge( final double[] a, final double[] b, final GeneralPath before, final GeneralPath behind )
-	{
-		final double[] t = new double[ 3 ];
-		if ( a[ 2 ] <= 0 )
-		{
-			before.moveTo( perspectiveX( a ), perspectiveY( a ) );
-			if ( b[ 2 ] <= 0 )
-				before.lineTo( perspectiveX( b ), perspectiveY( b ) );
-			else
-			{
-				final double d = a[ 2 ] / ( a[ 2 ] - b[ 2 ] );
-				t[ 0 ] = ( b[ 0 ] - a[ 0 ] ) * d + a[ 0 ];
-				t[ 1 ] = ( b[ 1 ] - a[ 1 ] ) * d + a[ 1 ];
-				before.lineTo( perspectiveX( t ), perspectiveY( t ) );
-				behind.moveTo( perspectiveX( t ), perspectiveY( t ) );
-				behind.lineTo( perspectiveX( b ), perspectiveY( b ) );
-			}
-		}
-		else
-		{
-			behind.moveTo( perspectiveX( a ), perspectiveY( a ) );
-			if ( b[ 2 ] > 0 )
-				behind.lineTo( perspectiveX( b ), perspectiveY( b ) );
-			else
-			{
-				final double d = a[ 2 ] / ( a[ 2 ] - b[ 2 ] );
-				t[ 0 ] = ( b[ 0 ] - a[ 0 ] ) * d + a[ 0 ];
-				t[ 1 ] = ( b[ 1 ] - a[ 1 ] ) * d + a[ 1 ];
-				behind.lineTo( perspectiveX( t ), perspectiveY( t ) );
-				before.moveTo( perspectiveX( t ), perspectiveY( t ) );
-				before.lineTo( perspectiveX( b ), perspectiveY( b ) );
-			}
-		}
-	}
-
-	private void renderCanvas( final Interval targetInterval,  final GeneralPath canvas )
-	{
-		final double tX0 = targetInterval.min( 0 );
-		final double tX1 = targetInterval.max( 0 );
-		final double tY0 = targetInterval.min( 1 );
-		final double tY1 = targetInterval.max( 1 );
-
-		final double[] c000 = new double[] { tX0, tY0, 0 };
-		final double[] c100 = new double[] { tX1, tY0, 0 };
-		final double[] c010 = new double[] { tX0, tY1, 0 };
-		final double[] c110 = new double[] { tX1, tY1, 0 };
-
-		canvas.moveTo( perspectiveX( c000 ), perspectiveY( c000 ) );
-		canvas.lineTo( perspectiveX( c100 ), perspectiveY( c100 ) );
-		canvas.lineTo( perspectiveX( c110 ), perspectiveY( c110 ) );
-		canvas.lineTo( perspectiveX( c010 ), perspectiveY( c010 ) );
-		canvas.closePath();
-	}
-
-	private void renderBox( final Interval sourceInterval, final AffineTransform3D transform, final GeneralPath front, final GeneralPath back )
-	{
-		final double sX0 = sourceInterval.min( 0 );
-		final double sX1 = sourceInterval.max( 0 );
-		final double sY0 = sourceInterval.min( 1 );
-		final double sY1 = sourceInterval.max( 1 );
-		final double sZ0 = sourceInterval.min( 2 );
-		final double sZ1 = sourceInterval.max( 2 );
-
-		final double[] p000 = new double[] { sX0, sY0, sZ0 };
-		final double[] p100 = new double[] { sX1, sY0, sZ0 };
-		final double[] p010 = new double[] { sX0, sY1, sZ0 };
-		final double[] p110 = new double[] { sX1, sY1, sZ0 };
-		final double[] p001 = new double[] { sX0, sY0, sZ1 };
-		final double[] p101 = new double[] { sX1, sY0, sZ1 };
-		final double[] p011 = new double[] { sX0, sY1, sZ1 };
-		final double[] p111 = new double[] { sX1, sY1, sZ1 };
-
-		final double[] q000 = new double[ 3 ];
-		final double[] q100 = new double[ 3 ];
-		final double[] q010 = new double[ 3 ];
-		final double[] q110 = new double[ 3 ];
-		final double[] q001 = new double[ 3 ];
-		final double[] q101 = new double[ 3 ];
-		final double[] q011 = new double[ 3 ];
-		final double[] q111 = new double[ 3 ];
-
-		transform.apply( p000, q000 );
-		transform.apply( p100, q100 );
-		transform.apply( p010, q010 );
-		transform.apply( p110, q110 );
-		transform.apply( p001, q001 );
-		transform.apply( p101, q101 );
-		transform.apply( p011, q011 );
-		transform.apply( p111, q111 );
-
-		splitEdge( q000, q100, front, back );
-		splitEdge( q100, q110, front, back );
-		splitEdge( q110, q010, front, back );
-		splitEdge( q010, q000, front, back );
-
-		splitEdge( q001, q101, front, back );
-		splitEdge( q101, q111, front, back );
-		splitEdge( q111, q011, front, back );
-		splitEdge( q011, q001, front, back );
-
-		splitEdge( q000, q001, front, back );
-		splitEdge( q100, q101, front, back );
-		splitEdge( q110, q111, front, back );
-		splitEdge( q010, q011, front, back );
-	}
-
 
 	private volatile boolean highlightInProgress;
 
@@ -289,11 +141,12 @@ public class MultiBoxOverlay
 	 */
 	private < I extends IntervalAndTransform > void paint( final Graphics2D graphics, final List< I > sources, final Interval targetInterval )
 	{
-		origin[ 0 ] = targetInterval.min( 0 ) + targetInterval.dimension( 0 ) / 2;
-		origin[ 1 ] = targetInterval.min( 1 ) + targetInterval.dimension( 1 ) / 2;
+		final double ox = targetInterval.min( 0 ) + targetInterval.dimension( 0 ) / 2;
+		final double oy = targetInterval.min( 1 ) + targetInterval.dimension( 1 ) / 2;
+		renderBoxHelper.setOrigin( ox, oy );
 
 		final GeneralPath canvas = new GeneralPath();
-		renderCanvas( targetInterval, canvas );
+		renderBoxHelper.renderCanvas( targetInterval, canvas );
 
 		final GeneralPath activeFront = new GeneralPath();
 		final GeneralPath activeBack = new GeneralPath();
@@ -344,14 +197,14 @@ public class MultiBoxOverlay
 				g = ( int ) ( alpha * 255 + ( 1 - alpha ) * c.getGreen() );
 				b = ( int ) ( alpha * 255 + ( 1 - alpha ) * c.getBlue() );
 				highlightBackColor = new Color( r, g, b );
-				renderBox( source.getSourceInterval(), source.getSourceToViewer(), highlightFront, highlightBack );
+				renderBoxHelper.renderBox( source.getSourceInterval(), source.getSourceToViewer(), highlightFront, highlightBack );
 			}
 			else
 			{
 				if( source.isVisible() )
-					renderBox( source.getSourceInterval(), source.getSourceToViewer(), activeFront, activeBack );
+					renderBoxHelper.renderBox( source.getSourceInterval(), source.getSourceToViewer(), activeFront, activeBack );
 				else
-					renderBox( source.getSourceInterval(), source.getSourceToViewer(), inactiveFront, inactiveBack );
+					renderBoxHelper.renderBox( source.getSourceInterval(), source.getSourceToViewer(), inactiveFront, inactiveBack );
 			}
 		}
 
@@ -403,9 +256,8 @@ public class MultiBoxOverlay
 
 		graphics.setPaint( Color.WHITE );
 		graphics.setFont( new Font( "SansSerif", Font.PLAIN, 8 ) );
-		graphics.drawString( "x", ( float ) perspectiveX( qx ), ( float ) perspectiveY( qx ) - 2 );
-		graphics.drawString( "y", ( float ) perspectiveX( qy ), ( float ) perspectiveY( qy ) - 2 );
-		graphics.drawString( "z", ( float ) perspectiveX( qz ), ( float ) perspectiveY( qz ) - 2 );
+		graphics.drawString( "x", ( float ) renderBoxHelper.perspectiveX( qx ), ( float ) renderBoxHelper.perspectiveY( qx ) - 2 );
+		graphics.drawString( "y", ( float ) renderBoxHelper.perspectiveX( qy ), ( float ) renderBoxHelper.perspectiveY( qy ) - 2 );
+		graphics.drawString( "z", ( float ) renderBoxHelper.perspectiveX( qz ), ( float ) renderBoxHelper.perspectiveY( qz ) - 2 );
 	}
-
 }

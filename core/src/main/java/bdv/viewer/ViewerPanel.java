@@ -713,6 +713,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		{
 			final int s = transformListeners.size();
 			transformListeners.add( index < 0 ? 0 : index > s ? s : index, listener );
+			listener.transformChanged( viewerTransform );
 		}
 	}
 
