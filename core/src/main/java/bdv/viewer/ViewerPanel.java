@@ -183,6 +183,8 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 		private int numRenderingThreads = 3;
 
+		private boolean useVolatileIfAvailable = true;
+
 		private MessageOverlayAnimator msgOverlay = new MessageOverlayAnimator( 800 );
 
 		public Options width( final int w )
@@ -218,6 +220,12 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		public Options numRenderingThreads( final int n )
 		{
 			numRenderingThreads = n;
+			return this;
+		}
+
+		public Options useVolatileIfAvailable( final boolean v )
+		{
+			useVolatileIfAvailable = v;
 			return this;
 		}
 
@@ -289,7 +297,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		imageRenderer = new MultiResolutionRenderer(
 				renderTarget, painterThread,
 				optional.screenScales, optional.targetRenderNanos, optional.doubleBuffered,
-				optional.numRenderingThreads, renderingExecutorService, optional.doubleBuffered, cache );
+				optional.numRenderingThreads, renderingExecutorService, optional.useVolatileIfAvailable, cache );
 
 		mouseCoordinates = new MouseCoordinateListener();
 		display.addHandler( mouseCoordinates );
