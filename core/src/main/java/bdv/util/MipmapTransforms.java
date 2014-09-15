@@ -54,7 +54,9 @@ public class MipmapTransforms
 		double pixelSize = 0;
 		final AffineTransform3D sourceToScreen = new AffineTransform3D();
 		sourceToScreen.set( screenTransform );
-		sourceToScreen.concatenate( source.getSourceTransform( timepoint, mipmapIndex ) );
+		final AffineTransform3D sourceTransform = new AffineTransform3D();
+		source.getSourceTransform( timepoint, mipmapIndex, sourceTransform );
+		sourceToScreen.concatenate( sourceTransform );
 		final double[] zero = new double[] { 0, 0, 0 };
 		final double[] tzero = new double[ 3 ];
 		final double[] one = new double[ 3 ];

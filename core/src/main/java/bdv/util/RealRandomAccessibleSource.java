@@ -30,8 +30,6 @@ public abstract class RealRandomAccessibleSource< T extends Type< T > > implemen
 
 	protected final VoxelDimensions voxelDimensions;
 
-	protected final AffineTransform3D identity;
-
 	public RealRandomAccessibleSource( final RealRandomAccessible< T > accessible, final String name )
 	{
 		this( accessible, name, null );
@@ -43,7 +41,6 @@ public abstract class RealRandomAccessibleSource< T extends Type< T > > implemen
 		this.type = Util.getTypeFromRealRandomAccess( accessible ).createVariable();
 		this.name = name;
 		this.voxelDimensions = voxelDimensions;
-		this.identity = new AffineTransform3D();
 	}
 
 	@Override
@@ -73,9 +70,18 @@ public abstract class RealRandomAccessibleSource< T extends Type< T > > implemen
 	}
 
 	@Override
+	public void getSourceTransform( final int t, final int level, final AffineTransform3D transform )
+	{
+		transform.identity();
+	}
+
+	@Override
+	@Deprecated
 	public AffineTransform3D getSourceTransform( final int t, final int level )
 	{
-		return identity;
+		final AffineTransform3D transform = new AffineTransform3D();
+		getSourceTransform( t, level, transform );
+		return transform;
 	}
 
 	@Override

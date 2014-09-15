@@ -54,15 +54,20 @@ public interface Source< T >
 	public RealRandomAccessible< T > getInterpolatedSource( final int t, final int level, final Interpolation method );
 
 	/**
-	 * Get the transform from the {@link #getSource(long) source} at timepoint index t
-	 * into the global coordinate system.
+	 * Get the transform from the {@link #getSource(long) source} at timepoint
+	 * index t into the global coordinate system.
 	 *
 	 * @param t
 	 *            timepoint index
 	 * @param level
-	 * 			  mipmap level
-	 * @return transforms source into the global coordinate system.
+	 *            mipmap level
+	 * @param transform
+	 *            is set to the source-to-global transform, that transforms
+	 *            source coordinates into the global coordinates
 	 */
+	public void getSourceTransform( int t, int level, AffineTransform3D transform );
+
+	@Deprecated
 	public AffineTransform3D getSourceTransform( int t, int level );
 
 	/**

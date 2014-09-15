@@ -694,7 +694,9 @@ public class MultiResolutionRenderer
 
 		final AffineTransform3D sourceToScreen = new AffineTransform3D();
 		viewerState.getViewerTransform( sourceToScreen );
-		sourceToScreen.concatenate( source.getSourceTransform( timepoint, mipmapIndex ) );
+		final AffineTransform3D sourceTransform = new AffineTransform3D();
+		source.getSourceTransform( timepoint, mipmapIndex, sourceTransform );
+		sourceToScreen.concatenate( sourceTransform );
 		sourceToScreen.preConcatenate( screenScaleTransform );
 
 		return RealViews.constantAffine( img, sourceToScreen );
@@ -722,7 +724,9 @@ public class MultiResolutionRenderer
 
 			final AffineTransform3D sourceToScreen = new AffineTransform3D();
 			viewerState.getViewerTransform( sourceToScreen );
-			sourceToScreen.concatenate( source.getSourceTransform( timepoint, mipmapIndex ) );
+			final AffineTransform3D sourceTransform = new AffineTransform3D();
+			source.getSourceTransform( timepoint, mipmapIndex, sourceTransform );
+			sourceToScreen.concatenate( sourceTransform );
 			sourceToScreen.preConcatenate( screenScaleTransform );
 
 			Prefetcher.fetchCells( sourceToScreen, cellDimensions, dimensions, screenInterval, interpolation, cellsRandomAccess );

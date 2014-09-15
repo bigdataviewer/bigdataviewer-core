@@ -539,7 +539,8 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	protected synchronized void align( final AlignPlane plane )
 	{
 		final SourceState< ? > source = state.getSources().get( state.getCurrentSource() );
-		final AffineTransform3D sourceTransform = source.getSpimSource().getSourceTransform( state.getCurrentTimepoint(), 0 );
+		final AffineTransform3D sourceTransform = new AffineTransform3D();
+		source.getSpimSource().getSourceTransform( state.getCurrentTimepoint(), 0, sourceTransform );
 
 		final double[] qSource = new double[ 4 ];
 		Affine3DHelpers.extractRotationAnisotropic( sourceTransform, qSource );
@@ -722,6 +723,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		{
 			final int s = transformListeners.size();
 			transformListeners.add( index < 0 ? 0 : index > s ? s : index, listener );
+			listener.transformChanged( viewerTransform );
 		}
 	}
 

@@ -137,11 +137,20 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 	}
 
 	@Override
-	public synchronized AffineTransform3D getSourceTransform( final int t, final int level )
+	public synchronized void getSourceTransform( final int t, final int level, final AffineTransform3D transform )
 	{
 		if ( t != currentTimePointIndex )
 			loadTimepoint( t );
-		return currentSourceTransforms[ level ].copy();
+		transform.set( currentSourceTransforms[ level ] );
+	}
+
+	@Override
+	@Deprecated
+	public AffineTransform3D getSourceTransform( final int t, final int level )
+	{
+		final AffineTransform3D transform = new AffineTransform3D();
+		getSourceTransform( t, level, transform );
+		return transform;
 	}
 
 	@Override

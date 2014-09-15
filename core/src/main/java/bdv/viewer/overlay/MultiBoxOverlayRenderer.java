@@ -112,6 +112,7 @@ public class MultiBoxOverlayRenderer
 			}
 
 			final AffineTransform3D sourceToViewer = new AffineTransform3D();
+			final AffineTransform3D sourceTransform = new AffineTransform3D();
 			for ( int i = 0, j = 0; i < numSources; ++i )
 			{
 				final SourceState< ? > source = sources.get( i );
@@ -119,7 +120,8 @@ public class MultiBoxOverlayRenderer
 				{
 					final IntervalAndTransform boxsource = boxSources.get( j++ );
 					viewerState.getViewerTransform( sourceToViewer );
-					sourceToViewer.concatenate( source.getSpimSource().getSourceTransform( timepoint, 0 ) );
+					source.getSpimSource().getSourceTransform( timepoint, 0, sourceTransform );
+					sourceToViewer.concatenate( sourceTransform );
 					boxsource.setSourceToViewer( sourceToViewer );
 					boxsource.setSourceInterval( source.getSpimSource().getSource( timepoint, 0 ) );
 					boxsource.setVisible( visible.contains( i ) );
