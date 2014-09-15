@@ -52,7 +52,7 @@ public final class KeyProperties
 
 	public static KeyProperties readPropertyFile()
 	{
-		final File file = new File( "spimviewer.properties" );
+		final File file = new File( "bigdataviewer.keys.properties" );
 		return readPropertyFile( file );
 	}
 
