@@ -39,7 +39,6 @@ import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.TransformEventHandler;
 import net.imglib2.ui.TransformEventHandler3D;
 import net.imglib2.ui.TransformListener;
-import net.imglib2.ui.overlay.BufferedImageOverlayRenderer;
 import net.imglib2.util.LinAlgHelpers;
 
 import org.jdom2.Element;
@@ -57,6 +56,7 @@ import bdv.viewer.overlay.MultiBoxOverlayRenderer;
 import bdv.viewer.overlay.ScaleBarOverlayRenderer;
 import bdv.viewer.overlay.SourceInfoOverlayRenderer;
 import bdv.viewer.render.MultiResolutionRenderer;
+import bdv.viewer.render.TransformAwareBufferedImageOverlayRenderer;
 import bdv.viewer.state.SourceGroup;
 import bdv.viewer.state.SourceState;
 import bdv.viewer.state.ViewerState;
@@ -87,6 +87,11 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 * Renders the current state for the {@link #display}.
 	 */
 	protected final MultiResolutionRenderer imageRenderer;
+
+	/**
+	 * TODO
+	 */
+	protected final TransformAwareBufferedImageOverlayRenderer renderTarget;
 
 	/**
 	 * Overlay navigation boxes.
@@ -146,6 +151,15 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 * {@link #requestRepaint()} so listeners have the chance to interfere.
 	 */
 	protected final CopyOnWriteArrayList< TransformListener< AffineTransform3D > > transformListeners;
+
+	/**
+	 * These listeners will be notified about changes to the
+	 * {@link #viewerTransform} that was used to render the current image. This
+	 * is intended for example for {@link OverlayRenderer}s that need to exactly
+	 * match the transform of their overlaid content to the transform of the
+	 * image.
+	 */
+	protected final CopyOnWriteArrayList< TransformListener< AffineTransform3D > > lastRenderTransformListeners;
 
 	/**
 	 * Current animator for viewer transform, or null. This is for example used
@@ -288,7 +302,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		display = new InteractiveDisplayCanvasComponent< AffineTransform3D >(
 				optional.width, optional.height, TransformEventHandler3D.factory() );
 		display.addTransformListener( this );
-		final BufferedImageOverlayRenderer renderTarget = new BufferedImageOverlayRenderer();
+		renderTarget = new TransformAwareBufferedImageOverlayRenderer();
 		renderTarget.setCanvasSize( optional.width, optional.height );
 		display.addOverlayRenderer( renderTarget );
 		display.addOverlayRenderer( this );
@@ -324,6 +338,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		visibilityAndGrouping.addUpdateListener( this );
 
 		transformListeners = new CopyOnWriteArrayList< TransformListener< AffineTransform3D > >();
+		lastRenderTransformListeners = new CopyOnWriteArrayList< TransformListener< AffineTransform3D > >();
 
 		msgOverlay = optional.msgOverlay;
 
@@ -710,6 +725,41 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 	/**
 	 * Add a {@link TransformListener} to notify about viewer transformation
+	 * changes. Listeners will be notified when a new image has been painted
+	 * with the viewer transform used to render that image.
+	 *
+	 * This happens immediately after that image is painted onto the screen,
+	 * before any overlays are painted.
+	 *
+	 * @param listener
+	 *            the transform listener to add.
+	 */
+	public synchronized void addRenderTransformListener( final TransformListener< AffineTransform3D > listener )
+	{
+		renderTarget.addTransformListener( listener );
+	}
+
+	/**
+	/**
+	 * Add a {@link TransformListener} to notify about viewer transformation
+	 * changes. Listeners will be notified when a new image has been painted
+	 * with the viewer transform used to render that image.
+	 *
+	 * This happens immediately after that image is painted onto the screen,
+	 * before any overlays are painted.
+	 *
+	 * @param listener
+	 *            the transform listener to add.
+	 * @param index
+	 *            position in the list of listeners at which to insert this one.
+	 */
+	public void addRenderTransformListener( final TransformListener< AffineTransform3D > listener, final int index )
+	{
+		renderTarget.addTransformListener( listener, index );
+	}
+
+	/**
+	 * Add a {@link TransformListener} to notify about viewer transformation
 	 * changes. Listeners will be notified <em>before</em> calling
 	 * {@link #requestRepaint()} so they have the chance to interfere.
 	 *
@@ -753,6 +803,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		{
 			transformListeners.remove( listener );
 		}
+		renderTarget.removeTransformListener( listener );
 	}
 
 	protected class MouseCoordinateListener implements MouseMotionListener, MouseListener

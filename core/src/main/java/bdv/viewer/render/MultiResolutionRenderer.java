@@ -24,6 +24,7 @@ import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
 import net.imglib2.ui.Renderer;
 import net.imglib2.ui.SimpleInterruptibleProjector;
+import net.imglib2.ui.TransformListener;
 import net.imglib2.ui.util.GuiUtil;
 import bdv.img.cache.Cache;
 import bdv.img.cache.CachedCellImg;
@@ -98,7 +99,7 @@ public class MultiResolutionRenderer
 	/**
 	 * Receiver for the {@link BufferedImage BufferedImages} that we render.
 	 */
-	protected final RenderTarget display;
+	protected final TransformAwareRenderTarget display;
 
 	/**
 	 * Thread that triggers repainting of the display.
@@ -287,7 +288,7 @@ public class MultiResolutionRenderer
 			final boolean useVolatileIfAvailable,
 			final Cache cache )
 	{
-		this.display = display;
+		this.display = wrapTransformAwareRenderTarget( display );
 		this.painterThread = painterThread;
 		projector = null;
 		currentScreenScaleIndex = -1;
@@ -406,6 +407,8 @@ public class MultiResolutionRenderer
 		return false;
 	}
 
+	protected final AffineTransform3D currentProjectorTransform = new AffineTransform3D();
+
 	/**
 	 * Render image at the {@link #requestedScreenScaleIndex requested screen
 	 * scale} and the {@link #requestedMipmapLevel requested mipmap level}.
@@ -472,7 +475,7 @@ public class MultiResolutionRenderer
 			{
 				if ( createProjector )
 				{
-					final BufferedImage bi = display.setBufferedImage( bufferedImage );
+					final BufferedImage bi = display.setBufferedImageAndTransform( bufferedImage, currentProjectorTransform );
 					if ( doubleBuffered )
 					{
 						renderIdQueue.pop();
@@ -578,6 +581,7 @@ public class MultiResolutionRenderer
 				projector = new AccumulateProjectorARGB( sourceProjectors, sourceImages, screenImage, numRenderingThreads, renderingExecutorService );
 			}
 			previousTimepoint = viewerState.getCurrentTimepoint();
+			viewerState.getViewerTransform( currentProjectorTransform );
 			cache.initIoTimeBudget( iobudget );
 			return projector;
 		}
@@ -731,5 +735,50 @@ public class MultiResolutionRenderer
 
 			Prefetcher.fetchCells( sourceToScreen, cellDimensions, dimensions, screenInterval, interpolation, cellsRandomAccess );
 		}
+	}
+
+	private static TransformAwareRenderTarget wrapTransformAwareRenderTarget( final RenderTarget t )
+	{
+		if ( t instanceof TransformAwareRenderTarget )
+			return ( TransformAwareRenderTarget ) t;
+		else
+			return new TransformAwareRenderTarget()
+			{
+				@Override
+				public BufferedImage setBufferedImage( final BufferedImage img )
+				{
+					return t.setBufferedImage( img );
+				}
+
+				@Override
+				public int getWidth()
+				{
+					return t.getWidth();
+				}
+
+				@Override
+				public int getHeight()
+				{
+					return t.getHeight();
+				}
+
+				@Override
+				public BufferedImage setBufferedImageAndTransform( final BufferedImage img, final AffineTransform3D transform )
+				{
+					return t.setBufferedImage( img );
+				}
+
+				@Override
+				public void removeTransformListener( final TransformListener< AffineTransform3D > listener )
+				{}
+
+				@Override
+				public void addTransformListener( final TransformListener< AffineTransform3D > listener, final int index )
+				{}
+
+				@Override
+				public void addTransformListener( final TransformListener< AffineTransform3D > listener )
+				{}
+			};
 	}
 }
