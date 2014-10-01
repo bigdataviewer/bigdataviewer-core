@@ -21,7 +21,11 @@ public class ScaleBarOverlayRenderer
 {
 	private final Font font = new Font( "SansSerif", Font.PLAIN, 12 );
 
-	private final Color color = new Color( Prefs.scaleBarColor() );
+	private final DecimalFormat format = new DecimalFormat("0.####");
+
+	private final Color color = new Color( Prefs.scaleBarColor(), true );
+
+	private final Color bgcolor = new Color( Prefs.scaleBarBgColor(), true );
 
 	private final AffineTransform3D transform = new AffineTransform3D();
 
@@ -46,24 +50,36 @@ public class ScaleBarOverlayRenderer
 
 	private String unit;
 
+	private boolean drawScaleBar;
+
 	public synchronized void paint( final Graphics2D g )
 	{
-		final DecimalFormat format = new DecimalFormat("0.####");
-		final String scaleBarText = format.format( scale ) + " " + unit;
+		if ( drawScaleBar )
+		{
+			final String scaleBarText = format.format( scale ) + " " + unit;
 
-		// draw scalebar
-		final int x = 20;
-		final int y = ( int ) g.getClipBounds().getHeight() - 30;
-		g.setColor( color );
-		g.fillRect( x, y, ( int ) scaleBarLength, 10 );
+			// scalebar position
+			final int x = 20;
+			final int y = ( int ) g.getClipBounds().getHeight() - 30;
 
-		// draw label
-		final FontRenderContext frc = g.getFontRenderContext();
-		final TextLayout layout = new TextLayout( scaleBarText, font, frc );
-		final Rectangle2D bounds = layout.getBounds();
-		final float tx = ( float ) ( 20 + ( scaleBarLength - bounds.getMaxX() ) / 2 );
-		final float ty = y - 5;
-		layout.draw( g, tx, ty );
+			// label position
+			final FontRenderContext frc = g.getFontRenderContext();
+			final TextLayout layout = new TextLayout( scaleBarText, font, frc );
+			final Rectangle2D bounds = layout.getBounds();
+			final float tx = ( float ) ( 20 + ( scaleBarLength - bounds.getMaxX() ) / 2 );
+			final float ty = y - 5;
+
+			// draw background
+			g.setColor( bgcolor );
+			g.fillRect( x - 7, ( int ) ( ty - bounds.getHeight() - 3 ), ( int ) scaleBarLength + 14, ( int ) bounds.getHeight() + 25 );
+
+			// draw scalebar
+			g.setColor( color );
+			g.fillRect( x, y, ( int ) scaleBarLength, 10 );
+
+			// draw label
+			layout.draw( g, tx, ty );
+		}
 	}
 
 	private static final String[] lengthUnits = { "nm", "µm", "mm", "m", "km" };
@@ -81,7 +97,11 @@ public class ScaleBarOverlayRenderer
 				final Source< ? > spimSource = sources.get( state.getCurrentSource() ).getSpimSource();
 				final VoxelDimensions voxelDimensions = spimSource.getVoxelDimensions();
 				if ( voxelDimensions == null )
+				{
+					drawScaleBar = false;
 					return;
+				}
+				drawScaleBar = true;
 
 				state.getViewerTransform( transform );
 

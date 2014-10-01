@@ -18,6 +18,11 @@ public class Prefs
 		return getInstance().scaleBarColor;
 	}
 
+	public static int scaleBarBgColor()
+	{
+		return getInstance().scaleBarBgColor;
+	}
+
 	private static Prefs instance;
 
 	public static Prefs getInstance()
@@ -31,14 +36,17 @@ public class Prefs
 
 	private static final String SHOW_SCALE_BAR = "show-scale-bar";
 	private static final String SCALE_BAR_COLOR = "scale-bar-color";
+	private static final String SCALE_BAR_BG_COLOR = "scale-bar-bg-color";
 
 	private final boolean showScaleBar;
 	private final int scaleBarColor;
+	private final int scaleBarBgColor;
 
 	private Prefs( final Properties p )
 	{
 		showScaleBar = getBoolean( p, SHOW_SCALE_BAR, false );
-		scaleBarColor = getInt( p, SCALE_BAR_COLOR, 0x00ffffff );
+		scaleBarColor = getInt( p, SCALE_BAR_COLOR, 0xffffffff );
+		scaleBarBgColor = getInt( p, SCALE_BAR_BG_COLOR, 0x88000000 );
 	}
 
 	private boolean getBoolean( final Properties p, final String key, final boolean defaultValue )
@@ -52,7 +60,7 @@ public class Prefs
 		try
 		{
 			final String property = ( p != null ) ? p.getProperty( key ) : null;
-			return ( property != null ) ? Integer.decode( property ) : defaultValue;
+			return ( property != null ) ? ( int ) ( Long.decode( property ).longValue() & 0xffffffff ) : defaultValue;
 		}
 		catch ( final NumberFormatException e )
 		{
@@ -104,6 +112,7 @@ public class Prefs
 		final Prefs prefs = new Prefs( null );
 		properties.put( SHOW_SCALE_BAR, "" + prefs.showScaleBar );
 		properties.put( SCALE_BAR_COLOR, "" + prefs.scaleBarColor );
+		properties.put( SCALE_BAR_BG_COLOR, "" + prefs.scaleBarBgColor );
 		return properties;
 	}
 
