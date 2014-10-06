@@ -252,8 +252,10 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 						final RandomAccess< A > sourceRandomAccess = sources.get( iFinal ).randomAccess( sourceInterval );
 						int myNumInvalidPixels = 0;
 
-						sourceRandomAccess.setPosition( min );
-						sourceRandomAccess.setPosition( myMinY, 1 );
+						final long[] smin = new long[ n ];
+						System.arraycopy( min, 0, smin, 0, n );
+						smin[ 1 ] = myMinY;
+						sourceRandomAccess.setPosition( smin );
 
 						targetRandomAccess.setPosition( min[ 0 ], 0 );
 						targetRandomAccess.setPosition( myMinY, 1 );
@@ -283,9 +285,9 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 								sourceRandomAccess.fwd( 0 );
 								targetRandomAccess.fwd( 0 );
 							}
-							sourceRandomAccess.move( cr, 0 );
+							++smin[ 1 ];
+							sourceRandomAccess.setPosition( smin );
 							targetRandomAccess.move( cr, 0 );
-							sourceRandomAccess.fwd( 1 );
 							targetRandomAccess.fwd( 1 );
 						}
 						numInvalidPixels.addAndGet( myNumInvalidPixels );
