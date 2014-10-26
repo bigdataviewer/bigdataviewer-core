@@ -19,6 +19,7 @@ import net.imglib2.type.volatiles.VolatileARGBType;
 import net.imglib2.type.volatiles.VolatileFloatType;
 import net.imglib2.type.volatiles.VolatileUnsignedByteType;
 import net.imglib2.type.volatiles.VolatileUnsignedShortType;
+import net.imglib2.util.Fraction;
 import bdv.AbstractViewerImgLoader;
 import bdv.img.cache.CacheArrayLoader;
 import bdv.img.cache.CacheHints;
@@ -186,7 +187,7 @@ public abstract class VirtualStackImageLoader< T extends NativeType< T >, V exte
 		final int priority = 0;
 		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
 		final CellCache< A > c = cache.new VolatileCellCache( view.getTimePointId(), view.getViewSetupId(), level, cacheHints );
-		final VolatileImgCells< A > cells = new VolatileImgCells< A >( c, 1, dimensions, cellDimensions );
+		final VolatileImgCells< A > cells = new VolatileImgCells< A >( c, new Fraction(), dimensions, cellDimensions );
 		final CachedCellImg< T, A > img = new CachedCellImg< T, A >( cells );
 		return img;
 	}

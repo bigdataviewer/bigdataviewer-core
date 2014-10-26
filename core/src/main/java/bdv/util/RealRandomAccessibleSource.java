@@ -6,7 +6,6 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.Type;
-import net.imglib2.util.Util;
 import net.imglib2.view.Views;
 import bdv.viewer.Interpolation;
 import bdv.viewer.Source;
@@ -30,15 +29,15 @@ public abstract class RealRandomAccessibleSource< T extends Type< T > > implemen
 
 	protected final VoxelDimensions voxelDimensions;
 
-	public RealRandomAccessibleSource( final RealRandomAccessible< T > accessible, final String name )
+	public RealRandomAccessibleSource( final RealRandomAccessible< T > accessible, final T type, final String name )
 	{
-		this( accessible, name, null );
+		this( accessible, type, name, null );
 	}
 
-	public RealRandomAccessibleSource( final RealRandomAccessible< T > accessible, final String name, final VoxelDimensions voxelDimensions )
+	public RealRandomAccessibleSource( final RealRandomAccessible< T > accessible, final T type, final String name, final VoxelDimensions voxelDimensions )
 	{
 		this.accessible = accessible;
-		this.type = Util.getTypeFromRealRandomAccess( accessible ).createVariable();
+		this.type = type.createVariable();
 		this.name = name;
 		this.voxelDimensions = voxelDimensions;
 	}

@@ -38,6 +38,7 @@ package net.imglib2.type.volatiles;
 
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.NumericType;
+import net.imglib2.util.Fraction;
 
 /**
  * Abstract base class for {@link VolatileNumericType}s that wrap
@@ -61,7 +62,7 @@ public abstract class AbstractVolatileNativeNumericType< N extends NumericType< 
 	}
 
 	@Override
-	public int getEntitiesPerPixel()
+	public Fraction getEntitiesPerPixel()
 	{
 		return t.getEntitiesPerPixel();
 	}

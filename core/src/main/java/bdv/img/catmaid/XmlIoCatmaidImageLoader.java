@@ -9,7 +9,8 @@ import mpicbg.spim.data.generic.sequence.XmlIoBasicImgLoader;
 import org.jdom2.Element;
 
 @ImgLoaderIo( format = "catmaid", type = CatmaidImageLoader.class )
-public class XmlIoCatmaidImageLoader implements XmlIoBasicImgLoader< CatmaidImageLoader >
+public class XmlIoCatmaidImageLoader
+		implements XmlIoBasicImgLoader< CatmaidImageLoader >
 {
 	@Override
 	public Element toXml( final CatmaidImageLoader imgLoader, final File basePath )
@@ -24,8 +25,8 @@ public class XmlIoCatmaidImageLoader implements XmlIoBasicImgLoader< CatmaidImag
 		final long height = Long.parseLong( elem.getChildText( "height" ) );
 		final long depth = Long.parseLong( elem.getChildText( "depth" ) );
 
-		double resXY = Double.parseDouble( elem.getChildText( "resXY" ) );
-		double resZ = Double.parseDouble( elem.getChildText( "resZ" ) );
+		final double resXY = Double.parseDouble( elem.getChildText( "resXY" ) );
+		final double resZ = Double.parseDouble( elem.getChildText( "resZ" ) );
 
 		final String urlFormat = elem.getChildText( "urlFormat" );
 

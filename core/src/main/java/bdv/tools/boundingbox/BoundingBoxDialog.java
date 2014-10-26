@@ -78,7 +78,7 @@ public class BoundingBoxDialog extends JDialog
 		boxRealRandomAccessible = new BoxRealRandomAccessible< UnsignedShortType >( initialInterval, insideValue, outsideValue );
 
 		// create a bdv.viewer.Source providing data from the bbox RealRandomAccessible
-		final RealRandomAccessibleSource< UnsignedShortType > boxSource = new RealRandomAccessibleSource< UnsignedShortType >( boxRealRandomAccessible, "selection" )
+		final RealRandomAccessibleSource< UnsignedShortType > boxSource = new RealRandomAccessibleSource< UnsignedShortType >( boxRealRandomAccessible, new UnsignedShortType(), "selection" )
 		{
 			@Override
 			public Interval getInterval( final int t, final int level )

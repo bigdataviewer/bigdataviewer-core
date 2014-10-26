@@ -11,10 +11,10 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.NativeImg;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
 import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.sampler.special.ConstantRandomAccessible;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.volatiles.VolatileUnsignedShortType;
+import net.imglib2.util.Fraction;
 import net.imglib2.util.IntervalIndexer;
 import net.imglib2.view.Views;
 import bdv.AbstractViewerImgLoader;
@@ -27,6 +27,7 @@ import bdv.img.cache.VolatileImgCells.CellCache;
 import bdv.img.hdf5.DimsAndExistence;
 import bdv.img.hdf5.MipmapInfo;
 import bdv.img.hdf5.ViewLevelId;
+import bdv.util.ConstantRandomAccessible;
 
 import com.google.gson.GsonBuilder;
 
@@ -181,7 +182,7 @@ public class RemoteImageLoader extends AbstractViewerImgLoader< UnsignedShortTyp
 		final int priority = mipmapInfo.getMaxLevel() - level;
 		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
 		final CellCache< VolatileShortArray > c = cache.new VolatileCellCache( timepointId, setupId, level, cacheHints );
-		final VolatileImgCells< VolatileShortArray > cells = new VolatileImgCells< VolatileShortArray >( c, 1, dimensions, cellDimensions );
+		final VolatileImgCells< VolatileShortArray > cells = new VolatileImgCells< VolatileShortArray >( c, new Fraction(), dimensions, cellDimensions );
 		final CachedCellImg< T, VolatileShortArray > img = new CachedCellImg< T, VolatileShortArray >( cells );
 		return img;
 	}

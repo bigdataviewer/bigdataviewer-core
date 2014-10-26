@@ -38,6 +38,7 @@ package net.imglib2.type.volatiles;
 
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.util.Fraction;
 
 /**
  * Abstract base class for {@link VolatileRealType}s that wrap
@@ -60,7 +61,7 @@ public abstract class AbstractVolatileNativeRealType< R extends RealType< R > & 
 	}
 
 	@Override
-	public int getEntitiesPerPixel()
+	public Fraction getEntitiesPerPixel()
 	{
 		return t.getEntitiesPerPixel();
 	}

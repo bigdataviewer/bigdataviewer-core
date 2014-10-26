@@ -16,6 +16,18 @@
 	<name>BigDataViewer Fiji</name>
 	<description>Fiji plugins for starting BigDataViewer and exporting data.</description>
 
+	<properties>
+		<spim_data.version>1.0.0-beta-2</spim_data.version>
+		<!-- <spim_data.version>1.0.0-beta-3-SNAPSHOT</spim_data.version> -->
+		<SPIM_Opener.version>2.0.0</SPIM_Opener.version>
+		<SPIM_Registration.version>2.0.0-SNAPSHOT</SPIM_Registration.version>
+		<legacy-imglib1.version>2.0.0-SNAPSHOT</legacy-imglib1.version>
+		<java3d.version>1.5.2</java3d.version>
+		<imagej.version>2.0.0-rc-8</imagej.version>
+		<imagej-ops.version>0.5.0</imagej-ops.version>
+		<imagej-common.version>0.8.0</imagej-common.version>
+	</properties>
+
 	<dependencies>
 		<dependency>
 			<groupId>sc.fiji</groupId>
@@ -23,8 +35,8 @@
 			<version>${project.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>net.imglib2</groupId>
-			<artifactId>imglib2-meta</artifactId>
+			<groupId>net.imagej</groupId>
+			<artifactId>imagej-common</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>net.imglib2</groupId>
@@ -37,10 +49,6 @@
 		<dependency>
 			<groupId>sc.fiji</groupId>
 			<artifactId>SPIM_Registration</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>java3d</groupId>
-			<artifactId>vecmath</artifactId>
 		</dependency>
 		<!--
 		The following dependencies are added to deal with old SPIM_Registration version currently deployed in maven.imagej.net.

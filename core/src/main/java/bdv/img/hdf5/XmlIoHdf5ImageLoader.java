@@ -13,7 +13,7 @@ import mpicbg.spim.data.XmlHelpers;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.ImgLoaderIo;
 import mpicbg.spim.data.generic.sequence.XmlIoBasicImgLoader;
-import net.imglib2.Pair;
+import net.imglib2.util.Pair;
 import net.imglib2.util.ValuePair;
 
 import org.jdom2.Element;

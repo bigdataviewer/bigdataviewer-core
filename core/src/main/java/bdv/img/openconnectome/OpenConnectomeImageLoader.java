@@ -14,6 +14,7 @@ import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.volatiles.VolatileARGBType;
 import net.imglib2.type.volatiles.VolatileUnsignedByteType;
+import net.imglib2.util.Fraction;
 import bdv.AbstractViewerImgLoader;
 import bdv.img.cache.Cache;
 import bdv.img.cache.CacheHints;
@@ -211,7 +212,7 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 		final int priority = numScales - 1 - level;
 		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
 		final CellCache< VolatileByteArray > c = cache.new VolatileCellCache( view.getTimePointId(), view.getViewSetupId(), level, cacheHints );
-		final VolatileImgCells< VolatileByteArray > cells = new VolatileImgCells< VolatileByteArray >( c, 1, dimensions, cellDimensions );
+		final VolatileImgCells< VolatileByteArray > cells = new VolatileImgCells< VolatileByteArray >( c, new Fraction(), dimensions, cellDimensions );
 		final CachedCellImg< T, VolatileByteArray > img = new CachedCellImg< T, VolatileByteArray >( cells );
 		return img;
 	}

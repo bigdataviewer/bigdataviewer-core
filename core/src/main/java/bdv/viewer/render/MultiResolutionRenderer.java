@@ -703,7 +703,7 @@ public class MultiResolutionRenderer
 		sourceToScreen.concatenate( sourceTransform );
 		sourceToScreen.preConcatenate( screenScaleTransform );
 
-		return RealViews.constantAffine( img, sourceToScreen );
+		return RealViews.affine( img, sourceToScreen );
 	}
 
 	private static < T > void prefetch(
