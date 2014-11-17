@@ -34,8 +34,9 @@ public class BigDataServer
 	public static void main( final String[] args ) throws Exception
 	{
 		final String fn = args.length > 0 ? args[ 0 ] : "/Users/pietzsch/Desktop/data/fibsem.xml";
+		final int port = args.length > 1 ? Integer.parseInt( args[ 1 ] ) : 8080;
 		System.setProperty( "org.eclipse.jetty.util.log.class", "org.eclipse.jetty.util.log.StdErrLog" );
-		final Server server = new Server( 8080 );
+		final Server server = new Server( port );
 		server.setHandler( new CellHandler( fn ) );
 		server.start();
 		server.join();

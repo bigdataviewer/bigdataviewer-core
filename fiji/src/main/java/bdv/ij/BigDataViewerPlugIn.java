@@ -7,6 +7,7 @@ import java.awt.FileDialog;
 import java.awt.Frame;
 import java.io.File;
 import java.io.FilenameFilter;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.swing.JFileChooser;
 import javax.swing.filechooser.FileFilter;
@@ -62,11 +63,20 @@ public class BigDataViewerPlugIn implements PlugIn
 			final FileDialog fd = new FileDialog( ( Frame ) null, "Open", FileDialog.LOAD );
 			fd.setDirectory( new File( lastDatasetPath ).getParent() );
 			fd.setFile( new File( lastDatasetPath ).getName() );
+			final AtomicBoolean workedWithFilenameFilter = new AtomicBoolean( false );
 			fd.setFilenameFilter( new FilenameFilter()
 			{
+				private boolean firstTime = true;
+
 				@Override
 				public boolean accept( final File dir, final String name )
 				{
+					if ( firstTime )
+					{
+						workedWithFilenameFilter.set( true );
+						firstTime = false;
+					}
+
 					final int i = name.lastIndexOf( '.' );
 					if ( i > 0 && i < name.length() - 1 )
 					{
@@ -77,6 +87,11 @@ public class BigDataViewerPlugIn implements PlugIn
 				}
 			} );
 			fd.setVisible( true );
+			if ( !workedWithFilenameFilter.get() )
+			{
+				fd.setFilenameFilter( null );
+				fd.setVisible( true );
+			}
 			final String filename = fd.getFile();
 			if ( filename != null )
 			{

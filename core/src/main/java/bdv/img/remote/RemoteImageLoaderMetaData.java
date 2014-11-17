@@ -93,9 +93,9 @@ public class RemoteImageLoaderMetaData
 			final long[] imageDimensions = entry.getValue().getDimensions();
 			final int[] cellSize = perSetupMipmapInfo.get( id.getViewSetupId() ).getSubdivisions()[ id.getLevel() ];
 			final int[] dims = new int[] {
-					( int ) imageDimensions[ 0 ] / cellSize[ 0 ],
-					( int ) imageDimensions[ 1 ] / cellSize[ 1 ],
-					( int ) imageDimensions[ 2 ] / cellSize[ 2 ] };
+					( int ) ( imageDimensions[ 0 ] + cellSize[ 0 ] - 1 ) / cellSize[ 0 ],
+					( int ) ( imageDimensions[ 1 ] + cellSize[ 1 ] - 1 ) / cellSize[ 1 ],
+					( int ) ( imageDimensions[ 2 ] + cellSize[ 2 ] - 1 ) / cellSize[ 2 ] };
 			cellsDimensions.put( id, dims );
 		}
 		return cellsDimensions;

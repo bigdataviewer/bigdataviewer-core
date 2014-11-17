@@ -155,7 +155,8 @@ public class BigDataViewer
 			final VolatileSpimSource< T, V > vs = new VolatileSpimSource< T, V >( spimData, setupId, setupName );
 			final SpimSource< T > s = vs.nonVolatile();
 
-			// Decorate each source with an extra transformation, that can be edited manually in this viewer.
+			// Decorate each source with an extra transformation, that can be
+			// edited manually in this viewer.
 			final TransformedSource< V > tvs = new TransformedSource< V >( vs );
 			final TransformedSource< T > ts = new TransformedSource< T >( s, tvs );
 
@@ -185,7 +186,8 @@ public class BigDataViewer
 			final String setupName = createSetupName( setup );
 			final SpimSource< T > s = new SpimSource< T >( spimData, setupId, setupName );
 
-			// Decorate each source with an extra transformation, that can be edited manually in this viewer.
+			// Decorate each source with an extra transformation, that can be
+			// edited manually in this viewer.
 			final TransformedSource< T > ts = new TransformedSource< T >( s );
 			final SourceAndConverter< T > soc = new SourceAndConverter< T >( ts, converter );
 
@@ -218,7 +220,8 @@ public class BigDataViewer
 			final VolatileSpimSource< ARGBType, VolatileARGBType > vs = new VolatileSpimSource< ARGBType, VolatileARGBType >( spimData, setupId, setupName );
 			final SpimSource< ARGBType > s = vs.nonVolatile();
 
-			// Decorate each source with an extra transformation, that can be edited manually in this viewer.
+			// Decorate each source with an extra transformation, that can be
+			// edited manually in this viewer.
 			final TransformedSource< VolatileARGBType > tvs = new TransformedSource< VolatileARGBType >( vs );
 			final TransformedSource< ARGBType > ts = new TransformedSource< ARGBType >( s, tvs );
 
@@ -240,7 +243,8 @@ public class BigDataViewer
 			initSetupsRealType( spimData, ( RealType ) type, converterSetups, sources );
 		else if ( ARGBType.class.isInstance( type ) )
 			initSetupsARGBType( spimData, ( ARGBType ) type, converterSetups, sources );
-		else throw new IllegalArgumentException( "ImgLoader of type " + type.getClass() + " not supported." );
+		else
+			throw new IllegalArgumentException( "ImgLoader of type " + type.getClass() + " not supported." );
 	}
 
 	public BigDataViewer( final String xmlFilename, final String windowTitle, final ProgressWriter progressWriter ) throws SpimDataException
@@ -289,7 +293,8 @@ public class BigDataViewer
 		cropDialog = new CropDialog( viewerFrame, viewer, seq );
 
 		movieDialog = new RecordMovieDialog( viewerFrame, viewer, progressWriter );
-		viewer.getDisplay().addOverlayRenderer( movieDialog ); // this is just to get updates of window size
+		// this is just to get updates of window size:
+		viewer.getDisplay().addOverlayRenderer( movieDialog );
 
 		activeSourcesDialog = new VisibilityAndGroupingDialog( viewerFrame, viewer.getVisibilityAndGrouping() );
 
@@ -311,12 +316,13 @@ public class BigDataViewer
 					return true;
 				if ( f.isFile() )
 				{
-			        final String s = f.getName();
-			        final int i = s.lastIndexOf('.');
-			        if (i > 0 &&  i < s.length() - 1) {
-			            final String ext = s.substring(i+1).toLowerCase();
-			            return ext.equals( "xml" );
-			        }
+					final String s = f.getName();
+					final int i = s.lastIndexOf( '.' );
+					if ( i > 0 && i < s.length() - 1 )
+					{
+						final String ext = s.substring( i + 1 ).toLowerCase();
+						return ext.equals( "xml" );
+					}
 				}
 				return false;
 			}
@@ -378,7 +384,7 @@ public class BigDataViewer
 
 		InitializeViewerState.initTransform( viewer );
 
-		if( ! tryLoadSettings( xmlFilename ) )
+		if ( !tryLoadSettings( xmlFilename ) )
 			InitializeViewerState.initBrightness( 0.001, 0.999, viewer, setupAssignments );
 
 //		( ( Hdf5ImageLoader ) seq.imgLoader ).initCachedDimensionsFromHdf5( false );
@@ -510,7 +516,7 @@ public class BigDataViewer
 //		final String fn = "/Volumes/projects/tomancak_lightsheet/Mette/ZeissZ1SPIM/Maritigrella/021013_McH2BsGFP_CAAX-mCherry/11-use/hdf5/021013_McH2BsGFP_CAAX-mCherry-11-use.xml";
 		try
 		{
-			System.setProperty("apple.laf.useScreenMenuBar", "true");
+			System.setProperty( "apple.laf.useScreenMenuBar", "true" );
 			view( fn, new ProgressWriterConsole() );
 //			new BigDataViewer( fn, "BigDataViewer", new ProgressWriterConsole() );
 		}
