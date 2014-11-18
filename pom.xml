@@ -76,9 +76,9 @@
 	</repositories>
 
 	<scm>
-		<connection>scm:git:git://github.com/tpietzsch/spimviewer</connection>
-		<developerConnection>scm:git:git@github.com:tpietzsch/spimviewer</developerConnection>
+		<connection>scm:git:git://github.com/tpietzsch/bigdataviewer-core</connection>
+		<developerConnection>scm:git:git@github.com:tpietzsch/bigdataviewer-core</developerConnection>
 		<tag>HEAD</tag>
-		<url>https://github.com/tpietzsch/spimviewer</url>
+		<url>https://github.com/tpietzsch/bigdataviewer-core</url>
 	</scm>
 </project>
