@@ -60,10 +60,10 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 
 	/**
 	 * Fetch the list of public tokens from an OpenConnectome volume cutout
-	 * service, e.g. {@linkplain http://openconnecto.me/emca/public_tokens/}.
+	 * service, e.g. {@linkplain http://openconnecto.me/ocp/ca/public_tokens/}.
 	 *
 	 * @param baseUrl
-	 *            e.g. "http://openconnecto.me/emca"
+	 *            e.g. "http://openconnecto.me/ocp/ca"
 	 * @return a list of {@link String Strings}
 	 * @throws JsonSyntaxException
 	 * @throws JsonIOException
@@ -79,10 +79,10 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 
 	/**
 	 * Fetch information for a token from an OpenConnectome volume cutout
-	 * service, e.g. {@linkplain http://openconnecto.me/emca/<token>/info/}.
+	 * service, e.g. {@linkplain http://openconnecto.me/ocp/ca/<token>/info/}.
 	 *
 	 * @param baseUrl
-	 *            e.g. "http://openconnecto.me/emca"
+	 *            e.g. "http://openconnecto.me/ocp/ca"
 	 * @param token
 	 * @return an {@link OpenConnectomeTokenInfo} instance that carries the
 	 *         token information
@@ -101,10 +101,10 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 	/**
 	 * Try to fetch the list of public tokens from an OpenConnectome volume
 	 * cutout service, e.g.
-	 * {@linkplain http://openconnecto.me/emca/public_tokens/}.
+	 * {@linkplain http://openconnecto.me/ocp/ca/public_tokens/}.
 	 *
 	 * @param baseUrl
-	 *            e.g. "http://openconnecto.me/emca"
+	 *            e.g. "http://openconnecto.me/ocp/ca"
 	 * @param maxNumTrials
 	 *            the maximum number of trials
 	 *
@@ -135,10 +135,10 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 
 	/**
 	 * Try to fetch information for a token from an OpenConnectome volume cutout
-	 * service, e.g. {@linkplain http://openconnecto.me/emca/<token>/info/}.
+	 * service, e.g. {@linkplain http://openconnecto.me/ocp/ca/<token>/info/}.
 	 *
 	 * @param baseUrl
-	 *            e.g. "http://openconnecto.me/emca"
+	 *            e.g. "http://openconnecto.me/ocp/ca"
 	 * @param token
 	 * @param maxNumTrials
 	 * @return an {@link OpenConnectomeTokenInfo} instance that carries the
