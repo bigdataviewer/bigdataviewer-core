@@ -9,7 +9,7 @@
 	</parent>
 
 	<artifactId>bigdataviewer-core</artifactId>
-	<version>1.0.1-SNAPSHOT</version>
+	<version>1.0.1</version>
 
 	<name>BigDataViewer Core</name>
 	<description>BigDataViewer core classes with minimal dependencies</description>
@@ -75,7 +75,7 @@
 	<scm>
 		<connection>scm:git:git://github.com/tpietzsch/bigdataviewer-core</connection>
 		<developerConnection>scm:git:git@github.com:tpietzsch/bigdataviewer-core</developerConnection>
-		<tag>HEAD</tag>
+		<tag>bigdataviewer-core-1.0.1</tag>
 		<url>https://github.com/tpietzsch/bigdataviewer-core</url>
 	</scm>
 </project>
