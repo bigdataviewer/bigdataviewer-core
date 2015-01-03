@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?><SequenceDescription>
+    <BasePath type="relative">.</BasePath>
+    <ImageLoader class="bdv.img.openconnectome.OpenConnectomeImageLoader">
+        <baseUrl>http://openconnecto.me/ocp/ca</baseUrl>
+        <token>bock11</token>
+        <mode>neariso</mode>
+    </ImageLoader>
+    <ViewSetup>
+        <id>0</id>
+        <angle>0</angle>
+        <illumination>0</illumination>
+        <channel>0</channel>
+        <width>0</width>
+        <height>0</height>
+        <depth>0</depth>
+        <pixelWidth>1.0</pixelWidth>
+        <pixelHeight>1.0</pixelHeight>
+        <pixelDepth>1.0</pixelDepth>
+    </ViewSetup>
+    <Timepoints type="range">
+        <first>0</first>
+        <last>0</last>
+    </Timepoints>
+    <ViewRegistrations>
+        <ReferenceTimepoint>0</ReferenceTimepoint>
+        <ViewRegistration>
+            <timepoint>0</timepoint>
+            <setup>0</setup>
+            <affine>1.0 0.0 0.0 0.0
+                    0.0 1.0 0.0 0.0
+                    0.0 0.0 1.0 0.0</affine>
+        </ViewRegistration>
+    </ViewRegistrations>
+</SequenceDescription>
+
