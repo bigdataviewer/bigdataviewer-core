@@ -249,10 +249,17 @@ public class BigDataViewer
 
 	public BigDataViewer( final String xmlFilename, final String windowTitle, final ProgressWriter progressWriter ) throws SpimDataException
 	{
+		this( new XmlIoSpimDataMinimal().load( xmlFilename ), windowTitle, progressWriter );
+
+		if ( !tryLoadSettings( xmlFilename ) )
+			InitializeViewerState.initBrightness( 0.001, 0.999, viewer, setupAssignments );
+	}
+
+	public BigDataViewer( final SpimDataMinimal spimData, final String windowTitle, final ProgressWriter progressWriter )
+	{
 		final int width = 800;
 		final int height = 600;
 
-		final SpimDataMinimal spimData = new XmlIoSpimDataMinimal().load( xmlFilename );
 		if ( WrapBasicImgLoader.wrapImgLoaderIfNecessary( spimData ) )
 		{
 			System.err.println( "WARNING:\nOpening <SpimData> dataset that is not suited for interactive browsing.\nConsider resaving as HDF5 for better performance." );
@@ -383,9 +390,6 @@ public class BigDataViewer
 		viewerFrame.setVisible( true );
 
 		InitializeViewerState.initTransform( viewer );
-
-		if ( !tryLoadSettings( xmlFilename ) )
-			InitializeViewerState.initBrightness( 0.001, 0.999, viewer, setupAssignments );
 
 //		( ( Hdf5ImageLoader ) seq.imgLoader ).initCachedDimensionsFromHdf5( false );
 	}
