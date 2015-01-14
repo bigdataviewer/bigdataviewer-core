@@ -248,7 +248,7 @@ public class SetupAssignments
 			final int max = Integer.parseInt( elem.getChildText( "max" ) );
 			final int color = Integer.parseInt( elem.getChildText( "color" ) );
 			final int groupId = Integer.parseInt( elem.getChildText( "groupId" ) );
-			final ConverterSetup setup = setups.get( id );
+			final ConverterSetup setup = getSetupById( id );
 			setup.setDisplayRange( min, max );
 			setup.setColor( new ARGBType( color ) );
 			final MinMaxGroup group = minMaxGroups.get( groupId );
@@ -258,5 +258,13 @@ public class SetupAssignments
 
 		if ( updateListener != null )
 			updateListener.update();
+	}
+
+	private ConverterSetup getSetupById( final int id )
+	{
+		for ( final ConverterSetup setup : setups )
+			if ( setup.getSetupId() == id )
+				return setup;
+		return null;
 	}
 }
