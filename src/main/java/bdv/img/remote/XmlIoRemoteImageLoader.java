@@ -1,8 +1,11 @@
 package bdv.img.remote;
 
+import static mpicbg.spim.data.XmlKeys.IMGLOADER_FORMAT_ATTRIBUTE_NAME;
+
 import java.io.File;
 import java.io.IOException;
 
+import mpicbg.spim.data.XmlHelpers;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.ImgLoaderIo;
 import mpicbg.spim.data.generic.sequence.XmlIoBasicImgLoader;
@@ -16,7 +19,10 @@ public class XmlIoRemoteImageLoader implements XmlIoBasicImgLoader< RemoteImageL
 	@Override
 	public Element toXml( final RemoteImageLoader imgLoader, final File basePath )
 	{
-		throw new UnsupportedOperationException( "not implemented" );
+		final Element elem = new Element( "ImageLoader" );
+		elem.setAttribute( IMGLOADER_FORMAT_ATTRIBUTE_NAME, "bdv.remote" );
+		elem.addContent( XmlHelpers.textElement( "baseUrl", imgLoader.baseUrl ) );
+		return elem;
 	}
 
 	@Override

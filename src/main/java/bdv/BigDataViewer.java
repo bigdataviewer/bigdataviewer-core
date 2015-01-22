@@ -498,12 +498,10 @@ public class BigDataViewer
 	{
 //		final String fn = "/Users/Pietzsch/Desktop/spimrec2/dataset.xml";
 //		final String fn = "/Users/pietzsch/Desktop/HisYFP-SPIM/dataset.xml";
-//		final String fn = "/groups/saalfeld/home/saalfelds/Desktop/catmaid-abd1.5.xml";
-		final String fn = "/groups/saalfeld/home/saalfelds/Desktop/openconnectome-bock11-neariso.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/bdv example/drosophila 2.xml";
 //		final String fn = "/Users/pietzsch/Desktop/data/clusterValia/140219-1/valia-140219-1.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/data/catmaid.xml";
-//		final String fn = "/Users/Pietzsch/Desktop/data/openconnectome-bock11-neariso.xml";
+		final String fn = "src/main/resources/openconnectome-bock11-neariso.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/data/catmaid-confocal.xml";
 //		final String fn = "/Users/pietzsch/desktop/data/BDV130418A325/BDV130418A325_NoTempReg.xml";
 //		final String fn = "/Users/pietzsch/Desktop/data/valia2/valia.xml";
