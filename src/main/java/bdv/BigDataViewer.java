@@ -425,6 +425,20 @@ public class BigDataViewer
 				}
 			}
 		}
+		else if(xmlFilename.startsWith( "http" ))
+		{
+			// load settings.xml from the BigDataServer
+			final String settings = xmlFilename + "settings";
+			try
+			{
+				loadSettings( settings );
+				return true;
+			}
+			catch ( final Exception e )
+			{
+				e.printStackTrace();
+			}
+		}
 		return false;
 	}
 
