@@ -15,24 +15,24 @@ public class OpenConnectomeVolatileArrayLoader implements CacheArrayLoader< Vola
 	private VolatileByteArray theEmptyArray;
 
 	final private String tokenUrl;
-	
+
 	final private String mode;
-	
+
 	final private long zMin;
 
 	/**
 	 * <p>Create a {@link CacheArrayLoader} for a source provided by the
 	 * <a href="http://hssl.cs.jhu.edu/wiki/doku.php?id=randal:hssl:research:brain:data_set_description">Open
 	 * Connectome Volume Cutout Service</a>.</p>
-	 * 
+	 *
 	 * <p>It is created with a base URL, e.g.
-	 * <a href="http://openconnecto.me/emca/kasthuri11">http://openconnecto.me/emca/kasthuri11</a>
+	 * <a href="http://openconnecto.me/ocp/ca/kasthuri11">http://openconnecto.me/ocp/ca/kasthuri11</a>
 	 * the cell dimensions, and an offset in <em>z</em>.  This offset constitutes the
 	 * 0-coordinate in <em>z</em> and should point to the first slice of the
 	 * dataset.</p>
-	 * 
+	 *
 	 * @param baseUrl e.g.
-	 * 		<a href="http://openconnecto.me/emca">http://openconnecto.me/emca</a>
+	 * 		<a href="http://openconnecto.me/ocp/ca">http://openconnecto.me/ocp/ca</a>
 	 * @param token e.g. "kasthuri11"
 	 * @param mode z-scaling mode, either of [null, "", "neariso"]
 	 * @param zMin first z-index
@@ -48,13 +48,13 @@ public class OpenConnectomeVolatileArrayLoader implements CacheArrayLoader< Vola
 		this.mode = "/" + mode + ( mode == null || mode.equals( "" ) ? "" : "/" );
 		this.zMin = zMin;
 	}
-	
+
 	@Override
 	public int getBytesPerElement()
 	{
 		return 1;
 	}
-	
+
 	@Override
 	public VolatileByteArray loadArray(
 			final int timepoint,
@@ -82,11 +82,11 @@ public class OpenConnectomeVolatileArrayLoader implements CacheArrayLoader< Vola
 			final long[] min ) throws InterruptedException
 	{
 		final byte[] data = new byte[ dimensions[ 0 ] * dimensions[ 1 ] * dimensions[ 2 ] ];
-		
+
 		final StringBuffer url = new StringBuffer( tokenUrl );
-		
+
 		final long z = min[ 2 ] + zMin;
-		
+
 		url.append( level );
 		url.append( "/" );
 		url.append( min[ 0 ] );
@@ -101,7 +101,7 @@ public class OpenConnectomeVolatileArrayLoader implements CacheArrayLoader< Vola
 		url.append( "," );
 		url.append( z + dimensions[ 2 ] );
 		url.append( mode );
-		
+
 		try
 		{
 			final URL file = new URL( url.toString() );
@@ -127,7 +127,7 @@ public class OpenConnectomeVolatileArrayLoader implements CacheArrayLoader< Vola
 		{
 			System.out.println( "failed unpacking x=" + min[ 0 ] + " y=" + min[ 1 ] + " z=" + min[ 2 ] + " url(" + url.toString() + ")" );
 		}
-		
+
 		return new VolatileByteArray( data, true );
 	}
 
