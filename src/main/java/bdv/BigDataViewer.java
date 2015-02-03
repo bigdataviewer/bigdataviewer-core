@@ -202,6 +202,11 @@ public class BigDataViewer
 			final List< ConverterSetup > converterSetups,
 			final List< SourceAndConverter< ? > > sources )
 	{
+		if ( spimData.getSequenceDescription().getImgLoader() instanceof WrapBasicImgLoader )
+		{
+			initSetupsARGBTypeNonVolatile( spimData, type, converterSetups, sources );
+			return;
+		}
 		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
 		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
 		{
@@ -227,6 +232,30 @@ public class BigDataViewer
 
 			final SourceAndConverter< VolatileARGBType > vsoc = new SourceAndConverter< VolatileARGBType >( tvs, vconverter );
 			final SourceAndConverter< ARGBType > soc = new SourceAndConverter< ARGBType >( ts, converter, vsoc );
+
+			sources.add( soc );
+		}
+	}
+
+	private static void initSetupsARGBTypeNonVolatile(
+			final AbstractSpimData< ? > spimData,
+			final ARGBType type,
+			final List< ConverterSetup > converterSetups,
+			final List< SourceAndConverter< ? > > sources )
+	{
+		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
+		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
+		{
+			final TypeIdentity< ARGBType > converter = new TypeIdentity< ARGBType >();
+
+			final int setupId = setup.getId();
+			final String setupName = createSetupName( setup );
+			final SpimSource< ARGBType > s = new SpimSource< ARGBType >( spimData, setupId, setupName );
+
+			// Decorate each source with an extra transformation, that can be
+			// edited manually in this viewer.
+			final TransformedSource< ARGBType > ts = new TransformedSource< ARGBType >( s );
+			final SourceAndConverter< ARGBType > soc = new SourceAndConverter< ARGBType >( ts, converter );
 
 			sources.add( soc );
 		}
