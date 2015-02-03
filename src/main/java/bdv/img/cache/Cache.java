@@ -28,8 +28,16 @@ public interface Cache
 	 */
 	public void initIoTimeBudget( final long[] partialBudget );
 
+	/**
+	 * Get the {@link CacheIoTiming} that provides per thread-group IO
+	 * statistics and budget.
+	 */
+	public CacheIoTiming getCacheIoTiming();
+
 	public static class Dummy implements Cache
 	{
+		private CacheIoTiming cacheIoTiming;
+
 		@Override
 		public void prepareNextFrame()
 		{}
@@ -37,5 +45,13 @@ public interface Cache
 		@Override
 		public void initIoTimeBudget( final long[] partialBudget )
 		{}
+
+		@Override
+		public CacheIoTiming getCacheIoTiming()
+		{
+			if ( cacheIoTiming == null )
+				cacheIoTiming = new CacheIoTiming();
+			return cacheIoTiming;
+		}
 	}
 }

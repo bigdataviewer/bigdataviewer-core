@@ -687,7 +687,7 @@ public class MultiResolutionRenderer
 			if ( hints.renewHintsAfterPaintingOnce() )
 				newFrameRequest = true;
 		}
-		return new VolatileHierarchyProjector< T, ARGBType >( renderList, source.getConverter(), screenImage, maskArray, numRenderingThreads, renderingExecutorService );
+		return new VolatileHierarchyProjector< T, ARGBType >( renderList, source.getConverter(), screenImage, maskArray, numRenderingThreads, renderingExecutorService, cache.getCacheIoTiming() );
 	}
 
 	private static < T > RandomAccessible< T > getTransformedSource( final ViewerState viewerState, final Source< T > source, final AffineTransform3D screenScaleTransform, final int mipmapIndex )

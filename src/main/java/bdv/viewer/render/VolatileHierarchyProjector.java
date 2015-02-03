@@ -102,14 +102,22 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 	 */
 	protected final AtomicBoolean interrupted = new AtomicBoolean();
 
+	/**
+	 * The {@link CacheIoTiming} that is used to determine
+	 * {@link #getLastFrameIoNanoTime() io time} and
+	 * {@link #getLastFrameRenderNanoTime() render time}.
+	 */
+	protected final CacheIoTiming cacheIoTiming;
+
 	public VolatileHierarchyProjector(
 			final List< ? extends RandomAccessible< A > > sources,
 			final Converter< ? super A, B > converter,
 			final RandomAccessibleInterval< B > target,
 			final int numThreads,
-			final ExecutorService executorService )
+			final ExecutorService executorService,
+			final CacheIoTiming cacheIoTiming )
 	{
-		this( sources, converter, target, new byte[ ( int ) ( target.dimension( 0 ) * target.dimension( 1 ) ) ], numThreads, executorService );
+		this( sources, converter, target, new byte[ ( int ) ( target.dimension( 0 ) * target.dimension( 1 ) ) ], numThreads, executorService, cacheIoTiming );
 	}
 
 	public VolatileHierarchyProjector(
@@ -118,7 +126,8 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 			final RandomAccessibleInterval< B > target,
 			final byte[] maskArray,
 			final int numThreads,
-			final ExecutorService executorService )
+			final ExecutorService executorService,
+			final CacheIoTiming cacheIoTiming )
 	{
 		super( Math.max( 2, sources.get( 0 ).numDimensions() ), converter, target );
 
@@ -143,8 +152,9 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 
 		this.numThreads = numThreads;
 		this.executorService = executorService;
-		lastFrameRenderNanoTime = -1;
+		this.cacheIoTiming = cacheIoTiming;
 
+		lastFrameRenderNanoTime = -1;
 		clearMask();
 	}
 
@@ -205,7 +215,7 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 
 		final StopWatch stopWatch = new StopWatch();
 		stopWatch.start();
-		final IoStatistics iostat = CacheIoTiming.getThreadGroupIoStatistics();
+		final IoStatistics iostat = cacheIoTiming.getThreadGroupIoStatistics();
 		final long startTimeIo = iostat.getIoNanoTime();
 		final long startTimeIoCumulative = iostat.getCumulativeIoNanoTime();
 //		final long startIoBytes = iostat.getIoBytes();
