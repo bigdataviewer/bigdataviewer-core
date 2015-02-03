@@ -251,6 +251,8 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 
 	private final CacheArrayLoader< A > loader;
 
+	private final CacheIoTiming cacheIoTiming;
+
 	/**
 	 *
 	 * @param loader
@@ -273,6 +275,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 		this.maxNumSetups = maxNumSetups;
 		this.maxNumLevels = maxNumLevels;
 
+		cacheIoTiming = new CacheIoTiming();
 		queue = new BlockingFetchQueues< Key >( maxNumLevels );
 		fetchers = new ArrayList< Fetcher >();
 		for ( int i = 0; i < numFetcherThreads; ++i )
@@ -357,7 +360,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	 */
 	protected void loadOrEnqueue( final Entry entry, final int priority, final boolean enqueuToFront )
 	{
-		final IoStatistics stats = CacheIoTiming.getThreadGroupIoStatistics();
+		final IoStatistics stats = cacheIoTiming.getThreadGroupIoStatistics();
 		final IoTimeBudget budget = stats.getIoTimeBudget();
 		final long timeLeft = budget.timeLeft( priority );
 		if ( timeLeft > 0 )
@@ -565,10 +568,20 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	@Override
 	public void initIoTimeBudget( final long[] partialBudget )
 	{
-		final IoStatistics stats = CacheIoTiming.getThreadGroupIoStatistics();
+		final IoStatistics stats = cacheIoTiming.getThreadGroupIoStatistics();
 		if ( stats.getIoTimeBudget() == null )
 			stats.setIoTimeBudget( new IoTimeBudget( maxNumLevels ) );
 		stats.getIoTimeBudget().reset( partialBudget );
+	}
+
+	/**
+	 * Get the {@link CacheIoTiming} that provides per thread-group IO
+	 * statistics and budget.
+	 */
+	@Override
+	public CacheIoTiming getCacheIoTiming()
+	{
+		return cacheIoTiming;
 	}
 
 	/**

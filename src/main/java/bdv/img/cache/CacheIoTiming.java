@@ -5,7 +5,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.imglib2.ui.util.StopWatch;
 
 /**
- * Utilities for per {@link ThreadGroup} measuring and budgeting of time spend
+ * Utilities for per {@link ThreadGroup} measuring and budgeting of time spent
  * in (blocking) IO.
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
@@ -142,9 +142,9 @@ public class CacheIoTiming
 		}
 	}
 
-	private final static ConcurrentHashMap< ThreadGroup, IoStatistics > perThreadGroupIoStatistics = new ConcurrentHashMap< ThreadGroup, IoStatistics >();
+	private final ConcurrentHashMap< ThreadGroup, IoStatistics > perThreadGroupIoStatistics = new ConcurrentHashMap< ThreadGroup, IoStatistics >();
 
-	public static IoStatistics getThreadGroupIoStatistics()
+	public IoStatistics getThreadGroupIoStatistics()
 	{
 		final ThreadGroup threadGroup = Thread.currentThread().getThreadGroup();
 		IoStatistics statistics = perThreadGroupIoStatistics.get( threadGroup );
@@ -156,12 +156,12 @@ public class CacheIoTiming
 		return statistics;
 	}
 
-	public static long getThreadGroupIoNanoTime()
+	public long getThreadGroupIoNanoTime()
 	{
 		return getThreadGroupIoStatistics().getIoNanoTime();
 	}
 
-	public static long getThreadGroupIoBytes()
+	public long getThreadGroupIoBytes()
 	{
 		return getThreadGroupIoStatistics().getIoBytes();
 	}
