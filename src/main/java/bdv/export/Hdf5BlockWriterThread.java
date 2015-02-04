@@ -64,9 +64,30 @@ class Hdf5BlockWriterThread extends Thread implements IHDF5Access
 				final Hdf5BlockWriterThread.Hdf5Task task = queue.poll( 10, TimeUnit.MILLISECONDS );
 				if ( task != null )
 					task.run( hdf5Access );
+				if ( queue.isEmpty() )
+					synchronized ( emptyMonitor )
+					{
+						emptyMonitor.notifyAll();
+					}
 			}
 			catch ( final InterruptedException e )
 			{}
+		}
+	}
+
+	private final Object emptyMonitor = new Object();
+
+	public void waitUntilEmpty()
+	{
+		synchronized ( emptyMonitor )
+		{
+			while ( !queue.isEmpty() )
+				try
+				{
+					emptyMonitor.wait();
+				}
+				catch ( final InterruptedException e )
+				{}
 		}
 	}
 
