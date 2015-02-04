@@ -1,6 +1,6 @@
 package bdv.img.hdf5;
 
-public interface IHDF5Access
+interface IHDF5Access
 {
 	public DimsAndExistence getDimsAndExistence( final ViewLevelId id );
 

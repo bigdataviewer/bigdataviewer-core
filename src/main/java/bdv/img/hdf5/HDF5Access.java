@@ -6,7 +6,7 @@ import ch.systemsx.cisd.base.mdarray.MDShortArray;
 import ch.systemsx.cisd.hdf5.HDF5DataSetInformation;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
 
-public class HDF5Access implements IHDF5Access
+class HDF5Access implements IHDF5Access
 {
 	private final IHDF5Reader hdf5Reader;
 

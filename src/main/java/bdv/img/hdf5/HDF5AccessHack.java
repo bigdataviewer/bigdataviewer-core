@@ -31,7 +31,7 @@ import ch.systemsx.cisd.hdf5.IHDF5Reader;
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
-public class HDF5AccessHack implements IHDF5Access
+class HDF5AccessHack implements IHDF5Access
 {
 	private final IHDF5Reader hdf5Reader;
 
