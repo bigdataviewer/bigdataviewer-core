@@ -2,6 +2,7 @@ package bdv.export;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -14,14 +15,10 @@ import mpicbg.spim.data.generic.sequence.BasicImgLoader;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.sequence.TimePoint;
 import mpicbg.spim.data.sequence.ViewId;
+import net.imglib2.Cursor;
 import net.imglib2.FinalInterval;
-import net.imglib2.Interval;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.algorithm.region.localneighborhood.Neighborhood;
-import net.imglib2.algorithm.region.localneighborhood.RectangleNeighborhoodFactory;
-import net.imglib2.algorithm.region.localneighborhood.RectangleNeighborhoodUnsafe;
-import net.imglib2.algorithm.region.localneighborhood.RectangleShape.NeighborhoodsAccessible;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.ShortArray;
@@ -500,22 +497,12 @@ public class WriteSequenceToHdf5
 			}
 			final double scale = 1.0 / size;
 
-			final RectangleNeighborhoodFactory< UnsignedShortType > f = RectangleNeighborhoodUnsafe.< UnsignedShortType >factory();
-			final long[] spanDim = new long[ n ];
-			for ( int d = 0; d < n; ++d )
-				spanDim[ d ] = factor[ d ];
-			final Interval spanInterval = new FinalInterval( spanDim );
-
-			final NeighborhoodsAccessible< UnsignedShortType > neighborhoods = new NeighborhoodsAccessible< UnsignedShortType >( img, spanInterval, f );
-
 			final long[] minRequiredInput = new long[ n ];
 			final long[] maxRequiredInput = new long[ n ];
-			img.max( maxRequiredInput );
+			img.min( minRequiredInput );
 			for ( int d = 0; d < n; ++d )
-				maxRequiredInput[ d ] += factor[ d ] - 1;
+				maxRequiredInput[ d ] = minRequiredInput[ d ] + dimensions[ d ] * factor[ d ] - 1;
 			final RandomAccessibleInterval< UnsignedShortType > extendedImg = Views.interval( Views.extendBorder( img ), new FinalInterval( minRequiredInput, maxRequiredInput ) );
-
-			final NeighborhoodsAccessible< UnsignedShortType > extendedNeighborhoods = new NeighborhoodsAccessible< UnsignedShortType >( extendedImg, spanInterval, f );
 
 			final int[] cellDimensions = subdivisions[ level ];
 			final ViewId viewIdPartition = new ViewId( timepointIdPartition, setupIdPartition );
@@ -540,14 +527,13 @@ public class WriteSequenceToHdf5
 					@Override
 					public void run()
 					{
+						final double[] accumulator = fullResolution ? null : new double[ cellDimensions[ 0 ] * cellDimensions[ 1 ] * cellDimensions[ 2 ] ];
 						final long[] currentCellMin = new long[ n ];
 						final long[] currentCellMax = new long[ n ];
 						final long[] currentCellDim = new long[ n ];
 						final long[] currentCellPos = new long[ n ];
 						final long[] blockMin = new long[ n ];
-						final RandomAccess< Neighborhood< UnsignedShortType > > block = neighborhoods.randomAccess();
-						final RandomAccess< Neighborhood< UnsignedShortType > > extendedBlock = extendedNeighborhoods.randomAccess();
-						final RandomAccess< UnsignedShortType > in = img.randomAccess();
+						final RandomAccess< UnsignedShortType > in = extendedImg.randomAccess();
 						while ( true )
 						{
 							synchronized ( i )
@@ -557,7 +543,6 @@ public class WriteSequenceToHdf5
 								i.fwd();
 								i.localize( currentCellPos );
 							}
-							boolean isBorderCell = false;
 							for ( int d = 0; d < n; ++d )
 							{
 								currentCellMin[ d ] = currentCellPos[ d ] * cellDimensions[ d ];
@@ -565,24 +550,14 @@ public class WriteSequenceToHdf5
 								final boolean isBorderCellInThisDim = ( currentCellPos[ d ] + 1 == numCells[ d ] );
 								currentCellDim[ d ] = isBorderCellInThisDim ? borderSize[ d ] : cellDimensions[ d ];
 								currentCellMax[ d ] = currentCellMin[ d ] + currentCellDim[ d ] - 1;
-								isBorderCell |= isBorderCellInThisDim;
 							}
 
 							final ArrayImg< UnsignedShortType, ? > cell = ArrayImgs.unsignedShorts( currentCellDim );
 							final RandomAccess< UnsignedShortType > out = cell.randomAccess();
 							if ( fullResolution )
-							{
 								copyBlock( out, currentCellDim, in, blockMin );
-							}
 							else
-							{
-								boolean requiresExtension = false;
-								if ( isBorderCell )
-									for ( int d = 0; d < n; ++d )
-										if ( ( currentCellMax[ d ] + 1 ) * factor[ d ] > img.dimension( d ) )
-											requiresExtension = true;
-								downsampleBlock( out, currentCellDim, requiresExtension ? extendedBlock : block, blockMin, factor, scale );
-							}
+								downsampleBlock( cell.cursor(), accumulator, currentCellDim, in, blockMin, factor, scale );
 
 							writerQueue.writeBlockWithOffset( ( ( ShortArray ) cell.update( null ) ).getCurrentStorageArray(), currentCellDim.clone(), currentCellMin.clone() );
 						}
@@ -660,7 +635,6 @@ public class WriteSequenceToHdf5
 
 	private static < T extends RealType< T > > void copyBlock( final RandomAccess< T > out, final long[] outDim, final RandomAccess< T > in, final long[] blockMin )
 	{
-		out.setPosition( new int[] { 0, 0, 0 } );
 		in.setPosition( blockMin );
 		for ( out.setPosition( 0, 2 ); out.getLongPosition( 2 ) < outDim[ 2 ]; out.fwd( 2 ) )
 		{
@@ -678,27 +652,52 @@ public class WriteSequenceToHdf5
 		}
 	}
 
-	private static < T extends RealType< T > > void downsampleBlock( final RandomAccess< T > out, final long[] outDim, final RandomAccess< Neighborhood< T > > block, final long[] blockMin, final int[] blockSize, final double scale )
+	private static < T extends RealType< T > > void downsampleBlock( final Cursor< T > out, final double[] accumulator, final long[] outDim, final RandomAccess< UnsignedShortType > randomAccess, final long[] blockMin, final int[] blockSize, final double scale )
 	{
-		out.setPosition( new int[] {0,0,0} );
-		block.setPosition( blockMin );
-		for ( out.setPosition( 0, 2 ); out.getLongPosition( 2 ) < outDim[ 2 ]; out.fwd( 2 ) )
+		final int numBlockPixels = ( int ) ( outDim[ 0 ] * outDim[ 1 ] * outDim[ 2 ] );
+		Arrays.fill( accumulator, 0, numBlockPixels, 0 );
+
+		randomAccess.setPosition( blockMin );
+
+		final int ox = ( int ) outDim[ 0 ];
+		final int oy = ( int ) outDim[ 1 ];
+		final int oz = ( int ) outDim[ 2 ];
+
+		final int sx = ox * blockSize[ 0 ];
+		final int sy = oy * blockSize[ 1 ];
+		final int sz = oz * blockSize[ 2 ];
+
+		int i = 0;
+		for ( int z = 0, bz = 0; z < sz; ++z )
 		{
-			for ( out.setPosition( 0, 1 ); out.getLongPosition( 1 ) < outDim[ 1 ]; out.fwd( 1 ) )
+			for ( int y = 0, by = 0; y < sy; ++y )
 			{
-				for ( out.setPosition( 0, 0 ); out.getLongPosition( 0 ) < outDim[ 0 ]; out.fwd( 0 ) )
+				for ( int x = 0, bx = 0; x < sx; ++x )
 				{
-					double sum = 0;
-					for ( final T in : block.get() )
-						sum += in.getRealDouble();
-					out.get().setReal( sum * scale );
-					block.move( blockSize[ 0 ], 0 );
+					accumulator[ i ] += randomAccess.get().getRealDouble();
+					randomAccess.fwd( 0 );
+					if ( ++bx == blockSize[ 0 ] )
+					{
+						bx = 0;
+						++i;
+					}
 				}
-				block.setPosition( blockMin[ 0 ], 0 );
-				block.move( blockSize[ 1 ], 1 );
+				randomAccess.move( -sx, 0 );
+				randomAccess.fwd( 1 );
+				if ( ++by == blockSize[ 1 ] )
+					by = 0;
+				else
+					i -= ox;
 			}
-			block.setPosition( blockMin[ 1 ], 1 );
-			block.move( blockSize[ 2 ], 2 );
+			randomAccess.move( -sy, 1 );
+			randomAccess.fwd( 2 );
+			if ( ++bz == blockSize[ 2 ] )
+				bz = 0;
+			else
+				i -= ox * oy;
 		}
+
+		for ( int j = 0; j < numBlockPixels; ++j )
+			out.next().setReal( accumulator[ j ] * scale );
 	}
 }
