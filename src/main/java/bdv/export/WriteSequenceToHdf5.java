@@ -23,7 +23,7 @@ import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.ShortArray;
 import net.imglib2.img.cell.CellImg;
-import net.imglib2.iterator.LocalizingZeroMinIntervalIterator;
+import net.imglib2.iterator.LocalizingIntervalIterator;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.view.Views;
@@ -511,67 +511,77 @@ public class WriteSequenceToHdf5
 
 			final long[] numCells = new long[ n ];
 			final int[] borderSize = new int[ n ];
+			final long[] minCell = new long[ n ];
+			final long[] maxCell = new long[ n ];
 			for ( int d = 0; d < n; ++d )
 			{
 				numCells[ d ] = ( dimensions[ d ] - 1 ) / cellDimensions[ d ] + 1;
+				maxCell[ d ] = numCells[ d ] - 1;
 				borderSize[ d ] = ( int ) ( dimensions[ d ] - ( numCells[ d ] - 1 ) * cellDimensions[ d ] );
 			}
-			final LocalizingZeroMinIntervalIterator i = new LocalizingZeroMinIntervalIterator( numCells );
 
-			final int numThreads = cellCreatorThreads.length;
-			final CountDownLatch doneSignal = new CountDownLatch( numThreads );
-			for ( int threadNum = 0; threadNum < numThreads; ++threadNum )
+			// generate one "plane" of cells after the other to avoid cache thrashing when exporting from virtual stacks
+			for ( int lastDimCell = 0; lastDimCell < numCells[ n - 1 ]; ++lastDimCell )
 			{
-				cellCreatorThreads[ threadNum ].run( new Runnable()
+				minCell[ n - 1 ] = lastDimCell;
+				maxCell[ n - 1 ] = lastDimCell;
+				final LocalizingIntervalIterator i = new LocalizingIntervalIterator( minCell, maxCell );
+
+				final int numThreads = cellCreatorThreads.length;
+				final CountDownLatch doneSignal = new CountDownLatch( numThreads );
+				for ( int threadNum = 0; threadNum < numThreads; ++threadNum )
 				{
-					@Override
-					public void run()
+					cellCreatorThreads[ threadNum ].run( new Runnable()
 					{
-						final double[] accumulator = fullResolution ? null : new double[ cellDimensions[ 0 ] * cellDimensions[ 1 ] * cellDimensions[ 2 ] ];
-						final long[] currentCellMin = new long[ n ];
-						final long[] currentCellMax = new long[ n ];
-						final long[] currentCellDim = new long[ n ];
-						final long[] currentCellPos = new long[ n ];
-						final long[] blockMin = new long[ n ];
-						final RandomAccess< UnsignedShortType > in = extendedImg.randomAccess();
-						while ( true )
+						@Override
+						public void run()
 						{
-							synchronized ( i )
+							final double[] accumulator = fullResolution ? null : new double[ cellDimensions[ 0 ] * cellDimensions[ 1 ] * cellDimensions[ 2 ] ];
+							final long[] currentCellMin = new long[ n ];
+							final long[] currentCellMax = new long[ n ];
+							final long[] currentCellDim = new long[ n ];
+							final long[] currentCellPos = new long[ n ];
+							final long[] blockMin = new long[ n ];
+							final RandomAccess< UnsignedShortType > in = extendedImg.randomAccess();
+							while ( true )
 							{
-								if ( !i.hasNext() )
-									break;
-								i.fwd();
-								i.localize( currentCellPos );
-							}
-							for ( int d = 0; d < n; ++d )
-							{
-								currentCellMin[ d ] = currentCellPos[ d ] * cellDimensions[ d ];
-								blockMin[ d ] = currentCellMin[ d ] * factor[ d ];
-								final boolean isBorderCellInThisDim = ( currentCellPos[ d ] + 1 == numCells[ d ] );
-								currentCellDim[ d ] = isBorderCellInThisDim ? borderSize[ d ] : cellDimensions[ d ];
-								currentCellMax[ d ] = currentCellMin[ d ] + currentCellDim[ d ] - 1;
-							}
+								synchronized ( i )
+								{
+									if ( !i.hasNext() )
+										break;
+									i.fwd();
+									i.localize( currentCellPos );
+								}
+								for ( int d = 0; d < n; ++d )
+								{
+									currentCellMin[ d ] = currentCellPos[ d ] * cellDimensions[ d ];
+									blockMin[ d ] = currentCellMin[ d ] * factor[ d ];
+									final boolean isBorderCellInThisDim = ( currentCellPos[ d ] + 1 == numCells[ d ] );
+									currentCellDim[ d ] = isBorderCellInThisDim ? borderSize[ d ] : cellDimensions[ d ];
+									currentCellMax[ d ] = currentCellMin[ d ] + currentCellDim[ d ] - 1;
+								}
 
-							final ArrayImg< UnsignedShortType, ? > cell = ArrayImgs.unsignedShorts( currentCellDim );
-							final RandomAccess< UnsignedShortType > out = cell.randomAccess();
-							if ( fullResolution )
-								copyBlock( out, currentCellDim, in, blockMin );
-							else
-								downsampleBlock( cell.cursor(), accumulator, currentCellDim, in, blockMin, factor, scale );
+								final ArrayImg< UnsignedShortType, ? > cell = ArrayImgs.unsignedShorts( currentCellDim );
+								final RandomAccess< UnsignedShortType > out = cell.randomAccess();
+								if ( fullResolution )
+									copyBlock( out, currentCellDim, in, blockMin );
+								else
+									downsampleBlock( cell.cursor(), accumulator, currentCellDim, in, blockMin, factor, scale );
 
-							writerQueue.writeBlockWithOffset( ( ( ShortArray ) cell.update( null ) ).getCurrentStorageArray(), currentCellDim.clone(), currentCellMin.clone() );
+								writerQueue.writeBlockWithOffset( ( ( ShortArray ) cell.update( null ) ).getCurrentStorageArray(), currentCellDim.clone(), currentCellMin.clone() );
+							}
+							doneSignal.countDown();
 						}
-						doneSignal.countDown();
-					}
-				} );
-			}
-			try
-			{
-				doneSignal.await();
-			}
-			catch ( final InterruptedException e )
-			{
-				e.printStackTrace();
+					} );
+				}
+				try
+				{
+					doneSignal.await();
+				}
+				catch ( final InterruptedException e )
+				{
+					e.printStackTrace();
+				}
 			}
 			writerQueue.closeDataset();
 			progressWriter.setProgress( ( double ) numCompletedTasks++ / numTasks );
