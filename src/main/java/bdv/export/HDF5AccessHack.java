@@ -85,4 +85,10 @@ class HDF5AccessHack implements IHDF5Access
 	{
 		hdf5Writer.close();
 	}
+
+	@Override
+	public IHDF5Writer getIHDF5Writer()
+	{
+		return hdf5Writer;
+	}
 }

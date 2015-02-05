@@ -172,7 +172,6 @@ class HDF5AccessHack implements IHDF5Access
 		return dataBlock;
 	}
 
-
 	@Override
 	public float[] readShortMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
 	{
@@ -196,6 +195,20 @@ class HDF5AccessHack implements IHDF5Access
 		H5Sclose( memorySpaceId );
 
 		return dataBlock;
+	}
+
+	@Override
+	public void closeAllDataSets()
+	{
+		for ( final OpenDataSet dataset : openDataSetCache.values() )
+			dataset.close();
+	}
+
+	@Override
+	public void close()
+	{
+		closeAllDataSets();
+		hdf5Reader.close();
 	}
 
 	@Override

@@ -58,6 +58,16 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 {
 	protected File hdf5File;
 
+	/**
+	 * The {@link Hdf5ImageLoader} can be constructed with an existing
+	 * {@link IHDF5Reader} which if non-null will be used instead of creating a
+	 * new one on {@link #hdf5File}.
+	 *
+	 * <p>
+	 * <em>Note that {@link #close()} will not close the existingHdf5Reader!</em>
+	 */
+	protected IHDF5Reader existingHdf5Reader;
+
 	protected IHDF5Access hdf5Access;
 
 	protected VolatileGlobalCellCache< VolatileShortArray > cache;
@@ -103,7 +113,13 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 
 	public Hdf5ImageLoader( final File hdf5File, final ArrayList< Partition > hdf5Partitions, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription, final boolean doOpen )
 	{
+		this( hdf5File, null, hdf5Partitions, sequenceDescription, doOpen );
+	}
+
+	protected Hdf5ImageLoader( final File hdf5File, final IHDF5Reader existingHdf5Reader, final ArrayList< Partition > hdf5Partitions, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription, final boolean doOpen )
+	{
 		super( new UnsignedShortType(), new VolatileUnsignedShortType() );
+		this.existingHdf5Reader = existingHdf5Reader;
 		this.hdf5File = hdf5File;
 		perSetupMipmapInfo = new HashMap< Integer, MipmapInfo >();
 		cachedDimsAndExistence = new HashMap< ViewLevelId, DimsAndExistence >();
@@ -127,7 +143,7 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 					return;
 				isOpen = true;
 
-				final IHDF5Reader hdf5Reader = HDF5Factory.openForReading( hdf5File );
+				final IHDF5Reader hdf5Reader = ( existingHdf5Reader != null ) ? existingHdf5Reader : HDF5Factory.openForReading( hdf5File );
 
 				maxNumLevels = 0;
 				perSetupMipmapInfo.clear();
@@ -165,6 +181,24 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 				cache = new VolatileGlobalCellCache< VolatileShortArray >( new Hdf5VolatileShortArrayLoader( hdf5Access ), maxNumTimepoints, maxNumSetups, maxNumLevels, 1 );
 			}
 		}
+	}
+
+	/**
+	 * Clear the cache and close the hdf5 file. Images that were obtained from
+	 * this loader before {@link #close()} will stop working. Requesting images
+	 * after {@link #close()} will cause the hdf5 file to be reopened (with a
+	 * new cache).
+	 */
+	public void close()
+	{
+		cache.clearCache();
+		hdf5Access.closeAllDataSets();
+
+		// only close reader if constructed it ourselves
+		if ( existingHdf5Reader == null )
+			hdf5Access.close();
+
+		isOpen = false;
 	}
 
 	public void initCachedDimensionsFromHdf5( final boolean background )

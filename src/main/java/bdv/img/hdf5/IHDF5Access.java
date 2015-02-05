@@ -11,4 +11,8 @@ interface IHDF5Access
 	public float[] readShortMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException;
 
 	public float[] readShortMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final float[] dataBlock ) throws InterruptedException;
+
+	public void closeAllDataSets();
+
+	public void close();
 }

@@ -107,6 +107,12 @@ class Hdf5BlockWriterThread extends Thread implements IHDF5Access
 	}
 
 	@Override
+	public IHDF5Writer getIHDF5Writer()
+	{
+		return hdf5Access.getIHDF5Writer();
+	}
+
+	@Override
 	public void writeMipmapDescription( final int setupIdPartition, final ExportMipmapInfo mipmapInfo )
 	{
 		put( new WriteMipmapDescriptionTask( setupIdPartition, mipmapInfo ) );
