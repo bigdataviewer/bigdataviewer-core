@@ -14,8 +14,10 @@ import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicImgLoader;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.sequence.TimePoint;
+import mpicbg.spim.data.sequence.TimePoints;
 import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.Cursor;
+import net.imglib2.Dimensions;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
@@ -30,8 +32,10 @@ import net.imglib2.view.Views;
 import bdv.img.hdf5.Hdf5ImageLoader;
 import bdv.img.hdf5.Partition;
 import bdv.img.hdf5.Util;
+import bdv.spimdata.SequenceDescriptionMinimal;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.HDF5IntStorageFeatures;
+import ch.systemsx.cisd.hdf5.IHDF5Reader;
 import ch.systemsx.cisd.hdf5.IHDF5Writer;
 
 /**
@@ -415,6 +419,24 @@ public class WriteSequenceToHdf5
 		writerQueue.close();
 	}
 
+	static class LoopBackImageLoader extends Hdf5ImageLoader
+	{
+		private LoopBackImageLoader( final IHDF5Reader existingHdf5Reader, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
+		{
+			super( null, existingHdf5Reader, null, sequenceDescription, true );
+		}
+
+		static LoopBackImageLoader create( final IHDF5Reader existingHdf5Reader, final int timepointIdPartition, final int setupIdPartition, final Dimensions imageDimensions )
+		{
+			final HashMap< Integer, TimePoint > timepoints = new HashMap< Integer, TimePoint >();
+			timepoints.put( timepointIdPartition, new TimePoint( timepointIdPartition ) );
+			final HashMap< Integer, BasicViewSetup > setups = new HashMap< Integer, BasicViewSetup >();
+			setups.put( setupIdPartition, new BasicViewSetup( setupIdPartition, null, imageDimensions, null ) );
+			final SequenceDescriptionMinimal seq = new SequenceDescriptionMinimal( new TimePoints( timepoints ), setups, null, null );
+			return new LoopBackImageLoader( existingHdf5Reader, seq );
+		}
+	}
+
 	/**
 	 * Write a single view to a hdf5 partition file, in a chunked, mipmaped
 	 * representation. Note that the specified view must not already exist in
@@ -448,7 +470,7 @@ public class WriteSequenceToHdf5
 	 *            be null.
 	 */
 	public static void writeViewToHdf5PartitionFile(
-			final RandomAccessibleInterval< UnsignedShortType > img,
+			RandomAccessibleInterval< UnsignedShortType > img,
 			final int timepointIdPartition,
 			final int setupIdPartition,
 			final ExportMipmapInfo mipmapInfo,
@@ -472,6 +494,9 @@ public class WriteSequenceToHdf5
 		if ( writeMipmapInfo )
 			writerQueue.writeMipmapDescription( setupIdPartition, mipmapInfo );
 
+		// create loopback image-loader to read already written chunks from the h5 for generating low-resolution versions.
+		final LoopBackImageLoader loopback = LoopBackImageLoader.create( writerQueue.getIHDF5Writer(), timepointIdPartition, setupIdPartition, img );
+
 		// write image data for all views to the HDF5 file
 		final int n = 3;
 		final long[] dimensions = new long[ n ];
@@ -482,6 +507,10 @@ public class WriteSequenceToHdf5
 
 		for ( int level = 0; level < numLevels; ++level )
 		{
+			// TODO: loopback will only work if we write the full resolution as level 0! check that!
+			if ( level > 0 )
+				img = loopback.getImage( new ViewId( timepointIdPartition, setupIdPartition ), 0 );
+
 			progressWriter.out().println( "writing level " + level );
 			img.dimensions( dimensions );
 			final int[] factor = resolutions[ level ];
@@ -586,6 +615,7 @@ public class WriteSequenceToHdf5
 			writerQueue.closeDataset();
 			progressWriter.setProgress( ( double ) numCompletedTasks++ / numTasks );
 		}
+		loopback.close();
 	}
 
 	public static CellCreatorThread[] createAndStartCellCreatorThreads( final int numThreads )
