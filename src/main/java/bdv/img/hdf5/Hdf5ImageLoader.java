@@ -43,6 +43,8 @@ import net.imglib2.util.Fraction;
 import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
 import bdv.AbstractViewerImgLoader;
+import bdv.ViewerImgLoader;
+import bdv.img.cache.Cache;
 import bdv.img.cache.CacheHints;
 import bdv.img.cache.CachedCellImg;
 import bdv.img.cache.LoadingStrategy;
@@ -409,22 +411,20 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 		return new MonolithicImageLoader();
 	}
 
-	public class MonolithicImageLoader implements ImgLoader< UnsignedShortType >
+	public class MonolithicImageLoader implements ViewerImgLoader< UnsignedShortType, VolatileUnsignedShortType >, ImgLoader< UnsignedShortType >
 	{
 		@Override
-		public RandomAccessibleInterval< UnsignedShortType > getImage( final ViewId view )
+		public RandomAccessibleInterval< UnsignedShortType > getImage( final ViewId view, final int level )
 		{
 			Img< UnsignedShortType > img = null;
 			final int timepoint = view.getTimePointId();
 			final int setup = view.getViewSetupId();
-			final int level = 0;
-			final Dimensions dims = getImageSize( view );
-			final int n = dims.numDimensions();
-			final long[] dimsLong = new long[ n ];
-			dims.dimensions( dimsLong );
+			final DimsAndExistence dimsAndExistence = getDimsAndExistence( new ViewLevelId( view, level ) );
+			final long[] dimsLong = dimsAndExistence.exists() ? dimsAndExistence.getDimensions() : null;
+			final int n = dimsLong.length;
 			final int[] dimsInt = new int[ n ];
 			final long[] min = new long[ n ];
-			if ( Intervals.numElements( dims ) <= Integer.MAX_VALUE )
+			if ( Intervals.numElements( new FinalDimensions( dimsLong ) ) <= Integer.MAX_VALUE )
 			{
 				// use ArrayImg
 				for ( int d = 0; d < dimsInt.length; ++d )
@@ -464,6 +464,12 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 				img = cellImg;
 			}
 			return img;
+		}
+
+		@Override
+		public RandomAccessibleInterval< UnsignedShortType > getImage( final ViewId view )
+		{
+			return getImage( view, 0 );
 		}
 
 		@Override
@@ -574,6 +580,41 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 			return Hdf5ImageLoader.this.getVoxelSize( view );
 		}
 
+		@Override
+		public RandomAccessibleInterval< VolatileUnsignedShortType > getVolatileImage( final ViewId view, final int level )
+		{
+			return Hdf5ImageLoader.this.getVolatileImage( view, level );
+		}
+
+		@Override
+		public VolatileUnsignedShortType getVolatileImageType()
+		{
+			return Hdf5ImageLoader.this.getVolatileImageType();
+		}
+
+		@Override
+		public double[][] getMipmapResolutions( final int setupId )
+		{
+			return Hdf5ImageLoader.this.getMipmapResolutions( setupId );
+		}
+
+		@Override
+		public AffineTransform3D[] getMipmapTransforms( final int setupId )
+		{
+			return Hdf5ImageLoader.this.getMipmapTransforms( setupId );
+		}
+
+		@Override
+		public int numMipmapLevels( final int setupId )
+		{
+			return Hdf5ImageLoader.this.numMipmapLevels( setupId );
+		}
+
+		@Override
+		public Cache getCache()
+		{
+			return Hdf5ImageLoader.this.getCache();
+		}
 	}
 
 //  ================================ mpicbg.spim.data.sequence.ImgLoader =============================== //
