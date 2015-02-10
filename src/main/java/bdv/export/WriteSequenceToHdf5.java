@@ -618,7 +618,6 @@ public class WriteSequenceToHdf5
 				useLoopBack = loopbackHeuristic.decide( img, resolutions[ level ], previousLevel, factorsToPreviousLevel, subdivisions[ level ] );
 				if ( useLoopBack )
 				{
-					System.out.println( "using loopback" );
 					sourceImg = loopback.getImage( new ViewId( timepointIdPartition, setupIdPartition ), previousLevel );
 					factor = factorsToPreviousLevel;
 				}
