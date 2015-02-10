@@ -90,6 +90,9 @@ public class WriteSequenceToHdf5
 	 *            reading pixels from the original image or by reading back a
 	 *            finer resolution level already written to the hdf5. may be
 	 *            null (in this case always use the original image).
+	 * @param afterEachPlane
+	 *            this is called after each "plane of chunks" is written, giving
+	 *            the opportunity to clear caches, etc.
 	 * @param progressWriter
 	 *            completion ratio and status output will be directed here.
 	 */
@@ -99,6 +102,7 @@ public class WriteSequenceToHdf5
 			final boolean deflate,
 			final File hdf5File,
 			final LoopbackHeuristic loopbackHeuristic,
+			final AfterEachPlane afterEachPlane,
 			final ProgressWriter progressWriter )
 	{
 		final HashMap< Integer, Integer > timepointIdSequenceToPartition = new HashMap< Integer, Integer >();
@@ -110,7 +114,7 @@ public class WriteSequenceToHdf5
 			setupIdSequenceToPartition.put( setup.getId(), setup.getId() );
 
 		final Partition partition = new Partition( hdf5File.getPath(), timepointIdSequenceToPartition, setupIdSequenceToPartition );
-		writeHdf5PartitionFile( seq, perSetupMipmapInfo, deflate, partition, loopbackHeuristic, progressWriter );
+		writeHdf5PartitionFile( seq, perSetupMipmapInfo, deflate, partition, loopbackHeuristic, afterEachPlane, progressWriter );
 	}
 
 	/**
@@ -141,6 +145,9 @@ public class WriteSequenceToHdf5
 	 *            reading pixels from the original image or by reading back a
 	 *            finer resolution level already written to the hdf5. may be
 	 *            null (in this case always use the original image).
+	 * @param afterEachPlane
+	 *            this is called after each "plane of chunks" is written, giving
+	 *            the opportunity to clear caches, etc.
 	 * @param progressWriter
 	 *            completion ratio and status output will be directed here.
 	 */
@@ -151,13 +158,14 @@ public class WriteSequenceToHdf5
 			final boolean deflate,
 			final File hdf5File,
 			final LoopbackHeuristic loopbackHeuristic,
+			final AfterEachPlane afterEachPlane,
 			final ProgressWriter progressWriter )
 	{
 		final HashMap< Integer, ExportMipmapInfo > perSetupMipmapInfo = new HashMap< Integer, ExportMipmapInfo >();
 		final ExportMipmapInfo mipmapInfo = new ExportMipmapInfo( resolutions, subdivisions );
 		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
 			perSetupMipmapInfo.put( setup.getId(), mipmapInfo );
-		writeHdf5File( seq, perSetupMipmapInfo, deflate, hdf5File, loopbackHeuristic, progressWriter );
+		writeHdf5File( seq, perSetupMipmapInfo, deflate, hdf5File, loopbackHeuristic, afterEachPlane, progressWriter );
 	}
 
 	/**
@@ -291,6 +299,9 @@ public class WriteSequenceToHdf5
 	 *            reading pixels from the original image or by reading back a
 	 *            finer resolution level already written to the hdf5. may be
 	 *            null (in this case always use the original image).
+	 * @param afterEachPlane
+	 *            this is called after each "plane of chunks" is written, giving
+	 *            the opportunity to clear caches, etc.
 	 * @param progressWriter
 	 *            completion ratio and status output will be directed here.
 	 */
@@ -300,6 +311,7 @@ public class WriteSequenceToHdf5
 			final boolean deflate,
 			final Partition partition,
 			final LoopbackHeuristic loopbackHeuristic,
+			final AfterEachPlane afterEachPlane,
 			ProgressWriter progressWriter )
 	{
 		final int blockWriterQueueLength = 100;
@@ -383,7 +395,7 @@ public class WriteSequenceToHdf5
 
 				writeViewToHdf5PartitionFile(
 						img, timepointIdPartition, setupIdPartition, mipmapInfo, false,
-						deflate, writerQueue, cellCreatorThreads, loopbackHeuristic, subProgressWriter );
+						deflate, writerQueue, cellCreatorThreads, loopbackHeuristic, afterEachPlane, subProgressWriter );
 			}
 		}
 
@@ -424,6 +436,9 @@ public class WriteSequenceToHdf5
 	 *            reading pixels from the original image or by reading back a
 	 *            finer resolution level already written to the hdf5. may be
 	 *            null (in this case always use the original image).
+	 * @param afterEachPlane
+	 *            this is called after each "plane of chunks" is written, giving
+	 *            the opportunity to clear caches, etc.
 	 * @param progressWriter
 	 *            completion ratio and status output will be directed here. may
 	 *            be null.
@@ -437,6 +452,7 @@ public class WriteSequenceToHdf5
 			final boolean writeMipmapInfo,
 			final boolean deflate,
 			final LoopbackHeuristic loopbackHeuristic,
+			final AfterEachPlane afterEachPlane,
 			final ProgressWriter progressWriter )
 	{
 		final int blockWriterQueueLength = 100;
@@ -448,7 +464,7 @@ public class WriteSequenceToHdf5
 		final CellCreatorThread[] cellCreatorThreads = createAndStartCellCreatorThreads( numThreads );
 
 		// write the image
-		writeViewToHdf5PartitionFile( img, timepointIdPartition, setupIdPartition, mipmapInfo, writeMipmapInfo, deflate, writerQueue, cellCreatorThreads, loopbackHeuristic, progressWriter );
+		writeViewToHdf5PartitionFile( img, timepointIdPartition, setupIdPartition, mipmapInfo, writeMipmapInfo, deflate, writerQueue, cellCreatorThreads, loopbackHeuristic, afterEachPlane, progressWriter );
 
 		stopCellCreatorThreads( cellCreatorThreads );
 		writerQueue.close();
@@ -505,6 +521,9 @@ public class WriteSequenceToHdf5
 	 *            reading pixels from the original image or by reading back a
 	 *            finer resolution level already written to the hdf5. may be
 	 *            null (in this case always use the original image).
+	 * @param afterEachPlane
+	 *            this is called after each "plane of chunks" is written, giving
+	 *            the opportunity to clear caches, etc.
 	 * @param progressWriter
 	 *            completion ratio and status output will be directed here. may
 	 *            be null.
@@ -519,6 +538,7 @@ public class WriteSequenceToHdf5
 			final Hdf5BlockWriterThread writerQueue,
 			final CellCreatorThread[] cellCreatorThreads,
 			final LoopbackHeuristic loopbackHeuristic,
+			final AfterEachPlane afterEachPlane,
 			ProgressWriter progressWriter )
 	{
 		final HDF5IntStorageFeatures storage = deflate ? HDF5IntStorageFeatures.INT_AUTO_SCALING_DEFLATE : HDF5IntStorageFeatures.INT_AUTO_SCALING;
@@ -555,10 +575,12 @@ public class WriteSequenceToHdf5
 
 			final RandomAccessibleInterval< UnsignedShortType > sourceImg;
 			final int[] factor;
+			final boolean useLoopBack;
 			if ( loopbackHeuristic == null )
 			{
 				sourceImg = img;
 				factor = resolutions[ level ];
+				useLoopBack = false;
 			}
 			else
 			{
@@ -593,7 +615,7 @@ public class WriteSequenceToHdf5
 				//   stack need to be accessed leading to cache thrashing if
 				//   individual planes are very large.
 
-				final boolean useLoopBack = loopbackHeuristic.decide( img, resolutions[ level ], previousLevel, factorsToPreviousLevel, subdivisions[ level ] );
+				useLoopBack = loopbackHeuristic.decide( img, resolutions[ level ], previousLevel, factorsToPreviousLevel, subdivisions[ level ] );
 				if ( useLoopBack )
 				{
 					System.out.println( "using loopback" );
@@ -705,8 +727,8 @@ public class WriteSequenceToHdf5
 				{
 					e.printStackTrace();
 				}
-				if ( loopbackHeuristic != null )
-					loopbackHeuristic.afterEachPlane();
+				if ( afterEachPlane != null )
+					afterEachPlane.afterEachPlane( useLoopBack );
 			}
 			writerQueue.closeDataset();
 			progressWriter.setProgress( ( double ) numCompletedTasks++ / numTasks );
@@ -728,8 +750,11 @@ public class WriteSequenceToHdf5
 				final int previousLevel,
 				final int[] factorsToPreviousLevel,
 				final int[] chunkSize );
+	}
 
-		public void afterEachPlane();
+	public interface AfterEachPlane
+	{
+		public void afterEachPlane( final boolean usedLoopBack );
 	}
 
 	/**
@@ -751,10 +776,6 @@ public class WriteSequenceToHdf5
 
 			return false;
 		}
-
-		@Override
-		public void afterEachPlane()
-		{}
 	}
 
 	public static int numElements( final int[] size )
