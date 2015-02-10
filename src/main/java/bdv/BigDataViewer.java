@@ -21,9 +21,8 @@ import mpicbg.spim.data.sequence.Angle;
 import mpicbg.spim.data.sequence.Channel;
 import mpicbg.spim.data.sequence.TimePoint;
 import net.imglib2.Volatile;
-import net.imglib2.converter.Converter;
-import net.imglib2.converter.TypeIdentity;
 import net.imglib2.display.RealARGBColorConverter;
+import net.imglib2.display.ScaledARGBConverter;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.volatiles.VolatileARGBType;
@@ -210,15 +209,8 @@ public class BigDataViewer
 		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
 		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
 		{
-			final Converter< VolatileARGBType, ARGBType > vconverter = new Converter< VolatileARGBType, ARGBType >()
-			{
-				@Override
-				public void convert( final VolatileARGBType input, final ARGBType output )
-				{
-					output.set( input.get() );
-				}
-			};
-			final TypeIdentity< ARGBType > converter = new TypeIdentity< ARGBType >();
+			final ScaledARGBConverter.VolatileARGB vconverter = new ScaledARGBConverter.VolatileARGB( 0, 255 );
+			final ScaledARGBConverter.ARGB converter = new ScaledARGBConverter.ARGB( 0, 255 );
 
 			final int setupId = setup.getId();
 			final String setupName = createSetupName( setup );
@@ -234,6 +226,7 @@ public class BigDataViewer
 			final SourceAndConverter< ARGBType > soc = new SourceAndConverter< ARGBType >( ts, converter, vsoc );
 
 			sources.add( soc );
+			converterSetups.add( new RealARGBColorConverterSetup( setupId, converter, vconverter ) );
 		}
 	}
 
@@ -246,7 +239,7 @@ public class BigDataViewer
 		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
 		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
 		{
-			final TypeIdentity< ARGBType > converter = new TypeIdentity< ARGBType >();
+			final ScaledARGBConverter.ARGB converter = new ScaledARGBConverter.ARGB( 0, 255 );
 
 			final int setupId = setup.getId();
 			final String setupName = createSetupName( setup );
@@ -258,6 +251,7 @@ public class BigDataViewer
 			final SourceAndConverter< ARGBType > soc = new SourceAndConverter< ARGBType >( ts, converter );
 
 			sources.add( soc );
+			converterSetups.add( new RealARGBColorConverterSetup( setupId, converter ) );
 		}
 	}
 
