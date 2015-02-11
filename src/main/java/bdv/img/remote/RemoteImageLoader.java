@@ -136,7 +136,7 @@ public class RemoteImageLoader extends AbstractViewerImgLoader< UnsignedShortTyp
 
 	/**
 	 * For images that are missing in the hdf5, a constant image is created.
-	 * If the dimension of the missing image is present in {@link #cachedDimensions} then use that.
+	 * If the dimension of the missing image is present in {@link #cache} then use that.
 	 * Otherwise create a 1x1x1 image.
 	 */
 	protected < T > RandomAccessibleInterval< T > getMissingDataImage( final ViewLevelId id, final T constant )

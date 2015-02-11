@@ -35,13 +35,12 @@ public class DefaultMipmapOrdering implements MipmapOrdering
 
 	/**
 	 * @param source
-	 * @param createHints
-	 *            If true, {@link Level}s are created with {@link CacheHints}
-	 *            computed as follows. {@link LoadingStrategy} and enqueue order
-	 *            are set as specified in the remaining parameters. Priority is
-	 *            set such that the coarsest mipmap level has highest priority.
-	 *            If false, {@link Level}s are created with {@code null}
-	 *            {@link CacheHints}.
+	 * @param createHints If true, {@link MipmapOrdering.Level}s are created with
+	 *          {@link CacheHints} computed as follows. {@link LoadingStrategy}
+	 *          and enqueue order are set as specified in the remaining
+	 *          parameters. Priority is set such that the coarsest mipmap level
+	 *          has highest priority. If false, {@link MipmapOrdering.Level}s are
+	 *          created with {@code null} {@link CacheHints}.
 	 * @param renderLoadingStrategy
 	 * @param renderEnqueuToFront
 	 * @param prefetchLoadingStrategy

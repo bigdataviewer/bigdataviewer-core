@@ -49,7 +49,7 @@ public class ViewerFrame extends JFrame
 	 *            number of available timepoints.
 	 * @param cache
 	 *            handle to cache. This is used to control io timing. Also, is
-	 *            is used to subscribe / {@link #stop() unsubscribe} to the
+	 *            is used to subscribe / unsubscribe to the
 	 *            cache as a consumer, so that eventually the io fetcher threads
 	 *            can be shut down.
 	 * @param optional

@@ -109,7 +109,7 @@ public class MultiResolutionRenderer
 
 	/**
 	 * Currently active projector, used to re-paint the display. It maps the
-	 * {@link #source} data to {@link #screenImage}.
+	 * source data to screen image.
 	 */
 	protected VolatileProjector projector;
 
@@ -411,7 +411,7 @@ public class MultiResolutionRenderer
 
 	/**
 	 * Render image at the {@link #requestedScreenScaleIndex requested screen
-	 * scale} and the {@link #requestedMipmapLevel requested mipmap level}.
+	 * scale} and the requested mipmap level.
 	 */
 	public boolean paint( final ViewerState state )
 	{
@@ -531,8 +531,8 @@ public class MultiResolutionRenderer
 
 	/**
 	 * Request a repaint of the display from the painter thread. The painter
-	 * thread will trigger a {@link #paint()} as soon as possible (that is,
-	 * immediately or after the currently running {@link #paint()} has
+	 * thread will trigger a {@link #paint} as soon as possible (that is,
+	 * immediately or after the currently running {@link #paint} has
 	 * completed).
 	 */
 	public synchronized void requestRepaint( final int screenScaleIndex )

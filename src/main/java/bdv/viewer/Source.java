@@ -54,7 +54,7 @@ public interface Source< T >
 	public RealRandomAccessible< T > getInterpolatedSource( final int t, final int level, final Interpolation method );
 
 	/**
-	 * Get the transform from the {@link #getSource(long) source} at timepoint
+	 * Get the transform from the {@link #getSource source} at timepoint
 	 * index t into the global coordinate system.
 	 *
 	 * @param t

@@ -61,7 +61,7 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 
 	/**
 	 * Fetch the list of public tokens from an OpenConnectome volume cutout
-	 * service, e.g. {@linkplain http://openconnecto.me/ocp/ca/public_tokens/}.
+	 * service, e.g. {@linkplain "http://openconnecto.me/ocp/ca/public_tokens/"}.
 	 *
 	 * @param baseUrl
 	 *            e.g. "http://openconnecto.me/ocp/ca"
@@ -80,7 +80,7 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 
 	/**
 	 * Fetch information for a token from an OpenConnectome volume cutout
-	 * service, e.g. {@linkplain http://openconnecto.me/ocp/ca/<token>/info/}.
+	 * service, e.g. {@linkplain "http://openconnecto.me/ocp/ca/<token>/info/"}.
 	 *
 	 * @param baseUrl
 	 *            e.g. "http://openconnecto.me/ocp/ca"
@@ -102,7 +102,7 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 	/**
 	 * Try to fetch the list of public tokens from an OpenConnectome volume
 	 * cutout service, e.g.
-	 * {@linkplain http://openconnecto.me/ocp/ca/public_tokens/}.
+	 * {@linkplain "http://openconnecto.me/ocp/ca/public_tokens/"}.
 	 *
 	 * @param baseUrl
 	 *            e.g. "http://openconnecto.me/ocp/ca"
@@ -136,7 +136,7 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 
 	/**
 	 * Try to fetch information for a token from an OpenConnectome volume cutout
-	 * service, e.g. {@linkplain http://openconnecto.me/ocp/ca/<token>/info/}.
+	 * service, e.g. {@linkplain "http://openconnecto.me/ocp/ca/<token>/info/"}.
 	 *
 	 * @param baseUrl
 	 *            e.g. "http://openconnecto.me/ocp/ca"

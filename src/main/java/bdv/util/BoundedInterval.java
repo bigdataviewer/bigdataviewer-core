@@ -4,8 +4,9 @@ package bdv.util;
  * A interval consisting of {@link BoundedValue} minimum and maximum that can
  * span any interval in a given range. The UI can listen to changes by adding
  * listeners can attach to the
- * {@link BoundedValue#setUpdateListener(UpdateListener) minimum and maximum}
- * values and/or overriding the {@link #updateInterval(int, int)} method.
+ * {@link BoundedValue#setUpdateListener(bdv.util.BoundedValue.UpdateListener)
+ * minimum and maximum} values and/or overriding the
+ * {@link #updateInterval(int, int)} method.
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */

@@ -1,5 +1,6 @@
 package net.imglib2.img.basictypeaccess.volatiles.array;
 
+import net.imglib2.img.basictypeaccess.array.ByteArray;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileByteAccess;
 
 /**
