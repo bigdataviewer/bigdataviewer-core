@@ -1,57 +1,41 @@
 package bdv.export;
 
-import static bdv.img.hdf5.Util.reorder;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5D.H5Dclose;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5D.H5Dget_space;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5D.H5Dopen;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5D.H5Dwrite;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5S.H5Sclose;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5S.H5Screate_simple;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5S.H5Sselect_hyperslab;
-import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5P_DEFAULT;
-import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5S_SELECT_SET;
-import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5T_NATIVE_INT16;
-
 import java.io.File;
-import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import mpicbg.spim.data.XmlHelpers;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicImgLoader;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.sequence.TimePoint;
+import mpicbg.spim.data.sequence.TimePoints;
 import mpicbg.spim.data.sequence.ViewId;
+import net.imglib2.Cursor;
+import net.imglib2.Dimensions;
 import net.imglib2.FinalInterval;
-import net.imglib2.Interval;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.algorithm.region.localneighborhood.Neighborhood;
-import net.imglib2.algorithm.region.localneighborhood.RectangleNeighborhoodFactory;
-import net.imglib2.algorithm.region.localneighborhood.RectangleNeighborhoodUnsafe;
-import net.imglib2.algorithm.region.localneighborhood.RectangleShape.NeighborhoodsAccessible;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.ShortArray;
 import net.imglib2.img.cell.CellImg;
-import net.imglib2.iterator.LocalizingZeroMinIntervalIterator;
+import net.imglib2.iterator.LocalizingIntervalIterator;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.view.Views;
 import bdv.img.hdf5.Hdf5ImageLoader;
 import bdv.img.hdf5.Partition;
 import bdv.img.hdf5.Util;
-import ch.systemsx.cisd.base.mdarray.MDShortArray;
+import bdv.spimdata.SequenceDescriptionMinimal;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.HDF5IntStorageFeatures;
+import ch.systemsx.cisd.hdf5.IHDF5Reader;
 import ch.systemsx.cisd.hdf5.IHDF5Writer;
 
 /**
@@ -89,8 +73,8 @@ public class WriteSequenceToHdf5
 	 * @param seq
 	 *            description of the sequence to be stored as hdf5. (The
 	 *            {@link AbstractSequenceDescription} contains the number of
-	 *            setups and timepoints as well as an {@link BasicImgLoader} that
-	 *            provides the image data, Registration information is not
+	 *            setups and timepoints as well as an {@link BasicImgLoader}
+	 *            that provides the image data, Registration information is not
 	 *            needed here, that will go into the accompanying xml).
 	 * @param perSetupMipmapInfo
 	 *            this maps from setup {@link BasicViewSetup#getId() id} to
@@ -101,10 +85,25 @@ public class WriteSequenceToHdf5
 	 *            whether to compress the data with the HDF5 DEFLATE filter.
 	 * @param hdf5File
 	 *            hdf5 file to which the image data is written.
+	 * @param loopbackHeuristic
+	 *            heuristic to decide whether to create each resolution level by
+	 *            reading pixels from the original image or by reading back a
+	 *            finer resolution level already written to the hdf5. may be
+	 *            null (in this case always use the original image).
+	 * @param afterEachPlane
+	 *            this is called after each "plane of chunks" is written, giving
+	 *            the opportunity to clear caches, etc.
 	 * @param progressWriter
 	 *            completion ratio and status output will be directed here.
 	 */
-	public static void writeHdf5File( final AbstractSequenceDescription< ?, ?, ? > seq, final Map< Integer, ExportMipmapInfo > perSetupMipmapInfo, final boolean deflate, final File hdf5File, final ProgressWriter progressWriter )
+	public static void writeHdf5File(
+			final AbstractSequenceDescription< ?, ?, ? > seq,
+			final Map< Integer, ExportMipmapInfo > perSetupMipmapInfo,
+			final boolean deflate,
+			final File hdf5File,
+			final LoopbackHeuristic loopbackHeuristic,
+			final AfterEachPlane afterEachPlane,
+			final ProgressWriter progressWriter )
 	{
 		final HashMap< Integer, Integer > timepointIdSequenceToPartition = new HashMap< Integer, Integer >();
 		for ( final TimePoint timepoint : seq.getTimePoints().getTimePointsOrdered() )
@@ -115,7 +114,7 @@ public class WriteSequenceToHdf5
 			setupIdSequenceToPartition.put( setup.getId(), setup.getId() );
 
 		final Partition partition = new Partition( hdf5File.getPath(), timepointIdSequenceToPartition, setupIdSequenceToPartition );
-		writeHdf5PartitionFile( seq, perSetupMipmapInfo, deflate, partition, progressWriter );
+		writeHdf5PartitionFile( seq, perSetupMipmapInfo, deflate, partition, loopbackHeuristic, afterEachPlane, progressWriter );
 	}
 
 	/**
@@ -127,10 +126,10 @@ public class WriteSequenceToHdf5
 	 *
 	 * @param seq
 	 *            description of the sequence to be stored as hdf5. (The
-	 *            {@link AbstractSequenceDescription} contains the number of setups and
-	 *            timepoints as well as an {@link BasicImgLoader} that provides the
-	 *            image data, Registration information is not needed here, that
-	 *            will go into the accompanying xml).
+	 *            {@link AbstractSequenceDescription} contains the number of
+	 *            setups and timepoints as well as an {@link BasicImgLoader}
+	 *            that provides the image data, Registration information is not
+	 *            needed here, that will go into the accompanying xml).
 	 * @param resolutions
 	 *            this nested arrays contains per mipmap level, the subsampling
 	 *            factors.
@@ -141,16 +140,32 @@ public class WriteSequenceToHdf5
 	 *            whether to compress the data with the HDF5 DEFLATE filter.
 	 * @param hdf5File
 	 *            hdf5 file to which the image data is written.
+	 * @param loopbackHeuristic
+	 *            heuristic to decide whether to create each resolution level by
+	 *            reading pixels from the original image or by reading back a
+	 *            finer resolution level already written to the hdf5. may be
+	 *            null (in this case always use the original image).
+	 * @param afterEachPlane
+	 *            this is called after each "plane of chunks" is written, giving
+	 *            the opportunity to clear caches, etc.
 	 * @param progressWriter
 	 *            completion ratio and status output will be directed here.
 	 */
-	public static void writeHdf5File( final AbstractSequenceDescription< ?, ?, ? > seq, final int[][] resolutions, final int[][] subdivisions, final boolean deflate, final File hdf5File, final ProgressWriter progressWriter )
+	public static void writeHdf5File(
+			final AbstractSequenceDescription< ?, ?, ? > seq,
+			final int[][] resolutions,
+			final int[][] subdivisions,
+			final boolean deflate,
+			final File hdf5File,
+			final LoopbackHeuristic loopbackHeuristic,
+			final AfterEachPlane afterEachPlane,
+			final ProgressWriter progressWriter )
 	{
 		final HashMap< Integer, ExportMipmapInfo > perSetupMipmapInfo = new HashMap< Integer, ExportMipmapInfo >();
 		final ExportMipmapInfo mipmapInfo = new ExportMipmapInfo( resolutions, subdivisions );
 		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
 			perSetupMipmapInfo.put( setup.getId(), mipmapInfo );
-		writeHdf5File( seq, perSetupMipmapInfo, deflate, hdf5File, progressWriter );
+		writeHdf5File( seq, perSetupMipmapInfo, deflate, hdf5File, loopbackHeuristic, afterEachPlane, progressWriter );
 	}
 
 	/**
@@ -176,7 +191,7 @@ public class WriteSequenceToHdf5
 	 */
 	public static void writeHdf5PartitionLinkFile( final AbstractSequenceDescription< ?, ?, ? > seq, final Map< Integer, ExportMipmapInfo > perSetupMipmapInfo )
 	{
-		if ( ! ( seq.getImgLoader() instanceof Hdf5ImageLoader ) )
+		if ( !( seq.getImgLoader() instanceof Hdf5ImageLoader ) )
 			throw new IllegalArgumentException( "sequence has " + seq.getImgLoader().getClass() + " imgloader. Hdf5ImageLoader required." );
 		final Hdf5ImageLoader loader = ( Hdf5ImageLoader ) seq.getImgLoader();
 		writeHdf5PartitionLinkFile( seq, perSetupMipmapInfo, loader.getPartitions(), loader.getHdf5File() );
@@ -267,8 +282,8 @@ public class WriteSequenceToHdf5
 	 * @param seq
 	 *            description of the sequence to be stored as hdf5. (The
 	 *            {@link AbstractSequenceDescription} contains the number of
-	 *            setups and timepoints as well as an {@link BasicImgLoader} that
-	 *            provides the image data, Registration information is not
+	 *            setups and timepoints as well as an {@link BasicImgLoader}
+	 *            that provides the image data, Registration information is not
 	 *            needed here, that will go into the accompanying xml).
 	 * @param perSetupMipmapInfo
 	 *            this maps from setup {@link BasicViewSetup#getId() id} to
@@ -279,61 +294,65 @@ public class WriteSequenceToHdf5
 	 *            whether to compress the data with the HDF5 DEFLATE filter.
 	 * @param partition
 	 *            which part of the dataset to write, and to which file.
+	 * @param loopbackHeuristic
+	 *            heuristic to decide whether to create each resolution level by
+	 *            reading pixels from the original image or by reading back a
+	 *            finer resolution level already written to the hdf5. may be
+	 *            null (in this case always use the original image).
+	 * @param afterEachPlane
+	 *            this is called after each "plane of chunks" is written, giving
+	 *            the opportunity to clear caches, etc.
 	 * @param progressWriter
 	 *            completion ratio and status output will be directed here.
 	 */
-	public static void writeHdf5PartitionFile( final AbstractSequenceDescription< ?, ?, ? > seq, final Map< Integer, ExportMipmapInfo > perSetupMipmapInfo, final boolean deflate, final Partition partition, ProgressWriter progressWriter )
+	public static void writeHdf5PartitionFile(
+			final AbstractSequenceDescription< ?, ?, ? > seq,
+			final Map< Integer, ExportMipmapInfo > perSetupMipmapInfo,
+			final boolean deflate,
+			final Partition partition,
+			final LoopbackHeuristic loopbackHeuristic,
+			final AfterEachPlane afterEachPlane,
+			ProgressWriter progressWriter )
 	{
-		final HDF5IntStorageFeatures storage = deflate ? HDF5IntStorageFeatures.INT_AUTO_SCALING_DEFLATE : HDF5IntStorageFeatures.INT_AUTO_SCALING;
-		final int numThreads = Math.max( 1, Runtime.getRuntime().availableProcessors() - 2 );
 		final int blockWriterQueueLength = 100;
+		final int numThreads = Math.max( 1, Runtime.getRuntime().availableProcessors() - 2 );
 
 		if ( progressWriter == null )
 			progressWriter = new ProgressWriterConsole();
+		progressWriter.setProgress( 0 );
 
+		// get sequence timepointIds for the timepoints contained in this partition
 		final ArrayList< Integer > timepointIdsSequence = new ArrayList< Integer >( partition.getTimepointIdSequenceToPartition().keySet() );
 		Collections.sort( timepointIdsSequence );
 		final int numTimepoints = timepointIdsSequence.size();
 		final ArrayList< Integer > setupIdsSequence = new ArrayList< Integer >( partition.getSetupIdSequenceToPartition().keySet() );
 		Collections.sort( setupIdsSequence );
 
-		if ( ! ( seq.getImgLoader().getImageType() instanceof UnsignedShortType ) )
+		// get the BasicImgLoader that supplies the images
+		if ( !( seq.getImgLoader().getImageType() instanceof UnsignedShortType ) )
 			throw new IllegalArgumentException( "Expected BasicImgLoader<UnsignedShortTyp> but your dataset has BasicImgLoader<"
 					+ seq.getImgLoader().getImageType().getClass().getSimpleName() + ">.\nCurrently writing to HDF5 is only supported for UnsignedShortType." );
 
 		@SuppressWarnings( "unchecked" )
 		final BasicImgLoader< UnsignedShortType > imgLoader = ( BasicImgLoader< UnsignedShortType > ) seq.getImgLoader();
 
-		// for progressWriter
-		// initial 1 is for writing resolutions etc.
-		// (numLevels + 1) is for writing each of the levels plus reading the source image
-		int numTasks = 1;
-		for ( final int setupIdSequence : setupIdsSequence )
-		{
-			final ExportMipmapInfo mipmapInfo = perSetupMipmapInfo.get( setupIdSequence );
-			final int numLevels = mipmapInfo.getNumLevels();
-			numTasks += numTimepoints * ( numLevels + 1 );
-		}
-		int numCompletedTasks = 0;
-		progressWriter.setProgress( ( double ) numCompletedTasks++ / numTasks );
-
-		// open HDF5 output file
+		// open HDF5 partition output file
 		final File hdf5File = new File( partition.getPath() );
 		if ( hdf5File.exists() )
 			hdf5File.delete();
-		final IHDF5Writer hdf5Writer = HDF5Factory.open( hdf5File );
-		IHDF5Access hdf5Access;
-		try
-		{
-			hdf5Access = new HDF5AccessHack( hdf5Writer );
-		}
-		catch ( final Exception e )
-		{
-			e.printStackTrace();
-			hdf5Access = new HDF5Access( hdf5Writer );
-		}
-		final HDF5BlockWriterThread writerQueue = new HDF5BlockWriterThread( hdf5Access, blockWriterQueueLength );
+		final Hdf5BlockWriterThread writerQueue = new Hdf5BlockWriterThread( hdf5File, blockWriterQueueLength );
 		writerQueue.start();
+
+		// start CellCreatorThreads
+		final CellCreatorThread[] cellCreatorThreads = createAndStartCellCreatorThreads( numThreads );
+
+		// calculate number of tasks for progressWriter
+		int numTasks = 1; // first task is for writing mipmap descriptions etc...
+		for ( final int timepointIdSequence : timepointIdsSequence )
+			for ( final int setupIdSequence : setupIdsSequence )
+				if ( seq.getViewDescriptions().get( new ViewId( timepointIdSequence, setupIdSequence ) ).isPresent() )
+					numTasks++;
+		int numCompletedTasks = 0;
 
 		// write Mipmap descriptions
 		for ( final Entry< Integer, Integer > entry : partition.getSetupIdSequenceToPartition().entrySet() )
@@ -341,22 +360,11 @@ public class WriteSequenceToHdf5
 			final int setupIdSequence = entry.getKey();
 			final int setupIdPartition = entry.getValue();
 			final ExportMipmapInfo mipmapInfo = perSetupMipmapInfo.get( setupIdSequence );
-			hdf5Writer.writeDoubleMatrix( Util.getResolutionsPath( setupIdPartition ), mipmapInfo.getResolutions() );
-			hdf5Writer.writeIntMatrix( Util.getSubdivisionsPath( setupIdPartition ), mipmapInfo.getSubdivisions() );
+			writerQueue.writeMipmapDescription( setupIdPartition, mipmapInfo );
 		}
-		progressWriter.setProgress( ( double ) numCompletedTasks++ / numTasks );
+		progressWriter.setProgress( ( double ) ++numCompletedTasks / numTasks );
 
 		// write image data for all views to the HDF5 file
-		final CellCreatorThread[] cellCreatorThreads = new CellCreatorThread[ numThreads ];
-		for ( int threadNum = 0; threadNum < numThreads; ++threadNum )
-		{
-			cellCreatorThreads[ threadNum ] = new CellCreatorThread();
-			cellCreatorThreads[ threadNum ].setName( "CellCreatorThread " + threadNum );
-			cellCreatorThreads[ threadNum ].start();
-		}
-
-		final int n = 3;
-		final long[] dimensions = new long[ n ];
 		int timepointIndex = 0;
 		for ( final int timepointIdSequence : timepointIdsSequence )
 		{
@@ -378,142 +386,424 @@ public class WriteSequenceToHdf5
 				final int setupIdPartition = partition.getSetupIdSequenceToPartition().get( setupIdSequence );
 				progressWriter.out().printf( "proccessing setup %d / %d\n", ++setupIndex, numSetups );
 
-				final ExportMipmapInfo mipmapInfo = perSetupMipmapInfo.get( setupIdSequence );
-				final int[][] resolutions = mipmapInfo.getExportResolutions();
-				final int[][] subdivisions = mipmapInfo.getSubdivisions();
-				final int numLevels = mipmapInfo.getNumLevels();
-
 				final ViewId viewIdSequence = new ViewId( timepointIdSequence, setupIdSequence );
 				final RandomAccessibleInterval< UnsignedShortType > img = imgLoader.getImage( viewIdSequence );
-				progressWriter.setProgress( ( double ) numCompletedTasks++ / numTasks );
+				final ExportMipmapInfo mipmapInfo = perSetupMipmapInfo.get( setupIdSequence );
+				final double startCompletionRatio = ( double ) numCompletedTasks++ / numTasks;
+				final double endCompletionRatio = ( double ) numCompletedTasks / numTasks;
+				final ProgressWriter subProgressWriter = new SubTaskProgressWriter( progressWriter, startCompletionRatio, endCompletionRatio );
 
-				for ( int level = 0; level < numLevels; ++level )
-				{
-					progressWriter.out().println( "writing level " + level );
-					img.dimensions( dimensions );
-					final int[] factor = resolutions[ level ];
-					final boolean fullResolution = ( factor[ 0 ] == 1 && factor[ 1 ] == 1 && factor[ 2 ] == 1 );
-					long size = 1;
-					if ( !fullResolution )
-					{
-						for ( int d = 0; d < n; ++d )
-						{
-							dimensions[ d ] = Math.max( dimensions[ d ] / factor[ d ], 1 );
-							size *= factor[ d ];
-						}
-					}
-					final double scale = 1.0 / size;
-
-					final RectangleNeighborhoodFactory< UnsignedShortType > f = RectangleNeighborhoodUnsafe.< UnsignedShortType >factory();
-					final long[] spanDim = new long[ n ];
-					for ( int d = 0; d < n; ++d )
-						spanDim[ d ] = factor[ d ];
-					final Interval spanInterval = new FinalInterval( spanDim );
-
-					final NeighborhoodsAccessible< UnsignedShortType > neighborhoods = new NeighborhoodsAccessible< UnsignedShortType >( img, spanInterval, f );
-
-					final long[] minRequiredInput = new long[ n ];
-					final long[] maxRequiredInput = new long[ n ];
-					img.max( maxRequiredInput );
-					for ( int d = 0; d < n; ++d )
-						maxRequiredInput[ d ] += factor[ d ] - 1;
-					final RandomAccessibleInterval< UnsignedShortType > extendedImg = Views.interval( Views.extendBorder( img ), new FinalInterval( minRequiredInput, maxRequiredInput ) );
-
-					final NeighborhoodsAccessible< UnsignedShortType > extendedNeighborhoods = new NeighborhoodsAccessible< UnsignedShortType >( extendedImg, spanInterval, f );
-
-					final int[] cellDimensions = subdivisions[ level ];
-					final ViewId viewIdPartition = new ViewId( timepointIdPartition, setupIdPartition );
-					hdf5Writer.object().createGroup( Util.getGroupPath( viewIdPartition, level ) );
-					final String path = Util.getCellsPath( viewIdPartition, level );
-					writerQueue.createAndOpenDataset( path, dimensions.clone(), cellDimensions.clone(), storage );
-
-					final long[] numCells = new long[ n ];
-					final int[] borderSize = new int[ n ];
-					for ( int d = 0; d < n; ++d )
-					{
-						numCells[ d ] = ( dimensions[ d ] - 1 ) / cellDimensions[ d ] + 1;
-						borderSize[ d ] = ( int ) ( dimensions[ d ] - ( numCells[ d ] - 1 ) * cellDimensions[ d ] );
-					}
-					final LocalizingZeroMinIntervalIterator i = new LocalizingZeroMinIntervalIterator( numCells );
-
-					final CountDownLatch doneSignal = new CountDownLatch( numThreads );
-					for ( int threadNum = 0; threadNum < numThreads; ++threadNum )
-					{
-						cellCreatorThreads[ threadNum ].run( new Runnable()
-						{
-							@Override
-							public void run()
-							{
-								final long[] currentCellMin = new long[ n ];
-								final long[] currentCellMax = new long[ n ];
-								final long[] currentCellDim = new long[ n ];
-								final long[] currentCellPos = new long[ n ];
-								final long[] blockMin = new long[ n ];
-								final RandomAccess< Neighborhood< UnsignedShortType > > block = neighborhoods.randomAccess();
-								final RandomAccess< Neighborhood< UnsignedShortType > > extendedBlock = extendedNeighborhoods.randomAccess();
-								final RandomAccess< UnsignedShortType > in = img.randomAccess();
-								while ( true )
-								{
-									synchronized ( i )
-									{
-										if ( !i.hasNext() )
-											break;
-										i.fwd();
-										i.localize( currentCellPos );
-									}
-									boolean isBorderCell = false;
-									for ( int d = 0; d < n; ++d )
-									{
-										currentCellMin[ d ] = currentCellPos[ d ] * cellDimensions[ d ];
-										blockMin[ d ] = currentCellMin[ d ] * factor[ d ];
-										final boolean isBorderCellInThisDim = ( currentCellPos[ d ] + 1 == numCells[ d ] );
-										currentCellDim[ d ] = isBorderCellInThisDim ? borderSize[ d ] : cellDimensions[ d ];
-										currentCellMax[ d ] = currentCellMin[ d ] + currentCellDim[ d ] - 1;
-										isBorderCell |= isBorderCellInThisDim;
-									}
-
-									final ArrayImg< UnsignedShortType, ? > cell = ArrayImgs.unsignedShorts( currentCellDim );
-									final RandomAccess< UnsignedShortType > out = cell.randomAccess();
-									if ( fullResolution )
-									{
-										copyBlock( out, currentCellDim, in, blockMin );
-									}
-									else
-									{
-										boolean requiresExtension = false;
-										if ( isBorderCell )
-											for ( int d = 0; d < n; ++d )
-												if ( ( currentCellMax[ d ] + 1 ) * factor[ d ] > img.dimension( d ) )
-													requiresExtension = true;
-										downsampleBlock( out, currentCellDim, requiresExtension ? extendedBlock : block, blockMin, factor, scale );
-									}
-
-									writerQueue.writeBlockWithOffset( ( ( ShortArray ) cell.update( null ) ).getCurrentStorageArray(), currentCellDim.clone(), currentCellMin.clone() );
-								}
-								doneSignal.countDown();
-							}
-						} );
-					}
-					try
-					{
-						doneSignal.await();
-					}
-					catch ( final InterruptedException e )
-					{
-						e.printStackTrace();
-					}
-					writerQueue.closeDataset();
-					progressWriter.setProgress( ( double ) numCompletedTasks++ / numTasks );
-				}
+				writeViewToHdf5PartitionFile(
+						img, timepointIdPartition, setupIdPartition, mipmapInfo, false,
+						deflate, writerQueue, cellCreatorThreads, loopbackHeuristic, afterEachPlane, subProgressWriter );
 			}
 		}
-		for ( int threadNum = 0; threadNum < numThreads; ++threadNum )
-			cellCreatorThreads[ threadNum ].interrupt();
-		writerQueue.shutdown();
-		hdf5Writer.close();
+
+		// shutdown and close file
+		stopCellCreatorThreads( cellCreatorThreads );
+		writerQueue.close();
+		progressWriter.setProgress( 1.0 );
 	}
 
-	private static class CellCreatorThread extends Thread
+	/**
+	 * Write a single view to a hdf5 partition file, in a chunked, mipmaped
+	 * representation. Note that the specified view must not already exist in
+	 * the partition file!
+	 *
+	 * @param img
+	 *            the view to be written.
+	 * @param partition
+	 *            describes which part of the full sequence is contained in this
+	 *            partition, and to which file this partition is written.
+	 * @param timepointIdPartition
+	 *            the timepoint id wrt the partition of the view to be written.
+	 *            The information in {@code partition} relates this to timepoint
+	 *            id in the full sequence.
+	 * @param setupIdPartition
+	 *            the setup id wrt the partition of the view to be written. The
+	 *            information in {@code partition} relates this to setup id in
+	 *            the full sequence.
+	 * @param mipmapInfo
+	 *            contains for each mipmap level of the setup, the subsampling
+	 *            factors and subdivision block sizes.
+	 * @param writeMipmapInfo
+	 *            whether to write mipmap description for the setup. must be
+	 *            done (at least) once for each setup in the partition.
+	 * @param deflate
+	 *            whether to compress the data with the HDF5 DEFLATE filter.
+	 * @param loopbackHeuristic
+	 *            heuristic to decide whether to create each resolution level by
+	 *            reading pixels from the original image or by reading back a
+	 *            finer resolution level already written to the hdf5. may be
+	 *            null (in this case always use the original image).
+	 * @param afterEachPlane
+	 *            this is called after each "plane of chunks" is written, giving
+	 *            the opportunity to clear caches, etc.
+	 * @param progressWriter
+	 *            completion ratio and status output will be directed here. may
+	 *            be null.
+	 */
+	public static void writeViewToHdf5PartitionFile(
+			final RandomAccessibleInterval< UnsignedShortType > img,
+			final Partition partition,
+			final int timepointIdPartition,
+			final int setupIdPartition,
+			final ExportMipmapInfo mipmapInfo,
+			final boolean writeMipmapInfo,
+			final boolean deflate,
+			final LoopbackHeuristic loopbackHeuristic,
+			final AfterEachPlane afterEachPlane,
+			final ProgressWriter progressWriter )
+	{
+		final int blockWriterQueueLength = 100;
+		final int numThreads = Math.max( 1, Runtime.getRuntime().availableProcessors() - 2 );
+
+		// create and start Hdf5BlockWriterThread
+		final Hdf5BlockWriterThread writerQueue = new Hdf5BlockWriterThread( partition.getPath(), blockWriterQueueLength );
+		writerQueue.start();
+		final CellCreatorThread[] cellCreatorThreads = createAndStartCellCreatorThreads( numThreads );
+
+		// write the image
+		writeViewToHdf5PartitionFile( img, timepointIdPartition, setupIdPartition, mipmapInfo, writeMipmapInfo, deflate, writerQueue, cellCreatorThreads, loopbackHeuristic, afterEachPlane, progressWriter );
+
+		stopCellCreatorThreads( cellCreatorThreads );
+		writerQueue.close();
+	}
+
+	static class LoopBackImageLoader extends Hdf5ImageLoader
+	{
+		private LoopBackImageLoader( final IHDF5Reader existingHdf5Reader, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
+		{
+			super( null, existingHdf5Reader, null, sequenceDescription, true );
+		}
+
+		static LoopBackImageLoader create( final IHDF5Reader existingHdf5Reader, final int timepointIdPartition, final int setupIdPartition, final Dimensions imageDimensions )
+		{
+			final HashMap< Integer, TimePoint > timepoints = new HashMap< Integer, TimePoint >();
+			timepoints.put( timepointIdPartition, new TimePoint( timepointIdPartition ) );
+			final HashMap< Integer, BasicViewSetup > setups = new HashMap< Integer, BasicViewSetup >();
+			setups.put( setupIdPartition, new BasicViewSetup( setupIdPartition, null, imageDimensions, null ) );
+			final SequenceDescriptionMinimal seq = new SequenceDescriptionMinimal( new TimePoints( timepoints ), setups, null, null );
+			return new LoopBackImageLoader( existingHdf5Reader, seq );
+		}
+	}
+
+	/**
+	 * Write a single view to a hdf5 partition file, in a chunked, mipmaped
+	 * representation. Note that the specified view must not already exist in
+	 * the partition file!
+	 *
+	 * @param img
+	 *            the view to be written.
+	 * @param timepointIdPartition
+	 *            the timepoint id wrt the partition of the view to be written.
+	 *            The information in {@code partition} relates this to timepoint
+	 *            id in the full sequence.
+	 * @param setupIdPartition
+	 *            the setup id wrt the partition of the view to be written. The
+	 *            information in {@code partition} relates this to setup id in
+	 *            the full sequence.
+	 * @param mipmapInfo
+	 *            contains for each mipmap level of the setup, the subsampling
+	 *            factors and subdivision block sizes.
+	 * @param writeMipmapInfo
+	 *            whether to write mipmap description for the setup. must be
+	 *            done (at least) once for each setup in the partition.
+	 * @param deflate
+	 *            whether to compress the data with the HDF5 DEFLATE filter.
+	 * @param writerQueue
+	 *            block writing tasks are enqueued here.
+	 * @param cellCreatorThreads
+	 *            threads used for creating (possibly down-sampled) blocks of
+	 *            the view to be written.
+	 * @param loopbackHeuristic
+	 *            heuristic to decide whether to create each resolution level by
+	 *            reading pixels from the original image or by reading back a
+	 *            finer resolution level already written to the hdf5. may be
+	 *            null (in this case always use the original image).
+	 * @param afterEachPlane
+	 *            this is called after each "plane of chunks" is written, giving
+	 *            the opportunity to clear caches, etc.
+	 * @param progressWriter
+	 *            completion ratio and status output will be directed here. may
+	 *            be null.
+	 */
+	public static void writeViewToHdf5PartitionFile(
+			final RandomAccessibleInterval< UnsignedShortType > img,
+			final int timepointIdPartition,
+			final int setupIdPartition,
+			final ExportMipmapInfo mipmapInfo,
+			final boolean writeMipmapInfo,
+			final boolean deflate,
+			final Hdf5BlockWriterThread writerQueue,
+			final CellCreatorThread[] cellCreatorThreads,
+			final LoopbackHeuristic loopbackHeuristic,
+			final AfterEachPlane afterEachPlane,
+			ProgressWriter progressWriter )
+	{
+		final HDF5IntStorageFeatures storage = deflate ? HDF5IntStorageFeatures.INT_AUTO_SCALING_DEFLATE : HDF5IntStorageFeatures.INT_AUTO_SCALING;
+
+		if ( progressWriter == null )
+			progressWriter = new ProgressWriterConsole();
+
+		// for progressWriter
+		final int numTasks = mipmapInfo.getNumLevels();
+		int numCompletedTasks = 0;
+		progressWriter.setProgress( ( double ) numCompletedTasks++ / numTasks );
+
+		// write Mipmap descriptions
+		if ( writeMipmapInfo )
+			writerQueue.writeMipmapDescription( setupIdPartition, mipmapInfo );
+
+		// create loopback image-loader to read already written chunks from the
+		// h5 for generating low-resolution versions.
+		final LoopBackImageLoader loopback = ( loopbackHeuristic == null ) ? null : LoopBackImageLoader.create( writerQueue.getIHDF5Writer(), timepointIdPartition, setupIdPartition, img );
+
+		// write image data for all views to the HDF5 file
+		final int n = 3;
+		final long[] dimensions = new long[ n ];
+
+		final int[][] resolutions = mipmapInfo.getExportResolutions();
+		final int[][] subdivisions = mipmapInfo.getSubdivisions();
+		final int numLevels = mipmapInfo.getNumLevels();
+
+		for ( int level = 0; level < numLevels; ++level )
+		{
+			progressWriter.out().println( "writing level " + level );
+
+			final long t0 = System.currentTimeMillis();
+
+			final RandomAccessibleInterval< UnsignedShortType > sourceImg;
+			final int[] factor;
+			final boolean useLoopBack;
+			if ( loopbackHeuristic == null )
+			{
+				sourceImg = img;
+				factor = resolutions[ level ];
+				useLoopBack = false;
+			}
+			else
+			{
+				// Are downsampling factors a multiple of a level that we have
+				// already written?
+				int[] factorsToPreviousLevel = null;
+				int previousLevel = -1;
+				A: for ( int l = level - 1; l >= 0; --l )
+				{
+					final int[] f = new int[ n ];
+					for ( int d = 0; d < n; ++d )
+					{
+						f[ d ] = resolutions[ level ][ d ] / resolutions[ l ][ d ];
+						if ( f[ d ] * resolutions[ l ][ d ] != resolutions[ level ][ d ] )
+							continue A;
+					}
+					factorsToPreviousLevel = f;
+					previousLevel = l;
+					break;
+				}
+				// Now, if previousLevel >= 0 we can use loopback ImgLoader on
+				// previousLevel and downsample with factorsToPreviousLevel.
+				//
+				// whether it makes sense to actually do so is determined by a
+				// heuristic based on the following considerations:
+				// * if downsampling a lot over original image, the cost of
+				//   reading images back from hdf5 outweighs the cost of
+				//   accessing and averaging original pixels.
+				// * original image may already be cached (for example when
+				//   exporting an ImageJ virtual stack. To compute blocks
+				//   that downsample a lot in Z, many planes of the virtual
+				//   stack need to be accessed leading to cache thrashing if
+				//   individual planes are very large.
+
+				useLoopBack = loopbackHeuristic.decide( img, resolutions[ level ], previousLevel, factorsToPreviousLevel, subdivisions[ level ] );
+				if ( useLoopBack )
+				{
+					sourceImg = loopback.getImage( new ViewId( timepointIdPartition, setupIdPartition ), previousLevel );
+					factor = factorsToPreviousLevel;
+				}
+				else
+				{
+					sourceImg = img;
+					factor = resolutions[ level ];
+				}
+			}
+
+			sourceImg.dimensions( dimensions );
+			final boolean fullResolution = ( factor[ 0 ] == 1 && factor[ 1 ] == 1 && factor[ 2 ] == 1 );
+			long size = 1;
+			if ( !fullResolution )
+			{
+				for ( int d = 0; d < n; ++d )
+				{
+					dimensions[ d ] = Math.max( dimensions[ d ] / factor[ d ], 1 );
+					size *= factor[ d ];
+				}
+			}
+			final double scale = 1.0 / size;
+
+			final long[] minRequiredInput = new long[ n ];
+			final long[] maxRequiredInput = new long[ n ];
+			sourceImg.min( minRequiredInput );
+			for ( int d = 0; d < n; ++d )
+				maxRequiredInput[ d ] = minRequiredInput[ d ] + dimensions[ d ] * factor[ d ] - 1;
+			final RandomAccessibleInterval< UnsignedShortType > extendedImg = Views.interval( Views.extendBorder( sourceImg ), new FinalInterval( minRequiredInput, maxRequiredInput ) );
+
+			final int[] cellDimensions = subdivisions[ level ];
+			final ViewId viewIdPartition = new ViewId( timepointIdPartition, setupIdPartition );
+			final String path = Util.getCellsPath( viewIdPartition, level );
+			writerQueue.createAndOpenDataset( path, dimensions.clone(), cellDimensions.clone(), storage );
+
+			final long[] numCells = new long[ n ];
+			final int[] borderSize = new int[ n ];
+			final long[] minCell = new long[ n ];
+			final long[] maxCell = new long[ n ];
+			for ( int d = 0; d < n; ++d )
+			{
+				numCells[ d ] = ( dimensions[ d ] - 1 ) / cellDimensions[ d ] + 1;
+				maxCell[ d ] = numCells[ d ] - 1;
+				borderSize[ d ] = ( int ) ( dimensions[ d ] - ( numCells[ d ] - 1 ) * cellDimensions[ d ] );
+			}
+
+			// generate one "plane" of cells after the other to avoid cache thrashing when exporting from virtual stacks
+			for ( int lastDimCell = 0; lastDimCell < numCells[ n - 1 ]; ++lastDimCell )
+			{
+				minCell[ n - 1 ] = lastDimCell;
+				maxCell[ n - 1 ] = lastDimCell;
+				final LocalizingIntervalIterator i = new LocalizingIntervalIterator( minCell, maxCell );
+
+				final int numThreads = cellCreatorThreads.length;
+				final CountDownLatch doneSignal = new CountDownLatch( numThreads );
+				for ( int threadNum = 0; threadNum < numThreads; ++threadNum )
+				{
+					cellCreatorThreads[ threadNum ].run( new Runnable()
+					{
+						@Override
+						public void run()
+						{
+							final double[] accumulator = fullResolution ? null : new double[ cellDimensions[ 0 ] * cellDimensions[ 1 ] * cellDimensions[ 2 ] ];
+							final long[] currentCellMin = new long[ n ];
+							final long[] currentCellMax = new long[ n ];
+							final long[] currentCellDim = new long[ n ];
+							final long[] currentCellPos = new long[ n ];
+							final long[] blockMin = new long[ n ];
+							final RandomAccess< UnsignedShortType > in = extendedImg.randomAccess();
+							while ( true )
+							{
+								synchronized ( i )
+								{
+									if ( !i.hasNext() )
+										break;
+									i.fwd();
+									i.localize( currentCellPos );
+								}
+								for ( int d = 0; d < n; ++d )
+								{
+									currentCellMin[ d ] = currentCellPos[ d ] * cellDimensions[ d ];
+									blockMin[ d ] = currentCellMin[ d ] * factor[ d ];
+									final boolean isBorderCellInThisDim = ( currentCellPos[ d ] + 1 == numCells[ d ] );
+									currentCellDim[ d ] = isBorderCellInThisDim ? borderSize[ d ] : cellDimensions[ d ];
+									currentCellMax[ d ] = currentCellMin[ d ] + currentCellDim[ d ] - 1;
+								}
+
+								final ArrayImg< UnsignedShortType, ? > cell = ArrayImgs.unsignedShorts( currentCellDim );
+								final RandomAccess< UnsignedShortType > out = cell.randomAccess();
+								if ( fullResolution )
+									copyBlock( out, currentCellDim, in, blockMin );
+								else
+									downsampleBlock( cell.cursor(), accumulator, currentCellDim, in, blockMin, factor, scale );
+
+								writerQueue.writeBlockWithOffset( ( ( ShortArray ) cell.update( null ) ).getCurrentStorageArray(), currentCellDim.clone(), currentCellMin.clone() );
+							}
+							doneSignal.countDown();
+						}
+					} );
+				}
+				try
+				{
+					doneSignal.await();
+				}
+				catch ( final InterruptedException e )
+				{
+					e.printStackTrace();
+				}
+				if ( afterEachPlane != null )
+					afterEachPlane.afterEachPlane( useLoopBack );
+			}
+			writerQueue.closeDataset();
+			progressWriter.setProgress( ( double ) numCompletedTasks++ / numTasks );
+		}
+		if ( loopback != null )
+			loopback.close();
+	}
+
+	/**
+	 * A heuristic to decide for a given resolution level whether the source
+	 * pixels should be taken from the original image or read from a previously
+	 * written resolution level in the hdf5 file.
+	 */
+	public interface LoopbackHeuristic
+	{
+		public boolean decide(
+				final RandomAccessibleInterval< ? > originalImg,
+				final int[] factorsToOriginalImg,
+				final int previousLevel,
+				final int[] factorsToPreviousLevel,
+				final int[] chunkSize );
+	}
+
+	public interface AfterEachPlane
+	{
+		public void afterEachPlane( final boolean usedLoopBack );
+	}
+
+	/**
+	 * Simple heuristic: use loopback image loader if saving 8 times or more on
+	 * number of pixel access with respect to the original image.
+	 *
+	 * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+	 */
+	public static class DefaultLoopbackHeuristic implements LoopbackHeuristic
+	{
+		@Override
+		public boolean decide( final RandomAccessibleInterval< ? > originalImg, final int[] factorsToOriginalImg, final int previousLevel, final int[] factorsToPreviousLevel, final int[] chunkSize )
+		{
+			if ( previousLevel < 0 )
+				return false;
+
+			if ( numElements( factorsToOriginalImg ) / numElements( factorsToPreviousLevel ) >= 8 )
+				return true;
+
+			return false;
+		}
+	}
+
+	public static int numElements( final int[] size )
+	{
+		int numElements = size[ 0 ];
+		for ( int d = 1; d < size.length; ++d )
+			numElements *= size[ d ];
+		return numElements;
+	}
+
+	public static CellCreatorThread[] createAndStartCellCreatorThreads( final int numThreads )
+	{
+		final CellCreatorThread[] cellCreatorThreads = new CellCreatorThread[ numThreads ];
+		for ( int threadNum = 0; threadNum < numThreads; ++threadNum )
+		{
+			cellCreatorThreads[ threadNum ] = new CellCreatorThread();
+			cellCreatorThreads[ threadNum ].setName( "CellCreatorThread " + threadNum );
+			cellCreatorThreads[ threadNum ].start();
+		}
+		return cellCreatorThreads;
+	}
+
+	public static void stopCellCreatorThreads( final CellCreatorThread[] cellCreatorThreads )
+	{
+		for ( final CellCreatorThread thread : cellCreatorThreads )
+			thread.interrupt();
+	}
+
+	public static class CellCreatorThread extends Thread
 	{
 		private Runnable currentTask = null;
 
@@ -550,248 +840,8 @@ public class WriteSequenceToHdf5
 		}
 	}
 
-	private static interface IHDF5Access
-	{
-		public void createAndOpenDataset( final String path, long[] dimensions, int[] cellDimensions, HDF5IntStorageFeatures features );
-
-		public void writeBlockWithOffset( final short[] data, final long[] blockDimensions, final long[] offset );
-
-		public void closeDataset();
-	}
-
-	private static class HDF5BlockWriterThread extends Thread implements IHDF5Access
-	{
-		private final IHDF5Access hdf5Access;
-
-		private static interface Hdf5Task
-		{
-			public void run( final IHDF5Access hdf5Access );
-		}
-
-		private final BlockingQueue< Hdf5Task > queue;
-
-		private volatile boolean shutdown;
-
-		public HDF5BlockWriterThread( final IHDF5Access hdf5Access, final int queueLength )
-		{
-			this.hdf5Access = hdf5Access;
-			queue = new ArrayBlockingQueue< Hdf5Task >( queueLength );
-			shutdown = false;
-			setName( "HDF5BlockWriterQueue" );
-		}
-
-		@Override
-		public void run()
-		{
-			while ( ! ( shutdown && queue.isEmpty() ) )
-			{
-				try
-				{
-					final Hdf5Task task = queue.poll( 10, TimeUnit.MILLISECONDS );
-					if ( task != null )
-						task.run( hdf5Access );
-				}
-				catch ( final InterruptedException e )
-				{}
-			}
-		}
-
-		public void shutdown()
-		{
-			shutdown = true;
-			try
-			{
-				join();
-			}
-			catch ( final InterruptedException e )
-			{
-				e.printStackTrace();
-			}
-		}
-
-		@Override
-		public void createAndOpenDataset( final String path, final long[] dimensions, final int[] cellDimensions, final HDF5IntStorageFeatures features )
-		{
-			put( new CreateAndOpenDatasetTask( path, dimensions, cellDimensions, features ) );
-		}
-
-		@Override
-		public void writeBlockWithOffset( final short[] data, final long[] blockDimensions, final long[] offset )
-		{
-			put( new WriteBlockWithOffsetTask( data, blockDimensions, offset ) );
-		}
-
-		@Override
-		public void closeDataset()
-		{
-			put( new CloseDatasetTask() );
-		}
-
-		private boolean put( final Hdf5Task task )
-		{
-			try
-			{
-				queue.put( task );
-				return true;
-			}
-			catch ( final InterruptedException e )
-			{
-				return false;
-			}
-		}
-
-		private static class CreateAndOpenDatasetTask implements Hdf5Task
-		{
-			private final String path;
-
-			private final long[] dimensions;
-
-			private final int[] cellDimensions;
-
-			private final HDF5IntStorageFeatures features;
-
-			public CreateAndOpenDatasetTask( final String path, final long[] dimensions, final int[] cellDimensions, final HDF5IntStorageFeatures features )
-			{
-				this.path = path;
-				this.dimensions = dimensions;
-				this.cellDimensions = cellDimensions;
-				this.features = features;
-			}
-
-			@Override
-			public void run( final IHDF5Access hdf5Access )
-			{
-				hdf5Access.createAndOpenDataset( path, dimensions, cellDimensions, features );
-			}
-		}
-
-		private static class WriteBlockWithOffsetTask implements Hdf5Task
-		{
-			private final short[] data;
-
-			private final long[] blockDimensions;
-
-			private final long[] offset;
-
-			public WriteBlockWithOffsetTask( final short[] data, final long[] blockDimensions, final long[] offset )
-			{
-				this.data = data;
-				this.blockDimensions = blockDimensions;
-				this.offset = offset;
-			}
-
-			@Override
-			public void run( final IHDF5Access hdf5Access )
-			{
-				hdf5Access.writeBlockWithOffset( data, blockDimensions, offset );
-			}
-		}
-
-		private static class CloseDatasetTask implements Hdf5Task
-		{
-			@Override
-			public void run( final IHDF5Access hdf5Access )
-			{
-				hdf5Access.closeDataset();
-			}
-		}
-	}
-
-	private static class HDF5Access implements IHDF5Access
-	{
-		private final IHDF5Writer hdf5Writer;
-
-		private final long[] reorderedDimensions = new long[ 3 ];
-
-		private final long[] reorderedOffset = new long[ 3 ];
-
-		private String datasetPath;
-
-		public HDF5Access( final IHDF5Writer hdf5Writer )
-		{
-			this.hdf5Writer = hdf5Writer;
-		}
-
-		@Override
-		public void createAndOpenDataset( final String path, final long[] dimensions, final int[] cellDimensions, final HDF5IntStorageFeatures features )
-		{
-			hdf5Writer.int16().createMDArray( path, reorder( dimensions ), reorder( cellDimensions ), features );
-			this.datasetPath = path;
-		}
-
-		@Override
-		public void writeBlockWithOffset( final short[] data, final long[] blockDimensions, final long[] offset )
-		{
-			reorder( blockDimensions, reorderedDimensions );
-			reorder( offset, reorderedOffset );
-			final MDShortArray array = new MDShortArray( data, reorderedDimensions );
-			hdf5Writer.int16().writeMDArrayBlockWithOffset( datasetPath, array, reorderedOffset );
-		}
-
-		@Override
-		public void closeDataset()
-		{}
-	}
-
-	private static class HDF5AccessHack implements IHDF5Access
-	{
-		private final IHDF5Writer hdf5Writer;
-
-		private final long[] reorderedDimensions = new long[ 3 ];
-
-		private final long[] reorderedOffset = new long[ 3 ];
-
-		private final int fileId;
-
-		private int dataSetId;
-
-		private int fileSpaceId;
-
-		public HDF5AccessHack( final IHDF5Writer hdf5Writer ) throws ClassNotFoundException, SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException
-		{
-			this.hdf5Writer = hdf5Writer;
-
-			final Class< ? > k = Class.forName( "ch.systemsx.cisd.hdf5.HDF5Writer" );
-			final Field f = k.getDeclaredField( "baseWriter" );
-			f.setAccessible( true );
-			final Object baseWriter = f.get( hdf5Writer );
-
-			final Class< ? > k2 = Class.forName( "ch.systemsx.cisd.hdf5.HDF5BaseReader" );
-			final Field f2 = k2.getDeclaredField( "fileId" );
-			f2.setAccessible( true );
-			fileId = ( ( Integer ) f2.get( baseWriter ) ).intValue();
-		}
-
-		@Override
-		public void closeDataset()
-		{
-			H5Sclose( fileSpaceId );
-			H5Dclose( dataSetId );
-		}
-
-		@Override
-		public void createAndOpenDataset( final String path, final long[] dimensions, final int[] cellDimensions, final HDF5IntStorageFeatures features )
-		{
-			hdf5Writer.int16().createMDArray( path, reorder( dimensions ), reorder( cellDimensions ), features );
-			dataSetId = H5Dopen( fileId, path, H5P_DEFAULT );
-			fileSpaceId = H5Dget_space( dataSetId );
-		}
-
-		@Override
-		public void writeBlockWithOffset( final short[] data, final long[] blockDimensions, final long[] offset )
-		{
-			reorder( blockDimensions, reorderedDimensions );
-			reorder( offset, reorderedOffset );
-			final int memorySpaceId = H5Screate_simple( reorderedDimensions.length, reorderedDimensions, null );
-			H5Sselect_hyperslab( fileSpaceId, H5S_SELECT_SET, reorderedOffset, null, reorderedDimensions, null );
-			H5Dwrite( dataSetId, H5T_NATIVE_INT16, memorySpaceId, fileSpaceId, H5P_DEFAULT, data );
-			H5Sclose( memorySpaceId );
-		}
-	}
-
 	private static < T extends RealType< T > > void copyBlock( final RandomAccess< T > out, final long[] outDim, final RandomAccess< T > in, final long[] blockMin )
 	{
-		out.setPosition( new int[] { 0, 0, 0 } );
 		in.setPosition( blockMin );
 		for ( out.setPosition( 0, 2 ); out.getLongPosition( 2 ) < outDim[ 2 ]; out.fwd( 2 ) )
 		{
@@ -809,27 +859,52 @@ public class WriteSequenceToHdf5
 		}
 	}
 
-	private static < T extends RealType< T > > void downsampleBlock( final RandomAccess< T > out, final long[] outDim, final RandomAccess< Neighborhood< T > > block, final long[] blockMin, final int[] blockSize, final double scale )
+	private static < T extends RealType< T > > void downsampleBlock( final Cursor< T > out, final double[] accumulator, final long[] outDim, final RandomAccess< UnsignedShortType > randomAccess, final long[] blockMin, final int[] blockSize, final double scale )
 	{
-		out.setPosition( new int[] {0,0,0} );
-		block.setPosition( blockMin );
-		for ( out.setPosition( 0, 2 ); out.getLongPosition( 2 ) < outDim[ 2 ]; out.fwd( 2 ) )
+		final int numBlockPixels = ( int ) ( outDim[ 0 ] * outDim[ 1 ] * outDim[ 2 ] );
+		Arrays.fill( accumulator, 0, numBlockPixels, 0 );
+
+		randomAccess.setPosition( blockMin );
+
+		final int ox = ( int ) outDim[ 0 ];
+		final int oy = ( int ) outDim[ 1 ];
+		final int oz = ( int ) outDim[ 2 ];
+
+		final int sx = ox * blockSize[ 0 ];
+		final int sy = oy * blockSize[ 1 ];
+		final int sz = oz * blockSize[ 2 ];
+
+		int i = 0;
+		for ( int z = 0, bz = 0; z < sz; ++z )
 		{
-			for ( out.setPosition( 0, 1 ); out.getLongPosition( 1 ) < outDim[ 1 ]; out.fwd( 1 ) )
+			for ( int y = 0, by = 0; y < sy; ++y )
 			{
-				for ( out.setPosition( 0, 0 ); out.getLongPosition( 0 ) < outDim[ 0 ]; out.fwd( 0 ) )
+				for ( int x = 0, bx = 0; x < sx; ++x )
 				{
-					double sum = 0;
-					for ( final T in : block.get() )
-						sum += in.getRealDouble();
-					out.get().setReal( sum * scale );
-					block.move( blockSize[ 0 ], 0 );
+					accumulator[ i ] += randomAccess.get().getRealDouble();
+					randomAccess.fwd( 0 );
+					if ( ++bx == blockSize[ 0 ] )
+					{
+						bx = 0;
+						++i;
+					}
 				}
-				block.setPosition( blockMin[ 0 ], 0 );
-				block.move( blockSize[ 1 ], 1 );
+				randomAccess.move( -sx, 0 );
+				randomAccess.fwd( 1 );
+				if ( ++by == blockSize[ 1 ] )
+					by = 0;
+				else
+					i -= ox;
 			}
-			block.setPosition( blockMin[ 1 ], 1 );
-			block.move( blockSize[ 2 ], 2 );
+			randomAccess.move( -sy, 1 );
+			randomAccess.fwd( 2 );
+			if ( ++bz == blockSize[ 2 ] )
+				bz = 0;
+			else
+				i -= ox * oy;
 		}
+
+		for ( int j = 0; j < numBlockPixels; ++j )
+			out.next().setReal( accumulator[ j ] * scale );
 	}
 }

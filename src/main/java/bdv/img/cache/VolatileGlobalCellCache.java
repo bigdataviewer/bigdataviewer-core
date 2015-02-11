@@ -590,6 +590,8 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	 */
 	public void clearCache()
 	{
+		for ( final Reference< Entry > ref : softReferenceCache.values() )
+			ref.clear();
 		softReferenceCache.clear();
 		prepareNextFrame();
 		// TODO: add a full clear to BlockingFetchQueues.

@@ -31,7 +31,7 @@ import ch.systemsx.cisd.hdf5.IHDF5Reader;
  *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
-public class HDF5AccessHack implements IHDF5Access
+class HDF5AccessHack implements IHDF5Access
 {
 	private final IHDF5Reader hdf5Reader;
 
@@ -172,7 +172,6 @@ public class HDF5AccessHack implements IHDF5Access
 		return dataBlock;
 	}
 
-
 	@Override
 	public float[] readShortMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
 	{
@@ -196,6 +195,20 @@ public class HDF5AccessHack implements IHDF5Access
 		H5Sclose( memorySpaceId );
 
 		return dataBlock;
+	}
+
+	@Override
+	public void closeAllDataSets()
+	{
+		for ( final OpenDataSet dataset : openDataSetCache.values() )
+			dataset.close();
+	}
+
+	@Override
+	public void close()
+	{
+		closeAllDataSets();
+		hdf5Reader.close();
 	}
 
 	@Override

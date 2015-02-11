@@ -177,6 +177,7 @@ public class BrightnessDialog extends JDialog
 						d.setVisible( true );
 					}
 				} );
+				button.setEnabled( setup.supportsColor() );
 				buttons.add( button );
 				add( button );
 			}
@@ -197,8 +198,13 @@ public class BrightnessDialog extends JDialog
 
 		private static Color getColor( final ConverterSetup setup )
 		{
-			final int value = setup.getColor().get();
-			return new Color( value );
+			if ( setup.supportsColor() )
+			{
+				final int value = setup.getColor().get();
+				return new Color( value );
+			}
+			else
+				return new Color ( 0xFFBBBBBB );
 		}
 
 		private static void setColor( final ConverterSetup setup, final Color color )

@@ -4,7 +4,7 @@ import net.imglib2.converter.Converter;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.RealType;
 
-public abstract class RealARGBColorConverter< R extends RealType< ? > > implements LinearRange, Converter< R, ARGBType >
+public abstract class RealARGBColorConverter< R extends RealType< ? > > implements ColorConverter, Converter< R, ARGBType >
 {
 	protected double min = 0;
 
@@ -29,15 +29,23 @@ public abstract class RealARGBColorConverter< R extends RealType< ? > > implemen
 
 	protected int black;
 
+	@Override
 	public ARGBType getColor()
 	{
 		return color.copy();
 	}
 
+	@Override
 	public void setColor( final ARGBType c )
 	{
 		color.set( c );
 		update();
+	}
+
+	@Override
+	public boolean supportsColor()
+	{
+		return true;
 	}
 
 	@Override

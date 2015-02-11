@@ -60,7 +60,7 @@ public class SetupAssignments
 		setupToGroup = new HashMap< ConverterSetup, MinMaxGroup >();
 		for ( final ConverterSetup setup : setups )
 		{
-			final MinMaxGroup group = new MinMaxGroup( fullRangeMin, fullRangeMax, fullRangeMin, fullRangeMax, setup.getDisplayRangeMin(), setup.getDisplayRangeMax() );
+			final MinMaxGroup group = new MinMaxGroup( fullRangeMin, fullRangeMax, fullRangeMin, fullRangeMax, ( int ) setup.getDisplayRangeMin(), ( int ) setup.getDisplayRangeMax() );
 			minMaxGroups.add( group );
 			setupToGroup.put( setup, group );
 			group.addSetup( setup );
@@ -102,7 +102,7 @@ public class SetupAssignments
 		if ( setupToGroup.get( setup ) != group )
 			return;
 
-		final MinMaxGroup newGroup = new MinMaxGroup( group.getFullRangeMin(), group.getFullRangeMax(), group.getRangeMin(), group.getRangeMax(), setup.getDisplayRangeMin(), setup.getDisplayRangeMax() );
+		final MinMaxGroup newGroup = new MinMaxGroup( group.getFullRangeMin(), group.getFullRangeMax(), group.getRangeMin(), group.getRangeMax(), ( int ) setup.getDisplayRangeMin(), ( int ) setup.getDisplayRangeMax() );
 		minMaxGroups.add( newGroup );
 		setupToGroup.put( setup, newGroup );
 		newGroup.addSetup( setup );
@@ -145,7 +145,7 @@ public class SetupAssignments
 	{
 		final int fullRangeMin = minMaxGroups.get( 0 ).getFullRangeMin();
 		final int fullRangeMax = minMaxGroups.get( 0 ).getFullRangeMax();
-		final MinMaxGroup group = new MinMaxGroup( fullRangeMin, fullRangeMax, fullRangeMin, fullRangeMax, setup.getDisplayRangeMin(), setup.getDisplayRangeMax() );
+		final MinMaxGroup group = new MinMaxGroup( fullRangeMin, fullRangeMax, fullRangeMin, fullRangeMax, ( int ) setup.getDisplayRangeMin(), ( int ) setup.getDisplayRangeMax() );
 		minMaxGroups.add( group );
 		setupToGroup.put( setup, group );
 		group.addSetup( setup );
@@ -182,8 +182,8 @@ public class SetupAssignments
 		{
 			final Element elemConverterSetup = new Element( "ConverterSetup" );
 			elemConverterSetup.addContent( XmlHelpers.intElement( "id", setup.getSetupId() ) );
-			elemConverterSetup.addContent( XmlHelpers.intElement( "min", setup.getDisplayRangeMin() ) );
-			elemConverterSetup.addContent( XmlHelpers.intElement( "max", setup.getDisplayRangeMax() ) );
+			elemConverterSetup.addContent( XmlHelpers.intElement( "min", ( int ) setup.getDisplayRangeMin() ) );
+			elemConverterSetup.addContent( XmlHelpers.intElement( "max", ( int ) setup.getDisplayRangeMax() ) );
 			elemConverterSetup.addContent( XmlHelpers.intElement( "color", setup.getColor().get() ) );
 			elemConverterSetup.addContent( XmlHelpers.intElement( "groupId", minMaxGroups.indexOf( setupToGroup.get( setup ) ) ) );
 			elemConverterSetups.addContent( elemConverterSetup );
