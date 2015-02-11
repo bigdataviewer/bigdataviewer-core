@@ -90,11 +90,11 @@ public abstract class AccumulateProjector< A, B > implements VolatileProjector
 
 		valid = true;
 		for ( final VolatileProjector p : sourceProjectors )
-			if ( !p.isValid() )
+			if ( !p.isValid() ) {
 				if ( !p.map( clearUntouchedTargetPixels ) )
 					return false;
-				else
-					valid &= p.isValid();
+				valid &= p.isValid();
+			}
 
 		final int width = ( int ) target.dimension( 0 );
 		final int height = ( int ) target.dimension( 1 );

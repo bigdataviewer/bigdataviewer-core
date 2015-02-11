@@ -35,8 +35,7 @@ public class WrapBasicImgLoader< T > implements ViewerImgLoader< T, Volatile< T 
 			setImgLoader( seq, new WrapBasicImgLoader( imgLoader ) );
 			return true;
 		}
-		else
-			return false;
+		return false;
 	}
 
 	@SuppressWarnings( "unchecked" )

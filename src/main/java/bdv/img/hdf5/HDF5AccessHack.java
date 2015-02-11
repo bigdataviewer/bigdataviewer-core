@@ -81,8 +81,7 @@ class HDF5AccessHack implements IHDF5Access
 				eldest.getValue().close();
 				return true;
 			}
-			else
-				return false;
+			return false;
 		}
 
 		public OpenDataSet getDataSet( final ViewLevelId id )
@@ -143,8 +142,7 @@ class HDF5AccessHack implements IHDF5Access
 		{}
 		if ( exists )
 			return new DimsAndExistence( reorder( realDimensions ), true );
-		else
-			return new DimsAndExistence( new long[] { 1, 1, 1 }, false );
+		return new DimsAndExistence( new long[] { 1, 1, 1 }, false );
 	}
 
 	@Override

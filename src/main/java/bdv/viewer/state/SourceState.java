@@ -50,8 +50,7 @@ public class SourceState< T > extends SourceAndConverter< T >
 		{
 			if ( soc == null )
 				return null;
-			else
-				return new VolatileSourceState< T, V >( soc, data );
+			return new VolatileSourceState< T, V >( soc, data );
 		}
 	}
 

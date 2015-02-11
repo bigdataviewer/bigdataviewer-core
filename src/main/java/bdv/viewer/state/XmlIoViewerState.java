@@ -187,7 +187,7 @@ public class XmlIoViewerState
 		final String t = elem.getTextTrim();
 		if ( VIEWERSTATE_INTERPOLATION_VALUE_NLINEAR.equals( t ) )
 			return NLINEAR;
-		else // if ( VIEWERSTATE_INTERPOLATION_VALUE_NEARESTNEIGHBOR.equals( t ) )
-			return NEARESTNEIGHBOR;
+		// if ( VIEWERSTATE_INTERPOLATION_VALUE_NEARESTNEIGHBOR.equals( t ) )
+		return NEARESTNEIGHBOR;
 	}
 }

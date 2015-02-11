@@ -76,10 +76,7 @@ public class XmlIoSpimDataMinimalLegacy
 				tps.add( new TimePoint( t ) );
 			return new TimePoints( tps );
 		}
-		else
-		{
-			throw new RuntimeException( "unknown <Timepoints> type: " + type );
-		}
+		throw new RuntimeException( "unknown <Timepoints> type: " + type );
 	}
 
 	private static Map< Integer, ? extends BasicViewSetup > createViewSetupsFromXml( final Element sequenceDescription )

@@ -34,8 +34,7 @@ class HDF5Access implements IHDF5Access
 		{}
 		if ( exists )
 			return new DimsAndExistence( reorder( info.getDimensions() ), true );
-		else
-			return new DimsAndExistence( new long[] { 1, 1, 1 }, false );
+		return new DimsAndExistence( new long[] { 1, 1, 1 }, false );
 	}
 
 	@Override

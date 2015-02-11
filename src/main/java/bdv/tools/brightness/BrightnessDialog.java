@@ -203,8 +203,7 @@ public class BrightnessDialog extends JDialog
 				final int value = setup.getColor().get();
 				return new Color( value );
 			}
-			else
-				return new Color ( 0xFFBBBBBB );
+			return new Color ( 0xFFBBBBBB );
 		}
 
 		private static void setColor( final ConverterSetup setup, final Color color )

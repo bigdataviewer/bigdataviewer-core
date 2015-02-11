@@ -627,14 +627,11 @@ public class MultiResolutionRenderer
 		{
 			return createSingleSourceVolatileProjector( viewerState, source.asVolatile(), sourceIndex, screenScaleIndex, screenImage, maskArray );
 		}
-		else
-		{
-			final AffineTransform3D screenScaleTransform = screenScaleTransforms[ currentScreenScaleIndex ];
-			final int bestLevel = viewerState.getBestMipMapLevel( screenScaleTransform, sourceIndex );
-			return new SimpleVolatileProjector< T, ARGBType >(
-					getTransformedSource( viewerState, source.getSpimSource(), screenScaleTransform, bestLevel ),
-					source.getConverter(), screenImage, numRenderingThreads );
-		}
+		final AffineTransform3D screenScaleTransform = screenScaleTransforms[ currentScreenScaleIndex ];
+		final int bestLevel = viewerState.getBestMipMapLevel( screenScaleTransform, sourceIndex );
+		return new SimpleVolatileProjector< T, ARGBType >(
+				getTransformedSource( viewerState, source.getSpimSource(), screenScaleTransform, bestLevel ),
+				source.getConverter(), screenImage, numRenderingThreads );
 	}
 
 	private < T extends Volatile< ? > > VolatileProjector createSingleSourceVolatileProjector(
@@ -741,44 +738,43 @@ public class MultiResolutionRenderer
 	{
 		if ( t instanceof TransformAwareRenderTarget )
 			return ( TransformAwareRenderTarget ) t;
-		else
-			return new TransformAwareRenderTarget()
+		return new TransformAwareRenderTarget()
+		{
+			@Override
+			public BufferedImage setBufferedImage( final BufferedImage img )
 			{
-				@Override
-				public BufferedImage setBufferedImage( final BufferedImage img )
-				{
-					return t.setBufferedImage( img );
-				}
+				return t.setBufferedImage( img );
+			}
 
-				@Override
-				public int getWidth()
-				{
-					return t.getWidth();
-				}
+			@Override
+			public int getWidth()
+			{
+				return t.getWidth();
+			}
 
-				@Override
-				public int getHeight()
-				{
-					return t.getHeight();
-				}
+			@Override
+			public int getHeight()
+			{
+				return t.getHeight();
+			}
 
-				@Override
-				public BufferedImage setBufferedImageAndTransform( final BufferedImage img, final AffineTransform3D transform )
-				{
-					return t.setBufferedImage( img );
-				}
+			@Override
+			public BufferedImage setBufferedImageAndTransform( final BufferedImage img, final AffineTransform3D transform )
+			{
+				return t.setBufferedImage( img );
+			}
 
-				@Override
-				public void removeTransformListener( final TransformListener< AffineTransform3D > listener )
-				{}
+			@Override
+			public void removeTransformListener( final TransformListener< AffineTransform3D > listener )
+			{}
 
-				@Override
-				public void addTransformListener( final TransformListener< AffineTransform3D > listener, final int index )
-				{}
+			@Override
+			public void addTransformListener( final TransformListener< AffineTransform3D > listener, final int index )
+			{}
 
-				@Override
-				public void addTransformListener( final TransformListener< AffineTransform3D > listener )
-				{}
-			};
+			@Override
+			public void addTransformListener( final TransformListener< AffineTransform3D > listener )
+			{}
+		};
 	}
 }
