@@ -14,6 +14,7 @@ import javax.swing.InputMap;
 import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.KeyStroke;
+import javax.swing.WindowConstants;
 
 import net.imglib2.Interval;
 import net.imglib2.display.RealARGBColorConverter;
@@ -165,7 +166,7 @@ public class BoundingBoxDialog extends JDialog
 		im.put( KeyStroke.getKeyStroke( KeyEvent.VK_ESCAPE, 0 ), hideKey );
 		am.put( hideKey, hideAction );
 
-		setDefaultCloseOperation( JDialog.HIDE_ON_CLOSE );
+		setDefaultCloseOperation( WindowConstants.HIDE_ON_CLOSE );
 		createContent();
 	}
 

@@ -26,6 +26,7 @@ import java.util.concurrent.Executors;
 
 import javax.swing.JPanel;
 import javax.swing.JSlider;
+import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -318,7 +319,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		add( display, BorderLayout.CENTER );
 		if ( numTimePoints > 1 )
 		{
-			sliderTime = new JSlider( JSlider.HORIZONTAL, 0, numTimePoints - 1, 0 );
+			sliderTime = new JSlider( SwingConstants.HORIZONTAL, 0, numTimePoints - 1, 0 );
 			sliderTime.addChangeListener( new ChangeListener()
 			{
 				@Override

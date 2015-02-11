@@ -9,6 +9,7 @@ import java.util.List;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
+import javax.swing.WindowConstants;
 
 import net.imglib2.ui.util.GuiUtil;
 import bdv.img.cache.Cache;
@@ -71,7 +72,7 @@ public class ViewerFrame extends JFrame
 		setPreferredSize( new Dimension( width, height ) );
 		add( viewer, BorderLayout.CENTER );
 		pack();
-		setDefaultCloseOperation( JFrame.DISPOSE_ON_CLOSE );
+		setDefaultCloseOperation( WindowConstants.DISPOSE_ON_CLOSE );
 		addWindowListener( new WindowAdapter()
 		{
 			@Override

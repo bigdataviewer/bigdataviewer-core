@@ -8,6 +8,7 @@ import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -40,7 +41,7 @@ public class SliderPanel extends JPanel implements BoundedValue.UpdateListener
 		super();
 		setLayout( new BorderLayout( 10, 10 ) );
 
-		slider = new JSlider( JSlider.HORIZONTAL, model.getRangeMin(), model.getRangeMax(), model.getCurrentValue() );
+		slider = new JSlider( SwingConstants.HORIZONTAL, model.getRangeMin(), model.getRangeMax(), model.getCurrentValue() );
 		spinner = new JSpinner();
 		spinner.setModel( new SpinnerNumberModel( model.getCurrentValue(), model.getRangeMin(), model.getRangeMax(), spinnerStepSize ) );
 
@@ -64,7 +65,7 @@ public class SliderPanel extends JPanel implements BoundedValue.UpdateListener
 			}
 		} );
 
-		final JLabel label = new JLabel( name, JLabel.CENTER );
+		final JLabel label = new JLabel( name, SwingConstants.CENTER );
 		label.setAlignmentX( Component.CENTER_ALIGNMENT );
 
 		add( label, BorderLayout.WEST );
