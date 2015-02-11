@@ -8,7 +8,7 @@ import bdv.viewer.DisplayMode;
 /**
  * TODO
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch
  */
 public class SourceGroup
 {

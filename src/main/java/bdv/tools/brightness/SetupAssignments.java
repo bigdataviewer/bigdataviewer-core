@@ -19,7 +19,7 @@ import org.jdom2.Element;
  * <li>No group is empty.</li>
  * </ol>
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch
  */
 public class SetupAssignments
 {

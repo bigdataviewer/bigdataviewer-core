@@ -15,8 +15,8 @@ import net.imglib2.type.numeric.integer.UnsignedShortType;
  * underlying {@link UnsignedShortType} that maps into a
  * {@link VolatileShortAccess}.
  *
- * @author Stephan Saalfeld <saalfelds@janelia.hhmi.org>
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Stephan Saalfeld
+ * @author Tobias Pietzsch
  */
 public class VolatileARGBType extends AbstractVolatileNativeNumericType< ARGBType, VolatileARGBType >
 {

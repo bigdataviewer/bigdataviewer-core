@@ -8,7 +8,7 @@ import net.imglib2.ui.util.StopWatch;
  * Utilities for per {@link ThreadGroup} measuring and budgeting of time spent
  * in (blocking) IO.
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch
  */
 public class CacheIoTiming
 {

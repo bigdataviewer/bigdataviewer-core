@@ -15,7 +15,7 @@ import bdv.viewer.animate.OverlayAnimator;
  * Draw one line of text in the center or bottom right of the display. Text is
  * fading in and out.
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch
  */
 public class BookmarkTextOverlayAnimator implements OverlayAnimator
 {

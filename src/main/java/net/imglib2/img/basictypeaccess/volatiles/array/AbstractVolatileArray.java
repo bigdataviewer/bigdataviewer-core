@@ -7,8 +7,8 @@ import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 /**
  * A {@link ShortArray} with an {@link #isValid()} flag.
  *
- * @author Stephan Saalfeld <saalfelds@janelia.hhmi.org>
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Stephan Saalfeld
+ * @author Tobias Pietzsch
  */
 public abstract class AbstractVolatileArray< T extends AbstractVolatileArray< T > > implements ArrayDataAccess< T >, VolatileAccess
 {

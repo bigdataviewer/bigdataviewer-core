@@ -33,8 +33,8 @@ import bdv.img.cache.CacheIoTiming.IoStatistics;
  * {@link #map()} call, the projector has a {@link #isValid() state} that
  * signalizes whether all projected pixels were perfect.
  *
- * @author Stephan Saalfeld <saalfeld@mpi-cbg.de>
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Stephan Saalfeld
+ * @author Tobias Pietzsch
  */
 public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends NumericType< B > > extends AbstractInterruptibleProjector< A, B > implements VolatileProjector
 {

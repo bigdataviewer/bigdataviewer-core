@@ -14,7 +14,7 @@ import bdv.viewer.state.ViewerState;
  * Render multibox overlay corresponding to a {@link ViewerState} into a
  * {@link Graphics2D}.
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch
  */
 public class MultiBoxOverlayRenderer
 {

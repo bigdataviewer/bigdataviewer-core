@@ -8,7 +8,7 @@ import net.imglib2.realtransform.AffineTransform3D;
  * Contains for each mipmap level, the subsampling factors and subdivision
  * block sizes.
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch
  */
 public class MipmapInfo
 {

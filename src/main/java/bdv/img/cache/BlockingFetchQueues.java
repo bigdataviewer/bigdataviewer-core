@@ -16,7 +16,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * Locking is adapted from {@link ArrayBlockingQueue}.
  *
  * @param <E> element type.
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch
  */
 public class BlockingFetchQueues< E >
 {

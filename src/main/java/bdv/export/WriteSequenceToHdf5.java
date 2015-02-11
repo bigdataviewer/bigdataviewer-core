@@ -61,7 +61,7 @@ import ch.systemsx.cisd.hdf5.IHDF5Writer;
  * A data-set can be stored in a single hdf5 file or split across several hdf5
  * "partitions" with one master hdf5 linking into the partitions.
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch
  */
 public class WriteSequenceToHdf5
 {
@@ -760,7 +760,7 @@ public class WriteSequenceToHdf5
 	 * Simple heuristic: use loopback image loader if saving 8 times or more on
 	 * number of pixel access with respect to the original image.
 	 *
-	 * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+	 * @author Tobias Pietzsch
 	 */
 	public static class DefaultLoopbackHeuristic implements LoopbackHeuristic
 	{

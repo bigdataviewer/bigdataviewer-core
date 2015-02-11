@@ -21,7 +21,7 @@ import bdv.util.BoundedValue;
  * An {@link UpdateListener} (usually a GUI component) can be notified about
  * changes.
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch
  */
 public class MinMaxGroup extends BoundedInterval
 {

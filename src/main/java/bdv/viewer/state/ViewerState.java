@@ -22,7 +22,7 @@ import bdv.viewer.SourceAndConverter;
  * current timepoint, the visible and current sources and groups respectively,
  * the viewer transformation, etc.
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch
  */
 public class ViewerState
 {

@@ -49,7 +49,7 @@ import net.imglib2.util.Fraction;
  * @param <T>
  *            type of derived concrete class.
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch
  */
 public abstract class AbstractVolatileNativeRealType< R extends RealType< R > & NativeType< R >, T extends AbstractVolatileNativeRealType< R, T > >
 	extends AbstractVolatileRealType< R, T >

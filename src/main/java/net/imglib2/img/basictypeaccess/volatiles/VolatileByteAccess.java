@@ -4,8 +4,8 @@ import net.imglib2.img.basictypeaccess.ByteAccess;
 
 
 /**
- * @author Stephan Saalfeld <saalfelds@janelia.hhmi.org>
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Stephan Saalfeld
+ * @author Tobias Pietzsch
  */
 public interface VolatileByteAccess extends ByteAccess, VolatileAccess
 {}
