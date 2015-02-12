@@ -27,7 +27,8 @@ public class InitializeViewerState
 	 * <ul>
 	 * <li>the XY plane is aligned with the screen plane,
 	 * <li>the <em>z = dim_z / 2</em> slice is shown,
-	 * <li>centered and scaled such that the full <em>dim_x</em> by <em>dim_y</em> is visible.
+	 * <li>centered and scaled such that the full <em>dim_x</em> by
+	 * <em>dim_y</em> is visible.
 	 * </ul>
 	 * This calls {@link #initTransform(int, int, ViewerPanel)}, using the size
 	 * of the viewer's display component.
@@ -50,7 +51,8 @@ public class InitializeViewerState
 	 * <ul>
 	 * <li>the XY plane is aligned with the screen plane,
 	 * <li>the <em>z = dim_z / 2</em> slice is shown,
-	 * <li>centered and scaled such that the full <em>dim_x</em> by <em>dim_y</em> is visible.
+	 * <li>centered and scaled such that the full <em>dim_x</em> by
+	 * <em>dim_y</em> is visible.
 	 * </ul>
 	 *
 	 * @param viewerWidth
@@ -82,7 +84,7 @@ public class InitializeViewerState
 		final double sY = ( sY0 + sY1 + 1 ) / 2;
 		final double sZ = ( sZ0 + sZ1 + 1 ) / 2;
 
-		final double[][] m = new double[3][4];
+		final double[][] m = new double[ 3 ][ 4 ];
 
 		// rotation
 		final double[] qSource = new double[ 4 ];
@@ -136,7 +138,7 @@ public class InitializeViewerState
 	public static void initBrightness( final double cumulativeMinCutoff, final double cumulativeMaxCutoff, final ViewerState state, final SetupAssignments setupAssignments )
 	{
 		final Source< ? > source = state.getSources().get( state.getCurrentSource() ).getSpimSource();
-		if ( ! UnsignedShortType.class.isInstance( source.getType() ) )
+		if ( !UnsignedShortType.class.isInstance( source.getType() ) )
 			return;
 		@SuppressWarnings( "unchecked" )
 		final RandomAccessibleInterval< UnsignedShortType > img = ( RandomAccessibleInterval< UnsignedShortType > ) source.getSource( state.getCurrentTimepoint(), source.getNumMipmapLevels() - 1 );
@@ -145,7 +147,7 @@ public class InitializeViewerState
 		final int numBins = 6535;
 		final Histogram1d< UnsignedShortType > histogram = new Histogram1d< UnsignedShortType >( Views.iterable( Views.hyperSlice( img, 2, z ) ), new Real1dBinMapper< UnsignedShortType >( 0, 65535, numBins, false ) );
 		final DiscreteFrequencyDistribution dfd = histogram.dfd();
-		final long[] bin = new long[] {0};
+		final long[] bin = new long[] { 0 };
 		double cumulative = 0;
 		int i = 0;
 		for ( ; i < numBins && cumulative < cumulativeMinCutoff; ++i )
