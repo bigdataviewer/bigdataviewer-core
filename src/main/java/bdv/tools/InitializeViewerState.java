@@ -39,7 +39,9 @@ public class InitializeViewerState
 	public static void initTransform( final ViewerPanel viewer )
 	{
 		final Dimension dim = viewer.getDisplay().getSize();
-		initTransform( dim.width, dim.height, viewer );
+		final ViewerState state = viewer.getState();
+		final AffineTransform3D viewerTransform = initTransform( dim.width, dim.height, state );
+		viewer.setCurrentViewerTransform( viewerTransform );
 	}
 
 	/**
@@ -59,12 +61,11 @@ public class InitializeViewerState
 	 *            the viewer (containing at least one source) to have its
 	 *            transform set.
 	 */
-	public static void initTransform( final int viewerWidth, final int viewerHeight, final ViewerPanel viewer )
+	public static AffineTransform3D initTransform( final int viewerWidth, final int viewerHeight, final ViewerState state )
 	{
 		final int cX = viewerWidth / 2;
 		final int cY = viewerHeight / 2;
 
-		final ViewerState state = viewer.getState();
 		final SourceState< ? > source = state.getSources().get( state.getCurrentSource() );
 		final int timepoint = state.getCurrentTimepoint();
 		final AffineTransform3D sourceTransform = new AffineTransform3D();
@@ -116,8 +117,12 @@ public class InitializeViewerState
 		// window center offset
 		viewerTransform.set( viewerTransform.get( 0, 3 ) + cX, 0, 3 );
 		viewerTransform.set( viewerTransform.get( 1, 3 ) + cY, 1, 3 );
+		return viewerTransform;
+	}
 
-		viewer.setCurrentViewerTransform( viewerTransform );
+	public static void initBrightness( final double cumulativeMinCutoff, final double cumulativeMaxCutoff, final ViewerPanel viewer, final SetupAssignments setupAssignments )
+	{
+		initBrightness( cumulativeMinCutoff, cumulativeMaxCutoff, viewer.getState(), setupAssignments );
 	}
 
 	/**
@@ -128,9 +133,8 @@ public class InitializeViewerState
 	 * @param viewer
 	 * @param setupAssignments
 	 */
-	public static void initBrightness( final double cumulativeMinCutoff, final double cumulativeMaxCutoff, final ViewerPanel viewer, final SetupAssignments setupAssignments )
+	public static void initBrightness( final double cumulativeMinCutoff, final double cumulativeMaxCutoff, final ViewerState state, final SetupAssignments setupAssignments )
 	{
-		final ViewerState state = viewer.getState();
 		final Source< ? > source = state.getSources().get( state.getCurrentSource() ).getSpimSource();
 		if ( ! UnsignedShortType.class.isInstance( source.getType() ) )
 			return;
