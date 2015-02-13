@@ -45,7 +45,7 @@ import net.imglib2.util.Fraction;
  * {@link NativeType native} {@link NumericType}s.
  *
  * @param <N>
- *            wrapped {@link NativeType native} {@link NumericType}.
+ *            wrapped {@link NativeType native} {@link NumericsType}.
  * @param <T>
  *            type of derived concrete class.
  *

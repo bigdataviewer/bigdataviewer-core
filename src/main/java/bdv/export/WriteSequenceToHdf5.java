@@ -120,7 +120,7 @@ public class WriteSequenceToHdf5
 	/**
 	 * Create a hdf5 file containing image data from all views and all
 	 * timepoints in a chunked, mipmaped representation. This is the same as
-	 * {@link WriteSequenceToHdf5#writeHdf5File(AbstractSequenceDescription, Map, boolean, File, LoopbackHeuristic, AfterEachPlane, ProgressWriter)}
+	 * {@link WriteSequenceToHdf5#writeHdf5File(AbstractSequenceDescription, ArrayList, ArrayList, File, ProgressWriter)}
 	 * except that only one set of supsampling factors and and subdivision
 	 * blocksizes is given, which is used for all {@link BasicViewSetup views}.
 	 *
@@ -204,7 +204,7 @@ public class WriteSequenceToHdf5
 	 *
 	 * Note that this method only writes the master file containing links. The
 	 * individual partitions need to be written with
-	 * {@link #writeHdf5PartitionFile}.
+	 * {@link #writeHdf5PartitionFile(AbstractSequenceDescription, Map, Partition, ProgressWriter)}.
 	 *
 	 * @param seq
 	 *            description of the sequence to be stored as hdf5. (The

@@ -14,7 +14,6 @@ import java.util.concurrent.Executors;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.sequence.Angle;
-import mpicbg.spim.data.sequence.Channel;
 import mpicbg.spim.data.sequence.ImgLoader;
 import mpicbg.spim.data.sequence.TimePoint;
 import mpicbg.spim.data.sequence.ViewId;
@@ -321,7 +320,7 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 
 	/**
 	 * For images that are missing in the hdf5, a constant image is created.
-	 * If the dimension of the missing image is present in {@link #cache} then use that.
+	 * If the dimension of the missing image is present in {@link #cachedDimensions} then use that.
 	 * Otherwise create a 1x1x1 image.
 	 */
 	protected < T > RandomAccessibleInterval< T > getMissingDataImage( final ViewLevelId id, final T constant )

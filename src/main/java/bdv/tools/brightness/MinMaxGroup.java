@@ -66,7 +66,7 @@ public class MinMaxGroup extends BoundedInterval
 
 	/**
 	 * Add a {@link ConverterSetup} which will have its
-	 * {@link ConverterSetup#setDisplayRange display range} updated to
+	 * {@link ConverterSetup#setDisplayRange(int, int) display range} updated to
 	 * the interval ({@link #getMinBoundedValue()},
 	 * {@link #getMaxBoundedValue()}).
 	 *

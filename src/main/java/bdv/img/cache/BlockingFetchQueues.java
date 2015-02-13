@@ -8,14 +8,17 @@ import java.util.concurrent.locks.ReentrantLock;
 /**
  * Queueing structure (intended for cells to be fetched). There is an array of
  * {@link ArrayDeque}s, ordered by priority. Elements are
- * {@link #put(Object, int, boolean)} with a priority and added to one of the
- * queues, accordingly. {@link #take()} returns an element from the highest
- * priority non-empty queue. Furthermore, there is a prefetch deque of bounded
- * size to provides elements when all the queues are exhausted. {@link #clear()}
- * empties all queues, and moves the removed elements to the prefetch queue.
+ * {@link #put(Object, int)} with a priority and added to one of the queues,
+ * accordingly. {@link #take()} returns an element from the highest priority
+ * non-empty queue. Furthermore, there is a prefetch deque of bounded size to
+ * provides elements when all the queues are exhausted. {@link #clear()} empties
+ * all queues, and moves the removed elements to the prefetch queue.
+ *
  * Locking is adapted from {@link ArrayBlockingQueue}.
  *
- * @param <E> element type.
+ * @param <E>
+ *            element type.
+ *
  * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
 public class BlockingFetchQueues< E >

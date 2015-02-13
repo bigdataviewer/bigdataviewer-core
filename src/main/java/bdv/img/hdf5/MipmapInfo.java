@@ -79,6 +79,7 @@ public class MipmapInfo
 
 	/**
 	 * Get the number of mipmap levels ({@link #getMaxLevel()} + 1).
+	 * @return
 	 */
 	public int getNumLevels()
 	{
