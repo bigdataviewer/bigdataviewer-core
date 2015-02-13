@@ -6,7 +6,7 @@ import net.imglib2.img.basictypeaccess.volatiles.VolatileFloatAccess;
 /**
  * A {@link FloatArray} with an {@link #isValid()} flag.
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 public class VolatileFloatArray extends AbstractVolatileArray< VolatileFloatArray > implements VolatileFloatAccess
 {

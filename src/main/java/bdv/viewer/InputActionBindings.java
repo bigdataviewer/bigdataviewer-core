@@ -18,7 +18,7 @@ import javax.swing.InputMap;
  * Maps can be added and will be chained in reverse order of addition, that is, the last added map overrides all previous ones.
  * For {@link InputMap}s it is possible to block maps that were added earlier.
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 public final class InputActionBindings
 {

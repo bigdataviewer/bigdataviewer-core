@@ -72,7 +72,7 @@ import bdv.viewer.state.XmlIoViewerState;
  * {@link PainterThread} for painting, which is started on construction (use
  * {@link #stop() to stop the PainterThread}.
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 public class ViewerPanel extends JPanel implements OverlayRenderer, TransformListener< AffineTransform3D >, PainterThread.Paintable, VisibilityAndGrouping.UpdateListener
 {

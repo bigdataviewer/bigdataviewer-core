@@ -26,7 +26,7 @@ import bdv.viewer.Source;
  * This {@link ImgLoader} provides views and transformations into a cropped
  * region of a data-set (provided by list of {@link Source Sources}).
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 public class CropImgLoader implements BasicImgLoader< UnsignedShortType >
 {

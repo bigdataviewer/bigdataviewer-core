@@ -8,7 +8,7 @@ import net.imglib2.type.numeric.ARGBType;
  * can have its own converter, this is used to adjust brightness, contrast, and
  * color of individual sources.
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 public interface ConverterSetup
 {

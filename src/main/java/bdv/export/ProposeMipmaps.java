@@ -18,7 +18,7 @@ import mpicbg.spim.data.sequence.VoxelDimensions;
  * one is closer to isotropic. It is very likely that more efficient choices can
  * be found by manual tuning, depending on hardware and use case.
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 public class ProposeMipmaps
 {

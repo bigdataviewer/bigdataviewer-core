@@ -9,8 +9,8 @@ import bdv.viewer.ViewerFrame;
  * from {@link System#currentTimeMillis()} or a frame number when rendering
  * movies.
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
- * @author Jean-Yves Tinevez <jeanyves.tinevez@gmail.com>
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+ * @author Jean-Yves Tinevez &lt;jeanyves.tinevez@gmail.com&gt;
  */
 public class AbstractAnimator
 {

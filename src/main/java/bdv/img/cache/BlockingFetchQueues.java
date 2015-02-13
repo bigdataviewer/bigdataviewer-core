@@ -19,7 +19,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * @param <E>
  *            element type.
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 public class BlockingFetchQueues< E >
 {

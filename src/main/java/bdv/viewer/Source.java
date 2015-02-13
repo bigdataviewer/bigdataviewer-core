@@ -16,7 +16,7 @@ import net.imglib2.realtransform.AffineTransform3D;
  * {@link TimePoint#getId() id}. This timepoint index is an index into the
  * ordered list of timepoints {@link TimePoints#getTimePointsOrdered()}.
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 public interface Source< T >
 {

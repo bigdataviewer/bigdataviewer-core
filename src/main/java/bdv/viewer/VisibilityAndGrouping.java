@@ -27,7 +27,7 @@ import bdv.viewer.state.XmlIoViewerState;
  * Manage visibility and currentness of sources and groups, as well as grouping
  * of sources, and display mode.
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 public class VisibilityAndGrouping
 {

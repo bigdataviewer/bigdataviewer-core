@@ -92,7 +92,7 @@ import bdv.viewer.state.ViewerState;
  * <p>
  * Rendering timing is tied to a {@link Cache} control for IO budgeting, etc.
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 public class MultiResolutionRenderer
 {
