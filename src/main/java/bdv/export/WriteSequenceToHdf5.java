@@ -42,6 +42,7 @@ import ch.systemsx.cisd.hdf5.IHDF5Writer;
  * Create a hdf5 files containing image data from all views and all timepoints
  * in a chunked, mipmaped representation.
  *
+ * <p>
  * Every image is stored in multiple resolutions. The resolutions are described
  * as int[] arrays defining multiple of original pixel size in every dimension.
  * For example {1,1,1} is the original resolution, {4,4,2} is downsampled by
@@ -53,11 +54,13 @@ import ch.systemsx.cisd.hdf5.IHDF5Writer;
  * {32,32,8} says that the (downsampled) image is divided into 32x32x8 pixel
  * blocks.
  *
+ * <p>
  * For every mipmap level we have a (3D) int[] resolution array, so the full
  * mipmap pyramid is specified by a nested int[][] array. Likewise, we have a
  * (3D) int[] subdivions array for every mipmap level, so the full chunking of
  * the full pyramid is specfied by a nested int[][] array.
  *
+ * <p>
  * A data-set can be stored in a single hdf5 file or split across several hdf5
  * "partitions" with one master hdf5 linking into the partitions.
  *
@@ -120,7 +123,7 @@ public class WriteSequenceToHdf5
 	/**
 	 * Create a hdf5 file containing image data from all views and all
 	 * timepoints in a chunked, mipmaped representation. This is the same as
-	 * {@link WriteSequenceToHdf5#writeHdf5File(AbstractSequenceDescription, ArrayList, ArrayList, File, ProgressWriter)}
+	 * {@link WriteSequenceToHdf5#writeHdf5File(AbstractSequenceDescription, Map, boolean, File, LoopbackHeuristic, AfterEachPlane, ProgressWriter)}
 	 * except that only one set of supsampling factors and and subdivision
 	 * blocksizes is given, which is used for all {@link BasicViewSetup views}.
 	 *
@@ -204,7 +207,7 @@ public class WriteSequenceToHdf5
 	 *
 	 * Note that this method only writes the master file containing links. The
 	 * individual partitions need to be written with
-	 * {@link #writeHdf5PartitionFile(AbstractSequenceDescription, Map, Partition, ProgressWriter)}.
+	 * {@link #writeHdf5PartitionFile(AbstractSequenceDescription, Map, boolean, Partition, LoopbackHeuristic, AfterEachPlane, ProgressWriter)}.
 	 *
 	 * @param seq
 	 *            description of the sequence to be stored as hdf5. (The

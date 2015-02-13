@@ -28,7 +28,7 @@ import bdv.img.cache.CacheIoTiming;
 import bdv.img.cache.CacheIoTiming.IoStatistics;
 
 /**
- * {@link Projector} for a hierarchy of {@link Volatile} inputs.  After each
+ * {@link VolatileProjector} for a hierarchy of {@link Volatile} inputs.  After each
  * {@link #map()} call, the projector has a {@link #isValid() state} that
  * signalizes whether all projected pixels were perfect.
  *

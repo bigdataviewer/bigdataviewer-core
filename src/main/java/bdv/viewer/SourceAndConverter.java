@@ -56,8 +56,8 @@ public class SourceAndConverter< T >
 	}
 
 	/**
-	 * Get the {@link Converter} (converts {@link #source} type T to ARGBType
-	 * for display).
+	 * Get the {@link Converter} (converts source type T to ARGBType for
+	 * display).
 	 */
 	public Converter< T, ARGBType > getConverter()
 	{

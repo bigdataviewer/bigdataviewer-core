@@ -117,8 +117,8 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	protected final AffineTransform3D viewerTransform;
 
 	/**
-	 * Canvas used for displaying the rendered {@link #screenImages screen
-	 * image}.
+	 * Canvas used for displaying the rendered {@link #renderTarget image} and
+	 * overlays.
 	 */
 	protected final InteractiveDisplayCanvasComponent< AffineTransform3D > display;
 

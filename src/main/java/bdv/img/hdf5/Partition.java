@@ -125,10 +125,10 @@ public class Partition
 	 *            list of all {@link BasicViewSetup}s.
 	 * @param timepointsPerPartition
 	 *            how many timepoints should each partition contain (if this is
-	 *            &leq;0, put do not split timepoints across partitions).
+	 *            &le;0, put do not split timepoints across partitions).
 	 * @param setupsPerPartition
 	 *            how many setups should each partition contain (if this is
-	 *            &leq;0, put do not split setups across partitions).
+	 *            &le;0, put do not split setups across partitions).
 	 * @param basename
 	 *            This is used to generate paths for the partitions. Partitions
 	 *            are named "basename-TT-SS.h5" where TT and SS are the index of

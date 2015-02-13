@@ -560,7 +560,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	 *
 	 * @param partialBudget
 	 *            Initial budget (in nanoseconds) for priority levels 0 through
-	 *            <em>n</em>. The budget for level <em>i>j</em> must always be
+	 *            <em>n</em>. The budget for level <em>i&gt;j</em> must always be
 	 *            smaller-equal the budget for level <em>j</em>. If <em>n</em>
 	 *            is smaller than the maximum number of mipmap levels, the
 	 *            remaining priority levels are filled up with budget[n].

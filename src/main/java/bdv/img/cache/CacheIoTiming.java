@@ -15,7 +15,7 @@ public class CacheIoTiming
 	/**
 	 * Budget of time that can be spent in blocking IO. The budget is grouped by
 	 * priority levels, where level 0 is the highest priority. The budget for
-	 * level <em>i>j</em> must always be smaller-equal the budget for level
+	 * level <em>i&gt;j</em> must always be smaller-equal the budget for level
 	 * <em>j</em>.
 	 */
 	public static class IoTimeBudget

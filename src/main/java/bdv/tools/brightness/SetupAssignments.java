@@ -170,8 +170,6 @@ public class SetupAssignments
 
 	/**
 	 * Serialize the state of this {@link SetupAssignments} to XML.
-	 * @param doc
-	 * @return
 	 */
 	public Element toXml()
 	{

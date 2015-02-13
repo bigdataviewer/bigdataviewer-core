@@ -109,7 +109,7 @@ public class MultiResolutionRenderer
 
 	/**
 	 * Currently active projector, used to re-paint the display. It maps the
-	 * {@link #source} data to {@link #screenImage}.
+	 * source data to {@link #screenImages}.
 	 */
 	protected VolatileProjector projector;
 
@@ -148,9 +148,9 @@ public class MultiResolutionRenderer
 	protected byte[][] renderMaskArrays;
 
 	/**
-	 * Used to render the image for display. Two images per screen resolution
-	 * if double buffering is enabled. First index is screen scale, second index is
-	 * double-buffer.
+	 * Used to render the image for display. Three images per screen resolution
+	 * if double buffering is enabled. First index is screen scale, second index
+	 * is double-buffer.
 	 */
 	protected ARGBScreenImage[][] screenImages;
 
@@ -411,7 +411,7 @@ public class MultiResolutionRenderer
 
 	/**
 	 * Render image at the {@link #requestedScreenScaleIndex requested screen
-	 * scale} and the {@link #requestedMipmapLevel requested mipmap level}.
+	 * scale}.
 	 */
 	public boolean paint( final ViewerState state )
 	{
@@ -531,8 +531,8 @@ public class MultiResolutionRenderer
 
 	/**
 	 * Request a repaint of the display from the painter thread. The painter
-	 * thread will trigger a {@link #paint()} as soon as possible (that is,
-	 * immediately or after the currently running {@link #paint()} has
+	 * thread will trigger a {@link #paint(ViewerState)} as soon as possible (that is,
+	 * immediately or after the currently running {@link #paint(ViewerState)} has
 	 * completed).
 	 */
 	public synchronized void requestRepaint( final int screenScaleIndex )
