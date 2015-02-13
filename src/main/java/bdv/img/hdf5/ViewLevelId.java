@@ -75,9 +75,11 @@ public class ViewLevelId implements Comparable< ViewLevelId >
 		{
 			if ( setupId == o.setupId )
 				return level - o.level;
-			return setupId - o.setupId;
+			else
+				return setupId - o.setupId;
 		}
-		return timepointId - o.timepointId;
+		else
+			return timepointId - o.timepointId;
 	}
 
 	@Override

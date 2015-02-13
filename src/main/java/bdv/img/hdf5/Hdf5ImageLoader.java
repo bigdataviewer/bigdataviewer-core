@@ -674,7 +674,8 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 		final DimsAndExistence dims = getDimsAndExistence( id );
 		if ( dims.exists() )
 			return new FinalDimensions( dims.getDimensions() );
-		return null;
+		else
+			return null;
 	}
 
 	@Override
