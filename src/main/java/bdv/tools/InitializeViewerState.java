@@ -30,7 +30,7 @@ public class InitializeViewerState
 	 * <li>centered and scaled such that the full <em>dim_x</em> by
 	 * <em>dim_y</em> is visible.
 	 * </ul>
-	 * This calls {@link #initTransform(int, int, ViewerPanel)}, using the size
+	 * This calls {@link #initTransform(int, int, boolean, ViewerState)}, using the size
 	 * of the viewer's display component.
 	 *
 	 * @param viewer
@@ -46,7 +46,7 @@ public class InitializeViewerState
 	}
 
 	/**
-	 * Set a "good" initial viewer transform. The viewer transform is chosen
+	 * Get a "good" initial viewer transform. The viewer transform is chosen
 	 * such that for the first source,
 	 * <ul>
 	 * <li>the XY plane is aligned with the screen plane,
@@ -59,9 +59,9 @@ public class InitializeViewerState
 	 *            width of the viewer display
 	 * @param viewerHeight
 	 *            height of the viewer display
-	 * @param viewer
-	 *            the viewer (containing at least one source) to have its
-	 *            transform set.
+	 * @param state
+	 *            the {@link ViewerState} containing at least one source.
+	 * @return proposed initial viewer transform.
 	 */
 	public static AffineTransform3D initTransform( final int viewerWidth, final int viewerHeight, final boolean zoomedIn, final ViewerState state )
 	{
@@ -136,7 +136,7 @@ public class InitializeViewerState
 	 *
 	 * @param cumulativeMinCutoff
 	 * @param cumulativeMaxCutoff
-	 * @param viewer
+	 * @param state
 	 * @param setupAssignments
 	 */
 	public static void initBrightness( final double cumulativeMinCutoff, final double cumulativeMaxCutoff, final ViewerState state, final SetupAssignments setupAssignments )
