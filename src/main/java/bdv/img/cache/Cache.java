@@ -7,7 +7,7 @@ package bdv.img.cache;
  * control cache behavior. If the renderer is used without
  * {@link VolatileGlobalCellCache}, these can be simply implemented to do nothing.
  *
- * @author Tobias Pietzsch
+ * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
 public interface Cache
 {

@@ -44,7 +44,7 @@ import net.imglib2.type.numeric.ARGBType;
 /**
  * Adjust brightness and colors for individual (or groups of) {@link BasicViewSetup setups}.
  *
- * @author Tobias Pietzsch
+ * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
 public class BrightnessDialog extends JDialog
 {

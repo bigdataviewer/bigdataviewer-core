@@ -18,7 +18,7 @@ import bdv.viewer.render.SetCacheHints;
  * This extra transformation is made to capture manual editing of the actual
  * transform in the SpimViewer.
  *
- * @author Jean-Yves Tinevez
+ * @author Jean-Yves Tinevez - Sept 2013
  *
  * @param <T>
  *            the type of the original source.

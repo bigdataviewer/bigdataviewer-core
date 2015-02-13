@@ -49,8 +49,8 @@ import net.imglib2.util.Fraction;
  * @param <T>
  *            type of derived concrete class.
  *
- * @author Tobias Pietzsch
- * @author Stephan Saalfeld
+ * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Stephan Saalfeld <saalfelds@janelia.hhmi.org>
  */
 public abstract class AbstractVolatileNativeNumericType< N extends NumericType< N > & NativeType< N >, T extends AbstractVolatileNativeNumericType< N, T > >
 	extends AbstractVolatileNumericType< N, T >

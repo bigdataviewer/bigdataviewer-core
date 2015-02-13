@@ -16,7 +16,7 @@ import bdv.viewer.state.ViewerState;
  * Render current source name and current timepoint of a {@link ViewerState}
  * into a {@link Graphics2D}.
  *
- * @author Tobias Pietzsch
+ * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
 public class SourceInfoOverlayRenderer
 {

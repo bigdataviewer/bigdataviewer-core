@@ -6,8 +6,8 @@ import net.imglib2.img.basictypeaccess.volatiles.VolatileByteAccess;
 /**
  * A {@link ByteArray} with an {@link #isValid()} flag.
  *
- * @author Stephan Saalfeld
- * @author Tobias Pietzsch
+ * @author Stephan Saalfeld <saalfelds@janelia.hhmi.org>
+ * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
 public class VolatileByteArray extends AbstractVolatileArray< VolatileByteArray > implements VolatileByteAccess
 {

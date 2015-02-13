@@ -10,7 +10,7 @@ import bdv.img.cache.VolatileGlobalCellCache.VolatileCellCache;
  * handled first) or back (requests are handled in order) of the respective
  * priority level.
  *
- * @author Tobias Pietzsch
+ * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
 public class CacheHints
 {

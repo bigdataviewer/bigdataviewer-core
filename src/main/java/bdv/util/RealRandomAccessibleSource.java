@@ -17,7 +17,7 @@ import bdv.viewer.Source;
  *
  * @param <T>
  *
- * @author Tobias Pietzsch
+ * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
 public abstract class RealRandomAccessibleSource< T extends Type< T > > implements Source< T >
 {

@@ -4,7 +4,7 @@ package bdv.img.hdf5;
  * The dimensions of an image and a flag indicating whether that image
  * exists (can be loaded)
  *
- * @author Tobias Pietzsch
+ * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
 public class DimsAndExistence
 {

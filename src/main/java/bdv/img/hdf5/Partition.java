@@ -16,7 +16,7 @@ import mpicbg.spim.data.sequence.ViewId;
  * created using the Partition information (without looking at the constituent
  * files).
  *
- * @author Tobias Pietzsch
+ * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
 public class Partition
 {

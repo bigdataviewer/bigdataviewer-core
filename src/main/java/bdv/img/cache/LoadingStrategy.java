@@ -20,7 +20,7 @@ import bdv.img.cache.CacheIoTiming.IoTimeBudget;
  *        Do nothing.
  * </ul>
  *
- * @author Tobias Pietzsch
+ * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
 public enum LoadingStrategy
 {

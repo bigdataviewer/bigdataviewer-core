@@ -19,7 +19,7 @@ import bdv.viewer.ViewerPanel.Options;
  * A {@link JFrame} containing a {@link ViewerPanel} and associated
  * {@link InputActionBindings}.
  *
- * @author Tobias Pietzsch
+ * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
 public class ViewerFrame extends JFrame
 {

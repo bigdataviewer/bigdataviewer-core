@@ -17,7 +17,7 @@ import net.imglib2.realtransform.AffineTransform3D;
  * colors depending whether the sources are visible.
  *
  * @author Stephan Saalfeld
- * @author Tobias Pietzsch
+ * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
 public class MultiBoxOverlay
 {

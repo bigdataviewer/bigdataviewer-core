@@ -29,7 +29,7 @@ import ch.systemsx.cisd.hdf5.IHDF5Reader;
  * The HDF5 fileId is extracted from a jhdf5 HDF5Reader using reflection to
  * avoid having to do everything ourselves.
  *
- * @author Tobias Pietzsch
+ * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
 class HDF5AccessHack implements IHDF5Access
 {

@@ -9,7 +9,7 @@ import net.imglib2.realtransform.AffineTransform3D;
  * Helper for rendering overlay boxes.
  *
  * @author Stephan Saalfeld
- * @author Tobias Pietzsch
+ * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
  */
 public class RenderBoxHelper
 {
