@@ -33,6 +33,7 @@ import javax.swing.JSpinner;
 import javax.swing.KeyStroke;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
+import javax.swing.WindowConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -87,7 +88,7 @@ public class BrightnessDialog extends JDialog
 		} );
 
 		pack();
-		setDefaultCloseOperation( JDialog.HIDE_ON_CLOSE );
+		setDefaultCloseOperation( WindowConstants.HIDE_ON_CLOSE );
 	}
 
 	/**

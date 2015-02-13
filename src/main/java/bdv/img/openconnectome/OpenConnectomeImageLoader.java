@@ -85,6 +85,7 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 	 * @param baseUrl
 	 *            e.g. "http://openconnecto.me/ocp/ca"
 	 * @param token
+	 *            the token whose information is desired
 	 * @return an {@link OpenConnectomeTokenInfo} instance that carries the
 	 *         token information
 	 * @throws JsonSyntaxException
