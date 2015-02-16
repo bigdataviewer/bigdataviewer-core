@@ -1,4 +1,4 @@
-package imaris;
+package bdv.img.imaris;
 
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileByteArray;
 import bdv.img.cache.CacheArrayLoader;

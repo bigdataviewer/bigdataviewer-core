@@ -1,6 +1,7 @@
-package imaris;
+package bdv.img.imaris;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 
@@ -14,27 +15,19 @@ import mpicbg.spim.data.sequence.ViewId;
 import mpicbg.spim.data.sequence.VoxelDimensions;
 import net.imglib2.FinalDimensions;
 import net.imglib2.realtransform.AffineTransform3D;
-import bdv.BigDataViewer;
-import bdv.export.ProgressWriterConsole;
 import bdv.img.hdf5.MipmapInfo;
 import bdv.spimdata.SequenceDescriptionMinimal;
 import bdv.spimdata.SpimDataMinimal;
 import bdv.util.MipmapTransforms;
+import ch.systemsx.cisd.hdf5.HDF5DataClass;
+import ch.systemsx.cisd.hdf5.HDF5DataSetInformation;
+import ch.systemsx.cisd.hdf5.HDF5DataTypeInformation;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
 
-public class OpenIms
+public class Imaris
 {
-	public static void main( final String[] args )
-	{
-		final String fn = "/Users/Pietzsch/Desktop/Imaris/retina.ims";
-
-		System.setProperty( "apple.laf.useScreenMenuBar", "true" );
-		final SpimDataMinimal spimData = openIms( fn );
-		new BigDataViewer( spimData, new File( fn ).getName(), new ProgressWriterConsole() );
-	}
-
-	public static SpimDataMinimal openIms( final String fn )
+	public static SpimDataMinimal openIms( final String fn ) throws IOException
 	{
 		final IHDF5Reader reader = HDF5Factory.openForReading( fn );
 		final IHDF5Access access;
@@ -76,12 +69,13 @@ public class OpenIms
 				( extMax[ 2 ] - extMin[ 2 ] ) / imageSize[ 2 ]
 		} );
 
+		DataTypes.DataType< ?, ?, ? > dataType = null;
 		final List< String > resolutionNames = reader.getGroupMembers( "DataSet" );
 		for ( final String resolutionName : resolutionNames )
 		{
 			if ( !resolutionName.startsWith( "ResolutionLevel " ) )
 			{
-				throw new IllegalArgumentException( "unexpected content '" + resolutionName + "'" );
+				throw new IOException( "unexpected content '" + resolutionName + "' while reading " + fn );
 			}
 			else
 			{
@@ -91,7 +85,7 @@ public class OpenIms
 				{
 					if ( !timepointName.startsWith( "TimePoint " ) )
 					{
-						throw new IllegalArgumentException( "unexpected content '" + timepointName + "'" );
+						throw new IOException( "unexpected content '" + timepointName + "' while reading " + fn );
 					}
 					else
 					{
@@ -104,10 +98,41 @@ public class OpenIms
 						{
 							if ( !channelName.startsWith( "Channel " ) )
 							{
-								throw new IllegalArgumentException( "unexpected content '" + channelName + "'" );
+								throw new IOException( "unexpected content '" + channelName + "' while reading " + fn );
 							}
 							else
 							{
+								final HDF5DataSetInformation info = reader.getDataSetInformation( "DataSet/" + resolutionName + "/" + timepointName + "/" + channelName + "/Data" );
+								if (  dataType == null )
+								{
+									final HDF5DataTypeInformation ti = info.getTypeInformation();
+									if ( ti.getDataClass().equals( HDF5DataClass.INTEGER ) )
+									{
+										switch ( ti.getElementSize() )
+										{
+										case 1:
+											dataType = DataTypes.UnsignedByte;
+											break;
+										case 2:
+											dataType = DataTypes.UnsignedShort;
+											break;
+										default:
+											throw new IOException( "expected datatype" + ti );
+										}
+									}
+									else if ( ti.getDataClass().equals( HDF5DataClass.FLOAT ) )
+									{
+										switch ( ti.getElementSize() )
+										{
+										case 4:
+											dataType = DataTypes.Float;
+											break;
+										default:
+											throw new IOException( "expected datatype" + ti );
+										}
+									}
+								}
+
 								final int channel = Integer.parseInt( channelName.substring( "Channel ".length() ) );
 								if ( !setupMap.containsKey( channel ) )
 								{
@@ -120,21 +145,33 @@ public class OpenIms
 								double[] resolution = levelToResolution.get( level );
 								if ( resolution == null ) {
 									path = "DataSet/" + resolutionName + "/" + timepointName + "/" + channelName;
+
 									final long[] dims = new long[] {
 											Integer.parseInt( access.readImarisAttributeString( path, "ImageSizeX" ) ),
 											Integer.parseInt( access.readImarisAttributeString( path, "ImageSizeY" ) ),
 											Integer.parseInt( access.readImarisAttributeString( path, "ImageSizeZ" ) ),
 									};
-									final int[] blockDims = new int[] {
-											Integer.parseInt( access.readImarisAttributeString( path, "ImageBlockSizeX" ) ),
-											Integer.parseInt( access.readImarisAttributeString( path, "ImageBlockSizeY" ) ),
-											Integer.parseInt( access.readImarisAttributeString( path, "ImageBlockSizeZ" ) ),
-									};
+
+									final int[] blockDims = new int[] { 16, 16, 16 };
+									try
+									{
+										blockDims[ 0 ] = Integer.parseInt( access.readImarisAttributeString( path, "ImageBlockSizeX" ) );
+										blockDims[ 1 ] = Integer.parseInt( access.readImarisAttributeString( path, "ImageBlockSizeY" ) );
+										blockDims[ 2 ] = Integer.parseInt( access.readImarisAttributeString( path, "ImageBlockSizeZ" ) );
+									} catch( final NumberFormatException e )
+									{
+										final int[] chunkSizes = info.tryGetChunkSizes();
+										if ( chunkSizes != null )
+											for ( int d = 0; d < 3; ++d )
+												blockDims[ d ] = chunkSizes[ d ];
+									}
+
 									resolution = new double[] {
 											imageSize[ 0 ] / dims[ 0 ],
 											imageSize[ 1 ] / dims[ 1 ],
 											imageSize[ 2 ] / dims[ 2 ],
 									};
+
 									levelToDimensions.put( level, dims );
 									levelToResolution.put( level, resolution );
 									levelToSubdivision.put( level, blockDims );
@@ -161,7 +198,8 @@ public class OpenIms
 		final MipmapInfo mipmapInfo = new MipmapInfo( resolutions, transforms, subdivisions );
 
 		final SequenceDescriptionMinimal seq = new SequenceDescriptionMinimal( new TimePoints( timepointMap ), setupMap, null, null );
-		final ImarisImageLoader imgLoader = new ImarisImageLoader( new File( fn ), mipmapInfo, dimensions, seq );
+		@SuppressWarnings( { "rawtypes", "unchecked" } ) // TODO: when ij2 supports java 7, replace SuppressWarnings by new ImarisImageLoader<>(...)
+		final ImarisImageLoader<?,?,?> imgLoader = new ImarisImageLoader( dataType, new File( fn ), mipmapInfo, dimensions, seq );
 		seq.setImgLoader( imgLoader );
 
 		final File basePath = new File( fn ).getParentFile();

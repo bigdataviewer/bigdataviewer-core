@@ -1,4 +1,4 @@
-package imaris;
+package bdv.img.imaris;
 
 import static bdv.img.hdf5.Util.reorder;
 import static ch.systemsx.cisd.hdf5.hdf5lib.H5A.H5Aclose;
@@ -171,6 +171,58 @@ public class HDF5AccessHack implements IHDF5Access
 		final int memorySpaceId = H5Screate_simple( reorderedDimensions.length, reorderedDimensions, null );
 		H5Sselect_hyperslab( dataset.fileSpaceId, H5S_SELECT_SET, reorderedMin, null, reorderedDimensions, null );
 		H5Dread( dataset.dataSetId, H5T_NATIVE_UCHAR, memorySpaceId, dataset.fileSpaceId, numericConversionXferPropertyListID, dataBlock );
+		H5Sclose( memorySpaceId );
+
+		return dataBlock;
+	}
+
+	@Override
+	public short[] readShortMDArrayBlockWithOffset( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
+	{
+		final short[] dataBlock = new short[ dimensions[ 0 ] * dimensions[ 1 ] * dimensions[ 2 ] ];
+		readShortMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min, dataBlock );
+		return dataBlock;
+	}
+
+	// TODO: this could be unified with readByteMDArrayBlockWithOffset? (final Object dataBlock, int H5T_NATIVE_type)?
+	@Override
+	public short[] readShortMDArrayBlockWithOffset( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final short[] dataBlock ) throws InterruptedException
+	{
+		if ( Thread.interrupted() )
+			throw new InterruptedException();
+		Util.reorder( dimensions, reorderedDimensions );
+		Util.reorder( min, reorderedMin );
+
+		final OpenDataSet dataset = openDataSetCache.getDataSet( new ViewLevelId( timepoint, setup, level ) );
+		final int memorySpaceId = H5Screate_simple( reorderedDimensions.length, reorderedDimensions, null );
+		H5Sselect_hyperslab( dataset.fileSpaceId, H5S_SELECT_SET, reorderedMin, null, reorderedDimensions, null );
+		H5Dread( dataset.dataSetId, H5T_NATIVE_USHORT, memorySpaceId, dataset.fileSpaceId, numericConversionXferPropertyListID, dataBlock );
+		H5Sclose( memorySpaceId );
+
+		return dataBlock;
+	}
+
+	@Override
+	public float[] readFloatMDArrayBlockWithOffset( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
+	{
+		final float[] dataBlock = new float[ dimensions[ 0 ] * dimensions[ 1 ] * dimensions[ 2 ] ];
+		readFloatMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min, dataBlock );
+		return dataBlock;
+	}
+
+	// TODO: this could be unified with readByteMDArrayBlockWithOffset? (final Object dataBlock, int H5T_NATIVE_type)?
+	@Override
+	public float[] readFloatMDArrayBlockWithOffset( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final float[] dataBlock ) throws InterruptedException
+	{
+		if ( Thread.interrupted() )
+			throw new InterruptedException();
+		Util.reorder( dimensions, reorderedDimensions );
+		Util.reorder( min, reorderedMin );
+
+		final OpenDataSet dataset = openDataSetCache.getDataSet( new ViewLevelId( timepoint, setup, level ) );
+		final int memorySpaceId = H5Screate_simple( reorderedDimensions.length, reorderedDimensions, null );
+		H5Sselect_hyperslab( dataset.fileSpaceId, H5S_SELECT_SET, reorderedMin, null, reorderedDimensions, null );
+		H5Dread( dataset.dataSetId, H5T_NATIVE_FLOAT, memorySpaceId, dataset.fileSpaceId, numericConversionXferPropertyListID, dataBlock );
 		H5Sclose( memorySpaceId );
 
 		return dataBlock;

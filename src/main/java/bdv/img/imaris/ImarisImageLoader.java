@@ -1,4 +1,4 @@
-package imaris;
+package bdv.img.imaris;
 
 import java.io.File;
 import java.util.HashMap;
@@ -9,18 +9,18 @@ import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.sequence.TimePoint;
 import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.Volatile;
 import net.imglib2.img.NativeImg;
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileByteArray;
+import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 import net.imglib2.img.cell.CellImg;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.type.volatiles.VolatileUnsignedByteType;
 import net.imglib2.type.volatiles.VolatileUnsignedShortType;
 import net.imglib2.util.Fraction;
 import bdv.AbstractViewerImgLoader;
 import bdv.img.cache.Cache;
+import bdv.img.cache.CacheArrayLoader;
 import bdv.img.cache.CacheHints;
 import bdv.img.cache.CachedCellImg;
 import bdv.img.cache.LoadingStrategy;
@@ -30,11 +30,14 @@ import bdv.img.cache.VolatileImgCells.CellCache;
 import bdv.img.hdf5.DimsAndExistence;
 import bdv.img.hdf5.MipmapInfo;
 import bdv.img.hdf5.ViewLevelId;
+import bdv.img.imaris.DataTypes.DataType;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
 
-public class ImarisImageLoader extends AbstractViewerImgLoader< UnsignedByteType, VolatileUnsignedByteType >
+public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T > & NativeType< V > , A extends VolatileAccess > extends AbstractViewerImgLoader< T, V >
 {
+	private final DataType< T, V, A > dataType;
+
 	private IHDF5Access hdf5Access;
 
 	private final MipmapInfo mipmapInfo;
@@ -45,7 +48,7 @@ public class ImarisImageLoader extends AbstractViewerImgLoader< UnsignedByteType
 
 	private final AbstractSequenceDescription< ?, ?, ? > sequenceDescription;
 
-	private VolatileGlobalCellCache< VolatileByteArray > cache;
+	private VolatileGlobalCellCache< A > cache;
 
 	/**
 	 * Maps {@link ViewLevelId} (timepoint, setup, level) to
@@ -55,9 +58,15 @@ public class ImarisImageLoader extends AbstractViewerImgLoader< UnsignedByteType
 	 */
 	private final HashMap< ViewLevelId, DimsAndExistence > cachedDimsAndExistence;
 
-	public ImarisImageLoader( final File hdf5File, final MipmapInfo mipmapInfo, final long[][] mipmapDimensions, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
+	public ImarisImageLoader(
+			final DataType< T, V, A > dataType,
+			final File hdf5File,
+			final MipmapInfo mipmapInfo,
+			final long[][] mipmapDimensions,
+			final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
 	{
-		super( new UnsignedByteType(), new VolatileUnsignedByteType() );
+		super( dataType.getType(), dataType.getVolatileType() );
+		this.dataType = dataType;
 		this.hdf5File = hdf5File;
 		this.mipmapInfo = mipmapInfo;
 		this.mipmapDimensions = mipmapDimensions;
@@ -94,27 +103,28 @@ public class ImarisImageLoader extends AbstractViewerImgLoader< UnsignedByteType
 				{
 					throw new RuntimeException( e );
 				}
-				cache = new VolatileGlobalCellCache< VolatileByteArray >( new ImarisVolatileByteArrayLoader( hdf5Access ), maxNumTimepoints, maxNumSetups, maxNumLevels, 1 );
+				final CacheArrayLoader< A > loader = dataType.createArrayLoader( hdf5Access );
+				cache = new VolatileGlobalCellCache< A >( loader, maxNumTimepoints, maxNumSetups, maxNumLevels, 1 );
 			}
 		}
 	}
 
 	@Override
-	public RandomAccessibleInterval< UnsignedByteType > getImage( final ViewId view, final int level )
+	public RandomAccessibleInterval< T > getImage( final ViewId view, final int level )
 	{
 		final ViewLevelId id = new ViewLevelId( view, level );
-		final CachedCellImg< UnsignedByteType, VolatileByteArray > img = prepareCachedImage( id, LoadingStrategy.BLOCKING );
-		final UnsignedByteType linkedType = new UnsignedByteType( img );
+		final CachedCellImg< T, A > img = prepareCachedImage( id, LoadingStrategy.BLOCKING );
+		final T linkedType = dataType.createLinkedType( img );
 		img.setLinkedType( linkedType );
 		return img;
 	}
 
 	@Override
-	public RandomAccessibleInterval< VolatileUnsignedByteType > getVolatileImage( final ViewId view, final int level )
+	public RandomAccessibleInterval< V > getVolatileImage( final ViewId view, final int level )
 	{
 		final ViewLevelId id = new ViewLevelId( view, level );
-		final CachedCellImg< VolatileUnsignedByteType, VolatileByteArray > img = prepareCachedImage( id, LoadingStrategy.BUDGETED );
-		final VolatileUnsignedByteType linkedType = new VolatileUnsignedByteType( img );
+		final CachedCellImg< V, A > img = prepareCachedImage( id, LoadingStrategy.BUDGETED );
+		final V linkedType = dataType.createLinkedVolatileType( img );
 		img.setLinkedType( linkedType );
 		return img;
 	}
@@ -125,7 +135,7 @@ public class ImarisImageLoader extends AbstractViewerImgLoader< UnsignedByteType
 	 * type} before it can be used. The type should be either
 	 * {@link UnsignedShortType} and {@link VolatileUnsignedShortType}.
 	 */
-	protected < T extends NativeType< T > > CachedCellImg< T, VolatileByteArray > prepareCachedImage( final ViewLevelId id, final LoadingStrategy loadingStrategy )
+	protected < T extends NativeType< T > > CachedCellImg< T, A > prepareCachedImage( final ViewLevelId id, final LoadingStrategy loadingStrategy )
 	{
 		open();
 		final int timepointId = id.getTimePointId();
@@ -136,9 +146,9 @@ public class ImarisImageLoader extends AbstractViewerImgLoader< UnsignedByteType
 
 		final int priority = mipmapInfo.getMaxLevel() - level;
 		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
-		final CellCache< VolatileByteArray > c = cache.new VolatileCellCache( timepointId, setupId, level, cacheHints );
-		final VolatileImgCells< VolatileByteArray > cells = new VolatileImgCells< VolatileByteArray >( c, new Fraction(), dimensions, cellDimensions );
-		final CachedCellImg< T, VolatileByteArray > img = new CachedCellImg< T, VolatileByteArray >( cells );
+		final CellCache< A > c = cache.new VolatileCellCache( timepointId, setupId, level, cacheHints );
+		final VolatileImgCells< A > cells = new VolatileImgCells< A >( c, new Fraction(), dimensions, cellDimensions );
+		final CachedCellImg< T, A > img = new CachedCellImg< T, A >( cells );
 		return img;
 	}
 
