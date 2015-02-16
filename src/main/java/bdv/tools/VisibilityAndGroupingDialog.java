@@ -37,6 +37,7 @@ import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
+import javax.swing.WindowConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
@@ -95,7 +96,7 @@ public class VisibilityAndGroupingDialog extends JDialog
 		am.put( hideKey, hideAction );
 
 		pack();
-		setDefaultCloseOperation( JDialog.HIDE_ON_CLOSE );
+		setDefaultCloseOperation( WindowConstants.HIDE_ON_CLOSE );
 	}
 
 	public void update()

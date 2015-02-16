@@ -251,6 +251,8 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 
 	private final CacheArrayLoader< A > loader;
 
+	private final CacheIoTiming cacheIoTiming;
+
 	/**
 	 *
 	 * @param loader
@@ -273,6 +275,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 		this.maxNumSetups = maxNumSetups;
 		this.maxNumLevels = maxNumLevels;
 
+		cacheIoTiming = new CacheIoTiming();
 		queue = new BlockingFetchQueues< Key >( maxNumLevels );
 		fetchers = new ArrayList< Fetcher >();
 		for ( int i = 0; i < numFetcherThreads; ++i )
@@ -357,7 +360,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	 */
 	protected void loadOrEnqueue( final Entry entry, final int priority, final boolean enqueuToFront )
 	{
-		final IoStatistics stats = CacheIoTiming.getThreadGroupIoStatistics();
+		final IoStatistics stats = cacheIoTiming.getThreadGroupIoStatistics();
 		final IoTimeBudget budget = stats.getIoTimeBudget();
 		final long timeLeft = budget.timeLeft( priority );
 		if ( timeLeft > 0 )
@@ -557,7 +560,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	 *
 	 * @param partialBudget
 	 *            Initial budget (in nanoseconds) for priority levels 0 through
-	 *            <em>n</em>. The budget for level <em>i>j</em> must always be
+	 *            <em>n</em>. The budget for level <em>i&gt;j</em> must always be
 	 *            smaller-equal the budget for level <em>j</em>. If <em>n</em>
 	 *            is smaller than the maximum number of mipmap levels, the
 	 *            remaining priority levels are filled up with budget[n].
@@ -565,10 +568,20 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	@Override
 	public void initIoTimeBudget( final long[] partialBudget )
 	{
-		final IoStatistics stats = CacheIoTiming.getThreadGroupIoStatistics();
+		final IoStatistics stats = cacheIoTiming.getThreadGroupIoStatistics();
 		if ( stats.getIoTimeBudget() == null )
 			stats.setIoTimeBudget( new IoTimeBudget( maxNumLevels ) );
 		stats.getIoTimeBudget().reset( partialBudget );
+	}
+
+	/**
+	 * Get the {@link CacheIoTiming} that provides per thread-group IO
+	 * statistics and budget.
+	 */
+	@Override
+	public CacheIoTiming getCacheIoTiming()
+	{
+		return cacheIoTiming;
 	}
 
 	/**
@@ -577,6 +590,8 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	 */
 	public void clearCache()
 	{
+		for ( final Reference< Entry > ref : softReferenceCache.values() )
+			ref.clear();
 		softReferenceCache.clear();
 		prepareNextFrame();
 		// TODO: add a full clear to BlockingFetchQueues.

@@ -3,7 +3,7 @@ package bdv.tools.brightness;
 import java.util.Arrays;
 import java.util.List;
 
-import net.imglib2.display.RealARGBColorConverter;
+import net.imglib2.display.ColorConverter;
 import net.imglib2.type.numeric.ARGBType;
 import bdv.viewer.ViewerPanel;
 
@@ -11,16 +11,16 @@ public class RealARGBColorConverterSetup implements ConverterSetup
 {
 	protected final int id;
 
-	protected final List< RealARGBColorConverter< ? > > converters;
+	protected final List< ColorConverter > converters;
 
 	protected ViewerPanel viewer;
 
-	public RealARGBColorConverterSetup( final int setupId, final RealARGBColorConverter< ? > ... converters )
+	public RealARGBColorConverterSetup( final int setupId, final ColorConverter ... converters )
 	{
-		this( setupId, Arrays.< RealARGBColorConverter< ? > >asList( converters ) );
+		this( setupId, Arrays.< ColorConverter >asList( converters ) );
 	}
 
-	public RealARGBColorConverterSetup( final int setupId, final List< RealARGBColorConverter< ? > > converters )
+	public RealARGBColorConverterSetup( final int setupId, final List< ColorConverter > converters )
 	{
 		this.id = setupId;
 		this.converters = converters;
@@ -28,9 +28,9 @@ public class RealARGBColorConverterSetup implements ConverterSetup
 	}
 
 	@Override
-	public void setDisplayRange( final int min, final int max )
+	public void setDisplayRange( final double min, final double max )
 	{
-		for ( final RealARGBColorConverter< ? > converter : converters )
+		for ( final ColorConverter converter : converters )
 		{
 			converter.setMin( min );
 			converter.setMax( max );
@@ -42,10 +42,16 @@ public class RealARGBColorConverterSetup implements ConverterSetup
 	@Override
 	public void setColor( final ARGBType color )
 	{
-		for ( final RealARGBColorConverter< ? > converter : converters )
+		for ( final ColorConverter converter : converters )
 			converter.setColor( color );
 		if ( viewer != null )
 			viewer.requestRepaint();
+	}
+
+	@Override
+	public boolean supportsColor()
+	{
+		return converters.get( 0 ).supportsColor();
 	}
 
 	@Override
@@ -55,15 +61,15 @@ public class RealARGBColorConverterSetup implements ConverterSetup
 	}
 
 	@Override
-	public int getDisplayRangeMin()
+	public double getDisplayRangeMin()
 	{
-		return ( int ) converters.get( 0 ).getMin();
+		return converters.get( 0 ).getMin();
 	}
 
 	@Override
-	public int getDisplayRangeMax()
+	public double getDisplayRangeMax()
 	{
-		return ( int ) converters.get( 0 ).getMax();
+		return converters.get( 0 ).getMax();
 	}
 
 	@Override

@@ -18,6 +18,8 @@ import javax.swing.JDialog;
 import javax.swing.JEditorPane;
 import javax.swing.JScrollPane;
 import javax.swing.KeyStroke;
+import javax.swing.ScrollPaneConstants;
+import javax.swing.WindowConstants;
 
 public class HelpDialog extends JDialog
 {
@@ -48,7 +50,7 @@ public class HelpDialog extends JDialog
 			editorPane.setBorder( BorderFactory.createEmptyBorder( 10, 0, 10, 10 ) );
 
 			final JScrollPane editorScrollPane = new JScrollPane( editorPane );
-			editorScrollPane.setVerticalScrollBarPolicy( JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED );
+			editorScrollPane.setVerticalScrollBarPolicy( ScrollPaneConstants.VERTICAL_SCROLLBAR_AS_NEEDED );
 			editorScrollPane.setPreferredSize( new Dimension( 800, 800 ) );
 
 			getContentPane().add( editorScrollPane, BorderLayout.CENTER );
@@ -70,7 +72,7 @@ public class HelpDialog extends JDialog
 			am.put( hideKey, hideAction );
 
 			pack();
-			setDefaultCloseOperation( JDialog.HIDE_ON_CLOSE );
+			setDefaultCloseOperation( WindowConstants.HIDE_ON_CLOSE );
 		}
 		catch ( final IOException e )
 		{

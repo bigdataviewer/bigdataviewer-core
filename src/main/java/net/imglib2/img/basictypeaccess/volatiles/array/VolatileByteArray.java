@@ -1,12 +1,13 @@
 package net.imglib2.img.basictypeaccess.volatiles.array;
 
+import net.imglib2.img.basictypeaccess.array.ByteArray;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileByteAccess;
 
 /**
  * A {@link ByteArray} with an {@link #isValid()} flag.
  *
- * @author Stephan Saalfeld <saalfelds@janelia.hhmi.org>
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Stephan Saalfeld &lt;saalfelds@janelia.hhmi.org&gt;
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 public class VolatileByteArray extends AbstractVolatileArray< VolatileByteArray > implements VolatileByteAccess
 {

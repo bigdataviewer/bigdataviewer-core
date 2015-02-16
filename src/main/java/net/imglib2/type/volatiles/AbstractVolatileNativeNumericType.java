@@ -45,12 +45,12 @@ import net.imglib2.util.Fraction;
  * {@link NativeType native} {@link NumericType}s.
  *
  * @param <N>
- *            wrapped {@link NativeType native} {@link NumericsType}.
+ *            wrapped {@link NativeType native} {@link NumericType}.
  * @param <T>
  *            type of derived concrete class.
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
- * @author Stephan Saalfeld <saalfelds@janelia.hhmi.org>
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+ * @author Stephan Saalfeld &lt;saalfelds@janelia.hhmi.org&gt;
  */
 public abstract class AbstractVolatileNativeNumericType< N extends NumericType< N > & NativeType< N >, T extends AbstractVolatileNativeNumericType< N, T > >
 	extends AbstractVolatileNumericType< N, T >

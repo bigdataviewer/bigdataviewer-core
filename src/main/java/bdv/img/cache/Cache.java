@@ -7,7 +7,7 @@ package bdv.img.cache;
  * control cache behavior. If the renderer is used without
  * {@link VolatileGlobalCellCache}, these can be simply implemented to do nothing.
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 public interface Cache
 {
@@ -28,8 +28,16 @@ public interface Cache
 	 */
 	public void initIoTimeBudget( final long[] partialBudget );
 
+	/**
+	 * Get the {@link CacheIoTiming} that provides per thread-group IO
+	 * statistics and budget.
+	 */
+	public CacheIoTiming getCacheIoTiming();
+
 	public static class Dummy implements Cache
 	{
+		private CacheIoTiming cacheIoTiming;
+
 		@Override
 		public void prepareNextFrame()
 		{}
@@ -37,5 +45,13 @@ public interface Cache
 		@Override
 		public void initIoTimeBudget( final long[] partialBudget )
 		{}
+
+		@Override
+		public CacheIoTiming getCacheIoTiming()
+		{
+			if ( cacheIoTiming == null )
+				cacheIoTiming = new CacheIoTiming();
+			return cacheIoTiming;
+		}
 	}
 }

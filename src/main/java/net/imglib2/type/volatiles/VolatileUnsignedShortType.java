@@ -13,7 +13,7 @@ import net.imglib2.type.numeric.integer.UnsignedShortType;
  * underlying {@link UnsignedShortType} that maps into a
  * {@link VolatileShortAccess}.
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 public class VolatileUnsignedShortType extends AbstractVolatileNativeRealType< UnsignedShortType, VolatileUnsignedShortType >
 {

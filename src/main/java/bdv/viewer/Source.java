@@ -16,7 +16,7 @@ import net.imglib2.realtransform.AffineTransform3D;
  * {@link TimePoint#getId() id}. This timepoint index is an index into the
  * ordered list of timepoints {@link TimePoints#getTimePointsOrdered()}.
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 public interface Source< T >
 {
@@ -54,8 +54,8 @@ public interface Source< T >
 	public RealRandomAccessible< T > getInterpolatedSource( final int t, final int level, final Interpolation method );
 
 	/**
-	 * Get the transform from the {@link #getSource(long) source} at timepoint
-	 * index t into the global coordinate system.
+	 * Get the transform from the {@link #getSource(int, int) source} at the
+	 * given timepoint index and mipmap level into the global coordinate system.
 	 *
 	 * @param t
 	 *            timepoint index

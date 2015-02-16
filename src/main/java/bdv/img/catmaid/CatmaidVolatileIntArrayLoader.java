@@ -15,11 +15,11 @@ public class CatmaidVolatileIntArrayLoader implements CacheArrayLoader< Volatile
 	private VolatileIntArray theEmptyArray;
 
 	private final String urlFormat;
-	
+
 	private final int tileWidth;
 
 	private final int tileHeight;
-	
+
 	final private int[] zScales;
 
 	/**
@@ -42,12 +42,12 @@ public class CatmaidVolatileIntArrayLoader implements CacheArrayLoader< Volatile
 	 * <dl>
 	 * <dt>"http://catmaid.org/my-data/xy/%5$d/%8$d_%9$d_%1$d.jpg"</dt>
 	 * <dd>CATMAID DefaultTileSource (type 1)</dd>
-	 * <dt>"http://catmaid.org/my-data/xy/?x=%3$d&y=%4$d&width=%6d&height=%7$d&row=%8$d&col=%9$d&scale=%2$f&z=%4$d"</dt>
+	 * <dt>"http://catmaid.org/my-data/xy/?x=%3$d&amp;y=%4$d&amp;width=%6d&amp;height=%7$d&amp;row=%8$d&amp;col=%9$d&amp;scale=%2$f&amp;z=%4$d"</dt>
      * <dd>CATMAID RequestTileSource (type 2)</dd>
 	 * <dt>"http://catmaid.org/my-data/xy/%1$d/%5$d/%8$d/%9$d.jpg"</dt>
 	 * <dd>CATMAID LargeDataTileSource (type 5)</dd>
 	 * </dl>
-	 * 
+	 *
 	 * @param urlFormat
 	 * @param tileWidth
 	 * @param tileHeight
@@ -60,7 +60,7 @@ public class CatmaidVolatileIntArrayLoader implements CacheArrayLoader< Volatile
 		this.tileHeight = tileHeight;
 		this.zScales = zScales;
 	}
-	
+
 	@Override
 	public int getBytesPerElement()
 	{
@@ -78,11 +78,11 @@ public class CatmaidVolatileIntArrayLoader implements CacheArrayLoader< Volatile
 		final int c = ( int ) min[ 0 ] / tileWidth;
 		final int r = ( int ) min[ 1 ] / tileHeight;
 		final double scale = 1.0 / Math.pow(2.0, level);
-		
+
 		final int w = dimensions[ 0 ];
 		final int h = dimensions[ 1 ];
 		final int[] data = new int[ w * h ];
-		
+
 		try
 		{
 			if ( zScales[ level ] > 1 )
@@ -120,7 +120,7 @@ public class CatmaidVolatileIntArrayLoader implements CacheArrayLoader< Volatile
 			else
 			{
 				final String urlString = String.format( urlFormat, level, scale, min[ 0 ], min[ 1 ], min[ 2 ], tileWidth, tileHeight, r, c );
-			
+
 				final URL url = new URL( urlString );
 //				final Image image = toolkit.createImage( url );
 				final BufferedImage jpg = ImageIO.read( url );

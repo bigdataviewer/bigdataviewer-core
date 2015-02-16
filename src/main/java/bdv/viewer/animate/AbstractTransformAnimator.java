@@ -10,8 +10,8 @@ import net.imglib2.realtransform.AffineTransform3D;
  * example you can use <b>ms</b> obtained from
  * {@link System#currentTimeMillis()} or a frame number when rendering movies.
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
- * @author Jean-Yves Tinevez <jeanyves.tinevez@gmail.com>
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+ * @author Jean-Yves Tinevez &lt;jeanyves.tinevez@gmail.com&gt;
  */
 public abstract class AbstractTransformAnimator extends AbstractAnimator
 {

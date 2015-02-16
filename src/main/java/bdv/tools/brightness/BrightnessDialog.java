@@ -33,6 +33,7 @@ import javax.swing.JSpinner;
 import javax.swing.KeyStroke;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
+import javax.swing.WindowConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -43,7 +44,7 @@ import net.imglib2.type.numeric.ARGBType;
 /**
  * Adjust brightness and colors for individual (or groups of) {@link BasicViewSetup setups}.
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 public class BrightnessDialog extends JDialog
 {
@@ -87,7 +88,7 @@ public class BrightnessDialog extends JDialog
 		} );
 
 		pack();
-		setDefaultCloseOperation( JDialog.HIDE_ON_CLOSE );
+		setDefaultCloseOperation( WindowConstants.HIDE_ON_CLOSE );
 	}
 
 	/**
@@ -177,6 +178,7 @@ public class BrightnessDialog extends JDialog
 						d.setVisible( true );
 					}
 				} );
+				button.setEnabled( setup.supportsColor() );
 				buttons.add( button );
 				add( button );
 			}
@@ -197,8 +199,13 @@ public class BrightnessDialog extends JDialog
 
 		private static Color getColor( final ConverterSetup setup )
 		{
-			final int value = setup.getColor().get();
-			return new Color( value );
+			if ( setup.supportsColor() )
+			{
+				final int value = setup.getColor().get();
+				return new Color( value );
+			}
+			else
+				return new Color ( 0xFFBBBBBB );
 		}
 
 		private static void setColor( final ConverterSetup setup, final Color color )

@@ -25,7 +25,7 @@ import bdv.viewer.Source;
  * between images that have all data present already or that we move to a new
  * image with no data present at all.
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 public class DefaultMipmapOrdering implements MipmapOrdering
 {

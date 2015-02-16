@@ -14,6 +14,7 @@ import java.util.concurrent.Executors;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.sequence.Angle;
+import mpicbg.spim.data.sequence.Channel;
 import mpicbg.spim.data.sequence.ImgLoader;
 import mpicbg.spim.data.sequence.TimePoint;
 import mpicbg.spim.data.sequence.ViewId;
@@ -43,6 +44,8 @@ import net.imglib2.util.Fraction;
 import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
 import bdv.AbstractViewerImgLoader;
+import bdv.ViewerImgLoader;
+import bdv.img.cache.Cache;
 import bdv.img.cache.CacheHints;
 import bdv.img.cache.CachedCellImg;
 import bdv.img.cache.LoadingStrategy;
@@ -57,6 +60,16 @@ import ch.systemsx.cisd.hdf5.IHDF5Reader;
 public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType, VolatileUnsignedShortType > implements ImgLoader< UnsignedShortType >
 {
 	protected File hdf5File;
+
+	/**
+	 * The {@link Hdf5ImageLoader} can be constructed with an existing
+	 * {@link IHDF5Reader} which if non-null will be used instead of creating a
+	 * new one on {@link #hdf5File}.
+	 *
+	 * <p>
+	 * <em>Note that {@link #close()} will not close the existingHdf5Reader!</em>
+	 */
+	protected IHDF5Reader existingHdf5Reader;
 
 	protected IHDF5Access hdf5Access;
 
@@ -103,7 +116,13 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 
 	public Hdf5ImageLoader( final File hdf5File, final ArrayList< Partition > hdf5Partitions, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription, final boolean doOpen )
 	{
+		this( hdf5File, null, hdf5Partitions, sequenceDescription, doOpen );
+	}
+
+	protected Hdf5ImageLoader( final File hdf5File, final IHDF5Reader existingHdf5Reader, final ArrayList< Partition > hdf5Partitions, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription, final boolean doOpen )
+	{
 		super( new UnsignedShortType(), new VolatileUnsignedShortType() );
+		this.existingHdf5Reader = existingHdf5Reader;
 		this.hdf5File = hdf5File;
 		perSetupMipmapInfo = new HashMap< Integer, MipmapInfo >();
 		cachedDimsAndExistence = new HashMap< ViewLevelId, DimsAndExistence >();
@@ -127,7 +146,7 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 					return;
 				isOpen = true;
 
-				final IHDF5Reader hdf5Reader = HDF5Factory.openForReading( hdf5File );
+				final IHDF5Reader hdf5Reader = ( existingHdf5Reader != null ) ? existingHdf5Reader : HDF5Factory.openForReading( hdf5File );
 
 				maxNumLevels = 0;
 				perSetupMipmapInfo.clear();
@@ -165,6 +184,24 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 				cache = new VolatileGlobalCellCache< VolatileShortArray >( new Hdf5VolatileShortArrayLoader( hdf5Access ), maxNumTimepoints, maxNumSetups, maxNumLevels, 1 );
 			}
 		}
+	}
+
+	/**
+	 * Clear the cache and close the hdf5 file. Images that were obtained from
+	 * this loader before {@link #close()} will stop working. Requesting images
+	 * after {@link #close()} will cause the hdf5 file to be reopened (with a
+	 * new cache).
+	 */
+	public void close()
+	{
+		cache.clearCache();
+		hdf5Access.closeAllDataSets();
+
+		// only close reader if constructed it ourselves
+		if ( existingHdf5Reader == null )
+			hdf5Access.close();
+
+		isOpen = false;
 	}
 
 	public void initCachedDimensionsFromHdf5( final boolean background )
@@ -285,9 +322,10 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 	}
 
 	/**
-	 * For images that are missing in the hdf5, a constant image is created.
-	 * If the dimension of the missing image is present in {@link #cachedDimensions} then use that.
-	 * Otherwise create a 1x1x1 image.
+	 * For images that are missing in the hdf5, a constant image is created. If
+	 * the dimension of the missing image is known (see
+	 * {@link #getDimsAndExistence(ViewLevelId)}) then use that. Otherwise
+	 * create a 1x1x1 image.
 	 */
 	protected < T > RandomAccessibleInterval< T > getMissingDataImage( final ViewLevelId id, final T constant )
 	{
@@ -375,22 +413,20 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 		return new MonolithicImageLoader();
 	}
 
-	public class MonolithicImageLoader implements ImgLoader< UnsignedShortType >
+	public class MonolithicImageLoader implements ViewerImgLoader< UnsignedShortType, VolatileUnsignedShortType >, ImgLoader< UnsignedShortType >
 	{
 		@Override
-		public RandomAccessibleInterval< UnsignedShortType > getImage( final ViewId view )
+		public RandomAccessibleInterval< UnsignedShortType > getImage( final ViewId view, final int level )
 		{
 			Img< UnsignedShortType > img = null;
 			final int timepoint = view.getTimePointId();
 			final int setup = view.getViewSetupId();
-			final int level = 0;
-			final Dimensions dims = getImageSize( view );
-			final int n = dims.numDimensions();
-			final long[] dimsLong = new long[ n ];
-			dims.dimensions( dimsLong );
+			final DimsAndExistence dimsAndExistence = getDimsAndExistence( new ViewLevelId( view, level ) );
+			final long[] dimsLong = dimsAndExistence.exists() ? dimsAndExistence.getDimensions() : null;
+			final int n = dimsLong.length;
 			final int[] dimsInt = new int[ n ];
 			final long[] min = new long[ n ];
-			if ( Intervals.numElements( dims ) <= Integer.MAX_VALUE )
+			if ( Intervals.numElements( new FinalDimensions( dimsLong ) ) <= Integer.MAX_VALUE )
 			{
 				// use ArrayImg
 				for ( int d = 0; d < dimsInt.length; ++d )
@@ -430,6 +466,12 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 				img = cellImg;
 			}
 			return img;
+		}
+
+		@Override
+		public RandomAccessibleInterval< UnsignedShortType > getImage( final ViewId view )
+		{
+			return getImage( view, 0 );
 		}
 
 		@Override
@@ -540,6 +582,41 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 			return Hdf5ImageLoader.this.getVoxelSize( view );
 		}
 
+		@Override
+		public RandomAccessibleInterval< VolatileUnsignedShortType > getVolatileImage( final ViewId view, final int level )
+		{
+			return Hdf5ImageLoader.this.getVolatileImage( view, level );
+		}
+
+		@Override
+		public VolatileUnsignedShortType getVolatileImageType()
+		{
+			return Hdf5ImageLoader.this.getVolatileImageType();
+		}
+
+		@Override
+		public double[][] getMipmapResolutions( final int setupId )
+		{
+			return Hdf5ImageLoader.this.getMipmapResolutions( setupId );
+		}
+
+		@Override
+		public AffineTransform3D[] getMipmapTransforms( final int setupId )
+		{
+			return Hdf5ImageLoader.this.getMipmapTransforms( setupId );
+		}
+
+		@Override
+		public int numMipmapLevels( final int setupId )
+		{
+			return Hdf5ImageLoader.this.numMipmapLevels( setupId );
+		}
+
+		@Override
+		public Cache getCache()
+		{
+			return Hdf5ImageLoader.this.getCache();
+		}
 	}
 
 //  ================================ mpicbg.spim.data.sequence.ImgLoader =============================== //

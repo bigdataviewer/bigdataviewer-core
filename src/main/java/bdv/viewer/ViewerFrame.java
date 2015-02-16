@@ -9,6 +9,7 @@ import java.util.List;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
+import javax.swing.WindowConstants;
 
 import net.imglib2.ui.util.GuiUtil;
 import bdv.img.cache.Cache;
@@ -18,7 +19,7 @@ import bdv.viewer.ViewerPanel.Options;
  * A {@link JFrame} containing a {@link ViewerPanel} and associated
  * {@link InputActionBindings}.
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 public class ViewerFrame extends JFrame
 {
@@ -48,10 +49,7 @@ public class ViewerFrame extends JFrame
 	 * @param numTimePoints
 	 *            number of available timepoints.
 	 * @param cache
-	 *            handle to cache. This is used to control io timing. Also, is
-	 *            is used to subscribe / {@link #stop() unsubscribe} to the
-	 *            cache as a consumer, so that eventually the io fetcher threads
-	 *            can be shut down.
+	 *            handle to cache. This is used to control io timing.
 	 * @param optional
 	 *            optional parameters. See {@link ViewerPanel#options()}.
 	 */
@@ -71,7 +69,7 @@ public class ViewerFrame extends JFrame
 		setPreferredSize( new Dimension( width, height ) );
 		add( viewer, BorderLayout.CENTER );
 		pack();
-		setDefaultCloseOperation( JFrame.DISPOSE_ON_CLOSE );
+		setDefaultCloseOperation( WindowConstants.DISPOSE_ON_CLOSE );
 		addWindowListener( new WindowAdapter()
 		{
 			@Override

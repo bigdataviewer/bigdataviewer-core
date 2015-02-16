@@ -8,7 +8,7 @@ import net.imglib2.type.numeric.ARGBType;
  * can have its own converter, this is used to adjust brightness, contrast, and
  * color of individual sources.
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 public interface ConverterSetup
 {
@@ -28,12 +28,14 @@ public interface ConverterSetup
 	 * @param max
 	 *            source value to map to maximum of the target range.
 	 */
-	public void setDisplayRange( int min, int max );
+	public void setDisplayRange( double min, double max );
 
 	/**
 	 * Set the color for this converter.
 	 */
 	public void setColor( final ARGBType color );
+
+	public boolean supportsColor();
 
 	/**
 	 * Get the (largest) source value that is mapped to the minimum of the
@@ -41,7 +43,7 @@ public interface ConverterSetup
 	 *
 	 * @return source value that is mapped to the minimum of the target range.
 	 */
-	public int getDisplayRangeMin();
+	public double getDisplayRangeMin();
 
 	/**
 	 * Get the (smallest) source value that is mapped to the maximum of the
@@ -49,7 +51,7 @@ public interface ConverterSetup
 	 *
 	 * @return source value that is mapped to the maximum of the target range.
 	 */
-	public int getDisplayRangeMax();
+	public double getDisplayRangeMax();
 
 	/**
 	 * Get the color for this converter.

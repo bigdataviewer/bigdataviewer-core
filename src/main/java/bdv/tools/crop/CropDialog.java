@@ -25,6 +25,7 @@ import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.WindowConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileFilter;
@@ -251,7 +252,7 @@ public class CropDialog extends JDialog
 		am.put( hideKey, hideAction );
 
 		pack();
-		setDefaultCloseOperation( JDialog.HIDE_ON_CLOSE );
+		setDefaultCloseOperation( WindowConstants.HIDE_ON_CLOSE );
 	}
 
 	/**
@@ -358,7 +359,7 @@ public class CropDialog extends JDialog
 						info.getSubdivisions() ) );
 		}
 
-		WriteSequenceToHdf5.writeHdf5File( seq, perSetupMipmapInfo, true, hdf5File, null );
+		WriteSequenceToHdf5.writeHdf5File( seq, perSetupMipmapInfo, true, hdf5File, null, null, null );
 
 		// Build ViewRegistrations with adjusted transforms.
 		final ArrayList< ViewRegistration > registrations = new ArrayList< ViewRegistration >();

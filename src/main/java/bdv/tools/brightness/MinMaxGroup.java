@@ -21,7 +21,7 @@ import bdv.util.BoundedValue;
  * An {@link UpdateListener} (usually a GUI component) can be notified about
  * changes.
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 public class MinMaxGroup extends BoundedInterval
 {
@@ -66,7 +66,7 @@ public class MinMaxGroup extends BoundedInterval
 
 	/**
 	 * Add a {@link ConverterSetup} which will have its
-	 * {@link ConverterSetup#setDisplayRange(int, int) display range} updated to
+	 * {@link ConverterSetup#setDisplayRange(double, double) display range} updated to
 	 * the interval ({@link #getMinBoundedValue()},
 	 * {@link #getMaxBoundedValue()}).
 	 *

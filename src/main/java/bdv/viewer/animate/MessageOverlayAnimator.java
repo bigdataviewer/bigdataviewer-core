@@ -15,7 +15,7 @@ import java.util.List;
  * fading in a specified time. If several messages are drawn at the same time,
  * old messages scroll up.
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 public class MessageOverlayAnimator implements OverlayAnimator
 {

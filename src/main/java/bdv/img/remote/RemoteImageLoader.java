@@ -43,22 +43,56 @@ public class RemoteImageLoader extends AbstractViewerImgLoader< UnsignedShortTyp
 
 	public RemoteImageLoader( final String baseUrl ) throws IOException
 	{
-		super( new UnsignedShortType(), new VolatileUnsignedShortType() );
+		this( baseUrl, true );
+	}
 
+	public RemoteImageLoader( final String baseUrl, final boolean doOpen ) throws IOException
+	{
+		super( new UnsignedShortType(), new VolatileUnsignedShortType() );
 		this.baseUrl = baseUrl;
-		final URL url = new URL( baseUrl + "?p=init" );
-		final GsonBuilder gsonBuilder = new GsonBuilder();
-		gsonBuilder.registerTypeAdapter( AffineTransform3D.class, new AffineTransform3DJsonSerializer() );
-		metadata = gsonBuilder.create().fromJson(
-				new InputStreamReader( url.openStream() ),
-				RemoteImageLoaderMetaData.class );
-		cache = new VolatileGlobalCellCache< VolatileShortArray >(
-				new RemoteVolatileShortArrayLoader( this ),
-				metadata.maxNumTimepoints,
-				metadata.maxNumSetups,
-				metadata.maxNumLevels,
-				10 );
-		cellsDimensions = metadata.createCellsDimensions();
+		if ( doOpen )
+			open();
+	}
+
+	private boolean isOpen = false;
+
+	private void open() throws IOException
+	{
+		if ( ! isOpen )
+		{
+			synchronized ( this )
+			{
+				if ( isOpen )
+					return;
+				isOpen = true;
+
+				final URL url = new URL( baseUrl + "?p=init" );
+				final GsonBuilder gsonBuilder = new GsonBuilder();
+				gsonBuilder.registerTypeAdapter( AffineTransform3D.class, new AffineTransform3DJsonSerializer() );
+				metadata = gsonBuilder.create().fromJson(
+						new InputStreamReader( url.openStream() ),
+						RemoteImageLoaderMetaData.class );
+				cache = new VolatileGlobalCellCache< VolatileShortArray >(
+						new RemoteVolatileShortArrayLoader( this ),
+						metadata.maxNumTimepoints,
+						metadata.maxNumSetups,
+						metadata.maxNumLevels,
+						10 );
+				cellsDimensions = metadata.createCellsDimensions();
+			}
+		}
+	}
+
+	private void tryopen()
+	{
+		try
+		{
+			open();
+		}
+		catch ( final IOException e )
+		{
+			throw new RuntimeException( e );
+		}
 	}
 
 	@Override
@@ -98,6 +132,7 @@ public class RemoteImageLoader extends AbstractViewerImgLoader< UnsignedShortTyp
 	@Override
 	public VolatileGlobalCellCache< VolatileShortArray > getCache()
 	{
+		tryopen();
 		return cache;
 	}
 
@@ -121,6 +156,7 @@ public class RemoteImageLoader extends AbstractViewerImgLoader< UnsignedShortTyp
 
 	public MipmapInfo getMipmapInfo( final int setupId )
 	{
+		tryopen();
 		return metadata.perSetupMipmapInfo.get( setupId );
 	}
 
@@ -135,9 +171,10 @@ public class RemoteImageLoader extends AbstractViewerImgLoader< UnsignedShortTyp
 	}
 
 	/**
-	 * For images that are missing in the hdf5, a constant image is created.
-	 * If the dimension of the missing image is present in {@link #cachedDimensions} then use that.
-	 * Otherwise create a 1x1x1 image.
+	 * For images that are missing in the hdf5, a constant image is created. If
+	 * the dimension of the missing image is known (see
+	 * {@link #getDimsAndExistence(ViewLevelId)}) then use that. Otherwise
+	 * create a 1x1x1 image.
 	 */
 	protected < T > RandomAccessibleInterval< T > getMissingDataImage( final ViewLevelId id, final T constant )
 	{
@@ -147,6 +184,7 @@ public class RemoteImageLoader extends AbstractViewerImgLoader< UnsignedShortTyp
 
 	public DimsAndExistence getDimsAndExistence( final ViewLevelId id )
 	{
+		tryopen();
 		return metadata.dimsAndExistence.get( id );
 	}
 
@@ -168,6 +206,7 @@ public class RemoteImageLoader extends AbstractViewerImgLoader< UnsignedShortTyp
 	 */
 	protected < T extends NativeType< T > > CachedCellImg< T, VolatileShortArray > prepareCachedImage( final ViewLevelId id, final LoadingStrategy loadingStrategy )
 	{
+		tryopen();
 		if ( cache == null )
 			throw new RuntimeException( "no connection open" );
 

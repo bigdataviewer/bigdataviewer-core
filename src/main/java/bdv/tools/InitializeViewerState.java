@@ -27,9 +27,10 @@ public class InitializeViewerState
 	 * <ul>
 	 * <li>the XY plane is aligned with the screen plane,
 	 * <li>the <em>z = dim_z / 2</em> slice is shown,
-	 * <li>centered and scaled such that the full <em>dim_x</em> by <em>dim_y</em> is visible.
+	 * <li>centered and scaled such that the full <em>dim_x</em> by
+	 * <em>dim_y</em> is visible.
 	 * </ul>
-	 * This calls {@link #initTransform(int, int, ViewerPanel)}, using the size
+	 * This calls {@link #initTransform(int, int, boolean, ViewerState)}, using the size
 	 * of the viewer's display component.
 	 *
 	 * @param viewer
@@ -39,32 +40,34 @@ public class InitializeViewerState
 	public static void initTransform( final ViewerPanel viewer )
 	{
 		final Dimension dim = viewer.getDisplay().getSize();
-		initTransform( dim.width, dim.height, viewer );
+		final ViewerState state = viewer.getState();
+		final AffineTransform3D viewerTransform = initTransform( dim.width, dim.height, false, state );
+		viewer.setCurrentViewerTransform( viewerTransform );
 	}
 
 	/**
-	 * Set a "good" initial viewer transform. The viewer transform is chosen
+	 * Get a "good" initial viewer transform. The viewer transform is chosen
 	 * such that for the first source,
 	 * <ul>
 	 * <li>the XY plane is aligned with the screen plane,
 	 * <li>the <em>z = dim_z / 2</em> slice is shown,
-	 * <li>centered and scaled such that the full <em>dim_x</em> by <em>dim_y</em> is visible.
+	 * <li>centered and scaled such that the full <em>dim_x</em> by
+	 * <em>dim_y</em> is visible.
 	 * </ul>
 	 *
 	 * @param viewerWidth
 	 *            width of the viewer display
 	 * @param viewerHeight
 	 *            height of the viewer display
-	 * @param viewer
-	 *            the viewer (containing at least one source) to have its
-	 *            transform set.
+	 * @param state
+	 *            the {@link ViewerState} containing at least one source.
+	 * @return proposed initial viewer transform.
 	 */
-	public static void initTransform( final int viewerWidth, final int viewerHeight, final ViewerPanel viewer )
+	public static AffineTransform3D initTransform( final int viewerWidth, final int viewerHeight, final boolean zoomedIn, final ViewerState state )
 	{
 		final int cX = viewerWidth / 2;
 		final int cY = viewerHeight / 2;
 
-		final ViewerState state = viewer.getState();
 		final SourceState< ? > source = state.getSources().get( state.getCurrentSource() );
 		final int timepoint = state.getCurrentTimepoint();
 		final AffineTransform3D sourceTransform = new AffineTransform3D();
@@ -81,7 +84,7 @@ public class InitializeViewerState
 		final double sY = ( sY0 + sY1 + 1 ) / 2;
 		final double sZ = ( sZ0 + sZ1 + 1 ) / 2;
 
-		final double[][] m = new double[3][4];
+		final double[][] m = new double[ 3 ][ 4 ];
 
 		// rotation
 		final double[] qSource = new double[ 4 ];
@@ -110,14 +113,22 @@ public class InitializeViewerState
 		viewerTransform.apply( pGlobal, pScreen );
 		final double scaleX = cX / pScreen[ 0 ];
 		final double scaleY = cY / pScreen[ 1 ];
-		final double scale = Math.min( scaleX, scaleY );
+		final double scale;
+		if ( zoomedIn )
+			scale = Math.max( scaleX, scaleY );
+		else
+			scale = Math.min( scaleX, scaleY );
 		viewerTransform.scale( scale );
 
 		// window center offset
 		viewerTransform.set( viewerTransform.get( 0, 3 ) + cX, 0, 3 );
 		viewerTransform.set( viewerTransform.get( 1, 3 ) + cY, 1, 3 );
+		return viewerTransform;
+	}
 
-		viewer.setCurrentViewerTransform( viewerTransform );
+	public static void initBrightness( final double cumulativeMinCutoff, final double cumulativeMaxCutoff, final ViewerPanel viewer, final SetupAssignments setupAssignments )
+	{
+		initBrightness( cumulativeMinCutoff, cumulativeMaxCutoff, viewer.getState(), setupAssignments );
 	}
 
 	/**
@@ -125,14 +136,13 @@ public class InitializeViewerState
 	 *
 	 * @param cumulativeMinCutoff
 	 * @param cumulativeMaxCutoff
-	 * @param viewer
+	 * @param state
 	 * @param setupAssignments
 	 */
-	public static void initBrightness( final double cumulativeMinCutoff, final double cumulativeMaxCutoff, final ViewerPanel viewer, final SetupAssignments setupAssignments )
+	public static void initBrightness( final double cumulativeMinCutoff, final double cumulativeMaxCutoff, final ViewerState state, final SetupAssignments setupAssignments )
 	{
-		final ViewerState state = viewer.getState();
 		final Source< ? > source = state.getSources().get( state.getCurrentSource() ).getSpimSource();
-		if ( ! UnsignedShortType.class.isInstance( source.getType() ) )
+		if ( !UnsignedShortType.class.isInstance( source.getType() ) )
 			return;
 		@SuppressWarnings( "unchecked" )
 		final RandomAccessibleInterval< UnsignedShortType > img = ( RandomAccessibleInterval< UnsignedShortType > ) source.getSource( state.getCurrentTimepoint(), source.getNumMipmapLevels() - 1 );
@@ -141,7 +151,7 @@ public class InitializeViewerState
 		final int numBins = 6535;
 		final Histogram1d< UnsignedShortType > histogram = new Histogram1d< UnsignedShortType >( Views.iterable( Views.hyperSlice( img, 2, z ) ), new Real1dBinMapper< UnsignedShortType >( 0, 65535, numBins, false ) );
 		final DiscreteFrequencyDistribution dfd = histogram.dfd();
-		final long[] bin = new long[] {0};
+		final long[] bin = new long[] { 0 };
 		double cumulative = 0;
 		int i = 0;
 		for ( ; i < numBins && cumulative < cumulativeMinCutoff; ++i )

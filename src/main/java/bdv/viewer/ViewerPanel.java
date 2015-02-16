@@ -26,6 +26,7 @@ import java.util.concurrent.Executors;
 
 import javax.swing.JPanel;
 import javax.swing.JSlider;
+import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -71,7 +72,7 @@ import bdv.viewer.state.XmlIoViewerState;
  * {@link PainterThread} for painting, which is started on construction (use
  * {@link #stop() to stop the PainterThread}.
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 public class ViewerPanel extends JPanel implements OverlayRenderer, TransformListener< AffineTransform3D >, PainterThread.Paintable, VisibilityAndGrouping.UpdateListener
 {
@@ -116,8 +117,8 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	protected final AffineTransform3D viewerTransform;
 
 	/**
-	 * Canvas used for displaying the rendered {@link #screenImages screen
-	 * image}.
+	 * Canvas used for displaying the rendered {@link #renderTarget image} and
+	 * overlays.
 	 */
 	protected final InteractiveDisplayCanvasComponent< AffineTransform3D > display;
 
@@ -319,7 +320,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		add( display, BorderLayout.CENTER );
 		if ( numTimePoints > 1 )
 		{
-			sliderTime = new JSlider( JSlider.HORIZONTAL, 0, numTimePoints - 1, 0 );
+			sliderTime = new JSlider( SwingConstants.HORIZONTAL, 0, numTimePoints - 1, 0 );
 			sliderTime.addChangeListener( new ChangeListener()
 			{
 				@Override

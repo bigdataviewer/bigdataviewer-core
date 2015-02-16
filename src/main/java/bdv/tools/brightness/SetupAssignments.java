@@ -19,7 +19,7 @@ import org.jdom2.Element;
  * <li>No group is empty.</li>
  * </ol>
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 public class SetupAssignments
 {
@@ -60,7 +60,7 @@ public class SetupAssignments
 		setupToGroup = new HashMap< ConverterSetup, MinMaxGroup >();
 		for ( final ConverterSetup setup : setups )
 		{
-			final MinMaxGroup group = new MinMaxGroup( fullRangeMin, fullRangeMax, fullRangeMin, fullRangeMax, setup.getDisplayRangeMin(), setup.getDisplayRangeMax() );
+			final MinMaxGroup group = new MinMaxGroup( fullRangeMin, fullRangeMax, fullRangeMin, fullRangeMax, ( int ) setup.getDisplayRangeMin(), ( int ) setup.getDisplayRangeMax() );
 			minMaxGroups.add( group );
 			setupToGroup.put( setup, group );
 			group.addSetup( setup );
@@ -102,7 +102,7 @@ public class SetupAssignments
 		if ( setupToGroup.get( setup ) != group )
 			return;
 
-		final MinMaxGroup newGroup = new MinMaxGroup( group.getFullRangeMin(), group.getFullRangeMax(), group.getRangeMin(), group.getRangeMax(), setup.getDisplayRangeMin(), setup.getDisplayRangeMax() );
+		final MinMaxGroup newGroup = new MinMaxGroup( group.getFullRangeMin(), group.getFullRangeMax(), group.getRangeMin(), group.getRangeMax(), ( int ) setup.getDisplayRangeMin(), ( int ) setup.getDisplayRangeMax() );
 		minMaxGroups.add( newGroup );
 		setupToGroup.put( setup, newGroup );
 		newGroup.addSetup( setup );
@@ -145,7 +145,7 @@ public class SetupAssignments
 	{
 		final int fullRangeMin = minMaxGroups.get( 0 ).getFullRangeMin();
 		final int fullRangeMax = minMaxGroups.get( 0 ).getFullRangeMax();
-		final MinMaxGroup group = new MinMaxGroup( fullRangeMin, fullRangeMax, fullRangeMin, fullRangeMax, setup.getDisplayRangeMin(), setup.getDisplayRangeMax() );
+		final MinMaxGroup group = new MinMaxGroup( fullRangeMin, fullRangeMax, fullRangeMin, fullRangeMax, ( int ) setup.getDisplayRangeMin(), ( int ) setup.getDisplayRangeMax() );
 		minMaxGroups.add( group );
 		setupToGroup.put( setup, group );
 		group.addSetup( setup );
@@ -170,8 +170,6 @@ public class SetupAssignments
 
 	/**
 	 * Serialize the state of this {@link SetupAssignments} to XML.
-	 * @param doc
-	 * @return
 	 */
 	public Element toXml()
 	{
@@ -182,8 +180,8 @@ public class SetupAssignments
 		{
 			final Element elemConverterSetup = new Element( "ConverterSetup" );
 			elemConverterSetup.addContent( XmlHelpers.intElement( "id", setup.getSetupId() ) );
-			elemConverterSetup.addContent( XmlHelpers.intElement( "min", setup.getDisplayRangeMin() ) );
-			elemConverterSetup.addContent( XmlHelpers.intElement( "max", setup.getDisplayRangeMax() ) );
+			elemConverterSetup.addContent( XmlHelpers.intElement( "min", ( int ) setup.getDisplayRangeMin() ) );
+			elemConverterSetup.addContent( XmlHelpers.intElement( "max", ( int ) setup.getDisplayRangeMax() ) );
 			elemConverterSetup.addContent( XmlHelpers.intElement( "color", setup.getColor().get() ) );
 			elemConverterSetup.addContent( XmlHelpers.intElement( "groupId", minMaxGroups.indexOf( setupToGroup.get( setup ) ) ) );
 			elemConverterSetups.addContent( elemConverterSetup );
@@ -248,7 +246,7 @@ public class SetupAssignments
 			final int max = Integer.parseInt( elem.getChildText( "max" ) );
 			final int color = Integer.parseInt( elem.getChildText( "color" ) );
 			final int groupId = Integer.parseInt( elem.getChildText( "groupId" ) );
-			final ConverterSetup setup = setups.get( id );
+			final ConverterSetup setup = getSetupById( id );
 			setup.setDisplayRange( min, max );
 			setup.setColor( new ARGBType( color ) );
 			final MinMaxGroup group = minMaxGroups.get( groupId );
@@ -258,5 +256,13 @@ public class SetupAssignments
 
 		if ( updateListener != null )
 			updateListener.update();
+	}
+
+	private ConverterSetup getSetupById( final int id )
+	{
+		for ( final ConverterSetup setup : setups )
+			if ( setup.getSetupId() == id )
+				return setup;
+		return null;
 	}
 }

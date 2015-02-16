@@ -13,8 +13,8 @@ import net.imglib2.type.numeric.integer.UnsignedByteType;
  * underlying {@link UnsignedByteType} that maps into a
  * {@link VolatileByteAccess}.
  *
- * @author Stephan Saalfeld <saalfelds@janelia.hhmi.org>
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Stephan Saalfeld &lt;saalfelds@janelia.hhmi.org&gt;
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 public class VolatileUnsignedByteType extends AbstractVolatileNativeRealType< UnsignedByteType, VolatileUnsignedByteType >
 {

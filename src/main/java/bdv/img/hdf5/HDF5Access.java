@@ -6,7 +6,7 @@ import ch.systemsx.cisd.base.mdarray.MDShortArray;
 import ch.systemsx.cisd.hdf5.HDF5DataSetInformation;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
 
-public class HDF5Access implements IHDF5Access
+class HDF5Access implements IHDF5Access
 {
 	private final IHDF5Reader hdf5Reader;
 
@@ -25,11 +25,13 @@ public class HDF5Access implements IHDF5Access
 		final String cellsPath = Util.getCellsPath( id );
 		HDF5DataSetInformation info = null;
 		boolean exists = false;
-		try {
+		try
+		{
 			info = hdf5Reader.getDataSetInformation( cellsPath );
 			exists = true;
-		} catch ( final Exception e ) {
 		}
+		catch ( final Exception e )
+		{}
 		if ( exists )
 			return new DimsAndExistence( reorder( info.getDimensions() ), true );
 		else
@@ -70,5 +72,16 @@ public class HDF5Access implements IHDF5Access
 	{
 		System.arraycopy( readShortMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min ), 0, dataBlock, 0, dataBlock.length );
 		return dataBlock;
+	}
+
+	@Override
+	public void closeAllDataSets()
+	{}
+
+	@Override
+	public void close()
+	{
+		closeAllDataSets();
+		hdf5Reader.close();
 	}
 }
