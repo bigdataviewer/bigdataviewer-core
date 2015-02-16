@@ -140,8 +140,8 @@ public class BigDataViewer
 			initSetupsRealTypeNonVolatile( spimData, type, converterSetups, sources );
 			return;
 		}
-		final double typeMin = type.getMinValue();
-		final double typeMax = type.getMaxValue();
+		final double typeMin = Math.max( 0, Math.min( type.getMinValue(), 65535 ) );
+		final double typeMax = Math.max( 0, Math.min( type.getMaxValue(), 65535 ) );
 		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
 		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
 		{
