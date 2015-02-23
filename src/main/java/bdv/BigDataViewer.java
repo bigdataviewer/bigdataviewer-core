@@ -37,7 +37,6 @@ import org.jdom2.output.XMLOutputter;
 
 import bdv.export.ProgressWriter;
 import bdv.export.ProgressWriterConsole;
-import bdv.spimdata.SpimDataMinimal;
 import bdv.spimdata.WrapBasicImgLoader;
 import bdv.spimdata.XmlIoSpimDataMinimal;
 import bdv.tools.HelpDialog;
@@ -278,7 +277,7 @@ public class BigDataViewer
 			InitializeViewerState.initBrightness( 0.001, 0.999, viewer, setupAssignments );
 	}
 
-	public BigDataViewer( final SpimDataMinimal spimData, final String windowTitle, final ProgressWriter progressWriter )
+	public BigDataViewer( final AbstractSpimData< ? > spimData, final String windowTitle, final ProgressWriter progressWriter )
 	{
 		final int width = 800;
 		final int height = 600;
