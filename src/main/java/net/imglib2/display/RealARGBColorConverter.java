@@ -10,7 +10,7 @@ public abstract class RealARGBColorConverter< R extends RealType< ? > > implemen
 
 	protected double max = 1;
 
-	protected final ARGBType color = new ARGBType();
+	protected final ARGBType color = new ARGBType( ARGBType.rgba( 255, 255, 255, 255 ) );
 
 	protected int A;
 
