@@ -202,6 +202,7 @@ class HDF5AccessHack implements IHDF5Access
 	{
 		for ( final OpenDataSet dataset : openDataSetCache.values() )
 			dataset.close();
+		openDataSetCache.clear();
 	}
 
 	@Override
@@ -218,6 +219,7 @@ class HDF5AccessHack implements IHDF5Access
 		{
 			for ( final OpenDataSet dataset : openDataSetCache.values() )
 				dataset.close();
+			openDataSetCache.clear();
 			hdf5Reader.close();
 		}
 		finally
