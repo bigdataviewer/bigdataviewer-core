@@ -6,10 +6,10 @@ import net.imglib2.Interval;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.algorithm.region.localneighborhood.Neighborhood;
-import net.imglib2.algorithm.region.localneighborhood.RectangleNeighborhoodFactory;
-import net.imglib2.algorithm.region.localneighborhood.RectangleNeighborhoodUnsafe;
-import net.imglib2.algorithm.region.localneighborhood.RectangleShape.NeighborhoodsAccessible;
+import net.imglib2.algorithm.neighborhood.Neighborhood;
+import net.imglib2.algorithm.neighborhood.RectangleNeighborhoodFactory;
+import net.imglib2.algorithm.neighborhood.RectangleNeighborhoodUnsafe;
+import net.imglib2.algorithm.neighborhood.RectangleShape;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.view.Views;
 
@@ -39,7 +39,7 @@ public class Downsample
 		}
 		final RandomAccessibleInterval< T > requiredInput = Views.interval( input, new FinalInterval( minRequiredInput, maxRequiredInput ) );
 
-		final NeighborhoodsAccessible< T > neighborhoods = new NeighborhoodsAccessible< T >( requiredInput, spanInterval, f );
+		final RectangleShape.NeighborhoodsAccessible< T > neighborhoods = new RectangleShape.NeighborhoodsAccessible< T >( requiredInput, spanInterval, f );
 		final RandomAccess< Neighborhood< T > > block = neighborhoods.randomAccess();
 
 		long size = 1;
