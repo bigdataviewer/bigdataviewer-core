@@ -30,7 +30,7 @@ public class PrintSequenceMipmapInfo
 			{
 				final int setupId = setup.getId();
 				System.out.println( "setup " + setupId );
-				final int numLevels = imgLoader.numMipmapLevels( setupId );
+				final int numLevels = imgLoader.getSetupImgLoader( setupId ).numMipmapLevels();
 				final ViewRegistration reg = spimData.getViewRegistrations().getViewRegistration( timepointId, setupId );
 				final AffineTransform3D model = reg.getModel();
 				final double[] scale = new double[ 3 ];
