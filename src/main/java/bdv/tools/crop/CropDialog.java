@@ -40,7 +40,6 @@ import mpicbg.spim.data.sequence.TimePoints;
 import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.RealInterval;
 import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.util.Intervals;
 import bdv.AbstractSpimSource;
 import bdv.export.ExportMipmapInfo;
@@ -283,9 +282,10 @@ public class CropDialog extends JDialog
 		// next unused setup id, in case we need to create new BasicViewSetup for sources that are not AbstractSpimSources
 		int nextSetupIndex = sequenceSetupsOrdered.get( sequenceSetupsOrdered.size() - 1 ).getId() + 1;
 
+		// TODO: fix comment
 		// List of all sources. if they are not of UnsignedShortType, cropping
 		// will not work...
-		final ArrayList< Source< UnsignedShortType > > sources = new ArrayList< Source< UnsignedShortType > >();
+		final ArrayList< Source< ? > > sources = new ArrayList< Source< ? > >();
 		// Map from setup id to BasicViewSetup. These are setups from the
 		// original sequence if available, or newly created ones otherwise.
 		// This contains all BasicViewSetups for the new cropped sequence.
@@ -296,10 +296,7 @@ public class CropDialog extends JDialog
 		final HashMap< Integer, Integer > setupIdToSourceIndex = new HashMap< Integer, Integer >();
 		for( final SourceState< ? > s : viewer.getState().getSources() )
 		{
-			if ( !( s.getSpimSource().getType() instanceof UnsignedShortType ) )
-				throw new RuntimeException( "cropping is only implemented for UnsignedShortType" );
-
-			Source< UnsignedShortType > source = ( Source< UnsignedShortType > ) s.getSpimSource();
+			Source< ? > source = s.getSpimSource();
 			sources.add( source );
 
 			// try to find the BasicViewSetup for the source
@@ -307,7 +304,7 @@ public class CropDialog extends JDialog
 
 			// strip TransformedSource wrapper
 			while ( source instanceof TransformedSource )
-				source = ( ( TransformedSource< UnsignedShortType > ) source ).getWrappedSource();
+				source = ( ( TransformedSource< ? > ) source ).getWrappedSource();
 
 			if ( source instanceof AbstractSpimSource )
 			{
