@@ -2,9 +2,12 @@ package bdv.tools.crop;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import mpicbg.spim.data.generic.sequence.BasicImgLoader;
+import mpicbg.spim.data.generic.sequence.BasicSetupImgLoader;
 import mpicbg.spim.data.sequence.ImgLoader;
 import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.Interval;
@@ -13,8 +16,6 @@ import net.imglib2.RealInterval;
 import net.imglib2.RealLocalizable;
 import net.imglib2.RealPoint;
 import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.type.numeric.NumericType;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.util.Intervals;
 import net.imglib2.util.Pair;
 import net.imglib2.util.ValuePair;
@@ -28,60 +29,41 @@ import bdv.viewer.Source;
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
-public class CropImgLoader implements BasicImgLoader< UnsignedShortType >
+public class CropImgLoader implements BasicImgLoader
 {
-	private final ArrayList< Source< UnsignedShortType > > sources;
-
 	private final AffineTransform3D globalToCropTransform;
 
 	private final RealInterval cropInterval;
 
 	private final Map< Integer, Integer > timepointIdToTimepointIndex;
 
-	private final Map< Integer, Integer > setupIdToSourceIndex;
+	private final Map< Integer, SetupImgLoader< ? > > setupImgLoaders;
 
 	public CropImgLoader(
-			final ArrayList< Source< UnsignedShortType > > sources,
+			final ArrayList< Source< ? > > sources,
 			final AffineTransform3D globalToCropTransform,
 			final RealInterval cropInterval,
 			final Map< Integer, Integer > timepointIdToTimepointIndex,
 			final Map< Integer, Integer > setupIdToSourceIndex )
 	{
-		this.sources = sources;
 		this.globalToCropTransform = globalToCropTransform;
 		this.cropInterval = cropInterval;
 		this.timepointIdToTimepointIndex = timepointIdToTimepointIndex;
-		this.setupIdToSourceIndex = setupIdToSourceIndex;
-	}
-
-	@Override
-	public RandomAccessibleInterval< UnsignedShortType > getImage( final ViewId view )
-	{
-		final Pair< RandomAccessibleInterval< UnsignedShortType >, AffineTransform3D > pair = cropView( view );
-		return pair.getA();
-	}
-
-	@Override
-	public UnsignedShortType getImageType()
-	{
-		return new UnsignedShortType();
+		this.setupImgLoaders = new HashMap< Integer, SetupImgLoader< ? > >();
+		for ( final Entry< Integer, Integer > entry : setupIdToSourceIndex.entrySet() )
+			setupImgLoaders.put( entry.getKey(), createSetupImgLoader( sources.get( entry.getValue() ) ) );
 	}
 
 	public AffineTransform3D getCroppedTransform( final ViewId view )
 	{
-		final Pair< RandomAccessibleInterval< UnsignedShortType >, AffineTransform3D > pair = cropView( view );
+		final Pair< ?, AffineTransform3D > pair = getSetupImgLoader( view.getViewSetupId() ).cropView( view.getTimePointId() );
 		return pair.getB();
 	}
 
-	private Pair< RandomAccessibleInterval< UnsignedShortType >, AffineTransform3D > cropView( final ViewId view )
+	@Override
+	public SetupImgLoader< ? > getSetupImgLoader( final int setupId )
 	{
-		final int setupId = view.getViewSetupId();
-		final int timepointId = view.getTimePointId();
-
-		final int sourceIndex = setupIdToSourceIndex.get( setupId );
-		final int timepointIndex = timepointIdToTimepointIndex.get( timepointId );
-
-		return crop( globalToCropTransform, cropInterval, sources.get( sourceIndex ), timepointIndex );
+		return setupImgLoaders.get( setupId );
 	}
 
 	/**
@@ -98,7 +80,7 @@ public class CropImgLoader implements BasicImgLoader< UnsignedShortType >
 	 * @return a zero-min view of the cropped region and a transform from that
 	 *         view into global coordinates.
 	 */
-	public static < T extends NumericType< T > > Pair< RandomAccessibleInterval< T >, AffineTransform3D > crop(
+	public static < T > Pair< RandomAccessibleInterval< T >, AffineTransform3D > crop(
 			final AffineTransform3D globalToCropTransform,
 			final RealInterval interval,
 			final Source< T > source,
@@ -144,5 +126,38 @@ public class CropImgLoader implements BasicImgLoader< UnsignedShortType >
 		croppedSourceTransform.preConcatenate( sourceToGlobal );
 
 		return new ValuePair< RandomAccessibleInterval<T>, AffineTransform3D >( croppedSourceImg, croppedSourceTransform );
+	}
+
+	private < T > SetupImgLoader< T > createSetupImgLoader( final Source< T > source )
+	{
+		return new SetupImgLoader< T >( source );
+	}
+
+	public class SetupImgLoader< T > implements BasicSetupImgLoader< T >
+	{
+		private final Source< T > source;
+
+		protected SetupImgLoader( final Source< T > source )
+		{
+			this.source = source;
+		}
+
+		@Override
+		public RandomAccessibleInterval< T > getImage( final int timepointId )
+		{
+			return cropView( timepointId ).getA();
+		}
+
+		@Override
+		public T getImageType()
+		{
+			return source.getType();
+		}
+
+		private Pair< RandomAccessibleInterval< T >, AffineTransform3D > cropView( final int timepointId )
+		{
+			final int timepointIndex = timepointIdToTimepointIndex.get( timepointId );
+			return crop( globalToCropTransform, cropInterval, source, timepointIndex );
+		}
 	}
 }
