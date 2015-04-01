@@ -67,7 +67,7 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 				? new HashSet< ViewId >()
 				: seq.getMissingViews().getMissingViews();
 		voxelDimensions = seq.getViewSetups().get( setupId ).getVoxelSize();
-		numMipmapLevels = ( ( ViewerImgLoader< ?, ? > ) seq.getImgLoader() ).numMipmapLevels( setupId );
+		numMipmapLevels = ( ( ViewerImgLoader ) seq.getImgLoader() ).getSetupImgLoader( setupId ).numMipmapLevels();
 		currentSources = new RandomAccessibleInterval[ numMipmapLevels ];
 		currentInterpolatedSources = new RealRandomAccessible[ numMipmapLevels ][ numInterpolationMethods ];
 		currentSourceTransforms = new AffineTransform3D[ numMipmapLevels ];
@@ -93,7 +93,7 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 				final AffineTransform3D mipmapTransform = getMipmapTransforms()[ level ];
 				currentSourceTransforms[ level ].set( reg );
 				currentSourceTransforms[ level ].concatenate( mipmapTransform );
-				currentSources[ level ] = getImage( viewId, level );
+				currentSources[ level ] = getImage( timepointId, level );
 				for ( int method = 0; method < numInterpolationMethods; ++method )
 					currentInterpolatedSources[ level ][ method ] = Views.interpolate( Views.extendValue( currentSources[ level ], zero ), interpolatorFactories[ method ] );
 			}
@@ -112,7 +112,7 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 
 	protected abstract AffineTransform3D[] getMipmapTransforms();
 
-	protected abstract RandomAccessibleInterval< T > getImage( final ViewId viewId, final int level );
+	protected abstract RandomAccessibleInterval< T > getImage( final int timepointId, final int level );
 
 	@Override
 	public boolean isPresent( final int t )

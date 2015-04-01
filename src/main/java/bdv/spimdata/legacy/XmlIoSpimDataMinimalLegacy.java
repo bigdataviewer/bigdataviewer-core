@@ -47,7 +47,7 @@ public class XmlIoSpimDataMinimalLegacy
 		final Map< Integer, ? extends BasicViewSetup > setups = createViewSetupsFromXml( root );
 		final MissingViews missingViews = null;
 		final SequenceDescriptionMinimal sequenceDescription = new SequenceDescriptionMinimal( timepoints, setups, null, missingViews );
-		final BasicImgLoader< ? > imgLoader = createImgLoaderFromXml( root, basePath, sequenceDescription );
+		final BasicImgLoader imgLoader = createImgLoaderFromXml( root, basePath, sequenceDescription );
 		sequenceDescription.setImgLoader( imgLoader );
 
 		final ViewRegistrations viewRegistrations = createRegistrationsFromXml( root );
@@ -133,7 +133,7 @@ public class XmlIoSpimDataMinimalLegacy
 		return setups;
 	}
 
-	private static BasicImgLoader< ? > createImgLoaderFromXml( final Element sequenceDescriptionElem, final File basePath, final SequenceDescriptionMinimal sequenceDescription  )
+	private static BasicImgLoader createImgLoaderFromXml( final Element sequenceDescriptionElem, final File basePath, final SequenceDescriptionMinimal sequenceDescription  )
 	{
 		final Element elem = sequenceDescriptionElem.getChild( "ImageLoader" );
 		final String classn = elem.getAttributeValue( "class" );
