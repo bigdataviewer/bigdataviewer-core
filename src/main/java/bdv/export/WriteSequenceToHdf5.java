@@ -12,6 +12,7 @@ import java.util.concurrent.CountDownLatch;
 import mpicbg.spim.data.XmlHelpers;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicImgLoader;
+import mpicbg.spim.data.generic.sequence.BasicSetupImgLoader;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.sequence.TimePoint;
 import mpicbg.spim.data.sequence.TimePoints;
@@ -361,12 +362,15 @@ public class WriteSequenceToHdf5
 		Collections.sort( setupIdsSequence );
 
 		// get the BasicImgLoader that supplies the images
-		if ( !( seq.getImgLoader().getImageType() instanceof UnsignedShortType ) )
-			throw new IllegalArgumentException( "Expected BasicImgLoader<UnsignedShortTyp> but your dataset has BasicImgLoader<"
-					+ seq.getImgLoader().getImageType().getClass().getSimpleName() + ">.\nCurrently writing to HDF5 is only supported for UnsignedShortType." );
+		final BasicImgLoader imgLoader = ( BasicImgLoader ) seq.getImgLoader();
 
-		@SuppressWarnings( "unchecked" )
-		final BasicImgLoader< UnsignedShortType > imgLoader = ( BasicImgLoader< UnsignedShortType > ) seq.getImgLoader();
+		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() ) {
+			final Object type = imgLoader.getSetupImgLoader( setup.getId() ).getImageType();
+			if ( !( type instanceof UnsignedShortType ) )
+				throw new IllegalArgumentException( "Expected BasicImgLoader<UnsignedShortTyp> but your dataset has BasicImgLoader<"
+						+ type.getClass().getSimpleName() + ">.\nCurrently writing to HDF5 is only supported for UnsignedShortType." );
+		}
+
 
 		// open HDF5 partition output file
 		final File hdf5File = new File( partition.getPath() );
@@ -418,8 +422,8 @@ public class WriteSequenceToHdf5
 				final int setupIdPartition = partition.getSetupIdSequenceToPartition().get( setupIdSequence );
 				progressWriter.out().printf( "proccessing setup %d / %d\n", ++setupIndex, numSetups );
 
-				final ViewId viewIdSequence = new ViewId( timepointIdSequence, setupIdSequence );
-				final RandomAccessibleInterval< UnsignedShortType > img = imgLoader.getImage( viewIdSequence );
+				@SuppressWarnings( "unchecked" )
+				final RandomAccessibleInterval< UnsignedShortType > img = ( ( BasicSetupImgLoader< UnsignedShortType > ) imgLoader.getSetupImgLoader( setupIdSequence ) ).getImage( timepointIdSequence );
 				final ExportMipmapInfo mipmapInfo = perSetupMipmapInfo.get( setupIdSequence );
 				final double startCompletionRatio = ( double ) numCompletedTasks++ / numTasks;
 				final double endCompletionRatio = ( double ) numCompletedTasks / numTasks;
@@ -655,7 +659,7 @@ public class WriteSequenceToHdf5
 				useLoopBack = loopbackHeuristic.decide( img, resolutions[ level ], previousLevel, factorsToPreviousLevel, subdivisions[ level ] );
 				if ( useLoopBack )
 				{
-					sourceImg = loopback.getImage( new ViewId( timepointIdPartition, setupIdPartition ), previousLevel );
+					sourceImg = loopback.getSetupImgLoader( setupIdPartition ).getImage( timepointIdPartition, previousLevel );
 					factor = factorsToPreviousLevel;
 				}
 				else
