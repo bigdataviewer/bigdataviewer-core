@@ -16,7 +16,7 @@ public class SpimDataMinimal extends AbstractSpimData< SequenceDescriptionMinima
 	/**
 	 * create copy of a {@link SpimDataMinimal} with replaced {@link BasicImgLoader}
 	 */
-	public SpimDataMinimal( final SpimDataMinimal other, final BasicImgLoader< ? > imgLoader )
+	public SpimDataMinimal( final SpimDataMinimal other, final BasicImgLoader imgLoader )
 	{
 		super( other.getBasePath(), new SequenceDescriptionMinimal( other.getSequenceDescription(), imgLoader ), other.getViewRegistrations() );
 	}

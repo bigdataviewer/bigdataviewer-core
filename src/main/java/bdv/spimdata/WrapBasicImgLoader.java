@@ -1,16 +1,21 @@
 package bdv.spimdata;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import mpicbg.spim.data.generic.AbstractSpimData;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicImgLoader;
+import mpicbg.spim.data.generic.sequence.BasicSetupImgLoader;
 import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
 import net.imglib2.realtransform.AffineTransform3D;
 import bdv.ViewerImgLoader;
+import bdv.ViewerSetupImgLoader;
 import bdv.img.cache.Cache;
 
-public class WrapBasicImgLoader< T > implements ViewerImgLoader< T, Volatile< T > >
+public class WrapBasicImgLoader implements ViewerImgLoader
 {
 	/**
 	 * If the {@link BasicImgLoader image loader} of {@code spimData} is not a
@@ -25,14 +30,13 @@ public class WrapBasicImgLoader< T > implements ViewerImgLoader< T, Volatile< T 
 	 * @return {@code true} if wrapping was necessary, {@code false} if
 	 *         {@code spimData} had a {@link ViewerImgLoader} already.
 	 */
-	@SuppressWarnings( { "rawtypes", "unchecked" } )
 	public static boolean wrapImgLoaderIfNecessary( final AbstractSpimData< ? > spimData )
 	{
 		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
-		final BasicImgLoader< ? > imgLoader = seq.getImgLoader();
-		if ( ! ( imgLoader instanceof ViewerImgLoader ) )
+		final BasicImgLoader imgLoader = seq.getImgLoader();
+		if ( !( imgLoader instanceof ViewerImgLoader ) )
 		{
-			setImgLoader( seq, new WrapBasicImgLoader( imgLoader ) );
+			setImgLoader( seq, new WrapBasicImgLoader( imgLoader, seq.getViewSetups() ) );
 			return true;
 		}
 		else
@@ -53,12 +57,10 @@ public class WrapBasicImgLoader< T > implements ViewerImgLoader< T, Volatile< T 
 	}
 
 	@SuppressWarnings( "unchecked" )
-	private static < L extends BasicImgLoader< ? > > void setImgLoader( final AbstractSequenceDescription< ?, ?, L  > seq, final BasicImgLoader< ? > newLoader )
+	private static < L extends BasicImgLoader > void setImgLoader( final AbstractSequenceDescription< ?, ?, L > seq, final BasicImgLoader newLoader )
 	{
 		seq.setImgLoader( ( L ) newLoader );
 	}
-
-	private final BasicImgLoader< T > source;
 
 	private static final double[][] mipmapResolutions = new double[][] { { 1, 1, 1 } };
 
@@ -66,63 +68,83 @@ public class WrapBasicImgLoader< T > implements ViewerImgLoader< T, Volatile< T 
 
 	private static final Cache cache = new Cache.Dummy();
 
-	public WrapBasicImgLoader( final BasicImgLoader< T > source )
-	{
-		this.source = source;
+	private final HashMap< Integer, WrapSetupImgLoader< ?, ? > > wrapped;
 
+	@SuppressWarnings( { "rawtypes", "unchecked" } )
+	public WrapBasicImgLoader( final BasicImgLoader source, final Map< Integer, ? > setupsMap )
+	{
+		wrapped = new HashMap< Integer, WrapSetupImgLoader< ?, ? > >();
+		for ( final int setupId : setupsMap.keySet() )
+			wrapped.put( setupId, new WrapSetupImgLoader( source.getSetupImgLoader( setupId ) ) );
 	}
 
 	@Override
-	public RandomAccessibleInterval< T > getImage( final ViewId view )
+	public ViewerSetupImgLoader< ?, ? > getSetupImgLoader( final int setupId )
 	{
-		return source.getImage( view );
-	}
-
-	@Override
-	public T getImageType()
-	{
-		return source.getImageType();
-	}
-
-	@Override
-	public RandomAccessibleInterval< T > getImage( final ViewId view, final int level )
-	{
-		return getImage( view );
-	}
-
-	@Override
-	public RandomAccessibleInterval< Volatile< T > > getVolatileImage( final ViewId view, final int level )
-	{
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public Volatile< T > getVolatileImageType()
-	{
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public double[][] getMipmapResolutions( final int setupId )
-	{
-		return mipmapResolutions;
-	}
-
-	@Override
-	public AffineTransform3D[] getMipmapTransforms( final int setupId )
-	{
-		return mipmapTransforms;
-	}
-
-	@Override
-	public int numMipmapLevels( final int setupId )
-	{
-		return 1;
+		return wrapped.get( setupId );
 	}
 
 	@Override
 	public Cache getCache()
 	{
 		return cache;
+	}
+
+	private class WrapSetupImgLoader< T, V extends Volatile< T > > implements ViewerSetupImgLoader< T, V >
+	{
+		private final BasicSetupImgLoader< T > source;
+
+		private WrapSetupImgLoader( final BasicSetupImgLoader< T > source )
+		{
+			this.source = source;
+		}
+
+		@Override
+		public RandomAccessibleInterval< T > getImage( final int timepointId )
+		{
+			return source.getImage( timepointId );
+		}
+
+		@Override
+		public RandomAccessibleInterval< T > getImage( final int timepointId, final int level )
+		{
+			return source.getImage( timepointId );
+		}
+
+		@Override
+		public T getImageType()
+		{
+			return source.getImageType();
+		}
+
+		@Override
+		public RandomAccessibleInterval< V > getVolatileImage( final int timepointId, final int level )
+		{
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public V getVolatileImageType()
+		{
+			throw new UnsupportedOperationException();
+		}
+
+		@Override
+		public double[][] getMipmapResolutions()
+		{
+			return mipmapResolutions;
+		}
+
+		@Override
+		public AffineTransform3D[] getMipmapTransforms()
+		{
+			return mipmapTransforms;
+		}
+
+		@Override
+		public int numMipmapLevels()
+		{
+			return 1;
+		}
 	}
 }

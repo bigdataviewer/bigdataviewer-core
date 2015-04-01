@@ -1,10 +1,9 @@
 package bdv;
 
-import mpicbg.spim.data.sequence.ViewId;
-import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
 
-public abstract class AbstractViewerImgLoader< T, V extends Volatile< T > > implements ViewerImgLoader< T, V >
+// TODO: Remove
+public abstract class AbstractViewerImgLoader< T, V extends Volatile< T > > implements ViewerImgLoader
 {
 	protected final T type;
 
@@ -14,23 +13,5 @@ public abstract class AbstractViewerImgLoader< T, V extends Volatile< T > > impl
 	{
 		this.type = type;
 		this.volatileType = volatileType;
-	}
-
-	@Override
-	public T getImageType()
-	{
-		return type;
-	}
-
-	@Override
-	public V getVolatileImageType()
-	{
-		return volatileType;
-	}
-
-	@Override
-	public RandomAccessibleInterval< T > getImage( final ViewId view )
-	{
-		return getImage( view, 0 );
 	}
 }
