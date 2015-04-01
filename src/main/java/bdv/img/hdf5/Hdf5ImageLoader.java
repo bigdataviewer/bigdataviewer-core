@@ -131,12 +131,8 @@ public class Hdf5ImageLoader implements ViewerImgLoader, ImgLoader, MultiResolut
 		this.hdf5File = hdf5File;
 		perSetupMipmapInfo = new HashMap< Integer, MipmapInfo >();
 		setupImgLoaders = new HashMap< Integer, SetupImgLoader >();
-		final List< ? extends BasicViewSetup > setups = sequenceDescription.getViewSetupsOrdered();
-		for ( final BasicViewSetup setup : setups )
-		{
-			final int setupId = setup.getId();
-			setupImgLoaders.put( setupId, new SetupImgLoader( setupId ) );
-		}
+		for ( final BasicViewSetup setup : sequenceDescription.getViewSetupsOrdered() )
+			setupImgLoaders.put( setup.getId(), new SetupImgLoader( setup.getId() ) );
 		cachedDimsAndExistence = new HashMap< ViewLevelId, DimsAndExistence >();
 		this.sequenceDescription = sequenceDescription;
 		partitions = new ArrayList< Partition >();
@@ -383,6 +379,15 @@ public class Hdf5ImageLoader implements ViewerImgLoader, ImgLoader, MultiResolut
 
 	public class MonolithicImageLoader implements ViewerImgLoader, ImgLoader, MultiResolutionImgLoader< ? >
 	{
+		private final HashMap< Integer, MonolithicSetupImgLoader > setupImgLoaders;
+
+		public MonolithicImageLoader()
+		{
+			setupImgLoaders = new HashMap< Integer, MonolithicSetupImgLoader >();
+			for ( final BasicViewSetup setup : sequenceDescription.getViewSetupsOrdered() )
+				setupImgLoaders.put( setup.getId(), new MonolithicSetupImgLoader( setup.getId() ) );
+		}
+
 		@Override
 		public RandomAccessibleInterval< FloatType > getFloatImage( final ViewId view, final boolean normalize )
 		{
@@ -499,8 +504,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, ImgLoader, MultiResolut
 		@Override
 		public MonolithicSetupImgLoader getSetupImgLoader( final int setupId )
 		{
-			// TODO Auto-generated method stub
-			return null;
+			return setupImgLoaders.get( setupId );
 		}
 
 		public class MonolithicSetupImgLoader extends AbstractViewerSetupImgLoader< UnsignedShortType, VolatileUnsignedShortType >
