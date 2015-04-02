@@ -73,7 +73,9 @@ public class Hdf5ImageLoader implements ViewerImgLoader, ImgLoader, MultiResolut
 
 	protected IHDF5Access hdf5Access;
 
-	protected VolatileGlobalCellCache< VolatileShortArray > cache;
+	protected VolatileGlobalCellCache cache;
+
+	protected Hdf5VolatileShortArrayLoader shortLoader;
 
 	/**
 	 * Description of available mipmap levels for each {@link BasicViewSetup}.
@@ -189,7 +191,8 @@ public class Hdf5ImageLoader implements ViewerImgLoader, ImgLoader, MultiResolut
 					e.printStackTrace();
 					hdf5Access = new HDF5Access( hdf5Reader );
 				}
-				cache = new VolatileGlobalCellCache< VolatileShortArray >( new Hdf5VolatileShortArrayLoader( hdf5Access ), maxNumTimepoints, maxNumSetups, maxNumLevels, 1 );
+				shortLoader = new Hdf5VolatileShortArrayLoader( hdf5Access );
+				cache = new VolatileGlobalCellCache( maxNumTimepoints, maxNumSetups, maxNumLevels, 1 );
 			}
 		}
 	}
@@ -262,7 +265,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, ImgLoader, MultiResolut
 	}
 
 	@Override
-	public VolatileGlobalCellCache< VolatileShortArray > getCache()
+	public VolatileGlobalCellCache getCache()
 	{
 		open();
 		return cache;
@@ -332,7 +335,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, ImgLoader, MultiResolut
 
 		final int priority = mipmapInfo.getMaxLevel() - level;
 		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
-		final CellCache< VolatileShortArray > c = cache.new VolatileCellCache( timepointId, setupId, level, cacheHints );
+		final CellCache< VolatileShortArray > c = cache.new VolatileCellCache< VolatileShortArray >( timepointId, setupId, level, cacheHints, shortLoader );
 		final VolatileImgCells< VolatileShortArray > cells = new VolatileImgCells< VolatileShortArray >( c, new Fraction(), dimensions, cellDimensions );
 		final CachedCellImg< T, VolatileShortArray > img = new CachedCellImg< T, VolatileShortArray >( cells );
 		return img;
