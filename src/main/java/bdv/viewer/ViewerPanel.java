@@ -39,6 +39,7 @@ import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.TransformEventHandler;
 import net.imglib2.ui.TransformEventHandler3D;
+import net.imglib2.ui.TransformEventHandlerFactory;
 import net.imglib2.ui.TransformListener;
 import net.imglib2.util.LinAlgHelpers;
 
@@ -202,6 +203,8 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 		private MessageOverlayAnimator msgOverlay = new MessageOverlayAnimator( 800 );
 
+		private TransformEventHandlerFactory< AffineTransform3D > transformEventHandlerFactory = TransformEventHandler3D.factory();
+
 		public Options width( final int w )
 		{
 			width = w;
@@ -247,6 +250,12 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		public Options msgOverlay( final MessageOverlayAnimator o )
 		{
 			msgOverlay = o;
+			return this;
+		}
+
+		public Options transformEventHandlerFactory( final TransformEventHandlerFactory< AffineTransform3D > f )
+		{
+			transformEventHandlerFactory = f;
 			return this;
 		}
 	}
@@ -301,7 +310,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		painterThread = new PainterThread( this );
 		viewerTransform = new AffineTransform3D();
 		display = new InteractiveDisplayCanvasComponent< AffineTransform3D >(
-				optional.width, optional.height, TransformEventHandler3D.factory() );
+				optional.width, optional.height, optional.transformEventHandlerFactory );
 		display.addTransformListener( this );
 		renderTarget = new TransformAwareBufferedImageOverlayRenderer();
 		renderTarget.setCanvasSize( optional.width, optional.height );
