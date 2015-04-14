@@ -42,9 +42,7 @@ public class BoundingBoxDialog extends JDialog
 
 	protected final BoundingBoxOverlay boxOverlay;
 
-	private boolean showBoxSource;
-
-	private boolean showBoxOverlay;
+	private boolean contentCreated = false;
 
 	public BoundingBoxDialog(
 			final Frame owner,
@@ -70,8 +68,6 @@ public class BoundingBoxDialog extends JDialog
 			final boolean showBoxOverlay )
 	{
 		super( owner, title, false );
-		this.showBoxSource = showBoxSource;
-		this.showBoxOverlay = showBoxOverlay;
 
 		// create a procedural RealRandomAccessible that will render the bounding box
 		final UnsignedShortType insideValue = new UnsignedShortType( 1000 ); // inside the box pixel value is 1000
@@ -167,7 +163,18 @@ public class BoundingBoxDialog extends JDialog
 		am.put( hideKey, hideAction );
 
 		setDefaultCloseOperation( WindowConstants.HIDE_ON_CLOSE );
-		createContent();
+//		createContent();
+	}
+
+	@Override
+	public void setVisible( final boolean b )
+	{
+		if ( b && !contentCreated )
+		{
+			createContent();
+			contentCreated = true;
+		}
+		super.setVisible( b );
 	}
 
 	// Override in subclasses
