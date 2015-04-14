@@ -95,9 +95,11 @@ public class ViewerState
 	{
 		this.sources = new ArrayList< SourceState< ? > >( sources.size() );
 		for ( final SourceAndConverter< ? > source : sources )
-			this.sources.add( SourceState.create( source ) );
+			this.sources.add( SourceState.create( source, this ) );
 		unmodifiableSources = Collections.unmodifiableList( this.sources );
-		this.groups = new ArrayList< SourceGroup >( sourceGroups );
+		groups = new ArrayList< SourceGroup >( sourceGroups.size() );
+		for ( final SourceGroup g : sourceGroups )
+			groups.add( g.copy( this ) );
 		unmodifiableGroups = Collections.unmodifiableList( this.groups );
 		this.numTimePoints = numTimePoints;
 
@@ -117,11 +119,11 @@ public class ViewerState
 	{
 		sources = new ArrayList< SourceState< ? > >( s.sources.size() );
 		for ( final SourceState< ? > source : s.sources )
-			this.sources.add( source.copy() );
+			this.sources.add( source.copy( this ) );
 		unmodifiableSources = Collections.unmodifiableList( sources );
 		groups = new ArrayList< SourceGroup >( s.groups.size() );
 		for ( final SourceGroup group : s.groups )
-			this.groups.add( group.copy() );
+			this.groups.add( group.copy( this ) );
 		unmodifiableGroups = Collections.unmodifiableList( groups );
 		numTimePoints = s.numTimePoints;
 		viewerTransform = s.viewerTransform.copy();
@@ -333,7 +335,7 @@ public class ViewerState
 
 	public synchronized void addSource( final SourceAndConverter< ? > source )
 	{
-		sources.add( SourceState.create( source ) );
+		sources.add( SourceState.create( source, this ) );
 	}
 
 	public synchronized void removeSource( final Source< ? > source )

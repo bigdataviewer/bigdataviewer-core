@@ -368,7 +368,7 @@ public class MultiResolutionRenderer
 		return false;
 	}
 
-	protected synchronized boolean checkRenewRenderImages( final int numVisibleSources )
+	protected boolean checkRenewRenderImages( final int numVisibleSources )
 	{
 		final int n = numVisibleSources > 1 ? numVisibleSources : 0;
 		if ( n != renderImages[ 0 ].length ||
@@ -393,7 +393,7 @@ public class MultiResolutionRenderer
 		return false;
 	}
 
-	protected synchronized boolean checkRenewMaskArrays( final int numVisibleSources )
+	protected boolean checkRenewMaskArrays( final int numVisibleSources )
 	{
 		if ( numVisibleSources != renderMaskArrays.length ||
 				( numVisibleSources != 0 &&	( renderMaskArrays[ 0 ].length < screenImages[ 0 ][ 0 ].size() ) ) )
@@ -419,10 +419,6 @@ public class MultiResolutionRenderer
 			return false;
 
 		final boolean resized = checkResize();
-
-		final int numVisibleSources = state.getVisibleSourceIndices().size();
-		checkRenewRenderImages( numVisibleSources );
-		checkRenewMaskArrays( numVisibleSources );
 
 		// the BufferedImage that is rendered to (to paint to the canvas)
 		final BufferedImage bufferedImage;
@@ -452,7 +448,13 @@ public class MultiResolutionRenderer
 				currentScreenScaleIndex = requestedScreenScaleIndex;
 				bufferedImage = bufferedImages[ currentScreenScaleIndex ][ renderId ];
 				final ARGBScreenImage screenImage = screenImages[ currentScreenScaleIndex ][ renderId ];
-				p = createProjector( state, currentScreenScaleIndex, screenImage );
+				synchronized ( state )
+				{
+					final int numVisibleSources = state.getVisibleSourceIndices().size();
+					checkRenewRenderImages( numVisibleSources );
+					checkRenewMaskArrays( numVisibleSources );
+					p = createProjector( state, currentScreenScaleIndex, screenImage );
+				}
 				projector = p;
 			}
 			else
@@ -549,42 +551,39 @@ public class MultiResolutionRenderer
 			final int screenScaleIndex,
 			final ARGBScreenImage screenImage )
 	{
-		synchronized ( viewerState )
+		cache.initIoTimeBudget( null ); // clear time budget such that prefetching doesn't wait for loading blocks.
+		final List< SourceState< ? > > sources = viewerState.getSources();
+		final List< Integer > visibleSourceIndices = viewerState.getVisibleSourceIndices();
+		VolatileProjector projector;
+		if ( visibleSourceIndices.isEmpty() )
+			projector = new EmptyProjector< ARGBType >( screenImage );
+		else if ( visibleSourceIndices.size() == 1 )
 		{
-			cache.initIoTimeBudget( null ); // clear time budget such that prefetching doesn't wait for loading blocks.
-			final List< SourceState< ? > > sources = viewerState.getSources();
-			final List< Integer > visibleSourceIndices = viewerState.getVisibleSourceIndices();
-			VolatileProjector projector;
-			if ( visibleSourceIndices.isEmpty() )
-				projector = new EmptyProjector< ARGBType >( screenImage );
-			else if ( visibleSourceIndices.size() == 1 )
-			{
-				final int i = visibleSourceIndices.get( 0 );
-				projector = createSingleSourceProjector( viewerState, sources.get( i ), i, currentScreenScaleIndex, screenImage, renderMaskArrays[ 0 ] );
-			}
-			else
-			{
-				final ArrayList< VolatileProjector > sourceProjectors = new ArrayList< VolatileProjector >();
-				final ArrayList< ARGBScreenImage > sourceImages = new ArrayList< ARGBScreenImage >();
-				int j = 0;
-				for ( final int i : visibleSourceIndices )
-				{
-					final ARGBScreenImage renderImage = renderImages[ currentScreenScaleIndex ][ j ];
-					final byte[] maskArray = renderMaskArrays[ j ];
-					++j;
-					final VolatileProjector p = createSingleSourceProjector(
-							viewerState, sources.get( i ), i, currentScreenScaleIndex,
-							renderImage, maskArray );
-					sourceProjectors.add( p );
-					sourceImages.add( renderImage );
-				}
-				projector = new AccumulateProjectorARGB( sourceProjectors, sourceImages, screenImage, numRenderingThreads, renderingExecutorService );
-			}
-			previousTimepoint = viewerState.getCurrentTimepoint();
-			viewerState.getViewerTransform( currentProjectorTransform );
-			cache.initIoTimeBudget( iobudget );
-			return projector;
+			final int i = visibleSourceIndices.get( 0 );
+			projector = createSingleSourceProjector( viewerState, sources.get( i ), i, currentScreenScaleIndex, screenImage, renderMaskArrays[ 0 ] );
 		}
+		else
+		{
+			final ArrayList< VolatileProjector > sourceProjectors = new ArrayList< VolatileProjector >();
+			final ArrayList< ARGBScreenImage > sourceImages = new ArrayList< ARGBScreenImage >();
+			int j = 0;
+			for ( final int i : visibleSourceIndices )
+			{
+				final ARGBScreenImage renderImage = renderImages[ currentScreenScaleIndex ][ j ];
+				final byte[] maskArray = renderMaskArrays[ j ];
+				++j;
+				final VolatileProjector p = createSingleSourceProjector(
+						viewerState, sources.get( i ), i, currentScreenScaleIndex,
+						renderImage, maskArray );
+				sourceProjectors.add( p );
+				sourceImages.add( renderImage );
+			}
+			projector = new AccumulateProjectorARGB( sourceProjectors, sourceImages, screenImage, numRenderingThreads, renderingExecutorService );
+		}
+		previousTimepoint = viewerState.getCurrentTimepoint();
+		viewerState.getViewerTransform( currentProjectorTransform );
+		cache.initIoTimeBudget( iobudget );
+		return projector;
 	}
 
 	private static class SimpleVolatileProjector< A, B > extends SimpleInterruptibleProjector< A, B > implements VolatileProjector

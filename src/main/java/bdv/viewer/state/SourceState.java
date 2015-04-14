@@ -41,52 +41,57 @@ public class SourceState< T > extends SourceAndConverter< T >
 
 	static class VolatileSourceState< T, V extends Volatile< T > > extends SourceState< V >
 	{
-		public VolatileSourceState( final SourceAndConverter< V > soc, final Data data )
+		public VolatileSourceState( final SourceAndConverter< V > soc, final ViewerState owner, final Data data )
 		{
-			super( soc, data );
+			super( soc, owner, data );
 		}
 
-		public static < T, V extends Volatile< T > > VolatileSourceState< T, V > create( final SourceAndConverter< V > soc, final Data data )
+		public static < T, V extends Volatile< T > > VolatileSourceState< T, V > create( final SourceAndConverter< V > soc, final ViewerState owner, final Data data )
 		{
 			if ( soc == null )
 				return null;
 			else
-				return new VolatileSourceState< T, V >( soc, data );
+				return new VolatileSourceState< T, V >( soc, owner, data );
 		}
 	}
+
+	final ViewerState owner;
 
 	final Data data;
 
 	final VolatileSourceState< T, ? extends Volatile< T > > volatileSourceState;
 
-	public SourceState( final SourceAndConverter< T > soc )
+	public SourceState( final SourceAndConverter< T > soc, final ViewerState owner )
 	{
 		super( soc );
 		data = new Data();
-		volatileSourceState = VolatileSourceState.create( soc.asVolatile(), data );
+		this.owner = owner;
+		volatileSourceState = VolatileSourceState.create( soc.asVolatile(), owner, data );
 	}
 
-	protected SourceState( final SourceAndConverter< T > soc, final Data data )
+	protected SourceState( final SourceAndConverter< T > soc, final ViewerState owner, final Data data )
 	{
 		super( soc );
 		this.data = data;
-		volatileSourceState = VolatileSourceState.create( soc.asVolatile(), data );
+		this.owner = owner;
+		volatileSourceState = VolatileSourceState.create( soc.asVolatile(), owner, data );
 	}
 
 	/**
 	 * copy constructor
 	 * @param s
 	 */
-	protected SourceState( final SourceState< T > s )
+	protected SourceState( final SourceState< T > s, final ViewerState owner )
 	{
 		super( s );
 		data = s.data.copy();
-		volatileSourceState = VolatileSourceState.create( s.volatileSourceAndConverter, data );
+		this.owner = owner;
+		volatileSourceState = VolatileSourceState.create( s.volatileSourceAndConverter, owner, data );
 	}
 
-	public SourceState< T > copy()
+	public SourceState< T > copy( final ViewerState owner )
 	{
-		return new SourceState< T >( this );
+		return new SourceState< T >( this, owner );
 	}
 
 	/**
@@ -104,7 +109,10 @@ public class SourceState< T > extends SourceAndConverter< T >
 	 */
 	public void setActive( final boolean isActive )
 	{
-		data.isActive = isActive;
+		synchronized ( owner )
+		{
+			data.isActive = isActive;
+		}
 	}
 
 	/**
@@ -122,15 +130,18 @@ public class SourceState< T > extends SourceAndConverter< T >
 	 */
 	public void setCurrent( final boolean isCurrent )
 	{
-		data.isCurrent = isCurrent;
+		synchronized ( owner )
+		{
+			data.isCurrent = isCurrent;
+		}
 	}
 
 	/**
 	 * Create a {@link SourceState} from a {@link SourceAndConverter}.
 	 */
-	public static < T > SourceState< T > create( final SourceAndConverter< T > soc )
+	public static < T > SourceState< T > create( final SourceAndConverter< T > soc, final ViewerState owner )
 	{
-		return new SourceState< T >( soc );
+		return new SourceState< T >( soc, owner );
 	}
 
 	@Override

@@ -12,6 +12,8 @@ import bdv.viewer.DisplayMode;
  */
 public class SourceGroup
 {
+	final ViewerState owner;
+
 	protected final TreeSet< Integer > sourceIds;
 
 	protected String name;
@@ -27,38 +29,46 @@ public class SourceGroup
 	 */
 	protected boolean isCurrent;
 
-	public SourceGroup( final String name )
+	public SourceGroup( final String name, final ViewerState owner )
 	{
+		this.owner = owner;
 		sourceIds = new TreeSet< Integer >();
 		this.name = name;
 		isActive = true;
 		isCurrent = false;
 	}
 
-	public SourceGroup( final SourceGroup g )
+	public SourceGroup( final SourceGroup g, final ViewerState owner )
 	{
+		this.owner = owner;
 		sourceIds = new TreeSet< Integer >( g.sourceIds );
 		name = g.name;
 		isActive = g.isActive;
 		isCurrent = g.isCurrent;
 	}
 
-	public SourceGroup copy()
+	public SourceGroup copy( final ViewerState owner )
 	{
-		return new SourceGroup( this );
+		return new SourceGroup( this, owner );
 	}
 
-	public synchronized void addSource( final int sourceId )
+	public void addSource( final int sourceId )
 	{
-		sourceIds.add( sourceId );
+		synchronized ( owner )
+		{
+			sourceIds.add( sourceId );
+		}
 	}
 
-	public synchronized void removeSource( final int sourceId )
+	public void removeSource( final int sourceId )
 	{
-		sourceIds.remove( sourceId );
+		synchronized ( owner )
+		{
+			sourceIds.remove( sourceId );
+		}
 	}
 
-	public synchronized SortedSet< Integer > getSourceIds()
+	public SortedSet< Integer > getSourceIds()
 	{
 		return sourceIds;
 	}
@@ -88,7 +98,10 @@ public class SourceGroup
 	 */
 	public void setActive( final boolean isActive )
 	{
-		this.isActive = isActive;
+		synchronized ( owner )
+		{
+			this.isActive = isActive;
+		}
 	}
 
 	/**
@@ -106,7 +119,10 @@ public class SourceGroup
 	 */
 	public void setCurrent( final boolean isCurrent )
 	{
-		this.isCurrent = isCurrent;
+		synchronized ( owner )
+		{
+			this.isCurrent = isCurrent;
+		}
 	}
 
 }
