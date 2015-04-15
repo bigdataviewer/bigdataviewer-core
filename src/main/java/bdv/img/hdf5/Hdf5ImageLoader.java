@@ -15,7 +15,6 @@ import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.sequence.Angle;
 import mpicbg.spim.data.sequence.Channel;
-import mpicbg.spim.data.sequence.ImgLoader;
 import mpicbg.spim.data.sequence.TimePoint;
 import mpicbg.spim.data.sequence.ViewId;
 import mpicbg.spim.data.sequence.VoxelDimensions;
@@ -57,7 +56,7 @@ import bdv.util.MipmapTransforms;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
 
-public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType, VolatileUnsignedShortType > implements ImgLoader< UnsignedShortType >
+public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType, VolatileUnsignedShortType > implements MultiResolutionImgLoader< UnsignedShortType >
 {
 	protected File hdf5File;
 
@@ -413,7 +412,7 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 		return new MonolithicImageLoader();
 	}
 
-	public class MonolithicImageLoader implements ViewerImgLoader< UnsignedShortType, VolatileUnsignedShortType >, ImgLoader< UnsignedShortType >
+	public class MonolithicImageLoader implements ViewerImgLoader< UnsignedShortType, VolatileUnsignedShortType >, MultiResolutionImgLoader< UnsignedShortType >
 	{
 		@Override
 		public RandomAccessibleInterval< UnsignedShortType > getImage( final ViewId view, final int level )
@@ -477,11 +476,16 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 		@Override
 		public RandomAccessibleInterval< FloatType > getFloatImage( final ViewId view, final boolean normalize )
 		{
+			return getFloatImage( view, 0, normalize );
+		}
+
+		@Override
+		public RandomAccessibleInterval< FloatType > getFloatImage( final ViewId view, final int level, final boolean normalize )
+		{
 			Img< FloatType > img = null;
 			final int timepoint = view.getTimePointId();
 			final int setup = view.getViewSetupId();
-			final int level = 0;
-			final Dimensions dims = getImageSize( view );
+			final Dimensions dims = getImageSize( view, level );
 			final int n = dims.numDimensions();
 			final long[] dimsLong = new long[ n ];
 			dims.dimensions( dimsLong );
@@ -577,6 +581,12 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 		}
 
 		@Override
+		public Dimensions getImageSize( final ViewId view, final int level )
+		{
+			return Hdf5ImageLoader.this.getImageSize( view, level );
+		}
+
+		@Override
 		public VoxelDimensions getVoxelSize( final ViewId view )
 		{
 			return Hdf5ImageLoader.this.getVoxelSize( view );
@@ -624,7 +634,13 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 	@Override
 	public RandomAccessibleInterval< FloatType > getFloatImage( final ViewId view, final boolean normalize )
 	{
-		final RandomAccessibleInterval< UnsignedShortType > ushortImg = getImage( view );
+		return getFloatImage( view, 0, normalize );
+	}
+
+	@Override
+	public RandomAccessibleInterval< FloatType > getFloatImage( final ViewId view, final int level, final boolean normalize )
+	{
+		final RandomAccessibleInterval< UnsignedShortType > ushortImg = getImage( view, level );
 
 		// copy unsigned short img to float img
 		final FloatType f = new FloatType();
@@ -710,14 +726,20 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 	}
 
 	@Override
-	public Dimensions getImageSize( final ViewId view )
+	public Dimensions getImageSize( final ViewId view, final int level )
 	{
-		final ViewLevelId id = new ViewLevelId( view, 0 );
+		final ViewLevelId id = new ViewLevelId( view, level );
 		final DimsAndExistence dims = getDimsAndExistence( id );
 		if ( dims.exists() )
 			return new FinalDimensions( dims.getDimensions() );
 		else
 			return null;
+	}
+
+	@Override
+	public Dimensions getImageSize( final ViewId view )
+	{
+		return getImageSize( view, 0 );
 	}
 
 	@Override
