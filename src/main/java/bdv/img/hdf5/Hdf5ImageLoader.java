@@ -133,8 +133,6 @@ public class Hdf5ImageLoader implements ViewerImgLoader, ImgLoader, MultiResolut
 		this.hdf5File = hdf5File;
 		perSetupMipmapInfo = new HashMap< Integer, MipmapInfo >();
 		setupImgLoaders = new HashMap< Integer, SetupImgLoader >();
-		for ( final BasicViewSetup setup : sequenceDescription.getViewSetupsOrdered() )
-			setupImgLoaders.put( setup.getId(), new SetupImgLoader( setup.getId() ) );
 		cachedDimsAndExistence = new HashMap< ViewLevelId, DimsAndExistence >();
 		this.sequenceDescription = sequenceDescription;
 		partitions = new ArrayList< Partition >();
@@ -175,6 +173,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, ImgLoader, MultiResolut
 						maxNumLevels = resolutions.length;
 
 					perSetupMipmapInfo.put( setupId, new MipmapInfo( resolutions, transforms, subdivisions ) );
+					setupImgLoaders.put( setupId, new SetupImgLoader( setupId ) );
 				}
 
 				cachedDimsAndExistence.clear();
@@ -507,6 +506,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, ImgLoader, MultiResolut
 		@Override
 		public MonolithicSetupImgLoader getSetupImgLoader( final int setupId )
 		{
+			open();
 			return setupImgLoaders.get( setupId );
 		}
 
@@ -720,6 +720,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, ImgLoader, MultiResolut
 	@Override
 	public SetupImgLoader getSetupImgLoader( final int setupId )
 	{
+		open();
 		return setupImgLoaders.get( setupId );
 	}
 
