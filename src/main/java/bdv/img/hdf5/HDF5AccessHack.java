@@ -212,19 +212,20 @@ class HDF5AccessHack implements IHDF5Access
 		hdf5Reader.close();
 	}
 
-	@Override
-	protected void finalize() throws Throwable
-	{
-		try
-		{
-			for ( final OpenDataSet dataset : openDataSetCache.values() )
-				dataset.close();
-			openDataSetCache.clear();
-			hdf5Reader.close();
-		}
-		finally
-		{
-			super.finalize();
-		}
-	}
+//	@Override
+//	protected void finalize() throws Throwable
+//	{
+//		try
+//		{
+//			for ( final OpenDataSet dataset : openDataSetCache.values() )
+//				dataset.close();
+//			openDataSetCache.clear();
+//			System.out.println("img.hdf5.HDF5AccessHack.finalize()");
+//			hdf5Reader.close();
+//		}
+//		finally
+//		{
+//			super.finalize();
+//		}
+//	}
 }
