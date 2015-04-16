@@ -747,9 +747,8 @@ public class WriteSequenceToHdf5
 								}
 
 								final ArrayImg< UnsignedShortType, ? > cell = ArrayImgs.unsignedShorts( currentCellDim );
-								final RandomAccess< UnsignedShortType > out = cell.randomAccess();
 								if ( fullResolution )
-									copyBlock( out, currentCellDim, in, blockMin );
+									copyBlock( cell.randomAccess(), currentCellDim, in, blockMin );
 								else
 									downsampleBlock( cell.cursor(), accumulator, currentCellDim, in, blockMin, factor, scale );
 
