@@ -321,6 +321,8 @@ public class BigDataViewer
 
 		cropDialog = new CropDialog( viewerFrame, viewer, seq );
 
+		WrapBasicImgLoader.removeWrapperIfPresent( spimData );
+
 		movieDialog = new RecordMovieDialog( viewerFrame, viewer, progressWriter );
 		// this is just to get updates of window size:
 		viewer.getDisplay().addOverlayRenderer( movieDialog );

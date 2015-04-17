@@ -39,6 +39,19 @@ public class WrapBasicImgLoader< T > implements ViewerImgLoader< T, Volatile< T 
 			return false;
 	}
 
+	public static boolean removeWrapperIfPresent( final AbstractSpimData< ? > spimData )
+	{
+		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
+		final BasicImgLoader< ? > imgLoader = seq.getImgLoader();
+		if ( imgLoader instanceof WrapBasicImgLoader )
+		{
+			setImgLoader( seq, ( ( WrapBasicImgLoader< ? > ) imgLoader ).source );
+			return true;
+		}
+		else
+			return false;
+	}
+
 	@SuppressWarnings( "unchecked" )
 	private static < L extends BasicImgLoader< ? > > void setImgLoader( final AbstractSequenceDescription< ?, ?, L  > seq, final BasicImgLoader< ? > newLoader )
 	{
