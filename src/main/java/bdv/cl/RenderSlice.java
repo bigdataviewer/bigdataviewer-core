@@ -119,6 +119,80 @@ public class RenderSlice
 		}
 	}
 
+	private short[] getCellData( final CellRequest request )
+	{
+		final int timepointId = 0; // TODO
+		final int setupId = 0; // TODO
+		final int level = 0; // TODO
+
+
+		final VolatileGlobalCellCache< VolatileShortArray > cache = imgLoader.getCache();
+		final CacheHints cacheHints = new CacheHints( LoadingStrategy.BLOCKING, 0, false );
+		final VolatileGlobalCellCache< VolatileShortArray >.VolatileCellCache cellCache = cache.new VolatileCellCache( timepointId, setupId, level, cacheHints );
+
+		final int[] blockSize = imgLoader.getMipmapInfo( setupId ).getSubdivisions()[ level ];
+		final long[] blockSizeLong = Util.int2long( blockSize );
+		final Dimensions imageSize = imgLoader.getImageSize( new ViewId( timepointId, setupId ), level );
+
+		final int n = 3;
+		final long[] dimensions = new long[ n ];
+		final int[] cellDimensions = new int[ n ];
+		final int[] numCells = new int[ n ];
+		final int[] borderSize = new int[ n ];
+
+		imageSize.dimensions( dimensions );
+		System.arraycopy( blockSize, 0, cellDimensions, 0, n );
+		for ( int d = 0; d < n; ++d )
+		{
+			numCells[ d ] = ( int ) ( ( dimensions[ d ] - 1 ) / cellDimensions[ d ] + 1 );
+			borderSize[ d ] = ( int ) ( dimensions[ d ] - ( numCells[ d ] - 1 ) * cellDimensions[ d ] );
+		}
+
+		// up to this point, the data should be stored in a per-setup-and-level lookup
+		// ===========================================================================
+
+		final long[] cellGridPosition = new long[] {
+				request.getGridPos()[ 0 ],
+				request.getGridPos()[ 1 ],
+				request.getGridPos()[ 2 ]
+		}; // TODO: implement Localizable?
+
+		final long[] cellMin = new long[ n ];
+		final int[] cellDims  = new int[ n ];
+
+		boolean needsPadding = false;
+		for ( int d = 0; d < n; ++d )
+		{
+			if ( cellGridPosition[ d ] + 1 == numCells[ d ] )
+			{
+				needsPadding = true;
+				cellDims[ d ] = borderSize[ d ];
+			}
+			else
+				cellDims[ d ] = cellDimensions[ d ];
+			cellMin[ d ] = cellGridPosition[ d ] * cellDimensions[ d ];
+		}
+		final int index = IntervalIndexer.positionToIndex( cellGridPosition, numCells );
+		final VolatileCell< VolatileShortArray > cell = cellCache.load( index, cellDims, cellMin );
+		final short[] cellData = cell.getData().getCurrentStorageArray();
+
+		final short[] data;
+		if ( needsPadding )
+		{
+			final int numElements = blockSize[ 0 ] * blockSize[ 1 ] * blockSize[ 2 ];
+			data = new short[ numElements ];
+			final Img< UnsignedShortType > cellDataImg = ArrayImgs.unsignedShorts( cellData, cellDims[ 0 ], cellDims[ 1 ], cellDims[ 2 ] );
+			final Cursor< UnsignedShortType > in = cellDataImg.cursor();
+			final Cursor< UnsignedShortType > out = Views.interval( ArrayImgs.unsignedShorts( data, blockSizeLong ), cellDataImg ).cursor();
+			while ( in.hasNext() )
+				out.next().set( in.next() );
+		}
+		else
+			data = cellData;
+
+		return data;
+	}
+
 	private ArrayList< CellRequest > getRequiredBlocks( final AffineTransform3D sourceToScreen, final int w, final int h, final int dd, final ViewId view )
 	{
 //		final CachedCellImg< ?, ? > cellImg = (bdv.img.cache.CachedCellImg< ?, ? > ) imgLoader.getVolatileImage( view, 0 );
