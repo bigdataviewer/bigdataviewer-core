@@ -30,7 +30,6 @@ import mpicbg.spim.data.sequence.TimePoint;
 import net.imglib2.Volatile;
 import net.imglib2.display.RealARGBColorConverter;
 import net.imglib2.display.ScaledARGBConverter;
-import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.volatiles.VolatileARGBType;
@@ -69,6 +68,7 @@ import bdv.viewer.NavigationActions;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerFrame;
 import bdv.viewer.ViewerPanel;
+import bdv.viewer.state.ViewerState;
 
 public class BigDataViewer
 {
@@ -441,11 +441,10 @@ public class BigDataViewer
 			@Override
 			public void actionPerformed( final ActionEvent e )
 			{
-				final AffineTransform3D viewerTransform = new AffineTransform3D();
-				viewer.getState().getViewerTransform( viewerTransform );
+				final ViewerState state = viewer.getState();
 				final int width = viewer.getWidth();
 				final int height = viewer.getHeight();
-				render.renderSlice( viewerTransform, width, height );
+				render.renderSlice( state, width, height );
 			}
 		} );
 		final InputActionBindings bindings = viewerFrame.getKeybindings();
