@@ -56,6 +56,9 @@ public class HelloJOCL
 				out.println( "dev.isLittleEndian() = " + dev.isLittleEndian() );
 				out.println( "dev.isMemoryUnified() = " + dev.isMemoryUnified() );
 				out.println( "dev.isImageSupportAvailable() = " + dev.isImageSupportAvailable() );
+				out.println( "dev.getMaxImage3dWidth() = " + dev.getMaxImage3dWidth() );
+				out.println( "dev.getMaxImage3dHeight() = " + dev.getMaxImage3dHeight() );
+				out.println( "dev.getMaxImage3dDepth() = " + dev.getMaxImage3dDepth() );
 				out.println();
 			}
 

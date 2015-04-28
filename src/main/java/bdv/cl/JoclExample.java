@@ -267,6 +267,7 @@ public class JoclExample
 		example.renderTest2( 896, 384 );
 
 		example.blocks.release();
+		example.blockLookup.release();
 		example.renderTarget.release();
 		example.cl.release();
 	}
