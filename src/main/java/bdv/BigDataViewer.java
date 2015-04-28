@@ -1,5 +1,8 @@
 package bdv;
 
+import ij.ImageJ;
+
+import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
@@ -7,11 +10,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.AbstractAction;
 import javax.swing.ActionMap;
+import javax.swing.InputMap;
 import javax.swing.JFileChooser;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.KeyStroke;
 import javax.swing.filechooser.FileFilter;
 
 import mpicbg.spim.data.SpimDataException;
@@ -24,6 +30,7 @@ import mpicbg.spim.data.sequence.TimePoint;
 import net.imglib2.Volatile;
 import net.imglib2.display.RealARGBColorConverter;
 import net.imglib2.display.ScaledARGBConverter;
+import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.volatiles.VolatileARGBType;
@@ -35,8 +42,10 @@ import org.jdom2.input.SAXBuilder;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 
+import bdv.cl.RenderSlice;
 import bdv.export.ProgressWriter;
 import bdv.export.ProgressWriterConsole;
+import bdv.img.hdf5.Hdf5ImageLoader;
 import bdv.spimdata.WrapBasicImgLoader;
 import bdv.spimdata.XmlIoSpimDataMinimal;
 import bdv.tools.HelpDialog;
@@ -55,6 +64,7 @@ import bdv.tools.transformation.ManualTransformation;
 import bdv.tools.transformation.ManualTransformationEditor;
 import bdv.tools.transformation.TransformedSource;
 import bdv.util.KeyProperties;
+import bdv.viewer.InputActionBindings;
 import bdv.viewer.NavigationActions;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerFrame;
@@ -414,6 +424,33 @@ public class BigDataViewer
 		viewerFrame.setVisible( true );
 
 		InitializeViewerState.initTransform( viewer );
+
+		setupVolumeRendering( spimData );
+	}
+
+	private void setupVolumeRendering( final AbstractSpimData< ? > spimData )
+	{
+		final Hdf5ImageLoader imgLoader = ( Hdf5ImageLoader ) spimData.getSequenceDescription().getImgLoader();
+		final RenderSlice render = new RenderSlice( imgLoader );
+		final String RENDER_SLICE = "render slice";
+		final InputMap inputMap = new InputMap();
+		inputMap.put( KeyStroke.getKeyStroke( "R" ), RENDER_SLICE );
+		final ActionMap actionMap = new ActionMap();
+		actionMap.put( RENDER_SLICE, new AbstractAction()
+		{
+			@Override
+			public void actionPerformed( final ActionEvent e )
+			{
+				final AffineTransform3D viewerTransform = new AffineTransform3D();
+				viewer.getState().getViewerTransform( viewerTransform );
+				final int width = viewer.getWidth();
+				final int height = viewer.getHeight();
+				render.renderSlice( viewerTransform, width, height );
+			}
+		} );
+		final InputActionBindings bindings = viewerFrame.getKeybindings();
+		bindings.addActionMap( "volume", actionMap );
+		bindings.addInputMap( "volume", inputMap );
 	}
 
 	public ViewerPanel getViewer()
@@ -540,6 +577,8 @@ public class BigDataViewer
 
 	public static void main( final String[] args )
 	{
+		ImageJ.main( args );
+
 //		final String fn = "http://tomancak-mac-17.mpi-cbg.de:8080/openspim/";
 //		final String fn = "/Users/Pietzsch/Desktop/openspim/datasetHDF.xml";
 		final String fn = "/Users/pietzsch/workspace/data/111010_weber_full.xml";
