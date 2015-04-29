@@ -442,8 +442,8 @@ public class BigDataViewer
 			public void actionPerformed( final ActionEvent e )
 			{
 				final ViewerState state = viewer.getState();
-				final int width = viewer.getWidth();
-				final int height = viewer.getHeight();
+				final int width = viewer.getDisplay().getWidth();
+				final int height = viewer.getDisplay().getHeight();
 				render.renderSlice( state, width, height );
 			}
 		} );
