@@ -64,7 +64,9 @@ class HDF5Access implements IHDF5Access
 		Util.reorder( dimensions, reorderedDimensions );
 		Util.reorder( min, reorderedMin );
 		final MDFloatArray array = hdf5Reader.float32().readMDArrayBlockWithOffset( Util.getCellsPath( timepoint, setup, level ), reorderedDimensions, reorderedMin );
-		return array.getAsFlatArray();
+		final float[] pixels = array.getAsFlatArray();
+		unsignedShort( pixels );
+		return pixels;
 	}
 
 	@Override
@@ -83,5 +85,11 @@ class HDF5Access implements IHDF5Access
 	{
 		closeAllDataSets();
 		hdf5Reader.close();
+	}
+
+	protected static final void unsignedShort( final float[] pixels )
+	{
+		for ( int j = 0; j < pixels.length; ++j )
+			pixels[ j ] = ((short)pixels[ j ]) & 0xffff;
 	}
 }
