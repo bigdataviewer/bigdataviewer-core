@@ -6,6 +6,7 @@ import java.util.LinkedHashMap;
 
 import net.imglib2.util.IntervalIndexer;
 import net.imglib2.util.Intervals;
+import net.imglib2.util.Util;
 
 import com.jogamp.common.nio.Buffers;
 import com.jogamp.opencl.CLCommandQueue;
@@ -129,6 +130,17 @@ public class BlockTexture
 		queue.putWriteImage( blocksTexture, 0, 0, x, y, z, w, h, d, true );
 	}
 
+	public static int[] findSuitableGridSize( final int[] blockSize, final int maxMemoryInMB )
+	{
+		final int bytesPerVoxel = 2;
+		final double numVoxels = maxMemoryInMB * 1024 * 1024 / bytesPerVoxel;
+		final double sideLength = Math.pow( numVoxels, 1.0/3.0 );
+		final int[] gridSize = new int[ 3 ];
+		for ( int d = 0; d < 3; ++d )
+			gridSize[ d ] = ( int ) ( sideLength / blockSize[ d ] );
+		return gridSize;
+	}
+
 	@SuppressWarnings( "unchecked" )
 	public BlockTexture( final int[] gridSize, final int[] blockSize, final CLCommandQueue queue )
 	{
@@ -143,6 +155,7 @@ public class BlockTexture
 				gridSize[ 2 ] * blockSize[ 2 ],
 				new CLImageFormat( ChannelOrder.R, ChannelType.UNSIGNED_INT16 ),
 				Mem.READ_ONLY );
+		printSizes();
 	}
 
 	public boolean contains( final BlockKey key )
@@ -170,5 +183,20 @@ public class BlockTexture
 	public void release()
 	{
 		blocksTexture.release();
+	}
+
+	private void printSizes()
+	{
+		System.out.println( "gridSize = " + Util.printCoordinates( gridSize ) );
+		System.out.println( "blockSize = " + Util.printCoordinates( blockSize ) );
+		final int[] textureSize = new int[] {
+				gridSize[ 0 ] * blockSize[ 0 ],
+				gridSize[ 1 ] * blockSize[ 1 ],
+				gridSize[ 2 ] * blockSize[ 2 ] };
+		System.out.println( "textureSize = " + Util.printCoordinates( textureSize ) );
+		long numBytes = 2;
+		for ( int d = 0; d < 3; ++d )
+			numBytes *= textureSize[ d ];
+		System.out.println( "requires " + numBytes / 1024 / 1024 + " MB");
 	}
 }
