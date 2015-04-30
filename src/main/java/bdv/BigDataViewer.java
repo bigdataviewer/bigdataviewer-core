@@ -1,7 +1,5 @@
 package bdv;
 
-import ij.ImageJ;
-
 import java.awt.event.ActionEvent;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -576,8 +574,6 @@ public class BigDataViewer
 
 	public static void main( final String[] args )
 	{
-		ImageJ.main( args );
-
 //		final String fn = "http://tomancak-mac-17.mpi-cbg.de:8080/openspim/";
 //		final String fn = "/Users/Pietzsch/Desktop/openspim/datasetHDF.xml";
 		final String fn = "/Users/pietzsch/workspace/data/111010_weber_full.xml";

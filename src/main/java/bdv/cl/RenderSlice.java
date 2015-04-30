@@ -1,22 +1,31 @@
 package bdv.cl;
 
+import java.awt.BorderLayout;
+import java.awt.Container;
+import java.awt.GraphicsConfiguration;
+import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
+import javax.swing.JFrame;
 
 import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.Cursor;
 import net.imglib2.Dimensions;
+import net.imglib2.display.screenimage.awt.UnsignedByteAWTScreenImage;
 import net.imglib2.RealPoint;
 import net.imglib2.algorithm.kdtree.HyperPlane;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
-import net.imglib2.img.display.imagej.ImageJFunctions;
+import net.imglib2.realtransform.AffineTransform2D;
 import net.imglib2.iterator.IntervalIterator;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.ui.InteractiveDisplayCanvasComponent;
+import net.imglib2.ui.overlay.BufferedImageOverlayRenderer;
+import net.imglib2.ui.util.GuiUtil;
 import net.imglib2.util.IntervalIndexer;
 import net.imglib2.util.Intervals;
 import net.imglib2.util.LinAlgHelpers;
@@ -206,7 +215,7 @@ public class RenderSlice
 
 		final byte[] data = new byte[ width * height ];
 		renderTarget.getBuffer().get( data );
-		ImageJFunctions.show( ArrayImgs.unsignedBytes( data, width, height ) );
+		show( data, width, height );
 
 		renderTarget.release();
 
@@ -214,6 +223,28 @@ public class RenderSlice
 
 		blockTexture.release();
 		blockLookup.release();
+	}
+
+	private void show( final byte[] data, final int width, final int height )
+	{
+		final UnsignedByteAWTScreenImage screenImage = new UnsignedByteAWTScreenImage( ArrayImgs.unsignedBytes( data, width, height ) );
+		final BufferedImage bufferedImage = screenImage.image();
+
+		final BufferedImageOverlayRenderer target = new BufferedImageOverlayRenderer();
+		target.setBufferedImage( bufferedImage );
+		final InteractiveDisplayCanvasComponent< AffineTransform2D > display =
+				new InteractiveDisplayCanvasComponent< AffineTransform2D >( width, height, FixedTransformEventHandler2D.factory() );
+		display.addOverlayRenderer( target );
+		target.setCanvasSize( width, height );
+
+		final GraphicsConfiguration gc = GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.RGB_COLOR_MODEL );
+		final JFrame frame = new JFrame( "ImgLib2", gc );
+		frame.getRootPane().setDoubleBuffered( true );
+		final Container content = frame.getContentPane();
+		content.add( display, BorderLayout.CENTER );
+		frame.pack();
+		frame.setDefaultCloseOperation( JFrame.DISPOSE_ON_CLOSE );
+		frame.setVisible( true );
 	}
 
 	private short[] getCellData( final int[] cellPos )
