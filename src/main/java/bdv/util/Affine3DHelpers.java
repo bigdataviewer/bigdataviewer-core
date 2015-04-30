@@ -1,12 +1,16 @@
 package bdv.util;
 
+import java.util.ArrayList;
+
+import net.imglib2.algorithm.kdtree.ConvexPolytope;
+import net.imglib2.algorithm.kdtree.HyperPlane;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.LinAlgHelpers;
 
 /**
- * Helpers to extract parts (rotation, scale, etc) from
- * {@link AffineTransform3D}. Note that most of these helpers assume additional
- * restrictions on the affine transform.
+ * Helper functions to manipulate and apply {@link AffineTransform3D}. Note that
+ * most of the helpers to extract parts of the transform (rotation, scale, etc)
+ * assume additional restrictions on the affine transform.
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
@@ -171,11 +175,10 @@ public class Affine3DHelpers
 		}
 		return Math.sqrt( sqSum );
 	}
-	
-	
+
 	/**
 	 * Pretty-print the matrix content of an affine transform.
-	 * 
+	 *
 	 * @param transform
 	 *            the transform to print.
 	 * @return a string representation of the specified transform.
@@ -188,5 +191,93 @@ public class Affine3DHelpers
 						transform.get( 0, 0 ), transform.get( 0, 1 ), transform.get( 0, 2 ), transform.get( 0, 3 ),
 						transform.get( 1, 0 ), transform.get( 1, 1 ), transform.get( 1, 2 ), transform.get( 1, 3 ),
 						transform.get( 2, 0 ), transform.get( 2, 1 ), transform.get( 2, 2 ), +transform.get( 2, 3 ) );
+	}
+
+	/**
+	 * Apply an {@link AffineTransform3D} to a 3D {@link HyperPlane}.
+	 *
+	 * @param plane
+	 *            a 3D plane.
+	 * @param transform
+	 *            affine transformation to apply to the plane.
+	 * @return the transformed plane.
+	 */
+	public static HyperPlane transform( final HyperPlane plane, final AffineTransform3D transform )
+	{
+		final double[] O = new double[ 3 ];
+		final double[] tO = new double[ 3 ];
+		LinAlgHelpers.scale( plane.getNormal(), plane.getDistance(), O );
+		transform.apply( O, tO );
+
+		final double[][] m = new double[ 3 ][ 3 ];
+		for ( int r = 0; r < 3; ++r )
+			for ( int c = 0; c < 3; ++c )
+				m[ r ][ c ] = transform.inverse().get( c, r );
+		final double[] tN = new double[ 3 ];
+		LinAlgHelpers.mult( m, plane.getNormal(), tN );
+		LinAlgHelpers.normalize( tN );
+		final double td = LinAlgHelpers.dot( tN, tO );
+
+		return new HyperPlane( tN, td );
+	}
+
+	/**
+	 * Apply the inverse of an {@link AffineTransform3D} to a 3D {@link HyperPlane}.
+	 *
+	 * @param plane
+	 *            a 3D plane.
+	 * @param transform
+	 *            affine transformation whose inverse to apply to the plane.
+	 * @return the transformed plane.
+	 */
+	public static HyperPlane inverseTransform( final HyperPlane plane, final AffineTransform3D transform )
+	{
+		final double[] O = new double[ 3 ];
+		final double[] tO = new double[ 3 ];
+		LinAlgHelpers.scale( plane.getNormal(), plane.getDistance(), O );
+		transform.applyInverse( tO, O );
+
+		final double[][] m = new double[3][3];
+		for ( int r = 0; r < 3; ++r )
+			for ( int c = 0; c < 3; ++c )
+				m[r][c] = transform.get( c, r );
+		final double[] tN = new double[ 3 ];
+		LinAlgHelpers.mult( m, plane.getNormal(), tN );
+		LinAlgHelpers.normalize( tN );
+		final double td = LinAlgHelpers.dot( tN, tO );
+
+		return new HyperPlane( tN, td );
+	}
+
+	/**
+	 * Apply the inverse of an {@link AffineTransform3D} to a 3D {@link ConvexPolytope}.
+	 *
+	 * @param polytope
+	 *            a 3D polytope.
+	 * @param transform
+	 *            affine transformation whose inverse to apply to the polytope.
+	 * @return the transformed polytope.
+	 */
+	public static ConvexPolytope inverseTransform( final ConvexPolytope polytope, final AffineTransform3D transform )
+	{
+		final double[] O = new double[ 3 ];
+		final double[] tO = new double[ 3 ];
+		final double[] tN = new double[ 3 ];
+		final double[][] m = new double[3][3];
+		for ( int r = 0; r < 3; ++r )
+			for ( int c = 0; c < 3; ++c )
+				m[r][c] = transform.get( c, r );
+
+		final ArrayList< HyperPlane > transformedPlanes = new ArrayList< HyperPlane >();
+		for ( final HyperPlane plane : polytope.getHyperplanes() )
+		{
+			LinAlgHelpers.scale( plane.getNormal(), plane.getDistance(), O );
+			transform.applyInverse( tO, O );
+			LinAlgHelpers.mult( m, plane.getNormal(), tN );
+			LinAlgHelpers.normalize( tN );
+			final double td = LinAlgHelpers.dot( tN, tO );
+			transformedPlanes.add( new HyperPlane( tN, td ) );
+		}
+		return new ConvexPolytope( transformedPlanes );
 	}
 }
