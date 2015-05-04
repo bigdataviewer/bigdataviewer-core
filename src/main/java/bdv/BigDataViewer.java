@@ -28,9 +28,11 @@ import mpicbg.spim.data.sequence.TimePoint;
 import net.imglib2.Volatile;
 import net.imglib2.display.RealARGBColorConverter;
 import net.imglib2.display.ScaledARGBConverter;
+import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.volatiles.VolatileARGBType;
+import net.imglib2.ui.TransformListener;
 
 import org.jdom2.Document;
 import org.jdom2.Element;
@@ -426,13 +428,16 @@ public class BigDataViewer
 		setupVolumeRendering( spimData );
 	}
 
+	private volatile boolean renderContinuously = false;
 	private void setupVolumeRendering( final AbstractSpimData< ? > spimData )
 	{
 		final Hdf5ImageLoader imgLoader = ( Hdf5ImageLoader ) spimData.getSequenceDescription().getImgLoader();
 		final RenderSlice render = new RenderSlice( imgLoader );
 		final String RENDER_SLICE = "render slice";
+		final String RENDER_CONTINUOUS = "continuous";
 		final InputMap inputMap = new InputMap();
 		inputMap.put( KeyStroke.getKeyStroke( "R" ), RENDER_SLICE );
+		inputMap.put( KeyStroke.getKeyStroke( "E" ), RENDER_CONTINUOUS );
 		final ActionMap actionMap = new ActionMap();
 		actionMap.put( RENDER_SLICE, new AbstractAction()
 		{
@@ -440,14 +445,36 @@ public class BigDataViewer
 			public void actionPerformed( final ActionEvent e )
 			{
 				final ViewerState state = viewer.getState();
-				final int width = viewer.getDisplay().getWidth();
-				final int height = viewer.getDisplay().getHeight();
+				final int width = 800;//viewer.getDisplay().getWidth();
+				final int height = 600;//viewer.getDisplay().getHeight();
 				render.renderSlice( state, width, height );
+			}
+		} );
+		actionMap.put( RENDER_CONTINUOUS, new AbstractAction()
+		{
+			@Override
+			public void actionPerformed( final ActionEvent e )
+			{
+				renderContinuously = !renderContinuously;
 			}
 		} );
 		final InputActionBindings bindings = viewerFrame.getKeybindings();
 		bindings.addActionMap( "volume", actionMap );
 		bindings.addInputMap( "volume", inputMap );
+		viewer.addRenderTransformListener( new TransformListener< AffineTransform3D >()
+		{
+			@Override
+			public void transformChanged( final AffineTransform3D transform )
+			{
+				if ( renderContinuously )
+				{
+					final ViewerState state = viewer.getState();
+					final int width = 800;//viewer.getDisplay().getWidth();
+					final int height = 600;//viewer.getDisplay().getHeight();
+					render.renderSlice( state, width, height );
+				}
+			}
+		} );
 	}
 
 	public ViewerPanel getViewer()
@@ -576,7 +603,7 @@ public class BigDataViewer
 	{
 //		final String fn = "http://tomancak-mac-17.mpi-cbg.de:8080/openspim/";
 //		final String fn = "/Users/Pietzsch/Desktop/openspim/datasetHDF.xml";
-		final String fn = "/Users/pietzsch/workspace/data/111010_weber_full.xml";
+//		final String fn = "/Users/pietzsch/workspace/data/111010_weber_full.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/spimrec2/dataset.xml";
 //		final String fn = "/Users/pietzsch/Desktop/HisYFP-SPIM/dataset.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/bdv example/drosophila 2.xml";
