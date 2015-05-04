@@ -13,11 +13,9 @@ import javax.swing.JFrame;
 
 import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.Cursor;
-import net.imglib2.Dimensions;
+import net.imglib2.RandomAccessible;
 import net.imglib2.display.screenimage.awt.UnsignedByteAWTScreenImage;
-import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgs;
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
 import net.imglib2.realtransform.AffineTransform2D;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
@@ -26,16 +24,11 @@ import net.imglib2.ui.overlay.BufferedImageOverlayRenderer;
 import net.imglib2.ui.util.GuiUtil;
 import net.imglib2.util.IntervalIndexer;
 import net.imglib2.util.Intervals;
-import net.imglib2.util.Util;
 import net.imglib2.view.Views;
 import bdv.cl.BlockTexture.Block;
 import bdv.cl.BlockTexture.BlockKey;
 import bdv.cl.FindRequiredBlocks.RequiredBlocks;
-import bdv.img.cache.CacheHints;
 import bdv.img.cache.CachedCellImg;
-import bdv.img.cache.LoadingStrategy;
-import bdv.img.cache.VolatileCell;
-import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.img.hdf5.Hdf5ImageLoader;
 import bdv.viewer.Source;
 import bdv.viewer.state.ViewerState;
@@ -74,10 +67,11 @@ public class RenderSlice
 
 	private CLBuffer< IntBuffer > sizes;
 
+	private final int[] blockSize = new int[] { 32, 32, 32 };
+
 	public RenderSlice( final Hdf5ImageLoader imgLoader )
 	{
 		this.imgLoader = imgLoader;
-		final int[] blockSize = imgLoader.getMipmapInfo( 0 ).getSubdivisions()[ 0 ]; // TODO
 
 		try
 		{
@@ -139,7 +133,6 @@ public class RenderSlice
 		final int timepointId = 0; // TODO
 		final int setupId = 0; // TODO
 		final int mipmapIndex = 0; // TODO
-		final int[] blockSize = imgLoader.getMipmapInfo( setupId ).getSubdivisions()[ 0 ]; // TODO
 
 		final AffineTransform3D sourceToScreen = new AffineTransform3D();
 		viewerState.getViewerTransform( sourceToScreen );
@@ -152,13 +145,15 @@ public class RenderSlice
 		t = System.currentTimeMillis() - t;
 		System.out.println( "getRequiredBlocks: " + t + " ms" );
 		t = System.currentTimeMillis();
+		final RandomAccessible< UnsignedShortType > img = Views.extendZero( imgLoader.getImage( new ViewId( timepointId, setupId ), 0 ) ); // TODO
+		final short[] blockData = new short[ blockSize[ 0 ] * blockSize[ 1 ] * blockSize[ 2 ] ];
 		int nnn = 0;
 		for ( final int[] cellPos : requiredBlocks.cellPositions )
 		{
 			final BlockKey key = new BlockKey( cellPos );
 			if ( ! blockTexture.contains( key ) )
 			{
-				blockTexture.put( key, getCellData( cellPos ) );
+				blockTexture.put( key, getBlockData( cellPos, img, blockData ) );
 				nnn++;
 			}
 		}
@@ -294,70 +289,21 @@ public class RenderSlice
 		frame.setVisible( true );
 	}
 
-	private short[] getCellData( final int[] cellPos )
+	private short[] getBlockData( final int[] blockPos, final RandomAccessible< UnsignedShortType > img, final short[] useThisData )
 	{
-		final int timepointId = 0; // TODO
-		final int setupId = 0; // TODO
-		final int level = 0; // TODO
-
-
-		final VolatileGlobalCellCache< VolatileShortArray > cache = imgLoader.getCache();
-		final CacheHints cacheHints = new CacheHints( LoadingStrategy.BLOCKING, 0, false );
-		final VolatileGlobalCellCache< VolatileShortArray >.VolatileCellCache cellCache = cache.new VolatileCellCache( timepointId, setupId, level, cacheHints );
-
-		final int[] blockSize = imgLoader.getMipmapInfo( setupId ).getSubdivisions()[ level ];
-		final long[] blockSizeLong = Util.int2long( blockSize );
-		final Dimensions imageSize = imgLoader.getImageSize( new ViewId( timepointId, setupId ), level );
-
 		final int n = 3;
-		final long[] dimensions = new long[ n ];
-		final int[] cellDimensions = new int[ n ];
-		final int[] numCells = new int[ n ];
-		final int[] borderSize = new int[ n ];
-
-		imageSize.dimensions( dimensions );
-		System.arraycopy( blockSize, 0, cellDimensions, 0, n );
+		final long[] min = new long[ n ];
+		final long[] max = new long[ n ];
 		for ( int d = 0; d < n; ++d )
 		{
-			numCells[ d ] = ( int ) ( ( dimensions[ d ] - 1 ) / cellDimensions[ d ] + 1 );
-			borderSize[ d ] = ( int ) ( dimensions[ d ] - ( numCells[ d ] - 1 ) * cellDimensions[ d ] );
+			min[ d ] = blockPos[ d ] * blockSize[ d ];
+			max[ d ] = min[ d ] +  blockSize[ d ] - 1;
 		}
 
-		// up to this point, the data should be stored in a per-setup-and-level lookup
-		// ===========================================================================
-
-		final long[] cellMin = new long[ n ];
-		final int[] cellDims  = new int[ n ];
-
-		boolean needsPadding = false;
-		for ( int d = 0; d < n; ++d )
-		{
-			if ( cellPos[ d ] + 1 == numCells[ d ] )
-			{
-				needsPadding = true;
-				cellDims[ d ] = borderSize[ d ];
-			}
-			else
-				cellDims[ d ] = cellDimensions[ d ];
-			cellMin[ d ] = cellPos[ d ] * cellDimensions[ d ];
-		}
-		final int index = IntervalIndexer.positionToIndex( cellPos, numCells );
-		final VolatileCell< VolatileShortArray > cell = cellCache.load( index, cellDims, cellMin );
-		final short[] cellData = cell.getData().getCurrentStorageArray();
-
-		final short[] data;
-		if ( needsPadding )
-		{
-			final int numElements = blockSize[ 0 ] * blockSize[ 1 ] * blockSize[ 2 ];
-			data = new short[ numElements ];
-			final Img< UnsignedShortType > cellDataImg = ArrayImgs.unsignedShorts( cellData, cellDims[ 0 ], cellDims[ 1 ], cellDims[ 2 ] );
-			final Cursor< UnsignedShortType > in = cellDataImg.cursor();
-			final Cursor< UnsignedShortType > out = Views.interval( ArrayImgs.unsignedShorts( data, blockSizeLong ), cellDataImg ).cursor();
-			while ( in.hasNext() )
-				out.next().set( in.next() );
-		}
-		else
-			data = cellData;
+		final short[] data = useThisData == null ? new short[ blockSize[ 0 ] * blockSize[ 1 ] * blockSize[ 2 ] ] : useThisData;
+		final Cursor< UnsignedShortType > in = Views.flatIterable( Views.interval( img, min, max ) ).cursor();
+		for ( int i = 0; i < data.length; ++i )
+			data[ i ] = ( short ) ( in.next().get() & 0xffff );
 
 		return data;
 	}
@@ -365,10 +311,8 @@ public class RenderSlice
 	private RequiredBlocks getRequiredBlocks( final AffineTransform3D sourceToScreen, final int w, final int h, final int dd, final ViewId view )
 	{
 		final CachedCellImg< ?, ? > cellImg = (bdv.img.cache.CachedCellImg< ?, ? > ) imgLoader.getImage( view, 0 );
-		final int[] cellDimensions = new int[ 3 ];
-		cellImg.getCells().cellDimensions( cellDimensions );
 		final long[] imgDimensions = new long[ 3 ];
 		cellImg.dimensions( imgDimensions );
-		return FindRequiredBlocks.getRequiredBlocks( sourceToScreen, w, h, dd, cellDimensions, imgDimensions );
+		return FindRequiredBlocks.getRequiredBlocks( sourceToScreen, w, h, dd, blockSize, imgDimensions );
 	}
 }
