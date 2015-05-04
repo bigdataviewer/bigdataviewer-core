@@ -10,6 +10,8 @@ import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.util.Random;
 
+import net.imglib2.util.Util;
+
 import com.jogamp.opencl.CLBuffer;
 import com.jogamp.opencl.CLCommandQueue;
 import com.jogamp.opencl.CLContext;
@@ -59,6 +61,8 @@ public class HelloJOCL
 				out.println( "dev.getMaxImage3dWidth() = " + dev.getMaxImage3dWidth() );
 				out.println( "dev.getMaxImage3dHeight() = " + dev.getMaxImage3dHeight() );
 				out.println( "dev.getMaxImage3dDepth() = " + dev.getMaxImage3dDepth() );
+				out.println( "dev.getMaxWorkItemSizes() = " + Util.printCoordinates( dev.getMaxWorkItemSizes() ) );
+				out.println( "dev.getMaxWorkGroupSize() = " + dev.getMaxWorkGroupSize() );
 				out.println();
 			}
 

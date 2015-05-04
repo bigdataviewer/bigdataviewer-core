@@ -127,7 +127,7 @@ public class BlockTexture
         final int x = blockPos[ 0 ] * w;
         final int y = blockPos[ 1 ] * h;
         final int z = blockPos[ 2 ] * d;
-		queue.putWriteImage( blocksTexture, 0, 0, x, y, z, w, h, d, true );
+		queue.putWriteImage( blocksTexture, 0, 0, x, y, z, w, h, d, false );
 	}
 
 	public static int[] findSuitableGridSize( final int[] blockSize, final int maxMemoryInMB )
@@ -183,6 +183,11 @@ public class BlockTexture
 	public void release()
 	{
 		blocksTexture.release();
+	}
+
+	public boolean isReleased()
+	{
+		return blocksTexture.isReleased();
 	}
 
 	private void printSizes()

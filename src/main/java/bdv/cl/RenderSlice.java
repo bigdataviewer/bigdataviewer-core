@@ -7,6 +7,7 @@ import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.nio.ShortBuffer;
 
 import javax.swing.JFrame;
 
@@ -42,8 +43,12 @@ import bdv.viewer.state.ViewerState;
 import com.jogamp.common.nio.Buffers;
 import com.jogamp.opencl.CLBuffer;
 import com.jogamp.opencl.CLCommandQueue;
+import com.jogamp.opencl.CLCommandQueue.Mode;
 import com.jogamp.opencl.CLContext;
 import com.jogamp.opencl.CLDevice;
+import com.jogamp.opencl.CLEvent;
+import com.jogamp.opencl.CLEvent.ProfilingCommand;
+import com.jogamp.opencl.CLEventList;
 import com.jogamp.opencl.CLImage2d;
 import com.jogamp.opencl.CLImageFormat;
 import com.jogamp.opencl.CLImageFormat.ChannelOrder;
@@ -63,7 +68,7 @@ public class RenderSlice
 
 	private BlockTexture blockTexture;
 
-	private CLKernel slice4;
+	private CLKernel slice;
 
 	private CLBuffer< FloatBuffer > transformMatrix;
 
@@ -72,6 +77,7 @@ public class RenderSlice
 	public RenderSlice( final Hdf5ImageLoader imgLoader )
 	{
 		this.imgLoader = imgLoader;
+		final int[] blockSize = imgLoader.getMipmapInfo( 0 ).getSubdivisions()[ 0 ]; // TODO
 
 		try
 		{
@@ -84,16 +90,20 @@ public class RenderSlice
 //				if ( "HD Graphics 4000".equals( dev.getName() ) )
 				{
 					device = dev;
+					System.out.println( "using " + dev.getName() );
 					break;
 				}
 			}
-			queue = device.createCommandQueue();
+			queue = device.createCommandQueue( Mode.PROFILING_MODE );
 
-			final CLProgram program = cl.createProgram( this.getClass().getResourceAsStream( "slice.cl" ) ).build();
-			slice4 = program.createCLKernel( "slice4" );
+			final CLProgram program = cl.createProgram( this.getClass().getResourceAsStream( "slice2.cl" ) ).build();
+			slice = program.createCLKernel( "slice" );
 
 			transformMatrix = cl.createFloatBuffer( 12, Mem.READ_ONLY, Mem.ALLOCATE_BUFFER );
 			sizes = cl.createIntBuffer( 8, Mem.READ_ONLY, Mem.ALLOCATE_BUFFER );
+
+			final int[] gridSize = BlockTexture.findSuitableGridSize( blockSize, 500 );
+			blockTexture = new BlockTexture( gridSize, blockSize, queue );
 		}
 		catch ( final Exception e )
 		{
@@ -107,6 +117,9 @@ public class RenderSlice
 		if ( queue != null && ! queue.isReleased() )
 			queue.release();
 
+		if ( blockTexture != null && ! blockTexture.isReleased() )
+			blockTexture.release();
+
 		if ( transformMatrix != null && ! transformMatrix.isReleased() )
 			transformMatrix.release();
 
@@ -119,13 +132,14 @@ public class RenderSlice
 
 	public void renderSlice( final ViewerState viewerState, final int width, final int height )
 	{
-		System.out.println( "render slice" );
-
+		final int dimZ = 100;
+		System.out.println();
 		final Source< ? > source = viewerState.getSources().get( 0 ).getSpimSource(); // TODO
 		final int timepoint = 0; // TODO
 		final int timepointId = 0; // TODO
 		final int setupId = 0; // TODO
 		final int mipmapIndex = 0; // TODO
+		final int[] blockSize = imgLoader.getMipmapInfo( setupId ).getSubdivisions()[ 0 ]; // TODO
 
 		final AffineTransform3D sourceToScreen = new AffineTransform3D();
 		viewerState.getViewerTransform( sourceToScreen );
@@ -133,17 +147,23 @@ public class RenderSlice
 		source.getSourceTransform( timepoint, mipmapIndex, sourceTransform );
 		sourceToScreen.concatenate( sourceTransform );
 
-		final int[] blockSize = imgLoader.getMipmapInfo( setupId ).getSubdivisions()[ 0 ];
-
-		final RequiredBlocks requiredBlocks = getRequiredBlocks( sourceToScreen, width, height, 100, new ViewId( timepointId, setupId ) );
-
-		blockTexture = new BlockTexture( new int[] { 10, 10, 10 }, blockSize, queue );
+		long t = System.currentTimeMillis();
+		final RequiredBlocks requiredBlocks = getRequiredBlocks( sourceToScreen, width, height, dimZ, new ViewId( timepointId, setupId ) );
+		t = System.currentTimeMillis() - t;
+		System.out.println( "getRequiredBlocks: " + t + " ms" );
+		t = System.currentTimeMillis();
+		int nnn = 0;
 		for ( final int[] cellPos : requiredBlocks.cellPositions )
 		{
 			final BlockKey key = new BlockKey( cellPos );
 			if ( ! blockTexture.contains( key ) )
+			{
 				blockTexture.put( key, getCellData( cellPos ) );
+				nnn++;
+			}
 		}
+		t = System.currentTimeMillis() - t;
+		System.out.println( "upload " + nnn + " blocks: " + t + " ms" );
 
 		final int[] lookupDims = new int[ 3 ];
 		final int[] maxCell = requiredBlocks.maxCell;
@@ -151,18 +171,22 @@ public class RenderSlice
 		for ( int d = 0; d < 3; ++d )
 			lookupDims[ d ] = maxCell[ d ] - minCell[ d ] + 1;
 
-		final CLBuffer< IntBuffer > blockLookup = cl.createIntBuffer( 4 * ( int ) Intervals.numElements( lookupDims ), Mem.READ_ONLY, Mem.ALLOCATE_BUFFER );
-
+		final CLBuffer< ShortBuffer > blockLookup = cl.createShortBuffer( 4 * ( int ) Intervals.numElements( lookupDims ), Mem.READ_ONLY, Mem.ALLOCATE_BUFFER );
 		final ByteBuffer bytes = queue.putMapBuffer( blockLookup, Map.WRITE, true );
-		final IntBuffer ints = bytes.asIntBuffer();
+		final ShortBuffer shorts = bytes.asShortBuffer();
 		for ( final int[] cellPos : requiredBlocks.cellPositions )
 		{
 			final BlockKey key = new BlockKey( cellPos );
-			final int[] blockPos = blockTexture.get( key ).getBlockPos();
+			final Block block = blockTexture.get( key );
+			final int[] blockPos;
+			if ( block != null )
+				blockPos = block.getBlockPos();
+			else
+				blockPos = new int[] { 0, 0, 0 };
 			final int i = 4 * IntervalIndexer.positionWithOffsetToIndex( cellPos, lookupDims, minCell );
 			for ( int d = 0; d < 3; ++d )
-				ints.put( i + d, blockPos[ d ] * blockSize[ d ] );
-			ints.put( i + 3, 0 );
+				shorts.put( i + d, ( short ) ( blockPos[ d ] * blockSize[ d ] ) );
+			shorts.put( i + 3, ( short ) 0 );
 		}
 		queue.putUnmapMemory( blockLookup, bytes );
 		queue.finish();
@@ -178,10 +202,16 @@ public class RenderSlice
 
 		final AffineTransform3D screenToShiftedSource = new AffineTransform3D();
 		screenToShiftedSource.set(
-				1, 0, 0, - minCell[ 0 ] * blockSize[ 0 ] ,
-				0, 1, 0, - minCell[ 1 ] * blockSize[ 1 ] ,
+				1, 0, 0, - minCell[ 0 ] * blockSize[ 0 ],
+				0, 1, 0, - minCell[ 1 ] * blockSize[ 1 ],
 				0, 0, 1, - minCell[ 2 ] * blockSize[ 2 ] );
 		screenToShiftedSource.concatenate( sourceToScreen.inverse() );
+		final AffineTransform3D shiftedSourceToBlock = new AffineTransform3D();
+		shiftedSourceToBlock.set(
+				1.0 / blockSize[ 0 ], 0, 0, 0,
+				0, 1.0 / blockSize[ 1 ], 0, 0,
+				0, 0, 1.0 / blockSize[ 2 ], 0 );
+		screenToShiftedSource.preConcatenate( shiftedSourceToBlock );
 		for ( int r = 0; r < 3; ++r )
 			for ( int c = 0; c < 4; ++c )
 				transformMatrix.getBuffer().put( ( float ) screenToShiftedSource.get( r, c ) );
@@ -201,37 +231,56 @@ public class RenderSlice
 		final long globalWorkSizeY = height;
         final long localWorkSizeX = 0;
         final long localWorkSizeY = 0;
-        for ( int i = 0; i < 10; ++i )
+        for ( int i = 0; i < 1; ++i )
         {
-	        long t = System.currentTimeMillis();
-			slice4.rewind().putArg( transformMatrix ).putArg( sizes ).putArg( blockLookup ).putArg( blockTexture.get() ).putArg( renderTarget );
-			queue.put2DRangeKernel( slice4, globalWorkOffsetX, globalWorkOffsetY, globalWorkSizeX, globalWorkSizeY, localWorkSizeX, localWorkSizeY );
+			final CLEventList eventList = new CLEventList( 1 );
+			slice.rewind()
+				.putArg( transformMatrix )
+				.putArg( sizes )
+				.putArg( blockLookup )
+				.putArg( blockTexture.get() )
+				.putArg( renderTarget );
+			queue.put2DRangeKernel( slice,
+					globalWorkOffsetX, globalWorkOffsetY, globalWorkSizeX,
+					globalWorkSizeY, localWorkSizeX, localWorkSizeY,
+					eventList );
 			queue.putReadImage( renderTarget, true ).finish();
-	        t = System.currentTimeMillis() - t;
-	        System.out.println( "t = " + t + " ms" );
+
+	        final CLEvent event = eventList.getEvent( 0 );
+	        final long start = event.getProfilingInfo( ProfilingCommand.START );
+	        final long end = event.getProfilingInfo( ProfilingCommand.END );
+	        System.out.println( "event t = " + ( ( end - start ) / 1000000.0 ) + " ms" );
         }
 
-		final byte[] data = new byte[ width * height ];
+		if ( data == null )
+			data = new byte[ width * height ];
+
 		renderTarget.getBuffer().get( data );
 		show( data, width, height );
-
 		renderTarget.release();
 
 		///////////////////
 
-		blockTexture.release();
 		blockLookup.release();
 	}
 
+	private byte[] data;
+	private InteractiveDisplayCanvasComponent< AffineTransform2D > display;
+
 	private void show( final byte[] data, final int width, final int height )
 	{
+		if ( display != null )
+		{
+			display.repaint();
+			return;
+		}
+
 		final UnsignedByteAWTScreenImage screenImage = new UnsignedByteAWTScreenImage( ArrayImgs.unsignedBytes( data, width, height ) );
 		final BufferedImage bufferedImage = screenImage.image();
 
 		final BufferedImageOverlayRenderer target = new BufferedImageOverlayRenderer();
 		target.setBufferedImage( bufferedImage );
-		final InteractiveDisplayCanvasComponent< AffineTransform2D > display =
-				new InteractiveDisplayCanvasComponent< AffineTransform2D >( width, height, FixedTransformEventHandler2D.factory() );
+		display = new InteractiveDisplayCanvasComponent< AffineTransform2D >( width, height, FixedTransformEventHandler2D.factory() );
 		display.addOverlayRenderer( target );
 		target.setCanvasSize( width, height );
 
@@ -313,7 +362,7 @@ public class RenderSlice
 		return data;
 	}
 
-	public RequiredBlocks getRequiredBlocks( final AffineTransform3D sourceToScreen, final int w, final int h, final int dd, final ViewId view )
+	private RequiredBlocks getRequiredBlocks( final AffineTransform3D sourceToScreen, final int w, final int h, final int dd, final ViewId view )
 	{
 		final CachedCellImg< ?, ? > cellImg = (bdv.img.cache.CachedCellImg< ?, ? > ) imgLoader.getImage( view, 0 );
 		final int[] cellDimensions = new int[ 3 ];
