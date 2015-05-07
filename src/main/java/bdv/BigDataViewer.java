@@ -611,7 +611,8 @@ public class BigDataViewer
 //		final String fn = "/Users/Pietzsch/Desktop/data/catmaid.xml";
 //		final String fn = "src/main/resources/openconnectome-bock11-neariso.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/data/catmaid-confocal.xml";
-//		final String fn = "/Users/pietzsch/desktop/data/BDV130418A325/BDV130418A325_NoTempReg.xml";
+		final String fn = "/Users/pietzsch/desktop/data/BDV130418A325/BDV130418A325_NoTempReg.xml";
+//		final String fn = "/Users/pietzsch/TGMM/data/tifs/datasethdf5.xml";
 //		final String fn = "/Users/pietzsch/Desktop/data/valia2/valia.xml";
 //		final String fn = "/Users/pietzsch/workspace/data/fast fly/111010_weber/combined.xml";
 //		final String fn = "/Users/pietzsch/workspace/data/mette/mette.xml";

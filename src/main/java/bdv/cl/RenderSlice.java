@@ -67,7 +67,9 @@ public class RenderSlice
 
 	private CLBuffer< IntBuffer > sizes;
 
-	private final int[] blockSize = new int[] { 32, 32, 32 };
+	private final int[] blockSize = new int[] { 32, 32, 8 };
+
+	private final int[] paddedBlockSize = new int[] { 33, 33, 9 };
 
 	public RenderSlice( final Hdf5ImageLoader imgLoader )
 	{
@@ -96,8 +98,8 @@ public class RenderSlice
 			transformMatrix = cl.createFloatBuffer( 12, Mem.READ_ONLY, Mem.ALLOCATE_BUFFER );
 			sizes = cl.createIntBuffer( 8, Mem.READ_ONLY, Mem.ALLOCATE_BUFFER );
 
-			final int[] gridSize = BlockTexture.findSuitableGridSize( blockSize, 500 );
-			blockTexture = new BlockTexture( gridSize, blockSize, queue );
+			final int[] gridSize = BlockTexture.findSuitableGridSize( paddedBlockSize, 300 );
+			blockTexture = new BlockTexture( gridSize, paddedBlockSize, queue );
 		}
 		catch ( final Exception e )
 		{
@@ -146,7 +148,7 @@ public class RenderSlice
 		System.out.println( "getRequiredBlocks: " + t + " ms" );
 		t = System.currentTimeMillis();
 		final RandomAccessible< UnsignedShortType > img = Views.extendZero( imgLoader.getImage( new ViewId( timepointId, setupId ), 0 ) ); // TODO
-		final short[] blockData = new short[ blockSize[ 0 ] * blockSize[ 1 ] * blockSize[ 2 ] ];
+		final short[] blockData = new short[ paddedBlockSize[ 0 ] * paddedBlockSize[ 1 ] * paddedBlockSize[ 2 ] ];
 		int nnn = 0;
 		for ( final int[] cellPos : requiredBlocks.cellPositions )
 		{
@@ -165,8 +167,9 @@ public class RenderSlice
 		final int[] minCell = requiredBlocks.minCell;
 		for ( int d = 0; d < 3; ++d )
 			lookupDims[ d ] = maxCell[ d ] - minCell[ d ] + 1;
+		System.out.println( "need " + ( 4 * ( int ) Intervals.numElements( lookupDims ) ) + " shorts for lookup table" );
 
-		final CLBuffer< ShortBuffer > blockLookup = cl.createShortBuffer( 4 * ( int ) Intervals.numElements( lookupDims ), Mem.READ_ONLY, Mem.ALLOCATE_BUFFER );
+		final CLBuffer< ShortBuffer > blockLookup = cl.createShortBuffer( 4 * ( int ) Intervals.numElements( lookupDims ) + 16, Mem.READ_ONLY, Mem.ALLOCATE_BUFFER );
 		final ByteBuffer bytes = queue.putMapBuffer( blockLookup, Map.WRITE, true );
 		final ShortBuffer shorts = bytes.asShortBuffer();
 		for ( final int[] cellPos : requiredBlocks.cellPositions )
@@ -180,9 +183,11 @@ public class RenderSlice
 				blockPos = new int[] { 0, 0, 0 };
 			final int i = 4 * IntervalIndexer.positionWithOffsetToIndex( cellPos, lookupDims, minCell );
 			for ( int d = 0; d < 3; ++d )
-				shorts.put( i + d, ( short ) ( blockPos[ d ] * blockSize[ d ] ) );
+				shorts.put( i + d, ( short ) ( blockPos[ d ] * paddedBlockSize[ d ] ) );
 			shorts.put( i + 3, ( short ) 0 );
 		}
+		for ( int i = 4 * ( int ) Intervals.numElements( lookupDims ); i < 4 * ( int ) Intervals.numElements( lookupDims ) + 16; ++i )
+			shorts.put( i, ( short ) 0 );
 		queue.putUnmapMemory( blockLookup, bytes );
 		queue.finish();
 
@@ -297,10 +302,10 @@ public class RenderSlice
 		for ( int d = 0; d < n; ++d )
 		{
 			min[ d ] = blockPos[ d ] * blockSize[ d ];
-			max[ d ] = min[ d ] +  blockSize[ d ] - 1;
+			max[ d ] = min[ d ] + paddedBlockSize[ d ] - 1;
 		}
 
-		final short[] data = useThisData == null ? new short[ blockSize[ 0 ] * blockSize[ 1 ] * blockSize[ 2 ] ] : useThisData;
+		final short[] data = useThisData == null ? new short[ paddedBlockSize[ 0 ] * paddedBlockSize[ 1 ] * paddedBlockSize[ 2 ] ] : useThisData;
 		final Cursor< UnsignedShortType > in = Views.flatIterable( Views.interval( img, min, max ) ).cursor();
 		for ( int i = 0; i < data.length; ++i )
 			data[ i ] = ( short ) ( in.next().get() & 0xffff );
