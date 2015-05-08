@@ -12,6 +12,8 @@ import java.awt.RenderingHints;
 import java.awt.Window;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 
@@ -54,7 +56,7 @@ public class BrightnessDialog extends JDialog
 
 		final Container content = getContentPane();
 
-		final MinMaxPanels minMaxPanels = new MinMaxPanels( setupAssignments, this );
+		final MinMaxPanels minMaxPanels = new MinMaxPanels( setupAssignments, this, true );
 		final ColorsPanel colorsPanel = new ColorsPanel( setupAssignments );
 		content.add( minMaxPanels, BorderLayout.NORTH );
 		content.add( colorsPanel, BorderLayout.SOUTH );
@@ -82,8 +84,6 @@ public class BrightnessDialog extends JDialog
 			{
 				colorsPanel.recreateContent();
 				minMaxPanels.recreateContent();
-				colorsPanel.update();
-				minMaxPanels.update();
 			}
 		} );
 
@@ -127,7 +127,7 @@ public class BrightnessDialog extends JDialog
 		}
 	}
 
-	public static class ColorsPanel extends JPanel implements SetupAssignments.UpdateListener
+	public static class ColorsPanel extends JPanel
 	{
 		private final SetupAssignments setupAssignments;
 
@@ -147,7 +147,7 @@ public class BrightnessDialog extends JDialog
 			recreateContent();
 		}
 
-		protected void recreateContent()
+		public void recreateContent()
 		{
 			removeAll();
 			buttons.clear();
@@ -189,14 +189,6 @@ public class BrightnessDialog extends JDialog
 				frame.pack();
 		}
 
-		@Override
-		public void update()
-		{
-			int i = 0;
-			for ( final ConverterSetup setup : setupAssignments.getConverterSetups() )
-				buttons.get( i++ ).setIcon( new ColorIcon( getColor( setup ) ) );
-		}
-
 		private static Color getColor( final ConverterSetup setup )
 		{
 			if ( setup.supportsColor() )
@@ -216,7 +208,7 @@ public class BrightnessDialog extends JDialog
 		private static final long serialVersionUID = 6408468837346789676L;
 	}
 
-	public static class MinMaxPanels extends JPanel implements SetupAssignments.UpdateListener
+	public static class MinMaxPanels extends JPanel
 	{
 		private final SetupAssignments setupAssignments;
 
@@ -224,10 +216,13 @@ public class BrightnessDialog extends JDialog
 
 		private final JDialog dialog;
 
-		public MinMaxPanels( final SetupAssignments assignments, final JDialog dialog )
+		private final boolean rememberSizes;
+
+		public MinMaxPanels( final SetupAssignments assignments, final JDialog dialog, final boolean rememberSizes )
 		{
 			super();
 			this.setupAssignments = assignments;
+			this.rememberSizes = rememberSizes;
 			minMaxPanels = new ArrayList< MinMaxPanel >();
 
 			setLayout( new BoxLayout( this, BoxLayout.PAGE_AXIS ) );
@@ -237,14 +232,19 @@ public class BrightnessDialog extends JDialog
 			this.dialog = dialog;
 		}
 
-		protected void recreateContent()
+		public void recreateContent()
 		{
+			final Dimension sliderSize = ( rememberSizes && !minMaxPanels.isEmpty() ) ?
+					minMaxPanels.get( 0 ).sliders.getPreferredSize() : null;
+
 			removeAll();
 			minMaxPanels.clear();
 
 			for ( final MinMaxGroup group : setupAssignments.getMinMaxGroups() )
 			{
-				final MinMaxPanel panel = new MinMaxPanel( group, setupAssignments, this );
+				final MinMaxPanel panel = new MinMaxPanel( group, setupAssignments, this, rememberSizes );
+				if ( sliderSize != null )
+					panel.sliders.setPreferredSize( sliderSize );
 				minMaxPanels.add( panel );
 				add( panel );
 			}
@@ -261,35 +261,6 @@ public class BrightnessDialog extends JDialog
 				frame.pack();
 		}
 
-		@Override
-		public void update()
-		{
-			for ( final MinMaxPanel panel : minMaxPanels )
-				panel.storeSliderSize();
-
-			final ArrayList< MinMaxPanel > panelsToRemove = new ArrayList< MinMaxPanel >();
-			for ( final MinMaxPanel panel : minMaxPanels )
-				if( ! setupAssignments.getMinMaxGroups().contains( panel.minMaxGroup ) )
-					panelsToRemove.add( panel );
-			minMaxPanels.removeAll( panelsToRemove );
-			for ( final MinMaxPanel panel : panelsToRemove )
-				remove( panel );
-
-A:			for ( final MinMaxGroup group : setupAssignments.getMinMaxGroups() )
-			{
-				for ( final MinMaxPanel panel : minMaxPanels )
-					if ( panel.minMaxGroup == group )
-						continue A;
-				final MinMaxPanel panel = new MinMaxPanel( group, setupAssignments, this );
-				minMaxPanels.add( panel );
-				add( panel );
-				panel.update();
-				panel.showAdvanced( isShowingAdvanced );
-			}
-
-			dialog.pack();
-		}
-
 		private boolean isShowingAdvanced = false;
 
 		public void showAdvanced( final boolean b )
@@ -300,7 +271,8 @@ A:			for ( final MinMaxGroup group : setupAssignments.getMinMaxGroups() )
 				panel.storeSliderSize();
 				panel.showAdvanced( isShowingAdvanced );
 			}
-			dialog.pack();
+			if ( dialog != null )
+				dialog.pack();
 		}
 
 		private static final long serialVersionUID = 6538962298579455010L;
@@ -325,11 +297,14 @@ A:			for ( final MinMaxGroup group : setupAssignments.getMinMaxGroups() )
 
 		private boolean isShowingAdvanced;
 
-		public MinMaxPanel( final MinMaxGroup group, final SetupAssignments assignments, final MinMaxPanels minMaxPanels )
+		private final boolean rememberSizes;
+
+		public MinMaxPanel( final MinMaxGroup group, final SetupAssignments assignments, final MinMaxPanels minMaxPanels, final boolean rememberSizes )
 		{
 			super();
 			setupAssignments = assignments;
 			minMaxGroup = group;
+			this.rememberSizes = rememberSizes;
 //			setBorder( BorderFactory.createCompoundBorder( BorderFactory.createEmptyBorder( 2, 2, 2, 2 ), BorderFactory.createLineBorder( Color.black ) ) );
 			setBorder( BorderFactory.createCompoundBorder( BorderFactory.createEmptyBorder( 2, 2, 2, 2 ), BorderFactory.createEtchedBorder() ) );
 			setLayout( new BorderLayout( 10, 10 ) );
@@ -343,7 +318,7 @@ A:			for ( final MinMaxGroup group : setupAssignments.getMinMaxGroups() )
 			final SliderPanel maxPanel = new SliderPanel( "max", group.getMaxBoundedValue(), 1 );
 			maxPanel.setBorder( BorderFactory.createEmptyBorder( 0, 10, 10, 10 ) );
 			sliders.add( maxPanel );
-			if ( ! minMaxPanels.minMaxPanels.isEmpty() )
+			if ( rememberSizes && ! minMaxPanels.minMaxPanels.isEmpty() )
 			{
 				final Dimension dim = minMaxPanels.minMaxPanels.get( 0 ).sliders.getSize();
 				if ( dim.width > 0 )
@@ -459,6 +434,15 @@ A:			for ( final MinMaxGroup group : setupAssignments.getMinMaxGroups() )
 				}
 			};
 
+			addComponentListener( new ComponentAdapter()
+			{
+				@Override
+				public void componentResized( final ComponentEvent e )
+				{
+					storeSliderSize();
+				}
+			} );
+
 			final JPanel eastPanel = new JPanel();
 			eastPanel.setLayout( new BoxLayout( eastPanel, BoxLayout.LINE_AXIS ) );
 			eastPanel.add( boxesPanel, BorderLayout.CENTER );
@@ -476,9 +460,12 @@ A:			for ( final MinMaxGroup group : setupAssignments.getMinMaxGroups() )
 
 		public void storeSliderSize()
 		{
-			final Dimension dim = sliders.getSize();
-			if ( dim.width > 0 )
-				sliders.setPreferredSize( dim );
+			if ( rememberSizes )
+			{
+				final Dimension dim = sliders.getSize();
+				if ( dim.width > 0 )
+					sliders.setPreferredSize( dim );
+			}
 		}
 
 		@Override
