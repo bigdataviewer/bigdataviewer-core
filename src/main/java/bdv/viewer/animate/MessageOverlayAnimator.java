@@ -67,7 +67,7 @@ public class MessageOverlayAnimator implements OverlayAnimator
 	@Override
 	public boolean isComplete()
 	{
-		// We this animator should not be removed, ever.
+		// this animator should not be removed, ever.
 		return false;
 	}
 
