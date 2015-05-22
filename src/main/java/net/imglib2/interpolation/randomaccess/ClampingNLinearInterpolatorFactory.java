@@ -41,6 +41,7 @@ import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.NumericType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.volatiles.VolatileARGBType;
 
 /**
  * Provides clamping n-linear interpolators for volatile and non-volatile types.
@@ -63,12 +64,13 @@ public class ClampingNLinearInterpolatorFactory< T extends NumericType< T > > im
 			else
 				return new ClampingNLinearInterpolatorRealType( randomAccessible );
 		}
-		else if ( type instanceof ARGBType )
+		else if ( ARGBType.class.isInstance( type ) )
 		{
-			if ( type instanceof Volatile )
-				return new ClampingNLinearInterpolatorVolatileARGB( randomAccessible );
-			else
-				return ( RealRandomAccess< T > ) new NLinearInterpolatorARGB( ( RandomAccessible< ARGBType > ) randomAccessible );
+			return ( RealRandomAccess ) new NLinearInterpolatorARGB( ( RandomAccessible ) randomAccessible );
+		}
+		else if ( VolatileARGBType.class.isInstance( type ) )
+		{
+			return ( RealRandomAccess ) new ClampingNLinearInterpolatorVolatileARGB< VolatileARGBType >( ( RandomAccessible ) randomAccessible );
 		}
 		else
 			// fall back to (non-clamping) NLinearInterpolator
