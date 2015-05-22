@@ -15,7 +15,7 @@ import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.interpolation.InterpolatorFactory;
-import net.imglib2.interpolation.randomaccess.NLinearInterpolatorFactory;
+import net.imglib2.interpolation.randomaccess.ClampingNLinearInterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.NumericType;
@@ -75,7 +75,7 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 			currentSourceTransforms[ level ] = new AffineTransform3D();
 		interpolatorFactories = new InterpolatorFactory[ numInterpolationMethods ];
 		interpolatorFactories[ iNearestNeighborMethod ] = new NearestNeighborInterpolatorFactory< T >();
-		interpolatorFactories[ iNLinearMethod ] = new NLinearInterpolatorFactory< T >();
+		interpolatorFactories[ iNLinearMethod ] = new ClampingNLinearInterpolatorFactory< T >();
 	}
 
 	protected void loadTimepoint( final int timepointIndex )
