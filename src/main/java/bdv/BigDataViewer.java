@@ -42,6 +42,7 @@ import bdv.spimdata.WrapBasicImgLoader;
 import bdv.spimdata.XmlIoSpimDataMinimal;
 import bdv.tools.HelpDialog;
 import bdv.tools.InitializeViewerState;
+import bdv.tools.RecordMaxProjectionDialog;
 import bdv.tools.RecordMovieDialog;
 import bdv.tools.VisibilityAndGroupingDialog;
 import bdv.tools.bookmarks.Bookmarks;
@@ -78,6 +79,8 @@ public class BigDataViewer
 	protected final CropDialog cropDialog;
 
 	protected final RecordMovieDialog movieDialog;
+
+	protected final RecordMaxProjectionDialog movieMaxProjectDialog;
 
 	protected final VisibilityAndGroupingDialog activeSourcesDialog;
 
@@ -339,6 +342,10 @@ public class BigDataViewer
 		// this is just to get updates of window size:
 		viewer.getDisplay().addOverlayRenderer( movieDialog );
 
+		movieMaxProjectDialog = new RecordMaxProjectionDialog( viewerFrame, viewer, progressWriter );
+		// this is just to get updates of window size:
+		viewer.getDisplay().addOverlayRenderer( movieMaxProjectDialog );
+
 		activeSourcesDialog = new VisibilityAndGroupingDialog( viewerFrame, viewer.getVisibilityAndGrouping() );
 
 		helpDialog = new HelpDialog( viewerFrame );
@@ -412,6 +419,10 @@ public class BigDataViewer
 		final JMenuItem miMovie = new JMenuItem( actionMap.get( BigDataViewerActions.RECORD_MOVIE ) );
 		miMovie.setText( "Record Movie" );
 		menu.add( miMovie );
+
+		final JMenuItem miMaxProjectMovie = new JMenuItem( actionMap.get( BigDataViewerActions.RECORD_MAX_PROJECTION_MOVIE ) );
+		miMaxProjectMovie.setText( "Record Max-Projection Movie" );
+		menu.add( miMaxProjectMovie );
 
 		final JMenuItem miManualTransform = new JMenuItem( actionMap.get( BigDataViewerActions.MANUAL_TRANSFORM ) );
 		miManualTransform.setText( "Manual Transform" );

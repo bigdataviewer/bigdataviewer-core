@@ -22,6 +22,7 @@ public class BigDataViewerActions
 	public static final String SAVE_SETTINGS = "save settings";
 	public static final String LOAD_SETTINGS = "load settings";
 	public static final String RECORD_MOVIE = "record movie";
+	public static final String RECORD_MAX_PROJECTION_MOVIE = "record max projection movie";
 	public static final String SET_BOOKMARK = "set bookmark";
 	public static final String GO_TO_BOOKMARK = "go to bookmark";
 	public static final String GO_TO_BOOKMARK_ROTATION = "go to bookmark rotation";
@@ -55,6 +56,7 @@ public class BigDataViewerActions
 		map.put( VISIBILITY_AND_GROUPING, "F6" );
 		map.put( MANUAL_TRANSFORM, "T" );
 		map.put( SHOW_HELP, "F1", "H" );
+		map.put( RECORD_MAX_PROJECTION_MOVIE, "F8" );
 		map.put( CROP, "F9" );
 		map.put( RECORD_MOVIE, "F10" );
 		map.put( SAVE_SETTINGS, "F11" );
@@ -74,6 +76,7 @@ public class BigDataViewerActions
 		map.put( new ToggleDialogAction( BRIGHTNESS_SETTINGS, bdv.brightnessDialog ) );
 		map.put( new ToggleDialogAction( VISIBILITY_AND_GROUPING, bdv.activeSourcesDialog ) );
 		map.put( new ToggleDialogAction( CROP, bdv.cropDialog ) );
+		map.put( new ToggleDialogAction( RECORD_MAX_PROJECTION_MOVIE, bdv.movieMaxProjectDialog ) );
 		map.put( new ToggleDialogAction( RECORD_MOVIE, bdv.movieDialog ) );
 		map.put( new ToggleDialogAction( SHOW_HELP, bdv.helpDialog ) );
 		map.put( new ManualTransformAction( bdv ) );
