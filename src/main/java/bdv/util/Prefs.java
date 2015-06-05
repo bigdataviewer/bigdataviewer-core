@@ -13,6 +13,11 @@ public class Prefs
 		return getInstance().showScaleBar;
 	}
 
+	public static boolean showScaleBarInMovie()
+	{
+		return getInstance().showScaleBarInMovie;
+	}
+
 	public static int scaleBarColor()
 	{
 		return getInstance().scaleBarColor;
@@ -35,16 +40,19 @@ public class Prefs
 	}
 
 	private static final String SHOW_SCALE_BAR = "show-scale-bar";
+	private static final String SHOW_SCALE_BAR_IN_MOVIE = "show-scale-bar-in-movie";
 	private static final String SCALE_BAR_COLOR = "scale-bar-color";
 	private static final String SCALE_BAR_BG_COLOR = "scale-bar-bg-color";
 
 	private final boolean showScaleBar;
+	private final boolean showScaleBarInMovie;
 	private final int scaleBarColor;
 	private final int scaleBarBgColor;
 
 	private Prefs( final Properties p )
 	{
 		showScaleBar = getBoolean( p, SHOW_SCALE_BAR, false );
+		showScaleBarInMovie = getBoolean( p, SHOW_SCALE_BAR_IN_MOVIE, false );
 		scaleBarColor = getInt( p, SCALE_BAR_COLOR, 0xffffffff );
 		scaleBarBgColor = getInt( p, SCALE_BAR_BG_COLOR, 0x88000000 );
 	}
@@ -111,6 +119,7 @@ public class Prefs
 		final Properties properties = new Properties();
 		final Prefs prefs = new Prefs( null );
 		properties.put( SHOW_SCALE_BAR, "" + prefs.showScaleBar );
+		properties.put( SHOW_SCALE_BAR_IN_MOVIE, "" + prefs.showScaleBarInMovie );
 		properties.put( SCALE_BAR_COLOR, "" + prefs.scaleBarColor );
 		properties.put( SCALE_BAR_BG_COLOR, "" + prefs.scaleBarBgColor );
 		return properties;

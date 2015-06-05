@@ -3,6 +3,7 @@ package bdv.tools;
 import java.awt.BorderLayout;
 import java.awt.Frame;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -36,7 +37,9 @@ import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
 import bdv.export.ProgressWriter;
 import bdv.img.cache.Cache;
+import bdv.util.Prefs;
 import bdv.viewer.ViewerPanel;
+import bdv.viewer.overlay.ScaleBarOverlayRenderer;
 import bdv.viewer.render.MultiResolutionRenderer;
 import bdv.viewer.state.ViewerState;
 
@@ -236,6 +239,8 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 		affine.set( affine.get( 1, 3 ) + height / 2, 1, 3 );
 		renderState.setViewerTransform( affine );
 
+		final ScaleBarOverlayRenderer scalebar = Prefs.showScaleBarInMovie() ? new ScaleBarOverlayRenderer() : null;
+
 		class MyTarget implements RenderTarget
 		{
 			BufferedImage bi;
@@ -267,6 +272,15 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 			renderState.setCurrentTimepoint( timepoint );
 			renderer.requestRepaint();
 			renderer.paint( renderState );
+
+			if ( Prefs.showScaleBarInMovie() )
+			{
+				final Graphics2D g2 = target.bi.createGraphics();
+				g2.setClip( 0, 0, width, height );
+				scalebar.setViewerState( renderState );
+				scalebar.paint( g2 );
+			}
+
 			ImageIO.write( target.bi, "png", new File( String.format( "%s/img-%03d.png", dir, timepoint ) ) );
 			progressWriter.setProgress( ( double ) (timepoint - minTimepointIndex + 1) / (maxTimepointIndex - minTimepointIndex + 1) );
 		}

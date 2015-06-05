@@ -193,7 +193,7 @@ class HDF5AccessHack implements IHDF5Access
 		H5Sselect_hyperslab( dataset.fileSpaceId, H5S_SELECT_SET, reorderedMin, null, reorderedDimensions, null );
 		H5Dread( dataset.dataSetId, H5T_NATIVE_FLOAT, memorySpaceId, dataset.fileSpaceId, numericConversionXferPropertyListID, dataBlock );
 		H5Sclose( memorySpaceId );
-
+		HDF5Access.unsignedShort( dataBlock );
 		return dataBlock;
 	}
 

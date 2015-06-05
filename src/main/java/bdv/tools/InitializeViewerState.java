@@ -16,7 +16,6 @@ import bdv.tools.brightness.SetupAssignments;
 import bdv.util.Affine3DHelpers;
 import bdv.viewer.Source;
 import bdv.viewer.ViewerPanel;
-import bdv.viewer.state.SourceState;
 import bdv.viewer.state.ViewerState;
 
 public class InitializeViewerState
@@ -68,12 +67,15 @@ public class InitializeViewerState
 		final int cX = viewerWidth / 2;
 		final int cY = viewerHeight / 2;
 
-		final SourceState< ? > source = state.getSources().get( state.getCurrentSource() );
+		final Source< ? > source = state.getSources().get( state.getCurrentSource() ).getSpimSource();
 		final int timepoint = state.getCurrentTimepoint();
-		final AffineTransform3D sourceTransform = new AffineTransform3D();
-		source.getSpimSource().getSourceTransform( timepoint, 0, sourceTransform );
+		if ( !source.isPresent( timepoint ) )
+			return new AffineTransform3D();
 
-		final Interval sourceInterval = source.getSpimSource().getSource( timepoint, 0 );
+		final AffineTransform3D sourceTransform = new AffineTransform3D();
+		source.getSourceTransform( timepoint, 0, sourceTransform );
+
+		final Interval sourceInterval = source.getSource( timepoint, 0 );
 		final double sX0 = sourceInterval.min( 0 );
 		final double sX1 = sourceInterval.max( 0 );
 		final double sY0 = sourceInterval.min( 1 );
@@ -142,10 +144,13 @@ public class InitializeViewerState
 	public static void initBrightness( final double cumulativeMinCutoff, final double cumulativeMaxCutoff, final ViewerState state, final SetupAssignments setupAssignments )
 	{
 		final Source< ? > source = state.getSources().get( state.getCurrentSource() ).getSpimSource();
+		final int timepoint = state.getCurrentTimepoint();
+		if ( !source.isPresent( timepoint ) )
+			return;
 		if ( !UnsignedShortType.class.isInstance( source.getType() ) )
 			return;
 		@SuppressWarnings( "unchecked" )
-		final RandomAccessibleInterval< UnsignedShortType > img = ( RandomAccessibleInterval< UnsignedShortType > ) source.getSource( state.getCurrentTimepoint(), source.getNumMipmapLevels() - 1 );
+		final RandomAccessibleInterval< UnsignedShortType > img = ( RandomAccessibleInterval< UnsignedShortType > ) source.getSource( timepoint, source.getNumMipmapLevels() - 1 );
 		final long z = ( img.min( 2 ) + img.max( 2 ) + 1 ) / 2;
 
 		final int numBins = 6535;

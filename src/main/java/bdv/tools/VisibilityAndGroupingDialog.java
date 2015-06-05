@@ -26,6 +26,7 @@ import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ActionMap;
 import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
 import javax.swing.ButtonGroup;
 import javax.swing.InputMap;
 import javax.swing.JCheckBox;
@@ -53,6 +54,8 @@ public class VisibilityAndGroupingDialog extends JDialog
 
 	private final GroupingPanel groupingPanel;
 
+	private final ModePanel modePanel;
+
 	public VisibilityAndGroupingDialog( final Frame owner, final VisibilityAndGrouping visibilityAndGrouping )
 	{
 		super( owner, "visibility and grouping", false );
@@ -66,7 +69,6 @@ public class VisibilityAndGroupingDialog extends JDialog
 								BorderFactory.createEtchedBorder(),
 								"visibility" ),
 						BorderFactory.createEmptyBorder( 2, 2, 2, 2 ) ) ) );
-		getContentPane().add( visibilityPanel, BorderLayout.NORTH );
 
 		groupingPanel = new GroupingPanel( visibilityAndGrouping );
 		visibilityAndGrouping.addUpdateListener( groupingPanel );
@@ -77,7 +79,16 @@ public class VisibilityAndGroupingDialog extends JDialog
 								BorderFactory.createEtchedBorder(),
 								"grouping" ),
 						BorderFactory.createEmptyBorder( 2, 2, 2, 2 ) ) ) );
-		getContentPane().add( groupingPanel, BorderLayout.SOUTH );
+
+		modePanel = new ModePanel( visibilityAndGrouping );
+		visibilityAndGrouping.addUpdateListener( modePanel );
+
+		final JPanel content = new JPanel();
+		content.setLayout( new BoxLayout( content, BoxLayout.PAGE_AXIS ) );
+		content.add( visibilityPanel );
+		content.add( groupingPanel );
+		content.add( modePanel );
+		getContentPane().add( content, BorderLayout.NORTH );
 
 		final ActionMap am = getRootPane().getActionMap();
 		final InputMap im = getRootPane().getInputMap( JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT );
@@ -103,6 +114,7 @@ public class VisibilityAndGroupingDialog extends JDialog
 	{
 		visibilityPanel.update();
 		groupingPanel.update();
+		modePanel.update();
 	}
 
 	public static class VisibilityPanel extends JPanel implements VisibilityAndGrouping.UpdateListener
@@ -251,6 +263,87 @@ public class VisibilityAndGroupingDialog extends JDialog
 		}
 	}
 
+	public static class ModePanel extends JPanel implements VisibilityAndGrouping.UpdateListener
+	{
+		private static final long serialVersionUID = 1L;
+
+		private final VisibilityAndGrouping visibility;
+
+		private JCheckBox groupingBox;
+
+		private JCheckBox fusedModeBox;
+
+		public ModePanel( final VisibilityAndGrouping visibilityAndGrouping )
+		{
+			super( new GridBagLayout() );
+			this.visibility = visibilityAndGrouping;
+			recreateContent();
+			update();
+		}
+
+		protected void recreateContent()
+		{
+			final GridBagConstraints c = new GridBagConstraints();
+			c.insets = new Insets( 0, 5, 0, 5 );
+
+			c.gridwidth = 1;
+			c.anchor = GridBagConstraints.LINE_START;
+			groupingBox = new JCheckBox();
+			groupingBox.addActionListener( new ActionListener()
+			{
+				@Override
+				public void actionPerformed( final ActionEvent e )
+				{
+					visibility.setGroupingEnabled( groupingBox.isSelected() );
+				}
+			} );
+			c.gridx = 0;
+			c.gridy = 0;
+			add( groupingBox, c );
+			c.gridx = 1;
+			add( new JLabel("enable grouping"), c );
+
+			fusedModeBox = new JCheckBox();
+			fusedModeBox.addActionListener( new ActionListener()
+			{
+				@Override
+				public void actionPerformed( final ActionEvent e )
+				{
+					visibility.setFusedEnabled( fusedModeBox.isSelected() );
+				}
+			} );
+			c.gridx = 0;
+			c.gridy = 1;
+			add( fusedModeBox, c );
+			c.gridx = 1;
+			add( new JLabel("enable fused mode"), c );
+		}
+
+		protected void update()
+		{
+			synchronized ( visibility )
+			{
+				groupingBox.setSelected( visibility.isGroupingEnabled() );
+				fusedModeBox.setSelected( visibility.isFusedEnabled() );
+			}
+		}
+
+		@Override
+		public void visibilityChanged( final Event e )
+		{
+			synchronized ( visibility )
+			{
+				switch ( e.id )
+				{
+				case DISPLAY_MODE_CHANGED:
+					groupingBox.setSelected( visibility.isGroupingEnabled() );
+					fusedModeBox.setSelected( visibility.isFusedEnabled() );
+					break;
+				}
+			}
+		}
+	}
+
 	public static class GroupingPanel extends JPanel implements VisibilityAndGrouping.UpdateListener
 	{
 		private static final long serialVersionUID = 1L;
@@ -264,10 +357,6 @@ public class VisibilityAndGroupingDialog extends JDialog
 		private final ArrayList< JCheckBox > fusedBoxes;
 
 		private final ArrayList< JCheckBox > assignBoxes;
-
-		private JCheckBox groupingBox;
-
-		private JCheckBox fusedModeBox;
 
 		private int numSources;
 
@@ -434,45 +523,6 @@ public class VisibilityAndGroupingDialog extends JDialog
 				}
 			}
 
-			final JPanel modepanel = new JPanel( new GridBagLayout() );
-			c.gridwidth = 1;
-			c.anchor = GridBagConstraints.LINE_START;
-			groupingBox = new JCheckBox();
-			groupingBox.addActionListener( new ActionListener()
-			{
-				@Override
-				public void actionPerformed( final ActionEvent e )
-				{
-					visibility.setGroupingEnabled( groupingBox.isSelected() );
-				}
-			} );
-			c.gridx = 0;
-			c.gridy = 0;
-			modepanel.add( groupingBox, c );
-			c.gridx = 1;
-			modepanel.add( new JLabel("enable grouping"), c );
-
-			fusedModeBox = new JCheckBox();
-			fusedModeBox.addActionListener( new ActionListener()
-			{
-				@Override
-				public void actionPerformed( final ActionEvent e )
-				{
-					visibility.setFusedEnabled( fusedModeBox.isSelected() );
-				}
-			} );
-			c.gridx = 0;
-			c.gridy = 1;
-			modepanel.add( fusedModeBox, c );
-			c.gridx = 1;
-			modepanel.add( new JLabel("enable fused mode"), c );
-
-			c.gridx = 0;
-			c.gridy = numGroups + 1;
-			c.gridwidth = 5 + numSources;
-			c.anchor = GridBagConstraints.CENTER;
-			add( modepanel, c );
-
 			invalidate();
 			final Window frame = SwingUtilities.getWindowAncestor( this );
 			if ( frame != null )
@@ -485,9 +535,6 @@ public class VisibilityAndGroupingDialog extends JDialog
 			{
 				if ( visibility.numSources() != numSources && visibility.numGroups() != numGroups )
 					recreateContent();
-
-				groupingBox.setSelected( visibility.isGroupingEnabled() );
-				fusedModeBox.setSelected( visibility.isFusedEnabled() );
 
 				currentButtons.get( visibility.getCurrentGroup() ).setSelected( true );
 				for ( int g = 0; g < numGroups; ++g )
@@ -528,10 +575,6 @@ public class VisibilityAndGroupingDialog extends JDialog
 
 				switch ( e.id )
 				{
-				case DISPLAY_MODE_CHANGED:
-					groupingBox.setSelected( visibility.isGroupingEnabled() );
-					fusedModeBox.setSelected( visibility.isFusedEnabled() );
-					break;
 				case CURRENT_GROUP_CHANGED:
 					currentButtons.get( visibility.getCurrentGroup() ).setSelected( true );
 					break;

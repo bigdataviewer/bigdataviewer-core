@@ -24,7 +24,6 @@ import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.sequence.Angle;
 import mpicbg.spim.data.sequence.Channel;
-import mpicbg.spim.data.sequence.TimePoint;
 import net.imglib2.Volatile;
 import net.imglib2.display.RealARGBColorConverter;
 import net.imglib2.display.ScaledARGBConverter;
@@ -44,7 +43,9 @@ import org.jdom2.output.XMLOutputter;
 import bdv.cl.RenderSlice;
 import bdv.export.ProgressWriter;
 import bdv.export.ProgressWriterConsole;
+import bdv.img.cache.Cache;
 import bdv.img.hdf5.Hdf5ImageLoader;
+import bdv.spimdata.SpimDataMinimal;
 import bdv.spimdata.WrapBasicImgLoader;
 import bdv.spimdata.XmlIoSpimDataMinimal;
 import bdv.tools.HelpDialog;
@@ -280,31 +281,44 @@ public class BigDataViewer
 			throw new IllegalArgumentException( "ImgLoader of type " + type.getClass() + " not supported." );
 	}
 
-	public BigDataViewer( final String xmlFilename, final String windowTitle, final ProgressWriter progressWriter ) throws SpimDataException
+	/**
+	 *
+	 * @param converterSetups
+	 *            list of {@link ConverterSetup} that control min/max and color
+	 *            of sources.
+	 * @param sources
+	 *            list of pairs of source of some type and converter from that
+	 *            type to ARGB.
+	 * @param spimData
+	 *            may be null. The {@link AbstractSpimData} of the dataset (if
+	 *            there is one). If it exists, it is used to set up a "Crop"
+	 *            dialog.
+	 * @param numTimepoints
+	 *            the number of timepoints in the dataset.
+	 * @param cache
+	 *            handle to cache. This is used to control io timing.
+	 * @param windowTitle
+	 *            title of the viewer window.
+	 * @param windowWidth
+	 *            width of the viewer window.
+	 * @param windowHeight
+	 *            height of the viewer window.
+	 * @param progressWriter
+	 *            a {@link ProgressWriter} to which BDV may report progress
+	 *            (currently only used in the "Record Movie" dialog).
+	 */
+	public BigDataViewer(
+			final ArrayList< ConverterSetup > converterSetups,
+			final ArrayList< SourceAndConverter< ? > > sources,
+			final AbstractSpimData< ? > spimData,
+			final int numTimepoints,
+			final Cache cache,
+			final String windowTitle,
+			final int windowWidth,
+			final int windowHeight,
+			final ProgressWriter progressWriter )
 	{
-		this( new XmlIoSpimDataMinimal().load( xmlFilename ), windowTitle, progressWriter );
-		if ( !tryLoadSettings( xmlFilename ) )
-			InitializeViewerState.initBrightness( 0.001, 0.999, viewer, setupAssignments );
-	}
-
-	public BigDataViewer( final AbstractSpimData< ? > spimData, final String windowTitle, final ProgressWriter progressWriter )
-	{
-		final int width = 800;
-		final int height = 600;
-
-		if ( WrapBasicImgLoader.wrapImgLoaderIfNecessary( spimData ) )
-		{
-			System.err.println( "WARNING:\nOpening <SpimData> dataset that is not suited for interactive browsing.\nConsider resaving as HDF5 for better performance." );
-		}
-		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
-
-		final ArrayList< ConverterSetup > converterSetups = new ArrayList< ConverterSetup >();
-		final ArrayList< SourceAndConverter< ? > > sources = new ArrayList< SourceAndConverter< ? > >();
-		initSetups( spimData, converterSetups, sources );
-
-		final List< TimePoint > timepoints = seq.getTimePoints().getTimePointsOrdered();
-		viewerFrame = new ViewerFrame( width, height, sources, timepoints.size(),
-				( ( ViewerImgLoader< ?, ? > ) seq.getImgLoader() ).getCache() );
+		viewerFrame = new ViewerFrame( windowWidth, windowHeight, sources, numTimepoints, cache );
 		if ( windowTitle != null )
 			viewerFrame.setTitle( windowTitle );
 		viewer = viewerFrame.getViewerPanel();
@@ -329,9 +343,7 @@ public class BigDataViewer
 
 		brightnessDialog = new BrightnessDialog( viewerFrame, setupAssignments );
 
-		cropDialog = new CropDialog( viewerFrame, viewer, seq );
-
-		WrapBasicImgLoader.removeWrapperIfPresent( spimData );
+		cropDialog = ( spimData == null ) ? null : new CropDialog( viewerFrame, viewer, spimData.getSequenceDescription() );
 
 		movieDialog = new RecordMovieDialog( viewerFrame, viewer, progressWriter );
 		// this is just to get updates of window size:
@@ -400,9 +412,12 @@ public class BigDataViewer
 		menu = new JMenu( "Tools" );
 		menubar.add( menu );
 
-		final JMenuItem miCrop = new JMenuItem( actionMap.get( BigDataViewerActions.CROP ) );
-		miCrop.setText( "Crop" );
-		menu.add( miCrop );
+		if ( cropDialog != null )
+		{
+			final JMenuItem miCrop = new JMenuItem( actionMap.get( BigDataViewerActions.CROP ) );
+			miCrop.setText( "Crop" );
+			menu.add( miCrop );
+		}
 
 		final JMenuItem miMovie = new JMenuItem( actionMap.get( BigDataViewerActions.RECORD_MOVIE ) );
 		miMovie.setText( "Record Movie" );
@@ -420,12 +435,57 @@ public class BigDataViewer
 		menu.add( miHelp );
 
 		viewerFrame.setJMenuBar( menubar );
+	}
 
-		viewerFrame.setVisible( true );
+	public static BigDataViewer open( final AbstractSpimData< ? > spimData, final String windowTitle, final ProgressWriter progressWriter )
+	{
+		final int width = 800;
+		final int height = 600;
 
-		InitializeViewerState.initTransform( viewer );
+		if ( WrapBasicImgLoader.wrapImgLoaderIfNecessary( spimData ) )
+		{
+			System.err.println( "WARNING:\nOpening <SpimData> dataset that is not suited for interactive browsing.\nConsider resaving as HDF5 for better performance." );
+		}
 
-		setupVolumeRendering( spimData );
+		final ArrayList< ConverterSetup > converterSetups = new ArrayList< ConverterSetup >();
+		final ArrayList< SourceAndConverter< ? > > sources = new ArrayList< SourceAndConverter< ? > >();
+		initSetups( spimData, converterSetups, sources );
+
+		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
+		final int numTimepoints = seq.getTimePoints().size();
+		final Cache cache = ( ( ViewerImgLoader< ?, ? > ) seq.getImgLoader() ).getCache();
+
+		final BigDataViewer bdv = new BigDataViewer( converterSetups, sources, spimData, numTimepoints, cache, windowTitle, width, height, progressWriter );
+
+		WrapBasicImgLoader.removeWrapperIfPresent( spimData );
+
+		bdv.viewerFrame.setVisible( true );
+		InitializeViewerState.initTransform( bdv.viewer );
+		return bdv;
+	}
+
+	public static BigDataViewer open( final String xmlFilename, final String windowTitle, final ProgressWriter progressWriter ) throws SpimDataException
+	{
+		final SpimDataMinimal spimData = new XmlIoSpimDataMinimal().load( xmlFilename );
+		final BigDataViewer bdv = open ( spimData, windowTitle, progressWriter );
+		if ( !bdv.tryLoadSettings( xmlFilename ) )
+			InitializeViewerState.initBrightness( 0.001, 0.999, bdv.viewer, bdv.setupAssignments );
+		bdv.setupVolumeRendering( spimData );
+		return bdv;
+	}
+
+	public static BigDataViewer open(
+			final ArrayList< ConverterSetup > converterSetups,
+			final ArrayList< SourceAndConverter< ? > > sources,
+			final int numTimepoints,
+			final Cache cache,
+			final String windowTitle,
+			final ProgressWriter progressWriter )
+	{
+		final BigDataViewer bdv = new BigDataViewer( converterSetups, sources, null, numTimepoints, cache, windowTitle, 800, 600, progressWriter );
+		bdv.viewerFrame.setVisible( true );
+		InitializeViewerState.initTransform( bdv.viewer );
+		return bdv;
 	}
 
 	private volatile boolean renderContinuously = false;
@@ -594,16 +654,87 @@ public class BigDataViewer
 		viewer.requestRepaint();
 	}
 
+	/**
+	 * Deprecated, please use {@link #open(String, String, ProgressWriter)} instead.
+	 */
+	@Deprecated
+	public BigDataViewer( final String xmlFilename, final String windowTitle, final ProgressWriter progressWriter ) throws SpimDataException
+	{
+		this( new XmlIoSpimDataMinimal().load( xmlFilename ), windowTitle, progressWriter );
+		if ( !tryLoadSettings( xmlFilename ) )
+			InitializeViewerState.initBrightness( 0.001, 0.999, viewer, setupAssignments );
+	}
+
+	/**
+	 * Deprecated, please use {@link #open(AbstractSpimData, String, ProgressWriter)} instead.
+	 */
+	@Deprecated
+	public BigDataViewer( final AbstractSpimData< ? > spimData, final String windowTitle, final ProgressWriter progressWriter )
+	{
+		this( new ForDeprecatedConstructors( spimData, windowTitle, progressWriter ) );
+		viewerFrame.setVisible( true );
+		InitializeViewerState.initTransform( viewer );
+	}
+
+	@Deprecated
+	private static class ForDeprecatedConstructors
+	{
+		final ArrayList< ConverterSetup > converterSetups;
+		final ArrayList< SourceAndConverter< ? > > sources;
+		final AbstractSpimData< ? > spimData;
+		final int numTimepoints;
+		final Cache cache;
+		final String windowTitle;
+		final int windowWidth;
+		final int windowHeight;
+		final ProgressWriter progressWriter;
+
+		private ForDeprecatedConstructors( final AbstractSpimData< ? > spimData, final String windowTitle, final ProgressWriter progressWriter )
+		{
+			this.windowTitle = windowTitle;
+			this.progressWriter = progressWriter;
+			this.spimData = spimData;
+
+			windowWidth = 800;
+			windowHeight = 600;
+
+			if ( WrapBasicImgLoader.wrapImgLoaderIfNecessary( spimData ) )
+			{
+				System.err.println( "WARNING:\nOpening <SpimData> dataset that is not suited for interactive browsing.\nConsider resaving as HDF5 for better performance." );
+			}
+
+			converterSetups = new ArrayList< ConverterSetup >();
+			sources = new ArrayList< SourceAndConverter< ? > >();
+			initSetups( spimData, converterSetups, sources );
+
+			final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
+			numTimepoints = seq.getTimePoints().size();
+			cache = ( ( ViewerImgLoader< ?, ? > ) seq.getImgLoader() ).getCache();
+
+			WrapBasicImgLoader.removeWrapperIfPresent( spimData );
+		}
+	}
+
+	@Deprecated
+	private BigDataViewer( final ForDeprecatedConstructors p )
+	{
+		this( p.converterSetups, p.sources, p.spimData, p.numTimepoints, p.cache, p.windowTitle, p.windowWidth, p.windowHeight, p.progressWriter );
+	}
+
+	/**
+	 * Deprecated, please use {@link #open(String, String, ProgressWriter)} instead.
+	 */
+	@Deprecated
 	public static void view( final String filename, final ProgressWriter progressWriter ) throws SpimDataException
 	{
-		new BigDataViewer( filename, new File( filename ).getName(), progressWriter );
+		open( filename, new File( filename ).getName(), progressWriter );
 	}
 
 	public static void main( final String[] args )
 	{
 //		final String fn = "http://tomancak-mac-17.mpi-cbg.de:8080/openspim/";
 //		final String fn = "/Users/Pietzsch/Desktop/openspim/datasetHDF.xml";
-//		final String fn = "/Users/pietzsch/workspace/data/111010_weber_full.xml";
+		final String fn = "/Users/pietzsch/workspace/data/111010_weber_full.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/spimrec2/dataset.xml";
 //		final String fn = "/Users/pietzsch/Desktop/HisYFP-SPIM/dataset.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/bdv example/drosophila 2.xml";
@@ -611,8 +742,7 @@ public class BigDataViewer
 //		final String fn = "/Users/Pietzsch/Desktop/data/catmaid.xml";
 //		final String fn = "src/main/resources/openconnectome-bock11-neariso.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/data/catmaid-confocal.xml";
-		final String fn = "/Users/pietzsch/desktop/data/BDV130418A325/BDV130418A325_NoTempReg.xml";
-//		final String fn = "/Users/pietzsch/TGMM/data/tifs/datasethdf5.xml";
+//		final String fn = "/Users/pietzsch/desktop/data/BDV130418A325/BDV130418A325_NoTempReg.xml";
 //		final String fn = "/Users/pietzsch/Desktop/data/valia2/valia.xml";
 //		final String fn = "/Users/pietzsch/workspace/data/fast fly/111010_weber/combined.xml";
 //		final String fn = "/Users/pietzsch/workspace/data/mette/mette.xml";
@@ -626,8 +756,7 @@ public class BigDataViewer
 		try
 		{
 			System.setProperty( "apple.laf.useScreenMenuBar", "true" );
-			view( fn, new ProgressWriterConsole() );
-//			new BigDataViewer( fn, "BigDataViewer", new ProgressWriterConsole() );
+			open( fn, new File( fn ).getName(), new ProgressWriterConsole() );
 		}
 		catch ( final Exception e )
 		{

@@ -192,6 +192,12 @@ public class Prefetcher
 	 * Get the bounding box of a cell under the current transform and
 	 * interpolation method. Set {@link #offsetNeg} and {@link #offsetPos} as
 	 * seen from the min corner of the cell.
+	 *
+	 * <p>
+	 * The box <em>(0,0,0)-cellDims</em> is projected to screen coordinates
+	 * (padded for interpolation). The bounding box in screen coordinates with
+	 * respect to the projected cell origin <em>(0,0,0)</em> is computed and
+	 * stored in {@link #offsetNeg} and {@link #offsetPos}.
 	 */
 	private void checkProtoCell( final int[] cellDims, final AffineTransform3D sourceToScreen, final Interpolation interpolation )
 	{
