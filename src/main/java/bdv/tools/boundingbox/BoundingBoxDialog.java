@@ -18,13 +18,18 @@ import javax.swing.WindowConstants;
 
 import net.imglib2.Interval;
 import net.imglib2.display.RealARGBColorConverter;
+import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
+import bdv.tools.boundingbox.BoundingBoxOverlay.BoundingBoxOverlaySource;
 import bdv.tools.brightness.RealARGBColorConverterSetup;
 import bdv.tools.brightness.SetupAssignments;
+import bdv.tools.transformation.TransformedSource;
 import bdv.util.RealRandomAccessibleSource;
+import bdv.viewer.DisplayMode;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerPanel;
+import bdv.viewer.VisibilityAndGrouping;
 
 // dialog to change bounding box
 // while dialog is visible, bounding box is added as a source to the viewer
@@ -93,10 +98,24 @@ public class BoundingBoxDialog extends JDialog
 		boxConverterSetup.setViewer( viewer );
 
 		// create a SourceAndConverter (can be added to the viewer for display)
-		boxSourceAndConverter = new SourceAndConverter< UnsignedShortType >( boxSource, converter );
+		final TransformedSource< UnsignedShortType > ts = new TransformedSource< UnsignedShortType >( boxSource );
+		boxSourceAndConverter = new SourceAndConverter< UnsignedShortType >( ts, converter );
 
 		// create an Overlay to show 3D wireframe box
-		boxOverlay = new BoundingBoxOverlay( boxRealRandomAccessible.getInterval() );
+		boxOverlay = new BoundingBoxOverlay( new BoundingBoxOverlaySource()
+		{
+			@Override
+			public void getIntervalTransform( final AffineTransform3D transform )
+			{
+				ts.getSourceTransform( 0, 0, transform );
+			}
+
+			@Override
+			public Interval getInterval()
+			{
+				return boxRealRandomAccessible.getInterval();
+			}
+		} );
 
 		// create a JPanel with sliders to modify the bounding box interval (boxRealRandomAccessible.getInterval())
 		boxSelectionPanel = new BoxSelectionPanel( boxRealRandomAccessible.getInterval(), rangeInterval );
@@ -120,6 +139,17 @@ public class BoundingBoxDialog extends JDialog
 				{
 					viewer.addSource( boxSourceAndConverter );
 					setupAssignments.addSetup( boxConverterSetup );
+
+					final int bbSourceIndex = viewer.getState().numSources() - 1;
+					final VisibilityAndGrouping vg = viewer.getVisibilityAndGrouping();
+					if ( vg.getDisplayMode() != DisplayMode.FUSED )
+					{
+						for ( int i = 0; i < bbSourceIndex; ++i )
+							vg.setSourceActive( i, vg.isSourceVisible( i ) );
+						vg.setDisplayMode( DisplayMode.FUSED );
+					}
+					vg.setSourceActive( bbSourceIndex, true );
+					vg.setCurrentSource( bbSourceIndex );
 				}
 				if ( showBoxOverlay )
 				{

@@ -15,11 +15,20 @@ import bdv.viewer.overlay.RenderBoxHelper;
 
 public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< AffineTransform3D >
 {
+	public static interface BoundingBoxOverlaySource
+	{
+		public Interval getInterval();
+
+		public void getIntervalTransform( AffineTransform3D transform );
+	}
+
 	private final Color backColor = new Color( 0x00994499 );// Color.MAGENTA;
 
 	private final Color frontColor = Color.GREEN;
 
-	private final Interval interval;
+	private final BoundingBoxOverlaySource bbSource;
+
+	private final AffineTransform3D viewerTransform;
 
 	private final AffineTransform3D transform;
 
@@ -31,7 +40,26 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 	public BoundingBoxOverlay( final Interval interval )
 	{
-		this.interval = interval;
+		this( new BoundingBoxOverlaySource()
+		{
+			@Override
+			public Interval getInterval()
+			{
+				return interval;
+			}
+
+			@Override
+			public void getIntervalTransform( final AffineTransform3D transform )
+			{
+				transform.identity();
+			}
+		} );
+	}
+
+	public BoundingBoxOverlay( final BoundingBoxOverlaySource bbSource )
+	{
+		this.bbSource = bbSource;
+		this.viewerTransform = new AffineTransform3D();
 		this.transform = new AffineTransform3D();
 		this.renderBoxHelper = new RenderBoxHelper();
 	}
@@ -44,11 +72,13 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 		final GeneralPath front = new GeneralPath();
 		final GeneralPath back = new GeneralPath();
 
+		final Interval interval = bbSource.getInterval();
 		final double perspective = 3;
 		final double sourceSize = Math.max( Math.max( interval.dimension( 0 ), interval.dimension( 1 ) ), interval.dimension( 2 ) );
 		final double ox = canvasWidth / 2;
 		final double oy = canvasHeight / 2;
-
+		bbSource.getIntervalTransform( transform );
+		transform.preConcatenate( viewerTransform );
 		renderBoxHelper.setDepth( perspective * sourceSize );
 		renderBoxHelper.setOrigin( ox, oy );
 		renderBoxHelper.setScale( 1 );
@@ -76,6 +106,6 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 	@Override
 	public void transformChanged( final AffineTransform3D t )
 	{
-		transform.set( t );
+		viewerTransform.set( t );
 	}
 }
