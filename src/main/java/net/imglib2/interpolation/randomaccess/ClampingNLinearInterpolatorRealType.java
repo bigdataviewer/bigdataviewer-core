@@ -43,7 +43,7 @@ import net.imglib2.type.numeric.RealType;
  *
  * @param <T>
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 public class ClampingNLinearInterpolatorRealType< T extends RealType< T > > extends NLinearInterpolator< T >
 {
@@ -79,7 +79,7 @@ public class ClampingNLinearInterpolatorRealType< T extends RealType< T > > exte
 	 * the target position is modified per move.
 	 *
 	 * <p>
-	 * {@see http://en.wikipedia.org/wiki/Gray_code}
+	 * @see <a href="http://en.wikipedia.org/wiki/Gray_code">Gray code</a>.
 	 */
 	@Override
 	public T get()

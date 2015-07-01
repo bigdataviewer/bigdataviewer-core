@@ -44,8 +44,8 @@ import net.imglib2.util.Util;
  *
  * @param <T>
  *
- * @author Stephan Saalfeld <saalfeld@mpi-cbg.de>
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Stephan Saalfeld &lt;saalfeld@mpi-cbg.de&gt;
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 public class ClampingNLinearInterpolatorVolatileARGB< T extends AbstractVolatileNumericType< ARGBType, T > > extends NLinearInterpolator< T >
 {
@@ -76,7 +76,7 @@ public class ClampingNLinearInterpolatorVolatileARGB< T extends AbstractVolatile
 	 * the target position is modified per move.
 	 *
 	 * <p>
-	 * {@see http://en.wikipedia.org/wiki/Gray_code}
+	 * @see <a href="http://en.wikipedia.org/wiki/Gray_code">Gray code</a>.
 	 */
 	@Override
 	public T get()

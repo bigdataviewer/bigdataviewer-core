@@ -44,7 +44,7 @@ import net.imglib2.type.volatiles.AbstractVolatileRealType;
  *
  * @param <T>
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 public class ClampingNLinearInterpolatorVolatileRealType< R extends RealType< R >, T extends AbstractVolatileRealType< R, T > > extends NLinearInterpolator< T >
 {
@@ -81,7 +81,7 @@ public class ClampingNLinearInterpolatorVolatileRealType< R extends RealType< R 
 	 * the target position is modified per move.
 	 *
 	 * <p>
-	 * {@see http://en.wikipedia.org/wiki/Gray_code}
+	 * @see <a href="http://en.wikipedia.org/wiki/Gray_code">Gray code</a>.
 	 */
 	@Override
 	public T get()
