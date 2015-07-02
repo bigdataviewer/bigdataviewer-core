@@ -477,7 +477,7 @@ public class WriteSequenceToHdf5
 	{
 		private LoopBackImageLoader( final IHDF5Reader existingHdf5Reader, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
 		{
-			super( null, existingHdf5Reader, null, sequenceDescription, true );
+			super( null, existingHdf5Reader, null, sequenceDescription, false );
 		}
 
 		static LoopBackImageLoader create( final IHDF5Reader existingHdf5Reader, final int timepointIdPartition, final int setupIdPartition, final Dimensions imageDimensions )
