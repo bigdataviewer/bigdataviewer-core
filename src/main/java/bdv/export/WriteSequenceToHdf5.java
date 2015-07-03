@@ -68,7 +68,6 @@ import ch.systemsx.cisd.hdf5.IHDF5Writer;
  */
 public class WriteSequenceToHdf5
 {
-
 	/**
 	 * Create a hdf5 file containing image data from all views and all
 	 * timepoints in a chunked, mipmaped representation.
@@ -96,6 +95,11 @@ public class WriteSequenceToHdf5
 	 * @param afterEachPlane
 	 *            this is called after each "plane of chunks" is written, giving
 	 *            the opportunity to clear caches, etc.
+	 * @param numCellCreatorThreads
+	 *            The number of threads that will be instantiated to generate
+	 *            cell data. Must be at least 1. (In addition the cell creator
+	 *            threads there is one writer thread that saves the generated
+	 *            data to HDF5.)
 	 * @param progressWriter
 	 *            completion ratio and status output will be directed here.
 	 */
@@ -106,6 +110,7 @@ public class WriteSequenceToHdf5
 			final File hdf5File,
 			final LoopbackHeuristic loopbackHeuristic,
 			final AfterEachPlane afterEachPlane,
+			final int numCellCreatorThreads,
 			final ProgressWriter progressWriter )
 	{
 		final HashMap< Integer, Integer > timepointIdSequenceToPartition = new HashMap< Integer, Integer >();
@@ -117,13 +122,13 @@ public class WriteSequenceToHdf5
 			setupIdSequenceToPartition.put( setup.getId(), setup.getId() );
 
 		final Partition partition = new Partition( hdf5File.getPath(), timepointIdSequenceToPartition, setupIdSequenceToPartition );
-		writeHdf5PartitionFile( seq, perSetupMipmapInfo, deflate, partition, loopbackHeuristic, afterEachPlane, progressWriter );
+		writeHdf5PartitionFile( seq, perSetupMipmapInfo, deflate, partition, loopbackHeuristic, afterEachPlane, numCellCreatorThreads, progressWriter );
 	}
 
 	/**
 	 * Create a hdf5 file containing image data from all views and all
 	 * timepoints in a chunked, mipmaped representation. This is the same as
-	 * {@link WriteSequenceToHdf5#writeHdf5File(AbstractSequenceDescription, Map, boolean, File, LoopbackHeuristic, AfterEachPlane, ProgressWriter)}
+	 * {@link WriteSequenceToHdf5#writeHdf5File(AbstractSequenceDescription, Map, boolean, File, LoopbackHeuristic, AfterEachPlane, int, ProgressWriter)}
 	 * except that only one set of supsampling factors and and subdivision
 	 * blocksizes is given, which is used for all {@link BasicViewSetup views}.
 	 *
@@ -151,6 +156,11 @@ public class WriteSequenceToHdf5
 	 * @param afterEachPlane
 	 *            this is called after each "plane of chunks" is written, giving
 	 *            the opportunity to clear caches, etc.
+	 * @param numCellCreatorThreads
+	 *            The number of threads that will be instantiated to generate
+	 *            cell data. Must be at least 1. (In addition the cell creator
+	 *            threads there is one writer thread that saves the generated
+	 *            data to HDF5.)
 	 * @param progressWriter
 	 *            completion ratio and status output will be directed here.
 	 */
@@ -162,13 +172,14 @@ public class WriteSequenceToHdf5
 			final File hdf5File,
 			final LoopbackHeuristic loopbackHeuristic,
 			final AfterEachPlane afterEachPlane,
+			final int numCellCreatorThreads,
 			final ProgressWriter progressWriter )
 	{
 		final HashMap< Integer, ExportMipmapInfo > perSetupMipmapInfo = new HashMap< Integer, ExportMipmapInfo >();
 		final ExportMipmapInfo mipmapInfo = new ExportMipmapInfo( resolutions, subdivisions );
 		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
 			perSetupMipmapInfo.put( setup.getId(), mipmapInfo );
-		writeHdf5File( seq, perSetupMipmapInfo, deflate, hdf5File, loopbackHeuristic, afterEachPlane, progressWriter );
+		writeHdf5File( seq, perSetupMipmapInfo, deflate, hdf5File, loopbackHeuristic, afterEachPlane, numCellCreatorThreads, progressWriter );
 	}
 
 	/**
@@ -273,6 +284,19 @@ public class WriteSequenceToHdf5
 		hdf5Writer.close();
 	}
 
+	public static void writeHdf5PartitionFile(
+			final AbstractSequenceDescription< ?, ?, ? > seq,
+			final Map< Integer, ExportMipmapInfo > perSetupMipmapInfo,
+			final boolean deflate,
+			final Partition partition,
+			final LoopbackHeuristic loopbackHeuristic,
+			final AfterEachPlane afterEachPlane,
+			final ProgressWriter progressWriter )
+	{
+		final int numThreads = Math.max( 1, Runtime.getRuntime().availableProcessors() - 2 );
+		writeHdf5PartitionFile( seq, perSetupMipmapInfo, deflate, partition, loopbackHeuristic, afterEachPlane, numThreads, progressWriter );
+	}
+
 	/**
 	 * Create a hdf5 partition file containing image data for a subset of views
 	 * and timepoints in a chunked, mipmaped representation.
@@ -305,6 +329,11 @@ public class WriteSequenceToHdf5
 	 * @param afterEachPlane
 	 *            this is called after each "plane of chunks" is written, giving
 	 *            the opportunity to clear caches, etc.
+	 * @param numCellCreatorThreads
+	 *            The number of threads that will be instantiated to generate
+	 *            cell data. Must be at least 1. (In addition the cell creator
+	 *            threads there is one writer thread that saves the generated
+	 *            data to HDF5.)
 	 * @param progressWriter
 	 *            completion ratio and status output will be directed here.
 	 */
@@ -315,10 +344,10 @@ public class WriteSequenceToHdf5
 			final Partition partition,
 			final LoopbackHeuristic loopbackHeuristic,
 			final AfterEachPlane afterEachPlane,
+			final int numCellCreatorThreads,
 			ProgressWriter progressWriter )
 	{
 		final int blockWriterQueueLength = 100;
-		final int numThreads = Math.max( 1, Runtime.getRuntime().availableProcessors() - 2 );
 
 		if ( progressWriter == null )
 			progressWriter = new ProgressWriterConsole();
@@ -347,7 +376,7 @@ public class WriteSequenceToHdf5
 		writerQueue.start();
 
 		// start CellCreatorThreads
-		final CellCreatorThread[] cellCreatorThreads = createAndStartCellCreatorThreads( numThreads );
+		final CellCreatorThread[] cellCreatorThreads = createAndStartCellCreatorThreads( numCellCreatorThreads );
 
 		// calculate number of tasks for progressWriter
 		int numTasks = 1; // first task is for writing mipmap descriptions etc...
@@ -442,6 +471,11 @@ public class WriteSequenceToHdf5
 	 * @param afterEachPlane
 	 *            this is called after each "plane of chunks" is written, giving
 	 *            the opportunity to clear caches, etc.
+	 * @param numCellCreatorThreads
+	 *            The number of threads that will be instantiated to generate
+	 *            cell data. Must be at least 1. (In addition the cell creator
+	 *            threads there is one writer thread that saves the generated
+	 *            data to HDF5.)
 	 * @param progressWriter
 	 *            completion ratio and status output will be directed here. may
 	 *            be null.
@@ -456,15 +490,15 @@ public class WriteSequenceToHdf5
 			final boolean deflate,
 			final LoopbackHeuristic loopbackHeuristic,
 			final AfterEachPlane afterEachPlane,
+			final int numCellCreatorThreads,
 			final ProgressWriter progressWriter )
 	{
 		final int blockWriterQueueLength = 100;
-		final int numThreads = Math.max( 1, Runtime.getRuntime().availableProcessors() - 2 );
 
 		// create and start Hdf5BlockWriterThread
 		final Hdf5BlockWriterThread writerQueue = new Hdf5BlockWriterThread( partition.getPath(), blockWriterQueueLength );
 		writerQueue.start();
-		final CellCreatorThread[] cellCreatorThreads = createAndStartCellCreatorThreads( numThreads );
+		final CellCreatorThread[] cellCreatorThreads = createAndStartCellCreatorThreads( numCellCreatorThreads );
 
 		// write the image
 		writeViewToHdf5PartitionFile( img, timepointIdPartition, setupIdPartition, mipmapInfo, writeMipmapInfo, deflate, writerQueue, cellCreatorThreads, loopbackHeuristic, afterEachPlane, progressWriter );
@@ -909,5 +943,66 @@ public class WriteSequenceToHdf5
 
 		for ( int j = 0; j < numBlockPixels; ++j )
 			out.next().setReal( accumulator[ j ] * scale );
+	}
+
+	/**
+	 * DEPRECATED. Use
+	 * {@link #writeHdf5File(AbstractSequenceDescription, Map, boolean, File, LoopbackHeuristic, AfterEachPlane, int, ProgressWriter)}
+	 * instead.
+	 */
+	@Deprecated
+	public static void writeHdf5File(
+			final AbstractSequenceDescription< ?, ?, ? > seq,
+			final Map< Integer, ExportMipmapInfo > perSetupMipmapInfo,
+			final boolean deflate,
+			final File hdf5File,
+			final LoopbackHeuristic loopbackHeuristic,
+			final AfterEachPlane afterEachPlane,
+			final ProgressWriter progressWriter )
+	{
+		final int numThreads = Math.max( 1, Runtime.getRuntime().availableProcessors() - 2 );
+		writeHdf5File( seq, perSetupMipmapInfo, deflate, hdf5File, loopbackHeuristic, afterEachPlane, numThreads, progressWriter );
+	}
+
+	/**
+	 * DEPRECATED. Use
+	 * {@link #writeHdf5File(AbstractSequenceDescription, int[][], int[][], boolean, File, LoopbackHeuristic, AfterEachPlane, int, ProgressWriter)}
+	 * instead.
+	 */
+	@Deprecated
+	public static void writeHdf5File(
+			final AbstractSequenceDescription< ?, ?, ? > seq,
+			final int[][] resolutions,
+			final int[][] subdivisions,
+			final boolean deflate,
+			final File hdf5File,
+			final LoopbackHeuristic loopbackHeuristic,
+			final AfterEachPlane afterEachPlane,
+			final ProgressWriter progressWriter )
+	{
+		final int numThreads = Math.max( 1, Runtime.getRuntime().availableProcessors() - 2 );
+		writeHdf5File( seq, resolutions, subdivisions, deflate, hdf5File, loopbackHeuristic, afterEachPlane, numThreads, progressWriter );
+	}
+
+	/**
+	 * DEPRECATED. Use
+	 * {@link #writeViewToHdf5PartitionFile(RandomAccessibleInterval, Partition, int, int, ExportMipmapInfo, boolean, boolean, LoopbackHeuristic, AfterEachPlane, int, ProgressWriter)}
+	 * instead.
+	 */
+	@Deprecated
+	public static void writeViewToHdf5PartitionFile(
+			final RandomAccessibleInterval< UnsignedShortType > img,
+			final Partition partition,
+			final int timepointIdPartition,
+			final int setupIdPartition,
+			final ExportMipmapInfo mipmapInfo,
+			final boolean writeMipmapInfo,
+			final boolean deflate,
+			final LoopbackHeuristic loopbackHeuristic,
+			final AfterEachPlane afterEachPlane,
+			final ProgressWriter progressWriter )
+	{
+		final int numThreads = Math.max( 1, Runtime.getRuntime().availableProcessors() - 2 );
+		writeViewToHdf5PartitionFile( img, partition, timepointIdPartition, setupIdPartition, mipmapInfo, writeMipmapInfo, deflate, loopbackHeuristic, afterEachPlane, numThreads, progressWriter );
 	}
 }

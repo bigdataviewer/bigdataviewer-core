@@ -359,7 +359,8 @@ public class CropDialog extends JDialog
 						info.getSubdivisions() ) );
 		}
 
-		WriteSequenceToHdf5.writeHdf5File( seq, perSetupMipmapInfo, true, hdf5File, null, null, null );
+		final int numThreads = Math.max( 1, Runtime.getRuntime().availableProcessors() - 2 );
+		WriteSequenceToHdf5.writeHdf5File( seq, perSetupMipmapInfo, true, hdf5File, null, null, numThreads, null );
 
 		// Build ViewRegistrations with adjusted transforms.
 		final ArrayList< ViewRegistration > registrations = new ArrayList< ViewRegistration >();
