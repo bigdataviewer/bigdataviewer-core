@@ -5,7 +5,6 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.HashMap;
 
-import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.NativeImg;
@@ -17,7 +16,8 @@ import net.imglib2.type.volatiles.VolatileUnsignedShortType;
 import net.imglib2.util.Fraction;
 import net.imglib2.util.IntervalIndexer;
 import net.imglib2.view.Views;
-import bdv.AbstractViewerImgLoader;
+import bdv.AbstractViewerSetupImgLoader;
+import bdv.ViewerImgLoader;
 import bdv.img.cache.CacheHints;
 import bdv.img.cache.CachedCellImg;
 import bdv.img.cache.LoadingStrategy;
@@ -31,7 +31,7 @@ import bdv.util.ConstantRandomAccessible;
 
 import com.google.gson.GsonBuilder;
 
-public class RemoteImageLoader extends AbstractViewerImgLoader< UnsignedShortType, VolatileUnsignedShortType >
+public class RemoteImageLoader implements ViewerImgLoader
 {
 	protected String baseUrl;
 
@@ -39,7 +39,14 @@ public class RemoteImageLoader extends AbstractViewerImgLoader< UnsignedShortTyp
 
 	protected HashMap< ViewLevelId, int[] > cellsDimensions;
 
-	protected VolatileGlobalCellCache< VolatileShortArray > cache;
+	protected VolatileGlobalCellCache cache;
+
+	protected RemoteVolatileShortArrayLoader shortLoader;
+
+	/**
+	 * TODO
+	 */
+	protected final HashMap< Integer, SetupImgLoader > setupImgLoaders;
 
 	public RemoteImageLoader( final String baseUrl ) throws IOException
 	{
@@ -48,10 +55,17 @@ public class RemoteImageLoader extends AbstractViewerImgLoader< UnsignedShortTyp
 
 	public RemoteImageLoader( final String baseUrl, final boolean doOpen ) throws IOException
 	{
-		super( new UnsignedShortType(), new VolatileUnsignedShortType() );
 		this.baseUrl = baseUrl;
+		setupImgLoaders = new HashMap< Integer, SetupImgLoader >();
 		if ( doOpen )
 			open();
+	}
+
+	@Override
+	public SetupImgLoader getSetupImgLoader( final int setupId )
+	{
+		tryopen();
+		return setupImgLoaders.get( setupId );
 	}
 
 	private boolean isOpen = false;
@@ -72,8 +86,8 @@ public class RemoteImageLoader extends AbstractViewerImgLoader< UnsignedShortTyp
 				metadata = gsonBuilder.create().fromJson(
 						new InputStreamReader( url.openStream() ),
 						RemoteImageLoaderMetaData.class );
-				cache = new VolatileGlobalCellCache< VolatileShortArray >(
-						new RemoteVolatileShortArrayLoader( this ),
+				shortLoader = new RemoteVolatileShortArrayLoader( this );
+				cache = new VolatileGlobalCellCache(
 						metadata.maxNumTimepoints,
 						metadata.maxNumSetups,
 						metadata.maxNumLevels,
@@ -96,62 +110,10 @@ public class RemoteImageLoader extends AbstractViewerImgLoader< UnsignedShortTyp
 	}
 
 	@Override
-	public RandomAccessibleInterval< UnsignedShortType > getImage( final ViewId view, final int level )
-	{
-		final ViewLevelId id = new ViewLevelId( view, level );
-		if ( ! existsImageData( id ) )
-		{
-			System.err.println(	String.format(
-					"image data for timepoint %d setup %d level %d could not be found.",
-					id.getTimePointId(), id.getViewSetupId(), id.getLevel() ) );
-			return getMissingDataImage( id, new UnsignedShortType() );
-		}
-		final CachedCellImg< UnsignedShortType, VolatileShortArray >  img = prepareCachedImage( id, LoadingStrategy.BLOCKING );
-		final UnsignedShortType linkedType = new UnsignedShortType( img );
-		img.setLinkedType( linkedType );
-		return img;
-	}
-
-	@Override
-	public RandomAccessibleInterval< VolatileUnsignedShortType > getVolatileImage( final ViewId view, final int level )
-	{
-		final ViewLevelId id = new ViewLevelId( view, level );
-		if ( ! existsImageData( id ) )
-		{
-			System.err.println(	String.format(
-					"image data for timepoint %d setup %d level %d could not be found.",
-					id.getTimePointId(), id.getViewSetupId(), id.getLevel() ) );
-			return getMissingDataImage( id, new VolatileUnsignedShortType() );
-		}
-		final CachedCellImg< VolatileUnsignedShortType, VolatileShortArray >  img = prepareCachedImage( id, LoadingStrategy.BUDGETED );
-		final VolatileUnsignedShortType linkedType = new VolatileUnsignedShortType( img );
-		img.setLinkedType( linkedType );
-		return img;
-	}
-
-	@Override
-	public VolatileGlobalCellCache< VolatileShortArray > getCache()
+	public VolatileGlobalCellCache getCache()
 	{
 		tryopen();
 		return cache;
-	}
-
-	@Override
-	public double[][] getMipmapResolutions( final int setupId )
-	{
-		return getMipmapInfo( setupId ).getResolutions();
-	}
-
-	@Override
-	public AffineTransform3D[] getMipmapTransforms( final int setupId )
-	{
-		return getMipmapInfo( setupId ).getTransforms();
-	}
-
-	@Override
-	public int numMipmapLevels( final int setupId )
-	{
-		return getMipmapInfo( setupId ).getNumLevels();
 	}
 
 	public MipmapInfo getMipmapInfo( final int setupId )
@@ -220,10 +182,72 @@ public class RemoteImageLoader extends AbstractViewerImgLoader< UnsignedShortTyp
 
 		final int priority = mipmapInfo.getMaxLevel() - level;
 		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
-		final CellCache< VolatileShortArray > c = cache.new VolatileCellCache( timepointId, setupId, level, cacheHints );
+		final CellCache< VolatileShortArray > c = cache.new VolatileCellCache< VolatileShortArray >( timepointId, setupId, level, cacheHints, shortLoader );
 		final VolatileImgCells< VolatileShortArray > cells = new VolatileImgCells< VolatileShortArray >( c, new Fraction(), dimensions, cellDimensions );
 		final CachedCellImg< T, VolatileShortArray > img = new CachedCellImg< T, VolatileShortArray >( cells );
 		return img;
 	}
 
+	public class SetupImgLoader extends AbstractViewerSetupImgLoader< UnsignedShortType, VolatileUnsignedShortType >
+	{
+		private final int setupId;
+
+		protected SetupImgLoader( final int setupId )
+		{
+			super( new UnsignedShortType(), new VolatileUnsignedShortType() );
+			this.setupId = setupId;
+		}
+
+		@Override
+		public RandomAccessibleInterval< UnsignedShortType > getImage( final int timepointId, final int level )
+		{
+			final ViewLevelId id = new ViewLevelId( timepointId, setupId, level );
+			if ( ! existsImageData( id ) )
+			{
+				System.err.println(	String.format(
+						"image data for timepoint %d setup %d level %d could not be found.",
+						id.getTimePointId(), id.getViewSetupId(), id.getLevel() ) );
+				return getMissingDataImage( id, new UnsignedShortType() );
+			}
+			final CachedCellImg< UnsignedShortType, VolatileShortArray >  img = prepareCachedImage( id, LoadingStrategy.BLOCKING );
+			final UnsignedShortType linkedType = new UnsignedShortType( img );
+			img.setLinkedType( linkedType );
+			return img;
+		}
+
+		@Override
+		public RandomAccessibleInterval< VolatileUnsignedShortType > getVolatileImage( final int timepointId, final int level )
+		{
+			final ViewLevelId id = new ViewLevelId( timepointId, setupId, level );
+			if ( ! existsImageData( id ) )
+			{
+				System.err.println(	String.format(
+						"image data for timepoint %d setup %d level %d could not be found.?",
+						id.getTimePointId(), id.getViewSetupId(), id.getLevel() ) );
+				return getMissingDataImage( id, new VolatileUnsignedShortType() );
+			}
+			final CachedCellImg< VolatileUnsignedShortType, VolatileShortArray >  img = prepareCachedImage( id, LoadingStrategy.BUDGETED );
+			final VolatileUnsignedShortType linkedType = new VolatileUnsignedShortType( img );
+			img.setLinkedType( linkedType );
+			return img;
+		}
+
+		@Override
+		public double[][] getMipmapResolutions()
+		{
+			return getMipmapInfo( setupId ).getResolutions();
+		}
+
+		@Override
+		public AffineTransform3D[] getMipmapTransforms()
+		{
+			return getMipmapInfo( setupId ).getTransforms();
+		}
+
+		@Override
+		public int numMipmapLevels()
+		{
+			return getMipmapInfo( setupId ).getNumLevels();
+		}
+	}
 }
