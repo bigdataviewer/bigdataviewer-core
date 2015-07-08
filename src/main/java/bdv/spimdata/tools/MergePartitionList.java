@@ -59,7 +59,7 @@ public class MergePartitionList
 
 	private static Hdf5ImageLoader getHdf5ImageLoader( final AbstractSequenceDescription< ?, ?, ? > seq )
 	{
-		final BasicImgLoader< ? > imgLoader = seq.getImgLoader();
+		final BasicImgLoader imgLoader = seq.getImgLoader();
 		if ( imgLoader instanceof Hdf5ImageLoader )
 			return ( Hdf5ImageLoader ) imgLoader;
 		else
