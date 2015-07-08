@@ -193,14 +193,22 @@ public class Hdf5ImageLoader extends AbstractViewerImgLoader< UnsignedShortType,
 	 */
 	public void close()
 	{
-		cache.clearCache();
-		hdf5Access.closeAllDataSets();
+		if ( isOpen )
+		{
+			synchronized ( this )
+			{
+				if ( !isOpen )
+					return;
+				isOpen = false;
 
-		// only close reader if constructed it ourselves
-		if ( existingHdf5Reader == null )
-			hdf5Access.close();
+				cache.clearCache();
+				hdf5Access.closeAllDataSets();
 
-		isOpen = false;
+				// only close reader if constructed it ourselves
+				if ( existingHdf5Reader == null )
+					hdf5Access.close();
+			}
+		}
 	}
 
 	public void initCachedDimensionsFromHdf5( final boolean background )
