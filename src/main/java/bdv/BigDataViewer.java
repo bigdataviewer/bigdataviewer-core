@@ -229,7 +229,6 @@ public class BigDataViewer
 			final List< ConverterSetup > converterSetups,
 			final List< SourceAndConverter< ? > > sources )
 	{
-		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
 		final ScaledARGBConverter.ARGB converter = new ScaledARGBConverter.ARGB( 0, 255 );
 
 		final int setupId = setup.getId();
@@ -438,7 +437,7 @@ public class BigDataViewer
 
 		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
 		final int numTimepoints = seq.getTimePoints().size();
-		final Cache cache = ( ( ViewerImgLoader< ?, ? > ) seq.getImgLoader() ).getCache();
+		final Cache cache = ( ( ViewerImgLoader ) seq.getImgLoader() ).getCache();
 
 		final BigDataViewer bdv = new BigDataViewer( converterSetups, sources, spimData, numTimepoints, cache, windowTitle, width, height, progressWriter );
 
@@ -644,7 +643,7 @@ public class BigDataViewer
 
 			final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
 			numTimepoints = seq.getTimePoints().size();
-			cache = ( ( ViewerImgLoader< ?, ? > ) seq.getImgLoader() ).getCache();
+			cache = ( ( ViewerImgLoader ) seq.getImgLoader() ).getCache();
 
 			WrapBasicImgLoader.removeWrapperIfPresent( spimData );
 		}

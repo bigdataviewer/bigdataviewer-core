@@ -46,10 +46,10 @@ public class WrapBasicImgLoader implements ViewerImgLoader
 	public static boolean removeWrapperIfPresent( final AbstractSpimData< ? > spimData )
 	{
 		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
-		final BasicImgLoader< ? > imgLoader = seq.getImgLoader();
+		final BasicImgLoader imgLoader = seq.getImgLoader();
 		if ( imgLoader instanceof WrapBasicImgLoader )
 		{
-			setImgLoader( seq, ( ( WrapBasicImgLoader< ? > ) imgLoader ).source );
+			setImgLoader( seq, ( ( WrapBasicImgLoader ) imgLoader ).source );
 			return true;
 		}
 		else
@@ -70,9 +70,12 @@ public class WrapBasicImgLoader implements ViewerImgLoader
 
 	private final HashMap< Integer, WrapSetupImgLoader< ?, ? > > wrapped;
 
+	private final BasicImgLoader source;
+
 	@SuppressWarnings( { "rawtypes", "unchecked" } )
 	public WrapBasicImgLoader( final BasicImgLoader source, final Map< Integer, ? > setupsMap )
 	{
+		this.source = source;
 		wrapped = new HashMap< Integer, WrapSetupImgLoader< ?, ? > >();
 		for ( final int setupId : setupsMap.keySet() )
 			wrapped.put( setupId, new WrapSetupImgLoader( source.getSetupImgLoader( setupId ) ) );
