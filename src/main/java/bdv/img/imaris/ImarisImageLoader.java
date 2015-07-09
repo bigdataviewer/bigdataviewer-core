@@ -1,6 +1,7 @@
 package bdv.img.imaris;
 
 import java.io.File;
+import java.util.HashMap;
 import java.util.List;
 
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
@@ -50,6 +51,8 @@ public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T
 
 	private CacheArrayLoader< A > loader;
 
+	private final HashMap< Integer, SetupImgLoader > setupImgLoaders;
+
 	public ImarisImageLoader(
 			final DataType< T, V, A > dataType,
 			final File hdf5File,
@@ -62,6 +65,7 @@ public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T
 		this.mipmapInfo = mipmapInfo;
 		this.mipmapDimensions = mipmapDimensions;
 		this.sequenceDescription = sequenceDescription;
+		this.setupImgLoaders = new HashMap< Integer, SetupImgLoader >();
 	}
 
 	private boolean isOpen = false;
@@ -95,6 +99,12 @@ public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T
 				}
 				loader = dataType.createArrayLoader( hdf5Access );
 				cache = new VolatileGlobalCellCache( maxNumTimepoints, maxNumSetups, maxNumLevels, 1 );
+
+				for ( final BasicViewSetup setup : setups )
+				{
+					final int setupId = setup.getId();
+					setupImgLoaders.put( setupId, new SetupImgLoader( setupId ) );
+				}
 			}
 		}
 	}
@@ -132,7 +142,8 @@ public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T
 	@Override
 	public SetupImgLoader getSetupImgLoader( final int setupId )
 	{
-		return null;
+		open();
+		return setupImgLoaders.get( setupId );
 	}
 
 	public class SetupImgLoader extends AbstractViewerSetupImgLoader< T, V >
