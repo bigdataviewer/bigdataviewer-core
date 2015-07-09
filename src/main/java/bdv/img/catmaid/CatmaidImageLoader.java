@@ -1,6 +1,5 @@
 package bdv.img.catmaid;
 
-import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.NativeImg;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
@@ -9,7 +8,9 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.volatiles.VolatileARGBType;
 import net.imglib2.util.Fraction;
-import bdv.AbstractViewerImgLoader;
+import bdv.AbstractViewerSetupImgLoader;
+import bdv.ViewerImgLoader;
+import bdv.ViewerSetupImgLoader;
 import bdv.img.cache.CacheHints;
 import bdv.img.cache.CachedCellImg;
 import bdv.img.cache.LoadingStrategy;
@@ -17,7 +18,7 @@ import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.img.cache.VolatileImgCells;
 import bdv.img.cache.VolatileImgCells.CellCache;
 
-public class CatmaidImageLoader extends AbstractViewerImgLoader< ARGBType, VolatileARGBType >
+public class CatmaidImageLoader extends AbstractViewerSetupImgLoader< ARGBType, VolatileARGBType > implements ViewerImgLoader
 {
 	private final int numScales;
 
@@ -31,7 +32,9 @@ public class CatmaidImageLoader extends AbstractViewerImgLoader< ARGBType, Volat
 
 	private final long[][] imageDimensions;
 
-	private final VolatileGlobalCellCache< VolatileIntArray > cache;
+	private final VolatileGlobalCellCache cache;
+
+	private final CatmaidVolatileIntArrayLoader loader;
 
 	public CatmaidImageLoader(
 			final long width,
@@ -74,8 +77,8 @@ public class CatmaidImageLoader extends AbstractViewerImgLoader< ARGBType, Volat
 			mipmapTransforms[ l ] = mipmapTransform;
 		}
 
-		cache = new VolatileGlobalCellCache< VolatileIntArray >(
-				new CatmaidVolatileIntArrayLoader( urlFormat, tileWidth, tileHeight, zScales ), 1, 1, numScales, 10 );
+		loader = new CatmaidVolatileIntArrayLoader( urlFormat, tileWidth, tileHeight, zScales );
+		cache = new VolatileGlobalCellCache( 1, 1, numScales, 10 );
 	}
 
 	final static public int getNumScales( long width, long height, final long tileWidth, final long tileHeight )
@@ -88,63 +91,69 @@ public class CatmaidImageLoader extends AbstractViewerImgLoader< ARGBType, Volat
 		return i;
 	}
 
-	@Override
-	public RandomAccessibleInterval< ARGBType > getImage( final ViewId view, final int level )
-	{
-		final CachedCellImg< ARGBType, VolatileIntArray >  img = prepareCachedImage( view, level, LoadingStrategy.BLOCKING );
-		final ARGBType linkedType = new ARGBType( img );
-		img.setLinkedType( linkedType );
-		return img;
-	}
-
-	@Override
-	public RandomAccessibleInterval< VolatileARGBType > getVolatileImage( final ViewId view, final int level )
-	{
-		final CachedCellImg< VolatileARGBType, VolatileIntArray >  img = prepareCachedImage( view, level, LoadingStrategy.VOLATILE );
-		final VolatileARGBType linkedType = new VolatileARGBType( img );
-		img.setLinkedType( linkedType );
-		return img;
-	}
-
-	@Override
-	public double[][] getMipmapResolutions( final int setup )
-	{
-		return mipmapResolutions;
-	}
-
-	@Override
-	public int numMipmapLevels( final int setup )
-	{
-		return numScales;
-	}
-
 	/**
 	 * (Almost) create a {@link CachedCellImg} backed by the cache.
 	 * The created image needs a {@link NativeImg#setLinkedType(net.imglib2.type.Type) linked type} before it can be used.
 	 * The type should be either {@link ARGBType} and {@link VolatileARGBType}.
 	 */
-	protected < T extends NativeType< T > > CachedCellImg< T, VolatileIntArray > prepareCachedImage( final ViewId view, final int level, final LoadingStrategy loadingStrategy )
+	protected < T extends NativeType< T > > CachedCellImg< T, VolatileIntArray > prepareCachedImage( final int timepointId, final int setupId, final int level, final LoadingStrategy loadingStrategy )
 	{
 		final long[] dimensions = imageDimensions[ level ];
 		final int[] cellDimensions = new int[]{ tileWidth, tileHeight, 1 };
 
 		final int priority = numScales - 1 - level;
 		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
-		final CellCache< VolatileIntArray > c = cache.new VolatileCellCache( view.getTimePointId(), view.getViewSetupId(), level, cacheHints );
+		final CellCache< VolatileIntArray > c = cache.new VolatileCellCache< VolatileIntArray >( timepointId, setupId, level, cacheHints, loader );
 		final VolatileImgCells< VolatileIntArray > cells = new VolatileImgCells< VolatileIntArray >( c, new Fraction(), dimensions, cellDimensions );
 		final CachedCellImg< T, VolatileIntArray > img = new CachedCellImg< T, VolatileIntArray >( cells );
 		return img;
 	}
 
 	@Override
-	public VolatileGlobalCellCache< VolatileIntArray > getCache()
+	public VolatileGlobalCellCache getCache()
 	{
 		return cache;
 	}
 
 	@Override
-	public AffineTransform3D[] getMipmapTransforms( final int setup )
+	public ViewerSetupImgLoader< ?, ? > getSetupImgLoader( final int setupId )
+	{
+		return this;
+	}
+
+	@Override
+	public RandomAccessibleInterval< ARGBType > getImage( final int timepointId, final int level )
+	{
+		final CachedCellImg< ARGBType, VolatileIntArray >  img = prepareCachedImage( timepointId, 0, level, LoadingStrategy.BLOCKING );
+		final ARGBType linkedType = new ARGBType( img );
+		img.setLinkedType( linkedType );
+		return img;
+	}
+
+	@Override
+	public RandomAccessibleInterval< VolatileARGBType > getVolatileImage( final int timepointId, final int level )
+	{
+		final CachedCellImg< VolatileARGBType, VolatileIntArray >  img = prepareCachedImage( timepointId, 0, level, LoadingStrategy.VOLATILE );
+		final VolatileARGBType linkedType = new VolatileARGBType( img );
+		img.setLinkedType( linkedType );
+		return img;
+	}
+
+	@Override
+	public double[][] getMipmapResolutions()
+	{
+		return mipmapResolutions;
+	}
+
+	@Override
+	public AffineTransform3D[] getMipmapTransforms()
 	{
 		return mipmapTransforms;
+	}
+
+	@Override
+	public int numMipmapLevels()
+	{
+		return numScales;
 	}
 }
