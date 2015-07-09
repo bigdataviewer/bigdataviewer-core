@@ -93,6 +93,8 @@ public class RemoteImageLoader implements ViewerImgLoader
 						metadata.maxNumLevels,
 						10 );
 				cellsDimensions = metadata.createCellsDimensions();
+				for ( final int setupId : metadata.perSetupMipmapInfo.keySet() )
+					setupImgLoaders.put( setupId, new SetupImgLoader( setupId ) );
 			}
 		}
 	}
