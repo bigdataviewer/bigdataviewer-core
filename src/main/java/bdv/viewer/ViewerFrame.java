@@ -1,7 +1,6 @@
 package bdv.viewer;
 
 import java.awt.BorderLayout;
-import java.awt.Dimension;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.List;
@@ -13,7 +12,6 @@ import javax.swing.WindowConstants;
 
 import net.imglib2.ui.util.GuiUtil;
 import bdv.img.cache.Cache;
-import bdv.viewer.ViewerPanel.Options;
 
 /**
  * A {@link JFrame} containing a {@link ViewerPanel} and associated
@@ -30,12 +28,11 @@ public class ViewerFrame extends JFrame
 	private final InputActionBindings keybindings;
 
 	public ViewerFrame(
-			final int width, final int height,
 			final List< SourceAndConverter< ? > > sources,
 			final int numTimePoints,
 			final Cache cache )
 	{
-		this( width, height, sources, numTimePoints, cache, ViewerPanel.options() );
+		this( sources, numTimePoints, cache, ViewerOptions.options() );
 	}
 
 	/**
@@ -51,22 +48,20 @@ public class ViewerFrame extends JFrame
 	 * @param cache
 	 *            handle to cache. This is used to control io timing.
 	 * @param optional
-	 *            optional parameters. See {@link ViewerPanel#options()}.
+	 *            optional parameters. See {@link ViewerOptions#options()}.
 	 */
 	public ViewerFrame(
-			final int width, final int height,
 			final List< SourceAndConverter< ? > > sources,
 			final int numTimePoints,
 			final Cache cache,
-			final Options optional )
+			final ViewerOptions optional )
 	{
 //		super( "BigDataViewer", GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.ARGB_COLOR_MODEL ) );
 		super( "BigDataViewer", GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.RGB_COLOR_MODEL ) );
-		viewer = new ViewerPanel( sources, numTimePoints, cache, optional.width( width ).height( height ) );
+		viewer = new ViewerPanel( sources, numTimePoints, cache, optional );
 		keybindings = new InputActionBindings();
 
 		getRootPane().setDoubleBuffered( true );
-		setPreferredSize( new Dimension( width, height ) );
 		add( viewer, BorderLayout.CENTER );
 		pack();
 		setDefaultCloseOperation( WindowConstants.DISPOSE_ON_CLOSE );

@@ -59,6 +59,7 @@ import bdv.util.KeyProperties;
 import bdv.viewer.NavigationActions;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerFrame;
+import bdv.viewer.ViewerOptions;
 import bdv.viewer.ViewerPanel;
 
 public class BigDataViewer
@@ -283,13 +284,11 @@ public class BigDataViewer
 	 *            handle to cache. This is used to control io timing.
 	 * @param windowTitle
 	 *            title of the viewer window.
-	 * @param windowWidth
-	 *            width of the viewer window.
-	 * @param windowHeight
-	 *            height of the viewer window.
 	 * @param progressWriter
 	 *            a {@link ProgressWriter} to which BDV may report progress
 	 *            (currently only used in the "Record Movie" dialog).
+	 * @param options
+	 *            optional parameters.
 	 */
 	public BigDataViewer(
 			final ArrayList< ConverterSetup > converterSetups,
@@ -298,11 +297,10 @@ public class BigDataViewer
 			final int numTimepoints,
 			final Cache cache,
 			final String windowTitle,
-			final int windowWidth,
-			final int windowHeight,
-			final ProgressWriter progressWriter )
+			final ProgressWriter progressWriter,
+			final ViewerOptions options )
 	{
-		viewerFrame = new ViewerFrame( windowWidth, windowHeight, sources, numTimepoints, cache );
+		viewerFrame = new ViewerFrame( sources, numTimepoints, cache, options );
 		if ( windowTitle != null )
 			viewerFrame.setTitle( windowTitle );
 		viewer = viewerFrame.getViewerPanel();
@@ -421,11 +419,8 @@ public class BigDataViewer
 		viewerFrame.setJMenuBar( menubar );
 	}
 
-	public static BigDataViewer open( final AbstractSpimData< ? > spimData, final String windowTitle, final ProgressWriter progressWriter )
+	public static BigDataViewer open( final AbstractSpimData< ? > spimData, final String windowTitle, final ProgressWriter progressWriter, final ViewerOptions options )
 	{
-		final int width = 800;
-		final int height = 600;
-
 		if ( WrapBasicImgLoader.wrapImgLoaderIfNecessary( spimData ) )
 		{
 			System.err.println( "WARNING:\nOpening <SpimData> dataset that is not suited for interactive browsing.\nConsider resaving as HDF5 for better performance." );
@@ -439,7 +434,7 @@ public class BigDataViewer
 		final int numTimepoints = seq.getTimePoints().size();
 		final Cache cache = ( ( ViewerImgLoader ) seq.getImgLoader() ).getCache();
 
-		final BigDataViewer bdv = new BigDataViewer( converterSetups, sources, spimData, numTimepoints, cache, windowTitle, width, height, progressWriter );
+		final BigDataViewer bdv = new BigDataViewer( converterSetups, sources, spimData, numTimepoints, cache, windowTitle, progressWriter, options );
 
 		WrapBasicImgLoader.removeWrapperIfPresent( spimData );
 
@@ -448,10 +443,10 @@ public class BigDataViewer
 		return bdv;
 	}
 
-	public static BigDataViewer open( final String xmlFilename, final String windowTitle, final ProgressWriter progressWriter ) throws SpimDataException
+	public static BigDataViewer open( final String xmlFilename, final String windowTitle, final ProgressWriter progressWriter, final ViewerOptions options ) throws SpimDataException
 	{
 		final SpimDataMinimal spimData = new XmlIoSpimDataMinimal().load( xmlFilename );
-		final BigDataViewer bdv = open ( spimData, windowTitle, progressWriter );
+		final BigDataViewer bdv = open( spimData, windowTitle, progressWriter, options );
 		if ( !bdv.tryLoadSettings( xmlFilename ) )
 			InitializeViewerState.initBrightness( 0.001, 0.999, bdv.viewer, bdv.setupAssignments );
 		return bdv;
@@ -463,9 +458,10 @@ public class BigDataViewer
 			final int numTimepoints,
 			final Cache cache,
 			final String windowTitle,
-			final ProgressWriter progressWriter )
+			final ProgressWriter progressWriter,
+			final ViewerOptions options )
 	{
-		final BigDataViewer bdv = new BigDataViewer( converterSetups, sources, null, numTimepoints, cache, windowTitle, 800, 600, progressWriter );
+		final BigDataViewer bdv = new BigDataViewer( converterSetups, sources, null, numTimepoints, cache, windowTitle, progressWriter, options );
 		bdv.viewerFrame.setVisible( true );
 		InitializeViewerState.initTransform( bdv.viewer );
 		return bdv;
@@ -619,18 +615,15 @@ public class BigDataViewer
 		final int numTimepoints;
 		final Cache cache;
 		final String windowTitle;
-		final int windowWidth;
-		final int windowHeight;
 		final ProgressWriter progressWriter;
+		final ViewerOptions options;
 
 		private ForDeprecatedConstructors( final AbstractSpimData< ? > spimData, final String windowTitle, final ProgressWriter progressWriter )
 		{
 			this.windowTitle = windowTitle;
 			this.progressWriter = progressWriter;
 			this.spimData = spimData;
-
-			windowWidth = 800;
-			windowHeight = 600;
+			this.options = ViewerOptions.options();
 
 			if ( WrapBasicImgLoader.wrapImgLoaderIfNecessary( spimData ) )
 			{
@@ -652,7 +645,7 @@ public class BigDataViewer
 	@Deprecated
 	private BigDataViewer( final ForDeprecatedConstructors p )
 	{
-		this( p.converterSetups, p.sources, p.spimData, p.numTimepoints, p.cache, p.windowTitle, p.windowWidth, p.windowHeight, p.progressWriter );
+		this( p.converterSetups, p.sources, p.spimData, p.numTimepoints, p.cache, p.windowTitle, p.progressWriter, p.options );
 	}
 
 	/**
@@ -661,7 +654,7 @@ public class BigDataViewer
 	@Deprecated
 	public static void view( final String filename, final ProgressWriter progressWriter ) throws SpimDataException
 	{
-		open( filename, new File( filename ).getName(), progressWriter );
+		open( filename, new File( filename ).getName(), progressWriter, ViewerOptions.options() );
 	}
 
 	public static void main( final String[] args )
@@ -690,7 +683,7 @@ public class BigDataViewer
 		try
 		{
 			System.setProperty( "apple.laf.useScreenMenuBar", "true" );
-			open( fn, new File( fn ).getName(), new ProgressWriterConsole() );
+			open( fn, new File( fn ).getName(), new ProgressWriterConsole(), ViewerOptions.options() );
 		}
 		catch ( final Exception e )
 		{

@@ -10,6 +10,19 @@ import net.imglib2.type.numeric.ARGBType;
 
 public class AccumulateProjectorARGB extends AccumulateProjector< ARGBType, ARGBType >
 {
+	public static AccumulateProjectorFactory factory = new AccumulateProjectorFactory()
+	{
+		@Override
+		public AccumulateProjectorARGB createAccumulateProjector(
+				final ArrayList< VolatileProjector > sourceProjectors,
+				final ArrayList< ? extends RandomAccessible< ARGBType > > sources,
+				final RandomAccessibleInterval< ARGBType > target,
+				final int numThreads,
+				final ExecutorService executorService )
+		{
+			return new AccumulateProjectorARGB( sourceProjectors, sources, target, numThreads, executorService );
+		}
+	};
 
 	public AccumulateProjectorARGB(
 			final ArrayList< VolatileProjector > sourceProjectors,

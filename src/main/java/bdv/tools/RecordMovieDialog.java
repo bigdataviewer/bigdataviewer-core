@@ -265,7 +265,9 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 			}
 		}
 		final MyTarget target = new MyTarget();
-		final MultiResolutionRenderer renderer = new MultiResolutionRenderer( target, new PainterThread( null ), new double[] { 1 }, 0, false, 1, null, false, new Cache.Dummy() );
+		final MultiResolutionRenderer renderer = new MultiResolutionRenderer(
+				target, new PainterThread( null ), new double[] { 1 }, 0, false, 1, null, false,
+				viewer.getOptionValues().getAccumulateProjectorFactory(), new Cache.Dummy() );
 		progressWriter.setProgress( 0 );
 		for ( int timepoint = minTimepointIndex; timepoint <= maxTimepointIndex; ++timepoint )
 		{

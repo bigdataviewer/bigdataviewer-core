@@ -38,8 +38,6 @@ import net.imglib2.ui.InteractiveDisplayCanvasComponent;
 import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.TransformEventHandler;
-import net.imglib2.ui.TransformEventHandler3D;
-import net.imglib2.ui.TransformEventHandlerFactory;
 import net.imglib2.ui.TransformListener;
 import net.imglib2.util.LinAlgHelpers;
 
@@ -182,96 +180,11 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 */
 	protected final MessageOverlayAnimator msgOverlay;
 
-	/**
-	 * Optional parameters for {@link ViewerPanel}.
-	 */
-	public static class Options
-	{
-		private int width = 800;
-
-		private int height = 600;
-
-		private double[] screenScales = new double[] { 1, 0.75, 0.5, 0.25, 0.125 };
-
-		private long targetRenderNanos = 30 * 1000000l;
-
-		private boolean doubleBuffered = true;
-
-		private int numRenderingThreads = 3;
-
-		private boolean useVolatileIfAvailable = true;
-
-		private MessageOverlayAnimator msgOverlay = new MessageOverlayAnimator( 800 );
-
-		private TransformEventHandlerFactory< AffineTransform3D > transformEventHandlerFactory = TransformEventHandler3D.factory();
-
-		public Options width( final int w )
-		{
-			width = w;
-			return this;
-		}
-
-		public Options height( final int h )
-		{
-			height = h;
-			return this;
-		}
-
-		public Options screenScales( final double[] s )
-		{
-			screenScales = s;
-			return this;
-		}
-
-		public Options targetRenderNanos( final long t )
-		{
-			targetRenderNanos = t;
-			return this;
-		}
-
-		public Options doubleBuffered( final boolean d )
-		{
-			doubleBuffered = d;
-			return this;
-		}
-
-		public Options numRenderingThreads( final int n )
-		{
-			numRenderingThreads = n;
-			return this;
-		}
-
-		public Options useVolatileIfAvailable( final boolean v )
-		{
-			useVolatileIfAvailable = v;
-			return this;
-		}
-
-		public Options msgOverlay( final MessageOverlayAnimator o )
-		{
-			msgOverlay = o;
-			return this;
-		}
-
-		public Options transformEventHandlerFactory( final TransformEventHandlerFactory< AffineTransform3D > f )
-		{
-			transformEventHandlerFactory = f;
-			return this;
-		}
-	}
-
-	/**
-	 * Create default {@link Options}.
-	 * @return default {@link Options}.
-	 */
-	public static Options options()
-	{
-		return new Options();
-	}
+	protected final ViewerOptions.Values options;
 
 	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimePoints, final Cache cache )
 	{
-		this( sources, numTimePoints, cache, options() );
+		this( sources, numTimePoints, cache, ViewerOptions.options() );
 	}
 
 	/**
@@ -284,9 +197,10 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 * @param optional
 	 *            optional parameters. See {@link #options()}.
 	 */
-	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimePoints, final Cache cache, final Options optional )
+	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimePoints, final Cache cache, final ViewerOptions optional )
 	{
 		super( new BorderLayout(), false );
+		options = optional.values;
 
 		final int numGroups = 10;
 		final ArrayList< SourceGroup > groups = new ArrayList< SourceGroup >( numGroups );
@@ -305,18 +219,24 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		painterThread = new PainterThread( this );
 		viewerTransform = new AffineTransform3D();
 		display = new InteractiveDisplayCanvasComponent< AffineTransform3D >(
-				optional.width, optional.height, optional.transformEventHandlerFactory );
+				options.getWidth(), options.getHeight(), options.getTransformEventHandlerFactory() );
 		display.addTransformListener( this );
 		renderTarget = new TransformAwareBufferedImageOverlayRenderer();
-		renderTarget.setCanvasSize( optional.width, optional.height );
+		renderTarget.setCanvasSize( options.getWidth(), options.getHeight() );
 		display.addOverlayRenderer( renderTarget );
 		display.addOverlayRenderer( this );
 
-		renderingExecutorService = Executors.newFixedThreadPool( optional.numRenderingThreads );
+		renderingExecutorService = Executors.newFixedThreadPool( options.getNumRenderingThreads() );
 		imageRenderer = new MultiResolutionRenderer(
 				renderTarget, painterThread,
-				optional.screenScales, optional.targetRenderNanos, optional.doubleBuffered,
-				optional.numRenderingThreads, renderingExecutorService, optional.useVolatileIfAvailable, cache );
+				options.getScreenScales(),
+				options.getTargetRenderNanos(),
+				options.isDoubleBuffered(),
+				options.getNumRenderingThreads(),
+				renderingExecutorService,
+				options.isUseVolatileIfAvailable(),
+				options.getAccumulateProjectorFactory(),
+				cache );
 
 		mouseCoordinates = new MouseCoordinateListener();
 		display.addHandler( mouseCoordinates );
@@ -345,7 +265,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		transformListeners = new CopyOnWriteArrayList< TransformListener< AffineTransform3D > >();
 		lastRenderTransformListeners = new CopyOnWriteArrayList< TransformListener< AffineTransform3D > >();
 
-		msgOverlay = optional.msgOverlay;
+		msgOverlay = options.getMsgOverlay();
 
 		overlayAnimators = new ArrayList< OverlayAnimator >();
 		overlayAnimators.add( msgOverlay );
@@ -906,6 +826,11 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	public VisibilityAndGrouping getVisibilityAndGrouping()
 	{
 		return visibilityAndGrouping;
+	}
+
+	public ViewerOptions.Values getOptionValues()
+	{
+		return options;
 	}
 
 	/**
