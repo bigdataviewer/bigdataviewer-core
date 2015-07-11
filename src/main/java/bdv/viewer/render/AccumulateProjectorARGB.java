@@ -11,7 +11,6 @@ import net.imglib2.type.numeric.ARGBType;
 public class AccumulateProjectorARGB extends AccumulateProjector< ARGBType, ARGBType >
 {
 	final static private ARGBCompositeAlphaAdd composite = new ARGBCompositeAlphaAdd();
-//	final static private ARGBCompositeAlphaYCbCr composite = new ARGBCompositeAlphaYCbCr();
 
 	public AccumulateProjectorARGB(
 			final ArrayList< VolatileProjector > sourceProjectors,
@@ -32,9 +31,6 @@ public class AccumulateProjectorARGB extends AccumulateProjector< ARGBType, ARGB
 		target.set( 0xff000000 );
 
 		for ( final Cursor< ARGBType > access : accesses )
-			composite.compose( target, access.get(), target );
-
-//		target.set( accesses[ 0 ].get() );
-//		composite.compose( target, accesses[ 1 ].get(), target );
+			composite.compose( target, access.get() );
 	}
 }

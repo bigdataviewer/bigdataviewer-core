@@ -19,11 +19,11 @@ package bdv.viewer.render;
 import net.imglib2.type.numeric.ARGBType;
 
 /**
- * Multiplies b by b's alpha value and adds it to a.
+ * Overlays b over a using b's alpha transparency value.
  *
  * @author Stephan Saalfeld <saalfelds@janelia.hhmi.org>
  */
-public class ARGBCompositeAlphaAdd implements Composite< ARGBType, ARGBType >
+public class ARGBCompositeAlpha implements Composite< ARGBType, ARGBType >
 {
 	@Override
 	public void compose( final ARGBType a, final ARGBType b )
@@ -40,13 +40,12 @@ public class ARGBCompositeAlphaAdd implements Composite< ARGBType, ARGBType >
 
 		final double aA = ARGBType.alpha( argbA ) / 255.0;
 		final double aB = ARGBType.alpha( argbB ) / 255.0;
-//		final double aB = ( rB == gB || gB == bB ) ? ARGBType.alpha( argbB ) / 255.0 : ARGBType.alpha( argbB ) / 255.0 * 0.125;
 
 		final double aTarget = aA + aB - aA * aB;
 
-		final int rTarget = Math.min( 255, ( int )Math.round( rA + rB * aB ) );
-		final int gTarget = Math.min( 255, ( int )Math.round( gA + gB * aB ) );
-		final int bTarget = Math.min( 255, ( int )Math.round( bA + bB * aB ) );
+		final int rTarget = Math.min( 255, ( int )Math.round( ( rB - rA ) * aB + rA ) );
+		final int gTarget = Math.min( 255, ( int )Math.round( ( gB - gA ) * aB + gA ) );
+		final int bTarget = Math.min( 255, ( int )Math.round( ( bB - bA ) * aB + bA ) );
 
 		a.set( ARGBType.rgba( rTarget, gTarget, bTarget, ( int )( aTarget * 255 ) ) );
 	}

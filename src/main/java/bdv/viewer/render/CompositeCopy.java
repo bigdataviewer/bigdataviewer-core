@@ -16,14 +16,18 @@
  */
 package bdv.viewer.render;
 
-import net.imglib2.type.numeric.ARGBType;
+import net.imglib2.type.Type;
 
 /**
- *
+ * Copies b into a.
  *
  * @author Stephan Saalfeld <saalfelds@janelia.hhmi.org>
  */
-public interface ARGBComposite
+public class CompositeCopy< A extends Type< A > > implements Composite< A, A >
 {
-	public void compose( final ARGBType a, final ARGBType b, final ARGBType target );
+	@Override
+	public void compose( final A a, final A b )
+	{
+		a.set( b );
+	}
 }
