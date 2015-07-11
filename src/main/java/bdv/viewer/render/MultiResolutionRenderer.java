@@ -220,6 +220,11 @@ public class MultiResolutionRenderer
 	protected final ExecutorService renderingExecutorService;
 
 	/**
+	 * TODO
+	 */
+	protected final AccumulateProjectorFactory accumulateProjectorFactory;
+
+	/**
 	 * Controls IO budgeting and fetcher queue.
 	 */
 	protected final Cache cache;
@@ -274,6 +279,8 @@ public class MultiResolutionRenderer
 	 * @param useVolatileIfAvailable
 	 *            whether volatile versions of sources should be used if
 	 *            available.
+	 * @param accumulateProjectorFactory
+	 *            can be used to customize how sources are combined.
 	 * @param cache
 	 *            the cache controls IO budgeting and fetcher queue.
 	 */
@@ -286,6 +293,7 @@ public class MultiResolutionRenderer
 			final int numRenderingThreads,
 			final ExecutorService renderingExecutorService,
 			final boolean useVolatileIfAvailable,
+			final AccumulateProjectorFactory accumulateProjectorFactory,
 			final Cache cache )
 	{
 		this.display = wrapTransformAwareRenderTarget( display );
@@ -310,6 +318,7 @@ public class MultiResolutionRenderer
 		this.numRenderingThreads = numRenderingThreads;
 		this.renderingExecutorService = renderingExecutorService;
 		this.useVolatileIfAvailable = useVolatileIfAvailable;
+		this.accumulateProjectorFactory = accumulateProjectorFactory;
 		this.cache = cache;
 		newFrameRequest = false;
 		previousTimepoint = -1;
@@ -578,7 +587,7 @@ public class MultiResolutionRenderer
 				sourceProjectors.add( p );
 				sourceImages.add( renderImage );
 			}
-			projector = new AccumulateProjectorARGB( sourceProjectors, sourceImages, screenImage, numRenderingThreads, renderingExecutorService );
+			projector = accumulateProjectorFactory.createAccumulateProjector( sourceProjectors, sourceImages, screenImage, numRenderingThreads, renderingExecutorService );
 		}
 		previousTimepoint = viewerState.getCurrentTimepoint();
 		viewerState.getViewerTransform( currentProjectorTransform );
