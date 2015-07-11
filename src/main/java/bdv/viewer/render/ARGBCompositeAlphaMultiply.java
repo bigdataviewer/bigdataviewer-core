@@ -19,11 +19,11 @@ package bdv.viewer.render;
 import net.imglib2.type.numeric.ARGBType;
 
 /**
- * Multiplies b by b's alpha value and adds it to a.
+ * Multiplies a by b and combines the result with a weighted by b's alpha value.
  *
  * @author Stephan Saalfeld <saalfelds@janelia.hhmi.org>
  */
-public class ARGBCompositeAlphaAdd implements Composite< ARGBType, ARGBType >
+public class ARGBCompositeAlphaMultiply implements Composite< ARGBType, ARGBType >
 {
 	@Override
 	public void compose( final ARGBType a, final ARGBType b )
@@ -31,23 +31,26 @@ public class ARGBCompositeAlphaAdd implements Composite< ARGBType, ARGBType >
 		final int argbA = a.get();
 		final int argbB = b.get();
 
-		final int rA = ARGBType.red( argbA );
-		final int rB = ARGBType.red( argbB );
-		final int gA = ARGBType.green( argbA );
-		final int gB = ARGBType.green( argbB );
-		final int bA = ARGBType.blue( argbA );
-		final int bB = ARGBType.blue( argbB );
+		final double rA = ARGBType.red( argbA ) / 255.0;
+		final double rB = ARGBType.red( argbB ) / 255.0;
+		final double gA = ARGBType.green( argbA ) / 255.0;
+		final double gB = ARGBType.green( argbB ) / 255.0;
+		final double bA = ARGBType.blue( argbA ) / 255.0;
+		final double bB = ARGBType.blue( argbB ) / 255.0;
 
 		final double aA = ARGBType.alpha( argbA ) / 255.0;
 		final double aB = ARGBType.alpha( argbB ) / 255.0;
-//		final double aB = ( rB == gB || gB == bB ) ? ARGBType.alpha( argbB ) / 255.0 : ARGBType.alpha( argbB ) / 255.0 * 0.125;
 
 		final double aTarget = aA + aB - aA * aB;
 
-		final int rTarget = Math.min( 255, ( int )Math.round( rA + rB * aB ) );
-		final int gTarget = Math.min( 255, ( int )Math.round( gA + gB * aB ) );
-		final int bTarget = Math.min( 255, ( int )Math.round( bA + bB * aB ) );
+		final double rTarget = rA - rA * aB + rA * rB * aB;
+		final double gTarget = gA - gA * aB + gA * gB * aB;
+		final double bTarget = bA - bA * aB + bA * bB * aB;
 
-		a.set( ARGBType.rgba( rTarget, gTarget, bTarget, ( int )( aTarget * 255 ) ) );
+		a.set( ARGBType.rgba(
+				Math.max( 0,  Math.min( 255, ( int )Math.round( rTarget * 255 ) ) ),
+				Math.max( 0,  Math.min( 255, ( int )Math.round( gTarget * 255 ) ) ),
+				Math.max( 0,  Math.min( 255, ( int )Math.round( bTarget * 255 ) ) ),
+				( int )( aTarget * 255 ) ) );
 	}
 }

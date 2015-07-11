@@ -19,11 +19,12 @@ package bdv.viewer.render;
 import net.imglib2.type.numeric.ARGBType;
 
 /**
- *
+ * Combines the Y-channel of a with the Cb and Cr channels of b, and mixes the result
+ * into a weighted by b's alpha value.
  *
  * @author Stephan Saalfeld <saalfelds@janelia.hhmi.org>
  */
-public class ARGBCompositeAlphaYCbCr implements ARGBComposite
+public class ARGBCompositeAlphaYCbCr implements Composite< ARGBType, ARGBType >
 {
 	final static private double det( final double[] a )
 	{
@@ -113,19 +114,21 @@ public class ARGBCompositeAlphaYCbCr implements ARGBComposite
 
 
 	@Override
-	public void compose( final ARGBType a, final ARGBType b, final ARGBType target )
+	public void compose( final ARGBType a, final ARGBType b )
 	{
 		final int argbA = a.get();
 		final int argbB = b.get();
 
-		final double aA = ARGBType.alpha( argbA ) / 255.0;
-		final double aB = ARGBType.alpha( argbB ) / 255.0;
 		final double rA = ARGBType.red( argbA ) / 255.0;
 		final double rB = ARGBType.red( argbB ) / 255.0;
 		final double gA = ARGBType.green( argbA ) / 255.0;
 		final double gB = ARGBType.green( argbB ) / 255.0;
 		final double bA = ARGBType.blue( argbA ) / 255.0;
 		final double bB = ARGBType.blue( argbB ) / 255.0;
+
+		final double aA = ARGBType.alpha( argbA ) / 255.0;
+		final double aB = ARGBType.alpha( argbB ) / 255.0;
+//		final double aB = ( rB == gB || gB == bB ) ? ARGBType.alpha( argbB ) / 255.0 * 0.5 : ARGBType.alpha( argbB ) / 255.0 * 0.125;
 
 		final double aTarget = aA + aB - aA * aB;
 
@@ -145,7 +148,7 @@ public class ARGBCompositeAlphaYCbCr implements ARGBComposite
 		final double gTarget = ycbcr2g( yA, cbTarget, crTarget );
 		final double bTarget = ycbcr2b( yA, cbTarget, crTarget );
 
-		target.set( ARGBType.rgba(
+		a.set( ARGBType.rgba(
 				Math.max( 0,  Math.min( 255, ( int )Math.round( rTarget * 255 ) ) ),
 				Math.max( 0,  Math.min( 255, ( int )Math.round( gTarget * 255 ) ) ),
 				Math.max( 0,  Math.min( 255, ( int )Math.round( bTarget * 255 ) ) ),
