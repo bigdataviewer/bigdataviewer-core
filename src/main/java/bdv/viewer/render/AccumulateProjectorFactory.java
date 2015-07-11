@@ -22,7 +22,7 @@ public interface AccumulateProjectorFactory
 	 * @param executorService
 	 *            {@link ExecutorService} to use for rendering. may be null.
 	 */
-	public AccumulateProjector< ARGBType, ARGBType > createAccumulateProjector(
+	public VolatileProjector createAccumulateProjector(
 			final ArrayList< VolatileProjector > sourceProjectors,
 			final ArrayList< ? extends RandomAccessible< ARGBType > > sources,
 			final RandomAccessibleInterval< ARGBType > target,
