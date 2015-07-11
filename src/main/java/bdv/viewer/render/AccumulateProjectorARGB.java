@@ -31,7 +31,7 @@ public class AccumulateProjectorARGB extends AccumulateProjector< ARGBType, ARGB
 			final int numThreads,
 			final ExecutorService executorService )
 	{
-		super( sourceProjectors, sources, null, target, numThreads, executorService );
+		super( sourceProjectors, sources, target, numThreads, executorService );
 	}
 
 	@Override

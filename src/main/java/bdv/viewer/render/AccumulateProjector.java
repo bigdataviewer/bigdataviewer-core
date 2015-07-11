@@ -10,7 +10,6 @@ import net.imglib2.Cursor;
 import net.imglib2.IterableInterval;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.converter.Converter;
 import net.imglib2.ui.InterruptibleProjector;
 import net.imglib2.ui.util.StopWatch;
 import net.imglib2.view.Views;
@@ -20,11 +19,6 @@ public abstract class AccumulateProjector< A, B > implements VolatileProjector
 	protected final ArrayList< VolatileProjector > sourceProjectors;
 
 	protected final ArrayList< IterableInterval< A > > sources;
-
-	/**
-	 * A converter from the source pixel type to the target pixel type.
-	 */
-	protected final Converter< ? super A, B > converter;
 
 	/**
 	 * The target interval. Pixels of the target interval should be set by
@@ -57,7 +51,6 @@ public abstract class AccumulateProjector< A, B > implements VolatileProjector
 	public AccumulateProjector(
 			final ArrayList< VolatileProjector > sourceProjectors,
 			final ArrayList< ? extends RandomAccessible< A > > sources,
-			final Converter< ? super A, B > converter,
 			final RandomAccessibleInterval< B > target,
 			final int numThreads,
 			final ExecutorService executorService )
@@ -66,7 +59,6 @@ public abstract class AccumulateProjector< A, B > implements VolatileProjector
 		this.sources = new ArrayList< IterableInterval< A > >();
 		for ( final RandomAccessible< A > source : sources )
 			this.sources.add( Views.flatIterable( Views.interval( source, target ) ) );
-		this.converter = converter;
 		this.target = target;
 		this.iterableTarget = Views.flatIterable( target );
 		this.numThreads = numThreads;
