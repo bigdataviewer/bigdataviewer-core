@@ -5,9 +5,8 @@ import java.util.concurrent.ExecutorService;
 
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.type.numeric.ARGBType;
 
-public interface AccumulateProjectorFactory
+public interface AccumulateProjectorFactory< A >
 {
 	/**
 	 * @param sourceProjectors
@@ -24,8 +23,8 @@ public interface AccumulateProjectorFactory
 	 */
 	public VolatileProjector createAccumulateProjector(
 			final ArrayList< VolatileProjector > sourceProjectors,
-			final ArrayList< ? extends RandomAccessible< ARGBType > > sources,
-			final RandomAccessibleInterval< ARGBType > target,
+			final ArrayList< ? extends RandomAccessible< A > > sources,
+			final RandomAccessibleInterval< A > target,
 			final int numThreads,
 			final ExecutorService executorService );
 }
