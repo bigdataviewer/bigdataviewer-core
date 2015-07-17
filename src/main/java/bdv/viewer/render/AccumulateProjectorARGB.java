@@ -10,7 +10,7 @@ import net.imglib2.type.numeric.ARGBType;
 
 public class AccumulateProjectorARGB extends AccumulateProjector< ARGBType, ARGBType >
 {
-	public static AccumulateProjectorFactory factory = new AccumulateProjectorFactory()
+	public static AccumulateProjectorFactory< ARGBType > factory = new AccumulateProjectorFactory< ARGBType >()
 	{
 		@Override
 		public AccumulateProjectorARGB createAccumulateProjector(
