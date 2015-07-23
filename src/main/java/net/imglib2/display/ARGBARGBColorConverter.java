@@ -103,6 +103,16 @@ public abstract class ARGBARGBColorConverter<R> implements ColorConverter, Conve
 		return ARGBType.rgba( newR, newG, newB, a );
 	}
 
+	/**
+	 * A converter from a ARGB to ARGB that initially converts the input color to grayscale, 
+	 * then scales the resulting grayscale value with the set color. 
+	 * <p>
+	 * This can be useful if a grayscale image is imported as ARGB and one wants to change
+	 * the hue for visualization / overlay.
+	 * 
+	 * @author John Bogovic
+	 *
+	 */
 	public static class ToGray extends ARGBARGBColorConverter<ARGBType>
 	{
 		public ToGray( final double min, final double max )
