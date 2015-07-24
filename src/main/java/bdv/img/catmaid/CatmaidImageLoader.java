@@ -32,22 +32,36 @@ public class CatmaidImageLoader extends AbstractViewerSetupImgLoader< ARGBType, 
 
 	private final long[][] imageDimensions;
 
+	private final int[][] blockDimensions;
+
 	private final VolatileGlobalCellCache cache;
 
 	private final CatmaidVolatileIntArrayLoader loader;
+
+	final static private int[][] blockDimensions(
+			final int tileWidth,
+			final int tileHeight,
+			final int numScales )
+	{
+		final int[][] blockDimensions = new int[ numScales ][];
+		for ( int i = 0; i < numScales; ++i )
+			blockDimensions[ i ] = new int[]{ tileWidth, tileHeight, 1 };
+
+		return blockDimensions;
+	}
 
 	public CatmaidImageLoader(
 			final long width,
 			final long height,
 			final long depth,
 			final double zScale,
-			final int numScales,
 			final String urlFormat,
 			final int tileWidth,
-			final int tileHeight )
+			final int tileHeight,
+			final int[][] blockDimensions )
 	{
 		super( new ARGBType(), new VolatileARGBType() );
-		this.numScales = numScales;
+		this.numScales = blockDimensions.length;
 		this.tileWidth = tileWidth;
 		this.tileHeight = tileHeight;
 
@@ -55,6 +69,7 @@ public class CatmaidImageLoader extends AbstractViewerSetupImgLoader< ARGBType, 
 		imageDimensions = new long[ numScales ][];
 		mipmapTransforms = new AffineTransform3D[ numScales ];
 		final int[] zScales = new int[ numScales ];
+		this.blockDimensions = new int[ numScales ][];
 		for ( int l = 0; l < numScales; ++l )
 		{
 			final int sixy = 1 << l;
@@ -62,6 +77,7 @@ public class CatmaidImageLoader extends AbstractViewerSetupImgLoader< ARGBType, 
 
 			mipmapResolutions[ l ] = new double[] { sixy, sixy, siz };
 			imageDimensions[ l ] = new long[] { width >> l, height >> l, depth / siz };
+			this.blockDimensions[ l ] = blockDimensions[ l ].clone();
 			zScales[ l ] = siz;
 
 			final AffineTransform3D mipmapTransform = new AffineTransform3D();
@@ -81,6 +97,34 @@ public class CatmaidImageLoader extends AbstractViewerSetupImgLoader< ARGBType, 
 		cache = new VolatileGlobalCellCache( 1, 1, numScales, 10 );
 	}
 
+	public CatmaidImageLoader(
+			final long width,
+			final long height,
+			final long depth,
+			final double zScale,
+			final int numScales,
+			final String urlFormat,
+			final int tileWidth,
+			final int tileHeight,
+			final int blockWidth,
+			final int blockHeight )
+	{
+		this( width, height, depth, zScale, urlFormat, tileWidth, tileHeight, blockDimensions( blockWidth, blockHeight, numScales ) );
+	}
+
+	public CatmaidImageLoader(
+			final long width,
+			final long height,
+			final long depth,
+			final double zScale,
+			final int numScales,
+			final String urlFormat,
+			final int tileWidth,
+			final int tileHeight )
+	{
+		this( width, height, depth, zScale, numScales, urlFormat, tileWidth, tileHeight, tileWidth, tileHeight );
+	}
+
 	final static public int getNumScales( long width, long height, final long tileWidth, final long tileHeight )
 	{
 		int i = 1;
@@ -96,15 +140,18 @@ public class CatmaidImageLoader extends AbstractViewerSetupImgLoader< ARGBType, 
 	 * The created image needs a {@link NativeImg#setLinkedType(net.imglib2.type.Type) linked type} before it can be used.
 	 * The type should be either {@link ARGBType} and {@link VolatileARGBType}.
 	 */
-	protected < T extends NativeType< T > > CachedCellImg< T, VolatileIntArray > prepareCachedImage( final int timepointId, final int setupId, final int level, final LoadingStrategy loadingStrategy )
+	protected < T extends NativeType< T > > CachedCellImg< T, VolatileIntArray > prepareCachedImage(
+			final int timepointId,
+			final int setupId,
+			final int level,
+			final LoadingStrategy loadingStrategy )
 	{
 		final long[] dimensions = imageDimensions[ level ];
-		final int[] cellDimensions = new int[]{ tileWidth, tileHeight, 1 };
 
 		final int priority = numScales - 1 - level;
 		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
 		final CellCache< VolatileIntArray > c = cache.new VolatileCellCache< VolatileIntArray >( timepointId, setupId, level, cacheHints, loader );
-		final VolatileImgCells< VolatileIntArray > cells = new VolatileImgCells< VolatileIntArray >( c, new Fraction(), dimensions, cellDimensions );
+		final VolatileImgCells< VolatileIntArray > cells = new VolatileImgCells< VolatileIntArray >( c, new Fraction(), dimensions, blockDimensions[ level ] );
 		final CachedCellImg< T, VolatileIntArray > img = new CachedCellImg< T, VolatileIntArray >( cells );
 		return img;
 	}
