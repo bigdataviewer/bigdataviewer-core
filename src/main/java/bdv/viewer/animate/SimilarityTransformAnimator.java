@@ -79,7 +79,8 @@ public class SimilarityTransformAnimator extends AbstractTransformAnimator
 		LinAlgHelpers.quaternionPower( qDiff, t, qDiffCurrent );
 		LinAlgHelpers.quaternionMultiply( qStart, qDiffCurrent, qCurrent );
 
-		final double scaleCurrent = scaleStart + t * scaleDiff;
+//		final double scaleCurrent = scaleStart + t * scaleDiff;
+		final double scaleCurrent = Math.pow( scaleEnd / scaleStart, t ) * scaleStart;
 
 		final double[] xg0Current = new double[ 3 ];
 		final double[] tCurrent = new double[ 3 ];
