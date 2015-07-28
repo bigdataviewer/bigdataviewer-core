@@ -41,6 +41,14 @@ public class AbstractAnimator
 	}
 
 	/**
+	 * Cosine shape acceleration/ deceleration curve  of linear [0,1]
+	 */
+	private double cos( final double t )
+	{
+		return 0.5 - 0.5 * Math.cos( Math.PI * t );
+	}
+
+	/**
 	 * Sets the current time for the animation.
 	 * The first call starts the animation.
 	 *
@@ -58,6 +66,8 @@ public class AbstractAnimator
 		complete = ( time - startTime ) / ( double ) duration;
 		if ( complete >= 1 )
 			complete = 1;
+		else
+			complete = cos( cos( complete ) );
 	}
 
 	/**
