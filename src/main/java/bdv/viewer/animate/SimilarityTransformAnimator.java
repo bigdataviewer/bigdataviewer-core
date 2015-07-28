@@ -20,6 +20,8 @@ public class SimilarityTransformAnimator extends AbstractTransformAnimator
 
 	private final double scaleDiff;
 
+	private final double scaleRate;
+
 	private final double cX;
 
 	private final double cY;
@@ -48,6 +50,7 @@ public class SimilarityTransformAnimator extends AbstractTransformAnimator
 		scaleStart = Affine3DHelpers.extractScale( transformStart, 0 );
 		scaleEnd = Affine3DHelpers.extractScale( transformEnd, 0 );
 		scaleDiff = scaleEnd - scaleStart;
+		scaleRate = scaleEnd / scaleStart;
 
 		final double[] tStart = new double[ 3 ];
 		final double[] tEnd = new double[ 3 ];
@@ -79,12 +82,12 @@ public class SimilarityTransformAnimator extends AbstractTransformAnimator
 		LinAlgHelpers.quaternionPower( qDiff, t, qDiffCurrent );
 		LinAlgHelpers.quaternionMultiply( qStart, qDiffCurrent, qCurrent );
 
-		final double alpha = Math.pow( scaleEnd / scaleStart, t );
+		final double alpha = Math.pow( scaleRate, t );
 		final double scaleCurrent = scaleStart * alpha;
 
 		final double[] xg0Current = new double[ 3 ];
 		final double[] tCurrent = new double[ 3 ];
-		final double f = scaleEnd / scaleStart < 0.0001 ? -t : ( scaleEnd / alpha - scaleEnd ) / scaleDiff;
+		final double f = Math.abs( scaleRate - 1.0 ) < 0.0001 ? -t : ( scaleEnd / alpha - scaleEnd ) / scaleDiff;
 		LinAlgHelpers.scale( xg0Diff, f, xg0Current );
 		for ( int r = 0; r < 3; ++r )
 			xg0Current[ r ] -= xg0Start[ r ];
