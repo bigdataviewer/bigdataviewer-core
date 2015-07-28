@@ -72,7 +72,7 @@ public class SimilarityTransformAnimator extends AbstractTransformAnimator
 	}
 
 	@Override
-	protected AffineTransform3D get( final double t )
+	public AffineTransform3D get( final double t )
 	{
 		final double[] qDiffCurrent = new double[ 4 ];
 		final double[] qCurrent = new double[ 4 ];

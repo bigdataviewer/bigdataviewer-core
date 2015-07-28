@@ -1,7 +1,7 @@
 package bdv.viewer.animate;
 
-import bdv.viewer.ViewerFrame;
 import net.imglib2.realtransform.AffineTransform3D;
+import bdv.viewer.ViewerFrame;
 
 /**
  * Mother abstract class for animators that animate the current view in a
@@ -53,5 +53,5 @@ public abstract class AbstractTransformAnimator extends AbstractAnimator
 	 *            the completion factor, ranging from 0 to 1.
 	 * @return the viewer transform for the specified completion factor.
 	 */
-	protected abstract AffineTransform3D get( double t );
+	public abstract AffineTransform3D get( double t );
 }
