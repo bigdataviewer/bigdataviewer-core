@@ -58,7 +58,8 @@ public class CatmaidImageLoader extends AbstractViewerSetupImgLoader< ARGBType, 
 			final String urlFormat,
 			final int tileWidth,
 			final int tileHeight,
-			final int[][] blockDimensions )
+			final int[][] blockDimensions,
+			final boolean topLeft )
 	{
 		super( new ARGBType(), new VolatileARGBType() );
 		this.numScales = blockDimensions.length;
@@ -86,8 +87,11 @@ public class CatmaidImageLoader extends AbstractViewerSetupImgLoader< ARGBType, 
 			mipmapTransform.set( sixy, 1, 1 );
 			mipmapTransform.set( zScale * siz, 2, 2 );
 
-			mipmapTransform.set( 0.5 * ( sixy - 1 ), 0, 3 );
-			mipmapTransform.set( 0.5 * ( sixy - 1 ), 1, 3 );
+			if ( topLeft )
+			{
+				mipmapTransform.set( 0.5 * ( sixy - 1 ), 0, 3 );
+				mipmapTransform.set( 0.5 * ( sixy - 1 ), 1, 3 );
+			}
 			mipmapTransform.set( 0.5 * ( zScale * siz - 1 ), 2, 3 );
 
 			mipmapTransforms[ l ] = mipmapTransform;
@@ -102,6 +106,35 @@ public class CatmaidImageLoader extends AbstractViewerSetupImgLoader< ARGBType, 
 			final long height,
 			final long depth,
 			final double zScale,
+			final String urlFormat,
+			final int tileWidth,
+			final int tileHeight,
+			final int[][] blockDimensions )
+	{
+		this( width, height, depth, zScale, urlFormat, tileWidth, tileHeight, blockDimensions, true );
+	}
+
+	public CatmaidImageLoader(
+			final long width,
+			final long height,
+			final long depth,
+			final double zScale,
+			final int numScales,
+			final String urlFormat,
+			final int tileWidth,
+			final int tileHeight,
+			final int blockWidth,
+			final int blockHeight,
+			final boolean topLeft )
+	{
+		this( width, height, depth, zScale, urlFormat, tileWidth, tileHeight, blockDimensions( blockWidth, blockHeight, numScales ), topLeft );
+	}
+
+	public CatmaidImageLoader(
+			final long width,
+			final long height,
+			final long depth,
+			final double zScale,
 			final int numScales,
 			final String urlFormat,
 			final int tileWidth,
@@ -109,7 +142,21 @@ public class CatmaidImageLoader extends AbstractViewerSetupImgLoader< ARGBType, 
 			final int blockWidth,
 			final int blockHeight )
 	{
-		this( width, height, depth, zScale, urlFormat, tileWidth, tileHeight, blockDimensions( blockWidth, blockHeight, numScales ) );
+		this( width, height, depth, zScale, urlFormat, tileWidth, tileHeight, blockDimensions( blockWidth, blockHeight, numScales ), true );
+	}
+
+	public CatmaidImageLoader(
+			final long width,
+			final long height,
+			final long depth,
+			final double zScale,
+			final int numScales,
+			final String urlFormat,
+			final int tileWidth,
+			final int tileHeight,
+			final boolean topLeft )
+	{
+		this( width, height, depth, zScale, numScales, urlFormat, tileWidth, tileHeight, tileWidth, tileHeight, topLeft );
 	}
 
 	public CatmaidImageLoader(
@@ -122,7 +169,7 @@ public class CatmaidImageLoader extends AbstractViewerSetupImgLoader< ARGBType, 
 			final int tileWidth,
 			final int tileHeight )
 	{
-		this( width, height, depth, zScale, numScales, urlFormat, tileWidth, tileHeight, tileWidth, tileHeight );
+		this( width, height, depth, zScale, numScales, urlFormat, tileWidth, tileHeight, true );
 	}
 
 	final static public int getNumScales( long width, long height, final long tileWidth, final long tileHeight )
