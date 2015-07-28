@@ -105,7 +105,7 @@ public class BookmarksEditor
 								final double cY = viewer.getDisplay().getHeight() / 2.0;
 								c.set( c.get( 0, 3 ) - cX, 0, 3 );
 								c.set( c.get( 1, 3 ) - cY, 1, 3 );
-								viewer.setTransformAnimator( new SimilarityTransformAnimator( c, t, cX, cY, 3000 ) );
+								viewer.setTransformAnimator( new SimilarityTransformAnimator( c, t, cX, cY, 300 ) );
 							}
 							animator.fadeOut( "go to bookmark: " + key, 500 );
 						}
