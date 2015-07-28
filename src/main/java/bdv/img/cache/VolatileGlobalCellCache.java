@@ -390,7 +390,7 @@ public class VolatileGlobalCellCache implements Cache
 
 	/**
 	 * Get a cell if it is in the cache or null. Note, that a cell being in the
-	 * cache only means that here is a data array, but not necessarily that the
+	 * cache only means that there is a data array, but not necessarily that the
 	 * data has already been loaded.
 	 *
 	 * If the cell data has not been loaded, do the following, depending on the
@@ -542,6 +542,7 @@ public class VolatileGlobalCellCache implements Cache
 	 * Prepare the cache for providing data for the "next frame":
 	 * <ul>
 	 * <li>the contents of fetch queues is moved to the prefetch.
+	 * <li>some cleaning up of garbage collected entries ({@link #finalizeRemovedCacheEntries()}).
 	 * <li>the internal frame counter is incremented, which will enable
 	 * previously enqueued requests to be enqueued again for the new frame.
 	 * </ul>
