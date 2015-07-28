@@ -561,7 +561,7 @@ public class MultiResolutionRenderer
 			final ARGBScreenImage screenImage )
 	{
 		cache.initIoTimeBudget( null ); // clear time budget such that prefetching doesn't wait for loading blocks.
-		final List< SourceState< ? > > sources = viewerState.getSources();
+		final List< SourceState< ? > > sourceStates = viewerState.getSources();
 		final List< Integer > visibleSourceIndices = viewerState.getVisibleSourceIndices();
 		VolatileProjector projector;
 		if ( visibleSourceIndices.isEmpty() )
@@ -569,12 +569,13 @@ public class MultiResolutionRenderer
 		else if ( visibleSourceIndices.size() == 1 )
 		{
 			final int i = visibleSourceIndices.get( 0 );
-			projector = createSingleSourceProjector( viewerState, sources.get( i ), i, currentScreenScaleIndex, screenImage, renderMaskArrays[ 0 ] );
+			projector = createSingleSourceProjector( viewerState, sourceStates.get( i ), i, currentScreenScaleIndex, screenImage, renderMaskArrays[ 0 ] );
 		}
 		else
 		{
 			final ArrayList< VolatileProjector > sourceProjectors = new ArrayList< VolatileProjector >();
 			final ArrayList< ARGBScreenImage > sourceImages = new ArrayList< ARGBScreenImage >();
+			final ArrayList< Source< ? > > sources = new ArrayList< Source< ? > >();
 			int j = 0;
 			for ( final int i : visibleSourceIndices )
 			{
@@ -582,12 +583,13 @@ public class MultiResolutionRenderer
 				final byte[] maskArray = renderMaskArrays[ j ];
 				++j;
 				final VolatileProjector p = createSingleSourceProjector(
-						viewerState, sources.get( i ), i, currentScreenScaleIndex,
+						viewerState, sourceStates.get( i ), i, currentScreenScaleIndex,
 						renderImage, maskArray );
 				sourceProjectors.add( p );
+				sources.add( sourceStates.get( i ).getSpimSource() );
 				sourceImages.add( renderImage );
 			}
-			projector = accumulateProjectorFactory.createAccumulateProjector( sourceProjectors, sourceImages, screenImage, numRenderingThreads, renderingExecutorService );
+			projector = accumulateProjectorFactory.createAccumulateProjector( sourceProjectors, sources, sourceImages, screenImage, numRenderingThreads, renderingExecutorService );
 		}
 		previousTimepoint = viewerState.getCurrentTimepoint();
 		viewerState.getViewerTransform( currentProjectorTransform );

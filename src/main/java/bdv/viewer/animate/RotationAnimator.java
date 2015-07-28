@@ -1,8 +1,8 @@
 package bdv.viewer.animate;
 
-import bdv.util.Affine3DHelpers;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.LinAlgHelpers;
+import bdv.util.Affine3DHelpers;
 
 public class RotationAnimator extends AbstractTransformAnimator
 {
@@ -34,7 +34,7 @@ public class RotationAnimator extends AbstractTransformAnimator
 	}
 
 	@Override
-	protected AffineTransform3D get( final double t )
+	public AffineTransform3D get( final double t )
 	{
 		final AffineTransform3D transform = new AffineTransform3D();
 		transform.set( transformStart );
