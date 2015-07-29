@@ -110,7 +110,7 @@ public class VolatileGlobalCellCache implements Cache
 
 		private VolatileCell< A > data;
 
-		private final CacheArrayLoader< A > loader;
+		private final CacheLoader< Key, VolatileCell< A > > loader;
 
 		/**
 		 * When was this entry last enqueued for loading (see
@@ -120,28 +120,24 @@ public class VolatileGlobalCellCache implements Cache
 		 */
 		private long enqueueFrame;
 
-		public Entry( final Key key, final VolatileCell< A > data, final CacheArrayLoader< A > loader )
+		public Entry( final Key key, final VolatileCell< A > data, final CacheLoader< Key, VolatileCell< A > > cacheLoader )
 		{
 			this.key = key;
 			this.data = data;
-			this.loader = loader;
+			this.loader = cacheLoader;
 			enqueueFrame = -1;
 		}
 
 		private void loadIfNotValid() throws InterruptedException
 		{
+			// TODO: assumption for following synchronisation pattern is that isValid() will never go from true to false. When invalidation API is added, that might change.
 			if ( !data.getData().isValid() )
 			{
-				final int[] cellDims = key.getCellDims();
-				final long[] cellMin = key.getCellMin();
-				final int timepoint = key.timepoint;
-				final int setup = key.setup;
-				final int level = key.level;
 				synchronized ( this )
 				{
 					if ( !data.getData().isValid() )
 					{
-						final VolatileCell< A > cell = new VolatileCell< A >( cellDims, cellMin, loader.loadArray( timepoint, setup, level, cellDims, cellMin ) );
+						final VolatileCell< A > cell = loader.load( key );
 						data = cell;
 						enqueueFrame = Long.MAX_VALUE;
 						softReferenceCache.put( key, new MySoftReference( this, finalizeQueue ) );
@@ -526,7 +522,7 @@ public class VolatileGlobalCellCache implements Cache
 	 *            {@link LoadingStrategy}, queue priority, and queue order.
 	 * @return a cell with the specified coordinates.
 	 */
-	public < A extends VolatileAccess > VolatileCell< ? > createGlobal( final Key key, final CacheHints cacheHints, final CacheArrayLoader< A > loader )
+	public < A extends VolatileAccess > VolatileCell< ? > createGlobal( final Key key, final CacheHints cacheHints, final CacheLoader< Key, VolatileCell< A > > cacheLoader )
 	{
 		Entry< ? > entry = null;
 
@@ -538,8 +534,8 @@ public class VolatileGlobalCellCache implements Cache
 
 			if ( entry == null )
 			{
-				final VolatileCell< A > cell = new VolatileCell< A >( key.getCellDims(), key.getCellMin(), loader.emptyArray( key.getCellDims() ) );
-				entry = new Entry< A >( key, cell, loader );
+				final VolatileCell< A > cell = cacheLoader.createEmptyValue( key );
+				entry = new Entry< A >( key, cell, cacheLoader );
 				softReferenceCache.put( key, new MyWeakReference( entry, finalizeQueue ) );
 			}
 		}
@@ -652,6 +648,8 @@ public class VolatileGlobalCellCache implements Cache
 
 		private final CacheArrayLoader< A > loader;
 
+		private final CacheLoader< Key, VolatileCell< A > > cacheLoader;
+
 		public VolatileCellCache( final int timepoint, final int setup, final int level, final CacheHints cacheHints, final CacheArrayLoader< A > loader )
 		{
 			this.timepoint = timepoint;
@@ -659,6 +657,7 @@ public class VolatileGlobalCellCache implements Cache
 			this.level = level;
 			this.cacheHints = cacheHints;
 			this.loader = loader;
+			this.cacheLoader = new CacheArrayLoaderWrapper< A >( loader );
 		}
 
 		@SuppressWarnings( "unchecked" )
@@ -674,7 +673,7 @@ public class VolatileGlobalCellCache implements Cache
 		public VolatileCell< A > load( final long index, final int[] cellDims, final long[] cellMin )
 		{
 			final Key key = new Key( timepoint, setup, level, index, cellDims, cellMin );
-			return ( VolatileCell< A > ) createGlobal( key, cacheHints, loader );
+			return ( VolatileCell< A > ) createGlobal( key, cacheHints, cacheLoader );
 		}
 
 		@Override
