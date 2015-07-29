@@ -609,6 +609,37 @@ public class VolatileGlobalCellCache implements Cache
 		// (BlockingFetchQueues.clear() moves stuff to the prefetchQueue.)
 	}
 
+	public static interface CacheLoader< K, V >
+	{
+		public V createEmptyValue( K key );
+
+		public V load( K key ) throws InterruptedException;
+	}
+
+	public static class CacheArrayLoaderWrapper< A extends VolatileAccess > implements CacheLoader< Key, VolatileCell< A > >
+	{
+		private final CacheArrayLoader< A > loader;
+
+		public CacheArrayLoaderWrapper( final CacheArrayLoader< A > loader )
+		{
+			this.loader = loader;
+		}
+
+		@Override
+		public VolatileCell< A > createEmptyValue( final Key key )
+		{
+			final VolatileCell< A > cell = new VolatileCell< A >( key.cellDims, key.cellMin, loader.emptyArray( key.getCellDims() ) );
+			return cell;
+		}
+
+		@Override
+		public VolatileCell< A > load( final Key key ) throws InterruptedException
+		{
+			final VolatileCell< A > cell = new VolatileCell< A >( key.cellDims, key.cellMin, loader.loadArray( key.timepoint, key.setup, key.level, key.cellDims, key.cellMin ) );
+			return cell;
+		}
+	}
+
 	public class VolatileCellCache< A extends VolatileAccess > implements CellCache< A >
 	{
 		private final int timepoint;
