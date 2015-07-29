@@ -104,13 +104,13 @@ public class VolatileGlobalCellCache implements Cache
 		}
 	}
 
-	class Entry< V extends VolatileCacheValue >
+	class Entry< K, V extends VolatileCacheValue >
 	{
-		private final Key key;
+		private final K key;
 
 		private V data;
 
-		private final VolatileCacheLoader< Key, V > loader;
+		private final VolatileCacheLoader< K, V > loader;
 
 		/**
 		 * When was this entry last enqueued for loading (see
@@ -120,7 +120,7 @@ public class VolatileGlobalCellCache implements Cache
 		 */
 		private long enqueueFrame;
 
-		public Entry( final Key key, final V data, final VolatileCacheLoader< Key, V > loader )
+		public Entry( final K key, final V data, final VolatileCacheLoader< K, V > loader )
 		{
 			this.key = key;
 			this.data = data;
@@ -139,7 +139,7 @@ public class VolatileGlobalCellCache implements Cache
 					{
 						data = loader.load( key );
 						enqueueFrame = Long.MAX_VALUE;
-						softReferenceCache.put( key, new MySoftReference( this, finalizeQueue ) );
+						softReferenceCache.put( key, new MySoftReference< K >( this, finalizeQueue ) );
 						notifyAll();
 					}
 				}
@@ -152,35 +152,35 @@ public class VolatileGlobalCellCache implements Cache
 		public K getKey();
 	}
 
-	class MySoftReference extends SoftReference< Entry< ? > > implements GetKey< Key >
+	class MySoftReference< K > extends SoftReference< Entry< ?, ? > > implements GetKey< K >
 	{
-		private final Key key;
+		private final K key;
 
-		public MySoftReference( final Entry< ? > referent, final ReferenceQueue< ? super Entry< ? > > q )
+		public MySoftReference( final Entry< K, ? > referent, final ReferenceQueue< ? super Entry< ?, ? > > q )
 		{
 			super( referent, q );
 			key = referent.key;
 		}
 
 		@Override
-		public Key getKey()
+		public K getKey()
 		{
 			return key;
 		}
 	}
 
-	class MyWeakReference extends WeakReference< Entry< ? > > implements GetKey< Key >
+	class MyWeakReference< K > extends WeakReference< Entry< ?, ? > > implements GetKey< K >
 	{
-		private final Key key;
+		private final K key;
 
-		public MyWeakReference( final Entry< ? > referent, final ReferenceQueue< ? super Entry< ? > > q )
+		public MyWeakReference( final Entry< K, ? > referent, final ReferenceQueue< ? super Entry< ?, ? > > q )
 		{
 			super( referent, q );
 			key = referent.key;
 		}
 
 		@Override
-		public Key getKey()
+		public K getKey()
 		{
 			return key;
 		}
@@ -194,21 +194,20 @@ public class VolatileGlobalCellCache implements Cache
 		{
 			for ( int i = 0; i < MAX_PER_FRAME_FINALIZE_ENTRIES; ++i )
 			{
-				final Reference< ? extends Entry< ? > > poll = finalizeQueue.poll();
+				final Reference< ? extends Entry< ?, ? > > poll = finalizeQueue.poll();
 				if ( poll == null )
 					break;
-				@SuppressWarnings( "unchecked" )
-				final Key key = ( ( GetKey< Key > ) poll ).getKey();
-				final Reference< Entry< ? > > ref = softReferenceCache.get( key );
+				final Object key = ( ( GetKey< ? > ) poll ).getKey();
+				final Reference< Entry< ?, ? > > ref = softReferenceCache.get( key );
 				if ( ref == poll )
 					softReferenceCache.remove( key );
 			}
 		}
 	}
 
-	protected final ConcurrentHashMap< Key, Reference< Entry< ? > > > softReferenceCache = new ConcurrentHashMap< Key, Reference< Entry< ? > > >();
+	protected final ConcurrentHashMap< Object, Reference< Entry< ?, ? > > > softReferenceCache = new ConcurrentHashMap< Object, Reference< Entry< ?, ? > > >();
 
-	protected final ReferenceQueue< Entry< ? > > finalizeQueue = new ReferenceQueue< Entry< ? > >();
+	protected final ReferenceQueue< Entry< ?, ? > > finalizeQueue = new ReferenceQueue< Entry< ?, ? > >();
 
 	protected final BlockingFetchQueues< Key > queue;
 
@@ -346,10 +345,10 @@ public class VolatileGlobalCellCache implements Cache
 	 */
 	protected void loadIfNotValid( final Key k ) throws InterruptedException
 	{
-		final Reference< Entry< ? > > ref = softReferenceCache.get( k );
+		final Reference< Entry< ?, ? > > ref = softReferenceCache.get( k );
 		if ( ref != null )
 		{
-			final Entry< ? > entry = ref.get();
+			final Entry< ?, ? > entry = ref.get();
 			if ( entry != null )
 				loadEntryIfNotValid( entry );
 		}
@@ -359,7 +358,7 @@ public class VolatileGlobalCellCache implements Cache
 	 * Load the data for the {@link Entry}, if it is not yet loaded (valid).
 	 * @throws InterruptedException
 	 */
-	protected void loadEntryIfNotValid( final Entry< ? > entry ) throws InterruptedException
+	protected void loadEntryIfNotValid( final Entry< ?, ? > entry ) throws InterruptedException
 	{
 		entry.loadIfNotValid();
 	}
@@ -368,8 +367,9 @@ public class VolatileGlobalCellCache implements Cache
 	 * Enqueue the {@link Entry} if it hasn't been enqueued for this frame
 	 * already.
 	 */
-	protected void enqueueEntry( final Entry< ? > entry, final int priority, final boolean enqueuToFront )
+	protected void enqueueEntry( final Entry< ?, ? > entryTODO, final int priority, final boolean enqueuToFront )
 	{
+		final Entry< Key, ? > entry = ( Entry< Key, ? > ) entryTODO; // TODO: fix generics
 		if ( entry.enqueueFrame < currentQueueFrame )
 		{
 			entry.enqueueFrame = currentQueueFrame;
@@ -383,7 +383,7 @@ public class VolatileGlobalCellCache implements Cache
 	 * there is enough {@link IoTimeBudget} left. Otherwise, enqueue the
 	 * {@link Entry} if it hasn't been enqueued for this frame already.
 	 */
-	protected void loadOrEnqueue( final Entry< ? > entry, final int priority, final boolean enqueuToFront )
+	protected void loadOrEnqueue( final Entry< ?, ? > entry, final int priority, final boolean enqueuToFront )
 	{
 		final IoStatistics stats = cacheIoTiming.getThreadGroupIoStatistics();
 		final IoTimeBudget budget = stats.getIoTimeBudget();
@@ -412,7 +412,7 @@ public class VolatileGlobalCellCache implements Cache
 			enqueueEntry( entry, priority, enqueuToFront );
 	}
 
-	private void loadEntryWithCacheHints( final Entry< ? > entry, final CacheHints cacheHints )
+	private void loadEntryWithCacheHints( final Entry< ?, ? > entry, final CacheHints cacheHints )
 	{
 		switch ( cacheHints.getLoadingStrategy() )
 		{
@@ -475,10 +475,10 @@ public class VolatileGlobalCellCache implements Cache
 	 */
 	public < V extends VolatileCacheValue > V getGlobalIfCached( final Key key, final CacheHints cacheHints )
 	{
-		final Reference< Entry< ? > > ref = softReferenceCache.get( key );
+		final Reference< Entry< ?, ? > > ref = softReferenceCache.get( key );
 		if ( ref != null )
 		{
-			final Entry< ? > entry = ref.get();
+			final Entry< ?, ? > entry = ref.get();
 			if ( entry != null )
 			{
 				loadEntryWithCacheHints( entry, cacheHints );
@@ -521,26 +521,26 @@ public class VolatileGlobalCellCache implements Cache
 	 *            {@link LoadingStrategy}, queue priority, and queue order.
 	 * @return a cell with the specified coordinates.
 	 */
-	public < V extends VolatileCacheValue > V createGlobal( final Key key, final CacheHints cacheHints, final VolatileCacheLoader< Key, V > cacheLoader )
+	public < K, V extends VolatileCacheValue > V createGlobal( final K key, final CacheHints cacheHints, final VolatileCacheLoader< K, V > cacheLoader )
 	{
-		Entry< ? > entry = null;
+		Entry< K, V > entry = null;
 
 		synchronized ( softReferenceCache )
 		{
-			final Reference< Entry< ? > > ref = softReferenceCache.get( key );
+			final Reference< Entry< ?, ? > > ref = softReferenceCache.get( key );
 			if ( ref != null )
-				entry = ref.get();
+				entry = ( Entry< K, V > ) ref.get(); // TODO: try to let softRefCache be Reference< ? extends Entry< ?, ? > > type
 
 			if ( entry == null )
 			{
 				final V value = cacheLoader.createEmptyValue( key );
-				entry = new Entry< V >( key, value, cacheLoader );
-				softReferenceCache.put( key, new MyWeakReference( entry, finalizeQueue ) );
+				entry = new Entry< K, V >( key, value, cacheLoader );
+				softReferenceCache.put( key, new MyWeakReference< K >( entry, finalizeQueue ) );
 			}
 		}
 
 		loadEntryWithCacheHints( entry, cacheHints );
-		return ( V ) entry.data;
+		return entry.data;
 	}
 
 	/**
@@ -596,7 +596,7 @@ public class VolatileGlobalCellCache implements Cache
 	 */
 	public void clearCache()
 	{
-		for ( final Reference< Entry< ? > > ref : softReferenceCache.values() )
+		for ( final Reference< Entry< ?, ? > > ref : softReferenceCache.values() )
 			ref.clear();
 		softReferenceCache.clear();
 		prepareNextFrame();
