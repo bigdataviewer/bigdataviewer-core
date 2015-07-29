@@ -468,15 +468,9 @@ public class VolatileGlobalCellCache implements Cache
 	 *            {@link LoadingStrategy}, queue priority, and queue order.
 	 * @return a cell with the specified coordinates or null.
 	 */
-	public VolatileCell< ? > getGlobalIfCached(
-			final int timepoint,
-			final int setup,
-			final int level,
-			final long index,
-			final CacheHints cacheHints )
+	public VolatileCell< ? > getGlobalIfCached( final Key key, final CacheHints cacheHints )
 	{
-		final Key k = new Key( timepoint, setup, level, index );
-		final Reference< Entry< ? > > ref = softReferenceCache.get( k );
+		final Reference< Entry< ? > > ref = softReferenceCache.get( key );
 		if ( ref != null )
 		{
 			final Entry< ? > entry = ref.get();
@@ -525,27 +519,23 @@ public class VolatileGlobalCellCache implements Cache
 	public < A extends VolatileAccess > VolatileCell< ? > createGlobal(
 			final int[] cellDims,
 			final long[] cellMin,
-			final int timepoint,
-			final int setup,
-			final int level,
-			final long index,
+			final Key key,
 			final CacheHints cacheHints,
 			final CacheArrayLoader< A > loader )
 	{
-		final Key k = new Key( timepoint, setup, level, index );
 		Entry< ? > entry = null;
 
 		synchronized ( softReferenceCache )
 		{
-			final Reference< Entry< ? > > ref = softReferenceCache.get( k );
+			final Reference< Entry< ? > > ref = softReferenceCache.get( key );
 			if ( ref != null )
 				entry = ref.get();
 
 			if ( entry == null )
 			{
 				final VolatileCell< A > cell = new VolatileCell< A >( cellDims, cellMin, loader.emptyArray( cellDims ) );
-				entry = new Entry< A >( k, cell, loader );
-				softReferenceCache.put( k, new MyWeakReference( entry, finalizeQueue ) );
+				entry = new Entry< A >( key, cell, loader );
+				softReferenceCache.put( key, new MyWeakReference( entry, finalizeQueue ) );
 			}
 		}
 
@@ -639,14 +629,16 @@ public class VolatileGlobalCellCache implements Cache
 		@Override
 		public VolatileCell< A > get( final long index )
 		{
-			return ( VolatileCell< A > ) getGlobalIfCached( timepoint, setup, level, index, cacheHints );
+			final Key key = new Key( timepoint, setup, level, index );
+			return ( VolatileCell< A > ) getGlobalIfCached( key, cacheHints );
 		}
 
 		@SuppressWarnings( "unchecked" )
 		@Override
 		public VolatileCell< A > load( final long index, final int[] cellDims, final long[] cellMin )
 		{
-			return ( VolatileCell< A > ) createGlobal( cellDims, cellMin, timepoint, setup, level, index, cacheHints, loader );
+			final Key key = new Key( timepoint, setup, level, index );
+			return ( VolatileCell< A > ) createGlobal( cellDims, cellMin, key, cacheHints, loader );
 		}
 
 		@Override
