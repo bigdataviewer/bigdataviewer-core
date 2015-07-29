@@ -104,13 +104,13 @@ public class VolatileGlobalCellCache implements Cache
 		}
 	}
 
-	class Entry< A extends VolatileAccess >
+	class Entry< V extends VolatileCacheValue >
 	{
 		private final Key key;
 
-		private VolatileCell< A > data;
+		private V data;
 
-		private final VolatileCacheLoader< Key, VolatileCell< A > > loader;
+		private final VolatileCacheLoader< Key, V > loader;
 
 		/**
 		 * When was this entry last enqueued for loading (see
@@ -120,25 +120,24 @@ public class VolatileGlobalCellCache implements Cache
 		 */
 		private long enqueueFrame;
 
-		public Entry( final Key key, final VolatileCell< A > data, final VolatileCacheLoader< Key, VolatileCell< A > > cacheLoader )
+		public Entry( final Key key, final V data, final VolatileCacheLoader< Key, V > loader )
 		{
 			this.key = key;
 			this.data = data;
-			this.loader = cacheLoader;
+			this.loader = loader;
 			enqueueFrame = -1;
 		}
 
 		private void loadIfNotValid() throws InterruptedException
 		{
 			// TODO: assumption for following synchronisation pattern is that isValid() will never go from true to false. When invalidation API is added, that might change.
-			if ( !data.getData().isValid() )
+			if ( !data.isValid() )
 			{
 				synchronized ( this )
 				{
-					if ( !data.getData().isValid() )
+					if ( !data.isValid() )
 					{
-						final VolatileCell< A > cell = loader.load( key );
-						data = cell;
+						data = loader.load( key );
 						enqueueFrame = Long.MAX_VALUE;
 						softReferenceCache.put( key, new MySoftReference( this, finalizeQueue ) );
 						notifyAll();
@@ -393,7 +392,7 @@ public class VolatileGlobalCellCache implements Cache
 		{
 			synchronized ( entry )
 			{
-				if ( entry.data.getData().isValid() )
+				if ( entry.data.isValid() )
 					return;
 				enqueueEntry( entry, priority, enqueuToFront );
 				final long t0 = stats.getIoNanoTime();
@@ -432,7 +431,7 @@ public class VolatileGlobalCellCache implements Cache
 				{}
 			break;
 		case BUDGETED:
-			if ( !entry.data.getData().isValid() )
+			if ( !entry.data.isValid() )
 				loadOrEnqueue( entry, cacheHints.getQueuePriority(), cacheHints.isEnqueuToFront() );
 			break;
 		case DONTLOAD:
@@ -474,7 +473,7 @@ public class VolatileGlobalCellCache implements Cache
 	 *            {@link LoadingStrategy}, queue priority, and queue order.
 	 * @return a cell with the specified coordinates or null.
 	 */
-	public VolatileCell< ? > getGlobalIfCached( final Key key, final CacheHints cacheHints )
+	public < V extends VolatileCacheValue > V getGlobalIfCached( final Key key, final CacheHints cacheHints )
 	{
 		final Reference< Entry< ? > > ref = softReferenceCache.get( key );
 		if ( ref != null )
@@ -483,7 +482,7 @@ public class VolatileGlobalCellCache implements Cache
 			if ( entry != null )
 			{
 				loadEntryWithCacheHints( entry, cacheHints );
-				return entry.data;
+				return ( V ) entry.data;
 			}
 		}
 		return null;
@@ -522,7 +521,7 @@ public class VolatileGlobalCellCache implements Cache
 	 *            {@link LoadingStrategy}, queue priority, and queue order.
 	 * @return a cell with the specified coordinates.
 	 */
-	public < A extends VolatileAccess > VolatileCell< ? > createGlobal( final Key key, final CacheHints cacheHints, final VolatileCacheLoader< Key, VolatileCell< A > > cacheLoader )
+	public < V extends VolatileCacheValue > V createGlobal( final Key key, final CacheHints cacheHints, final VolatileCacheLoader< Key, V > cacheLoader )
 	{
 		Entry< ? > entry = null;
 
@@ -534,14 +533,14 @@ public class VolatileGlobalCellCache implements Cache
 
 			if ( entry == null )
 			{
-				final VolatileCell< A > cell = cacheLoader.createEmptyValue( key );
-				entry = new Entry< A >( key, cell, cacheLoader );
+				final V value = cacheLoader.createEmptyValue( key );
+				entry = new Entry< V >( key, value, cacheLoader );
 				softReferenceCache.put( key, new MyWeakReference( entry, finalizeQueue ) );
 			}
 		}
 
 		loadEntryWithCacheHints( entry, cacheHints );
-		return entry.data;
+		return ( V ) entry.data;
 	}
 
 	/**
@@ -669,20 +668,18 @@ public class VolatileGlobalCellCache implements Cache
 			this.cacheLoader = new CacheArrayLoaderWrapper< A >( loader );
 		}
 
-		@SuppressWarnings( "unchecked" )
 		@Override
 		public VolatileCell< A > get( final long index )
 		{
 			final Key key = new Key( timepoint, setup, level, index, null, null );
-			return ( VolatileCell< A > ) getGlobalIfCached( key, cacheHints );
+			return getGlobalIfCached( key, cacheHints );
 		}
 
-		@SuppressWarnings( "unchecked" )
 		@Override
 		public VolatileCell< A > load( final long index, final int[] cellDims, final long[] cellMin )
 		{
 			final Key key = new Key( timepoint, setup, level, index, cellDims, cellMin );
-			return ( VolatileCell< A > ) createGlobal( key, cacheHints, cacheLoader );
+			return createGlobal( key, cacheHints, cacheLoader );
 		}
 
 		@Override
