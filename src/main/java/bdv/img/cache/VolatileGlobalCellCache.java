@@ -58,12 +58,18 @@ public class VolatileGlobalCellCache implements Cache
 
 		private final long index;
 
-		public Key( final int timepoint, final int setup, final int level, final long index )
+		private final int[] cellDims;
+
+		private final long[] cellMin;
+
+		public Key( final int timepoint, final int setup, final int level, final long index, final int[] cellDims, final long[] cellMin )
 		{
 			this.timepoint = timepoint;
 			this.setup = setup;
 			this.level = level;
 			this.index = index;
+			this.cellDims = cellDims;
+			this.cellMin = cellMin;
 
 			final long value = ( ( index * maxNumLevels + level ) * maxNumSetups + setup ) * maxNumTimepoints + timepoint;
 			hashcode = ( int ) ( value ^ ( value >>> 32 ) );
@@ -86,6 +92,16 @@ public class VolatileGlobalCellCache implements Cache
 		public int hashCode()
 		{
 			return hashcode;
+		}
+
+		protected int[] getCellDims()
+		{
+			return cellDims;
+		}
+
+		protected long[] getCellMin()
+		{
+			return cellMin;
 		}
 	}
 
@@ -117,8 +133,8 @@ public class VolatileGlobalCellCache implements Cache
 		{
 			if ( !data.getData().isValid() )
 			{
-				final int[] cellDims = data.getDimensions();
-				final long[] cellMin = data.getMin();
+				final int[] cellDims = key.getCellDims();
+				final long[] cellMin = key.getCellMin();
 				final int timepoint = key.timepoint;
 				final int setup = key.setup;
 				final int level = key.level;
@@ -516,12 +532,7 @@ public class VolatileGlobalCellCache implements Cache
 	 *            {@link LoadingStrategy}, queue priority, and queue order.
 	 * @return a cell with the specified coordinates.
 	 */
-	public < A extends VolatileAccess > VolatileCell< ? > createGlobal(
-			final int[] cellDims,
-			final long[] cellMin,
-			final Key key,
-			final CacheHints cacheHints,
-			final CacheArrayLoader< A > loader )
+	public < A extends VolatileAccess > VolatileCell< ? > createGlobal( final Key key, final CacheHints cacheHints, final CacheArrayLoader< A > loader )
 	{
 		Entry< ? > entry = null;
 
@@ -533,7 +544,7 @@ public class VolatileGlobalCellCache implements Cache
 
 			if ( entry == null )
 			{
-				final VolatileCell< A > cell = new VolatileCell< A >( cellDims, cellMin, loader.emptyArray( cellDims ) );
+				final VolatileCell< A > cell = new VolatileCell< A >( key.getCellDims(), key.getCellMin(), loader.emptyArray( key.getCellDims() ) );
 				entry = new Entry< A >( key, cell, loader );
 				softReferenceCache.put( key, new MyWeakReference( entry, finalizeQueue ) );
 			}
@@ -629,7 +640,7 @@ public class VolatileGlobalCellCache implements Cache
 		@Override
 		public VolatileCell< A > get( final long index )
 		{
-			final Key key = new Key( timepoint, setup, level, index );
+			final Key key = new Key( timepoint, setup, level, index, null, null );
 			return ( VolatileCell< A > ) getGlobalIfCached( key, cacheHints );
 		}
 
@@ -637,8 +648,8 @@ public class VolatileGlobalCellCache implements Cache
 		@Override
 		public VolatileCell< A > load( final long index, final int[] cellDims, final long[] cellMin )
 		{
-			final Key key = new Key( timepoint, setup, level, index );
-			return ( VolatileCell< A > ) createGlobal( cellDims, cellMin, key, cacheHints, loader );
+			final Key key = new Key( timepoint, setup, level, index, cellDims, cellMin );
+			return ( VolatileCell< A > ) createGlobal( key, cacheHints, loader );
 		}
 
 		@Override
