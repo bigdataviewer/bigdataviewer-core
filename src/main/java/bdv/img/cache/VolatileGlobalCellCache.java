@@ -407,6 +407,33 @@ public class VolatileGlobalCellCache implements Cache
 			enqueueEntry( entry, priority, enqueuToFront );
 	}
 
+	private void loadEntryWithCacheHints( final Entry< ? > entry, final CacheHints cacheHints )
+	{
+		switch ( cacheHints.getLoadingStrategy() )
+		{
+		case VOLATILE:
+		default:
+			enqueueEntry( entry, cacheHints.getQueuePriority(), cacheHints.isEnqueuToFront() );
+			break;
+		case BLOCKING:
+			while ( true )
+				try
+				{
+					loadEntryIfNotValid( entry );
+					break;
+				}
+				catch ( final InterruptedException e )
+				{}
+			break;
+		case BUDGETED:
+			if ( !entry.data.getData().isValid() )
+				loadOrEnqueue( entry, cacheHints.getQueuePriority(), cacheHints.isEnqueuToFront() );
+			break;
+		case DONTLOAD:
+			break;
+		}
+	}
+
 	/**
 	 * Get a cell if it is in the cache or null. Note, that a cell being in the
 	 * cache only means that there is a data array, but not necessarily that the
@@ -455,29 +482,7 @@ public class VolatileGlobalCellCache implements Cache
 			final Entry< ? > entry = ref.get();
 			if ( entry != null )
 			{
-				switch ( cacheHints.getLoadingStrategy() )
-				{
-				case VOLATILE:
-				default:
-					enqueueEntry( entry, cacheHints.getQueuePriority(), cacheHints.isEnqueuToFront() );
-					break;
-				case BLOCKING:
-					while ( true )
-						try
-						{
-							loadEntryIfNotValid( entry );
-							break;
-						}
-						catch ( final InterruptedException e )
-						{}
-					break;
-				case BUDGETED:
-					if ( !entry.data.getData().isValid() )
-						loadOrEnqueue( entry, cacheHints.getQueuePriority(), cacheHints.isEnqueuToFront() );
-					break;
-				case DONTLOAD:
-					break;
-				}
+				loadEntryWithCacheHints( entry, cacheHints );
 				return entry.data;
 			}
 		}
@@ -544,29 +549,7 @@ public class VolatileGlobalCellCache implements Cache
 			}
 		}
 
-		switch ( cacheHints.getLoadingStrategy() )
-		{
-		case VOLATILE:
-		default:
-			enqueueEntry( entry, cacheHints.getQueuePriority(), cacheHints.isEnqueuToFront() );
-			break;
-		case BLOCKING:
-			while ( true )
-				try
-				{
-					loadEntryIfNotValid( entry );
-					break;
-				}
-				catch ( final InterruptedException e )
-				{}
-			break;
-		case BUDGETED:
-			if ( !entry.data.getData().isValid() )
-				loadOrEnqueue( entry, cacheHints.getQueuePriority(), cacheHints.isEnqueuToFront() );
-			break;
-		case DONTLOAD:
-			break;
-		}
+		loadEntryWithCacheHints( entry, cacheHints );
 		return entry.data;
 	}
 
