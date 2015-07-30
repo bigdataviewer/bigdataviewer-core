@@ -654,18 +654,15 @@ public class VolatileGlobalCellCache implements Cache
 
 		private CacheHints cacheHints;
 
-		private final CacheArrayLoader< A > loader;
+		private final VolatileCacheLoader< Key, VolatileCell< A > > loader;
 
-		private final VolatileCacheLoader< Key, VolatileCell< A > > cacheLoader;
-
-		public VolatileCellCache( final int timepoint, final int setup, final int level, final CacheHints cacheHints, final CacheArrayLoader< A > loader )
+		public VolatileCellCache( final int timepoint, final int setup, final int level, final CacheHints cacheHints, final CacheArrayLoader< A > cacheArrayLoader )
 		{
 			this.timepoint = timepoint;
 			this.setup = setup;
 			this.level = level;
 			this.cacheHints = cacheHints;
-			this.loader = loader;
-			this.cacheLoader = new CacheArrayLoaderWrapper< A >( loader );
+			this.loader = new CacheArrayLoaderWrapper< A >( cacheArrayLoader );
 		}
 
 		@Override
@@ -679,7 +676,7 @@ public class VolatileGlobalCellCache implements Cache
 		public VolatileCell< A > load( final long index, final int[] cellDims, final long[] cellMin )
 		{
 			final Key key = new Key( timepoint, setup, level, index, cellDims, cellMin );
-			return createGlobal( key, cacheHints, cacheLoader );
+			return createGlobal( key, cacheHints, loader );
 		}
 
 		@Override
