@@ -31,6 +31,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import net.imglib2.Positionable;
+import net.imglib2.RealLocalizable;
 import net.imglib2.RealPoint;
 import net.imglib2.RealPositionable;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -309,6 +310,50 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 //	{
 //		display.addHandler( handler );
 //	}
+
+	/**
+	 * Set {@code gPos} to the display coordinates at gPos transformed into the
+	 * global coordinate system.
+	 *
+	 * @param gPos
+	 *            is set to the corresponding global coordinates.
+	 */
+	public <P extends RealLocalizable & RealPositionable > void displayToGlobalCoordinates( final double[] gPos )
+	{
+		assert gPos.length >= 3;
+
+		viewerTransform.applyInverse( gPos, gPos );
+	}
+
+	/**
+	 * Set {@code gPos} to the display coordinates at gPos transformed into the
+	 * global coordinate system.
+	 *
+	 * @param gPos
+	 *            is set to the corresponding global coordinates.
+	 */
+	public <P extends RealLocalizable & RealPositionable > void displayToGlobalCoordinates( final P gPos )
+	{
+		assert gPos.numDimensions() >= 3;
+
+		viewerTransform.applyInverse( gPos, gPos );
+	}
+
+	/**
+	 * Set {@code gPos} to the display coordinates (x,y,0)<sup>T</sup> transformed into the
+	 * global coordinate system.
+	 *
+	 * @param gPos
+	 *            is set to the global coordinates at display (x,y,0)<sup>T</sup>.
+	 */
+	public void displayToGlobalCoordinates( final double x, final double y, final RealPositionable gPos )
+	{
+		assert gPos.numDimensions() >= 3;
+		final RealPoint lPos = new RealPoint( 3 );
+		lPos.setPosition( x, 0 );
+		lPos.setPosition( y, 1 );
+		viewerTransform.applyInverse( gPos, lPos );
+	}
 
 	/**
 	 * Set {@code gPos} to the current mouse coordinates transformed into the
