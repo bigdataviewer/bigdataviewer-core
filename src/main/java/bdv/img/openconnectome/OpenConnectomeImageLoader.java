@@ -100,6 +100,9 @@ public class OpenConnectomeImageLoader extends AbstractViewerSetupImgLoader< Uns
 	{
 		final Gson gson = new Gson();
 		final URL url = new URL( baseUrl + "/" + token + "/info/" );
+		
+		System.out.println( "Fetching token from " + url );
+		
 		return gson.fromJson( new InputStreamReader( url.openStream() ), OpenConnectomeTokenInfo.class );
 	}
 
@@ -161,7 +164,9 @@ public class OpenConnectomeImageLoader extends AbstractViewerSetupImgLoader< Uns
 				break;
 			}
 			catch ( final Exception e )
-			{}
+			{
+				e.printStackTrace( System.err );
+			}
 			try
 			{
 				Thread.sleep( 100 );
