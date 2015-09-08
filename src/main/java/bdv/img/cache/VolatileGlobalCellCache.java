@@ -209,7 +209,7 @@ public class VolatileGlobalCellCache implements Cache
 
 	protected final ReferenceQueue< Entry< ?, ? > > finalizeQueue = new ReferenceQueue< Entry< ?, ? > >();
 
-	protected final BlockingFetchQueues< Key > queue;
+	protected final BlockingFetchQueues< Object > queue;
 
 	protected volatile long currentQueueFrame = 0;
 
@@ -218,7 +218,7 @@ public class VolatileGlobalCellCache implements Cache
 		@Override
 		public final void run()
 		{
-			Key key = null;
+			Object key = null;
 			while ( true )
 			{
 				while ( key == null )
@@ -321,7 +321,7 @@ public class VolatileGlobalCellCache implements Cache
 		this.maxNumLevels = maxNumLevels;
 
 		cacheIoTiming = new CacheIoTiming();
-		queue = new BlockingFetchQueues< Key >( maxNumLevels );
+		queue = new BlockingFetchQueues< Object >( maxNumLevels );
 		fetchers = new ArrayList< Fetcher >();
 		for ( int i = 0; i < numFetcherThreads; ++i )
 		{
@@ -343,7 +343,7 @@ public class VolatileGlobalCellCache implements Cache
 	 * @param k
 	 * @throws InterruptedException
 	 */
-	protected void loadIfNotValid( final Key k ) throws InterruptedException
+	protected void loadIfNotValid( final Object k ) throws InterruptedException
 	{
 		final Reference< Entry< ?, ? > > ref = softReferenceCache.get( k );
 		if ( ref != null )
@@ -367,14 +367,12 @@ public class VolatileGlobalCellCache implements Cache
 	 * Enqueue the {@link Entry} if it hasn't been enqueued for this frame
 	 * already.
 	 */
-	protected void enqueueEntry( final Entry< ?, ? > entryTODO, final int priority, final boolean enqueuToFront )
+	protected void enqueueEntry( final Entry< ?, ? > entry, final int priority, final boolean enqueuToFront )
 	{
-		final Entry< Key, ? > entry = ( Entry< Key, ? > ) entryTODO; // TODO: fix generics
 		if ( entry.enqueueFrame < currentQueueFrame )
 		{
 			entry.enqueueFrame = currentQueueFrame;
-			final Key k = entry.key;
-			queue.put( k, priority, enqueuToFront );
+			queue.put( entry.key, priority, enqueuToFront );
 		}
 	}
 
