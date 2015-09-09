@@ -147,12 +147,12 @@ public class VolatileGlobalCellCache implements Cache
 		}
 	}
 
-	interface GetKey< K >
+	static interface GetKey< K >
 	{
 		public K getKey();
 	}
 
-	class MySoftReference< K > extends SoftReference< Entry< ?, ? > > implements GetKey< K >
+	static class MySoftReference< K > extends SoftReference< Entry< ?, ? > > implements GetKey< K >
 	{
 		private final K key;
 
@@ -169,7 +169,7 @@ public class VolatileGlobalCellCache implements Cache
 		}
 	}
 
-	class MyWeakReference< K > extends WeakReference< Entry< ?, ? > > implements GetKey< K >
+	static class MyWeakReference< K > extends WeakReference< Entry< ?, ? > > implements GetKey< K >
 	{
 		private final K key;
 
