@@ -30,7 +30,6 @@ package bdv.img.cache;
 
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 import net.imglib2.img.cell.AbstractCell;
-import bdv.img.cache.VolatileGlobalCellCache.VolatileCacheValue;
 
 @SuppressWarnings( "serial" )
 public class VolatileCell< A extends VolatileAccess > extends AbstractCell< A > implements VolatileCacheValue

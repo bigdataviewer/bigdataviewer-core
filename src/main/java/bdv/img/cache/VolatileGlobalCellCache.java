@@ -110,7 +110,7 @@ public class VolatileGlobalCellCache implements Cache
 
 		private V data;
 
-		private final VolatileCacheLoader< K, V > loader;
+		private final VolatileCacheValueLoader< K, V > loader;
 
 		/**
 		 * When was this entry last enqueued for loading (see
@@ -120,7 +120,7 @@ public class VolatileGlobalCellCache implements Cache
 		 */
 		private long enqueueFrame;
 
-		public Entry( final K key, final V data, final VolatileCacheLoader< K, V > loader )
+		public Entry( final K key, final V data, final VolatileCacheValueLoader< K, V > loader )
 		{
 			this.key = key;
 			this.data = data;
@@ -519,7 +519,7 @@ public class VolatileGlobalCellCache implements Cache
 	 *            {@link LoadingStrategy}, queue priority, and queue order.
 	 * @return a cell with the specified coordinates.
 	 */
-	public < K, V extends VolatileCacheValue > V createGlobal( final K key, final CacheHints cacheHints, final VolatileCacheLoader< K, V > cacheLoader )
+	public < K, V extends VolatileCacheValue > V createGlobal( final K key, final CacheHints cacheHints, final VolatileCacheValueLoader< K, V > cacheLoader )
 	{
 		Entry< K, V > entry = null;
 
@@ -606,19 +606,7 @@ public class VolatileGlobalCellCache implements Cache
 
 
 
-	public static interface VolatileCacheValue
-	{
-		public boolean isValid();
-	}
-
-	public static interface VolatileCacheLoader< K, V extends VolatileCacheValue >
-	{
-		public V createEmptyValue( K key );
-
-		public V load( K key ) throws InterruptedException;
-	}
-
-	public static class CacheArrayLoaderWrapper< A extends VolatileAccess > implements VolatileCacheLoader< Key, VolatileCell< A > >
+	public static class CacheArrayLoaderWrapper< A extends VolatileAccess > implements VolatileCacheValueLoader< Key, VolatileCell< A > >
 	{
 		private final CacheArrayLoader< A > loader;
 
@@ -652,7 +640,7 @@ public class VolatileGlobalCellCache implements Cache
 
 		private CacheHints cacheHints;
 
-		private final VolatileCacheLoader< Key, VolatileCell< A > > loader;
+		private final VolatileCacheValueLoader< Key, VolatileCell< A > > loader;
 
 		public VolatileCellCache( final int timepoint, final int setup, final int level, final CacheHints cacheHints, final CacheArrayLoader< A > cacheArrayLoader )
 		{
