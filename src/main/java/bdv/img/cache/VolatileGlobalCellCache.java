@@ -28,12 +28,7 @@
  */
 package bdv.img.cache;
 
-import java.lang.ref.Reference;
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.SoftReference;
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.concurrent.ConcurrentHashMap;
 
 import bdv.img.cache.CacheIoTiming.IoStatistics;
 import bdv.img.cache.CacheIoTiming.IoTimeBudget;
@@ -104,110 +99,7 @@ public class VolatileGlobalCellCache implements Cache
 		}
 	}
 
-	class Entry< K, V extends VolatileCacheValue >
-	{
-		private final K key;
-
-		private V data;
-
-		private final VolatileCacheValueLoader< K, V > loader;
-
-		/**
-		 * When was this entry last enqueued for loading (see
-		 * {@link VolatileGlobalCellCache#currentQueueFrame}). This is initialized
-		 * to -1. When the entry's data becomes valid, it is set to
-		 * {@link Long#MAX_VALUE}.
-		 */
-		private long enqueueFrame;
-
-		public Entry( final K key, final V data, final VolatileCacheValueLoader< K, V > loader )
-		{
-			this.key = key;
-			this.data = data;
-			this.loader = loader;
-			enqueueFrame = -1;
-		}
-
-		private void loadIfNotValid() throws InterruptedException
-		{
-			// TODO: assumption for following synchronisation pattern is that isValid() will never go from true to false. When invalidation API is added, that might change.
-			if ( !data.isValid() )
-			{
-				synchronized ( this )
-				{
-					if ( !data.isValid() )
-					{
-						data = loader.load( key );
-						enqueueFrame = Long.MAX_VALUE;
-						softReferenceCache.put( key, new MySoftReference< K >( this, finalizeQueue ) );
-						notifyAll();
-					}
-				}
-			}
-		}
-	}
-
-	static interface GetKey< K >
-	{
-		public K getKey();
-	}
-
-	static class MySoftReference< K > extends SoftReference< Entry< ?, ? > > implements GetKey< K >
-	{
-		private final K key;
-
-		public MySoftReference( final Entry< K, ? > referent, final ReferenceQueue< ? super Entry< ?, ? > > q )
-		{
-			super( referent, q );
-			key = referent.key;
-		}
-
-		@Override
-		public K getKey()
-		{
-			return key;
-		}
-	}
-
-	static class MyWeakReference< K > extends WeakReference< Entry< ?, ? > > implements GetKey< K >
-	{
-		private final K key;
-
-		public MyWeakReference( final Entry< K, ? > referent, final ReferenceQueue< ? super Entry< ?, ? > > q )
-		{
-			super( referent, q );
-			key = referent.key;
-		}
-
-		@Override
-		public K getKey()
-		{
-			return key;
-		}
-	}
-
-	protected static final int MAX_PER_FRAME_FINALIZE_ENTRIES = 500;
-
-	protected void finalizeRemovedCacheEntries()
-	{
-		synchronized ( softReferenceCache )
-		{
-			for ( int i = 0; i < MAX_PER_FRAME_FINALIZE_ENTRIES; ++i )
-			{
-				final Reference< ? extends Entry< ?, ? > > poll = finalizeQueue.poll();
-				if ( poll == null )
-					break;
-				final Object key = ( ( GetKey< ? > ) poll ).getKey();
-				final Reference< Entry< ?, ? > > ref = softReferenceCache.get( key );
-				if ( ref == poll )
-					softReferenceCache.remove( key );
-			}
-		}
-	}
-
-	protected final ConcurrentHashMap< Object, Reference< Entry< ?, ? > > > softReferenceCache = new ConcurrentHashMap< Object, Reference< Entry< ?, ? > > >();
-
-	protected final ReferenceQueue< Entry< ?, ? > > finalizeQueue = new ReferenceQueue< Entry< ?, ? > >();
+	protected VolatileCache volatileCache = new SoftRefVolatileCacheImp();
 
 	protected final BlockingFetchQueues< Object > queue;
 
@@ -244,7 +136,7 @@ public class VolatileGlobalCellCache implements Cache
 				}
 				try
 				{
-					loadIfNotValid( key );
+					volatileCache.loadIfNotValid( key );
 					key = null;
 				}
 				catch ( final InterruptedException e )
@@ -334,45 +226,15 @@ public class VolatileGlobalCellCache implements Cache
 	}
 
 	/**
-	 * Load the data for the {@link VolatileCell} referenced by k, if
-	 * <ul>
-	 * <li>the {@link VolatileCell} is in the cache, and
-	 * <li>the data is not yet loaded (valid).
-	 * </ul>
-	 *
-	 * @param k
-	 * @throws InterruptedException
-	 */
-	protected void loadIfNotValid( final Object k ) throws InterruptedException
-	{
-		final Reference< Entry< ?, ? > > ref = softReferenceCache.get( k );
-		if ( ref != null )
-		{
-			final Entry< ?, ? > entry = ref.get();
-			if ( entry != null )
-				loadEntryIfNotValid( entry );
-		}
-	}
-
-	/**
-	 * Load the data for the {@link Entry}, if it is not yet loaded (valid).
-	 * @throws InterruptedException
-	 */
-	protected void loadEntryIfNotValid( final Entry< ?, ? > entry ) throws InterruptedException
-	{
-		entry.loadIfNotValid();
-	}
-
-	/**
 	 * Enqueue the {@link Entry} if it hasn't been enqueued for this frame
 	 * already.
 	 */
-	protected void enqueueEntry( final Entry< ?, ? > entry, final int priority, final boolean enqueuToFront )
+	protected void enqueueEntry( final VolatileCacheEntry< ?, ? > entry, final int priority, final boolean enqueuToFront )
 	{
-		if ( entry.enqueueFrame < currentQueueFrame )
+		if ( entry.getEnqueueFrame() < currentQueueFrame )
 		{
-			entry.enqueueFrame = currentQueueFrame;
-			queue.put( entry.key, priority, enqueuToFront );
+			entry.setEnqueueFrame( currentQueueFrame );
+			queue.put( entry.getKey(), priority, enqueuToFront );
 		}
 	}
 
@@ -381,7 +243,7 @@ public class VolatileGlobalCellCache implements Cache
 	 * there is enough {@link IoTimeBudget} left. Otherwise, enqueue the
 	 * {@link Entry} if it hasn't been enqueued for this frame already.
 	 */
-	protected void loadOrEnqueue( final Entry< ?, ? > entry, final int priority, final boolean enqueuToFront )
+	protected void loadOrEnqueue( final VolatileCacheEntry< ?, ? > entry, final int priority, final boolean enqueuToFront )
 	{
 		final IoStatistics stats = cacheIoTiming.getThreadGroupIoStatistics();
 		final IoTimeBudget budget = stats.getIoTimeBudget();
@@ -390,7 +252,7 @@ public class VolatileGlobalCellCache implements Cache
 		{
 			synchronized ( entry )
 			{
-				if ( entry.data.isValid() )
+				if ( entry.getValue().isValid() )
 					return;
 				enqueueEntry( entry, priority, enqueuToFront );
 				final long t0 = stats.getIoNanoTime();
@@ -410,7 +272,7 @@ public class VolatileGlobalCellCache implements Cache
 			enqueueEntry( entry, priority, enqueuToFront );
 	}
 
-	private void loadEntryWithCacheHints( final Entry< ?, ? > entry, final CacheHints cacheHints )
+	private void loadEntryWithCacheHints( final VolatileCacheEntry< ?, ? > entry, final CacheHints cacheHints )
 	{
 		switch ( cacheHints.getLoadingStrategy() )
 		{
@@ -422,14 +284,14 @@ public class VolatileGlobalCellCache implements Cache
 			while ( true )
 				try
 				{
-					loadEntryIfNotValid( entry );
+					entry.loadIfNotValid();
 					break;
 				}
 				catch ( final InterruptedException e )
 				{}
 			break;
 		case BUDGETED:
-			if ( !entry.data.isValid() )
+			if ( !entry.getValue().isValid() )
 				loadOrEnqueue( entry, cacheHints.getQueuePriority(), cacheHints.isEnqueuToFront() );
 			break;
 		case DONTLOAD:
@@ -473,18 +335,16 @@ public class VolatileGlobalCellCache implements Cache
 	 */
 	public < V extends VolatileCacheValue > V getGlobalIfCached( final Key key, final CacheHints cacheHints )
 	{
-		final Reference< Entry< ?, ? > > ref = softReferenceCache.get( key );
-		if ( ref != null )
+		final VolatileCacheEntry< Key, V > entry = volatileCache.get( key );
+		if ( entry != null )
 		{
-			final Entry< ?, ? > entry = ref.get();
-			if ( entry != null )
-			{
-				loadEntryWithCacheHints( entry, cacheHints );
-				return ( V ) entry.data;
-			}
+			loadEntryWithCacheHints( entry, cacheHints );
+			return entry.getValue();
 		}
 		return null;
 	}
+
+	private final Object cacheLock = new Object();
 
 	/**
 	 * Create a new cell with the specified coordinates, if it isn't in the
@@ -521,24 +381,20 @@ public class VolatileGlobalCellCache implements Cache
 	 */
 	public < K, V extends VolatileCacheValue > V createGlobal( final K key, final CacheHints cacheHints, final VolatileCacheValueLoader< K, V > cacheLoader )
 	{
-		Entry< K, V > entry = null;
+		VolatileCacheEntry< K, V > entry = null;
 
-		synchronized ( softReferenceCache )
+		synchronized ( cacheLock )
 		{
-			final Reference< Entry< ?, ? > > ref = softReferenceCache.get( key );
-			if ( ref != null )
-				entry = ( Entry< K, V > ) ref.get(); // TODO: try to let softRefCache be Reference< ? extends Entry< ?, ? > > type
-
+			entry = volatileCache.get( key );
 			if ( entry == null )
 			{
 				final V value = cacheLoader.createEmptyValue( key );
-				entry = new Entry< K, V >( key, value, cacheLoader );
-				softReferenceCache.put( key, new MyWeakReference< K >( entry, finalizeQueue ) );
+				entry = volatileCache.put( key, value, cacheLoader );
 			}
 		}
 
 		loadEntryWithCacheHints( entry, cacheHints );
-		return entry.data;
+		return entry.getValue();
 	}
 
 	/**
@@ -554,7 +410,7 @@ public class VolatileGlobalCellCache implements Cache
 	public void prepareNextFrame()
 	{
 		queue.clear();
-		finalizeRemovedCacheEntries();
+		volatileCache.finalizeRemovedCacheEntries();
 		++currentQueueFrame;
 	}
 
@@ -594,17 +450,12 @@ public class VolatileGlobalCellCache implements Cache
 	 */
 	public void clearCache()
 	{
-		for ( final Reference< Entry< ?, ? > > ref : softReferenceCache.values() )
-			ref.clear();
-		softReferenceCache.clear();
+		// TODO: we should only clear out our own cache entries not the entire global cache!
+		volatileCache.clearCache();
 		prepareNextFrame();
 		// TODO: add a full clear to BlockingFetchQueues.
 		// (BlockingFetchQueues.clear() moves stuff to the prefetchQueue.)
 	}
-
-
-
-
 
 	public static class CacheArrayLoaderWrapper< A extends VolatileAccess > implements VolatileCacheValueLoader< Key, VolatileCell< A > >
 	{
