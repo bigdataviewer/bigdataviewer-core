@@ -11,6 +11,11 @@ import bdv.img.cache.VolatileGlobalCellCache;
 
 public class SoftRefVolatileCacheImp implements VolatileCache
 {
+	public static VolatileCache getInstance()
+	{
+		return instance;
+	}
+
 	@Override
 	public < K, V extends VolatileCacheValue >
 		VolatileCacheEntry< K, V > put( final K key, final V value, final VolatileCacheValueLoader< K, V > loader )
@@ -194,4 +199,9 @@ public class SoftRefVolatileCacheImp implements VolatileCache
 	private final ConcurrentHashMap< Object, Reference< Entry< ?, ? > > > softReferenceCache = new ConcurrentHashMap< Object, Reference< Entry< ?, ? > > >();
 
 	private final ReferenceQueue< Entry< ?, ? > > finalizeQueue = new ReferenceQueue< Entry< ?, ? > >();
+
+	private SoftRefVolatileCacheImp()
+	{}
+
+	private static SoftRefVolatileCacheImp instance = new SoftRefVolatileCacheImp();
 }

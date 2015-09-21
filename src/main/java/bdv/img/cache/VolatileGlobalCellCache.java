@@ -104,7 +104,7 @@ public class VolatileGlobalCellCache implements Cache
 		}
 	}
 
-	protected VolatileCache volatileCache = new SoftRefVolatileCacheImp();
+	protected VolatileCache volatileCache = SoftRefVolatileCacheImp.getInstance();
 
 	protected final BlockingFetchQueues< Object > queue;
 
