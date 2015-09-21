@@ -17,9 +17,9 @@ public class SoftRefVolatileCacheImp implements VolatileCache
 	{
 		final Entry< K, V > entry = new Entry< K, V >( key, value, loader );
 		if ( value.isValid() )
-			softReferenceCache.put( key, new SoftRefVolatileCacheImp.MySoftReference< K >( entry, finalizeQueue ) );
+			softReferenceCache.put( key, new MySoftReference< K >( entry, finalizeQueue ) );
 		else
-			softReferenceCache.put( key, new SoftRefVolatileCacheImp.MyWeakReference< K >( entry, finalizeQueue ) );
+			softReferenceCache.put( key, new MyWeakReference< K >( entry, finalizeQueue ) );
 		return entry;
 	}
 
@@ -74,7 +74,7 @@ public class SoftRefVolatileCacheImp implements VolatileCache
 				final Reference< ? extends Entry< ?, ? > > poll = finalizeQueue.poll();
 				if ( poll == null )
 					break;
-				final Object key = ( ( SoftRefVolatileCacheImp.GetKey< ? > ) poll ).getKey();
+				final Object key = ( ( GetKey< ? > ) poll ).getKey();
 				final Reference< Entry< ?, ? > > ref = softReferenceCache.get( key );
 				if ( ref == poll )
 					softReferenceCache.remove( key );
@@ -155,7 +155,7 @@ public class SoftRefVolatileCacheImp implements VolatileCache
 		public K getKey();
 	}
 
-	private static class MySoftReference< K > extends SoftReference< Entry< ?, ? > > implements SoftRefVolatileCacheImp.GetKey< K >
+	private static class MySoftReference< K > extends SoftReference< Entry< ?, ? > > implements GetKey< K >
 	{
 		private final K key;
 
@@ -172,7 +172,7 @@ public class SoftRefVolatileCacheImp implements VolatileCache
 		}
 	}
 
-	private static class MyWeakReference< K > extends WeakReference< Entry< ?, ? > > implements SoftRefVolatileCacheImp.GetKey< K >
+	private static class MyWeakReference< K > extends WeakReference< Entry< ?, ? > > implements GetKey< K >
 	{
 		private final K key;
 
