@@ -28,12 +28,12 @@
  */
 package bdv.img.cache;
 
-
 /**
- * This is the part of the {@link VolatileGlobalCellCache} interface that is exposed
- * to the renderer directly (that is, not via images). It comprises methods to
- * control cache behavior. If the renderer is used without
- * {@link VolatileGlobalCellCache}, these can be simply implemented to do nothing.
+ * This is the part of the {@link VolatileGlobalCellCache} interface that is
+ * exposed to the renderer directly (that is, not via images). It comprises
+ * methods to control cache behavior. If the renderer is used without
+ * {@link VolatileGlobalCellCache}, these can be simply implemented to do
+ * nothing.
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
