@@ -1,10 +1,13 @@
-package bdv.img.cache;
+package bdv.cache;
 
 import java.lang.ref.Reference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.ConcurrentHashMap;
+
+import bdv.img.cache.VolatileCell;
+import bdv.img.cache.VolatileGlobalCellCache;
 
 public class SoftRefVolatileCacheImp implements VolatileCache
 {
@@ -25,7 +28,7 @@ public class SoftRefVolatileCacheImp implements VolatileCache
 		VolatileCacheEntry< K, V > get( final K key )
 	{
 		final Reference< Entry< ?, ? > > ref = softReferenceCache.get( key );
-			return ref == null ? null : ( VolatileCacheEntry< K, V > ) ref.get();
+			return ref == null ? null : (bdv.cache.VolatileCacheEntry< K, V > ) ref.get();
 	}
 
 	/**

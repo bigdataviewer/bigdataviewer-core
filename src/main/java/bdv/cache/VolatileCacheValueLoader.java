@@ -1,4 +1,4 @@
-package bdv.img.cache;
+package bdv.cache;
 
 /**
  * Loader that can create {@link VolatileCacheValue} for a given key.

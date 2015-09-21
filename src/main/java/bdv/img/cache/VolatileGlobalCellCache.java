@@ -30,6 +30,11 @@ package bdv.img.cache;
 
 import java.util.ArrayList;
 
+import bdv.cache.SoftRefVolatileCacheImp;
+import bdv.cache.VolatileCache;
+import bdv.cache.VolatileCacheEntry;
+import bdv.cache.VolatileCacheValue;
+import bdv.cache.VolatileCacheValueLoader;
 import bdv.img.cache.CacheIoTiming.IoStatistics;
 import bdv.img.cache.CacheIoTiming.IoTimeBudget;
 import bdv.img.cache.VolatileImgCells.CellCache;

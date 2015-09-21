@@ -1,4 +1,4 @@
-package bdv.img.cache;
+package bdv.cache;
 
 /**
  * Value (or placeholder for value) that is stored in a cache may be initially
