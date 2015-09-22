@@ -28,10 +28,22 @@
  */
 package bdv.img.cache;
 
-import bdv.cache.VolatileCacheValue;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 import net.imglib2.img.cell.AbstractCell;
+import net.imglib2.img.cell.CellImg;
+import net.imglib2.type.Type;
+import bdv.cache.VolatileCacheValue;
 
+/**
+ * A {@link AbstractCell} that with volatile data. Note that these cells can be
+ * used in {@link CellImg}s of non-volatile {@link Type} as well, if it is
+ * ensured that the data is always valid.
+ *
+ * @param <A>
+ *            type of access to the cell's data.
+ *
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+ */
 @SuppressWarnings( "serial" )
 public class VolatileCell< A extends VolatileAccess > extends AbstractCell< A > implements VolatileCacheValue
 {
