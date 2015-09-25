@@ -263,13 +263,6 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 		return cache;
 	}
 
-	// TODO: remove
-	@Deprecated
-	public MipmapInfo getMipmapInfo( final int setupId )
-	{
-		return getSetupImgLoader( setupId ).getMipmapInfo();
-	}
-
 	/**
 	 * Checks whether the given image data is present in the hdf5. Missing data
 	 * may be caused by missing partition files

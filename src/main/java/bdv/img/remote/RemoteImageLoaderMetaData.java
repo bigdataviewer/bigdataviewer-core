@@ -60,7 +60,7 @@ public class RemoteImageLoaderMetaData
 		for ( final BasicViewSetup setup : setups )
 		{
 			final int setupId = setup.getId();
-			final MipmapInfo info = imgLoader.getMipmapInfo( setupId );
+			final MipmapInfo info = imgLoader.getSetupImgLoader( setupId ).getMipmapInfo();
 			perSetupMipmapInfo.put( setupId, info );
 
 			final int numLevels = info.getNumLevels();

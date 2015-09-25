@@ -41,7 +41,7 @@ public class PrintSequenceMipmapInfo
 				System.out.println( "    normalized voxel scale:" );
 				for ( int level = 0; level < numLevels; ++level )
 				{
-					final MipmapInfo mipmapInfo = imgLoader.getMipmapInfo( setupId );
+					final MipmapInfo mipmapInfo = imgLoader.getSetupImgLoader( setupId ).getMipmapInfo();
 					final double[] res = mipmapInfo.getResolutions()[ level ];
 					final double[] voxelScale = new double[ 3 ];
 					for ( int d = 0; d < 3; ++d )
