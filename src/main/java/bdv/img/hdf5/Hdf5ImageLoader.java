@@ -12,6 +12,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
+import mpicbg.spim.data.generic.sequence.BasicMultiResolutionImgLoader;
+import mpicbg.spim.data.generic.sequence.BasicMultiResolutionSetupImgLoader;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.sequence.Angle;
 import mpicbg.spim.data.sequence.Channel;
@@ -57,7 +59,7 @@ import bdv.util.MipmapTransforms;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
 
-public class Hdf5ImageLoader implements ViewerImgLoader, ImgLoader, MultiResolutionImgLoader
+public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 {
 	protected File hdf5File;
 
@@ -379,7 +381,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, ImgLoader, MultiResolut
 		return new MonolithicImageLoader();
 	}
 
-	public class MonolithicImageLoader implements ViewerImgLoader, ImgLoader, MultiResolutionImgLoader
+	public class MonolithicImageLoader implements ViewerImgLoader, ImgLoader, BasicMultiResolutionImgLoader
 	{
 		private final HashMap< Integer, MonolithicSetupImgLoader > setupImgLoaders;
 
@@ -516,7 +518,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, ImgLoader, MultiResolut
 			return setupImgLoaders.get( setupId );
 		}
 
-		public class MonolithicSetupImgLoader extends AbstractViewerSetupImgLoader< UnsignedShortType, VolatileUnsignedShortType > implements MultiResolutionSetupImgLoader< UnsignedShortType >
+		public class MonolithicSetupImgLoader extends AbstractViewerSetupImgLoader< UnsignedShortType, VolatileUnsignedShortType > implements BasicMultiResolutionSetupImgLoader< UnsignedShortType >
 		{
 			private final int setupId;
 
@@ -730,7 +732,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, ImgLoader, MultiResolut
 		return setupImgLoaders.get( setupId );
 	}
 
-	public class SetupImgLoader extends AbstractViewerSetupImgLoader< UnsignedShortType, VolatileUnsignedShortType > implements MultiResolutionSetupImgLoader< UnsignedShortType >
+	public class SetupImgLoader extends AbstractViewerSetupImgLoader< UnsignedShortType, VolatileUnsignedShortType > implements BasicMultiResolutionSetupImgLoader< UnsignedShortType >
 	{
 		private final int setupId;
 
