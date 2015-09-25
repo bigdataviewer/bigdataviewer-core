@@ -6,6 +6,7 @@ import java.util.List;
 
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
+import mpicbg.spim.data.generic.sequence.ImgLoaderHint;
 import mpicbg.spim.data.sequence.TimePoint;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
@@ -157,7 +158,7 @@ public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T
 		}
 
 		@Override
-		public RandomAccessibleInterval< T > getImage( final int timepointId, final int level )
+		public RandomAccessibleInterval< T > getImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 		{
 			final ViewLevelId id = new ViewLevelId( timepointId, setupId, level );
 			final CachedCellImg< T, A > img = prepareCachedImage( id, LoadingStrategy.BLOCKING );
@@ -167,7 +168,7 @@ public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T
 		}
 
 		@Override
-		public RandomAccessibleInterval< V > getVolatileImage( final int timepointId, final int level )
+		public RandomAccessibleInterval< V > getVolatileImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 		{
 			final ViewLevelId id = new ViewLevelId( timepointId, setupId, level );
 			final CachedCellImg< V, A > img = prepareCachedImage( id, LoadingStrategy.BUDGETED );

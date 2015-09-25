@@ -7,6 +7,7 @@ import mpicbg.spim.data.generic.AbstractSpimData;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicImgLoader;
 import mpicbg.spim.data.generic.sequence.BasicSetupImgLoader;
+import mpicbg.spim.data.generic.sequence.ImgLoaderHint;
 import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
@@ -103,15 +104,15 @@ public class WrapBasicImgLoader implements ViewerImgLoader
 		}
 
 		@Override
-		public RandomAccessibleInterval< T > getImage( final int timepointId )
+		public RandomAccessibleInterval< T > getImage( final int timepointId, final ImgLoaderHint... hints )
 		{
-			return source.getImage( timepointId );
+			return source.getImage( timepointId, hints );
 		}
 
 		@Override
-		public RandomAccessibleInterval< T > getImage( final int timepointId, final int level )
+		public RandomAccessibleInterval< T > getImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 		{
-			return source.getImage( timepointId );
+			return source.getImage( timepointId, hints );
 		}
 
 		@Override
@@ -121,7 +122,7 @@ public class WrapBasicImgLoader implements ViewerImgLoader
 		}
 
 		@Override
-		public RandomAccessibleInterval< V > getVolatileImage( final int timepointId, final int level )
+		public RandomAccessibleInterval< V > getVolatileImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 		{
 			throw new UnsupportedOperationException();
 		}

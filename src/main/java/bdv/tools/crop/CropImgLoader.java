@@ -8,6 +8,7 @@ import java.util.Map.Entry;
 
 import mpicbg.spim.data.generic.sequence.BasicImgLoader;
 import mpicbg.spim.data.generic.sequence.BasicSetupImgLoader;
+import mpicbg.spim.data.generic.sequence.ImgLoaderHint;
 import mpicbg.spim.data.sequence.ImgLoader;
 import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.Interval;
@@ -143,7 +144,7 @@ public class CropImgLoader implements BasicImgLoader
 		}
 
 		@Override
-		public RandomAccessibleInterval< T > getImage( final int timepointId )
+		public RandomAccessibleInterval< T > getImage( final int timepointId, final ImgLoaderHint... hints )
 		{
 			return cropView( timepointId ).getA();
 		}

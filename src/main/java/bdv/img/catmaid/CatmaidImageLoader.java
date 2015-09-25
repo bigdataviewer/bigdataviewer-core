@@ -1,5 +1,6 @@
 package bdv.img.catmaid;
 
+import mpicbg.spim.data.generic.sequence.ImgLoaderHint;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.NativeImg;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
@@ -216,7 +217,7 @@ public class CatmaidImageLoader extends AbstractViewerSetupImgLoader< ARGBType, 
 	}
 
 	@Override
-	public RandomAccessibleInterval< ARGBType > getImage( final int timepointId, final int level )
+	public RandomAccessibleInterval< ARGBType > getImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 	{
 		final CachedCellImg< ARGBType, VolatileIntArray >  img = prepareCachedImage( timepointId, 0, level, LoadingStrategy.BLOCKING );
 		final ARGBType linkedType = new ARGBType( img );
@@ -225,7 +226,7 @@ public class CatmaidImageLoader extends AbstractViewerSetupImgLoader< ARGBType, 
 	}
 
 	@Override
-	public RandomAccessibleInterval< VolatileARGBType > getVolatileImage( final int timepointId, final int level )
+	public RandomAccessibleInterval< VolatileARGBType > getVolatileImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 	{
 		final CachedCellImg< VolatileARGBType, VolatileIntArray >  img = prepareCachedImage( timepointId, 0, level, LoadingStrategy.VOLATILE );
 		final VolatileARGBType linkedType = new VolatileARGBType( img );

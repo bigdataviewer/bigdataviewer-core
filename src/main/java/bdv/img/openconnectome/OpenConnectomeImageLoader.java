@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 
+import mpicbg.spim.data.generic.sequence.ImgLoaderHint;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.NativeImg;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileByteArray;
@@ -100,9 +101,9 @@ public class OpenConnectomeImageLoader extends AbstractViewerSetupImgLoader< Uns
 	{
 		final Gson gson = new Gson();
 		final URL url = new URL( baseUrl + "/" + token + "/info/" );
-		
+
 		System.out.println( "Fetching token from " + url );
-		
+
 		return gson.fromJson( new InputStreamReader( url.openStream() ), OpenConnectomeTokenInfo.class );
 	}
 
@@ -178,7 +179,7 @@ public class OpenConnectomeImageLoader extends AbstractViewerSetupImgLoader< Uns
 	}
 
 	@Override
-	public RandomAccessibleInterval< UnsignedByteType > getImage( final int timepointId, final int level )
+	public RandomAccessibleInterval< UnsignedByteType > getImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 	{
 		final CachedCellImg< UnsignedByteType, VolatileByteArray > img = prepareCachedImage( timepointId, 0, level, LoadingStrategy.BLOCKING );
 		final UnsignedByteType linkedType = new UnsignedByteType( img );
@@ -187,7 +188,7 @@ public class OpenConnectomeImageLoader extends AbstractViewerSetupImgLoader< Uns
 	}
 
 	@Override
-	public RandomAccessibleInterval< VolatileUnsignedByteType > getVolatileImage( final int timepointId, final int level )
+	public RandomAccessibleInterval< VolatileUnsignedByteType > getVolatileImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 	{
 		final CachedCellImg< VolatileUnsignedByteType, VolatileByteArray > img = prepareCachedImage( timepointId, 0, level, LoadingStrategy.VOLATILE );
 		final VolatileUnsignedByteType linkedType = new VolatileUnsignedByteType( img );

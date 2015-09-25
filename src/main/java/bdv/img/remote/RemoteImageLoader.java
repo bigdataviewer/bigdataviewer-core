@@ -5,6 +5,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.HashMap;
 
+import mpicbg.spim.data.generic.sequence.ImgLoaderHint;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.NativeImg;
@@ -201,7 +202,7 @@ public class RemoteImageLoader implements ViewerImgLoader
 		}
 
 		@Override
-		public RandomAccessibleInterval< UnsignedShortType > getImage( final int timepointId, final int level )
+		public RandomAccessibleInterval< UnsignedShortType > getImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 		{
 			final ViewLevelId id = new ViewLevelId( timepointId, setupId, level );
 			if ( ! existsImageData( id ) )
@@ -218,7 +219,7 @@ public class RemoteImageLoader implements ViewerImgLoader
 		}
 
 		@Override
-		public RandomAccessibleInterval< VolatileUnsignedShortType > getVolatileImage( final int timepointId, final int level )
+		public RandomAccessibleInterval< VolatileUnsignedShortType > getVolatileImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 		{
 			final ViewLevelId id = new ViewLevelId( timepointId, setupId, level );
 			if ( ! existsImageData( id ) )
