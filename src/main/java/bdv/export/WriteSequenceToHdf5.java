@@ -285,19 +285,6 @@ public class WriteSequenceToHdf5
 		hdf5Writer.close();
 	}
 
-	public static void writeHdf5PartitionFile(
-			final AbstractSequenceDescription< ?, ?, ? > seq,
-			final Map< Integer, ExportMipmapInfo > perSetupMipmapInfo,
-			final boolean deflate,
-			final Partition partition,
-			final LoopbackHeuristic loopbackHeuristic,
-			final AfterEachPlane afterEachPlane,
-			final ProgressWriter progressWriter )
-	{
-		final int numThreads = Math.max( 1, Runtime.getRuntime().availableProcessors() - 2 );
-		writeHdf5PartitionFile( seq, perSetupMipmapInfo, deflate, partition, loopbackHeuristic, afterEachPlane, numThreads, progressWriter );
-	}
-
 	/**
 	 * Create a hdf5 partition file containing image data for a subset of views
 	 * and timepoints in a chunked, mipmaped representation.
@@ -985,6 +972,25 @@ public class WriteSequenceToHdf5
 	{
 		final int numThreads = Math.max( 1, Runtime.getRuntime().availableProcessors() - 2 );
 		writeHdf5File( seq, resolutions, subdivisions, deflate, hdf5File, loopbackHeuristic, afterEachPlane, numThreads, progressWriter );
+	}
+
+	/**
+	 * DEPRECATED. Use
+	 * {@link #writeHdf5PartitionFile(AbstractSequenceDescription, Map, boolean, Partition, LoopbackHeuristic, AfterEachPlane, int, ProgressWriter)}
+	 * instead.
+	 */
+	@Deprecated
+	public static void writeHdf5PartitionFile(
+			final AbstractSequenceDescription< ?, ?, ? > seq,
+			final Map< Integer, ExportMipmapInfo > perSetupMipmapInfo,
+			final boolean deflate,
+			final Partition partition,
+			final LoopbackHeuristic loopbackHeuristic,
+			final AfterEachPlane afterEachPlane,
+			final ProgressWriter progressWriter )
+	{
+		final int numThreads = Math.max( 1, Runtime.getRuntime().availableProcessors() - 2 );
+		writeHdf5PartitionFile( seq, perSetupMipmapInfo, deflate, partition, loopbackHeuristic, afterEachPlane, numThreads, progressWriter );
 	}
 
 	/**
