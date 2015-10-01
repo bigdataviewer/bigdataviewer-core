@@ -44,7 +44,7 @@ public class VolatileGlobalCellCache implements Cache
 {
 	private final int maxNumLevels;
 
-	static class Key
+	public static class Key
 	{
 		private final int timepoint;
 
