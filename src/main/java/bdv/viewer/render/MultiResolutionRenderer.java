@@ -222,7 +222,7 @@ public class MultiResolutionRenderer
 	/**
 	 * TODO
 	 */
-	protected final AccumulateProjectorFactory accumulateProjectorFactory;
+	protected final AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory;
 
 	/**
 	 * Controls IO budgeting and fetcher queue.
@@ -293,7 +293,7 @@ public class MultiResolutionRenderer
 			final int numRenderingThreads,
 			final ExecutorService renderingExecutorService,
 			final boolean useVolatileIfAvailable,
-			final AccumulateProjectorFactory accumulateProjectorFactory,
+			final AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory,
 			final Cache cache )
 	{
 		this.display = wrapTransformAwareRenderTarget( display );

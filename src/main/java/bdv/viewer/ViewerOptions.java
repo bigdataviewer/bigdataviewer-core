@@ -1,6 +1,7 @@
 package bdv.viewer;
 
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.ui.TransformEventHandler3D;
 import net.imglib2.ui.TransformEventHandlerFactory;
 import bdv.viewer.animate.MessageOverlayAnimator;
@@ -136,7 +137,7 @@ public class ViewerOptions
 	 *            factory for creating {@link AccumulateProjector}.
 	 * @see MultiResolutionRenderer
 	 */
-	public ViewerOptions accumulateProjectorFactory( final AccumulateProjectorFactory f )
+	public ViewerOptions accumulateProjectorFactory( final AccumulateProjectorFactory< ARGBType > f )
 	{
 		values.accumulateProjectorFactory = f;
 		return this;
@@ -165,7 +166,7 @@ public class ViewerOptions
 
 		private TransformEventHandlerFactory< AffineTransform3D > transformEventHandlerFactory = TransformEventHandler3D.factory();
 
-		private AccumulateProjectorFactory accumulateProjectorFactory = AccumulateProjectorARGB.factory;
+		private AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory = AccumulateProjectorARGB.factory;
 
 		public ViewerOptions optionsFromValues()
 		{
@@ -227,7 +228,7 @@ public class ViewerOptions
 			return transformEventHandlerFactory;
 		}
 
-		public AccumulateProjectorFactory getAccumulateProjectorFactory()
+		public AccumulateProjectorFactory< ARGBType > getAccumulateProjectorFactory()
 		{
 			return accumulateProjectorFactory;
 		}
