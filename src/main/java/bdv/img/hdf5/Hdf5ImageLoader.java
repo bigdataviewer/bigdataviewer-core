@@ -263,6 +263,12 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 		return cache;
 	}
 
+	public Hdf5VolatileShortArrayLoader getShortArrayLoader()
+	{
+		open();
+		return shortLoader;
+	}
+
 	/**
 	 * Checks whether the given image data is present in the hdf5. Missing data
 	 * may be caused by missing partition files
