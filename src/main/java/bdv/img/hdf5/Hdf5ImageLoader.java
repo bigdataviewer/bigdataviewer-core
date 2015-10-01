@@ -108,10 +108,10 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 	 * @param hdf5File
 	 * @param hdf5Partitions
 	 * @param sequenceDescription
-	 *            the {@link AbstractSequenceDescription}. When
-	 *            {@link #getImage(ViewId) loading} images, this may be used to
-	 *            retrieve additional information for a {@link ViewId}, such as
-	 *            setup name, {@link Angle}, {@link Channel}, etc.
+	 *            the {@link AbstractSequenceDescription}. When loading images,
+	 *            this may be used to retrieve additional information for a
+	 *            {@link ViewId}, such as setup name, {@link Angle},
+	 *            {@link Channel}, etc.
 	 */
 	public Hdf5ImageLoader( final File hdf5File, final ArrayList< Partition > hdf5Partitions, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
 	{

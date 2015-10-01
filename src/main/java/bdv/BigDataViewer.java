@@ -585,7 +585,7 @@ public class BigDataViewer
 	}
 
 	/**
-	 * Deprecated, please use {@link #open(String, String, ProgressWriter)} instead.
+	 * Deprecated, please use {@link #open(String, String, ProgressWriter, ViewerOptions)} instead.
 	 */
 	@Deprecated
 	public BigDataViewer( final String xmlFilename, final String windowTitle, final ProgressWriter progressWriter ) throws SpimDataException
@@ -596,7 +596,7 @@ public class BigDataViewer
 	}
 
 	/**
-	 * Deprecated, please use {@link #open(AbstractSpimData, String, ProgressWriter)} instead.
+	 * Deprecated, please use {@link #open(AbstractSpimData, String, ProgressWriter, ViewerOptions)} instead.
 	 */
 	@Deprecated
 	public BigDataViewer( final AbstractSpimData< ? > spimData, final String windowTitle, final ProgressWriter progressWriter )
@@ -649,7 +649,7 @@ public class BigDataViewer
 	}
 
 	/**
-	 * Deprecated, please use {@link #open(String, String, ProgressWriter)} instead.
+	 * Deprecated, please use {@link #open(String, String, ProgressWriter, ViewerOptions)} instead.
 	 */
 	@Deprecated
 	public static void view( final String filename, final ProgressWriter progressWriter ) throws SpimDataException

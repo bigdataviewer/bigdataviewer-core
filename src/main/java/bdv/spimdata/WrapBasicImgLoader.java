@@ -8,7 +8,6 @@ import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicImgLoader;
 import mpicbg.spim.data.generic.sequence.BasicSetupImgLoader;
 import mpicbg.spim.data.generic.sequence.ImgLoaderHint;
-import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -23,9 +22,10 @@ public class WrapBasicImgLoader implements ViewerImgLoader
 	 * {@link ViewerImgLoader}, then replace it with a wrapper that presents it
 	 * as {@link ViewerImgLoader}.
 	 *
-	 * However, note that trying to call {@link #getVolatileImage(ViewId, int)}
-	 * or {@link #getVolatileImageType()} on the wrapper will throw an
-	 * {@link UnsupportedOperationException}.
+	 * However, note that trying to call
+	 * {@link ViewerSetupImgLoader#getVolatileImage(int, int, ImgLoaderHint...)}
+	 * or {@link ViewerSetupImgLoader#getVolatileImageType()} on the wrapper
+	 * will throw an {@link UnsupportedOperationException}.
 	 *
 	 * @param spimData
 	 * @return {@code true} if wrapping was necessary, {@code false} if

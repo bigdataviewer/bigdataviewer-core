@@ -37,10 +37,6 @@ public class ViewerFrame extends JFrame
 
 	/**
 	 *
-	 * @param width
-	 *            width of the display window.
-	 * @param height
-	 *            height of the display window.
 	 * @param sources
 	 *            the {@link SourceAndConverter sources} to display.
 	 * @param numTimePoints

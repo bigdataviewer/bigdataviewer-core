@@ -196,7 +196,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 * @param cache
 	 *            to control IO budgeting and fetcher queue.
 	 * @param optional
-	 *            optional parameters. See {@link #options()}.
+	 *            optional parameters. See {@link ViewerOptions#options()}.
 	 */
 	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimePoints, final Cache cache, final ViewerOptions optional )
 	{
