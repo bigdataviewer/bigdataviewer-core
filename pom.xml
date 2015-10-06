@@ -10,6 +10,8 @@
 
 	<artifactId>bigdataviewer-core</artifactId>
 	<version>1.2.3-SNAPSHOT</version>
+	<url>http://github.com/bigdataviewer/bigdataviewer-core</url>
+	<inceptionYear>2012</inceptionYear>
 
 	<name>BigDataViewer Core</name>
 	<description>BigDataViewer core classes with minimal dependencies</description>
@@ -73,9 +75,40 @@
 	</repositories>
 
 	<scm>
-		<connection>scm:git:git://github.com/tpietzsch/bigdataviewer-core</connection>
-		<developerConnection>scm:git:git@github.com:tpietzsch/bigdataviewer-core</developerConnection>
+		<connection>scm:git:git://github.com/bigdataviewer/bigdataviewer-core</connection>
+		<developerConnection>scm:git:git@github.com:bigdataviewer/bigdataviewer-core</developerConnection>
 		<tag>HEAD</tag>
-		<url>https://github.com/tpietzsch/bigdataviewer-core</url>
+		<url>https://github.com/bigdataviewer/bigdataviewer-core</url>
 	</scm>
+	<ciManagement>
+		<system>Jenkins</system>
+		<url>http://jenkins.imagej.net/job/BigDataViewer-Core/</url>
+	</ciManagement>
+
+	<licenses>
+		<license>
+			<name>BSD 2-Clause License</name>
+			<url>http://opensource.org/licenses/BSD-2-Clause</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>license-maven-plugin</artifactId>
+				<configuration>
+					<licenseName>bsd_2</licenseName>
+					<copyrightOwners>Tobias Pietzsch, Stephan Saalfeld, Stephan Preibisch,
+Jean-Yves Tinevez, HongKee Moon, Johannes Schindelin, Curtis Rueden</copyrightOwners>
+					<organizationName>BigDataViewer authors</organizationName>
+					<projectName>BigDataViewer core classes with minimal dependencies</projectName>
+					<roots>
+						<root>src/main/java</root>
+						<root>src/test/java</root>
+					</roots>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
 </project>
