@@ -1,13 +1,5 @@
 package bdv.img.catmaid;
 
-import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.NativeImg;
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
-import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.type.volatiles.VolatileARGBType;
-import net.imglib2.util.Fraction;
 import bdv.AbstractViewerSetupImgLoader;
 import bdv.ViewerImgLoader;
 import bdv.ViewerSetupImgLoader;
@@ -17,14 +9,18 @@ import bdv.img.cache.LoadingStrategy;
 import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.img.cache.VolatileImgCells;
 import bdv.img.cache.VolatileImgCells.CellCache;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.NativeImg;
+import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
+import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.ARGBType;
+import net.imglib2.type.volatiles.VolatileARGBType;
+import net.imglib2.util.Fraction;
 
 public class CatmaidImageLoader extends AbstractViewerSetupImgLoader< ARGBType, VolatileARGBType > implements ViewerImgLoader
 {
 	private final int numScales;
-
-	private final int tileWidth;
-
-	private final int tileHeight;
 
 	private final double[][] mipmapResolutions;
 
@@ -34,7 +30,7 @@ public class CatmaidImageLoader extends AbstractViewerSetupImgLoader< ARGBType, 
 
 	private final int[][] blockDimensions;
 
-	private final VolatileGlobalCellCache cache;
+	private VolatileGlobalCellCache cache;
 
 	private final CatmaidVolatileIntArrayLoader loader;
 
@@ -63,8 +59,6 @@ public class CatmaidImageLoader extends AbstractViewerSetupImgLoader< ARGBType, 
 	{
 		super( new ARGBType(), new VolatileARGBType() );
 		this.numScales = blockDimensions.length;
-		this.tileWidth = tileWidth;
-		this.tileHeight = tileHeight;
 
 		mipmapResolutions = new double[ numScales ][];
 		imageDimensions = new long[ numScales ][];
@@ -249,5 +243,10 @@ public class CatmaidImageLoader extends AbstractViewerSetupImgLoader< ARGBType, 
 	public int numMipmapLevels()
 	{
 		return numScales;
+	}
+	
+	public void setCache( final VolatileGlobalCellCache cache )
+	{
+		this.cache = cache;
 	}
 }

@@ -8,8 +8,8 @@ import java.net.URL;
 
 import javax.imageio.ImageIO;
 
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
 import bdv.img.cache.CacheArrayLoader;
+import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
 
 public class CatmaidVolatileIntArrayLoader implements CacheArrayLoader< VolatileIntArray >
 {
@@ -98,13 +98,14 @@ public class CatmaidVolatileIntArrayLoader implements CacheArrayLoader< Volatile
 				try
 				{
 					final String urlString = String.format( urlFormat, level, scale, x, y, z, tileWidth, tileHeight, r, c );
+//					System.out.println( urlString );
 					final URL url = new URL( urlString );
 					final BufferedImage tile = ImageIO.read( url );
 					g2d.drawImage( tile, ( int )( x - min[ 0 ] ), ( int )( y - min[ 1 ] ), null );
 				}
 				catch (final IOException e)
 				{
-//					System.out.println( "failed loading r=" + r + " c=" + c );
+					System.out.println( "failed loading r=" + r + " c=" + c );
 				}
 			}
 		}
@@ -164,8 +165,8 @@ public class CatmaidVolatileIntArrayLoader implements CacheArrayLoader< Volatile
 		final double scale = 1.0 / Math.pow(2.0, level);
 		final int[] slice = new int[ w * h ];
 
-		final long c0 = ( long )( min[ 0 ] / tileWidth );
-		final long r0 = ( long )( min[ 1 ] / tileHeight );
+		final long c0 = min[ 0 ] / tileWidth;
+		final long r0 = min[ 1 ] / tileHeight;
 		final long x0 = c0 * tileWidth;
 		final long y0 = r0 * tileHeight;
 
