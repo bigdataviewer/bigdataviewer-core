@@ -33,18 +33,8 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.HashMap;
 
-import mpicbg.spim.data.generic.sequence.ImgLoaderHint;
-import net.imglib2.FinalInterval;
-import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.NativeImg;
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
-import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.type.volatiles.VolatileUnsignedShortType;
-import net.imglib2.util.Fraction;
-import net.imglib2.util.IntervalIndexer;
-import net.imglib2.view.Views;
+import com.google.gson.GsonBuilder;
+
 import bdv.AbstractViewerSetupImgLoader;
 import bdv.ViewerImgLoader;
 import bdv.img.cache.CacheHints;
@@ -57,8 +47,18 @@ import bdv.img.hdf5.DimsAndExistence;
 import bdv.img.hdf5.MipmapInfo;
 import bdv.img.hdf5.ViewLevelId;
 import bdv.util.ConstantRandomAccessible;
-
-import com.google.gson.GsonBuilder;
+import mpicbg.spim.data.generic.sequence.ImgLoaderHint;
+import net.imglib2.FinalInterval;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.NativeImg;
+import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
+import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.type.volatiles.VolatileUnsignedShortType;
+import net.imglib2.util.Fraction;
+import net.imglib2.util.IntervalIndexer;
+import net.imglib2.view.Views;
 
 public class RemoteImageLoader implements ViewerImgLoader
 {
@@ -245,6 +245,8 @@ public class RemoteImageLoader implements ViewerImgLoader
 			img.setLinkedType( linkedType );
 			return img;
 		}
+		
+		
 
 		@Override
 		public RandomAccessibleInterval< VolatileUnsignedShortType > getVolatileImage( final int timepointId, final int level, final ImgLoaderHint... hints )

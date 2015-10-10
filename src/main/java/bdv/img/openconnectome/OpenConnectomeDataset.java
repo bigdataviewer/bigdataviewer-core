@@ -37,9 +37,8 @@ public class OpenConnectomeDataset implements Serializable
 
 	public HashMap< String, int[] > cube_dimension;
 	public String description;
-	public HashMap< String, long[] > imagesize;
-	public HashMap< String, Long > neariso_scaledown;
-	public HashMap< String, long[] > offset;
+	public HashMap< String, long[] > neariso_imagesize;
+	public HashMap< String, double[] > neariso_offset;
 	public long[] resolutions;
-	public HashMap< String, double[] > voxelres;
+	public HashMap< String, double[] > neariso_voxelres;
 }

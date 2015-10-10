@@ -41,28 +41,17 @@ public class OpenConnectomeTokenInfo implements Serializable
 	
 	public long[][] getLevelDimensions( final String mode )
 	{
-		final long[][] levelDimensions = new long[ dataset.imagesize.size() ][ 3 ];
+		final long[][] levelDimensions = new long[ dataset.resolutions.length ][ 3 ];
 
 		if ( mode.equals( "neariso" ) )
 		{
-			final double zScale0 = dataset.voxelres.get( "0" )[ 2 ];
-			for ( int i = 0; i < dataset.imagesize.size(); ++i )
-			{
-				final long[] xyz = dataset.imagesize.get( new Integer( i ).toString() );
-				final double[] voxelres = dataset.voxelres.get( new Integer( i ).toString() );
-				levelDimensions[ i ][ 0 ] = xyz[ 0 ];
-				levelDimensions[ i ][ 1 ] = xyz[ 1 ];
-//				levelDimensions[ i ][ 2 ] = ( long )( xyz[ 2 ] * zScale0 / voxelres[ 2 ] );
-				levelDimensions[ i ][ 2 ] = ( long ) ( xyz[ 2 ] * zScale0 / dataset.neariso_scaledown.get( new Integer( i ).toString() ) / voxelres[ 2 ] );
-			}
+			for ( int i = 0; i < dataset.resolutions.length; ++i )
+				levelDimensions[ i ] = dataset.neariso_imagesize.get( new Integer( i ).toString() ).clone();
 		}
 		else
 		{
-			for ( int i = 0; i < dataset.imagesize.size(); ++i )
-			{
-				final long[] xyz = dataset.imagesize.get( new Integer( i ).toString() );
-				levelDimensions[ i ] = xyz.clone();
-			}
+			for ( int i = 0; i < dataset.resolutions.length; ++i )
+				levelDimensions[ i ] = dataset.imagesize.get( new Integer( i ).toString() ).clone();
 		}
 
 		return levelDimensions;
@@ -80,32 +69,32 @@ public class OpenConnectomeTokenInfo implements Serializable
 	public double[][] getLevelScales( final String mode )
 	{
 		final double[][] levelScales = new double[ dataset.resolutions.length ][ 3 ];
-		long s = 1;
-		final double zScale0 = dataset.voxelres.get( "0" )[ 2 ];
+		final double zScale0 = dataset.neariso_voxelres.get( "0" )[ 2 ];
 		if ( mode.equals( "neariso" ) )
 		{
-			for ( int i = 0; i < dataset.neariso_scaledown.size(); ++i, s <<= 1 )
-			{
-				levelScales[ i ][ 0 ] = s;
-				levelScales[ i ][ 1 ] = s;
-				levelScales[ i ][ 2 ] = zScale0 * dataset.neariso_scaledown.get( new Integer( i ).toString() );
-			}
+			for ( int i = 0; i < dataset.resolutions.length; ++i )
+				levelScales[ i ] = dataset.neariso_voxelres.get( new Integer( i ).toString() ).clone();
 		}
 		else
 		{
-			for ( int i = 0; i < dataset.resolutions.length; ++i, s <<= 1 )
+			for ( int i = 0; i < dataset.resolutions.length; ++i )
 			{
-				levelScales[ i ][ 0 ] = s;
-				levelScales[ i ][ 1 ] = s;
-				levelScales[ i ][ 2 ] = zScale0 * s;
+				levelScales[ i ] = dataset.voxelres.get( new Integer( i ).toString() ).clone();
 			}
 		}
 
 		return levelScales;
 	}
 	
-	public long getMinZ()
+	public long getOffsets( final String mode )
 	{
+		final double[][] offsets = new double[ dataset.resolutions.length ][];
+		if ( mode.equals( "neariso" ) )
+		{
+			for ( int i = 0; i < dataset.resolutions.length; ++i )
+				offset
+			
+		}
 		return dataset.offset.get( "0" )[ 2 ];
 	}
 	

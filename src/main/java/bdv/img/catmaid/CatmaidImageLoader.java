@@ -28,15 +28,6 @@
  */
 package bdv.img.catmaid;
 
-import mpicbg.spim.data.generic.sequence.ImgLoaderHint;
-import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.NativeImg;
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
-import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.type.volatiles.VolatileARGBType;
-import net.imglib2.util.Fraction;
 import bdv.AbstractViewerSetupImgLoader;
 import bdv.ViewerImgLoader;
 import bdv.ViewerSetupImgLoader;
@@ -46,6 +37,15 @@ import bdv.img.cache.LoadingStrategy;
 import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.img.cache.VolatileImgCells;
 import bdv.img.cache.VolatileImgCells.CellCache;
+import mpicbg.spim.data.generic.sequence.ImgLoaderHint;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.NativeImg;
+import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
+import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.ARGBType;
+import net.imglib2.type.volatiles.VolatileARGBType;
+import net.imglib2.util.Fraction;
 
 public class CatmaidImageLoader extends AbstractViewerSetupImgLoader< ARGBType, VolatileARGBType > implements ViewerImgLoader
 {
@@ -246,7 +246,7 @@ public class CatmaidImageLoader extends AbstractViewerSetupImgLoader< ARGBType, 
 		img.setLinkedType( linkedType );
 		return img;
 	}
-
+	
 	@Override
 	public RandomAccessibleInterval< VolatileARGBType > getVolatileImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 	{
