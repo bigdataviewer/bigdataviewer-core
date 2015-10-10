@@ -26,15 +26,29 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package bdv;
+package bdv.spimdata.legacy;
 
-import mpicbg.spim.data.generic.sequence.BasicMultiResolutionImgLoader;
+import mpicbg.spim.data.legacy.LegacyBasicImgLoader;
+import mpicbg.spim.data.sequence.ViewId;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.Volatile;
+import net.imglib2.realtransform.AffineTransform3D;
 import bdv.img.cache.Cache;
 
-public interface ViewerImgLoader extends BasicMultiResolutionImgLoader
+//@Deprecated
+public interface LegacyViewerImgLoader< T, V extends Volatile< T > > extends LegacyBasicImgLoader< T >
 {
-	@Override
-	public ViewerSetupImgLoader< ?, ? > getSetupImgLoader( final int setupId );
+	public RandomAccessibleInterval< T > getImage( final ViewId view, final int level );
+
+	public RandomAccessibleInterval< V > getVolatileImage( final ViewId view, final int level );
+
+	public V getVolatileImageType();
+
+	public double[][] getMipmapResolutions( final int setupId );
+
+	public AffineTransform3D[] getMipmapTransforms( final int setupId );
+
+	public int numMipmapLevels( final int setupId );
 
 	public Cache getCache();
 }
