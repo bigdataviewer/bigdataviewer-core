@@ -2,11 +2,11 @@ package bdv.img.catmaid;
 
 import java.io.File;
 
+import org.jdom2.Element;
+
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.ImgLoaderIo;
 import mpicbg.spim.data.generic.sequence.XmlIoBasicImgLoader;
-
-import org.jdom2.Element;
 
 @ImgLoaderIo( format = "catmaid", type = CatmaidImageLoader.class )
 public class XmlIoCatmaidImageLoader
@@ -32,7 +32,17 @@ public class XmlIoCatmaidImageLoader
 
 		final int tileWidth = Integer.parseInt( elem.getChildText( "tileWidth" ) );
 		final int tileHeight = Integer.parseInt( elem.getChildText( "tileHeight" ) );
-
+		
+		final String blockWidthString = elem.getChildText( "blockWidth" );
+		final String blockHeightString = elem.getChildText( "blockHeight" );
+		final String blockDepthString = elem.getChildText( "blockDepth" );
+		
+		final int blockWidth = blockWidthString == null ? tileWidth : Integer.parseInt( blockWidthString );
+		final int blockHeight = blockHeightString == null ? tileHeight : Integer.parseInt( blockHeightString );
+		final int blockDepth = blockDepthString == null ? 1 : Integer.parseInt( blockDepthString );
+		
+		System.out.println( String.format( "Block size = (%d, %d, %d)", blockWidth, blockHeight, blockDepth ) );
+		
 		final String numScalesString = elem.getChildText( "numScales" );
 		int numScales;
 		if ( numScalesString == null )
@@ -40,6 +50,18 @@ public class XmlIoCatmaidImageLoader
 		else
 			numScales = Integer.parseInt( numScalesString );
 
-		return new CatmaidImageLoader( width, height, depth, resZ / resXY, numScales, urlFormat, tileWidth, tileHeight );
+		final int[][] blockSize = new int[ numScales ][];
+		for ( int i = 0; i < numScales; ++i )
+			blockSize[ i ] = new int[]{ blockWidth, blockHeight, blockDepth };
+		
+		return new CatmaidImageLoader(
+				width,
+				height,
+				depth,
+				resZ / resXY,
+				urlFormat,
+				tileWidth,
+				tileHeight,
+				blockSize );
 	}
 }
