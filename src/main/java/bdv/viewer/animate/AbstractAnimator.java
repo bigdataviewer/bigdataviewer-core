@@ -33,7 +33,7 @@ import bdv.viewer.ViewerFrame;
 /**
  * Mother abstract class for animators that can animate the current view in a
  * {@link ViewerFrame} instance. The time unit for animation duration, start time
- * and current time is not specified, or example you can use <b>ms</b> obtained
+ * and current time is not specified, for example you can use <b>ms</b> obtained
  * from {@link System#currentTimeMillis()} or a frame number when rendering
  * movies.
  *
