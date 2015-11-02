@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -50,7 +50,20 @@ public class MergePartitionList
 		return partitions;
 	}
 
+	/**
+	 * Return map from setup id to {@link ExportMipmapInfo} for the
+	 * {@link Hdf5ImageLoader} of the specified
+	 * {@link AbstractSequenceDescription}.
+	 *
+	 * @param seq
+	 *            a sequence.
+	 * @return map from setup id to {@link ExportMipmapInfo}.
+	 * @throws IllegalArgumentException
+	 *             if the specified {@link AbstractSequenceDescription} does not
+	 *             have an {@link Hdf5ImageLoader}.
+	 */
 	public static Map< Integer, ExportMipmapInfo > getHdf5PerSetupExportMipmapInfos( final AbstractSequenceDescription< ?, ?, ? > seq )
+			throws IllegalArgumentException
 	{
 		final Hdf5ImageLoader imgLoader = getHdf5ImageLoader( seq );
 		final HashMap< Integer, ExportMipmapInfo > perSetupMipmapInfo = new HashMap< Integer, ExportMipmapInfo >();
@@ -62,7 +75,20 @@ public class MergePartitionList
 		return perSetupMipmapInfo;
 	}
 
-	private static ArrayList< Partition > getPartitions( final AbstractSequenceDescription< ?, ?, ? > seq )
+	/**
+	 * Get the {@link Partition} list for the {@link Hdf5ImageLoader} of the
+	 * specified {@link AbstractSequenceDescription}. If the dataset is not
+	 * partitioned, a single partition containing the full dataset is created.
+	 *
+	 * @param seq
+	 *            a sequence.
+	 * @return partition list of the specified sequence.
+	 * @throws IllegalArgumentException
+	 *             if the specified {@link AbstractSequenceDescription} does not
+	 *             have an {@link Hdf5ImageLoader}.
+	 */
+	public static ArrayList< Partition > getPartitions( final AbstractSequenceDescription< ?, ?, ? > seq )
+			throws IllegalArgumentException
 	{
 		// create partition list for existing dataset
 		final Hdf5ImageLoader imgLoader = getHdf5ImageLoader( seq );
@@ -85,7 +111,20 @@ public class MergePartitionList
 		return partitions;
 	}
 
-	private static Hdf5ImageLoader getHdf5ImageLoader( final AbstractSequenceDescription< ?, ?, ? > seq )
+	/**
+	 * Get the {@link Hdf5ImageLoader} of a {@link AbstractSequenceDescription},
+	 * or throw an exception if the sequence doesn't have an
+	 * {@link Hdf5ImageLoader}.
+	 *
+	 * @param seq
+	 *            a sequence.
+	 * @return the {@link Hdf5ImageLoader} of the sequence.
+	 * @throws IllegalArgumentException
+	 *             if the specified {@link AbstractSequenceDescription} does not
+	 *             have an {@link Hdf5ImageLoader}.
+	 */
+	public static Hdf5ImageLoader getHdf5ImageLoader( final AbstractSequenceDescription< ?, ?, ? > seq )
+			throws IllegalArgumentException
 	{
 		final BasicImgLoader imgLoader = seq.getImgLoader();
 		if ( imgLoader instanceof Hdf5ImageLoader )
