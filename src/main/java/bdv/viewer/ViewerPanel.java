@@ -907,7 +907,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	}
 
 	/**
-	 * Stop the {@link #painterThread} and unsubscribe as a cache consumer.
+	 * Stop the {@link #painterThread} and shutdown rendering {@link ExecutorService}.
 	 */
 	public void stop()
 	{
