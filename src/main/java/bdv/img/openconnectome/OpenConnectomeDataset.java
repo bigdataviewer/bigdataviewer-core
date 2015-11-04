@@ -35,9 +35,9 @@ import java.util.HashMap;
 /**
  * An openconnecto.me dataset as specified by example at
  *
- * {@linkplain http://openconnecto.me/ocp/ca/bock11/info/}
+ * <a href="http://openconnecto.me/ocp/ca/bock11/info/">http://openconnecto.me/ocp/ca/bock11/info/</a>
  *
- * @author Stephan Saalfeld <saalfelds@janelia.hhmi.org>
+ * @author Stephan Saalfeld &lt;saalfelds@janelia.hhmi.org&gt;
  */
 public class OpenConnectomeDataset implements Serializable
 {
