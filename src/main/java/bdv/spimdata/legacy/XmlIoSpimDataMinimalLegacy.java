@@ -36,6 +36,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jdom2.Element;
+
+import bdv.img.catmaid.XmlIoCatmaidImageLoader;
+import bdv.img.hdf5.Hdf5ImageLoader;
+import bdv.img.hdf5.Partition;
+import bdv.img.openconnectome.XmlIoOpenConnectomeImageLoader;
+import bdv.img.remote.XmlIoRemoteImageLoader;
+import bdv.spimdata.SequenceDescriptionMinimal;
+import bdv.spimdata.SpimDataMinimal;
 import mpicbg.spim.data.XmlHelpers;
 import mpicbg.spim.data.generic.sequence.BasicImgLoader;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
@@ -53,16 +62,6 @@ import mpicbg.spim.data.sequence.VoxelDimensions;
 import net.imglib2.Dimensions;
 import net.imglib2.FinalDimensions;
 import net.imglib2.realtransform.AffineTransform3D;
-
-import org.jdom2.Element;
-
-import bdv.img.catmaid.XmlIoCatmaidImageLoader;
-import bdv.img.hdf5.Hdf5ImageLoader;
-import bdv.img.hdf5.Partition;
-import bdv.img.openconnectome.XmlIoOpenConnectomeImageLoader;
-import bdv.img.remote.XmlIoRemoteImageLoader;
-import bdv.spimdata.SequenceDescriptionMinimal;
-import bdv.spimdata.SpimDataMinimal;
 
 public class XmlIoSpimDataMinimalLegacy
 {
@@ -185,12 +184,6 @@ public class XmlIoSpimDataMinimalLegacy
 		{
 			return new XmlIoRemoteImageLoader().fromXml( elem, basePath, sequenceDescription );
 		}
-		// TODO add back when KNOSSOS backend has been converted to
-		// general block per file backend and moved into BDV
-//		else if ( classn.equals( "bdv.img.knossos.KnossosImageLoader" ) )
-//		{
-//			return new XmlIoKnossosUnsignedByteImageLoader().fromXml( elem, basePath, sequenceDescription );
-//		}
 		else
 			throw new RuntimeException( "unknown ImageLoader class" );
 	}
