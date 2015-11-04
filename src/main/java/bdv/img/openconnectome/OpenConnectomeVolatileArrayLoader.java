@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -35,8 +35,8 @@ import java.net.URL;
 import java.util.zip.DataFormatException;
 import java.util.zip.Inflater;
 
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileByteArray;
 import bdv.img.cache.CacheArrayLoader;
+import net.imglib2.img.basictypeaccess.volatiles.array.VolatileByteArray;
 
 public class OpenConnectomeVolatileArrayLoader implements CacheArrayLoader< VolatileByteArray >
 {
@@ -63,7 +63,7 @@ public class OpenConnectomeVolatileArrayLoader implements CacheArrayLoader< Vola
 	 * 		<a href="http://openconnecto.me/ocp/ca">http://openconnecto.me/ocp/ca</a>
 	 * @param token e.g. "kasthuri11"
 	 * @param mode z-scaling mode, either of [null, "", "neariso"]
-	 * @param zMin first z-index
+	 * @param zMin first z-index at scale level 0
 	 */
 	public OpenConnectomeVolatileArrayLoader(
 			final String baseUrl,
@@ -123,7 +123,7 @@ public class OpenConnectomeVolatileArrayLoader implements CacheArrayLoader< Vola
 		url.append( "/" );
 		url.append( min[ 1 ] );
 		url.append( "," );
-		url.append( min[ 1 ] +  + dimensions[ 1 ] );
+		url.append( min[ 1 ] + dimensions[ 1 ] );
 		url.append( "/" );
 		url.append( z );
 		url.append( "," );

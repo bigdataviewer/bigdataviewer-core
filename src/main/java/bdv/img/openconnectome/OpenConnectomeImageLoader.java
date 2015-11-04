@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -32,6 +32,20 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonSyntaxException;
+
+import bdv.AbstractViewerSetupImgLoader;
+import bdv.ViewerImgLoader;
+import bdv.ViewerSetupImgLoader;
+import bdv.img.cache.Cache;
+import bdv.img.cache.CacheHints;
+import bdv.img.cache.CachedCellImg;
+import bdv.img.cache.LoadingStrategy;
+import bdv.img.cache.VolatileGlobalCellCache;
+import bdv.img.cache.VolatileImgCells;
+import bdv.img.cache.VolatileImgCells.CellCache;
 import mpicbg.spim.data.generic.sequence.ImgLoaderHint;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.NativeImg;
@@ -43,20 +57,6 @@ import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.volatiles.VolatileARGBType;
 import net.imglib2.type.volatiles.VolatileUnsignedByteType;
 import net.imglib2.util.Fraction;
-import bdv.AbstractViewerSetupImgLoader;
-import bdv.ViewerImgLoader;
-import bdv.ViewerSetupImgLoader;
-import bdv.img.cache.Cache;
-import bdv.img.cache.CacheHints;
-import bdv.img.cache.CachedCellImg;
-import bdv.img.cache.LoadingStrategy;
-import bdv.img.cache.VolatileGlobalCellCache;
-import bdv.img.cache.VolatileImgCells;
-import bdv.img.cache.VolatileImgCells.CellCache;
-
-import com.google.gson.Gson;
-import com.google.gson.JsonIOException;
-import com.google.gson.JsonSyntaxException;
 
 public class OpenConnectomeImageLoader extends AbstractViewerSetupImgLoader< UnsignedByteType, VolatileUnsignedByteType > implements ViewerImgLoader
 {
@@ -88,7 +88,13 @@ public class OpenConnectomeImageLoader extends AbstractViewerSetupImgLoader< Uns
 		mipmapTransforms = info.getLevelTransforms( mode );
 
 		cache = new VolatileGlobalCellCache( 1, 1, numScales, 10 );
-		loader = new OpenConnectomeVolatileArrayLoader( baseUrl, token, mode, info.getMinZ() );
+		System.out.println( info.getOffsets( mode )[ 0 ][ 2 ] + " " + imageDimensions[ 0 ][ 2 ] );
+
+		loader = new OpenConnectomeVolatileArrayLoader(
+				baseUrl,
+				token,
+				mode,
+				Math.round( info.getOffsets( mode )[ 0 ][ 2 ] ) );
 	}
 
 	/**

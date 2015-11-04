@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -31,6 +31,14 @@ package bdv.img.openconnectome;
 import java.io.Serializable;
 import java.util.HashMap;
 
+
+/**
+ * An openconnecto.me dataset as specified by example at
+ *
+ * {@linkplain http://openconnecto.me/ocp/ca/bock11/info/}
+ *
+ * @author Stephan Saalfeld <saalfelds@janelia.hhmi.org>
+ */
 public class OpenConnectomeDataset implements Serializable
 {
 	private static final long serialVersionUID = 7020249341572881545L;
@@ -38,8 +46,10 @@ public class OpenConnectomeDataset implements Serializable
 	public HashMap< String, int[] > cube_dimension;
 	public String description;
 	public HashMap< String, long[] > imagesize;
-	public HashMap< String, Long > neariso_scaledown;
-	public HashMap< String, long[] > offset;
-	public long[] resolutions;
-	public HashMap< String, double[] > voxelres;
+	public HashMap< String, long[] > neariso_imagesize;
+	public HashMap< String, double[] > offset;
+	public HashMap< String, double[] > neariso_offset;
+	public int[] resolutions;
+	public HashMap< String, long[] > voxelres;
+	public HashMap< String, long[] > neariso_voxelres;
 }
