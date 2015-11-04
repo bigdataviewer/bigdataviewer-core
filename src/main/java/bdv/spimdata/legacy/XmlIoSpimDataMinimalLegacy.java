@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -36,15 +36,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
-import org.jdom2.Element;
-
-import bdv.img.catmaid.XmlIoCatmaidImageLoader;
-import bdv.img.hdf5.Hdf5ImageLoader;
-import bdv.img.hdf5.Partition;
-import bdv.img.openconnectome.XmlIoOpenConnectomeImageLoader;
-import bdv.img.remote.XmlIoRemoteImageLoader;
-import bdv.spimdata.SequenceDescriptionMinimal;
-import bdv.spimdata.SpimDataMinimal;
 import mpicbg.spim.data.XmlHelpers;
 import mpicbg.spim.data.generic.sequence.BasicImgLoader;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
@@ -62,6 +53,16 @@ import mpicbg.spim.data.sequence.VoxelDimensions;
 import net.imglib2.Dimensions;
 import net.imglib2.FinalDimensions;
 import net.imglib2.realtransform.AffineTransform3D;
+
+import org.jdom2.Element;
+
+import bdv.img.catmaid.XmlIoCatmaidImageLoader;
+import bdv.img.hdf5.Hdf5ImageLoader;
+import bdv.img.hdf5.Partition;
+import bdv.img.openconnectome.XmlIoOpenConnectomeImageLoader;
+import bdv.img.remote.XmlIoRemoteImageLoader;
+import bdv.spimdata.SequenceDescriptionMinimal;
+import bdv.spimdata.SpimDataMinimal;
 
 public class XmlIoSpimDataMinimalLegacy
 {
