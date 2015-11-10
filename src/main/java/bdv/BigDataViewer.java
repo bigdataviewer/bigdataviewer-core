@@ -521,7 +521,7 @@ public class BigDataViewer
 		return setupAssignments;
 	}
 
-	protected boolean tryLoadSettings( final String xmlFilename )
+	public boolean tryLoadSettings( final String xmlFilename )
 	{
 		proposedSettingsFile = null;
 		if( xmlFilename.startsWith( "http://" ) )
