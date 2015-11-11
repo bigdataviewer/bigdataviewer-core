@@ -191,6 +191,14 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	protected final CopyOnWriteArrayList< TransformListener< AffineTransform3D > > lastRenderTransformListeners;
 
 	/**
+	 * These listeners will be notified about changes to the current timepoint
+	 * {@link ViewerState#getCurrentTimepoint()}. This is done <em>before</em>
+	 * calling {@link #requestRepaint()} so listeners have the chance to
+	 * interfere.
+	 */
+	protected final CopyOnWriteArrayList< TimePointListener > timePointListeners;
+
+	/**
 	 * Current animator for viewer transform, or null. This is for example used
 	 * to make smooth transitions when {@link #align(AlignPlane) aligning to
 	 * orthogonal planes}.
@@ -293,6 +301,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 		transformListeners = new CopyOnWriteArrayList< TransformListener< AffineTransform3D > >();
 		lastRenderTransformListeners = new CopyOnWriteArrayList< TransformListener< AffineTransform3D > >();
+		timePointListeners = new CopyOnWriteArrayList< TimePointListener >();
 
 		msgOverlay = options.getMsgOverlay();
 
@@ -653,6 +662,8 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		{
 			state.setCurrentTimepoint( timepoint );
 			sliderTime.setValue( timepoint );
+			for ( final TimePointListener l : timePointListeners )
+				l.timePointChanged( timepoint );
 			requestRepaint();
 		}
 	}
@@ -732,12 +743,11 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 * @param listener
 	 *            the transform listener to add.
 	 */
-	public synchronized void addRenderTransformListener( final TransformListener< AffineTransform3D > listener )
+	public void addRenderTransformListener( final TransformListener< AffineTransform3D > listener )
 	{
 		renderTarget.addTransformListener( listener );
 	}
 
-	/**
 	/**
 	 * Add a {@link TransformListener} to notify about viewer transformation
 	 * changes. Listeners will be notified when a new image has been painted
@@ -764,7 +774,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 * @param listener
 	 *            the transform listener to add.
 	 */
-	public synchronized void addTransformListener( final TransformListener< AffineTransform3D > listener )
+	public void addTransformListener( final TransformListener< AffineTransform3D > listener )
 	{
 		addTransformListener( listener, Integer.MAX_VALUE );
 	}
@@ -795,13 +805,60 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 * @param listener
 	 *            the transform listener to remove.
 	 */
-	public synchronized void removeTransformListener( final TransformListener< AffineTransform3D > listener )
+	public void removeTransformListener( final TransformListener< AffineTransform3D > listener )
 	{
 		synchronized ( transformListeners )
 		{
 			transformListeners.remove( listener );
 		}
 		renderTarget.removeTransformListener( listener );
+	}
+
+	/**
+	 * Add a {@link TimePointListener} to notify about time-point
+	 * changes. Listeners will be notified <em>before</em> calling
+	 * {@link #requestRepaint()} so they have the chance to interfere.
+	 *
+	 * @param listener
+	 *            the listener to add.
+	 */
+	public void addTimePointListener( final TimePointListener listener )
+	{
+		addTimePointListener( listener, Integer.MAX_VALUE );
+	}
+
+	/**
+	 * Add a {@link TimePointListener} to notify about time-point
+	 * changes. Listeners will be notified <em>before</em> calling
+	 * {@link #requestRepaint()} so they have the chance to interfere.
+	 *
+	 * @param listener
+	 *            the listener to add.
+	 * @param index
+	 *            position in the list of listeners at which to insert this one.
+	 */
+	public void addTimePointListener( final TimePointListener listener, final int index )
+	{
+		synchronized ( timePointListeners )
+		{
+			final int s = timePointListeners.size();
+			timePointListeners.add( index < 0 ? 0 : index > s ? s : index, listener );
+			listener.timePointChanged( state.getCurrentTimepoint() );
+		}
+	}
+
+	/**
+	 * Remove a {@link TimePointListener}.
+	 *
+	 * @param listener
+	 *            the listener to remove.
+	 */
+	public void removeTimePointListener( final TimePointListener listener )
+	{
+		synchronized ( timePointListeners )
+		{
+			timePointListeners.remove( listener );
+		}
 	}
 
 	protected class MouseCoordinateListener implements MouseMotionListener, MouseListener
