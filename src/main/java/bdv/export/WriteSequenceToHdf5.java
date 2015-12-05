@@ -377,7 +377,7 @@ public class WriteSequenceToHdf5
 		Collections.sort( setupIdsSequence );
 
 		// get the BasicImgLoader that supplies the images
-		final BasicImgLoader imgLoader = ( BasicImgLoader ) seq.getImgLoader();
+		final BasicImgLoader imgLoader = seq.getImgLoader();
 
 		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() ) {
 			final Object type = imgLoader.getSetupImgLoader( setup.getId() ).getImageType();
