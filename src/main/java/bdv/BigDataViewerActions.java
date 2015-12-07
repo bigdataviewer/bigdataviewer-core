@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -33,11 +33,10 @@ import java.awt.event.ActionEvent;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
 
+import bdv.behaviour.KeyStrokeAdder;
 import bdv.tools.ToggleDialogAction;
 import bdv.util.AbstractNamedAction;
 import bdv.util.AbstractNamedAction.NamedActionAdder;
-import bdv.util.KeyProperties;
-import bdv.util.KeyProperties.KeyStrokeAdder;
 import bdv.viewer.InputActionBindings;
 
 public class BigDataViewerActions
@@ -69,16 +68,16 @@ public class BigDataViewerActions
 	public static void installActionBindings(
 			final InputActionBindings inputActionBindings,
 			final BigDataViewer bdv,
-			final KeyProperties keyProperties )
+			final KeyStrokeAdder.Factory keyProperties )
 	{
 		inputActionBindings.addActionMap( "bdv", createActionMap( bdv ) );
 		inputActionBindings.addInputMap( "bdv", createInputMap( keyProperties ) );
 	}
 
-	public static InputMap createInputMap( final KeyProperties keyProperties )
+	public static InputMap createInputMap( final KeyStrokeAdder.Factory keyProperties )
 	{
 		final InputMap inputMap = new InputMap();
-		final KeyStrokeAdder map = keyProperties.adder( inputMap );
+		final KeyStrokeAdder map = keyProperties.keyStrokeAdder( inputMap );
 
 		map.put( BRIGHTNESS_SETTINGS, "S" );
 		map.put( VISIBILITY_AND_GROUPING, "F6" );

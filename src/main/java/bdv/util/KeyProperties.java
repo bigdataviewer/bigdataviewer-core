@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -41,7 +41,9 @@ import java.util.Set;
 import javax.swing.InputMap;
 import javax.swing.KeyStroke;
 
-public final class KeyProperties
+import bdv.behaviour.KeyStrokeAdder;
+
+public final class KeyProperties implements KeyStrokeAdder.Factory
 {
 	private final HashSet< KeyStroke > allKeys;
 
@@ -112,23 +114,25 @@ public final class KeyProperties
 		return allKeys;
 	}
 
-	public KeyStrokeAdder adder( final InputMap map )
+	@Override
+	public KeyStrokeAdder keyStrokeAdder( final InputMap map, final String ... contexts )
 	{
-		return new KeyStrokeAdder( map, this );
+		return new KeyStrokeAdderImp( map, this );
 	}
 
-	public static class KeyStrokeAdder
+	public static class KeyStrokeAdderImp implements KeyStrokeAdder
 	{
 		private final InputMap map;
 
 		private final KeyProperties config;
 
-		public KeyStrokeAdder( final InputMap map, final KeyProperties config )
+		public KeyStrokeAdderImp( final InputMap map, final KeyProperties config )
 		{
 			this.map = map;
 			this.config = config;
 		}
 
+		@Override
 		public void put( final String actionName, final KeyStroke ... defaultKeyStrokes )
 		{
 			final Set< KeyStroke > keys = config.getKeyStrokes( actionName );
@@ -141,6 +145,7 @@ public final class KeyProperties
 					map.put( key, actionName );
 		}
 
+		@Override
 		public void put( final String actionName, final String ... defaultKeyStrokes )
 		{
 			final KeyStroke[] keys = new KeyStroke[ defaultKeyStrokes.length ];
@@ -148,6 +153,12 @@ public final class KeyProperties
 			for ( final String s : defaultKeyStrokes )
 				keys[ i++ ] = KeyStroke.getKeyStroke( s );
 			put( actionName, keys );
+		}
+
+		@Override
+		public void put( final String actionName )
+		{
+			put( actionName, new KeyStroke[ 0 ] );
 		}
 	}
 
