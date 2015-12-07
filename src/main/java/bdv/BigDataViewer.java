@@ -30,7 +30,6 @@ package bdv;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -42,19 +41,6 @@ import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.filechooser.FileFilter;
-
-import mpicbg.spim.data.SpimDataException;
-import mpicbg.spim.data.generic.AbstractSpimData;
-import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
-import mpicbg.spim.data.generic.sequence.BasicViewSetup;
-import mpicbg.spim.data.sequence.Angle;
-import mpicbg.spim.data.sequence.Channel;
-import net.imglib2.Volatile;
-import net.imglib2.display.RealARGBColorConverter;
-import net.imglib2.display.ScaledARGBConverter;
-import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.volatiles.VolatileARGBType;
 
 import org.jdom2.Document;
 import org.jdom2.Element;
@@ -94,6 +80,18 @@ import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerFrame;
 import bdv.viewer.ViewerOptions;
 import bdv.viewer.ViewerPanel;
+import mpicbg.spim.data.SpimDataException;
+import mpicbg.spim.data.generic.AbstractSpimData;
+import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
+import mpicbg.spim.data.generic.sequence.BasicViewSetup;
+import mpicbg.spim.data.sequence.Angle;
+import mpicbg.spim.data.sequence.Channel;
+import net.imglib2.Volatile;
+import net.imglib2.display.RealARGBColorConverter;
+import net.imglib2.display.ScaledARGBConverter;
+import net.imglib2.type.numeric.ARGBType;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.volatiles.VolatileARGBType;
 
 public class BigDataViewer
 {
@@ -402,7 +400,7 @@ public class BigDataViewer
 			}
 		} );
 
-		final KeyStrokeAdder.Factory keyProperties = tryLoadKeyConfig();
+		final KeyStrokeAdder.Factory keyProperties = getKeyConfig( options );
 		NavigationActions.installActionBindings( viewerFrame.getKeybindings(), viewer, keyProperties );
 		BigDataViewerActions.installActionBindings( viewerFrame.getKeybindings(), this, keyProperties );
 
@@ -596,18 +594,10 @@ public class BigDataViewer
 		xout.output( doc, new FileWriter( xmlFilename ) );
 	}
 
-	protected KeyStrokeAdder.Factory tryLoadKeyConfig()
+	protected KeyStrokeAdder.Factory getKeyConfig( final ViewerOptions options )
 	{
-		try
-		{
-			final File file = new File( "/Users/pietzsch/Desktop/bdvkeyconfig.json" );
-			if ( file.exists() )
-				return new InputTriggerConfig(  JsonConfigIO.read( new FileReader( file ) ) );
-		} catch ( final IOException e )
-		{
-			System.err.println( e );
-		}
-		return KeyProperties.readPropertyFile();
+		final InputTriggerConfig conf = options.values.getInputTriggerConfig();
+		return conf != null ? conf : KeyProperties.readPropertyFile();
 	}
 
 	protected void loadSettings()
@@ -745,7 +735,13 @@ public class BigDataViewer
 		try
 		{
 			System.setProperty( "apple.laf.useScreenMenuBar", "true" );
-			open( fn, new File( fn ).getName(), new ProgressWriterConsole(), ViewerOptions.options() );
+
+			final InputTriggerConfig keyconf = new InputTriggerConfig( JsonConfigIO.read( "/Users/pietzsch/Desktop/bdvkeyconfig.json" ) );
+
+			open( fn, new File( fn ).getName(), new ProgressWriterConsole(),
+					ViewerOptions.options().
+						transformEventHandlerFactory( BehaviourTransformEventHandler3D.factory( keyconf ) ).
+						inputTriggerConfig( keyconf ) );
 		}
 		catch ( final Exception e )
 		{
