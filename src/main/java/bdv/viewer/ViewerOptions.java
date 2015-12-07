@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -32,6 +32,7 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.ui.TransformEventHandler3D;
 import net.imglib2.ui.TransformEventHandlerFactory;
+import bdv.behaviour.io.InputTriggerConfig;
 import bdv.viewer.animate.MessageOverlayAnimator;
 import bdv.viewer.render.AccumulateProjector;
 import bdv.viewer.render.AccumulateProjectorARGB;
@@ -172,6 +173,19 @@ public class ViewerOptions
 	}
 
 	/**
+	 * TODO javadoc
+	 * TODO is this config option necessary?
+	 *
+	 * @param c
+	 * @return
+	 */
+	public ViewerOptions inputTriggerConfig( final InputTriggerConfig c )
+	{
+		values.inputTriggerConfig = c;
+		return this;
+	}
+
+	/**
 	 * Read-only {@link ViewerOptions} values.
 	 */
 	public static class Values
@@ -196,6 +210,8 @@ public class ViewerOptions
 
 		private AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory = AccumulateProjectorARGB.factory;
 
+		private InputTriggerConfig inputTriggerConfig = null;
+
 		public ViewerOptions optionsFromValues()
 		{
 			return new ViewerOptions().
@@ -208,7 +224,8 @@ public class ViewerOptions
 				useVolatileIfAvailable( useVolatileIfAvailable ).
 				msgOverlay( msgOverlay ).
 				transformEventHandlerFactory( transformEventHandlerFactory ).
-				accumulateProjectorFactory( accumulateProjectorFactory );
+				accumulateProjectorFactory( accumulateProjectorFactory ).
+				inputTriggerConfig( inputTriggerConfig );
 		}
 
 		public int getWidth()
@@ -259,6 +276,11 @@ public class ViewerOptions
 		public AccumulateProjectorFactory< ARGBType > getAccumulateProjectorFactory()
 		{
 			return accumulateProjectorFactory;
+		}
+
+		public InputTriggerConfig getInputTriggerConfig()
+		{
+			return inputTriggerConfig;
 		}
 	}
 }
