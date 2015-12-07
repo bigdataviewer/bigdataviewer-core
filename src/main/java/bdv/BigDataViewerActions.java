@@ -77,7 +77,7 @@ public class BigDataViewerActions
 	public static InputMap createInputMap( final KeyStrokeAdder.Factory keyProperties )
 	{
 		final InputMap inputMap = new InputMap();
-		final KeyStrokeAdder map = keyProperties.keyStrokeAdder( inputMap );
+		final KeyStrokeAdder map = keyProperties.keyStrokeAdder( inputMap, "bdv" );
 
 		map.put( BRIGHTNESS_SETTINGS, "S" );
 		map.put( VISIBILITY_AND_GROUPING, "F6" );

@@ -72,7 +72,7 @@ public class NavigationActions
 	public static InputMap createInputMap( final KeyStrokeAdder.Factory keyProperties )
 	{
 		final InputMap inputMap = new InputMap();
-		final KeyStrokeAdder map = keyProperties.keyStrokeAdder( inputMap );
+		final KeyStrokeAdder map = keyProperties.keyStrokeAdder( inputMap, "bdv" );
 
 		map.put( TOGGLE_INTERPOLATION, "I" );
 		map.put( TOGGLE_FUSED_MODE, "F" );
