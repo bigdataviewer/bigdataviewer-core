@@ -18,6 +18,7 @@
 
 	<properties>
 		<enforcer.skip>true</enforcer.skip>
+		<scijava.jvm.version>1.8</scijava.jvm.version>
 	</properties>
 
 	<dependencies>
@@ -116,6 +117,13 @@ Jean-Yves Tinevez, HongKee Moon, Johannes Schindelin, Curtis Rueden</copyrightOw
 						<root>src/main/java</root>
 						<root>src/test/java</root>
 					</roots>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>1.8</source>
+					<target>1.8</target>
 				</configuration>
 			</plugin>
 		</plugins>
