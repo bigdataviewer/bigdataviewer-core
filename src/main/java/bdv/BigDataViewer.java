@@ -30,6 +30,7 @@ package bdv;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -62,6 +63,9 @@ import org.jdom2.input.SAXBuilder;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 
+import bdv.behaviour.KeyStrokeAdder;
+import bdv.behaviour.io.InputTriggerConfig;
+import bdv.behaviour.io.json.JsonConfigIO;
 import bdv.export.ProgressWriter;
 import bdv.export.ProgressWriterConsole;
 import bdv.img.cache.Cache;
@@ -398,7 +402,7 @@ public class BigDataViewer
 			}
 		} );
 
-		final KeyProperties keyProperties = KeyProperties.readPropertyFile();
+		final KeyStrokeAdder.Factory keyProperties = tryLoadKeyConfig();
 		NavigationActions.installActionBindings( viewerFrame.getKeybindings(), viewer, keyProperties );
 		BigDataViewerActions.installActionBindings( viewerFrame.getKeybindings(), this, keyProperties );
 
@@ -592,6 +596,20 @@ public class BigDataViewer
 		xout.output( doc, new FileWriter( xmlFilename ) );
 	}
 
+	protected KeyStrokeAdder.Factory tryLoadKeyConfig()
+	{
+		try
+		{
+			final File file = new File( "/Users/pietzsch/Desktop/bdvkeyconfig.json" );
+			if ( file.exists() )
+				return new InputTriggerConfig(  JsonConfigIO.read( new FileReader( file ) ) );
+		} catch ( final IOException e )
+		{
+			System.err.println( e );
+		}
+		return KeyProperties.readPropertyFile();
+	}
+
 	protected void loadSettings()
 	{
 		fileChooser.setSelectedFile( proposedSettingsFile );
@@ -700,13 +718,13 @@ public class BigDataViewer
 	{
 //		final String fn = "http://tomancak-mac-17.mpi-cbg.de:8080/openspim/";
 //		final String fn = "/Users/Pietzsch/Desktop/openspim/datasetHDF.xml";
-//		final String fn = "/Users/pietzsch/workspace/data/111010_weber_full.xml";
+		final String fn = "/Users/pietzsch/workspace/data/111010_weber_full.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/spimrec2/dataset.xml";
 //		final String fn = "/Users/pietzsch/Desktop/HisYFP-SPIM/dataset.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/bdv example/drosophila 2.xml";
 //		final String fn = "/Users/pietzsch/Desktop/data/clusterValia/140219-1/valia-140219-1.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/data/catmaid.xml";
-		final String fn = "src/main/resources/openconnectome-bock11-neariso.xml";
+//		final String fn = "src/main/resources/openconnectome-bock11-neariso.xml";
 //		final String fn = "/home/saalfeld/catmaid.xml";
 //		final String fn = "/home/saalfeld/catmaid-fafb00-v9.xml";
 //		final String fn = "/home/saalfeld/catmaid-fafb00-sample_A_cutout_3k.xml";
