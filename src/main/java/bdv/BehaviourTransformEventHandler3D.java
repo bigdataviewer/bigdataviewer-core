@@ -2,6 +2,7 @@ package bdv;
 
 import bdv.behaviour.Behaviour;
 import bdv.behaviour.BehaviourMap;
+import bdv.behaviour.ClickBehaviour;
 import bdv.behaviour.DragBehaviour;
 import bdv.behaviour.InputTriggerAdder;
 import bdv.behaviour.InputTriggerMap;
@@ -44,6 +45,12 @@ public class BehaviourTransformEventHandler3D extends MouseAndKeyHandler impleme
 	 */
 	protected TransformListener< AffineTransform3D > listener;
 
+	protected final BehaviourMap behaviourMap;
+
+	protected final InputTriggerMap inputMap;
+
+	protected final InputTriggerAdder inputAdder;
+
 	/**
 	 * Copy of {@link #affine current transform} when mouse dragging started.
 	 */
@@ -79,7 +86,6 @@ public class BehaviourTransformEventHandler3D extends MouseAndKeyHandler impleme
 		final double fastSpeed = 10.0;
 		final double slowSpeed = 0.1;
 
-
 		final String DRAG_ROTATE_NORMAL = "drag rotate normal";
 		final String DRAG_ROTATE_FAST = "drag rotate fast";
 		final String DRAG_ROTATE_SLOW = "drag rotate slow";
@@ -88,27 +94,61 @@ public class BehaviourTransformEventHandler3D extends MouseAndKeyHandler impleme
 		final String SCROLL_Z_FAST = "scroll browse z fast";
 		final String SCROLL_Z_SLOW = "scroll browse z slow";
 		final String ZOOM_NORMAL = "scroll zoom";
+		final String SELECT_AXIS_X = "axis x";
+		final String SELECT_AXIS_Y = "axis y";
+		final String SELECT_AXIS_Z = "axis z";
+		final String ROTATE_LEFT_NORMAL = "rotate left normal";
+		final String ROTATE_LEFT_FAST = "rotate left fast";
+		final String ROTATE_LEFT_SLOW = "rotate left slow";
+		final String ROTATE_RIGHT_NORMAL = "rotate right normal";
+		final String ROTATE_RIGHT_FAST = "rotate right fast";
+		final String ROTATE_RIGHT_SLOW = "rotate right slow";
+		final String KEY_ZOOM_IN_NORMAL = "zoom in normal";
+		final String KEY_ZOOM_IN_FAST = "zoom in fast";
+		final String KEY_ZOOM_IN_SLOW = "zoom in slow";
+		final String KEY_ZOOM_OUT_NORMAL = "zoom out normal";
+		final String KEY_ZOOM_OUT_FAST = "zoom out fast";
+		final String KEY_ZOOM_OUT_SLOW = "zoom out slow";
+		final String KEY_FORWARD_Z_NORMAL = "forward z normal";
+		final String KEY_FORWARD_Z_FAST = "forward z fast";
+		final String KEY_FORWARD_Z_SLOW = "forward z slow";
+		final String KEY_BACKWARD_Z_NORMAL = "backward z normal";
+		final String KEY_BACKWARD_Z_FAST = "backward z fast";
+		final String KEY_BACKWARD_Z_SLOW = "backward z slow";
 
-		final BehaviourMap behaviourMap = new BehaviourMap();
-		behaviourMap.put( DRAG_ROTATE_NORMAL, new Rotate( normalSpeed ) );
-		behaviourMap.put( DRAG_ROTATE_FAST, new Rotate( fastSpeed ) );
-		behaviourMap.put( DRAG_ROTATE_SLOW, new Rotate( slowSpeed ) );
-		behaviourMap.put( DRAG_TRANSLATE, new TranslateXY() );
-		behaviourMap.put( SCROLL_Z_NORMAL, new TranslateZ( normalSpeed ) );
-		behaviourMap.put( SCROLL_Z_FAST, new TranslateZ( fastSpeed ) );
-		behaviourMap.put( SCROLL_Z_SLOW, new TranslateZ( slowSpeed ) );
-		behaviourMap.put( ZOOM_NORMAL, new Zoom( normalSpeed ) );
+		behaviourMap = new BehaviourMap();
+		inputMap = new InputTriggerMap();
+		inputAdder = config.inputTriggerAdder( inputMap, "bdv" );
 
-		final InputTriggerMap inputMap = new InputTriggerMap();
-		final InputTriggerAdder map = config.inputTriggerAdder( inputMap, "bdv" );
-		map.put( DRAG_ROTATE_NORMAL, "button1" );
-		map.put( DRAG_ROTATE_FAST, "shift button1" );
-		map.put( DRAG_ROTATE_SLOW, "ctrl button1" );
-		map.put( DRAG_TRANSLATE, "button2", "button3" );
-		map.put( SCROLL_Z_NORMAL, "scroll" );
-		map.put( SCROLL_Z_FAST, "shift scroll" );
-		map.put( SCROLL_Z_SLOW, "ctrl scroll" );
-		map.put( ZOOM_NORMAL, "meta scroll", "ctrl shift scroll" );
+		new Rotate( normalSpeed, DRAG_ROTATE_NORMAL, "win button1" ).register();
+		new Rotate( fastSpeed, DRAG_ROTATE_FAST, "shift button1" ).register();
+		new Rotate( slowSpeed, DRAG_ROTATE_SLOW, "ctrl button1" ).register();
+		new TranslateXY( DRAG_TRANSLATE, "button2", "button3" ).register();
+		new TranslateZ( normalSpeed, SCROLL_Z_NORMAL, "scroll" ).register();
+		new TranslateZ( fastSpeed, SCROLL_Z_FAST, "shift scroll" ).register();
+		new TranslateZ( slowSpeed, SCROLL_Z_SLOW, "ctrl scroll" ).register();
+		new Zoom( normalSpeed, ZOOM_NORMAL, "meta scroll", "ctrl shift scroll" ).register();
+		new SelectRotationAxis( 0, SELECT_AXIS_X, "X" ).register();
+		new SelectRotationAxis( 1, SELECT_AXIS_Y, "Y" ).register();
+		new SelectRotationAxis( 2, SELECT_AXIS_Z, "Z" ).register();
+		new KeyRotate( normalSpeed, ROTATE_LEFT_NORMAL, "LEFT" ).register();
+		new KeyRotate( fastSpeed, ROTATE_LEFT_FAST, "shift LEFT" ).register();
+		new KeyRotate( slowSpeed, ROTATE_LEFT_SLOW, "ctrl LEFT" ).register();
+		new KeyRotate( -normalSpeed, ROTATE_RIGHT_NORMAL, "RIGHT" ).register();
+		new KeyRotate( -fastSpeed, ROTATE_RIGHT_FAST, "shift RIGHT" ).register();
+		new KeyRotate( -slowSpeed, ROTATE_RIGHT_SLOW, "ctrl RIGHT" ).register();
+		new KeyZoom( normalSpeed, KEY_ZOOM_IN_NORMAL, "UP" ).register();
+		new KeyZoom( fastSpeed, KEY_ZOOM_IN_FAST, "shift UP" ).register();
+		new KeyZoom( slowSpeed, KEY_ZOOM_IN_SLOW, "ctrl UP" ).register();
+		new KeyZoom( -normalSpeed, KEY_ZOOM_OUT_NORMAL, "DOWN" ).register();
+		new KeyZoom( -fastSpeed, KEY_ZOOM_OUT_FAST, "shift DOWN" ).register();
+		new KeyZoom( -slowSpeed, KEY_ZOOM_OUT_SLOW, "ctrl DOWN" ).register();
+		new KeyTranslateZ( normalSpeed, KEY_FORWARD_Z_NORMAL, "COMMA" ).register();
+		new KeyTranslateZ( fastSpeed, KEY_FORWARD_Z_FAST, "shift COMMA" ).register();
+		new KeyTranslateZ( slowSpeed, KEY_FORWARD_Z_SLOW, "ctrl COMMA" ).register();
+		new KeyTranslateZ( -normalSpeed, KEY_BACKWARD_Z_NORMAL, "PERIOD" ).register();
+		new KeyTranslateZ( -fastSpeed, KEY_BACKWARD_Z_FAST, "shift PERIOD" ).register();
+		new KeyTranslateZ( -slowSpeed, KEY_BACKWARD_Z_SLOW, "ctrl PERIOD" ).register();
 
 		this.setBehaviourMap( behaviourMap );
 		this.setInputMap( inputMap );
@@ -214,12 +254,51 @@ public class BehaviourTransformEventHandler3D extends MouseAndKeyHandler impleme
 		affine.set( affine.get( 1, 3 ) + y, 1, 3 );
 	}
 
-	private class Rotate implements DragBehaviour
+	/**
+	 * Rotate by d radians around axis. Keep screen coordinates (
+	 * {@link #centerX}, {@link #centerY}) fixed.
+	 */
+	private void rotate( final int axis, final double d )
+	{
+		// center shift
+		affine.set( affine.get( 0, 3 ) - centerX, 0, 3 );
+		affine.set( affine.get( 1, 3 ) - centerY, 1, 3 );
+
+		// rotate
+		affine.rotate( axis, d );
+
+		// center un-shift
+		affine.set( affine.get( 0, 3 ) + centerX, 0, 3 );
+		affine.set( affine.get( 1, 3 ) + centerY, 1, 3 );
+
+	}
+
+	private abstract class SelfRegisteringBehaviour implements Behaviour
+	{
+		private final String name;
+
+		private final String[] defaultTriggers;
+
+		public SelfRegisteringBehaviour( final String name, final String ... defaultTriggers )
+		{
+			this.name = name;
+			this.defaultTriggers = defaultTriggers;
+		}
+
+		public void register()
+		{
+			behaviourMap.put( name, this );
+			inputAdder.put( name, defaultTriggers );
+		}
+	}
+
+	private class Rotate extends SelfRegisteringBehaviour implements DragBehaviour
 	{
 		private final double speed;
 
-		public Rotate( final double speed )
+		public Rotate( final double speed, final String name, final String ... defaultTriggers )
 		{
+			super( name, defaultTriggers );
 			this.speed = speed;
 		}
 
@@ -264,8 +343,13 @@ public class BehaviourTransformEventHandler3D extends MouseAndKeyHandler impleme
 		{}
 	}
 
-	private class TranslateXY implements DragBehaviour
+	private class TranslateXY extends SelfRegisteringBehaviour implements DragBehaviour
 	{
+		public TranslateXY( final String name, final String ... defaultTriggers )
+		{
+			super( name, defaultTriggers );
+		}
+
 		@Override
 		public void init( final int x, final int y )
 		{
@@ -297,12 +381,13 @@ public class BehaviourTransformEventHandler3D extends MouseAndKeyHandler impleme
 		{}
 	}
 
-	private class TranslateZ implements ScrollBehaviour
+	private class TranslateZ extends SelfRegisteringBehaviour implements ScrollBehaviour
 	{
 		private final double speed;
 
-		public TranslateZ( final double speed )
+		public TranslateZ( final double speed, final String name, final String ... defaultTriggers )
 		{
+			super( name, defaultTriggers );
 			this.speed = speed;
 		}
 
@@ -319,12 +404,13 @@ public class BehaviourTransformEventHandler3D extends MouseAndKeyHandler impleme
 		}
 	}
 
-	private class Zoom implements ScrollBehaviour
+	private class Zoom extends SelfRegisteringBehaviour implements ScrollBehaviour
 	{
 		private final double speed;
 
-		public Zoom( final double speed )
+		public Zoom( final double speed, final String name, final String ... defaultTriggers )
 		{
+			super( name, defaultTriggers );
 			this.speed = speed;
 		}
 
@@ -339,6 +425,89 @@ public class BehaviourTransformEventHandler3D extends MouseAndKeyHandler impleme
 					scale( 1.0 / dScale, x, y );
 				else
 					scale( dScale, x, y );
+				notifyListener();
+			}
+		}
+	}
+
+	private class SelectRotationAxis extends SelfRegisteringBehaviour implements ClickBehaviour
+	{
+		private final int axis;
+
+		public SelectRotationAxis( final int axis, final String name, final String ... defaultTriggers )
+		{
+			super( name, defaultTriggers );
+			this.axis = axis;
+		}
+
+		@Override
+		public void click( final int x, final int y )
+		{
+			BehaviourTransformEventHandler3D.this.axis = axis;
+		}
+	}
+
+	private class KeyRotate extends SelfRegisteringBehaviour implements ClickBehaviour
+	{
+		private final double velocity;
+
+		public KeyRotate( final double velocity, final String name, final String ... defaultTriggers )
+		{
+			super( name, defaultTriggers );
+			this.velocity = velocity;
+		}
+
+		@Override
+		public void click( final int x, final int y )
+		{
+			synchronized ( affine )
+			{
+				rotate( axis, step * velocity );
+				notifyListener();
+			}
+		}
+	}
+
+	private class KeyZoom extends SelfRegisteringBehaviour implements ClickBehaviour
+	{
+		private final double dScale;
+
+		public KeyZoom( final double speed, final String name, final String ... defaultTriggers )
+		{
+			super( name, defaultTriggers );
+			if ( speed > 0 )
+				dScale = 1.0 + 0.1 * speed;
+			else
+				dScale = 1.0 / ( 1.0 - 0.1 * speed );
+		}
+
+		@Override
+		public void click( final int x, final int y )
+		{
+			synchronized ( affine )
+			{
+				scale( dScale, centerX, centerY );
+				notifyListener();
+			}
+		}
+	}
+
+	private class KeyTranslateZ extends SelfRegisteringBehaviour implements ClickBehaviour
+	{
+		private final double speed;
+
+		public KeyTranslateZ( final double speed, final String name, final String ... defaultTriggers )
+		{
+			super( name, defaultTriggers );
+			this.speed = speed;
+		}
+
+		@Override
+		public void click( final int x, final int y )
+		{
+			synchronized ( affine )
+			{
+				affine.set( affine.get( 2, 3 ) + speed, 2, 3 );
 				notifyListener();
 			}
 		}
