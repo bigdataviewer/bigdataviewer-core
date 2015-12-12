@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -38,8 +38,11 @@ import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 
-import net.imglib2.ui.util.GuiUtil;
+import bdv.BehaviourTransformEventHandler;
+import bdv.behaviour.MouseAndKeyHandler;
 import bdv.img.cache.Cache;
+import net.imglib2.ui.TransformEventHandler;
+import net.imglib2.ui.util.GuiUtil;
 
 /**
  * A {@link JFrame} containing a {@link ViewerPanel} and associated
@@ -54,6 +57,8 @@ public class ViewerFrame extends JFrame
 	protected final ViewerPanel viewer;
 
 	private final InputActionBindings keybindings;
+
+	private final TriggerBehaviourBindings triggerbindings;
 
 	public ViewerFrame(
 			final List< SourceAndConverter< ? > > sources,
@@ -84,6 +89,7 @@ public class ViewerFrame extends JFrame
 		super( "BigDataViewer", GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.RGB_COLOR_MODEL ) );
 		viewer = new ViewerPanel( sources, numTimePoints, cache, optional );
 		keybindings = new InputActionBindings();
+		triggerbindings = new TriggerBehaviourBindings();
 
 		getRootPane().setDoubleBuffered( true );
 		add( viewer, BorderLayout.CENTER );
@@ -100,6 +106,15 @@ public class ViewerFrame extends JFrame
 
 		SwingUtilities.replaceUIActionMap( getRootPane(), keybindings.getConcatenatedActionMap() );
 		SwingUtilities.replaceUIInputMap( getRootPane(), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, keybindings.getConcatenatedInputMap() );
+
+		final MouseAndKeyHandler mouseAndKeyHandler = new MouseAndKeyHandler();
+		mouseAndKeyHandler.setInputMap( triggerbindings.getConcatenatedInputTriggerMap() );
+		mouseAndKeyHandler.setBehaviourMap( triggerbindings.getConcatenatedBehaviourMap() );
+		viewer.getDisplay().addHandler( mouseAndKeyHandler );
+
+		final TransformEventHandler< ? > tfHandler = viewer.getDisplay().getTransformEventHandler();
+		if ( tfHandler instanceof BehaviourTransformEventHandler )
+			( ( BehaviourTransformEventHandler< ? > ) tfHandler ).install( triggerbindings );
 	}
 
 	// TODO: remove!?
@@ -118,5 +133,10 @@ public class ViewerFrame extends JFrame
 	public InputActionBindings getKeybindings()
 	{
 		return keybindings;
+	}
+
+	public TriggerBehaviourBindings getTriggerbindings()
+	{
+		return triggerbindings;
 	}
 }
