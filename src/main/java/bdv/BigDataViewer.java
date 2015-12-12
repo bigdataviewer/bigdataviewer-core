@@ -736,9 +736,17 @@ public class BigDataViewer
 		{
 			System.setProperty( "apple.laf.useScreenMenuBar", "true" );
 
-			final InputTriggerConfig keyconf = new InputTriggerConfig( JsonConfigIO.read( "/Users/pietzsch/Desktop/bdvkeyconfig.json" ) );
+			InputTriggerConfig keyconf;
+			try
+			{
+				keyconf = new InputTriggerConfig( JsonConfigIO.read( "/Users/pietzsch/Desktop/bdvkeyconfig.json" ) );
+			}
+			catch ( final IOException e )
+			{
+				keyconf = new InputTriggerConfig();
+			}
 
-			open( fn, new File( fn ).getName(), new ProgressWriterConsole(),
+			final BigDataViewer bdv = open( fn, new File( fn ).getName(), new ProgressWriterConsole(),
 					ViewerOptions.options().
 						transformEventHandlerFactory( BehaviourTransformEventHandler3D.factory( keyconf ) ).
 						inputTriggerConfig( keyconf ) );
