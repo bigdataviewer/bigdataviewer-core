@@ -742,6 +742,8 @@ public class BigDataViewer
 					ViewerOptions.options().
 						transformEventHandlerFactory( BehaviourTransformEventHandler3D.factory( keyconf ) ).
 						inputTriggerConfig( keyconf ) );
+
+//			DumpInputConfig.writeToJson( "/Users/pietzsch/Desktop/bdvkeyconfig.json", bdv.getViewerFrame() );
 		}
 		catch ( final Exception e )
 		{
