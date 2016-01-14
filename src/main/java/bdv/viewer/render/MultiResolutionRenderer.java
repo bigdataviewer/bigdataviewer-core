@@ -583,6 +583,31 @@ public class MultiResolutionRenderer
 		painterThread.requestRepaint();
 	}
 
+	/**
+	 * DON'T USE THIS.
+	 * <p>
+	 * This is a work around for JDK bug
+	 * https://bugs.openjdk.java.net/browse/JDK-8029147 which leads to
+	 * ViewerPanel not being garbage-collected when ViewerFrame is closed. So
+	 * instead we need to manually let go of resources...
+	 */
+	public void kill()
+	{
+		if ( display instanceof TransformAwareBufferedImageOverlayRenderer )
+			( ( TransformAwareBufferedImageOverlayRenderer ) display ).kill();
+		projector = null;
+		renderIdQueue.clear();
+		bufferedImageToRenderId.clear();
+		for ( int i = 0; i < renderImages.length; ++i )
+			renderImages[ i ] = null;
+		for ( int i = 0; i < renderMaskArrays.length; ++i )
+			renderMaskArrays[ i ] = null;
+		for ( int i = 0; i < screenImages.length; ++i )
+			screenImages[ i ] = null;
+		for ( int i = 0; i < bufferedImages.length; ++i )
+			bufferedImages[ i ] = null;
+	}
+
 	private VolatileProjector createProjector(
 			final ViewerState viewerState,
 			final int screenScaleIndex,

@@ -970,5 +970,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	{
 		painterThread.interrupt();
 		renderingExecutorService.shutdown();
+		state.kill();
+		imageRenderer.kill();
 	}
 }
