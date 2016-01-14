@@ -11,28 +11,6 @@ import java.nio.ShortBuffer;
 
 import javax.swing.JFrame;
 
-import mpicbg.spim.data.sequence.ViewId;
-import net.imglib2.Cursor;
-import net.imglib2.RandomAccessible;
-import net.imglib2.display.screenimage.awt.UnsignedByteAWTScreenImage;
-import net.imglib2.img.array.ArrayImgs;
-import net.imglib2.realtransform.AffineTransform2D;
-import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.ui.InteractiveDisplayCanvasComponent;
-import net.imglib2.ui.overlay.BufferedImageOverlayRenderer;
-import net.imglib2.ui.util.GuiUtil;
-import net.imglib2.util.IntervalIndexer;
-import net.imglib2.util.Intervals;
-import net.imglib2.view.Views;
-import bdv.cl.BlockTexture.Block;
-import bdv.cl.BlockTexture.BlockKey;
-import bdv.cl.FindRequiredBlocks.RequiredBlocks;
-import bdv.img.cache.CachedCellImg;
-import bdv.img.hdf5.Hdf5ImageLoader;
-import bdv.viewer.Source;
-import bdv.viewer.state.ViewerState;
-
 import com.jogamp.common.nio.Buffers;
 import com.jogamp.opencl.CLBuffer;
 import com.jogamp.opencl.CLCommandQueue;
@@ -50,6 +28,28 @@ import com.jogamp.opencl.CLKernel;
 import com.jogamp.opencl.CLMemory.Map;
 import com.jogamp.opencl.CLMemory.Mem;
 import com.jogamp.opencl.CLProgram;
+
+import bdv.cl.BlockTexture.Block;
+import bdv.cl.BlockTexture.BlockKey;
+import bdv.cl.FindRequiredBlocks.RequiredBlocks;
+import bdv.img.cache.CachedCellImg;
+import bdv.img.hdf5.Hdf5ImageLoader;
+import bdv.viewer.Source;
+import bdv.viewer.state.ViewerState;
+import mpicbg.spim.data.sequence.ViewId;
+import net.imglib2.Cursor;
+import net.imglib2.RandomAccessible;
+import net.imglib2.display.screenimage.awt.UnsignedByteAWTScreenImage;
+import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.realtransform.AffineTransform2D;
+import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.ui.InteractiveDisplayCanvasComponent;
+import net.imglib2.ui.overlay.BufferedImageOverlayRenderer;
+import net.imglib2.ui.util.GuiUtil;
+import net.imglib2.util.IntervalIndexer;
+import net.imglib2.util.Intervals;
+import net.imglib2.view.Views;
 
 public class RenderSlice
 {
@@ -147,7 +147,8 @@ public class RenderSlice
 		t = System.currentTimeMillis() - t;
 		System.out.println( "getRequiredBlocks: " + t + " ms" );
 		t = System.currentTimeMillis();
-		final RandomAccessible< UnsignedShortType > img = Views.extendZero( imgLoader.getImage( new ViewId( timepointId, setupId ), 0 ) ); // TODO
+		final RandomAccessible< UnsignedShortType > img = Views.extendZero(
+				imgLoader.getSetupImgLoader( setupId ).getImage( timepointId, 0 ) ); // TODO
 		final short[] blockData = new short[ paddedBlockSize[ 0 ] * paddedBlockSize[ 1 ] * paddedBlockSize[ 2 ] ];
 		int nnn = 0;
 		for ( final int[] cellPos : requiredBlocks.cellPositions )
@@ -193,7 +194,7 @@ public class RenderSlice
 
 		///////////////////
 
-		final CLImage2d< ByteBuffer > renderTarget = ( CLImage2d< ByteBuffer > ) cl.createImage2d(
+		final CLImage2d< ByteBuffer > renderTarget = cl.createImage2d(
 				Buffers.newDirectByteBuffer( width * height ),
 				width,
 				height,
@@ -315,7 +316,8 @@ public class RenderSlice
 
 	private RequiredBlocks getRequiredBlocks( final AffineTransform3D sourceToScreen, final int w, final int h, final int dd, final ViewId view )
 	{
-		final CachedCellImg< ?, ? > cellImg = (bdv.img.cache.CachedCellImg< ?, ? > ) imgLoader.getImage( view, 0 );
+		final RandomAccessible< UnsignedShortType > img = imgLoader.getSetupImgLoader( view.getViewSetupId() ).getImage( view.getTimePointId(), 0 );
+		final CachedCellImg< ?, ? > cellImg = (bdv.img.cache.CachedCellImg< ?, ? > ) img;
 		final long[] imgDimensions = new long[ 3 ];
 		cellImg.dimensions( imgDimensions );
 		return FindRequiredBlocks.getRequiredBlocks( sourceToScreen, w, h, dd, blockSize, imgDimensions );

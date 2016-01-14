@@ -1,26 +1,10 @@
 package bdv.cl;
 
-import ij.ImageJ;
-
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.ShortBuffer;
 import java.util.Random;
-
-import mpicbg.spim.data.SpimDataException;
-import net.imglib2.img.array.ArrayImgs;
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
-import net.imglib2.img.display.imagej.ImageJFunctions;
-import net.imglib2.util.IntervalIndexer;
-import bdv.img.cache.CacheHints;
-import bdv.img.cache.LoadingStrategy;
-import bdv.img.cache.VolatileCell;
-import bdv.img.cache.VolatileGlobalCellCache;
-import bdv.img.hdf5.Hdf5ImageLoader;
-import bdv.spimdata.SequenceDescriptionMinimal;
-import bdv.spimdata.SpimDataMinimal;
-import bdv.spimdata.XmlIoSpimDataMinimal;
 
 import com.jogamp.common.nio.Buffers;
 import com.jogamp.opencl.CLBuffer;
@@ -36,6 +20,22 @@ import com.jogamp.opencl.CLKernel;
 import com.jogamp.opencl.CLMemory.Map;
 import com.jogamp.opencl.CLMemory.Mem;
 import com.jogamp.opencl.CLProgram;
+
+import bdv.img.cache.CacheHints;
+import bdv.img.cache.LoadingStrategy;
+import bdv.img.cache.VolatileCell;
+import bdv.img.cache.VolatileGlobalCellCache;
+import bdv.img.hdf5.Hdf5ImageLoader;
+import bdv.img.hdf5.Hdf5VolatileShortArrayLoader;
+import bdv.spimdata.SequenceDescriptionMinimal;
+import bdv.spimdata.SpimDataMinimal;
+import bdv.spimdata.XmlIoSpimDataMinimal;
+import ij.ImageJ;
+import mpicbg.spim.data.SpimDataException;
+import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
+import net.imglib2.img.display.imagej.ImageJFunctions;
+import net.imglib2.util.IntervalIndexer;
 
 public class JoclExample
 {
@@ -117,10 +117,11 @@ public class JoclExample
 		final SpimDataMinimal spimData = io.load( fn );
 		final SequenceDescriptionMinimal seq = spimData.getSequenceDescription();
 		final Hdf5ImageLoader imgLoader = ( Hdf5ImageLoader ) seq.getImgLoader();
+		final Hdf5VolatileShortArrayLoader loader = imgLoader.getShortArrayLoader();
 
-		final VolatileGlobalCellCache< VolatileShortArray > cache = imgLoader.getCache();
+		final VolatileGlobalCellCache cache = imgLoader.getCache();
 		final CacheHints cacheHints = new CacheHints( LoadingStrategy.BLOCKING, 0, false );
-		final VolatileGlobalCellCache< VolatileShortArray >.VolatileCellCache cellCache = cache.new VolatileCellCache( 0, 0, 0, cacheHints );
+		final VolatileGlobalCellCache.VolatileCellCache< VolatileShortArray > cellCache = cache.new VolatileCellCache< VolatileShortArray >( 1, 0, 0, cacheHints, loader );
 
 		final int n = 3;
 		final int[] dim = new int[] { 15, 7, 3 };
