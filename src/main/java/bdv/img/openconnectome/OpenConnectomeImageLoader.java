@@ -1,10 +1,52 @@
+/*
+ * #%L
+ * BigDataViewer core classes with minimal dependencies
+ * %%
+ * Copyright (C) 2012 - 2015 BigDataViewer authors
+ * %%
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ * #L%
+ */
 package bdv.img.openconnectome;
 
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 
-import mpicbg.spim.data.sequence.ViewId;
+import com.google.gson.Gson;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonSyntaxException;
+
+import bdv.AbstractViewerSetupImgLoader;
+import bdv.ViewerImgLoader;
+import bdv.ViewerSetupImgLoader;
+import bdv.img.cache.Cache;
+import bdv.img.cache.CacheHints;
+import bdv.img.cache.CachedCellImg;
+import bdv.img.cache.LoadingStrategy;
+import bdv.img.cache.VolatileGlobalCellCache;
+import bdv.img.cache.VolatileImgCells;
+import bdv.img.cache.VolatileImgCells.CellCache;
+import mpicbg.spim.data.generic.sequence.ImgLoaderHint;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.NativeImg;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileByteArray;
@@ -15,20 +57,8 @@ import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.volatiles.VolatileARGBType;
 import net.imglib2.type.volatiles.VolatileUnsignedByteType;
 import net.imglib2.util.Fraction;
-import bdv.AbstractViewerImgLoader;
-import bdv.img.cache.Cache;
-import bdv.img.cache.CacheHints;
-import bdv.img.cache.CachedCellImg;
-import bdv.img.cache.LoadingStrategy;
-import bdv.img.cache.VolatileGlobalCellCache;
-import bdv.img.cache.VolatileImgCells;
-import bdv.img.cache.VolatileImgCells.CellCache;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonIOException;
-import com.google.gson.JsonSyntaxException;
-
-public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< UnsignedByteType, VolatileUnsignedByteType >
+public class OpenConnectomeImageLoader extends AbstractViewerSetupImgLoader< UnsignedByteType, VolatileUnsignedByteType > implements ViewerImgLoader
 {
 	private final int numScales;
 
@@ -40,7 +70,9 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 
 	private final AffineTransform3D[] mipmapTransforms;
 
-	protected VolatileGlobalCellCache< VolatileByteArray > cache;
+	private final VolatileGlobalCellCache cache;
+
+	private final OpenConnectomeVolatileArrayLoader loader;
 
 	public OpenConnectomeImageLoader( final String baseUrl, final String token, final String mode )
 	{
@@ -55,8 +87,14 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 		blockDimensions = info.getLevelCellDimensions();
 		mipmapTransforms = info.getLevelTransforms( mode );
 
-		cache = new VolatileGlobalCellCache< VolatileByteArray >(
-				new OpenConnectomeVolatileArrayLoader( baseUrl, token, mode, info.getMinZ() ), 1, 1, numScales, 10 );
+		cache = new VolatileGlobalCellCache( 1, 1, numScales, 10 );
+		System.out.println( info.getOffsets( mode )[ 0 ][ 2 ] + " " + imageDimensions[ 0 ][ 2 ] );
+
+		loader = new OpenConnectomeVolatileArrayLoader(
+				baseUrl,
+				token,
+				mode,
+				Math.round( info.getOffsets( mode )[ 0 ][ 2 ] ) );
 	}
 
 	/**
@@ -97,6 +135,9 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 	{
 		final Gson gson = new Gson();
 		final URL url = new URL( baseUrl + "/" + token + "/info/" );
+
+		System.out.println( "Fetching token from " + url );
+
 		return gson.fromJson( new InputStreamReader( url.openStream() ), OpenConnectomeTokenInfo.class );
 	}
 
@@ -158,7 +199,9 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 				break;
 			}
 			catch ( final Exception e )
-			{}
+			{
+				e.printStackTrace( System.err );
+			}
 			try
 			{
 				Thread.sleep( 100 );
@@ -170,33 +213,39 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 	}
 
 	@Override
-	public RandomAccessibleInterval< UnsignedByteType > getImage( final ViewId view, final int level )
+	public RandomAccessibleInterval< UnsignedByteType > getImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 	{
-		final CachedCellImg< UnsignedByteType, VolatileByteArray > img = prepareCachedImage( view, level, LoadingStrategy.BLOCKING );
+		final CachedCellImg< UnsignedByteType, VolatileByteArray > img = prepareCachedImage( timepointId, 0, level, LoadingStrategy.BLOCKING );
 		final UnsignedByteType linkedType = new UnsignedByteType( img );
 		img.setLinkedType( linkedType );
 		return img;
 	}
 
 	@Override
-	public RandomAccessibleInterval< VolatileUnsignedByteType > getVolatileImage( final ViewId view, final int level )
+	public RandomAccessibleInterval< VolatileUnsignedByteType > getVolatileImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 	{
-		final CachedCellImg< VolatileUnsignedByteType, VolatileByteArray > img = prepareCachedImage( view, level, LoadingStrategy.VOLATILE );
+		final CachedCellImg< VolatileUnsignedByteType, VolatileByteArray > img = prepareCachedImage( timepointId, 0, level, LoadingStrategy.VOLATILE );
 		final VolatileUnsignedByteType linkedType = new VolatileUnsignedByteType( img );
 		img.setLinkedType( linkedType );
 		return img;
 	}
 
 	@Override
-	public double[][] getMipmapResolutions( final int setup )
+	public double[][] getMipmapResolutions()
 	{
 		return mipmapResolutions;
 	}
 
 	@Override
-	public int numMipmapLevels( final int setup )
+	public int numMipmapLevels()
 	{
 		return numScales;
+	}
+
+	@Override
+	public AffineTransform3D[] getMipmapTransforms()
+	{
+		return mipmapTransforms;
 	}
 
 	/**
@@ -205,14 +254,14 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 	 * type} before it can be used. The type should be either {@link ARGBType}
 	 * and {@link VolatileARGBType}.
 	 */
-	protected < T extends NativeType< T > > CachedCellImg< T, VolatileByteArray > prepareCachedImage( final ViewId view, final int level, final LoadingStrategy loadingStrategy )
+	protected < T extends NativeType< T > > CachedCellImg< T, VolatileByteArray > prepareCachedImage( final int timepointId, final int setupId, final int level, final LoadingStrategy loadingStrategy )
 	{
 		final long[] dimensions = imageDimensions[ level ];
 		final int[] cellDimensions = blockDimensions[ level ];
 
 		final int priority = numScales - 1 - level;
 		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
-		final CellCache< VolatileByteArray > c = cache.new VolatileCellCache( view.getTimePointId(), view.getViewSetupId(), level, cacheHints );
+		final CellCache< VolatileByteArray > c = cache.new VolatileCellCache< VolatileByteArray >( timepointId, setupId, level, cacheHints, loader );
 		final VolatileImgCells< VolatileByteArray > cells = new VolatileImgCells< VolatileByteArray >( c, new Fraction(), dimensions, cellDimensions );
 		final CachedCellImg< T, VolatileByteArray > img = new CachedCellImg< T, VolatileByteArray >( cells );
 		return img;
@@ -225,8 +274,8 @@ public class OpenConnectomeImageLoader extends AbstractViewerImgLoader< Unsigned
 	}
 
 	@Override
-	public AffineTransform3D[] getMipmapTransforms( final int setup )
+	public ViewerSetupImgLoader< ?, ? > getSetupImgLoader( final int setupId )
 	{
-		return mipmapTransforms;
+		return this;
 	}
 }

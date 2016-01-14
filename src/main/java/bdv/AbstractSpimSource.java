@@ -1,3 +1,31 @@
+/*
+ * #%L
+ * BigDataViewer core classes with minimal dependencies
+ * %%
+ * Copyright (C) 2012 - 2015 BigDataViewer authors
+ * %%
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ * #L%
+ */
 package bdv;
 
 import java.util.HashSet;
@@ -67,7 +95,7 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 				? new HashSet< ViewId >()
 				: seq.getMissingViews().getMissingViews();
 		voxelDimensions = seq.getViewSetups().get( setupId ).getVoxelSize();
-		numMipmapLevels = ( ( ViewerImgLoader< ?, ? > ) seq.getImgLoader() ).numMipmapLevels( setupId );
+		numMipmapLevels = ( ( ViewerImgLoader ) seq.getImgLoader() ).getSetupImgLoader( setupId ).numMipmapLevels();
 		currentSources = new RandomAccessibleInterval[ numMipmapLevels ];
 		currentInterpolatedSources = new RealRandomAccessible[ numMipmapLevels ][ numInterpolationMethods ];
 		currentSourceTransforms = new AffineTransform3D[ numMipmapLevels ];
@@ -93,7 +121,7 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 				final AffineTransform3D mipmapTransform = getMipmapTransforms()[ level ];
 				currentSourceTransforms[ level ].set( reg );
 				currentSourceTransforms[ level ].concatenate( mipmapTransform );
-				currentSources[ level ] = getImage( viewId, level );
+				currentSources[ level ] = getImage( timepointId, level );
 				for ( int method = 0; method < numInterpolationMethods; ++method )
 					currentInterpolatedSources[ level ][ method ] = Views.interpolate( Views.extendValue( currentSources[ level ], zero ), interpolatorFactories[ method ] );
 			}
@@ -112,7 +140,7 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 
 	protected abstract AffineTransform3D[] getMipmapTransforms();
 
-	protected abstract RandomAccessibleInterval< T > getImage( final ViewId viewId, final int level );
+	protected abstract RandomAccessibleInterval< T > getImage( final int timepointId, final int level );
 
 	@Override
 	public boolean isPresent( final int t )

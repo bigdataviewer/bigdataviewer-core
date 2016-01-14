@@ -1,23 +1,18 @@
 /*
  * #%L
- * ImgLib2: a general-purpose, multidimensional image processing library.
+ * BigDataViewer core classes with minimal dependencies
  * %%
- * Copyright (C) 2009 - 2015 Tobias Pietzsch, Stephan Preibisch, Barry DeZonia,
- * Stephan Saalfeld, Curtis Rueden, Albert Cardona, Christian Dietz, Jean-Yves
- * Tinevez, Johannes Schindelin, Jonathan Hale, Lee Kamentsky, Larry Lindsey, Mark
- * Hiner, Michael Zinsmaier, Martin Horn, Grant Harris, Aivar Grislis, John
- * Bogovic, Steffen Jaensch, Stefan Helfrich, Jan Funke, Nick Perry, Mark Longair,
- * Melissa Linkert and Dimiter Prodanov.
+ * Copyright (C) 2012 - 2015 BigDataViewer authors
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- *
+ * 
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -43,7 +38,7 @@ import net.imglib2.type.numeric.RealType;
  *
  * @param <T>
  *
- * @author Tobias Pietzsch <tobias.pietzsch@gmail.com>
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 public class ClampingNLinearInterpolatorRealType< T extends RealType< T > > extends NLinearInterpolator< T >
 {
@@ -79,7 +74,7 @@ public class ClampingNLinearInterpolatorRealType< T extends RealType< T > > exte
 	 * the target position is modified per move.
 	 *
 	 * <p>
-	 * {@see http://en.wikipedia.org/wiki/Gray_code}
+	 * @see <a href="http://en.wikipedia.org/wiki/Gray_code">Gray code</a>.
 	 */
 	@Override
 	public T get()

@@ -1,3 +1,31 @@
+/*
+ * #%L
+ * BigDataViewer core classes with minimal dependencies
+ * %%
+ * Copyright (C) 2012 - 2015 BigDataViewer authors
+ * %%
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ * #L%
+ */
 package bdv.img.cache;
 
 import java.lang.ref.Reference;
@@ -5,8 +33,6 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
@@ -14,7 +40,7 @@ import bdv.img.cache.CacheIoTiming.IoStatistics;
 import bdv.img.cache.CacheIoTiming.IoTimeBudget;
 import bdv.img.cache.VolatileImgCells.CellCache;
 
-public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cache
+public class VolatileGlobalCellCache implements Cache
 {
 	private final int maxNumTimepoints;
 
@@ -50,7 +76,6 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 				return true;
 			if ( !( other instanceof VolatileGlobalCellCache.Key ) )
 				return false;
-			@SuppressWarnings( "unchecked" )
 			final Key that = ( Key ) other;
 			return ( this.timepoint == that.timepoint ) && ( this.setup == that.setup ) && ( this.level == that.level ) && ( this.index == that.index );
 		}
@@ -64,11 +89,13 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 		}
 	}
 
-	class Entry
+	class Entry< A extends VolatileAccess >
 	{
 		private final Key key;
 
 		private VolatileCell< A > data;
+
+		private final CacheArrayLoader< A > loader;
 
 		/**
 		 * When was this entry last enqueued for loading (see
@@ -78,11 +105,35 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 		 */
 		private long enqueueFrame;
 
-		public Entry( final Key key, final VolatileCell< A > data )
+		public Entry( final Key key, final VolatileCell< A > data, final CacheArrayLoader< A > loader )
 		{
 			this.key = key;
 			this.data = data;
+			this.loader = loader;
 			enqueueFrame = -1;
+		}
+
+		private void loadIfNotValid() throws InterruptedException
+		{
+			if ( !data.getData().isValid() )
+			{
+				final int[] cellDims = data.getDimensions();
+				final long[] cellMin = data.getMin();
+				final int timepoint = key.timepoint;
+				final int setup = key.setup;
+				final int level = key.level;
+				synchronized ( this )
+				{
+					if ( !data.getData().isValid() )
+					{
+						final VolatileCell< A > cell = new VolatileCell< A >( cellDims, cellMin, loader.loadArray( timepoint, setup, level, cellDims, cellMin ) );
+						data = cell;
+						enqueueFrame = Long.MAX_VALUE;
+						softReferenceCache.put( key, new MySoftReference( this, finalizeQueue ) );
+						notifyAll();
+					}
+				}
+			}
 		}
 	}
 
@@ -91,11 +142,11 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 		public K getKey();
 	}
 
-	class MySoftReference extends SoftReference< Entry > implements GetKey< Key >
+	class MySoftReference extends SoftReference< Entry< ? > > implements GetKey< Key >
 	{
 		private final Key key;
 
-		public MySoftReference( final Entry referent, final ReferenceQueue< ? super Entry > q )
+		public MySoftReference( final Entry< ? > referent, final ReferenceQueue< ? super Entry< ? > > q )
 		{
 			super( referent, q );
 			key = referent.key;
@@ -108,11 +159,11 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 		}
 	}
 
-	class MyWeakReference extends WeakReference< Entry > implements GetKey< Key >
+	class MyWeakReference extends WeakReference< Entry< ? > > implements GetKey< Key >
 	{
 		private final Key key;
 
-		public MyWeakReference( final Entry referent, final ReferenceQueue< ? super Entry > q )
+		public MyWeakReference( final Entry< ? > referent, final ReferenceQueue< ? super Entry< ? > > q )
 		{
 			super( referent, q );
 			key = referent.key;
@@ -133,27 +184,21 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 		{
 			for ( int i = 0; i < MAX_PER_FRAME_FINALIZE_ENTRIES; ++i )
 			{
-				final Reference< ? extends Entry > poll = finalizeQueue.poll();
+				final Reference< ? extends Entry< ? > > poll = finalizeQueue.poll();
 				if ( poll == null )
 					break;
 				@SuppressWarnings( "unchecked" )
 				final Key key = ( ( GetKey< Key > ) poll ).getKey();
-				final Reference< Entry > ref = softReferenceCache.get( key );
+				final Reference< Entry< ? > > ref = softReferenceCache.get( key );
 				if ( ref == poll )
 					softReferenceCache.remove( key );
 			}
 		}
 	}
 
-	protected final ConcurrentHashMap< Key, Reference< Entry > > softReferenceCache = new ConcurrentHashMap< Key, Reference< Entry > >();
+	protected final ConcurrentHashMap< Key, Reference< Entry< ? > > > softReferenceCache = new ConcurrentHashMap< Key, Reference< Entry< ? > > >();
 
-	protected final ReferenceQueue< Entry > finalizeQueue = new ReferenceQueue< Entry >();
-
-	/**
-	 * Keeps references to the {@link Entry entries} accessed in the current
-	 * frame, such that they cannot be cleared from the cache prematurely.
-	 */
-	protected final List< Entry > currentFrameEntries = Collections.synchronizedList( new ArrayList< Entry >() );
+	protected final ReferenceQueue< Entry< ? > > finalizeQueue = new ReferenceQueue< Entry< ? > >();
 
 	protected final BlockingFetchQueues< Key > queue;
 
@@ -249,13 +294,10 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 
 	private final ArrayList< Fetcher > fetchers;
 
-	private final CacheArrayLoader< A > loader;
-
 	private final CacheIoTiming cacheIoTiming;
 
 	/**
 	 *
-	 * @param loader
 	 * @param maxNumTimepoints
 	 *            the highest occurring timepoint id plus 1. This is only used to
 	 *            compute a hashcode, thus it can be initialized with a best
@@ -268,9 +310,8 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	 *            the highest occurring mipmap level plus 1.
 	 * @param numFetcherThreads
 	 */
-	public VolatileGlobalCellCache( final CacheArrayLoader< A > loader, final int maxNumTimepoints, final int maxNumSetups, final int maxNumLevels, final int numFetcherThreads )
+	public VolatileGlobalCellCache( final int maxNumTimepoints, final int maxNumSetups, final int maxNumLevels, final int numFetcherThreads )
 	{
-		this.loader = loader;
 		this.maxNumTimepoints = maxNumTimepoints;
 		this.maxNumSetups = maxNumSetups;
 		this.maxNumLevels = maxNumLevels;
@@ -300,10 +341,10 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	 */
 	protected void loadIfNotValid( final Key k ) throws InterruptedException
 	{
-		final Reference< Entry > ref = softReferenceCache.get( k );
+		final Reference< Entry< ? > > ref = softReferenceCache.get( k );
 		if ( ref != null )
 		{
-			final Entry entry = ref.get();
+			final Entry< ? > entry = ref.get();
 			if ( entry != null )
 				loadEntryIfNotValid( entry );
 		}
@@ -313,43 +354,22 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	 * Load the data for the {@link Entry}, if it is not yet loaded (valid).
 	 * @throws InterruptedException
 	 */
-	protected void loadEntryIfNotValid( final Entry entry ) throws InterruptedException
+	protected void loadEntryIfNotValid( final Entry< ? > entry ) throws InterruptedException
 	{
-		final VolatileCell< A > c = entry.data;
-		if ( !c.getData().isValid() )
-		{
-			final int[] cellDims = c.getDimensions();
-			final long[] cellMin = c.getMin();
-			final Key k = entry.key;
-			final int timepoint = k.timepoint;
-			final int setup = k.setup;
-			final int level = k.level;
-			synchronized ( entry )
-			{
-				if ( !entry.data.getData().isValid() )
-				{
-					final VolatileCell< A > cell = new VolatileCell< A >( cellDims, cellMin, loader.loadArray( timepoint, setup, level, cellDims, cellMin ) );
-					entry.data = cell;
-					entry.enqueueFrame = Long.MAX_VALUE;
-					softReferenceCache.put( entry.key, new MySoftReference( entry, finalizeQueue ) );
-					entry.notifyAll();
-				}
-			}
-		}
+		entry.loadIfNotValid();
 	}
 
 	/**
 	 * Enqueue the {@link Entry} if it hasn't been enqueued for this frame
 	 * already.
 	 */
-	protected void enqueueEntry( final Entry entry, final int priority, final boolean enqueuToFront )
+	protected void enqueueEntry( final Entry< ? > entry, final int priority, final boolean enqueuToFront )
 	{
 		if ( entry.enqueueFrame < currentQueueFrame )
 		{
 			entry.enqueueFrame = currentQueueFrame;
 			final Key k = entry.key;
 			queue.put( k, priority, enqueuToFront );
-			currentFrameEntries.add( entry );
 		}
 	}
 
@@ -358,7 +378,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	 * there is enough {@link IoTimeBudget} left. Otherwise, enqueue the
 	 * {@link Entry} if it hasn't been enqueued for this frame already.
 	 */
-	protected void loadOrEnqueue( final Entry entry, final int priority, final boolean enqueuToFront )
+	protected void loadOrEnqueue( final Entry< ? > entry, final int priority, final boolean enqueuToFront )
 	{
 		final IoStatistics stats = cacheIoTiming.getThreadGroupIoStatistics();
 		final IoTimeBudget budget = stats.getIoTimeBudget();
@@ -389,7 +409,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 
 	/**
 	 * Get a cell if it is in the cache or null. Note, that a cell being in the
-	 * cache only means that here is a data array, but not necessarily that the
+	 * cache only means that there is a data array, but not necessarily that the
 	 * data has already been loaded.
 	 *
 	 * If the cell data has not been loaded, do the following, depending on the
@@ -421,13 +441,13 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	 *            {@link LoadingStrategy}, queue priority, and queue order.
 	 * @return a cell with the specified coordinates or null.
 	 */
-	public VolatileCell< A > getGlobalIfCached( final int timepoint, final int setup, final int level, final int index, final CacheHints cacheHints )
+	public VolatileCell< ? > getGlobalIfCached( final int timepoint, final int setup, final int level, final int index, final CacheHints cacheHints )
 	{
 		final Key k = new Key( timepoint, setup, level, index );
-		final Reference< Entry > ref = softReferenceCache.get( k );
+		final Reference< Entry< ? > > ref = softReferenceCache.get( k );
 		if ( ref != null )
 		{
-			final Entry entry = ref.get();
+			final Entry< ? > entry = ref.get();
 			if ( entry != null )
 			{
 				switch ( cacheHints.getLoadingStrategy() )
@@ -492,21 +512,21 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	 *            {@link LoadingStrategy}, queue priority, and queue order.
 	 * @return a cell with the specified coordinates.
 	 */
-	public VolatileCell< A > createGlobal( final int[] cellDims, final long[] cellMin, final int timepoint, final int setup, final int level, final int index, final CacheHints cacheHints )
+	public < A extends VolatileAccess > VolatileCell< ? > createGlobal( final int[] cellDims, final long[] cellMin, final int timepoint, final int setup, final int level, final int index, final CacheHints cacheHints, final CacheArrayLoader< A > loader )
 	{
 		final Key k = new Key( timepoint, setup, level, index );
-		Entry entry = null;
+		Entry< ? > entry = null;
 
 		synchronized ( softReferenceCache )
 		{
-			final Reference< Entry > ref = softReferenceCache.get( k );
+			final Reference< Entry< ? > > ref = softReferenceCache.get( k );
 			if ( ref != null )
 				entry = ref.get();
 
 			if ( entry == null )
 			{
 				final VolatileCell< A > cell = new VolatileCell< A >( cellDims, cellMin, loader.emptyArray( cellDims ) );
-				entry = new Entry( k, cell );
+				entry = new Entry< A >( k, cell, loader );
 				softReferenceCache.put( k, new MyWeakReference( entry, finalizeQueue ) );
 			}
 		}
@@ -541,6 +561,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	 * Prepare the cache for providing data for the "next frame":
 	 * <ul>
 	 * <li>the contents of fetch queues is moved to the prefetch.
+	 * <li>some cleaning up of garbage collected entries ({@link #finalizeRemovedCacheEntries()}).
 	 * <li>the internal frame counter is incremented, which will enable
 	 * previously enqueued requests to be enqueued again for the new frame.
 	 * </ul>
@@ -549,7 +570,6 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	public void prepareNextFrame()
 	{
 		queue.clear();
-		currentFrameEntries.clear();
 		finalizeRemovedCacheEntries();
 		++currentQueueFrame;
 	}
@@ -590,7 +610,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 	 */
 	public void clearCache()
 	{
-		for ( final Reference< Entry > ref : softReferenceCache.values() )
+		for ( final Reference< Entry< ? > > ref : softReferenceCache.values() )
 			ref.clear();
 		softReferenceCache.clear();
 		prepareNextFrame();
@@ -598,7 +618,7 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 		// (BlockingFetchQueues.clear() moves stuff to the prefetchQueue.)
 	}
 
-	public class VolatileCellCache implements CellCache< A >
+	public class VolatileCellCache< A extends VolatileAccess > implements CellCache< A >
 	{
 		private final int timepoint;
 
@@ -608,24 +628,29 @@ public class VolatileGlobalCellCache< A extends VolatileAccess > implements Cach
 
 		private CacheHints cacheHints;
 
-		public VolatileCellCache( final int timepoint, final int setup, final int level, final CacheHints cacheHints )
+		private final CacheArrayLoader< A > loader;
+
+		public VolatileCellCache( final int timepoint, final int setup, final int level, final CacheHints cacheHints, final CacheArrayLoader< A > loader )
 		{
 			this.timepoint = timepoint;
 			this.setup = setup;
 			this.level = level;
 			this.cacheHints = cacheHints;
+			this.loader = loader;
 		}
 
+		@SuppressWarnings( "unchecked" )
 		@Override
 		public VolatileCell< A > get( final int index )
 		{
-			return getGlobalIfCached( timepoint, setup, level, index, cacheHints );
+			return ( VolatileCell< A > ) getGlobalIfCached( timepoint, setup, level, index, cacheHints );
 		}
 
+		@SuppressWarnings( "unchecked" )
 		@Override
 		public VolatileCell< A > load( final int index, final int[] cellDims, final long[] cellMin )
 		{
-			return createGlobal( cellDims, cellMin, timepoint, setup, level, index, cacheHints );
+			return ( VolatileCell< A > ) createGlobal( cellDims, cellMin, timepoint, setup, level, index, cacheHints, loader );
 		}
 
 		@Override

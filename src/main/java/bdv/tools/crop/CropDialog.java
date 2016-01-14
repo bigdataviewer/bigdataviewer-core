@@ -1,3 +1,31 @@
+/*
+ * #%L
+ * BigDataViewer core classes with minimal dependencies
+ * %%
+ * Copyright (C) 2012 - 2015 BigDataViewer authors
+ * %%
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ * #L%
+ */
 package bdv.tools.crop;
 
 import java.awt.BorderLayout;
@@ -40,7 +68,6 @@ import mpicbg.spim.data.sequence.TimePoints;
 import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.RealInterval;
 import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.util.Intervals;
 import bdv.AbstractSpimSource;
 import bdv.export.ExportMipmapInfo;
@@ -283,9 +310,10 @@ public class CropDialog extends JDialog
 		// next unused setup id, in case we need to create new BasicViewSetup for sources that are not AbstractSpimSources
 		int nextSetupIndex = sequenceSetupsOrdered.get( sequenceSetupsOrdered.size() - 1 ).getId() + 1;
 
+		// TODO: fix comment
 		// List of all sources. if they are not of UnsignedShortType, cropping
 		// will not work...
-		final ArrayList< Source< UnsignedShortType > > sources = new ArrayList< Source< UnsignedShortType > >();
+		final ArrayList< Source< ? > > sources = new ArrayList< Source< ? > >();
 		// Map from setup id to BasicViewSetup. These are setups from the
 		// original sequence if available, or newly created ones otherwise.
 		// This contains all BasicViewSetups for the new cropped sequence.
@@ -296,10 +324,7 @@ public class CropDialog extends JDialog
 		final HashMap< Integer, Integer > setupIdToSourceIndex = new HashMap< Integer, Integer >();
 		for( final SourceState< ? > s : viewer.getState().getSources() )
 		{
-			if ( !( s.getSpimSource().getType() instanceof UnsignedShortType ) )
-				throw new RuntimeException( "cropping is only implemented for UnsignedShortType" );
-
-			Source< UnsignedShortType > source = ( Source< UnsignedShortType > ) s.getSpimSource();
+			Source< ? > source = s.getSpimSource();
 			sources.add( source );
 
 			// try to find the BasicViewSetup for the source
@@ -307,7 +332,7 @@ public class CropDialog extends JDialog
 
 			// strip TransformedSource wrapper
 			while ( source instanceof TransformedSource )
-				source = ( ( TransformedSource< UnsignedShortType > ) source ).getWrappedSource();
+				source = ( ( TransformedSource< ? > ) source ).getWrappedSource();
 
 			if ( source instanceof AbstractSpimSource )
 			{
@@ -348,7 +373,7 @@ public class CropDialog extends JDialog
 		final Hdf5ImageLoader loader = ( Hdf5ImageLoader ) sequenceDescription.getImgLoader();
 		for ( final int setupId : cropSetups.keySet() )
 		{
-			final MipmapInfo info = loader.getMipmapInfo( setupId );
+			final MipmapInfo info = loader.getSetupImgLoader( setupId ).getMipmapInfo();;
 			if ( info == null )
 				perSetupMipmapInfo.put( setupId, new ExportMipmapInfo(
 						new int[][] { { 1, 1, 1 } },
@@ -359,7 +384,8 @@ public class CropDialog extends JDialog
 						info.getSubdivisions() ) );
 		}
 
-		WriteSequenceToHdf5.writeHdf5File( seq, perSetupMipmapInfo, true, hdf5File, null, null, null );
+		final int numThreads = Math.max( 1, Runtime.getRuntime().availableProcessors() - 2 );
+		WriteSequenceToHdf5.writeHdf5File( seq, perSetupMipmapInfo, true, hdf5File, null, null, numThreads, null );
 
 		// Build ViewRegistrations with adjusted transforms.
 		final ArrayList< ViewRegistration > registrations = new ArrayList< ViewRegistration >();

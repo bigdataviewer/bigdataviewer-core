@@ -1,3 +1,31 @@
+/*
+ * #%L
+ * BigDataViewer core classes with minimal dependencies
+ * %%
+ * Copyright (C) 2012 - 2015 BigDataViewer authors
+ * %%
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ * #L%
+ */
 package bdv.tools.boundingbox;
 
 import java.awt.Color;
@@ -15,11 +43,20 @@ import bdv.viewer.overlay.RenderBoxHelper;
 
 public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< AffineTransform3D >
 {
+	public static interface BoundingBoxOverlaySource
+	{
+		public Interval getInterval();
+
+		public void getIntervalTransform( AffineTransform3D transform );
+	}
+
 	private final Color backColor = new Color( 0x00994499 );// Color.MAGENTA;
 
 	private final Color frontColor = Color.GREEN;
 
-	private final Interval interval;
+	private final BoundingBoxOverlaySource bbSource;
+
+	private final AffineTransform3D viewerTransform;
 
 	private final AffineTransform3D transform;
 
@@ -31,7 +68,26 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 	public BoundingBoxOverlay( final Interval interval )
 	{
-		this.interval = interval;
+		this( new BoundingBoxOverlaySource()
+		{
+			@Override
+			public Interval getInterval()
+			{
+				return interval;
+			}
+
+			@Override
+			public void getIntervalTransform( final AffineTransform3D transform )
+			{
+				transform.identity();
+			}
+		} );
+	}
+
+	public BoundingBoxOverlay( final BoundingBoxOverlaySource bbSource )
+	{
+		this.bbSource = bbSource;
+		this.viewerTransform = new AffineTransform3D();
 		this.transform = new AffineTransform3D();
 		this.renderBoxHelper = new RenderBoxHelper();
 	}
@@ -44,11 +100,13 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 		final GeneralPath front = new GeneralPath();
 		final GeneralPath back = new GeneralPath();
 
+		final Interval interval = bbSource.getInterval();
 		final double perspective = 3;
 		final double sourceSize = Math.max( Math.max( interval.dimension( 0 ), interval.dimension( 1 ) ), interval.dimension( 2 ) );
 		final double ox = canvasWidth / 2;
 		final double oy = canvasHeight / 2;
-
+		bbSource.getIntervalTransform( transform );
+		transform.preConcatenate( viewerTransform );
 		renderBoxHelper.setDepth( perspective * sourceSize );
 		renderBoxHelper.setOrigin( ox, oy );
 		renderBoxHelper.setScale( 1 );
@@ -76,6 +134,6 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 	@Override
 	public void transformChanged( final AffineTransform3D t )
 	{
-		transform.set( t );
+		viewerTransform.set( t );
 	}
 }

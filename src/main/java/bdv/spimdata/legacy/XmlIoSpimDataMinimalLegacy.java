@@ -1,3 +1,31 @@
+/*
+ * #%L
+ * BigDataViewer core classes with minimal dependencies
+ * %%
+ * Copyright (C) 2012 - 2015 BigDataViewer authors
+ * %%
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ * #L%
+ */
 package bdv.spimdata.legacy;
 
 import static mpicbg.spim.data.XmlHelpers.loadPath;
@@ -8,6 +36,15 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
+import org.jdom2.Element;
+
+import bdv.img.catmaid.XmlIoCatmaidImageLoader;
+import bdv.img.hdf5.Hdf5ImageLoader;
+import bdv.img.hdf5.Partition;
+import bdv.img.openconnectome.XmlIoOpenConnectomeImageLoader;
+import bdv.img.remote.XmlIoRemoteImageLoader;
+import bdv.spimdata.SequenceDescriptionMinimal;
+import bdv.spimdata.SpimDataMinimal;
 import mpicbg.spim.data.XmlHelpers;
 import mpicbg.spim.data.generic.sequence.BasicImgLoader;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
@@ -26,16 +63,6 @@ import net.imglib2.Dimensions;
 import net.imglib2.FinalDimensions;
 import net.imglib2.realtransform.AffineTransform3D;
 
-import org.jdom2.Element;
-
-import bdv.img.catmaid.XmlIoCatmaidImageLoader;
-import bdv.img.hdf5.Hdf5ImageLoader;
-import bdv.img.hdf5.Partition;
-import bdv.img.openconnectome.XmlIoOpenConnectomeImageLoader;
-import bdv.img.remote.XmlIoRemoteImageLoader;
-import bdv.spimdata.SequenceDescriptionMinimal;
-import bdv.spimdata.SpimDataMinimal;
-
 public class XmlIoSpimDataMinimalLegacy
 {
 	// load legacy SequenceDescription xml format
@@ -47,7 +74,7 @@ public class XmlIoSpimDataMinimalLegacy
 		final Map< Integer, ? extends BasicViewSetup > setups = createViewSetupsFromXml( root );
 		final MissingViews missingViews = null;
 		final SequenceDescriptionMinimal sequenceDescription = new SequenceDescriptionMinimal( timepoints, setups, null, missingViews );
-		final BasicImgLoader< ? > imgLoader = createImgLoaderFromXml( root, basePath, sequenceDescription );
+		final BasicImgLoader imgLoader = createImgLoaderFromXml( root, basePath, sequenceDescription );
 		sequenceDescription.setImgLoader( imgLoader );
 
 		final ViewRegistrations viewRegistrations = createRegistrationsFromXml( root );
@@ -133,7 +160,7 @@ public class XmlIoSpimDataMinimalLegacy
 		return setups;
 	}
 
-	private static BasicImgLoader< ? > createImgLoaderFromXml( final Element sequenceDescriptionElem, final File basePath, final SequenceDescriptionMinimal sequenceDescription  )
+	private static BasicImgLoader createImgLoaderFromXml( final Element sequenceDescriptionElem, final File basePath, final SequenceDescriptionMinimal sequenceDescription  )
 	{
 		final Element elem = sequenceDescriptionElem.getChild( "ImageLoader" );
 		final String classn = elem.getAttributeValue( "class" );

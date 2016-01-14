@@ -1,3 +1,31 @@
+/*
+ * #%L
+ * BigDataViewer core classes with minimal dependencies
+ * %%
+ * Copyright (C) 2012 - 2015 BigDataViewer authors
+ * %%
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ * #L%
+ */
 package bdv.viewer.render;
 
 import java.awt.image.BufferedImage;
@@ -220,6 +248,11 @@ public class MultiResolutionRenderer
 	protected final ExecutorService renderingExecutorService;
 
 	/**
+	 * TODO
+	 */
+	protected final AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory;
+
+	/**
 	 * Controls IO budgeting and fetcher queue.
 	 */
 	protected final Cache cache;
@@ -274,6 +307,8 @@ public class MultiResolutionRenderer
 	 * @param useVolatileIfAvailable
 	 *            whether volatile versions of sources should be used if
 	 *            available.
+	 * @param accumulateProjectorFactory
+	 *            can be used to customize how sources are combined.
 	 * @param cache
 	 *            the cache controls IO budgeting and fetcher queue.
 	 */
@@ -286,6 +321,7 @@ public class MultiResolutionRenderer
 			final int numRenderingThreads,
 			final ExecutorService renderingExecutorService,
 			final boolean useVolatileIfAvailable,
+			final AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory,
 			final Cache cache )
 	{
 		this.display = wrapTransformAwareRenderTarget( display );
@@ -310,6 +346,7 @@ public class MultiResolutionRenderer
 		this.numRenderingThreads = numRenderingThreads;
 		this.renderingExecutorService = renderingExecutorService;
 		this.useVolatileIfAvailable = useVolatileIfAvailable;
+		this.accumulateProjectorFactory = accumulateProjectorFactory;
 		this.cache = cache;
 		newFrameRequest = false;
 		previousTimepoint = -1;
@@ -552,7 +589,7 @@ public class MultiResolutionRenderer
 			final ARGBScreenImage screenImage )
 	{
 		cache.initIoTimeBudget( null ); // clear time budget such that prefetching doesn't wait for loading blocks.
-		final List< SourceState< ? > > sources = viewerState.getSources();
+		final List< SourceState< ? > > sourceStates = viewerState.getSources();
 		final List< Integer > visibleSourceIndices = viewerState.getVisibleSourceIndices();
 		VolatileProjector projector;
 		if ( visibleSourceIndices.isEmpty() )
@@ -560,12 +597,13 @@ public class MultiResolutionRenderer
 		else if ( visibleSourceIndices.size() == 1 )
 		{
 			final int i = visibleSourceIndices.get( 0 );
-			projector = createSingleSourceProjector( viewerState, sources.get( i ), i, currentScreenScaleIndex, screenImage, renderMaskArrays[ 0 ] );
+			projector = createSingleSourceProjector( viewerState, sourceStates.get( i ), i, currentScreenScaleIndex, screenImage, renderMaskArrays[ 0 ] );
 		}
 		else
 		{
 			final ArrayList< VolatileProjector > sourceProjectors = new ArrayList< VolatileProjector >();
 			final ArrayList< ARGBScreenImage > sourceImages = new ArrayList< ARGBScreenImage >();
+			final ArrayList< Source< ? > > sources = new ArrayList< Source< ? > >();
 			int j = 0;
 			for ( final int i : visibleSourceIndices )
 			{
@@ -573,12 +611,13 @@ public class MultiResolutionRenderer
 				final byte[] maskArray = renderMaskArrays[ j ];
 				++j;
 				final VolatileProjector p = createSingleSourceProjector(
-						viewerState, sources.get( i ), i, currentScreenScaleIndex,
+						viewerState, sourceStates.get( i ), i, currentScreenScaleIndex,
 						renderImage, maskArray );
 				sourceProjectors.add( p );
+				sources.add( sourceStates.get( i ).getSpimSource() );
 				sourceImages.add( renderImage );
 			}
-			projector = new AccumulateProjectorARGB( sourceProjectors, sourceImages, screenImage, numRenderingThreads, renderingExecutorService );
+			projector = accumulateProjectorFactory.createAccumulateProjector( sourceProjectors, sources, sourceImages, screenImage, numRenderingThreads, renderingExecutorService );
 		}
 		previousTimepoint = viewerState.getCurrentTimepoint();
 		viewerState.getViewerTransform( currentProjectorTransform );
