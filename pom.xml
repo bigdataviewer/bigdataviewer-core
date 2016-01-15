@@ -16,13 +16,10 @@
 	<name>BigDataViewer Core</name>
 	<description>BigDataViewer core classes with minimal dependencies</description>
 
-	<properties><enforcer.skip>true</enforcer.skip></properties>
-	
 	<dependencies>
 		<dependency>
 			<groupId>net.imglib2</groupId>
 			<artifactId>imglib2</artifactId>
-			<version>2.2.2-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>net.imglib2</groupId>
@@ -59,12 +56,12 @@
 		<dependency>
 			<groupId>org.jogamp.gluegen</groupId>
 			<artifactId>gluegen-rt-main</artifactId>
-			<version>2.3.1</version>
+			<version>2.3.2</version>
 		</dependency>
  		<dependency>
 			<groupId>org.jogamp.jocl</groupId>
 			<artifactId>jocl-main</artifactId>
-			<version>2.3.1</version>
+			<version>2.3.2</version>
 		</dependency>
 	</dependencies>
 
