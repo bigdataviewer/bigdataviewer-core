@@ -33,7 +33,8 @@ import java.awt.event.ActionEvent;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
 
-import bdv.behaviour.KeyStrokeAdder;
+import org.scijava.ui.behaviour.KeyStrokeAdder;
+
 import bdv.tools.ToggleDialogAction;
 import bdv.util.AbstractNamedAction;
 import bdv.util.AbstractNamedAction.NamedActionAdder;

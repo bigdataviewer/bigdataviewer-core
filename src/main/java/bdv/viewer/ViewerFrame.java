@@ -38,8 +38,9 @@ import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 
+import org.scijava.ui.behaviour.MouseAndKeyHandler;
+
 import bdv.BehaviourTransformEventHandler;
-import bdv.behaviour.MouseAndKeyHandler;
 import bdv.img.cache.Cache;
 import net.imglib2.ui.TransformEventHandler;
 import net.imglib2.ui.util.GuiUtil;

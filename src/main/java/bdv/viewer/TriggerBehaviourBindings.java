@@ -39,8 +39,8 @@ import java.util.Set;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
 
-import bdv.behaviour.BehaviourMap;
-import bdv.behaviour.InputTriggerMap;
+import org.scijava.ui.behaviour.BehaviourMap;
+import org.scijava.ui.behaviour.InputTriggerMap;
 
 /**
  * Maintains lists of {@link BehaviourMap}s and {@link InputTriggerMap}s, which

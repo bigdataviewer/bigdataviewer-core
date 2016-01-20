@@ -48,10 +48,10 @@ import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
+import org.scijava.ui.behaviour.KeyStrokeAdder;
+import org.scijava.ui.behaviour.io.InputTriggerConfig;
+import org.scijava.ui.behaviour.io.json.JsonConfigIO;
 
-import bdv.behaviour.KeyStrokeAdder;
-import bdv.behaviour.io.InputTriggerConfig;
-import bdv.behaviour.io.json.JsonConfigIO;
 import bdv.export.ProgressWriter;
 import bdv.export.ProgressWriterConsole;
 import bdv.img.cache.Cache;

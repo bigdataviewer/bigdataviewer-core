@@ -41,7 +41,7 @@ import java.util.Set;
 import javax.swing.InputMap;
 import javax.swing.KeyStroke;
 
-import bdv.behaviour.KeyStrokeAdder;
+import org.scijava.ui.behaviour.KeyStrokeAdder;
 
 public final class KeyProperties implements KeyStrokeAdder.Factory
 {

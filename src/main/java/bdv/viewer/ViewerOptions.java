@@ -28,16 +28,17 @@
  */
 package bdv.viewer;
 
-import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.ui.TransformEventHandler3D;
-import net.imglib2.ui.TransformEventHandlerFactory;
-import bdv.behaviour.io.InputTriggerConfig;
+import org.scijava.ui.behaviour.io.InputTriggerConfig;
+
 import bdv.viewer.animate.MessageOverlayAnimator;
 import bdv.viewer.render.AccumulateProjector;
 import bdv.viewer.render.AccumulateProjectorARGB;
 import bdv.viewer.render.AccumulateProjectorFactory;
 import bdv.viewer.render.MultiResolutionRenderer;
+import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.numeric.ARGBType;
+import net.imglib2.ui.TransformEventHandler3D;
+import net.imglib2.ui.TransformEventHandlerFactory;
 
 /**
  * Optional parameters for {@link ViewerPanel}.

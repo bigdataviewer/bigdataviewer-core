@@ -2,8 +2,9 @@ package bdv.util;
 
 import java.io.IOException;
 
-import bdv.behaviour.io.InputTriggerDescriptionsBuilder;
-import bdv.behaviour.io.json.JsonConfigIO;
+import org.scijava.ui.behaviour.io.InputTriggerDescriptionsBuilder;
+import org.scijava.ui.behaviour.io.json.JsonConfigIO;
+
 import bdv.viewer.ViewerFrame;
 
 public class DumpInputConfig
