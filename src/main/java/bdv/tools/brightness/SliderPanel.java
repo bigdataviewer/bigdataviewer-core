@@ -107,6 +107,11 @@ public class SliderPanel extends JPanel implements BoundedValue.UpdateListener
 		model.setUpdateListener( this );
 	}
 
+	public void setNumColummns( final int cols )
+	{
+		( ( JSpinner.NumberEditor ) spinner.getEditor() ).getTextField().setColumns( cols );
+	}
+
 	@Override
 	public void update()
 	{
