@@ -93,10 +93,13 @@ public class SliderPanel extends JPanel implements BoundedValue.UpdateListener
 			}
 		} );
 
-		final JLabel label = new JLabel( name, SwingConstants.CENTER );
-		label.setAlignmentX( Component.CENTER_ALIGNMENT );
+		if ( name != null )
+		{
+			final JLabel label = new JLabel( name, SwingConstants.CENTER );
+			label.setAlignmentX( Component.CENTER_ALIGNMENT );
+			add( label, BorderLayout.WEST );
+		}
 
-		add( label, BorderLayout.WEST );
 		add( slider, BorderLayout.CENTER );
 		add( spinner, BorderLayout.EAST );
 
