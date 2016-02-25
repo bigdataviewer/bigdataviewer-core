@@ -50,7 +50,7 @@ import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 import org.scijava.ui.behaviour.KeyStrokeAdder;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
-import org.scijava.ui.behaviour.io.json.JsonConfigIO;
+import org.scijava.ui.behaviour.io.yaml.YamlConfigIO;
 
 import bdv.export.ProgressWriter;
 import bdv.export.ProgressWriterConsole;
@@ -739,7 +739,7 @@ public class BigDataViewer
 			InputTriggerConfig keyconf;
 			try
 			{
-				keyconf = new InputTriggerConfig( JsonConfigIO.read( "/Users/pietzsch/Desktop/bdvkeyconfig.json" ) );
+				keyconf = new InputTriggerConfig(YamlConfigIO.read( System.getProperty( "user.home" ) + "/.bdv/bdvkeyconfig.yaml" ) );
 			}
 			catch ( final IOException e )
 			{
@@ -751,7 +751,7 @@ public class BigDataViewer
 						transformEventHandlerFactory( BehaviourTransformEventHandler3D.factory( keyconf ) ).
 						inputTriggerConfig( keyconf ) );
 
-//			DumpInputConfig.writeToJson( "/Users/pietzsch/Desktop/bdvkeyconfig.json", bdv.getViewerFrame() );
+//			DumpInputConfig.writeToYaml( System.getProperty( "user.home" ) + "/.bdv/bdvkeyconfig.yaml", bdv.getViewerFrame() );
 		}
 		catch ( final Exception e )
 		{
