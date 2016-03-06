@@ -88,7 +88,11 @@ public class SetupAssignments
 		setupToGroup = new HashMap< ConverterSetup, MinMaxGroup >();
 		for ( final ConverterSetup setup : setups )
 		{
-			final MinMaxGroup group = new MinMaxGroup( fullRangeMin, fullRangeMax, fullRangeMin, fullRangeMax, ( int ) setup.getDisplayRangeMin(), ( int ) setup.getDisplayRangeMax() );
+			final int displayRangeMin = Math.max( fullRangeMin, Math.min( fullRangeMax, ( int ) setup.getDisplayRangeMin() ) );
+			final int displayRangeMax = Math.max( fullRangeMin, Math.min( fullRangeMax, ( int ) setup.getDisplayRangeMax() ) );
+			if ( setup.getDisplayRangeMin() != displayRangeMin || setup.getDisplayRangeMax() != displayRangeMax )
+				setup.setDisplayRange( displayRangeMin, displayRangeMax );
+			final MinMaxGroup group = new MinMaxGroup( fullRangeMin, fullRangeMax, fullRangeMin, fullRangeMax, displayRangeMin, displayRangeMax );
 			minMaxGroups.add( group );
 			setupToGroup.put( setup, group );
 			group.addSetup( setup );
