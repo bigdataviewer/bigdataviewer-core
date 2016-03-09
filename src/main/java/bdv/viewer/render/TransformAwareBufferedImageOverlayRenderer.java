@@ -153,4 +153,18 @@ public class TransformAwareBufferedImageOverlayRenderer extends BufferedImageOve
 			paintedTransformListeners.remove( listener );
 		}
 	}
+
+	/**
+	 * DON'T USE THIS.
+	 * <p>
+	 * This is a work around for JDK bug
+	 * https://bugs.openjdk.java.net/browse/JDK-8029147 which leads to
+	 * ViewerPanel not being garbage-collected when ViewerFrame is closed. So
+	 * instead we need to manually let go of resources...
+	 */
+	void kill()
+	{
+		bufferedImage = null;
+		pendingImage = null;
+	}
 }
