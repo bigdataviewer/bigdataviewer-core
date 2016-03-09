@@ -109,7 +109,7 @@
 				<configuration>
 					<licenseName>bsd_2</licenseName>
 					<copyrightOwners>Tobias Pietzsch, Stephan Saalfeld, Stephan Preibisch,
-Jean-Yves Tinevez, HongKee Moon, Johannes Schindelin, Curtis Rueden</copyrightOwners>
+Jean-Yves Tinevez, HongKee Moon, Johannes Schindelin, Curtis Rueden, John Bogovic</copyrightOwners>
 					<organizationName>BigDataViewer authors</organizationName>
 					<projectName>BigDataViewer core classes with minimal dependencies</projectName>
 					<roots>
