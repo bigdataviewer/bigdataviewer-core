@@ -48,10 +48,11 @@ import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
-import org.scijava.ui.behaviour.KeyStrokeAdder;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
+import org.scijava.ui.behaviour.io.InputTriggerDescription;
 import org.scijava.ui.behaviour.io.yaml.YamlConfigIO;
 
+import bdv.BehaviourTransformEventHandler3D.BehaviourTransformEventHandler3DFactory;
 import bdv.export.ProgressWriter;
 import bdv.export.ProgressWriterConsole;
 import bdv.img.cache.Cache;
@@ -333,6 +334,10 @@ public class BigDataViewer
 			final ProgressWriter progressWriter,
 			final ViewerOptions options )
 	{
+		final InputTriggerConfig inputTriggerConfig = getInputTriggerConfig( options );
+		if ( options.values.getTransformEventHandlerFactory() instanceof BehaviourTransformEventHandler3DFactory )
+			( ( BehaviourTransformEventHandler3DFactory ) options.values.getTransformEventHandlerFactory() ).setConfig( inputTriggerConfig );
+
 		viewerFrame = new ViewerFrame( sources, numTimepoints, cache, options );
 		if ( windowTitle != null )
 			viewerFrame.setTitle( windowTitle );
@@ -400,9 +405,8 @@ public class BigDataViewer
 			}
 		} );
 
-		final KeyStrokeAdder.Factory keyProperties = getKeyConfig( options );
-		NavigationActions.installActionBindings( viewerFrame.getKeybindings(), viewer, keyProperties );
-		BigDataViewerActions.installActionBindings( viewerFrame.getKeybindings(), this, keyProperties );
+		NavigationActions.installActionBindings( viewerFrame.getKeybindings(), viewer, inputTriggerConfig );
+		BigDataViewerActions.installActionBindings( viewerFrame.getKeybindings(), this, inputTriggerConfig );
 
 		final JMenuBar menubar = new JMenuBar();
 		JMenu menu = new JMenu( "File" );
@@ -594,10 +598,68 @@ public class BigDataViewer
 		xout.output( doc, new FileWriter( xmlFilename ) );
 	}
 
-	protected KeyStrokeAdder.Factory getKeyConfig( final ViewerOptions options )
+	/**
+	 * If {@code options} doesn't define a {@link InputTriggerConfig}, try to
+	 * load it from files in this order:
+	 * <ol>
+	 * <li>"bdvkeyconfig.yaml" in the current directory.
+	 * <li>".bdv/bdvkeyconfig.yaml" in the user's home directory.
+	 * <li>legacy "bigdataviewer.keys.properties" in current directory (will be
+	 * also written to "bdvkeyconfig.yaml").
+	 * </ol>
+	 *
+	 * @param options
+	 * @return
+	 */
+	protected InputTriggerConfig getInputTriggerConfig( final ViewerOptions options )
 	{
-		final InputTriggerConfig conf = options.values.getInputTriggerConfig();
-		return conf != null ? conf : KeyProperties.readPropertyFile();
+		InputTriggerConfig conf = options.values.getInputTriggerConfig();
+
+		// try "bdvkeyconfig.yaml" in current directory
+		if ( conf == null && new File( "bdvkeyconfig.yaml" ).isFile() )
+		{
+			try
+			{
+				conf = new InputTriggerConfig( YamlConfigIO.read( "bdvkeyconfig.yaml" ) );
+			}
+			catch ( final IOException e )
+			{}
+		}
+
+		// try "~/.bdv/bdvkeyconfig.yaml" in current directory
+		if ( conf == null )
+		{
+			final String fn = System.getProperty( "user.home" ) + "/.bdv/bdvkeyconfig.yaml";
+			if ( new File( fn ).isFile() )
+			{
+				try
+				{
+					conf = new InputTriggerConfig( YamlConfigIO.read( fn ) );
+				}
+				catch ( final IOException e )
+				{}
+			}
+		}
+
+		// try to load and convert old KeyProperties file "bigdataviewer.keys.properties" in current directory
+		if ( conf == null && new File( "bigdataviewer.keys.properties" ).exists() )
+		{
+			final ArrayList< InputTriggerDescription > descriptions = KeyProperties.readPropertyFile().getInputTriggerDescriptions();
+			conf = new InputTriggerConfig( descriptions );
+			try
+			{
+				YamlConfigIO.write( descriptions, "bdvkeyconfig.yaml" );
+			}
+			catch ( final IOException e )
+			{}
+		}
+
+		if ( conf == null )
+		{
+			conf = new InputTriggerConfig();
+		}
+
+		return conf;
 	}
 
 	protected void loadSettings()
@@ -736,20 +798,7 @@ public class BigDataViewer
 		{
 			System.setProperty( "apple.laf.useScreenMenuBar", "true" );
 
-			InputTriggerConfig keyconf;
-			try
-			{
-				keyconf = new InputTriggerConfig(YamlConfigIO.read( System.getProperty( "user.home" ) + "/.bdv/bdvkeyconfig.yaml" ) );
-			}
-			catch ( final IOException e )
-			{
-				keyconf = new InputTriggerConfig();
-			}
-
-			final BigDataViewer bdv = open( fn, new File( fn ).getName(), new ProgressWriterConsole(),
-					ViewerOptions.options().
-						transformEventHandlerFactory( BehaviourTransformEventHandler3D.factory( keyconf ) ).
-						inputTriggerConfig( keyconf ) );
+			final BigDataViewer bdv = open( fn, new File( fn ).getName(), new ProgressWriterConsole(), ViewerOptions.options() );
 
 //			DumpInputConfig.writeToYaml( System.getProperty( "user.home" ) + "/.bdv/bdvkeyconfig.yaml", bdv.getViewerFrame() );
 		}

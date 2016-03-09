@@ -24,16 +24,25 @@ import net.imglib2.ui.TransformListener;
  */
 public class BehaviourTransformEventHandler3D implements BehaviourTransformEventHandler< AffineTransform3D >
 {
-	public static TransformEventHandlerFactory< AffineTransform3D > factory( final InputTriggerConfig config )
+	public static TransformEventHandlerFactory< AffineTransform3D > factory()
 	{
-		return new TransformEventHandlerFactory< AffineTransform3D >()
+		return new BehaviourTransformEventHandler3DFactory();
+	}
+
+	public static class BehaviourTransformEventHandler3DFactory implements TransformEventHandlerFactory< AffineTransform3D >
+	{
+		private InputTriggerConfig config = new InputTriggerConfig();
+
+		public void setConfig( final InputTriggerConfig config )
 		{
-			@Override
-			public TransformEventHandler< AffineTransform3D > create( final TransformListener< AffineTransform3D > transformListener )
-			{
-				return new BehaviourTransformEventHandler3D( transformListener, config );
-			}
-		};
+			this.config = config;
+		}
+
+		@Override
+		public BehaviourTransformEventHandler3D create( final TransformListener< AffineTransform3D > transformListener )
+		{
+			return new BehaviourTransformEventHandler3D( transformListener, config );
+		}
 	}
 
 	/**

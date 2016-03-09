@@ -30,6 +30,7 @@ package bdv.viewer;
 
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 
+import bdv.BehaviourTransformEventHandler3D;
 import bdv.viewer.animate.MessageOverlayAnimator;
 import bdv.viewer.render.AccumulateProjector;
 import bdv.viewer.render.AccumulateProjectorARGB;
@@ -37,7 +38,6 @@ import bdv.viewer.render.AccumulateProjectorFactory;
 import bdv.viewer.render.MultiResolutionRenderer;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.ui.TransformEventHandler3D;
 import net.imglib2.ui.TransformEventHandlerFactory;
 
 /**
@@ -207,7 +207,7 @@ public class ViewerOptions
 
 		private MessageOverlayAnimator msgOverlay = new MessageOverlayAnimator( 800 );
 
-		private TransformEventHandlerFactory< AffineTransform3D > transformEventHandlerFactory = TransformEventHandler3D.factory();
+		private TransformEventHandlerFactory< AffineTransform3D > transformEventHandlerFactory = BehaviourTransformEventHandler3D.factory();
 
 		private AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory = AccumulateProjectorARGB.factory;
 

@@ -32,6 +32,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map.Entry;
@@ -42,7 +43,9 @@ import javax.swing.InputMap;
 import javax.swing.KeyStroke;
 
 import org.scijava.ui.behaviour.KeyStrokeAdder;
+import org.scijava.ui.behaviour.io.InputTriggerDescription;
 
+@Deprecated
 public final class KeyProperties implements KeyStrokeAdder.Factory
 {
 	private final HashSet< KeyStroke > allKeys;
@@ -172,5 +175,19 @@ public final class KeyProperties implements KeyStrokeAdder.Factory
 			properties.put( key.toString(), actionName.toString() );
 		}
 		return properties;
+	}
+
+	public ArrayList< InputTriggerDescription > getInputTriggerDescriptions()
+	{
+		final ArrayList< InputTriggerDescription > descriptions = new ArrayList<>();
+		for ( final Entry< String, HashSet< KeyStroke > > actionToKeysEntry : actionToKeysMap.entrySet() )
+		{
+			final String action = actionToKeysEntry.getKey();
+			final ArrayList< String > triggers = new ArrayList< >();
+			for ( final KeyStroke key : actionToKeysEntry.getValue() )
+				triggers.add( key.toString() );
+			descriptions.add( new InputTriggerDescription( triggers.toArray( new String[ 0 ] ), action, "bdv" ) );
+		}
+		return descriptions;
 	}
 }
