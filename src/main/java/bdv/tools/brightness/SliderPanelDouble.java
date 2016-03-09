@@ -71,7 +71,6 @@ public class SliderPanelDouble extends JPanel implements BoundedValueDouble.Upda
 	 * @param model
 	 *            the value that is modified.
 	 * @param spinnerStepSize
-	 * @param decimalFormat
 	 */
 	public SliderPanelDouble(
 			final String name,
