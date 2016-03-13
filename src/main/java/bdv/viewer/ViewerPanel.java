@@ -102,7 +102,7 @@ import bdv.viewer.state.XmlIoViewerState;
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
-public class ViewerPanel extends JPanel implements OverlayRenderer, TransformListener< AffineTransform3D >, PainterThread.Paintable, VisibilityAndGrouping.UpdateListener
+public class ViewerPanel extends JPanel implements OverlayRenderer, TransformListener< AffineTransform3D >, PainterThread.Paintable, VisibilityAndGrouping.UpdateListener, RequestRepaint
 {
 	private static final long serialVersionUID = 1L;
 
@@ -441,6 +441,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	/**
 	 * Repaint as soon as possible.
 	 */
+	@Override
 	public void requestRepaint()
 	{
 		imageRenderer.requestRepaint();

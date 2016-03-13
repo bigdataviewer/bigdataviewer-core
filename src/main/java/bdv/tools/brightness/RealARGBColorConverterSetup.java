@@ -31,9 +31,9 @@ package bdv.tools.brightness;
 import java.util.Arrays;
 import java.util.List;
 
+import bdv.viewer.RequestRepaint;
 import net.imglib2.display.ColorConverter;
 import net.imglib2.type.numeric.ARGBType;
-import bdv.viewer.ViewerPanel;
 
 public class RealARGBColorConverterSetup implements ConverterSetup
 {
@@ -41,7 +41,7 @@ public class RealARGBColorConverterSetup implements ConverterSetup
 
 	protected final List< ColorConverter > converters;
 
-	protected ViewerPanel viewer;
+	protected RequestRepaint viewer;
 
 	public RealARGBColorConverterSetup( final int setupId, final ColorConverter ... converters )
 	{
@@ -106,7 +106,7 @@ public class RealARGBColorConverterSetup implements ConverterSetup
 		return converters.get( 0 ).getColor();
 	}
 
-	public void setViewer( final ViewerPanel viewer )
+	public void setViewer( final RequestRepaint viewer )
 	{
 		this.viewer = viewer;
 	}
