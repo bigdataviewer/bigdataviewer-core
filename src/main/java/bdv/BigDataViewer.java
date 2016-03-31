@@ -626,7 +626,7 @@ public class BigDataViewer
 			{}
 		}
 
-		// try "~/.bdv/bdvkeyconfig.yaml" in current directory
+		// try "~/.bdv/bdvkeyconfig.yaml"
 		if ( conf == null )
 		{
 			final String fn = System.getProperty( "user.home" ) + "/.bdv/bdvkeyconfig.yaml";
