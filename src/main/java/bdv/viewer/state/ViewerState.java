@@ -54,14 +54,14 @@ import bdv.viewer.SourceAndConverter;
  */
 public class ViewerState
 {
-	protected final ArrayList< SourceState< ? > > sources;
+	private final ArrayList< SourceState< ? > > sources;
 
 	/**
 	 * read-only view of {@link #sources}.
 	 */
 	private final List< SourceState< ? > > unmodifiableSources;
 
-	protected final ArrayList< SourceGroup > groups;
+	private final ArrayList< SourceGroup > groups;
 
 	/**
 	 * read-only view of {@link #groups}.
@@ -77,12 +77,12 @@ public class ViewerState
 	 * Transformation set by the interactive viewer. Transforms from global
 	 * coordinate system to viewer coordinate system.
 	 */
-	protected final AffineTransform3D viewerTransform;
+	private final AffineTransform3D viewerTransform;
 
 	/**
 	 * Which interpolation method is currently used to render the display.
 	 */
-	protected Interpolation interpolation;
+	private Interpolation interpolation;
 
 	/**
 	 * Is the display mode <em>single-source</em>? In <em>single-source</em>
@@ -93,24 +93,24 @@ public class ViewerState
 	/**
 	 * TODO
 	 */
-	protected DisplayMode displayMode;
+	private DisplayMode displayMode;
 
 	/**
 	 * The index of the current source.
 	 * (In single-source mode only the current source is shown.)
 	 */
-	protected int currentSource;
+	private int currentSource;
 
 	/**
 	 * The index of the current group.
 	 * (In single-group mode only the sources in the current group are shown.)
 	 */
-	protected int currentGroup;
+	private int currentGroup;
 
 	/**
 	 * which timepoint is currently shown.
 	 */
-	protected int currentTimepoint;
+	private int currentTimepoint;
 
 	/**
 	 *
