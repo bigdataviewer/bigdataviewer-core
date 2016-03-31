@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -41,6 +41,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Window;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseEvent;
@@ -52,23 +53,13 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javax.swing.DefaultBoundedRangeModel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-
-import net.imglib2.Positionable;
-import net.imglib2.RealLocalizable;
-import net.imglib2.RealPoint;
-import net.imglib2.RealPositionable;
-import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.ui.InteractiveDisplayCanvasComponent;
-import net.imglib2.ui.OverlayRenderer;
-import net.imglib2.ui.PainterThread;
-import net.imglib2.ui.TransformEventHandler;
-import net.imglib2.ui.TransformListener;
-import net.imglib2.util.LinAlgHelpers;
 
 import org.jdom2.Element;
 
@@ -90,6 +81,17 @@ import bdv.viewer.state.SourceGroup;
 import bdv.viewer.state.SourceState;
 import bdv.viewer.state.ViewerState;
 import bdv.viewer.state.XmlIoViewerState;
+import net.imglib2.Positionable;
+import net.imglib2.RealLocalizable;
+import net.imglib2.RealPoint;
+import net.imglib2.RealPositionable;
+import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.ui.InteractiveDisplayCanvasComponent;
+import net.imglib2.ui.OverlayRenderer;
+import net.imglib2.ui.PainterThread;
+import net.imglib2.ui.TransformEventHandler;
+import net.imglib2.ui.TransformListener;
+import net.imglib2.util.LinAlgHelpers;
 
 
 /**
@@ -227,14 +229,14 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	/**
 	 * @param sources
 	 *            the {@link SourceAndConverter sources} to display.
-	 * @param numTimePoints
+	 * @param numTimepoints
 	 *            number of available timepoints.
 	 * @param cache
 	 *            to control IO budgeting and fetcher queue.
 	 * @param optional
 	 *            optional parameters. See {@link ViewerOptions#options()}.
 	 */
-	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimePoints, final Cache cache, final ViewerOptions optional )
+	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimepoints, final Cache cache, final ViewerOptions optional )
 	{
 		super( new BorderLayout(), false );
 		options = optional.values;
@@ -243,7 +245,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		final ArrayList< SourceGroup > groups = new ArrayList< SourceGroup >( numGroups );
 		for ( int i = 0; i < numGroups; ++i )
 			groups.add( new SourceGroup( "group " + Integer.toString( i + 1 ), null ) );
-		state = new ViewerState( sources, groups, numTimePoints );
+		state = new ViewerState( sources, groups, numTimepoints );
 		for ( int i = Math.min( numGroups, sources.size() ) - 1; i >= 0; --i )
 			state.getSourceGroups().get( i ).addSource( i );
 
@@ -278,23 +280,20 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		mouseCoordinates = new MouseCoordinateListener();
 		display.addHandler( mouseCoordinates );
 
-		add( display, BorderLayout.CENTER );
-		if ( numTimePoints > 1 )
+		sliderTime = new JSlider( SwingConstants.HORIZONTAL, 0, numTimepoints - 1, 0 );
+		sliderTime.addChangeListener( new ChangeListener()
 		{
-			sliderTime = new JSlider( SwingConstants.HORIZONTAL, 0, numTimePoints - 1, 0 );
-			sliderTime.addChangeListener( new ChangeListener()
+			@Override
+			public void stateChanged( final ChangeEvent e )
 			{
-				@Override
-				public void stateChanged( final ChangeEvent e )
-				{
-					if ( e.getSource().equals( sliderTime ) )
-						setTimepoint( sliderTime.getValue() );
-				}
-			} );
+				if ( e.getSource().equals( sliderTime ) )
+					setTimepoint( sliderTime.getValue() );
+			}
+		} );
+
+		add( display, BorderLayout.CENTER );
+		if ( numTimepoints > 1 )
 			add( sliderTime, BorderLayout.SOUTH );
-		}
-		else
-			sliderTime = null;
 
 		visibilityAndGrouping = new VisibilityAndGrouping( state );
 		visibilityAndGrouping.addUpdateListener( this );
@@ -668,7 +667,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 */
 	public synchronized void nextTimePoint()
 	{
-		if ( sliderTime != null )
+		if ( state.getNumTimepoints() > 1 )
 			sliderTime.setValue( sliderTime.getValue() + 1 );
 	}
 
@@ -677,8 +676,44 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 */
 	public synchronized void previousTimePoint()
 	{
-		if ( sliderTime != null )
+		if ( state.getNumTimepoints() > 1 )
 			sliderTime.setValue( sliderTime.getValue() - 1 );
+	}
+
+	/**
+	 * Set the number of available timepoints. If {@code numTimepoints == 1}
+	 * this will hide the time slider, otherwise show it. If the currently
+	 * displayed timepoint would be out of range with the new number of
+	 * timepoints, the current timepoint is set to {@code numTimepoints - 1}.
+	 *
+	 * @param numTimepoints
+	 *            number of available timepoints. Must be {@code >= 1}.
+	 */
+	public synchronized void setNumTimepoints( final int numTimepoints )
+	{
+		if ( numTimepoints < 1 || state.getNumTimepoints() == numTimepoints )
+			return;
+		else if ( numTimepoints == 1 && state.getNumTimepoints() > 1 )
+			remove( sliderTime );
+		else if ( numTimepoints > 1 && state.getNumTimepoints() == 1 )
+			add( sliderTime, BorderLayout.SOUTH );
+
+		state.setNumTimepoints( numTimepoints );
+		if ( state.getCurrentTimepoint() >= numTimepoints )
+		{
+			final int timepoint = numTimepoints - 1;
+			state.setCurrentTimepoint( timepoint );
+			for ( final TimePointListener l : timePointListeners )
+				l.timePointChanged( timepoint );
+		}
+		sliderTime.setModel( new DefaultBoundedRangeModel( state.getCurrentTimepoint(), 0, 0, numTimepoints - 1 ) );
+
+		invalidate();
+		final Window frame = SwingUtilities.getWindowAncestor( this );
+		if ( frame != null )
+			frame.pack();
+
+		requestRepaint();
 	}
 
 	/**

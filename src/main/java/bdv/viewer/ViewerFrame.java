@@ -63,17 +63,17 @@ public class ViewerFrame extends JFrame
 
 	public ViewerFrame(
 			final List< SourceAndConverter< ? > > sources,
-			final int numTimePoints,
+			final int numTimepoints,
 			final Cache cache )
 	{
-		this( sources, numTimePoints, cache, ViewerOptions.options() );
+		this( sources, numTimepoints, cache, ViewerOptions.options() );
 	}
 
 	/**
 	 *
 	 * @param sources
 	 *            the {@link SourceAndConverter sources} to display.
-	 * @param numTimePoints
+	 * @param numTimepoints
 	 *            number of available timepoints.
 	 * @param cache
 	 *            handle to cache. This is used to control io timing.
@@ -82,13 +82,13 @@ public class ViewerFrame extends JFrame
 	 */
 	public ViewerFrame(
 			final List< SourceAndConverter< ? > > sources,
-			final int numTimePoints,
+			final int numTimepoints,
 			final Cache cache,
 			final ViewerOptions optional )
 	{
 //		super( "BigDataViewer", GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.ARGB_COLOR_MODEL ) );
 		super( "BigDataViewer", GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.RGB_COLOR_MODEL ) );
-		viewer = new ViewerPanel( sources, numTimePoints, cache, optional );
+		viewer = new ViewerPanel( sources, numTimepoints, cache, optional );
 		keybindings = new InputActionBindings();
 		triggerbindings = new TriggerBehaviourBindings();
 
