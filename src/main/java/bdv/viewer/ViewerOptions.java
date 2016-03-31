@@ -174,11 +174,9 @@ public class ViewerOptions
 	}
 
 	/**
-	 * TODO javadoc
-	 * TODO is this config option necessary?
+	 * Set the {@link InputTriggerConfig} from which keyboard and mouse action mapping is loaded.
 	 *
-	 * @param c
-	 * @return
+	 * @param c the {@link InputTriggerConfig} from which keyboard and mouse action mapping is loaded
 	 */
 	public ViewerOptions inputTriggerConfig( final InputTriggerConfig c )
 	{
