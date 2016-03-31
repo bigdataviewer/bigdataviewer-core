@@ -71,7 +71,7 @@ public class ViewerState
 	/**
 	 * number of available timepoints.
 	 */
-	protected final int numTimePoints;
+	private int numTimepoints;
 
 	/**
 	 * Transformation set by the interactive viewer. Transforms from global
@@ -129,7 +129,7 @@ public class ViewerState
 		for ( final SourceGroup g : sourceGroups )
 			groups.add( g.copy( this ) );
 		unmodifiableGroups = Collections.unmodifiableList( this.groups );
-		this.numTimePoints = numTimePoints;
+		this.numTimepoints = numTimePoints;
 
 		viewerTransform = new AffineTransform3D();
 		interpolation = NEARESTNEIGHBOR;
@@ -153,7 +153,7 @@ public class ViewerState
 		for ( final SourceGroup group : s.groups )
 			this.groups.add( group.copy( this ) );
 		unmodifiableGroups = Collections.unmodifiableList( groups );
-		numTimePoints = s.numTimePoints;
+		numTimepoints = s.numTimepoints;
 		viewerTransform = s.viewerTransform.copy();
 		interpolation = s.interpolation;
 		displayMode = s.displayMode;
@@ -484,8 +484,16 @@ public class ViewerState
 	}
 
 	public int getNumTimePoints()
+
+	/**
+	 * Set the number of timepoints.
+	 *
+	 * @param numTimepoints
+	 *            the number of timepoints.
+	 */
+	public synchronized void setNumTimepoints( final int numTimepoints )
 	{
-		return numTimePoints;
+		this.numTimepoints = numTimepoints;
 	}
 
 	/**
