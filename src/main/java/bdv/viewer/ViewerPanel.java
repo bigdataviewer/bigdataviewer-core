@@ -355,7 +355,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 * @param gPos
 	 *            is set to the corresponding global coordinates.
 	 */
-	public <P extends RealLocalizable & RealPositionable > void displayToGlobalCoordinates( final double[] gPos )
+	public < P extends RealLocalizable & RealPositionable > void displayToGlobalCoordinates( final double[] gPos )
 	{
 		assert gPos.length >= 3;
 
@@ -369,7 +369,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 * @param gPos
 	 *            is set to the corresponding global coordinates.
 	 */
-	public <P extends RealLocalizable & RealPositionable > void displayToGlobalCoordinates( final P gPos )
+	public < P extends RealLocalizable & RealPositionable > void displayToGlobalCoordinates( final P gPos )
 	{
 		assert gPos.numDimensions() >= 3;
 
