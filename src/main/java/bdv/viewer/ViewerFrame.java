@@ -118,14 +118,6 @@ public class ViewerFrame extends JFrame
 			( ( BehaviourTransformEventHandler< ? > ) tfHandler ).install( triggerbindings );
 	}
 
-	// TODO: remove!?
-//	public void addHandler( final Object handler )
-//	{
-//		viewer.addHandler( handler );
-//		if ( KeyListener.class.isInstance( handler ) )
-//			addKeyListener( ( KeyListener ) handler );
-//	}
-
 	public ViewerPanel getViewerPanel()
 	{
 		return viewer;

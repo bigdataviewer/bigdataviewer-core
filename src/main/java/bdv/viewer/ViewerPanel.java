@@ -342,12 +342,6 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		requestRepaint();
 	}
 
-	// TODO: remove?
-//	public void addHandler( final Object handler )
-//	{
-//		display.addHandler( handler );
-//	}
-
 	/**
 	 * Set {@code gPos} to the display coordinates at gPos transformed into the
 	 * global coordinate system.
