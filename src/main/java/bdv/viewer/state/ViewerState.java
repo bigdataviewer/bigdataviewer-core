@@ -483,7 +483,15 @@ public class ViewerState
 		return MipmapTransforms.getBestMipMapLevel( screenTransform, source, currentTimepoint );
 	}
 
-	public int getNumTimePoints()
+	/**
+	 * Get the number of timepoints.
+	 *
+	 * @return the number of timepoints.
+	 */
+	public synchronized int getNumTimepoints()
+	{
+		return numTimepoints;
+	}
 
 	/**
 	 * Set the number of timepoints.

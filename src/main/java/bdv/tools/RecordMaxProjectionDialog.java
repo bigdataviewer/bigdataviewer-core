@@ -106,7 +106,7 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 	{
 		super( owner, "record max projection movie", false );
 		this.viewer = viewer;
-		maxTimepoint = viewer.getState().getNumTimePoints() - 1;
+		maxTimepoint = viewer.getState().getNumTimepoints() - 1;
 		this.progressWriter = progressWriter;
 
 		final JPanel boxes = new JPanel();

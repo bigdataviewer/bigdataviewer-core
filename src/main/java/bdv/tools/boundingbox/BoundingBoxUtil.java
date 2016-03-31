@@ -45,7 +45,7 @@ public class BoundingBoxUtil
 {
 	public static Interval getSourcesBoundingBox( final ViewerState state )
 	{
-		return getSourcesBoundingBox( state, 0, state.getNumTimePoints() - 1 );
+		return getSourcesBoundingBox( state, 0, state.getNumTimepoints() - 1 );
 	}
 
 	public static Interval getSourcesBoundingBox( final ViewerState state, final int minTimepointIndex, final int maxTimepointIndex )
@@ -100,7 +100,7 @@ public class BoundingBoxUtil
 
 	public static RealInterval getSourcesBoundingBoxReal( final ViewerState state )
 	{
-		return getSourcesBoundingBoxReal( state, 0, state.getNumTimePoints() - 1 );
+		return getSourcesBoundingBoxReal( state, 0, state.getNumTimepoints() - 1 );
 	}
 
 	public static RealInterval getSourcesBoundingBoxReal( final ViewerState state, final int minTimepointIndex, final int maxTimepointIndex )
