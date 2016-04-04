@@ -47,6 +47,7 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -689,7 +690,26 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 * @param numTimepoints
 	 *            number of available timepoints. Must be {@code >= 1}.
 	 */
-	public synchronized void setNumTimepoints( final int numTimepoints )
+	public void setNumTimepoints( final int numTimepoints )
+	{
+		try
+		{
+			SwingUtilities.invokeAndWait( new Runnable()
+			{
+				@Override
+				public void run()
+				{
+					setNumTimepointsSynchronized( numTimepoints );
+				}
+			} );
+		}
+		catch ( InvocationTargetException | InterruptedException e )
+		{
+			e.printStackTrace();
+		}
+	}
+
+	private synchronized void setNumTimepointsSynchronized( final int numTimepoints )
 	{
 		if ( numTimepoints < 1 || state.getNumTimepoints() == numTimepoints )
 			return;
@@ -709,7 +729,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		sliderTime.setModel( new DefaultBoundedRangeModel( state.getCurrentTimepoint(), 0, 0, numTimepoints - 1 ) );
 
 		invalidate();
-		final Window frame = SwingUtilities.getWindowAncestor( this );
+		final Window frame = SwingUtilities.getWindowAncestor( ViewerPanel.this );
 		if ( frame != null )
 			frame.pack();
 
