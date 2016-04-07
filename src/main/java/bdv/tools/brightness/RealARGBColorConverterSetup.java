@@ -106,6 +106,7 @@ public class RealARGBColorConverterSetup implements ConverterSetup
 		return converters.get( 0 ).getColor();
 	}
 
+	@Override
 	public void setViewer( final RequestRepaint viewer )
 	{
 		this.viewer = viewer;

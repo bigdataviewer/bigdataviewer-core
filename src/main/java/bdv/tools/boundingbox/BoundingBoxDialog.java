@@ -44,11 +44,6 @@ import javax.swing.JDialog;
 import javax.swing.KeyStroke;
 import javax.swing.WindowConstants;
 
-import net.imglib2.Interval;
-import net.imglib2.display.RealARGBColorConverter;
-import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
 import bdv.tools.boundingbox.BoundingBoxOverlay.BoundingBoxOverlaySource;
 import bdv.tools.brightness.RealARGBColorConverterSetup;
 import bdv.tools.brightness.SetupAssignments;
@@ -58,6 +53,11 @@ import bdv.viewer.DisplayMode;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerPanel;
 import bdv.viewer.VisibilityAndGrouping;
+import net.imglib2.Interval;
+import net.imglib2.display.RealARGBColorConverter;
+import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.numeric.ARGBType;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
 
 // dialog to change bounding box
 // while dialog is visible, bounding box is added as a source to the viewer
@@ -167,6 +167,7 @@ public class BoundingBoxDialog extends JDialog
 				{
 					viewer.addSource( boxSourceAndConverter );
 					setupAssignments.addSetup( boxConverterSetup );
+					boxConverterSetup.setViewer( viewer );
 
 					final int bbSourceIndex = viewer.getState().numSources() - 1;
 					final VisibilityAndGrouping vg = viewer.getVisibilityAndGrouping();

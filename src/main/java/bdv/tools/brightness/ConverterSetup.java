@@ -28,6 +28,7 @@
  */
 package bdv.tools.brightness;
 
+import bdv.viewer.RequestRepaint;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import net.imglib2.type.numeric.ARGBType;
 
@@ -87,4 +88,12 @@ public interface ConverterSetup
 	 * @return the color for this converter.
 	 */
 	public ARGBType getColor();
+
+	/**
+	 * Set the {@link RequestRepaint} that should be notified if
+	 * {@link ConverterSetup} settings change.
+	 *
+	 * @param viewer
+	 */
+	public void setViewer( final RequestRepaint viewer );
 }
