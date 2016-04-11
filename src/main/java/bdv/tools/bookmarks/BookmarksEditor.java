@@ -31,6 +31,9 @@ package bdv.tools.bookmarks;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -38,13 +41,13 @@ import javax.swing.ActionMap;
 import javax.swing.InputMap;
 import javax.swing.KeyStroke;
 
-import net.imglib2.Point;
-import net.imglib2.realtransform.AffineTransform3D;
 import bdv.util.Affine3DHelpers;
 import bdv.viewer.InputActionBindings;
 import bdv.viewer.ViewerPanel;
 import bdv.viewer.animate.RotationAnimator;
 import bdv.viewer.animate.SimilarityTransformAnimator;
+import net.imglib2.Point;
+import net.imglib2.realtransform.AffineTransform3D;
 
 public class BookmarksEditor
 {
@@ -59,6 +62,8 @@ public class BookmarksEditor
 	private Mode mode = Mode.INACTIVE;
 
 	private volatile boolean initialKey = false;
+
+	private final ArrayList< String  > inputMapsToBlock;
 
 	private final ViewerPanel viewer;
 
@@ -77,6 +82,7 @@ public class BookmarksEditor
 		this.viewer = viewer;
 		bindings = inputActionBindings;
 		this.bookmarks = bookmarks;
+		inputMapsToBlock = new ArrayList<>( Arrays.asList( "bdv", "navigation" ) );
 
 		final KeyStroke abortKey = KeyStroke.getKeyStroke( KeyEvent.VK_ESCAPE, 0 );
 		final Action abortAction = new AbstractAction( "abort bookmark" )
@@ -176,7 +182,7 @@ public class BookmarksEditor
 	{
 		initialKey = true;
 		this.mode = mode;
-		bindings.addInputMap( "bookmarks", inputMap, "bdv", "navigation" );
+		bindings.addInputMap( "bookmarks", inputMap, inputMapsToBlock );
 		if ( animator != null )
 			animator.clear();
 		animator = new BookmarkTextOverlayAnimator( viewer );
@@ -204,5 +210,11 @@ public class BookmarksEditor
 		mode = Mode.INACTIVE;
 		initialKey = false;
 		bindings.removeInputMap( "bookmarks" );
+	}
+
+	public synchronized void setInputMapsToBlock( final Collection< String > idsToBlock )
+	{
+		inputMapsToBlock.clear();
+		inputMapsToBlock.addAll( idsToBlock );
 	}
 }
