@@ -34,10 +34,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.jdom2.Element;
+
 import mpicbg.spim.data.XmlHelpers;
 import net.imglib2.type.numeric.ARGBType;
-
-import org.jdom2.Element;
 
 /**
  * Manage a (fixed) set of {@link ConverterSetup}s and (changing) set of
@@ -68,6 +68,10 @@ public class SetupAssignments
 	 */
 	private final Map< ConverterSetup, MinMaxGroup > setupToGroup;
 
+	private final int fullRangeMin;
+
+	private final int fullRangeMax;
+
 	public interface UpdateListener
 	{
 		public void update();
@@ -86,6 +90,8 @@ public class SetupAssignments
 		setups = new ArrayList< ConverterSetup >( converterSetups );
 		minMaxGroups = new ArrayList< MinMaxGroup >();
 		setupToGroup = new HashMap< ConverterSetup, MinMaxGroup >();
+		this.fullRangeMin = fullRangeMin;
+		this.fullRangeMax = fullRangeMax;
 		for ( final ConverterSetup setup : setups )
 		{
 			final int displayRangeMin = Math.max( fullRangeMin, Math.min( fullRangeMax, ( int ) setup.getDisplayRangeMin() ) );
@@ -175,8 +181,6 @@ public class SetupAssignments
 	 */
 	public void addSetup( final ConverterSetup setup )
 	{
-		final int fullRangeMin = minMaxGroups.get( 0 ).getFullRangeMin();
-		final int fullRangeMax = minMaxGroups.get( 0 ).getFullRangeMax();
 		final MinMaxGroup group = new MinMaxGroup( fullRangeMin, fullRangeMax, fullRangeMin, fullRangeMax, ( int ) setup.getDisplayRangeMin(), ( int ) setup.getDisplayRangeMax() );
 		minMaxGroups.add( group );
 		setupToGroup.put( setup, group );
