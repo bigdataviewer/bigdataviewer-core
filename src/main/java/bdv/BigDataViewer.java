@@ -52,7 +52,6 @@ import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.io.InputTriggerDescription;
 import org.scijava.ui.behaviour.io.yaml.YamlConfigIO;
 
-import bdv.BehaviourTransformEventHandler3D.BehaviourTransformEventHandler3DFactory;
 import bdv.export.ProgressWriter;
 import bdv.export.ProgressWriterConsole;
 import bdv.img.cache.Cache;
@@ -335,8 +334,8 @@ public class BigDataViewer
 			final ViewerOptions options )
 	{
 		final InputTriggerConfig inputTriggerConfig = getInputTriggerConfig( options );
-		if ( options.values.getTransformEventHandlerFactory() instanceof BehaviourTransformEventHandler3DFactory )
-			( ( BehaviourTransformEventHandler3DFactory ) options.values.getTransformEventHandlerFactory() ).setConfig( inputTriggerConfig );
+		if ( options.values.getTransformEventHandlerFactory() instanceof BehaviourTransformEventHandlerFactory )
+			( ( BehaviourTransformEventHandlerFactory< ? > ) options.values.getTransformEventHandlerFactory() ).setConfig( inputTriggerConfig );
 
 		viewerFrame = new ViewerFrame( sources, numTimepoints, cache, options );
 		if ( windowTitle != null )
