@@ -28,16 +28,23 @@
  */
 package bdv;
 
-import java.awt.event.ActionEvent;
+import java.awt.Dialog;
 
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
 
 import org.scijava.ui.behaviour.KeyStrokeAdder;
 
+import bdv.tools.HelpDialog;
+import bdv.tools.RecordMaxProjectionDialog;
+import bdv.tools.RecordMovieDialog;
 import bdv.tools.ToggleDialogAction;
-import bdv.util.AbstractNamedAction;
-import bdv.util.AbstractNamedAction.NamedActionAdder;
+import bdv.tools.VisibilityAndGroupingDialog;
+import bdv.tools.bookmarks.BookmarksEditor;
+import bdv.tools.brightness.BrightnessDialog;
+import bdv.tools.crop.CropDialog;
+import bdv.tools.transformation.ManualTransformationEditor;
+import bdv.util.RunnableAction;
 import bdv.viewer.InputActionBindings;
 
 public class BigDataViewerActions
@@ -55,6 +62,19 @@ public class BigDataViewerActions
 	public static final String GO_TO_BOOKMARK = "go to bookmark";
 	public static final String GO_TO_BOOKMARK_ROTATION = "go to bookmark rotation";
 
+	static final String[] BRIGHTNESS_SETTINGS_KEYS         = new String[] { "S" };
+	static final String[] VISIBILITY_AND_GROUPING_KEYS     = new String[] { "F6" };
+	static final String[] MANUAL_TRANSFORM_KEYS            = new String[] { "T" };
+	static final String[] SHOW_HELP_KEYS                   = new String[] { "F1", "H" };
+	static final String[] RECORD_MAX_PROJECTION_MOVIE_KEYS = new String[] { "F8" };
+	static final String[] CROP_KEYS                        = new String[] { "F9" };
+	static final String[] RECORD_MOVIE_KEYS                = new String[] { "F10" };
+	static final String[] SAVE_SETTINGS_KEYS               = new String[] { "F11" };
+	static final String[] LOAD_SETTINGS_KEYS               = new String[] { "F12" };
+	static final String[] GO_TO_BOOKMARK_KEYS              = new String[] { "B" };
+	static final String[] GO_TO_BOOKMARK_ROTATION_KEYS     = new String[] { "O" };
+	static final String[] SET_BOOKMARK_KEYS                = new String[] { "shift B" };
+
 	/**
 	 * Create BigDataViewer actions and install them in the specified
 	 * {@link InputActionBindings}.
@@ -71,161 +91,95 @@ public class BigDataViewerActions
 			final BigDataViewer bdv,
 			final KeyStrokeAdder.Factory keyProperties )
 	{
-		inputActionBindings.addActionMap( "bdv", createActionMap( bdv ) );
-		inputActionBindings.addInputMap( "bdv", createInputMap( keyProperties ) );
+		final BigDataViewerActions actions = new BigDataViewerActions( inputActionBindings, keyProperties );
+		actions.dialog( bdv.brightnessDialog );
+		actions.dialog( bdv.activeSourcesDialog );
+		actions.dialog( bdv.helpDialog );
+		actions.dialog( bdv.cropDialog );
+		actions.dialog( bdv.movieDialog );
+		actions.dialog( bdv.movieMaxProjectDialog );
+		actions.bookmarks( bdv.bookmarkEditor );
+		actions.manualTransform( bdv.manualTransformationEditor );
+		actions.runnableAction( bdv::loadSettings, LOAD_SETTINGS, LOAD_SETTINGS_KEYS );
+		actions.runnableAction( bdv::saveSettings, SAVE_SETTINGS, SAVE_SETTINGS_KEYS );
 	}
 
-	public static InputMap createInputMap( final KeyStrokeAdder.Factory keyProperties )
+	private final InputMap inputMap;
+
+	private final ActionMap actionMap;
+
+	private final KeyStrokeAdder.Factory keyConfig;
+
+	public BigDataViewerActions(
+			final InputActionBindings inputActionBindings,
+			final KeyStrokeAdder.Factory keyConfig )
 	{
-		final InputMap inputMap = new InputMap();
-		final KeyStrokeAdder map = keyProperties.keyStrokeAdder( inputMap, "bdv" );
-
-		map.put( BRIGHTNESS_SETTINGS, "S" );
-		map.put( VISIBILITY_AND_GROUPING, "F6" );
-		map.put( MANUAL_TRANSFORM, "T" );
-		map.put( SHOW_HELP, "F1", "H" );
-		map.put( RECORD_MAX_PROJECTION_MOVIE, "F8" );
-		map.put( CROP, "F9" );
-		map.put( RECORD_MOVIE, "F10" );
-		map.put( SAVE_SETTINGS, "F11" );
-		map.put( LOAD_SETTINGS, "F12" );
-		map.put( GO_TO_BOOKMARK, "B" );
-		map.put( GO_TO_BOOKMARK_ROTATION, "O" );
-		map.put( SET_BOOKMARK, "shift B" );
-
-		return inputMap;
+		this( inputActionBindings, keyConfig, "bdv" );
 	}
 
-	public static ActionMap createActionMap( final BigDataViewer bdv )
+	public BigDataViewerActions(
+			final InputActionBindings inputActionBindings,
+			final KeyStrokeAdder.Factory keyConfig,
+			final String name )
 	{
-		final ActionMap actionMap = new ActionMap();
-		final NamedActionAdder map = new NamedActionAdder( actionMap );
-
-		map.put( new ToggleDialogAction( BRIGHTNESS_SETTINGS, bdv.brightnessDialog ) );
-		map.put( new ToggleDialogAction( VISIBILITY_AND_GROUPING, bdv.activeSourcesDialog ) );
-		map.put( new ToggleDialogAction( CROP, bdv.cropDialog ) );
-		map.put( new ToggleDialogAction( RECORD_MAX_PROJECTION_MOVIE, bdv.movieMaxProjectDialog ) );
-		map.put( new ToggleDialogAction( RECORD_MOVIE, bdv.movieDialog ) );
-		map.put( new ToggleDialogAction( SHOW_HELP, bdv.helpDialog ) );
-		map.put( new ManualTransformAction( bdv ) );
-		map.put( new SetBookmarkAction( bdv ) );
-		map.put( new GoToBookmarkAction( bdv ) );
-		map.put( new GoToBookmarkRotationAction( bdv ) );
-		map.put( new SaveSettingsAction( bdv ) );
-		map.put( new LoadSettingsAction( bdv ) );
-
-		return actionMap;
+		this.keyConfig = keyConfig;
+		actionMap = new ActionMap();
+		inputMap = new InputMap();
+		inputActionBindings.addActionMap( name, actionMap );
+		inputActionBindings.addInputMap( name, inputMap );
 	}
 
-	private static abstract class ViewerAction extends AbstractNamedAction
+	public void toggleDialogAction( final Dialog dialog, final String name, final String... defaultKeyStrokes )
 	{
-		protected final BigDataViewer bdv;
-
-		public ViewerAction( final String name, final BigDataViewer bdv )
-		{
-			super( name );
-			this.bdv = bdv;
-		}
-
-		private static final long serialVersionUID = 1L;
+		keyConfig.keyStrokeAdder( inputMap, "bdv" ).put( name, defaultKeyStrokes );
+		new ToggleDialogAction( name, dialog ).put( actionMap );
 	}
 
-	public static class ManualTransformAction extends ViewerAction
+	public void runnableAction( final Runnable action, final String name, final String... defaultKeyStrokes )
 	{
-		public ManualTransformAction( final BigDataViewer bdv )
-		{
-			super( MANUAL_TRANSFORM, bdv );
-		}
-
-		@Override
-		public void actionPerformed( final ActionEvent e )
-		{
-			bdv.toggleManualTransformation();
-		}
-
-		private static final long serialVersionUID = 1L;
+		keyConfig.keyStrokeAdder( inputMap, "bdv" ).put( name, defaultKeyStrokes );
+		new RunnableAction( name, action ).put( actionMap );
 	}
 
-	public static class SetBookmarkAction extends ViewerAction
+	public void dialog( final BrightnessDialog brightnessDialog )
 	{
-		public SetBookmarkAction( final BigDataViewer bdv )
-		{
-			super( SET_BOOKMARK, bdv );
-		}
-
-		@Override
-		public void actionPerformed( final ActionEvent e )
-		{
-			bdv.initSetBookmark();
-		}
-
-		private static final long serialVersionUID = 1L;
+		toggleDialogAction( brightnessDialog, BRIGHTNESS_SETTINGS, BRIGHTNESS_SETTINGS_KEYS );
 	}
 
-	public static class GoToBookmarkAction extends ViewerAction
+	public void dialog( final VisibilityAndGroupingDialog visibilityAndGroupingDialog )
 	{
-		public GoToBookmarkAction( final BigDataViewer bdv )
-		{
-			super( GO_TO_BOOKMARK, bdv );
-		}
-
-		@Override
-		public void actionPerformed( final ActionEvent e )
-		{
-			bdv.initGoToBookmark();
-		}
-
-		private static final long serialVersionUID = 1L;
+		toggleDialogAction( visibilityAndGroupingDialog, VISIBILITY_AND_GROUPING, VISIBILITY_AND_GROUPING_KEYS );
 	}
 
-	public static class GoToBookmarkRotationAction extends ViewerAction
+	public void dialog( final CropDialog cropDialog )
 	{
-		public GoToBookmarkRotationAction( final BigDataViewer bdv )
-		{
-			super( GO_TO_BOOKMARK_ROTATION, bdv );
-		}
-
-		@Override
-		public void actionPerformed( final ActionEvent e )
-		{
-			bdv.initGoToBookmarkRotation();
-		}
-
-		private static final long serialVersionUID = 1L;
+		toggleDialogAction( cropDialog, CROP, CROP_KEYS );
 	}
 
-	public static class SaveSettingsAction extends ViewerAction
+	public void dialog( final HelpDialog helpDialog )
 	{
-		public SaveSettingsAction( final BigDataViewer bdv )
-		{
-			super( SAVE_SETTINGS, bdv );
-		}
-
-		@Override
-		public void actionPerformed( final ActionEvent e )
-		{
-			bdv.saveSettings();
-		}
-
-		private static final long serialVersionUID = 1L;
+		toggleDialogAction( helpDialog, SHOW_HELP, SHOW_HELP_KEYS );
 	}
 
-	public static class LoadSettingsAction extends ViewerAction
+	public void dialog( final RecordMovieDialog recordMovieDialog )
 	{
-		public LoadSettingsAction( final BigDataViewer bdv )
-		{
-			super( LOAD_SETTINGS, bdv );
-		}
-
-		@Override
-		public void actionPerformed( final ActionEvent e )
-		{
-			bdv.loadSettings();
-		}
-
-		private static final long serialVersionUID = 1L;
+		toggleDialogAction( recordMovieDialog, RECORD_MOVIE, RECORD_MOVIE_KEYS );
 	}
 
-	private BigDataViewerActions()
-	{}
+	public void dialog( final RecordMaxProjectionDialog recordMaxProjectionDialog )
+	{
+		toggleDialogAction( recordMaxProjectionDialog, RECORD_MAX_PROJECTION_MOVIE, RECORD_MAX_PROJECTION_MOVIE_KEYS );
+	}
+
+	public void bookmarks( final BookmarksEditor bookmarksEditor )
+	{
+		runnableAction( bookmarksEditor::initGoToBookmark, GO_TO_BOOKMARK, GO_TO_BOOKMARK_KEYS );
+		runnableAction( bookmarksEditor::initGoToBookmarkRotation, GO_TO_BOOKMARK_ROTATION, GO_TO_BOOKMARK_ROTATION_KEYS );
+		runnableAction( bookmarksEditor::initSetBookmark, SET_BOOKMARK, SET_BOOKMARK_KEYS );
+	}
+
+	public void manualTransform( final ManualTransformationEditor manualTransformationEditor )
+	{
+		runnableAction( manualTransformationEditor::toggle, MANUAL_TRANSFORM, MANUAL_TRANSFORM_KEYS );
+	}
 }
