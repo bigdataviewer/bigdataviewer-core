@@ -31,24 +31,32 @@ package bdv.tools.transformation;
 import java.util.ArrayList;
 import java.util.List;
 
-import net.imglib2.realtransform.AffineTransform3D;
-
 import org.jdom2.Element;
 
 import bdv.viewer.Source;
+import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerPanel;
-import bdv.viewer.state.SourceState;
-import bdv.viewer.state.ViewerState;
+import net.imglib2.realtransform.AffineTransform3D;
 
 public class ManualTransformation
 {
-	protected final ViewerPanel viewer;
+	private final XmlIoTransformedSources io;
 
-	protected final XmlIoTransformedSources io;
+	private final ViewerPanel viewer;
+
+	private final List< SourceAndConverter< ? > > sources;
+
+	public ManualTransformation( final List< SourceAndConverter< ? > > sources )
+	{
+		this.sources = sources;
+		this.viewer = null;
+		io = new XmlIoTransformedSources();
+	}
 
 	public ManualTransformation( final ViewerPanel viewer )
 	{
 		this.viewer = viewer;
+		this.sources = null;
 		io = new XmlIoTransformedSources();
 	}
 
@@ -79,11 +87,13 @@ public class ManualTransformation
 
 	private ArrayList< TransformedSource< ? > > getTransformedSources()
 	{
-		final ViewerState state = viewer.getState();
 		final ArrayList< TransformedSource< ? > > list = new ArrayList< TransformedSource< ? > >();
-		for ( final SourceState< ? > sourceState : state.getSources() )
+		final List< ? extends SourceAndConverter< ? > > sourceList = ( sources != null )
+				? sources
+				: viewer.getState().getSources();
+		for ( final SourceAndConverter< ? > soc : sourceList )
 		{
-			final Source< ? > source = sourceState.getSpimSource();
+			final Source< ? > source = soc.getSpimSource();
 			if ( TransformedSource.class.isInstance( source ) )
 				list.add( (TransformedSource< ? > ) source );
 		}
