@@ -384,7 +384,9 @@ public class ViewerState
 	protected void removeSource( final int index )
 	{
 		sources.remove( index );
-		if ( currentSource == index )
+		if ( sources.isEmpty() )
+			currentSource = -1;
+		else if ( currentSource == index )
 			currentSource = 0;
 		else if ( currentSource > index )
 			--currentSource;
