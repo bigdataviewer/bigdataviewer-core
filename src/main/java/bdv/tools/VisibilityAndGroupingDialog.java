@@ -564,7 +564,7 @@ public class VisibilityAndGroupingDialog extends JDialog
 		{
 			synchronized ( visibility )
 			{
-				if ( visibility.numSources() != numSources && visibility.numGroups() != numGroups )
+				if ( visibility.numSources() != numSources || visibility.numGroups() != numGroups )
 					recreateContent();
 
 				currentButtons.get( visibility.getCurrentGroup() ).setSelected( true );
@@ -602,7 +602,7 @@ public class VisibilityAndGroupingDialog extends JDialog
 			synchronized ( visibility )
 			{
 				if ( visibility.numSources() != numSources || visibility.numGroups() != numGroups )
-					recreateContent();
+					update();
 
 				switch ( e.id )
 				{
