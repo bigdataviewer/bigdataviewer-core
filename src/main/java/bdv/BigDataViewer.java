@@ -610,7 +610,7 @@ public class BigDataViewer
 	 * @param options
 	 * @return
 	 */
-	protected InputTriggerConfig getInputTriggerConfig( final ViewerOptions options )
+	public static InputTriggerConfig getInputTriggerConfig( final ViewerOptions options )
 	{
 		InputTriggerConfig conf = options.values.getInputTriggerConfig();
 
