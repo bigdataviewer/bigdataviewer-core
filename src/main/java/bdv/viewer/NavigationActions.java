@@ -28,15 +28,12 @@
  */
 package bdv.viewer;
 
-import java.awt.event.ActionEvent;
-
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
 
 import org.scijava.ui.behaviour.KeyStrokeAdder;
 
-import bdv.util.AbstractNamedAction;
-import bdv.util.AbstractNamedAction.NamedActionAdder;
+import bdv.util.RunnableAction;
 import bdv.viewer.ViewerPanel.AlignPlane;
 
 public class NavigationActions
@@ -66,217 +63,93 @@ public class NavigationActions
 			final ViewerPanel viewer,
 			final KeyStrokeAdder.Factory keyProperties )
 	{
-		inputActionBindings.addActionMap( "navigation", createActionMap( viewer ) );
-		inputActionBindings.addInputMap( "navigation", createInputMap( keyProperties ) );
+		final NavigationActions actions = new NavigationActions( inputActionBindings, keyProperties );
+		actions.modes( viewer );
+		actions.sources( viewer );
+		actions.time( viewer );
+		actions.alignPlanes( viewer );
 	}
 
-	public static InputMap createInputMap( final KeyStrokeAdder.Factory keyProperties )
+	private final InputMap inputMap;
+
+	private final ActionMap actionMap;
+
+	private final KeyStrokeAdder.Factory keyConfig;
+
+	public NavigationActions(
+			final InputActionBindings inputActionBindings,
+			final KeyStrokeAdder.Factory keyConfig )
 	{
-		final InputMap inputMap = new InputMap();
-		final KeyStrokeAdder map = keyProperties.keyStrokeAdder( inputMap, "bdv" );
+		this( inputActionBindings, keyConfig, "navigation" );
+	}
 
-		map.put( TOGGLE_INTERPOLATION, "I" );
-		map.put( TOGGLE_FUSED_MODE, "F" );
-		map.put( TOGGLE_GROUPING, "G" );
-		map.put( NEXT_TIMEPOINT, "CLOSE_BRACKET", "M" );
-		map.put( PREVIOUS_TIMEPOINT, "OPEN_BRACKET", "N" );
+	public NavigationActions(
+			final InputActionBindings inputActionBindings,
+			final KeyStrokeAdder.Factory keyConfig,
+			final String name )
+	{
+		this.keyConfig = keyConfig;
+		actionMap = new ActionMap();
+		inputMap = new InputMap();
+		inputActionBindings.addActionMap( name, actionMap );
+		inputActionBindings.addInputMap( name, inputMap );
+	}
 
+	public void runnableAction( final Runnable action, final String name, final String... defaultKeyStrokes )
+	{
+		keyConfig.keyStrokeAdder( inputMap, "navigation" ).put( name, defaultKeyStrokes );
+		new RunnableAction( name, action ).put( actionMap );
+	}
+
+	public void alignPlaneAction( final ViewerPanel viewer, final AlignPlane plane, final String... defaultKeyStrokes )
+	{
+		final String name = String.format( ALIGN_PLANE, plane.getName() );
+		keyConfig.keyStrokeAdder( inputMap, "navigation" ).put( name, defaultKeyStrokes );
+		new RunnableAction( name, () -> viewer.align( plane ) ).put( actionMap );
+	}
+
+	public void modes( final ViewerPanel viewer )
+	{
+		runnableAction(
+				() -> viewer.toggleInterpolation(),
+				TOGGLE_INTERPOLATION, "I" );
+		runnableAction(
+				() -> viewer.getVisibilityAndGrouping().setFusedEnabled( !viewer.visibilityAndGrouping.isFusedEnabled() ),
+				TOGGLE_FUSED_MODE, "F" );
+		runnableAction(
+				() -> viewer.getVisibilityAndGrouping().setGroupingEnabled( !viewer.visibilityAndGrouping.isGroupingEnabled() ),
+				TOGGLE_GROUPING, "G" );
+	}
+
+	public void time( final ViewerPanel viewer )
+	{
+		runnableAction(
+				() -> viewer.nextTimePoint(),
+				NEXT_TIMEPOINT, "CLOSE_BRACKET", "M" );
+		runnableAction(
+				() -> viewer.previousTimePoint(),
+				PREVIOUS_TIMEPOINT, "OPEN_BRACKET", "N" );
+	}
+
+	public void sources( final ViewerPanel viewer )
+	{
 		final String[] numkeys = new String[] { "1", "2", "3", "4", "5", "6", "7", "8", "9", "0" };
 		for ( int i = 0; i < numkeys.length; ++i )
 		{
-			map.put( String.format( SET_CURRENT_SOURCE, i ), numkeys[ i ] );
-			map.put( String.format( TOGGLE_SOURCE_VISIBILITY, i ), "shift " + numkeys[ i ] );
+			final int sourceIndex = i;
+			runnableAction(
+					() -> viewer.getVisibilityAndGrouping().setCurrentGroupOrSource( sourceIndex ),
+					String.format( SET_CURRENT_SOURCE, i ), numkeys[ i ] );
+			runnableAction(
+					() -> viewer.getVisibilityAndGrouping().toggleActiveGroupOrSource( sourceIndex ),
+					String.format( TOGGLE_SOURCE_VISIBILITY, i ), "shift " + numkeys[ i ] );
 		}
-
-		map.put( String.format( ALIGN_PLANE, AlignPlane.XY ), "shift Z" );
-		map.put( String.format( ALIGN_PLANE, AlignPlane.ZY ), "shift X" );
-		map.put( String.format( ALIGN_PLANE, AlignPlane.XZ ), "shift Y", "shift A" );
-
-		return inputMap;
 	}
 
-	public static ActionMap createActionMap( final ViewerPanel viewer )
+	public void alignPlanes( final ViewerPanel viewer )
 	{
-		return createActionMap( viewer, 10 );
+		alignPlaneAction( viewer, AlignPlane.XY, "shift Z" );
+		alignPlaneAction( viewer, AlignPlane.ZY, "shift X" );
+		alignPlaneAction( viewer, AlignPlane.XZ, "shift Y", "shift A" );
 	}
-
-	public static ActionMap createActionMap( final ViewerPanel viewer, final int numSourceKeys )
-	{
-		final ActionMap actionMap = new ActionMap();
-		addToActionMap( actionMap, viewer, numSourceKeys );
-		return actionMap;
-	}
-
-	public static void addToActionMap( final ActionMap actionMap, final ViewerPanel viewer, final int numSourceKeys )
-	{
-		final NamedActionAdder map = new NamedActionAdder( actionMap );
-
-		map.put( new ToggleInterPolationAction( viewer ) );
-		map.put( new ToggleFusedModeAction( viewer ) );
-		map.put( new ToggleGroupingAction( viewer ) );
-		map.put( new NextTimePointAction( viewer ) );
-		map.put( new PreviousTimePointAction( viewer ) );
-
-		for ( int i = 0; i < numSourceKeys; ++i )
-		{
-			map.put( new SetCurrentSourceOrGroupAction( viewer, i ) );
-			map.put( new ToggleSourceOrGroupVisibilityAction( viewer, i ) );
-		}
-
-		for ( final AlignPlane plane : AlignPlane.values() )
-			map.put( new AlignPlaneAction( viewer, plane ) );
-	}
-
-	private static abstract class NavigationAction extends AbstractNamedAction
-	{
-		protected final ViewerPanel viewer;
-
-		public NavigationAction( final String name, final ViewerPanel viewer )
-		{
-			super( name );
-			this.viewer = viewer;
-		}
-
-		private static final long serialVersionUID = 1L;
-	}
-
-	public static class ToggleInterPolationAction extends NavigationAction
-	{
-		public ToggleInterPolationAction( final ViewerPanel viewer )
-		{
-			super( TOGGLE_INTERPOLATION, viewer );
-		}
-
-		@Override
-		public void actionPerformed( final ActionEvent e )
-		{
-			viewer.toggleInterpolation();
-		}
-
-		private static final long serialVersionUID = 1L;
-	}
-
-	public static class ToggleFusedModeAction extends NavigationAction
-	{
-		public ToggleFusedModeAction( final ViewerPanel viewer )
-		{
-			super( TOGGLE_FUSED_MODE, viewer );
-		}
-
-		@Override
-		public void actionPerformed( final ActionEvent e )
-		{
-			viewer.getVisibilityAndGrouping().setFusedEnabled( !viewer.visibilityAndGrouping.isFusedEnabled() );
-		}
-
-		private static final long serialVersionUID = 1L;
-	}
-
-	public static class ToggleGroupingAction extends NavigationAction
-	{
-		public ToggleGroupingAction( final ViewerPanel viewer )
-		{
-			super( TOGGLE_GROUPING, viewer );
-		}
-
-		@Override
-		public void actionPerformed( final ActionEvent e )
-		{
-			viewer.getVisibilityAndGrouping().setGroupingEnabled( !viewer.visibilityAndGrouping.isGroupingEnabled() );
-		}
-
-		private static final long serialVersionUID = 1L;
-	}
-
-	public static class SetCurrentSourceOrGroupAction extends NavigationAction
-	{
-		private final int sourceIndex;
-
-		public SetCurrentSourceOrGroupAction( final ViewerPanel viewer, final int sourceIndex )
-		{
-			super( String.format( SET_CURRENT_SOURCE, sourceIndex ), viewer );
-			this.sourceIndex = sourceIndex;
-		}
-
-		@Override
-		public void actionPerformed( final ActionEvent e )
-		{
-			viewer.getVisibilityAndGrouping().setCurrentGroupOrSource( sourceIndex );
-		}
-
-		private static final long serialVersionUID = 1L;
-	}
-
-	public static class ToggleSourceOrGroupVisibilityAction extends NavigationAction
-	{
-		private final int sourceIndex;
-
-		public ToggleSourceOrGroupVisibilityAction( final ViewerPanel viewer, final int sourceIndex )
-		{
-			super( String.format( TOGGLE_SOURCE_VISIBILITY, sourceIndex ), viewer );
-			this.sourceIndex = sourceIndex;
-		}
-
-		@Override
-		public void actionPerformed( final ActionEvent e )
-		{
-			viewer.getVisibilityAndGrouping().toggleActiveGroupOrSource( sourceIndex );
-		}
-
-		private static final long serialVersionUID = 1L;
-	}
-
-	public static class AlignPlaneAction extends NavigationAction
-	{
-		private final AlignPlane plane;
-
-		public AlignPlaneAction( final ViewerPanel viewer, final AlignPlane plane )
-		{
-			super( String.format( ALIGN_PLANE, plane.getName() ), viewer );
-			this.plane = plane;
-		}
-
-		@Override
-		public void actionPerformed( final ActionEvent e )
-		{
-			viewer.align( plane );
-		}
-
-		private static final long serialVersionUID = 1L;
-	}
-
-	public static class NextTimePointAction extends NavigationAction
-	{
-		public NextTimePointAction( final ViewerPanel viewer )
-		{
-			super( NEXT_TIMEPOINT, viewer );
-		}
-
-		@Override
-		public void actionPerformed( final ActionEvent e )
-		{
-			viewer.nextTimePoint();
-		}
-
-		private static final long serialVersionUID = 1L;
-	}
-
-	public static class PreviousTimePointAction extends NavigationAction
-	{
-		public PreviousTimePointAction( final ViewerPanel viewer )
-		{
-			super( PREVIOUS_TIMEPOINT, viewer );
-		}
-
-		@Override
-		public void actionPerformed( final ActionEvent e )
-		{
-			viewer.previousTimePoint();
-		}
-
-		private static final long serialVersionUID = 1L;
-	}
-
-	private NavigationActions()
-	{}
 }

@@ -29,10 +29,11 @@ public class BehaviourTransformEventHandler3D implements BehaviourTransformEvent
 		return new BehaviourTransformEventHandler3DFactory();
 	}
 
-	public static class BehaviourTransformEventHandler3DFactory implements TransformEventHandlerFactory< AffineTransform3D >
+	public static class BehaviourTransformEventHandler3DFactory implements BehaviourTransformEventHandlerFactory< AffineTransform3D >
 	{
 		private InputTriggerConfig config = new InputTriggerConfig();
 
+		@Override
 		public void setConfig( final InputTriggerConfig config )
 		{
 			this.config = config;

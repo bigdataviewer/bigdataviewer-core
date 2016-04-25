@@ -38,12 +38,12 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import net.imglib2.realtransform.AffineTransform3D;
 import bdv.util.MipmapTransforms;
 import bdv.viewer.DisplayMode;
 import bdv.viewer.Interpolation;
 import bdv.viewer.Source;
 import bdv.viewer.SourceAndConverter;
+import net.imglib2.realtransform.AffineTransform3D;
 
 /**
  * Description of everything required to render the current image, such as the
@@ -134,7 +134,7 @@ public class ViewerState
 		viewerTransform = new AffineTransform3D();
 		interpolation = NEARESTNEIGHBOR;
 		displayMode = SINGLE;
-		currentSource = 0;
+		currentSource = sources.isEmpty() ? -1 : 0;
 		currentGroup = 0;
 		currentTimepoint = 0;
 	}
@@ -206,7 +206,8 @@ public class ViewerState
 	 */
 	public synchronized void setCurrentSource( final int index )
 	{
-		if ( index >= 0 && index < sources.size() )
+		final int minIndex = sources.isEmpty() ? -1 : 0;
+		if ( index >= minIndex && index < sources.size() )
 		{
 			sources.get( currentSource ).setCurrent( false );
 			currentSource = index;
@@ -364,6 +365,8 @@ public class ViewerState
 	public synchronized void addSource( final SourceAndConverter< ? > source )
 	{
 		sources.add( SourceState.create( source, this ) );
+		if ( currentSource < 0 )
+			currentSource = 0;
 	}
 
 	public synchronized void removeSource( final Source< ? > source )
@@ -381,7 +384,9 @@ public class ViewerState
 	protected void removeSource( final int index )
 	{
 		sources.remove( index );
-		if ( currentSource == index )
+		if ( sources.isEmpty() )
+			currentSource = -1;
+		else if ( currentSource == index )
 			currentSource = 0;
 		else if ( currentSource > index )
 			--currentSource;
@@ -435,7 +440,7 @@ public class ViewerState
 		switch ( displayMode )
 		{
 		case SINGLE:
-			if ( isPresent( currentSource ) )
+			if ( currentSource >= 0 && isPresent( currentSource ) )
 				visible.add( currentSource );
 			break;
 		case GROUP:
