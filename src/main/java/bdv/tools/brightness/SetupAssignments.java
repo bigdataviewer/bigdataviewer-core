@@ -176,6 +176,14 @@ public class SetupAssignments
 	}
 
 	/**
+	 * @return the {@link MinMaxGroup} that contains {@code setup}, currently.
+	 */
+	public MinMaxGroup getMinMaxGroup( final ConverterSetup setup )
+	{
+		return setupToGroup.get( setup );
+	}
+
+	/**
 	 * Add the setup in a new group.
 	 * @param setup
 	 */
