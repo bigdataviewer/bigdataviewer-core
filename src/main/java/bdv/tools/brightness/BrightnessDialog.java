@@ -443,6 +443,9 @@ public class BrightnessDialog extends JDialog
 				@Override
 				public void run()
 				{
+					 // TODO spinners should be updated by listening to minMaxGroup instead
+					spinnerRangeMin.setValue( minMaxGroup.getRangeMin() );
+					spinnerRangeMax.setValue( minMaxGroup.getRangeMax() );
 					advancedPanel.add( spinnerRangeMin );
 					advancedPanel.add( spinnerRangeMax );
 					advancedButton.setText( "<<" );
