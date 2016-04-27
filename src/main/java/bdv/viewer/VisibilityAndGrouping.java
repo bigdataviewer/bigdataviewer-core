@@ -160,6 +160,13 @@ public class VisibilityAndGrouping
 		update( CURRENT_SOURCE_CHANGED );
 	};
 
+	public synchronized void setCurrentSource( final Source< ? > source )
+	{
+		state.setCurrentSource( source );
+		checkVisibilityChange();
+		update( CURRENT_SOURCE_CHANGED );
+	};
+
 	public synchronized boolean isSourceActive( final int sourceIndex )
 	{
 		if ( sourceIndex < 0 || sourceIndex >= numSources() )
@@ -180,6 +187,23 @@ public class VisibilityAndGrouping
 			return;
 
 		state.getSources().get( sourceIndex ).setActive( isActive );
+		update( SOURCE_ACTVITY_CHANGED );
+		checkVisibilityChange();
+	}
+
+	/**
+	 * Set the source active (visible in fused mode) or inactive.
+	 *
+	 * @param sourceIndex
+	 * @param isActive
+	 */
+	public synchronized void setSourceActive( final Source< ? > source, final boolean isActive )
+	{
+		for ( final SourceState< ? > s : state.getSources() )
+		{
+			if ( s.getSpimSource().equals( source ) )
+				s.setActive( isActive );
+		}
 		update( SOURCE_ACTVITY_CHANGED );
 		checkVisibilityChange();
 	}

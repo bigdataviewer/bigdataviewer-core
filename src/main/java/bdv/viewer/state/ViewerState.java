@@ -216,6 +216,16 @@ public class ViewerState
 	}
 
 	/**
+	 * Make the given source current.
+	 */
+	public synchronized void setCurrentSource( final Source< ? > source )
+	{
+		final int i = getSourceIndex( source );
+		if ( i >= 0 )
+			setCurrentSource( i );
+	}
+
+	/**
 	 * Get the index of the current source.
 	 */
 	public synchronized int getCurrentGroup()
@@ -521,5 +531,20 @@ public class ViewerState
 	{
 		sources.clear();
 		groups.clear();
+	}
+
+	/**
+	 * Get index of (first) {@link SourceState} that matches the given
+	 * {@link Source}.
+	 */
+	private int getSourceIndex( final Source< ? > source )
+	{
+		for ( int i = 0; i < sources.size(); ++i )
+		{
+			final SourceState< ? > s = sources.get( i );
+			if ( s.getSpimSource() == source )
+				return i;
+		}
+		return -1;
 	}
 }
