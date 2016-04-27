@@ -66,6 +66,7 @@ import org.jdom2.Element;
 
 import bdv.img.cache.Cache;
 import bdv.util.Affine3DHelpers;
+import bdv.util.InvokeOnEDT;
 import bdv.util.Prefs;
 import bdv.viewer.animate.AbstractTransformAnimator;
 import bdv.viewer.animate.MessageOverlayAnimator;
@@ -694,7 +695,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	{
 		try
 		{
-			SwingUtilities.invokeAndWait( new Runnable()
+			InvokeOnEDT.invokeAndWait( new Runnable()
 			{
 				@Override
 				public void run()
