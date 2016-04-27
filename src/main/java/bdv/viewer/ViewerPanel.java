@@ -41,7 +41,6 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Window;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseEvent;
@@ -58,7 +57,6 @@ import javax.swing.DefaultBoundedRangeModel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -728,12 +726,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 				l.timePointChanged( timepoint );
 		}
 		sliderTime.setModel( new DefaultBoundedRangeModel( state.getCurrentTimepoint(), 0, 0, numTimepoints - 1 ) );
-
-		invalidate();
-		final Window frame = SwingUtilities.getWindowAncestor( ViewerPanel.this );
-		if ( frame != null )
-			frame.pack();
-
+		revalidate();
 		requestRepaint();
 	}
 
