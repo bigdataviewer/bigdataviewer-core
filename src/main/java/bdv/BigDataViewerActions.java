@@ -44,10 +44,10 @@ import bdv.tools.bookmarks.BookmarksEditor;
 import bdv.tools.brightness.BrightnessDialog;
 import bdv.tools.crop.CropDialog;
 import bdv.tools.transformation.ManualTransformationEditor;
-import bdv.util.RunnableAction;
+import bdv.util.AbstractActions;
 import bdv.viewer.InputActionBindings;
 
-public class BigDataViewerActions
+public class BigDataViewerActions extends AbstractActions
 {
 	public static final String BRIGHTNESS_SETTINGS = "brightness settings";
 	public static final String VISIBILITY_AND_GROUPING = "visibility and grouping";
@@ -104,12 +104,6 @@ public class BigDataViewerActions
 		actions.runnableAction( bdv::saveSettings, SAVE_SETTINGS, SAVE_SETTINGS_KEYS );
 	}
 
-	private final InputMap inputMap;
-
-	private final ActionMap actionMap;
-
-	private final KeyStrokeAdder.Factory keyConfig;
-
 	public BigDataViewerActions(
 			final InputActionBindings inputActionBindings,
 			final KeyStrokeAdder.Factory keyConfig )
@@ -122,23 +116,13 @@ public class BigDataViewerActions
 			final KeyStrokeAdder.Factory keyConfig,
 			final String name )
 	{
-		this.keyConfig = keyConfig;
-		actionMap = new ActionMap();
-		inputMap = new InputMap();
-		inputActionBindings.addActionMap( name, actionMap );
-		inputActionBindings.addInputMap( name, inputMap );
+		super( inputActionBindings, name, keyConfig, new String[] { "bdv" } );
 	}
 
 	public void toggleDialogAction( final Dialog dialog, final String name, final String... defaultKeyStrokes )
 	{
-		keyConfig.keyStrokeAdder( inputMap, "bdv" ).put( name, defaultKeyStrokes );
+		keyStrokeAdder.put( name, defaultKeyStrokes );
 		new ToggleDialogAction( name, dialog ).put( actionMap );
-	}
-
-	public void runnableAction( final Runnable action, final String name, final String... defaultKeyStrokes )
-	{
-		keyConfig.keyStrokeAdder( inputMap, "bdv" ).put( name, defaultKeyStrokes );
-		new RunnableAction( name, action ).put( actionMap );
 	}
 
 	public void dialog( final BrightnessDialog brightnessDialog )

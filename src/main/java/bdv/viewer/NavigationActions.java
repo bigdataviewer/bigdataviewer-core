@@ -33,10 +33,11 @@ import javax.swing.InputMap;
 
 import org.scijava.ui.behaviour.KeyStrokeAdder;
 
+import bdv.util.AbstractActions;
 import bdv.util.RunnableAction;
 import bdv.viewer.ViewerPanel.AlignPlane;
 
-public class NavigationActions
+public class NavigationActions extends AbstractActions
 {
 	public static final String TOGGLE_INTERPOLATION = "toggle interpolation";
 	public static final String TOGGLE_FUSED_MODE = "toggle fused mode";
@@ -70,12 +71,6 @@ public class NavigationActions
 		actions.alignPlanes( viewer );
 	}
 
-	private final InputMap inputMap;
-
-	private final ActionMap actionMap;
-
-	private final KeyStrokeAdder.Factory keyConfig;
-
 	public NavigationActions(
 			final InputActionBindings inputActionBindings,
 			final KeyStrokeAdder.Factory keyConfig )
@@ -88,23 +83,13 @@ public class NavigationActions
 			final KeyStrokeAdder.Factory keyConfig,
 			final String name )
 	{
-		this.keyConfig = keyConfig;
-		actionMap = new ActionMap();
-		inputMap = new InputMap();
-		inputActionBindings.addActionMap( name, actionMap );
-		inputActionBindings.addInputMap( name, inputMap );
-	}
-
-	public void runnableAction( final Runnable action, final String name, final String... defaultKeyStrokes )
-	{
-		keyConfig.keyStrokeAdder( inputMap, "navigation" ).put( name, defaultKeyStrokes );
-		new RunnableAction( name, action ).put( actionMap );
+		super( inputActionBindings, name, keyConfig, new String[] { "navigation" } );
 	}
 
 	public void alignPlaneAction( final ViewerPanel viewer, final AlignPlane plane, final String... defaultKeyStrokes )
 	{
 		final String name = String.format( ALIGN_PLANE, plane.getName() );
-		keyConfig.keyStrokeAdder( inputMap, "navigation" ).put( name, defaultKeyStrokes );
+		keyStrokeAdder.put( name, defaultKeyStrokes );
 		new RunnableAction( name, () -> viewer.align( plane ) ).put( actionMap );
 	}
 
