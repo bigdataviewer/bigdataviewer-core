@@ -44,9 +44,9 @@ public class BoundedInterval
 	private final BoundedValue maxValue;
 
 	/**
-	 * minimum interval size - 1
+	 * minimum interval size. {@code max - min >= minIntervalSize}.
 	 */
-	protected final int minSizeMinusOne;
+	protected final int minIntervalSize;
 
 	/**
 	 * @param rangeMin
@@ -60,13 +60,13 @@ public class BoundedInterval
 	 * @param initialMax
 	 *            initial interval maximum.
 	 * @param minIntervalSize
-	 *            interval is forced to have this size at least.
+	 *            interval is forced to have this size at least, i.e., {@code max - min >= minIntervalSize}.
 	 */
 	public BoundedInterval( final int rangeMin, final int rangeMax, final int initialMin, final int initialMax, final int minIntervalSize )
 	{
-		minSizeMinusOne = minIntervalSize - 1;
+		this.minIntervalSize = minIntervalSize;
 
-		minValue = new BoundedValue( rangeMin, rangeMax - minSizeMinusOne, initialMin )
+		minValue = new BoundedValue( rangeMin, rangeMax - minIntervalSize, initialMin )
 		{
 			@Override
 			public void setCurrentValue( final int value )
@@ -74,16 +74,16 @@ public class BoundedInterval
 				super.setCurrentValue( value );
 				final int min = minValue.getCurrentValue();
 				int max = maxValue.getCurrentValue();
-				if ( min > max - minSizeMinusOne )
+				if ( min > max - minIntervalSize )
 				{
-					max = min + minSizeMinusOne;
+					max = min + minIntervalSize;
 					maxValue.setCurrentValue( max );
 				}
 				updateInterval( min, max );
 			}
 		};
 
-		maxValue = new BoundedValue( rangeMin + minSizeMinusOne, rangeMax, initialMax )
+		maxValue = new BoundedValue( rangeMin + minIntervalSize, rangeMax, initialMax )
 		{
 			@Override
 			public void setCurrentValue( final int value )
@@ -91,9 +91,9 @@ public class BoundedInterval
 				super.setCurrentValue( value );
 				int min = minValue.getCurrentValue();
 				final int max = maxValue.getCurrentValue();
-				if ( min > max - minSizeMinusOne )
+				if ( min > max - minIntervalSize )
 				{
-					min = max - minSizeMinusOne;
+					min = max - minIntervalSize;
 					minValue.setCurrentValue( min );
 				}
 				updateInterval( min, max );
@@ -171,17 +171,17 @@ public class BoundedInterval
 	 */
 	public void setRange( final int min, final int max )
 	{
-		assert min < max - minSizeMinusOne;
-		minValue.setRange( min, max - minSizeMinusOne );
-		maxValue.setRange( min + minSizeMinusOne, max );
+		assert min < max - minIntervalSize;
+		minValue.setRange( min, max - minIntervalSize );
+		maxValue.setRange( min + minIntervalSize, max );
 		final int currentMin = minValue.getCurrentValue();
 		final int currentMax = maxValue.getCurrentValue();
-		if ( currentMin > currentMax - minSizeMinusOne )
+		if ( currentMin > currentMax - minIntervalSize )
 		{
 			if ( currentMax == max )
-				minValue.setCurrentValue( currentMax - minSizeMinusOne );
+				minValue.setCurrentValue( currentMax - minIntervalSize );
 			else
-				maxValue.setCurrentValue( currentMin + minSizeMinusOne );
+				maxValue.setCurrentValue( currentMin + minIntervalSize );
 		}
 	}
 }

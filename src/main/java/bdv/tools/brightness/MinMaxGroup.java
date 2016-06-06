@@ -68,7 +68,7 @@ public class MinMaxGroup extends BoundedInterval
 
 	public MinMaxGroup( final int fullRangeMin, final int fullRangeMax, final int rangeMin, final int rangeMax, final int currentMin, final int currentMax )
 	{
-		super( rangeMin, rangeMax, currentMin, currentMax, 2 );
+		super( rangeMin, rangeMax, currentMin, currentMax, 1 );
 		this.fullRangeMin = fullRangeMin;
 		this.fullRangeMax = fullRangeMax;
 		setups = new LinkedHashSet< ConverterSetup >();

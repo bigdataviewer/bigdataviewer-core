@@ -34,11 +34,11 @@ import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JPanel;
 
-import net.imglib2.FinalInterval;
-import net.imglib2.Interval;
 import bdv.tools.brightness.SliderPanel;
 import bdv.util.BoundedInterval;
 import bdv.util.ModifiableInterval;
+import net.imglib2.FinalInterval;
+import net.imglib2.Interval;
 
 // a JPanel containing X,Y,Z min/max sliders for adjusting an interval
 public class BoxSelectionPanel extends JPanel
@@ -70,7 +70,7 @@ public class BoxSelectionPanel extends JPanel
 			final int rangeMax = ( int ) rangeInterval.max( d );
 			final int initialMin = Math.max( ( int ) selection.min( d ), rangeMin );
 			final int initialMax = Math.min( ( int ) selection.max( d ), rangeMax );
-			final BoundedInterval range = new BoundedInterval( rangeMin, rangeMax, initialMin, initialMax, 1 )
+			final BoundedInterval range = new BoundedInterval( rangeMin, rangeMax, initialMin, initialMax, 0 )
 			{
 				@Override
 				protected void updateInterval( final int min, final int max )
