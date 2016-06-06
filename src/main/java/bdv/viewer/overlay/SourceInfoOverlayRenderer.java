@@ -39,6 +39,7 @@ import bdv.viewer.DisplayMode;
 import bdv.viewer.state.SourceGroup;
 import bdv.viewer.state.SourceState;
 import bdv.viewer.state.ViewerState;
+import mpicbg.spim.data.sequence.TimePoint;
 
 /**
  * Render current source name and current timepoint of a {@link ViewerState}
@@ -48,6 +49,8 @@ import bdv.viewer.state.ViewerState;
  */
 public class SourceInfoOverlayRenderer
 {
+	protected List< TimePoint > timePointsOrdered;
+
 	protected String sourceName;
 
 	protected String groupName;
@@ -60,6 +63,11 @@ public class SourceInfoOverlayRenderer
 		g.drawString( sourceName, ( int ) g.getClipBounds().getWidth() / 2, 12 );
 		g.drawString( groupName, ( int ) g.getClipBounds().getWidth() / 2, 25 );
 		g.drawString( timepointString, ( int ) g.getClipBounds().getWidth() - 170, 12 );
+	}
+
+	public synchronized void setTimePointsOrdered( final List< TimePoint > timePointsOrdered )
+	{
+		this.timePointsOrdered = timePointsOrdered;
 	}
 
 	/**
@@ -82,7 +90,11 @@ public class SourceInfoOverlayRenderer
 			else
 				groupName = "";
 
-			timepointString = String.format( "t = %d", state.getCurrentTimepoint() );
+			final int t = state.getCurrentTimepoint();
+			if ( timePointsOrdered != null && t >= 0 && t < timePointsOrdered.size() )
+				timepointString = String.format( "t = %s", timePointsOrdered.get( t ).getName() );
+			else
+				timepointString = String.format( "t = %d", t );
 		}
 	}
 }

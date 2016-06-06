@@ -362,6 +362,9 @@ public class BigDataViewer
 
 		brightnessDialog = new BrightnessDialog( viewerFrame, setupAssignments );
 
+		if (spimData != null )
+			viewer.getSourceInfoOverlayRenderer().setTimePointsOrdered( spimData.getSequenceDescription().getTimePoints().getTimePointsOrdered() );
+
 		cropDialog = ( spimData == null ) ? null : new CropDialog( viewerFrame, viewer, spimData.getSequenceDescription() );
 
 		movieDialog = new RecordMovieDialog( viewerFrame, viewer, progressWriter );

@@ -1007,6 +1007,11 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		return options;
 	}
 
+	public SourceInfoOverlayRenderer getSourceInfoOverlayRenderer()
+	{
+		return sourceInfoOverlayRenderer;
+	}
+
 	/**
 	 * Stop the {@link #painterThread} and shutdown rendering {@link ExecutorService}.
 	 */
