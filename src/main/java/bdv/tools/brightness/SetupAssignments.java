@@ -68,9 +68,11 @@ public class SetupAssignments
 	 */
 	private final Map< ConverterSetup, MinMaxGroup > setupToGroup;
 
-	private final int fullRangeMin;
+	private final double fullRangeMin;
 
-	private final int fullRangeMax;
+	private final double fullRangeMax;
+
+	private final double minIntervalSize;
 
 	public interface UpdateListener
 	{
@@ -79,14 +81,21 @@ public class SetupAssignments
 
 	private UpdateListener updateListener;
 
+	@Deprecated
+	public SetupAssignments( final ArrayList< ConverterSetup > converterSetups, final int fullRangeMin, final int fullRangeMax )
+	{
+		this( converterSetups, fullRangeMin, fullRangeMax, 1 );
+	}
+
 	/**
 	 *
 	 * @param converterSetups
 	 * @param fullRangeMin
 	 * @param fullRangeMax
 	 */
-	public SetupAssignments( final ArrayList< ConverterSetup > converterSetups, final int fullRangeMin, final int fullRangeMax )
+	public SetupAssignments( final ArrayList< ConverterSetup > converterSetups, final double fullRangeMin, final double fullRangeMax, final double minIntervalSize )
 	{
+		this.minIntervalSize = minIntervalSize;
 		setups = new ArrayList< ConverterSetup >( converterSetups );
 		minMaxGroups = new ArrayList< MinMaxGroup >();
 		setupToGroup = new HashMap< ConverterSetup, MinMaxGroup >();
@@ -94,11 +103,11 @@ public class SetupAssignments
 		this.fullRangeMax = fullRangeMax;
 		for ( final ConverterSetup setup : setups )
 		{
-			final int displayRangeMin = Math.max( fullRangeMin, Math.min( fullRangeMax, ( int ) setup.getDisplayRangeMin() ) );
-			final int displayRangeMax = Math.max( fullRangeMin, Math.min( fullRangeMax, ( int ) setup.getDisplayRangeMax() ) );
+			final double displayRangeMin = Math.max( fullRangeMin, Math.min( fullRangeMax, setup.getDisplayRangeMin() ) );
+			final double displayRangeMax = Math.max( fullRangeMin, Math.min( fullRangeMax, setup.getDisplayRangeMax() ) );
 			if ( setup.getDisplayRangeMin() != displayRangeMin || setup.getDisplayRangeMax() != displayRangeMax )
 				setup.setDisplayRange( displayRangeMin, displayRangeMax );
-			final MinMaxGroup group = new MinMaxGroup( fullRangeMin, fullRangeMax, fullRangeMin, fullRangeMax, displayRangeMin, displayRangeMax );
+			final MinMaxGroup group = new MinMaxGroup( fullRangeMin, fullRangeMax, fullRangeMin, fullRangeMax, displayRangeMin, displayRangeMax, minIntervalSize );
 			minMaxGroups.add( group );
 			setupToGroup.put( setup, group );
 			group.addSetup( setup );
@@ -140,7 +149,7 @@ public class SetupAssignments
 		if ( setupToGroup.get( setup ) != group )
 			return;
 
-		final MinMaxGroup newGroup = new MinMaxGroup( group.getFullRangeMin(), group.getFullRangeMax(), group.getRangeMin(), group.getRangeMax(), ( int ) setup.getDisplayRangeMin(), ( int ) setup.getDisplayRangeMax() );
+		final MinMaxGroup newGroup = new MinMaxGroup( group.getFullRangeMin(), group.getFullRangeMax(), group.getRangeMin(), group.getRangeMax(), setup.getDisplayRangeMin(), setup.getDisplayRangeMax(), minIntervalSize );
 		minMaxGroups.add( newGroup );
 		setupToGroup.put( setup, newGroup );
 		newGroup.addSetup( setup );
@@ -189,7 +198,7 @@ public class SetupAssignments
 	 */
 	public void addSetup( final ConverterSetup setup )
 	{
-		final MinMaxGroup group = new MinMaxGroup( fullRangeMin, fullRangeMax, fullRangeMin, fullRangeMax, ( int ) setup.getDisplayRangeMin(), ( int ) setup.getDisplayRangeMax() );
+		final MinMaxGroup group = new MinMaxGroup( fullRangeMin, fullRangeMax, fullRangeMin, fullRangeMax, setup.getDisplayRangeMin(), setup.getDisplayRangeMax(), minIntervalSize );
 		minMaxGroups.add( group );
 		setupToGroup.put( setup, group );
 		group.addSetup( setup );
@@ -224,8 +233,8 @@ public class SetupAssignments
 		{
 			final Element elemConverterSetup = new Element( "ConverterSetup" );
 			elemConverterSetup.addContent( XmlHelpers.intElement( "id", setup.getSetupId() ) );
-			elemConverterSetup.addContent( XmlHelpers.intElement( "min", ( int ) setup.getDisplayRangeMin() ) );
-			elemConverterSetup.addContent( XmlHelpers.intElement( "max", ( int ) setup.getDisplayRangeMax() ) );
+			elemConverterSetup.addContent( XmlHelpers.doubleElement( "min", setup.getDisplayRangeMin() ) );
+			elemConverterSetup.addContent( XmlHelpers.doubleElement( "max", setup.getDisplayRangeMax() ) );
 			elemConverterSetup.addContent( XmlHelpers.intElement( "color", setup.getColor().get() ) );
 			elemConverterSetup.addContent( XmlHelpers.intElement( "groupId", minMaxGroups.indexOf( setupToGroup.get( setup ) ) ) );
 			elemConverterSetups.addContent( elemConverterSetup );
@@ -238,12 +247,12 @@ public class SetupAssignments
 			final MinMaxGroup group = minMaxGroups.get( i );
 			final Element elemMinMaxGroup = new Element( "MinMaxGroup" );
 			elemMinMaxGroup.addContent( XmlHelpers.intElement( "id", i ) );
-			elemMinMaxGroup.addContent( XmlHelpers.intElement( "fullRangeMin", group.getFullRangeMin() ) );
-			elemMinMaxGroup.addContent( XmlHelpers.intElement( "fullRangeMax", group.getFullRangeMax() ) );
-			elemMinMaxGroup.addContent( XmlHelpers.intElement( "rangeMin", group.getRangeMin() ) );
-			elemMinMaxGroup.addContent( XmlHelpers.intElement( "rangeMax", group.getRangeMax() ) );
-			elemMinMaxGroup.addContent( XmlHelpers.intElement( "currentMin", group.getMinBoundedValue().getCurrentValue() ) );
-			elemMinMaxGroup.addContent( XmlHelpers.intElement( "currentMax", group.getMaxBoundedValue().getCurrentValue() ) );
+			elemMinMaxGroup.addContent( XmlHelpers.doubleElement( "fullRangeMin", group.getFullRangeMin() ) );
+			elemMinMaxGroup.addContent( XmlHelpers.doubleElement( "fullRangeMax", group.getFullRangeMax() ) );
+			elemMinMaxGroup.addContent( XmlHelpers.doubleElement( "rangeMin", group.getRangeMin() ) );
+			elemMinMaxGroup.addContent( XmlHelpers.doubleElement( "rangeMax", group.getRangeMax() ) );
+			elemMinMaxGroup.addContent( XmlHelpers.doubleElement( "currentMin", group.getMinBoundedValue().getCurrentValue() ) );
+			elemMinMaxGroup.addContent( XmlHelpers.doubleElement( "currentMax", group.getMaxBoundedValue().getCurrentValue() ) );
 			elemMinMaxGroups.addContent( elemMinMaxGroup );
 		}
 		elem.addContent( elemMinMaxGroups );
@@ -274,20 +283,20 @@ public class SetupAssignments
 		for ( final Element elem : minMaxGroupNodes  )
 		{
 			final int id = Integer.parseInt( elem.getChildText( "id" ) );
-			final int fullRangeMin = Integer.parseInt( elem.getChildText( "fullRangeMin" ) );
-			final int fullRangeMax = Integer.parseInt( elem.getChildText( "fullRangeMax" ) );
-			final int rangeMin = Integer.parseInt( elem.getChildText( "rangeMin" ) );
-			final int rangeMax = Integer.parseInt( elem.getChildText( "rangeMax" ) );
-			final int currentMin = Integer.parseInt( elem.getChildText( "currentMin" ) );
-			final int currentMax = Integer.parseInt( elem.getChildText( "currentMax" ) );
-			minMaxGroups.set( id, new MinMaxGroup( fullRangeMin, fullRangeMax, rangeMin, rangeMax, currentMin, currentMax ) );
+			final double fullRangeMin = Double.parseDouble( elem.getChildText( "fullRangeMin" ) );
+			final double fullRangeMax = Double.parseDouble( elem.getChildText( "fullRangeMax" ) );
+			final double rangeMin = Double.parseDouble( elem.getChildText( "rangeMin" ) );
+			final double rangeMax = Double.parseDouble( elem.getChildText( "rangeMax" ) );
+			final double currentMin = Double.parseDouble( elem.getChildText( "currentMin" ) );
+			final double currentMax = Double.parseDouble( elem.getChildText( "currentMax" ) );
+			minMaxGroups.set( id, new MinMaxGroup( fullRangeMin, fullRangeMax, rangeMin, rangeMax, currentMin, currentMax, minIntervalSize ) );
 		}
 
 		for ( final Element elem : converterSetupNodes )
 		{
 			final int id = Integer.parseInt( elem.getChildText( "id" ) );
-			final int min = Integer.parseInt( elem.getChildText( "min" ) );
-			final int max = Integer.parseInt( elem.getChildText( "max" ) );
+			final double min = Double.parseDouble( elem.getChildText( "min" ) );
+			final double max = Double.parseDouble( elem.getChildText( "max" ) );
 			final int color = Integer.parseInt( elem.getChildText( "color" ) );
 			final int groupId = Integer.parseInt( elem.getChildText( "groupId" ) );
 			final ConverterSetup setup = getSetupById( id );

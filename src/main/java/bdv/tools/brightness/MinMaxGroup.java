@@ -31,7 +31,7 @@ package bdv.tools.brightness;
 import java.util.LinkedHashSet;
 import java.util.Set;
 
-import bdv.util.BoundedInterval;
+import bdv.util.BoundedIntervalDouble;
 import bdv.util.BoundedValue;
 
 /**
@@ -51,11 +51,11 @@ import bdv.util.BoundedValue;
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
-public class MinMaxGroup extends BoundedInterval
+public class MinMaxGroup extends BoundedIntervalDouble
 {
-	private final int fullRangeMin;
+	private final double fullRangeMin;
 
-	private final int fullRangeMax;
+	private final double fullRangeMax;
 
 	final Set< ConverterSetup > setups;
 
@@ -66,9 +66,16 @@ public class MinMaxGroup extends BoundedInterval
 
 	private UpdateListener updateListener;
 
-	public MinMaxGroup( final int fullRangeMin, final int fullRangeMax, final int rangeMin, final int rangeMax, final int currentMin, final int currentMax )
+	public MinMaxGroup(
+			final double fullRangeMin,
+			final double fullRangeMax,
+			final double rangeMin,
+			final double rangeMax,
+			final double currentMin,
+			final double currentMax,
+			final double minIntervalSize )
 	{
-		super( rangeMin, rangeMax, currentMin, currentMax, 1 );
+		super( rangeMin, rangeMax, currentMin, currentMax, minIntervalSize );
 		this.fullRangeMin = fullRangeMin;
 		this.fullRangeMax = fullRangeMax;
 		setups = new LinkedHashSet< ConverterSetup >();
@@ -76,18 +83,18 @@ public class MinMaxGroup extends BoundedInterval
 	}
 
 	@Override
-	protected void updateInterval( final int min, final int max )
+	protected void updateInterval( final double min, final double max )
 	{
 		for ( final ConverterSetup setup : setups )
 			setup.setDisplayRange( min, max );
 	}
 
-	public int getFullRangeMin()
+	public double getFullRangeMin()
 	{
 		return fullRangeMin;
 	}
 
-	public int getFullRangeMax()
+	public double getFullRangeMax()
 	{
 		return fullRangeMax;
 	}
