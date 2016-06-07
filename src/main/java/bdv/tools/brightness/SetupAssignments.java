@@ -72,6 +72,10 @@ public class SetupAssignments
 
 	private final double fullRangeMax;
 
+	private final double defaultRangeMin;
+
+	private final double defaultRangeMax;
+
 	private static final double minIntervalSize = 0;
 
 	public interface UpdateListener
@@ -81,26 +85,35 @@ public class SetupAssignments
 
 	private UpdateListener updateListener;
 
+	public SetupAssignments( final ArrayList< ConverterSetup > converterSetups, final double fullRangeMin, final double fullRangeMax )
+	{
+		this( converterSetups, fullRangeMin, fullRangeMax, fullRangeMin, fullRangeMax );
+	}
+
 	/**
 	 *
 	 * @param converterSetups
 	 * @param fullRangeMin
 	 * @param fullRangeMax
+	 * @param defaultRangeMin
+	 * @param defaultRangeMax
 	 */
-	public SetupAssignments( final ArrayList< ConverterSetup > converterSetups, final double fullRangeMin, final double fullRangeMax )
+	public SetupAssignments( final ArrayList< ConverterSetup > converterSetups, final double fullRangeMin, final double fullRangeMax, final double defaultRangeMin, final double defaultRangeMax )
 	{
 		setups = new ArrayList< ConverterSetup >( converterSetups );
 		minMaxGroups = new ArrayList< MinMaxGroup >();
 		setupToGroup = new HashMap< ConverterSetup, MinMaxGroup >();
 		this.fullRangeMin = fullRangeMin;
 		this.fullRangeMax = fullRangeMax;
+		this.defaultRangeMin = defaultRangeMin;
+		this.defaultRangeMax = defaultRangeMax;
 		for ( final ConverterSetup setup : setups )
 		{
-			final double displayRangeMin = Math.max( fullRangeMin, Math.min( fullRangeMax, setup.getDisplayRangeMin() ) );
-			final double displayRangeMax = Math.max( fullRangeMin, Math.min( fullRangeMax, setup.getDisplayRangeMax() ) );
+			final double displayRangeMin = Math.max( defaultRangeMin, Math.min( defaultRangeMax, setup.getDisplayRangeMin() ) );
+			final double displayRangeMax = Math.max( defaultRangeMin, Math.min( defaultRangeMax, setup.getDisplayRangeMax() ) );
 			if ( setup.getDisplayRangeMin() != displayRangeMin || setup.getDisplayRangeMax() != displayRangeMax )
 				setup.setDisplayRange( displayRangeMin, displayRangeMax );
-			final MinMaxGroup group = new MinMaxGroup( fullRangeMin, fullRangeMax, fullRangeMin, fullRangeMax, displayRangeMin, displayRangeMax, minIntervalSize );
+			final MinMaxGroup group = new MinMaxGroup( fullRangeMin, fullRangeMax, defaultRangeMin, defaultRangeMax, displayRangeMin, displayRangeMax, minIntervalSize );
 			minMaxGroups.add( group );
 			setupToGroup.put( setup, group );
 			group.addSetup( setup );
