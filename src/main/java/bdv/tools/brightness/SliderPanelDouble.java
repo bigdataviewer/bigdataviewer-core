@@ -30,11 +30,14 @@ package bdv.tools.brightness;
 
 import java.awt.BorderLayout;
 import java.awt.Component;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.JSpinner;
+import javax.swing.JSpinner.NumberEditor;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
@@ -62,6 +65,8 @@ public class SliderPanelDouble extends JPanel implements BoundedValueDouble.Upda
 	private double dmin;
 
 	private double dmax;
+
+	private boolean userDefinedNumberFormat = false;
 
 	/**
 	 * Create a {@link SliderPanelDouble} to modify a given {@link BoundedValueDouble value}.
@@ -97,6 +102,15 @@ public class SliderPanelDouble extends JPanel implements BoundedValueDouble.Upda
 			}
 		} );
 
+		slider.addComponentListener( new ComponentAdapter()
+		{
+			@Override
+			public void componentResized( final ComponentEvent e )
+			{
+				updateNumberFormat();
+			}
+		} );
+
 		spinner.addChangeListener( new ChangeListener()
 		{
 			@Override
@@ -123,7 +137,16 @@ public class SliderPanelDouble extends JPanel implements BoundedValueDouble.Upda
 
 	public void setDecimalFormat( final String pattern )
 	{
-		( ( JSpinner.NumberEditor ) spinner.getEditor() ).getFormat().applyPattern( pattern );
+		if ( pattern == null )
+		{
+			userDefinedNumberFormat = false;
+			updateNumberFormat();
+		}
+		else
+		{
+			userDefinedNumberFormat = true;
+			( ( JSpinner.NumberEditor ) spinner.getEditor() ).getFormat().applyPattern( pattern );
+		}
 	}
 
 	public void setNumColummns( final int cols )
@@ -137,7 +160,9 @@ public class SliderPanelDouble extends JPanel implements BoundedValueDouble.Upda
 		final double value = model.getCurrentValue();
 		final double min = model.getRangeMin();
 		final double max = model.getRangeMax();
-		if ( dmax != max || dmin != min)
+
+		final boolean rangeChanged = ( dmax != max || dmin != min );
+		if ( rangeChanged )
 		{
 			dmin = min;
 			dmax = max;
@@ -147,6 +172,25 @@ public class SliderPanelDouble extends JPanel implements BoundedValueDouble.Upda
 		}
 		slider.setValue( toSlider( value ) );
 		spinner.setValue( value );
+
+		if ( rangeChanged )
+			updateNumberFormat();
+	}
+
+	private void updateNumberFormat()
+	{
+		if ( userDefinedNumberFormat )
+			return;
+
+		final int sw = slider.getWidth();
+		if ( sw > 0 )
+		{
+			final double range = dmax - dmin;
+			final int digits = ( int ) Math.ceil( Math.log10( sw / range ) );
+			final NumberEditor numberEditor = ( ( JSpinner.NumberEditor ) spinner.getEditor() );
+			numberEditor.getFormat().setMaximumFractionDigits( digits );
+			numberEditor.stateChanged( new ChangeEvent( spinner ) );
+		}
 	}
 
 	private int toSlider( final double value )
