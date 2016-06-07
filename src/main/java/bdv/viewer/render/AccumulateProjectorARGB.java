@@ -44,7 +44,7 @@ public class AccumulateProjectorARGB extends AccumulateProjector< ARGBType, ARGB
 		@Override
 		public AccumulateProjectorARGB createAccumulateProjector(
 				final ArrayList< VolatileProjector > sourceProjectors,
-				final ArrayList< Source< ? > > sour,
+				final ArrayList< Source< ? > > sources,
 				final ArrayList< ? extends RandomAccessible< ARGBType > > sourceScreenImages,
 				final RandomAccessibleInterval< ARGBType > targetScreenImages,
 				final int numThreads,
