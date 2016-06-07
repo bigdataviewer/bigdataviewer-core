@@ -340,10 +340,11 @@ public class BrightnessDialog extends JDialog
 			sliders = new JPanel();
 			sliders.setLayout( new BoxLayout( sliders, BoxLayout.PAGE_AXIS ) );
 
-			final SliderPanel minPanel = new SliderPanel( "min", group.getMinBoundedValue(), 1 );
+			final double spinnerStepSize = 1;
+			final SliderPanelDouble minPanel = new SliderPanelDouble( "min", group.getMinBoundedValue(), spinnerStepSize );
 			minPanel.setBorder( BorderFactory.createEmptyBorder( 0, 10, 10, 10 ) );
 			sliders.add( minPanel );
-			final SliderPanel maxPanel = new SliderPanel( "max", group.getMaxBoundedValue(), 1 );
+			final SliderPanelDouble maxPanel = new SliderPanelDouble( "max", group.getMaxBoundedValue(), spinnerStepSize );
 			maxPanel.setBorder( BorderFactory.createEmptyBorder( 0, 10, 10, 10 ) );
 			sliders.add( maxPanel );
 			if ( rememberSizes && ! minMaxPanels.minMaxPanels.isEmpty() )
@@ -394,7 +395,7 @@ public class BrightnessDialog extends JDialog
 				@Override
 				public void stateChanged( final ChangeEvent e )
 				{
-					final int value = ( ( Integer ) spinnerRangeMin.getValue() ).intValue();
+					final double value = ( ( Number ) spinnerRangeMin.getValue() ).doubleValue();
 					if ( value < minMaxGroup.getFullRangeMin() )
 						spinnerRangeMin.setValue( minMaxGroup.getFullRangeMin() );
 					else if ( value > minMaxGroup.getRangeMax() - 1 )
@@ -413,7 +414,7 @@ public class BrightnessDialog extends JDialog
 				@Override
 				public void stateChanged( final ChangeEvent e )
 				{
-					final int value = ( ( Integer ) spinnerRangeMax.getValue() ).intValue();
+					final double value = ( ( Number ) spinnerRangeMax.getValue() ).doubleValue();
 					if ( value < minMaxGroup.getRangeMin() + 1 )
 						spinnerRangeMax.setValue( minMaxGroup.getRangeMin() + 1 );
 					else if ( value > minMaxGroup.getFullRangeMax() )
