@@ -444,9 +444,6 @@ public class BrightnessDialog extends JDialog
 				@Override
 				public void run()
 				{
-					 // TODO spinners should be updated by listening to minMaxGroup instead
-					spinnerRangeMin.setValue( minMaxGroup.getRangeMin() );
-					spinnerRangeMax.setValue( minMaxGroup.getRangeMax() );
 					advancedPanel.add( spinnerRangeMin );
 					advancedPanel.add( spinnerRangeMax );
 					advancedButton.setText( "<<" );
@@ -474,6 +471,9 @@ public class BrightnessDialog extends JDialog
 					storeSliderSize();
 				}
 			} );
+
+			minPanel.setRangeListener( () -> spinnerRangeMin.setValue( minMaxGroup.getRangeMin() ) );
+			maxPanel.setRangeListener( () -> spinnerRangeMax.setValue( minMaxGroup.getRangeMax() ) );
 
 			final JPanel eastPanel = new JPanel();
 			eastPanel.setLayout( new BoxLayout( eastPanel, BoxLayout.LINE_AXIS ) );

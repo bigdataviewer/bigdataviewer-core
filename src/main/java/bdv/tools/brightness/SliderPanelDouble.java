@@ -68,6 +68,13 @@ public class SliderPanelDouble extends JPanel implements BoundedValueDouble.Upda
 
 	private boolean userDefinedNumberFormat = false;
 
+	private RangeListener rangeListener;
+
+	public static interface RangeListener
+	{
+		public void rangeChanged();
+	}
+
 	/**
 	 * Create a {@link SliderPanelDouble} to modify a given {@link BoundedValueDouble value}.
 	 *
@@ -175,6 +182,15 @@ public class SliderPanelDouble extends JPanel implements BoundedValueDouble.Upda
 
 		if ( rangeChanged )
 			updateNumberFormat();
+
+		if ( rangeChanged && rangeListener != null )
+			rangeListener.rangeChanged();
+
+	}
+
+	public void setRangeListener( final RangeListener listener )
+	{
+		this.rangeListener = listener;
 	}
 
 	private void updateNumberFormat()
