@@ -212,7 +212,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 * animators. Initially, this contains a {@link TextOverlayAnimator} showing
 	 * the "press F1 for help" message.
 	 */
-	protected ArrayList< OverlayAnimator > overlayAnimators;
+	protected final ArrayList< OverlayAnimator > overlayAnimators;
 
 	/**
 	 * Fade-out overlay of recent messages. See {@link #showMessage(String)}.
