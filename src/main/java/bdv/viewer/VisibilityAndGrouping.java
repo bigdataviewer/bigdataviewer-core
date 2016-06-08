@@ -194,7 +194,7 @@ public class VisibilityAndGrouping
 	/**
 	 * Set the source active (visible in fused mode) or inactive.
 	 *
-	 * @param sourceIndex
+	 * @param source
 	 * @param isActive
 	 */
 	public synchronized void setSourceActive( final Source< ? > source, final boolean isActive )

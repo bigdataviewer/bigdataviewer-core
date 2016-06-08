@@ -32,14 +32,14 @@ import java.util.LinkedHashSet;
 import java.util.Set;
 
 import bdv.util.BoundedIntervalDouble;
-import bdv.util.BoundedValue;
+import bdv.util.BoundedValueDouble;
 
 /**
- * An <code>int</code> interval. The {@link #getMinBoundedValue() min} and
+ * A {@code double} interval. The {@link #getMinBoundedValue() min} and
  * {@link #getMaxBoundedValue() max} of the interval are stored as
- * {@link BoundedValue}. The min and max can be changed to span any non-empty
+ * {@link BoundedValueDouble}. The min and max can be changed to span any non-empty
  * interval within the range ({@link #getRangeMin()}, {@link #getRangeMax()}).
- * This range can be {@link #setRange(int, int) modified} as well.
+ * This range can be {@link #setRange(double, double) modified} as well.
  * <p>
  * Some {@link ConverterSetup ConverterSetups} can be
  * {@link #addSetup(ConverterSetup) linked}. They will have their display range
