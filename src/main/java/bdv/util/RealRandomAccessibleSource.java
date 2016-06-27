@@ -103,15 +103,6 @@ public abstract class RealRandomAccessibleSource< T extends Type< T > > implemen
 	}
 
 	@Override
-	@Deprecated
-	public AffineTransform3D getSourceTransform( final int t, final int level )
-	{
-		final AffineTransform3D transform = new AffineTransform3D();
-		getSourceTransform( t, level, transform );
-		return transform;
-	}
-
-	@Override
 	public T getType()
 	{
 		return type;

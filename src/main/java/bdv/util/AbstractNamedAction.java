@@ -43,12 +43,6 @@ public abstract class AbstractNamedAction extends AbstractAction
 		return ( String ) getValue( NAME );
 	}
 
-	@Deprecated
-	public static void put( final ActionMap map, final AbstractNamedAction a )
-	{
-		a.put( map );
-	}
-
 	public void put( final ActionMap map )
 	{
 		map.put( name(), this );
@@ -57,7 +51,7 @@ public abstract class AbstractNamedAction extends AbstractAction
 	public static class NamedActionAdder
 	{
 		private final ActionMap map;
-;
+
 		public NamedActionAdder( final ActionMap map )
 		{
 			this.map = map;

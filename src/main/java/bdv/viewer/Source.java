@@ -95,9 +95,6 @@ public interface Source< T >
 	 */
 	public void getSourceTransform( int t, int level, AffineTransform3D transform );
 
-	@Deprecated
-	public AffineTransform3D getSourceTransform( int t, int level );
-
 	/**
 	 * Get an instance of the pixel type.
 	 * @return instance of pixel type.
