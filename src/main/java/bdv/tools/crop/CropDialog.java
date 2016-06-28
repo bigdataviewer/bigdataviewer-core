@@ -300,7 +300,7 @@ public class CropDialog extends JDialog
 		final int x = 0;
 		final int y = 0;
 		final int z = - d / 2;
-		final RealInterval cropInterval = Intervals.createMinSizeReal( x, y, z, w, h, d );
+		final RealInterval cropInterval = Intervals.createMinSize( x, y, z, w, h, d );
 
 		// list of timepoints of the original sequence
 		final List< TimePoint > sequenceTimepointsOrdered = sequenceDescription.getTimePoints().getTimePointsOrdered();
