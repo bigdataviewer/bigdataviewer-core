@@ -37,6 +37,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
+import bdv.img.cache.Cache;
+import bdv.img.cache.CachedCellImg;
+import bdv.img.cache.LoadingStrategy;
+import bdv.viewer.Interpolation;
+import bdv.viewer.Source;
+import bdv.viewer.SourceAndConverter;
+import bdv.viewer.render.MipmapOrdering.Level;
+import bdv.viewer.render.MipmapOrdering.MipmapHints;
+import bdv.viewer.state.ViewerState;
 import net.imglib2.Dimensions;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
@@ -54,15 +63,6 @@ import net.imglib2.ui.Renderer;
 import net.imglib2.ui.SimpleInterruptibleProjector;
 import net.imglib2.ui.TransformListener;
 import net.imglib2.ui.util.GuiUtil;
-import bdv.img.cache.Cache;
-import bdv.img.cache.CachedCellImg;
-import bdv.img.cache.LoadingStrategy;
-import bdv.viewer.Interpolation;
-import bdv.viewer.Source;
-import bdv.viewer.render.MipmapOrdering.Level;
-import bdv.viewer.render.MipmapOrdering.MipmapHints;
-import bdv.viewer.state.SourceState;
-import bdv.viewer.state.ViewerState;
 
 /**
  * A {@link Renderer} that uses a coarse-to-fine rendering scheme. First, a
@@ -614,7 +614,7 @@ public class MultiResolutionRenderer
 			final ARGBScreenImage screenImage )
 	{
 		cache.initIoTimeBudget( null ); // clear time budget such that prefetching doesn't wait for loading blocks.
-		final List< SourceState< ? > > sourceStates = viewerState.getSources();
+		final List< ? extends SourceAndConverter< ? > > sourceStates = viewerState.getSources();
 		final List< Integer > visibleSourceIndices = viewerState.getVisibleSourceIndices();
 		VolatileProjector projector;
 		if ( visibleSourceIndices.isEmpty() )
@@ -680,7 +680,7 @@ public class MultiResolutionRenderer
 
 	private < T > VolatileProjector createSingleSourceProjector(
 			final ViewerState viewerState,
-			final SourceState< T > source,
+			final SourceAndConverter< T > source,
 			final int sourceIndex,
 			final int screenScaleIndex,
 			final ARGBScreenImage screenImage,
@@ -702,7 +702,7 @@ public class MultiResolutionRenderer
 
 	private < T extends Volatile< ? > > VolatileProjector createSingleSourceVolatileProjector(
 			final ViewerState viewerState,
-			final SourceState< T > source,
+			final SourceAndConverter< T > source,
 			final int sourceIndex,
 			final int screenScaleIndex,
 			final ARGBScreenImage screenImage,

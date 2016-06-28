@@ -54,12 +54,19 @@ import net.imglib2.realtransform.AffineTransform3D;
  */
 public class ViewerState
 {
-	private final ArrayList< SourceState< ? > > sources;
+	private final ArrayList< SourceAndConverter< ? > > sources;
+
+	private final ArrayList< SourceState > sourceStates;
 
 	/**
 	 * read-only view of {@link #sources}.
 	 */
-	private final List< SourceState< ? > > unmodifiableSources;
+	private final List< SourceAndConverter< ? > > unmodifiableSources;
+
+	/**
+	 * read-only view of {@link #sourceStates}.
+	 */
+	private final List< SourceState > unmodifiableSourceStates;
 
 	private final ArrayList< SourceGroup > groups;
 
@@ -121,16 +128,20 @@ public class ViewerState
 	 */
 	public ViewerState( final List< SourceAndConverter< ? > > sources, final List< SourceGroup > sourceGroups, final int numTimePoints )
 	{
-		this.sources = new ArrayList< SourceState< ? > >( sources.size() );
-		for ( final SourceAndConverter< ? > source : sources )
-			this.sources.add( SourceState.create( source, this ) );
+		this.sources = new ArrayList<>( sources );
 		unmodifiableSources = Collections.unmodifiableList( this.sources );
+
+		sourceStates = new ArrayList<>( sources.size() );
+		for ( int i = 0; i < sources.size(); ++i )
+			sourceStates.add( new SourceState() );
+		unmodifiableSourceStates = Collections.unmodifiableList( this.sourceStates );
+
 		groups = new ArrayList< SourceGroup >( sourceGroups.size() );
 		for ( final SourceGroup g : sourceGroups )
 			groups.add( g.copy( this ) );
 		unmodifiableGroups = Collections.unmodifiableList( this.groups );
-		this.numTimepoints = numTimePoints;
 
+		this.numTimepoints = numTimePoints;
 		viewerTransform = new AffineTransform3D();
 		interpolation = NEARESTNEIGHBOR;
 		displayMode = SINGLE;
@@ -145,14 +156,19 @@ public class ViewerState
 	 */
 	protected ViewerState( final ViewerState s )
 	{
-		sources = new ArrayList< SourceState< ? > >( s.sources.size() );
-		for ( final SourceState< ? > source : s.sources )
-			this.sources.add( source.copy( this ) );
+		sources = new ArrayList<>( s.sources );
 		unmodifiableSources = Collections.unmodifiableList( sources );
+
+		sourceStates = new ArrayList<>( sources.size() );
+		for ( final SourceState state : s.sourceStates )
+			sourceStates.add( state.copy() );
+		unmodifiableSourceStates = Collections.unmodifiableList( this.sourceStates );
+
 		groups = new ArrayList< SourceGroup >( s.groups.size() );
 		for ( final SourceGroup group : s.groups )
 			this.groups.add( group.copy( this ) );
 		unmodifiableGroups = Collections.unmodifiableList( groups );
+
 		numTimepoints = s.numTimepoints;
 		viewerTransform = s.viewerTransform.copy();
 		interpolation = s.interpolation;
@@ -208,11 +224,7 @@ public class ViewerState
 	{
 		final int minIndex = sources.isEmpty() ? -1 : 0;
 		if ( index >= minIndex && index < sources.size() )
-		{
-			sources.get( currentSource ).setCurrent( false );
 			currentSource = index;
-			sources.get( currentSource ).setCurrent( true );
-		}
 	}
 
 	/**
@@ -226,7 +238,45 @@ public class ViewerState
 	}
 
 	/**
-	 * Get the index of the current source.
+	 * Check whether the source with the given index is active (visible in fused
+	 * mode).
+	 *
+	 * @return {@code true} if the source with the given index is active.
+	 */
+	public synchronized boolean isSourceActive( final int index )
+	{
+		if ( index < 0 || index >= sources.size() )
+			return false;
+
+		return sourceStates.get( index ).isActive();
+	}
+
+	/**
+	 * Make the source with the given index active (visible in fused mode) or
+	 * inactive.
+	 */
+	public synchronized void setSourceActive( final int index, final boolean isActive )
+	{
+		if ( index < 0 || index >= sources.size() )
+			return;
+
+		sourceStates.get( index ).setActive( isActive );
+
+	}
+
+	/**
+	 * Make the given source active (visible in fused mode) or inactive.
+	 */
+	public synchronized void setSourceActive( final Source< ? > source, final boolean isActive )
+	{
+		final int i = getSourceIndex( source );
+		if ( i >= 0 )
+			setSourceActive( i, isActive );
+	}
+
+
+	/**
+	 * Get the index of the current group.
 	 */
 	public synchronized int getCurrentGroup()
 	{
@@ -234,16 +284,41 @@ public class ViewerState
 	}
 
 	/**
-	 * Make the source with the given index current.
+	 * Make the group with the given index current.
 	 */
 	public synchronized void setCurrentGroup( final int index )
 	{
-		if ( index >= 0 && index < groups.size() )
-		{
-			groups.get( currentGroup ).setCurrent( false );
-			currentGroup = index;
-			groups.get( currentGroup ).setCurrent( true );
-		}
+		if ( index < 0 || index >= groups.size() )
+			return;
+
+		currentGroup = index;
+	}
+
+	/**
+	 * Check whether the group with the given index is active (visible in fused
+	 * mode).
+	 *
+	 * @return {@code true} if the group with the given index is active.
+	 */
+	public synchronized boolean isGroupActive( final int index )
+	{
+		if ( index < 0 || index >= groups.size() )
+			return false;
+
+		return groups.get( index ).isActive();
+	}
+
+	/**
+	 * Make the group with the given index active (visible in fused mode) or
+	 * inactive.
+	 */
+	public synchronized void setGroupActive( final int index, final boolean isActive )
+	{
+		if ( index < 0 || index >= groups.size() )
+			return;
+
+		groups.get( index ).setActive( isActive );
+
 	}
 
 	/**
@@ -337,9 +412,20 @@ public class ViewerState
 	 *
 	 * @return list of all sources.
 	 */
-	public List< SourceState< ? > > getSources()
+	public List< ? extends SourceAndConverter< ? > > getSources()
 	{
 		return unmodifiableSources;
+	}
+
+	/**
+	 * Returns a list of all {@link SourceState}s.
+	 * These store whether sources are active.
+	 *
+	 * @return list of all {@link SourceState}s.
+	 */
+	public List< SourceState > getSourceStates()
+	{
+		return unmodifiableSourceStates;
 	}
 
 	/**
@@ -374,26 +460,23 @@ public class ViewerState
 
 	public synchronized void addSource( final SourceAndConverter< ? > source )
 	{
-		sources.add( SourceState.create( source, this ) );
+		sources.add( source );
+		sourceStates.add( new SourceState() );
 		if ( currentSource < 0 )
 			currentSource = 0;
 	}
 
 	public synchronized void removeSource( final Source< ? > source )
 	{
-		for ( int i = 0; i < sources.size(); )
-		{
-			final SourceState< ? > s = sources.get( i );
-			if ( s.getSpimSource() == source )
-				removeSource( i );
-			else
-				i++;
-		}
+		final int i = getSourceIndex( source );
+		if ( i >= 0 )
+			removeSource( i );
 	}
 
 	protected void removeSource( final int index )
 	{
 		sources.remove( index );
+		sourceStates.remove( index );
 		if ( sources.isEmpty() )
 			currentSource = -1;
 		else if ( currentSource == index )
@@ -424,7 +507,7 @@ public class ViewerState
 		case GROUP:
 			return groups.get( currentGroup ).getSourceIds().contains( index ) && isPresent( index );
 		case FUSED:
-			return sources.get( index ).isActive() && isPresent( index );
+			return sourceStates.get( index ).isActive() && isPresent( index );
 		case FUSEDGROUP:
 		default:
 			for ( final SourceGroup group : groups )
@@ -460,7 +543,7 @@ public class ViewerState
 			break;
 		case FUSED:
 			for ( int i = 0; i < sources.size(); ++i )
-				if ( sources.get( i ).isActive() && isPresent( i ) )
+				if ( sourceStates.get( i ).isActive() && isPresent( i ) )
 					visible.add( i );
 			break;
 		case FUSEDGROUP:
@@ -541,7 +624,7 @@ public class ViewerState
 	{
 		for ( int i = 0; i < sources.size(); ++i )
 		{
-			final SourceState< ? > s = sources.get( i );
+			final SourceAndConverter< ? > s = sources.get( i );
 			if ( s.getSpimSource() == source )
 				return i;
 		}

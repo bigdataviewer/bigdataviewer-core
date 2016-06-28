@@ -32,11 +32,11 @@ import java.awt.Graphics2D;
 import java.util.ArrayList;
 import java.util.List;
 
+import bdv.viewer.SourceAndConverter;
+import bdv.viewer.state.ViewerState;
 import net.imglib2.Interval;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.Intervals;
-import bdv.viewer.state.SourceState;
-import bdv.viewer.state.ViewerState;
 
 /**
  * Render multibox overlay corresponding to a {@link ViewerState} into a
@@ -122,13 +122,13 @@ public class MultiBoxOverlayRenderer
 	{
 		synchronized ( viewerState )
 		{
-			final List< SourceState< ? > > sources = viewerState.getSources();
+			final List< ? extends SourceAndConverter< ? > > sources = viewerState.getSources();
 			final List< Integer > visible = viewerState.getVisibleSourceIndices();
 			final int timepoint = viewerState.getCurrentTimepoint();
 
 			final int numSources = sources.size();
 			int numPresentSources = 0;
-			for ( final SourceState< ? > source : sources )
+			for ( final SourceAndConverter< ? > source : sources )
 				if ( source.getSpimSource().isPresent( timepoint ) )
 					numPresentSources++;
 			if ( boxSources.size() != numPresentSources )
@@ -143,7 +143,7 @@ public class MultiBoxOverlayRenderer
 			final AffineTransform3D sourceTransform = new AffineTransform3D();
 			for ( int i = 0, j = 0; i < numSources; ++i )
 			{
-				final SourceState< ? > source = sources.get( i );
+				final SourceAndConverter< ? > source = sources.get( i );
 				if ( source.getSpimSource().isPresent( timepoint ) )
 				{
 					final IntervalAndTransform boxsource = boxSources.get( j++ );

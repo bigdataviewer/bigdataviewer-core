@@ -37,13 +37,13 @@ import java.awt.geom.Rectangle2D;
 import java.text.DecimalFormat;
 import java.util.List;
 
-import mpicbg.spim.data.sequence.VoxelDimensions;
-import net.imglib2.realtransform.AffineTransform3D;
 import bdv.util.Affine3DHelpers;
 import bdv.util.Prefs;
 import bdv.viewer.Source;
-import bdv.viewer.state.SourceState;
+import bdv.viewer.SourceAndConverter;
 import bdv.viewer.state.ViewerState;
+import mpicbg.spim.data.sequence.VoxelDimensions;
+import net.imglib2.realtransform.AffineTransform3D;
 
 public class ScaleBarOverlayRenderer
 {
@@ -119,7 +119,7 @@ public class ScaleBarOverlayRenderer
 	{
 		synchronized ( state )
 		{
-			final List< SourceState< ? > > sources = state.getSources();
+			final List< ? extends SourceAndConverter< ? > > sources = state.getSources();
 			if ( ! sources.isEmpty() )
 			{
 				final Source< ? > spimSource = sources.get( state.getCurrentSource() ).getSpimSource();

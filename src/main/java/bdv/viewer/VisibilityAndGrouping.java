@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -47,7 +47,6 @@ import java.util.SortedSet;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import bdv.viewer.state.SourceGroup;
-import bdv.viewer.state.SourceState;
 import bdv.viewer.state.ViewerState;
 import bdv.viewer.state.XmlIoViewerState;
 
@@ -113,7 +112,7 @@ public class VisibilityAndGrouping
 		return state.numSources();
 	}
 
-	public List< SourceState< ? > > getSources()
+	public List< ? extends SourceAndConverter< ? > > getSources()
 	{
 		return state.getSources();
 	}
@@ -152,9 +151,6 @@ public class VisibilityAndGrouping
 	 */
 	public synchronized void setCurrentSource( final int sourceIndex )
 	{
-		if ( sourceIndex < 0 || sourceIndex >= numSources() )
-			return;
-
 		state.setCurrentSource( sourceIndex );
 		checkVisibilityChange();
 		update( CURRENT_SOURCE_CHANGED );
@@ -169,10 +165,7 @@ public class VisibilityAndGrouping
 
 	public synchronized boolean isSourceActive( final int sourceIndex )
 	{
-		if ( sourceIndex < 0 || sourceIndex >= numSources() )
-			return false;
-
-		return state.getSources().get( sourceIndex ).isActive();
+		return state.isSourceActive( sourceIndex );
 	}
 
 	/**
@@ -183,10 +176,7 @@ public class VisibilityAndGrouping
 	 */
 	public synchronized void setSourceActive( final int sourceIndex, final boolean isActive )
 	{
-		if ( sourceIndex < 0 || sourceIndex >= numSources() )
-			return;
-
-		state.getSources().get( sourceIndex ).setActive( isActive );
+		state.setSourceActive( sourceIndex, isActive );
 		update( SOURCE_ACTVITY_CHANGED );
 		checkVisibilityChange();
 	}
@@ -199,11 +189,7 @@ public class VisibilityAndGrouping
 	 */
 	public synchronized void setSourceActive( final Source< ? > source, final boolean isActive )
 	{
-		for ( final SourceState< ? > s : state.getSources() )
-		{
-			if ( s.getSpimSource().equals( source ) )
-				s.setActive( isActive );
-		}
+		state.setSourceActive( source, isActive );
 		update( SOURCE_ACTVITY_CHANGED );
 		checkVisibilityChange();
 	}
@@ -236,10 +222,7 @@ public class VisibilityAndGrouping
 
 	public synchronized boolean isGroupActive( final int groupIndex )
 	{
-		if ( groupIndex < 0 || groupIndex >= numGroups() )
-			return false;
-
-		return state.getSourceGroups().get( groupIndex ).isActive();
+		return state.isGroupActive( groupIndex );
 	}
 
 	/**
@@ -250,10 +233,7 @@ public class VisibilityAndGrouping
 	 */
 	public synchronized void setGroupActive( final int groupIndex, final boolean isActive )
 	{
-		if ( groupIndex < 0 || groupIndex >= numGroups() )
-			return;
-
-		state.getSourceGroups().get( groupIndex ).setActive( isActive );
+		state.setGroupActive( groupIndex, isActive );
 		update( GROUP_ACTIVITY_CHANGED );
 		checkVisibilityChange();
 	}

@@ -131,26 +131,4 @@ public class SourceGroup
 			this.isActive = isActive;
 		}
 	}
-
-	/**
-	 * Is this group the current group?
-	 *
-	 * @return whether the group is current.
-	 */
-	public boolean isCurrent()
-	{
-		return isCurrent;
-	}
-
-	/**
-	 * Set this group current (or not).
-	 */
-	public void setCurrent( final boolean isCurrent )
-	{
-		synchronized ( owner )
-		{
-			this.isCurrent = isCurrent;
-		}
-	}
-
 }

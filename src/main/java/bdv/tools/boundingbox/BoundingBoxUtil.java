@@ -31,15 +31,15 @@ package bdv.tools.boundingbox;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import bdv.viewer.Source;
+import bdv.viewer.SourceAndConverter;
+import bdv.viewer.state.ViewerState;
 import net.imglib2.FinalInterval;
 import net.imglib2.FinalRealInterval;
 import net.imglib2.Interval;
 import net.imglib2.RealInterval;
 import net.imglib2.RealPoint;
 import net.imglib2.realtransform.AffineTransform3D;
-import bdv.viewer.Source;
-import bdv.viewer.state.SourceState;
-import bdv.viewer.state.ViewerState;
 
 public class BoundingBoxUtil
 {
@@ -51,7 +51,7 @@ public class BoundingBoxUtil
 	public static Interval getSourcesBoundingBox( final ViewerState state, final int minTimepointIndex, final int maxTimepointIndex )
 	{
 		final ArrayList< Source< ? > > sources = new ArrayList< Source< ? > >();
-		for ( final SourceState< ? > source : state.getSources() )
+		for ( final SourceAndConverter< ? > source : state.getSources() )
 			sources.add( source.getSpimSource() );
 		return getSourcesBoundingBox( sources, minTimepointIndex, maxTimepointIndex );
 	}
@@ -106,7 +106,7 @@ public class BoundingBoxUtil
 	public static RealInterval getSourcesBoundingBoxReal( final ViewerState state, final int minTimepointIndex, final int maxTimepointIndex )
 	{
 		final ArrayList< Source< ? > > sources = new ArrayList< Source< ? > >();
-		for ( final SourceState< ? > source : state.getSources() )
+		for ( final SourceAndConverter< ? > source : state.getSources() )
 			sources.add( source.getSpimSource() );
 		return getSourcesBoundingBoxReal( sources, minTimepointIndex, maxTimepointIndex );
 	}

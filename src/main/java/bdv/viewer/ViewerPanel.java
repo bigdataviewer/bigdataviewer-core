@@ -78,7 +78,6 @@ import bdv.viewer.overlay.SourceInfoOverlayRenderer;
 import bdv.viewer.render.MultiResolutionRenderer;
 import bdv.viewer.render.TransformAwareBufferedImageOverlayRenderer;
 import bdv.viewer.state.SourceGroup;
-import bdv.viewer.state.SourceState;
 import bdv.viewer.state.ViewerState;
 import bdv.viewer.state.XmlIoViewerState;
 import net.imglib2.Positionable;
@@ -568,7 +567,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 */
 	protected synchronized void align( final AlignPlane plane )
 	{
-		final SourceState< ? > source = state.getSources().get( state.getCurrentSource() );
+		final SourceAndConverter< ? > source = state.getSources().get( state.getCurrentSource() );
 		final AffineTransform3D sourceTransform = new AffineTransform3D();
 		source.getSpimSource().getSourceTransform( state.getCurrentTimepoint(), 0, sourceTransform );
 

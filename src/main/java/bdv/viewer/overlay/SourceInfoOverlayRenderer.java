@@ -36,8 +36,8 @@ import java.awt.Graphics2D;
 import java.util.List;
 
 import bdv.viewer.DisplayMode;
+import bdv.viewer.SourceAndConverter;
 import bdv.viewer.state.SourceGroup;
-import bdv.viewer.state.SourceState;
 import bdv.viewer.state.ViewerState;
 import mpicbg.spim.data.sequence.TimePoint;
 
@@ -77,7 +77,7 @@ public class SourceInfoOverlayRenderer
 	{
 		synchronized ( state )
 		{
-			final List< SourceState< ? > > sources = state.getSources();
+			final List< ? extends SourceAndConverter< ? > > sources = state.getSources();
 			if ( ! sources.isEmpty() )
 				sourceName = sources.get( state.getCurrentSource() ).getSpimSource().getName();
 			else

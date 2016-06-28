@@ -38,12 +38,11 @@ import static bdv.viewer.Interpolation.NLINEAR;
 import java.util.List;
 import java.util.SortedSet;
 
-import mpicbg.spim.data.XmlHelpers;
-
 import org.jdom2.Element;
 
 import bdv.viewer.DisplayMode;
 import bdv.viewer.Interpolation;
+import mpicbg.spim.data.XmlHelpers;
 
 
 public class XmlIoViewerState
@@ -82,7 +81,7 @@ public class XmlIoViewerState
 	public Element toXml( final ViewerState state )
 	{
 		final Element elem = new Element( VIEWERSTATE_TAG );
-		elem.addContent( sourcesToXml( state.getSources() ) );
+		elem.addContent( sourcesToXml( state.getSourceStates() ) );
 		elem.addContent( sourceGroupsToXml( state.getSourceGroups() ) );
 		elem.addContent( displayModeToXml( state.getDisplayMode() ) );
 		elem.addContent( interpolationModeToXml ( state.getInterpolation() ) );
@@ -98,7 +97,7 @@ public class XmlIoViewerState
 	 */
 	public void restoreFromXml( final Element elem, final ViewerState state )
 	{
-		restoreSourcesFromXml( elem.getChild( VIEWERSTATE_SOURCES_TAG ), state.getSources() );
+		restoreSourcesFromXml( elem.getChild( VIEWERSTATE_SOURCES_TAG ), state.getSourceStates() );
 		restoreSourceGroupsFromXml( elem.getChild( VIEWERSTATE_GROUPS_TAG ), state.getSourceGroups() );
 		state.setDisplayMode( displayModeFromXml( elem.getChild( VIEWERSTATE_DISPLAYMODE_TAG ) ) );
 		state.setInterpolation( interpolationModeFromXml( elem.getChild( VIEWERSTATE_INTERPOLATION_TAG ) ) );
@@ -107,10 +106,10 @@ public class XmlIoViewerState
 		state.setCurrentTimepoint( XmlHelpers.getInt( elem, VIEWERSTATE_CURRENTTIMEPOINT_TAG ) );
 	}
 
-	protected Element sourcesToXml( final List< SourceState< ? > > sources )
+	protected Element sourcesToXml( final List< SourceState > sources )
 	{
 		final Element elem = new Element( VIEWERSTATE_SOURCES_TAG );
-		for ( final SourceState< ? > source : sources )
+		for ( final SourceState source : sources )
 		{
 			final Element sourceElem = new Element( VIEWERSTATE_SOURCE_TAG );
 			sourceElem.addContent( XmlHelpers.booleanElement( VIEWERSTATE_SOURCE_ACTIVE_TAG, source.isActive() ) );
@@ -123,7 +122,7 @@ public class XmlIoViewerState
 	 * @param elem &lt;Sources&gt; element.
 	 * @param sources is restored from the <code>elem</code>.
 	 */
-	protected void restoreSourcesFromXml( final Element elem, final List< SourceState< ? > > sources )
+	protected void restoreSourcesFromXml( final Element elem, final List< SourceState > sources )
 	{
 		final List< Element > sourceElems = elem.getChildren( VIEWERSTATE_SOURCE_TAG );
 		if ( sources.size() != sourceElems.size() )

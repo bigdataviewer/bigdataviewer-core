@@ -58,17 +58,6 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileFilter;
 
-import mpicbg.spim.data.SpimDataException;
-import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
-import mpicbg.spim.data.generic.sequence.BasicViewSetup;
-import mpicbg.spim.data.registration.ViewRegistration;
-import mpicbg.spim.data.registration.ViewRegistrations;
-import mpicbg.spim.data.sequence.TimePoint;
-import mpicbg.spim.data.sequence.TimePoints;
-import mpicbg.spim.data.sequence.ViewId;
-import net.imglib2.RealInterval;
-import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.util.Intervals;
 import bdv.AbstractSpimSource;
 import bdv.export.ExportMipmapInfo;
 import bdv.export.WriteSequenceToHdf5;
@@ -80,8 +69,19 @@ import bdv.spimdata.SpimDataMinimal;
 import bdv.spimdata.XmlIoSpimDataMinimal;
 import bdv.tools.transformation.TransformedSource;
 import bdv.viewer.Source;
+import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerPanel;
-import bdv.viewer.state.SourceState;
+import mpicbg.spim.data.SpimDataException;
+import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
+import mpicbg.spim.data.generic.sequence.BasicViewSetup;
+import mpicbg.spim.data.registration.ViewRegistration;
+import mpicbg.spim.data.registration.ViewRegistrations;
+import mpicbg.spim.data.sequence.TimePoint;
+import mpicbg.spim.data.sequence.TimePoints;
+import mpicbg.spim.data.sequence.ViewId;
+import net.imglib2.RealInterval;
+import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.util.Intervals;
 
 public class CropDialog extends JDialog
 {
@@ -322,7 +322,7 @@ public class CropDialog extends JDialog
 		// This is needed because the CropImgLoader is asked for (timepointId,
 		// setupId) pair and needs to retrieve from corresponding source.
 		final HashMap< Integer, Integer > setupIdToSourceIndex = new HashMap< Integer, Integer >();
-		for( final SourceState< ? > s : viewer.getState().getSources() )
+		for( final SourceAndConverter< ? > s : viewer.getState().getSources() )
 		{
 			Source< ? > source = s.getSpimSource();
 			sources.add( source );

@@ -28,98 +28,26 @@
  */
 package bdv.viewer.state;
 
-import net.imglib2.Volatile;
 import bdv.viewer.DisplayMode;
-import bdv.viewer.SourceAndConverter;
 
 /**
- * Source with some attached state needed for rendering.
+ * Stores whether a source is active.
  */
-public class SourceState< T > extends SourceAndConverter< T >
+public class SourceState
 {
-	protected static class Data
-	{
-		/**
-		 * Whether the source is active (visible in  {@link DisplayMode#FUSED} mode).
-		 */
-		protected boolean isActive;
-
-		/**
-		 * Whether the source is current.
-		 */
-		protected boolean isCurrent;
-
-		public Data()
-		{
-			isActive = true;
-			isCurrent = false;
-		}
-
-		protected Data( final Data d )
-		{
-			isActive = d.isActive;
-			isCurrent = d.isCurrent;
-		}
-
-		public Data copy()
-		{
-			return new Data( this );
-		}
-	}
-
-	static class VolatileSourceState< T, V extends Volatile< T > > extends SourceState< V >
-	{
-		public VolatileSourceState( final SourceAndConverter< V > soc, final ViewerState owner, final Data data )
-		{
-			super( soc, owner, data );
-		}
-
-		public static < T, V extends Volatile< T > > VolatileSourceState< T, V > create( final SourceAndConverter< V > soc, final ViewerState owner, final Data data )
-		{
-			if ( soc == null )
-				return null;
-			else
-				return new VolatileSourceState< T, V >( soc, owner, data );
-		}
-	}
-
-	final ViewerState owner;
-
-	final Data data;
-
-	final VolatileSourceState< T, ? extends Volatile< T > > volatileSourceState;
-
-	public SourceState( final SourceAndConverter< T > soc, final ViewerState owner )
-	{
-		super( soc );
-		data = new Data();
-		this.owner = owner;
-		volatileSourceState = VolatileSourceState.create( soc.asVolatile(), owner, data );
-	}
-
-	protected SourceState( final SourceAndConverter< T > soc, final ViewerState owner, final Data data )
-	{
-		super( soc );
-		this.data = data;
-		this.owner = owner;
-		volatileSourceState = VolatileSourceState.create( soc.asVolatile(), owner, data );
-	}
-
 	/**
-	 * copy constructor
-	 * @param s
+	 * Whether the source is active (visible in {@link DisplayMode#FUSED} mode).
 	 */
-	protected SourceState( final SourceState< T > s, final ViewerState owner )
+	private boolean isActive;
+
+	public SourceState()
 	{
-		super( s );
-		data = s.data.copy();
-		this.owner = owner;
-		volatileSourceState = VolatileSourceState.create( s.volatileSourceAndConverter, owner, data );
+		isActive = true;
 	}
 
-	public SourceState< T > copy( final ViewerState owner )
+	protected SourceState( final SourceState s )
 	{
-		return new SourceState< T >( this, owner );
+		isActive = s.isActive;
 	}
 
 	/**
@@ -129,7 +57,7 @@ public class SourceState< T > extends SourceAndConverter< T >
 	 */
 	public boolean isActive()
 	{
-		return data.isActive;
+		return isActive;
 	}
 
 	/**
@@ -137,45 +65,11 @@ public class SourceState< T > extends SourceAndConverter< T >
 	 */
 	public void setActive( final boolean isActive )
 	{
-		synchronized ( owner )
-		{
-			data.isActive = isActive;
-		}
+		this.isActive = isActive;
 	}
 
-	/**
-	 * Is this source the current source?
-	 *
-	 * @return whether the source is current.
-	 */
-	public boolean isCurrent()
+	public SourceState copy()
 	{
-		return data.isCurrent;
-	}
-
-	/**
-	 * Set this source current (or not).
-	 */
-	public void setCurrent( final boolean isCurrent )
-	{
-		synchronized ( owner )
-		{
-			data.isCurrent = isCurrent;
-		}
-	}
-
-	/**
-	 * Create a {@link SourceState} from a {@link SourceAndConverter}.
-	 */
-	public static < T > SourceState< T > create( final SourceAndConverter< T > soc, final ViewerState owner )
-	{
-		return new SourceState< T >( soc, owner );
-	}
-
-	@Override
-	public SourceState< ? extends Volatile< T > > asVolatile()
-	{
-		return volatileSourceState;
+		return new SourceState( this );
 	}
 }
-
