@@ -51,19 +51,12 @@ public class SourceGroup
 	 */
 	protected boolean isActive;
 
-	/**
-	 * Whether the group is current (only group visible in
-	 * {@link DisplayMode#FUSED} mode).
-	 */
-	protected boolean isCurrent;
-
 	public SourceGroup( final String name, final ViewerState owner )
 	{
 		this.owner = owner;
 		sourceIds = new TreeSet< Integer >();
 		this.name = name;
 		isActive = true;
-		isCurrent = false;
 	}
 
 	public SourceGroup( final SourceGroup g, final ViewerState owner )
@@ -72,7 +65,6 @@ public class SourceGroup
 		sourceIds = new TreeSet< Integer >( g.sourceIds );
 		name = g.name;
 		isActive = g.isActive;
-		isCurrent = g.isCurrent;
 	}
 
 	public SourceGroup copy( final ViewerState owner )
