@@ -69,7 +69,7 @@ public class MergePartitionList
 		final HashMap< Integer, ExportMipmapInfo > perSetupMipmapInfo = new HashMap< Integer, ExportMipmapInfo >();
 		for ( final int setupId : seq.getViewSetups().keySet() )
 		{
-			final MipmapInfo info = imgLoader.getSetupImgLoader( setupId ).getMipmapInfo();;
+			final MipmapInfo info = imgLoader.getSetupImgLoader( setupId ).getMipmapInfo();
 			perSetupMipmapInfo.put( setupId, new ExportMipmapInfo( Util.castToInts( info.getResolutions() ), info.getSubdivisions() ) );
 		}
 		return perSetupMipmapInfo;

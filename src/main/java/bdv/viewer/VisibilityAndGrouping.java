@@ -150,14 +150,14 @@ public class VisibilityAndGrouping
 		state.setCurrentSource( sourceIndex );
 		checkVisibilityChange();
 		update( CURRENT_SOURCE_CHANGED );
-	};
+	}
 
 	public synchronized void setCurrentSource( final Source< ? > source )
 	{
 		state.setCurrentSource( source );
 		checkVisibilityChange();
 		update( CURRENT_SOURCE_CHANGED );
-	};
+	}
 
 	public synchronized boolean isSourceActive( final int sourceIndex )
 	{

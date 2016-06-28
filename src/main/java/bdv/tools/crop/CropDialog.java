@@ -373,7 +373,7 @@ public class CropDialog extends JDialog
 		final Hdf5ImageLoader loader = ( Hdf5ImageLoader ) sequenceDescription.getImgLoader();
 		for ( final int setupId : cropSetups.keySet() )
 		{
-			final MipmapInfo info = loader.getSetupImgLoader( setupId ).getMipmapInfo();;
+			final MipmapInfo info = loader.getSetupImgLoader( setupId ).getMipmapInfo();
 			if ( info == null )
 				perSetupMipmapInfo.put( setupId, new ExportMipmapInfo(
 						new int[][] { { 1, 1, 1 } },
