@@ -341,29 +341,19 @@ public class ViewerState
 		interpolation = method;
 	}
 
-	// TODO: replace by getDisplayMode()
 	/**
-	 * Is the display mode <em>single-source</em>? In <em>single-source</em>
-	 * mode, only the current source (SPIM angle). Otherwise, in <em>fused</em>
-	 * mode, all active sources are blended.
-	 *
-	 * @return whether the display mode is <em>single-source</em>.
+	 * DEPRECATED. Replace by {@link #getDisplayMode()}.
 	 */
+	@Deprecated
 	public synchronized boolean isSingleSourceMode()
 	{
 		return displayMode == SINGLE;
 	}
 
-	// TODO: replace by setDisplayMode();
 	/**
-	 * Set the display mode to <em>single-source</em> (true) or <em>fused</em>
-	 * (false). In <em>single-source</em> mode, only the current source (SPIM
-	 * angle) is shown. In <em>fused</em> mode, all active sources are blended.
-	 *
-	 * @param singleSourceMode
-	 *            If true, set <em>single-source</em> mode. If false, set
-	 *            <em>fused</em> mode.
+	 * DEPRECATED. Replace by {@link #setDisplayMode(DisplayMode)}.
 	 */
+	@Deprecated
 	public synchronized void setSingleSourceMode( final boolean singleSourceMode )
 	{
 		if ( singleSourceMode )
@@ -373,14 +363,26 @@ public class ViewerState
 	}
 
 	/**
-	 * TODO
-	 * @param mode
+	 * Set the display mode. In <em>single-source</em> mode, only the current
+	 * source (SPIM angle) is shown. In <em>fused</em> mode, all active sources
+	 * are blended. In <em>single-group mode</em>, all sources in the current
+	 * group are blended. In <em>fused group mode</em> all sources in all active
+	 * groups are blended.
 	 */
 	public synchronized void setDisplayMode( final DisplayMode mode )
 	{
 		displayMode = mode;
 	}
 
+	/**
+	 * Get the display mode. In <em>single-source</em> mode, only the current
+	 * source (SPIM angle) is shown. In <em>fused</em> mode, all active sources
+	 * are blended. In <em>single-group mode</em>, all sources in the current
+	 * group are blended. In <em>fused group mode</em> all sources in all active
+	 * groups are blended.
+	 *
+	 * @return the current display mode.
+	 */
 	public synchronized DisplayMode getDisplayMode()
 	{
 		return displayMode;
