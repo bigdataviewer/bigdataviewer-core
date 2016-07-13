@@ -35,10 +35,10 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
-import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 import bdv.img.cache.CacheIoTiming.IoStatistics;
 import bdv.img.cache.CacheIoTiming.IoTimeBudget;
 import bdv.img.cache.VolatileImgCells.CellCache;
+import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 
 public class VolatileGlobalCellCache implements Cache
 {
@@ -56,9 +56,9 @@ public class VolatileGlobalCellCache implements Cache
 
 		private final int level;
 
-		private final int index;
+		private final long index;
 
-		public Key( final int timepoint, final int setup, final int level, final int index )
+		public Key( final int timepoint, final int setup, final int level, final long index )
 		{
 			this.timepoint = timepoint;
 			this.setup = setup;
@@ -441,7 +441,12 @@ public class VolatileGlobalCellCache implements Cache
 	 *            {@link LoadingStrategy}, queue priority, and queue order.
 	 * @return a cell with the specified coordinates or null.
 	 */
-	public VolatileCell< ? > getGlobalIfCached( final int timepoint, final int setup, final int level, final int index, final CacheHints cacheHints )
+	public VolatileCell< ? > getGlobalIfCached(
+			final int timepoint,
+			final int setup,
+			final int level,
+			final long index,
+			final CacheHints cacheHints )
 	{
 		final Key k = new Key( timepoint, setup, level, index );
 		final Reference< Entry< ? > > ref = softReferenceCache.get( k );
@@ -512,7 +517,15 @@ public class VolatileGlobalCellCache implements Cache
 	 *            {@link LoadingStrategy}, queue priority, and queue order.
 	 * @return a cell with the specified coordinates.
 	 */
-	public < A extends VolatileAccess > VolatileCell< ? > createGlobal( final int[] cellDims, final long[] cellMin, final int timepoint, final int setup, final int level, final int index, final CacheHints cacheHints, final CacheArrayLoader< A > loader )
+	public < A extends VolatileAccess > VolatileCell< ? > createGlobal(
+			final int[] cellDims,
+			final long[] cellMin,
+			final int timepoint,
+			final int setup,
+			final int level,
+			final long index,
+			final CacheHints cacheHints,
+			final CacheArrayLoader< A > loader )
 	{
 		final Key k = new Key( timepoint, setup, level, index );
 		Entry< ? > entry = null;
@@ -641,14 +654,14 @@ public class VolatileGlobalCellCache implements Cache
 
 		@SuppressWarnings( "unchecked" )
 		@Override
-		public VolatileCell< A > get( final int index )
+		public VolatileCell< A > get( final long index )
 		{
 			return ( VolatileCell< A > ) getGlobalIfCached( timepoint, setup, level, index, cacheHints );
 		}
 
 		@SuppressWarnings( "unchecked" )
 		@Override
-		public VolatileCell< A > load( final int index, final int[] cellDims, final long[] cellMin )
+		public VolatileCell< A > load( final long index, final int[] cellDims, final long[] cellMin )
 		{
 			return ( VolatileCell< A > ) createGlobal( cellDims, cellMin, timepoint, setup, level, index, cacheHints, loader );
 		}
