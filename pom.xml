@@ -9,7 +9,7 @@
 	</parent>
 
 	<artifactId>bigdataviewer-core</artifactId>
-	<version>2.5.1-SNAPSHOT</version>
+	<version>2.5.2-SNAPSHOT</version>
 	<url>http://github.com/bigdataviewer/bigdataviewer-core</url>
 	<inceptionYear>2012</inceptionYear>
 
