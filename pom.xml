@@ -9,7 +9,7 @@
 	</parent>
 
 	<artifactId>bigdataviewer-core</artifactId>
-	<version>2.5.1-SNAPSHOT</version>
+	<version>2.5.1</version>
 	<url>http://github.com/bigdataviewer/bigdataviewer-core</url>
 	<inceptionYear>2012</inceptionYear>
 
@@ -83,7 +83,7 @@
 	<scm>
 		<connection>scm:git:git://github.com/bigdataviewer/bigdataviewer-core</connection>
 		<developerConnection>scm:git:git@github.com:bigdataviewer/bigdataviewer-core</developerConnection>
-		<tag>HEAD</tag>
+		<tag>bigdataviewer-core-2.5.1</tag>
 		<url>https://github.com/bigdataviewer/bigdataviewer-core</url>
 	</scm>
 	<ciManagement>
