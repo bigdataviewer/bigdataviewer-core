@@ -162,7 +162,7 @@ public class ViewerState
 		currentTimepoint = s.currentTimepoint;
 	}
 
-	public ViewerState copy()
+	public synchronized ViewerState copy()
 	{
 		return new ViewerState( this );
 	}
