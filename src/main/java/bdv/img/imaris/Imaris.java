@@ -33,6 +33,16 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 
+import bdv.img.hdf5.MipmapInfo;
+import bdv.img.hdf5.Util;
+import bdv.spimdata.SequenceDescriptionMinimal;
+import bdv.spimdata.SpimDataMinimal;
+import bdv.util.MipmapTransforms;
+import ch.systemsx.cisd.hdf5.HDF5DataClass;
+import ch.systemsx.cisd.hdf5.HDF5DataSetInformation;
+import ch.systemsx.cisd.hdf5.HDF5DataTypeInformation;
+import ch.systemsx.cisd.hdf5.HDF5Factory;
+import ch.systemsx.cisd.hdf5.IHDF5Reader;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.registration.ViewRegistration;
 import mpicbg.spim.data.registration.ViewRegistrations;
@@ -43,15 +53,6 @@ import mpicbg.spim.data.sequence.ViewId;
 import mpicbg.spim.data.sequence.VoxelDimensions;
 import net.imglib2.FinalDimensions;
 import net.imglib2.realtransform.AffineTransform3D;
-import bdv.img.hdf5.MipmapInfo;
-import bdv.spimdata.SequenceDescriptionMinimal;
-import bdv.spimdata.SpimDataMinimal;
-import bdv.util.MipmapTransforms;
-import ch.systemsx.cisd.hdf5.HDF5DataClass;
-import ch.systemsx.cisd.hdf5.HDF5DataSetInformation;
-import ch.systemsx.cisd.hdf5.HDF5DataTypeInformation;
-import ch.systemsx.cisd.hdf5.HDF5Factory;
-import ch.systemsx.cisd.hdf5.IHDF5Reader;
 
 public class Imaris
 {
@@ -188,10 +189,13 @@ public class Imaris
 										blockDims[ 2 ] = Integer.parseInt( access.readImarisAttributeString( path, "ImageBlockSizeZ" ) );
 									} catch( final NumberFormatException e )
 									{
-										final int[] chunkSizes = info.tryGetChunkSizes();
+										int[] chunkSizes = info.tryGetChunkSizes();
 										if ( chunkSizes != null )
+										{
+											chunkSizes = Util.reorder( chunkSizes );
 											for ( int d = 0; d < 3; ++d )
 												blockDims[ d ] = chunkSizes[ d ];
+										}
 									}
 
 									resolution = new double[] {
