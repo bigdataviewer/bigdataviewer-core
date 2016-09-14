@@ -693,14 +693,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	{
 		try
 		{
-			InvokeOnEDT.invokeAndWait( new Runnable()
-			{
-				@Override
-				public void run()
-				{
-					setNumTimepointsSynchronized( numTimepoints );
-				}
-			} );
+			InvokeOnEDT.invokeAndWait( () -> setNumTimepointsSynchronized( numTimepoints ) );
 		}
 		catch ( InvocationTargetException | InterruptedException e )
 		{
