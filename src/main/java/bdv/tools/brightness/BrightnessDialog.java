@@ -43,6 +43,7 @@ import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 
 import javax.swing.AbstractAction;
@@ -67,6 +68,7 @@ import javax.swing.WindowConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import bdv.util.InvokeOnEDT;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import net.imglib2.type.numeric.ARGBType;
 
@@ -110,8 +112,17 @@ public class BrightnessDialog extends JDialog
 			@Override
 			public void update()
 			{
-				colorsPanel.recreateContent();
-				minMaxPanels.recreateContent();
+				try
+				{
+					InvokeOnEDT.invokeAndWait( () -> {
+						colorsPanel.recreateContent();
+						minMaxPanels.recreateContent();
+					} );
+				}
+				catch ( InvocationTargetException | InterruptedException e )
+				{
+					e.printStackTrace();
+				}
 			}
 		} );
 
