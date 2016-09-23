@@ -32,12 +32,12 @@ import javax.swing.ActionMap;
 import javax.swing.InputMap;
 
 import org.scijava.ui.behaviour.KeyStrokeAdder;
+import org.scijava.ui.behaviour.util.Actions;
+import org.scijava.ui.behaviour.util.InputActionBindings;
 
-import bdv.util.AbstractActions;
-import bdv.util.RunnableAction;
 import bdv.viewer.ViewerPanel.AlignPlane;
 
-public class NavigationActions extends AbstractActions
+public class NavigationActions extends Actions
 {
 	public static final String TOGGLE_INTERPOLATION = "toggle interpolation";
 	public static final String TOGGLE_FUSED_MODE = "toggle fused mode";
@@ -64,33 +64,26 @@ public class NavigationActions extends AbstractActions
 			final ViewerPanel viewer,
 			final KeyStrokeAdder.Factory keyProperties )
 	{
-		final NavigationActions actions = new NavigationActions( inputActionBindings, keyProperties );
+		final NavigationActions actions = new NavigationActions( keyProperties );
+
 		actions.modes( viewer );
 		actions.sources( viewer );
 		actions.time( viewer );
 		actions.alignPlanes( viewer );
+
+		actions.install( inputActionBindings, "navigation" );
 	}
 
-	public NavigationActions(
-			final InputActionBindings inputActionBindings,
-			final KeyStrokeAdder.Factory keyConfig )
+	public NavigationActions( final KeyStrokeAdder.Factory keyConfig )
 	{
-		this( inputActionBindings, keyConfig, "navigation" );
-	}
-
-	public NavigationActions(
-			final InputActionBindings inputActionBindings,
-			final KeyStrokeAdder.Factory keyConfig,
-			final String name )
-	{
-		super( inputActionBindings, name, keyConfig, new String[] { "navigation" } );
+		super( keyConfig, new String[] { "navigation" } );
 	}
 
 	public void alignPlaneAction( final ViewerPanel viewer, final AlignPlane plane, final String... defaultKeyStrokes )
 	{
-		final String name = String.format( ALIGN_PLANE, plane.getName() );
-		keyStrokeAdder.put( name, defaultKeyStrokes );
-		new RunnableAction( name, () -> viewer.align( plane ) ).put( actionMap );
+		runnableAction(
+				() -> viewer.align( plane ),
+				String.format( ALIGN_PLANE, plane.getName() ), defaultKeyStrokes );
 	}
 
 	public void modes( final ViewerPanel viewer )

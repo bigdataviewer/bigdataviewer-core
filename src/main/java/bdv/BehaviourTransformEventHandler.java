@@ -1,6 +1,7 @@
 package bdv;
 
-import bdv.viewer.TriggerBehaviourBindings;
+import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
+
 import net.imglib2.ui.TransformEventHandler;
 
 public interface BehaviourTransformEventHandler< A > extends TransformEventHandler< A >
