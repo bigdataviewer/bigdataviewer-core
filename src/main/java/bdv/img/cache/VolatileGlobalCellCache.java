@@ -44,6 +44,10 @@ public class VolatileGlobalCellCache implements Cache
 {
 	private final int maxNumLevels;
 
+	/**
+	 * Key for a cell identified by timepoint, setup, level, and index
+	 * (flattened spatial coordinate).
+	 */
 	public static class Key
 	{
 		private final int timepoint;
@@ -58,6 +62,24 @@ public class VolatileGlobalCellCache implements Cache
 
 		private final long[] cellMin;
 
+		/**
+		 * Create a Key for the specified cell. Note that {@code cellDims} and
+		 * {@code cellMin} are not used for {@code hashcode()/equals()}.
+		 *
+		 * @param timepoint
+		 *            timepoint coordinate of the cell
+		 * @param setup
+		 *            setup coordinate of the cell
+		 * @param level
+		 *            level coordinate of the cell
+		 * @param index
+		 *            index of the cell (flattened spatial coordinate of the
+		 *            cell)
+		 * @param cellDims
+		 *            dimensions of the cell in pixels
+		 * @param cellMin
+		 *            minimum spatial coordinates of the cell in pixels
+		 */
 		public Key( final int timepoint, final int setup, final int level, final long index, final int[] cellDims, final long[] cellMin )
 		{
 			this.timepoint = timepoint;
@@ -231,7 +253,7 @@ public class VolatileGlobalCellCache implements Cache
 	}
 
 	/**
-	 * Enqueue the {@link Entry} if it hasn't been enqueued for this frame
+	 * Enqueue the {@link VolatileCacheEntry} if it hasn't been enqueued for this frame
 	 * already.
 	 */
 	protected void enqueueEntry( final VolatileCacheEntry< ?, ? > entry, final int priority, final boolean enqueuToFront )
@@ -244,9 +266,9 @@ public class VolatileGlobalCellCache implements Cache
 	}
 
 	/**
-	 * Load the data for the {@link Entry} if it is not yet loaded (valid) and
+	 * Load the data for the {@link VolatileCacheEntry} if it is not yet loaded (valid) and
 	 * there is enough {@link IoTimeBudget} left. Otherwise, enqueue the
-	 * {@link Entry} if it hasn't been enqueued for this frame already.
+	 * {@link VolatileCacheEntry} if it hasn't been enqueued for this frame already.
 	 */
 	protected void loadOrEnqueue( final VolatileCacheEntry< ?, ? > entry, final int priority, final boolean enqueuToFront )
 	{
@@ -312,28 +334,20 @@ public class VolatileGlobalCellCache implements Cache
 	 * If the cell data has not been loaded, do the following, depending on the
 	 * {@link LoadingStrategy}:
 	 * <ul>
-	 *   <li> {@link LoadingStrategy#VOLATILE}:
-	 *        Enqueue the cell for asynchronous loading by a fetcher thread, if
-	 *        it has not been enqueued in the current frame already.
-	 *   <li> {@link LoadingStrategy#BLOCKING}:
-	 *        Load the cell data immediately.
-	 *   <li> {@link LoadingStrategy#BUDGETED}:
-	 *        Load the cell data immediately if there is enough
-	 *        {@link IoTimeBudget} left for the current thread group.
-	 *        Otherwise enqueue for asynchronous loading, if it has not been
-	 *        enqueued in the current frame already.
-	 *   <li> {@link LoadingStrategy#DONTLOAD}:
-	 *        Do nothing.
+	 * <li>{@link LoadingStrategy#VOLATILE}: Enqueue the cell for asynchronous
+	 * loading by a fetcher thread, if it has not been enqueued in the current
+	 * frame already.
+	 * <li>{@link LoadingStrategy#BLOCKING}: Load the cell data immediately.
+	 * <li>{@link LoadingStrategy#BUDGETED}: Load the cell data immediately if
+	 * there is enough {@link IoTimeBudget} left for the current thread group.
+	 * Otherwise enqueue for asynchronous loading, if it has not been enqueued
+	 * in the current frame already.
+	 * <li>{@link LoadingStrategy#DONTLOAD}: Do nothing.
 	 * </ul>
 	 *
-	 * @param timepoint
-	 *            timepoint coordinate of the cell
-	 * @param setup
-	 *            setup coordinate of the cell
-	 * @param level
-	 *            level coordinate of the cell
-	 * @param index
-	 *            index of the cell (flattened spatial coordinate of the cell)
+	 * @param key
+	 *            coordinate of the cell (comprising timepoint, setup, level,
+	 *            and flattened index).
 	 * @param cacheHints
 	 *            {@link LoadingStrategy}, queue priority, and queue order.
 	 * @return a cell with the specified coordinates or null.
@@ -356,30 +370,18 @@ public class VolatileGlobalCellCache implements Cache
 	 * cache already. Depending on the {@link LoadingStrategy}, do the
 	 * following:
 	 * <ul>
-	 *   <li> {@link LoadingStrategy#VOLATILE}:
-	 *        Enqueue the cell for asynchronous loading by a fetcher thread.
-	 *   <li> {@link LoadingStrategy#BLOCKING}:
-	 *        Load the cell data immediately.
-	 *   <li> {@link LoadingStrategy#BUDGETED}:
-	 *        Load the cell data immediately if there is enough
-	 *        {@link IoTimeBudget} left for the current thread group.
-	 *        Otherwise enqueue for asynchronous loading.
-	 *   <li> {@link LoadingStrategy#DONTLOAD}:
-	 *        Do nothing.
+	 * <li>{@link LoadingStrategy#VOLATILE}: Enqueue the cell for asynchronous
+	 * loading by a fetcher thread.
+	 * <li>{@link LoadingStrategy#BLOCKING}: Load the cell data immediately.
+	 * <li>{@link LoadingStrategy#BUDGETED}: Load the cell data immediately if
+	 * there is enough {@link IoTimeBudget} left for the current thread group.
+	 * Otherwise enqueue for asynchronous loading.
+	 * <li>{@link LoadingStrategy#DONTLOAD}: Do nothing.
 	 * </ul>
 	 *
-	 * @param cellDims
-	 *            dimensions of the cell in pixels
-	 * @param cellMin
-	 *            minimum spatial coordinates of the cell in pixels
-	 * @param timepoint
-	 *            timepoint coordinate of the cell
-	 * @param setup
-	 *            setup coordinate of the cell
-	 * @param level
-	 *            level coordinate of the cell
-	 * @param index
-	 *            index of the cell (flattened spatial coordinate of the cell)
+	 * @param key
+	 *            coordinate of the cell (comprising timepoint, setup, level,
+	 *            and flattened index).
 	 * @param cacheHints
 	 *            {@link LoadingStrategy}, queue priority, and queue order.
 	 * @return a cell with the specified coordinates.
@@ -406,7 +408,7 @@ public class VolatileGlobalCellCache implements Cache
 	 * Prepare the cache for providing data for the "next frame":
 	 * <ul>
 	 * <li>the contents of fetch queues is moved to the prefetch.
-	 * <li>some cleaning up of garbage collected entries ({@link #finalizeRemovedCacheEntries()}).
+	 * <li>some cleaning up of garbage collected entries ({@link VolatileCache#finalizeRemovedCacheEntries()}).
 	 * <li>the internal frame counter is incremented, which will enable
 	 * previously enqueued requests to be enqueued again for the new frame.
 	 * </ul>

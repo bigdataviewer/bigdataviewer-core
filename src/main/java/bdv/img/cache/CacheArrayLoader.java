@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -28,9 +28,9 @@
  */
 package bdv.img.cache;
 
-import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 import bdv.ViewerImgLoader;
 import bdv.img.catmaid.CatmaidImageLoader;
+import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 
 /**
  * Provider of {@link VolatileCell} data. This is implemented by data back-ends
@@ -85,9 +85,9 @@ public interface CacheArrayLoader< A >
 	 * The only exception to this rule is at the (max) border of the stack. The
 	 * boundary cells may have a truncated shape. For example, if your image
 	 * size is <em>20x20x1</em> and your cell size is <em>16x16x1</em>, you will
-	 * have cell sizes <br/>
-	 * <em>(16x16x1)</em>, <em>(4x16x1)</em> <br/>
-	 * <em>(16x4x1)</em>, <em>(4x4x1)</em><br/>
+	 * have cell sizes <br>
+	 * <em>(16x16x1)</em>, <em>(4x16x1)</em> <br>
+	 * <em>(16x4x1)</em>, <em>(4x4x1)</em><br>
 	 *
 	 * @param timepoint
 	 *            the timepoint of the stack.
