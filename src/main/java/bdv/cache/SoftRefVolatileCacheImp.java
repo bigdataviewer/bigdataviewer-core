@@ -6,14 +6,14 @@ import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.ConcurrentHashMap;
 
-import bdv.img.cache.VolatileCell;
 import bdv.img.cache.VolatileGlobalCellCache;
 
 public class SoftRefVolatileCacheImp implements VolatileCache
 {
+	// TODO: this should be a singleton, but for now we create new instances, because bdv cache keys don't identify the viewer (yet).
 	public static VolatileCache getInstance()
 	{
-		return instance;
+		return new SoftRefVolatileCacheImp();
 	}
 
 	@Override
@@ -33,31 +33,7 @@ public class SoftRefVolatileCacheImp implements VolatileCache
 		VolatileCacheEntry< K, V > get( final K key )
 	{
 		final Reference< Entry< ?, ? > > ref = softReferenceCache.get( key );
-			return ref == null ? null : (bdv.cache.VolatileCacheEntry< K, V > ) ref.get();
-	}
-
-	/**
-	 * TODO: FIX DOC
-	 *
-	 * Load the data for the {@link VolatileCell} referenced by k, if
-	 * <ul>
-	 * <li>the {@link VolatileCell} is in the cache, and
-	 * <li>the data is not yet loaded (valid).
-	 * </ul>
-	 *
-	 * @param k
-	 * @throws InterruptedException
-	 */
-	@Override
-	public void loadIfNotValid( final Object k ) throws InterruptedException
-	{
-		final Reference< Entry< ?, ? > > ref = softReferenceCache.get( k );
-		if ( ref != null )
-		{
-			final Entry< ?, ? > entry = ref.get();
-			if ( entry != null )
-				entry.loadIfNotValid();
-		}
+			return ref == null ? null : ( VolatileCacheEntry< K, V > ) ref.get();
 	}
 
 	@Override
@@ -203,5 +179,5 @@ public class SoftRefVolatileCacheImp implements VolatileCache
 	private SoftRefVolatileCacheImp()
 	{}
 
-	private static SoftRefVolatileCacheImp instance = new SoftRefVolatileCacheImp();
+//	private static SoftRefVolatileCacheImp instance = new SoftRefVolatileCacheImp();
 }

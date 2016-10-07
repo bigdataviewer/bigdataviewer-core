@@ -163,7 +163,9 @@ public class VolatileGlobalCellCache implements Cache
 				}
 				try
 				{
-					volatileCache.loadIfNotValid( key );
+					final VolatileCacheEntry< ?, ? > entry = volatileCache.get( key );
+					if ( entry != null )
+						entry.loadIfNotValid();
 					key = null;
 				}
 				catch ( final InterruptedException e )

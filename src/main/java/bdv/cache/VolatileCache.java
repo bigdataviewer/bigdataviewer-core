@@ -8,8 +8,6 @@ public interface VolatileCache
 	public < K, V extends VolatileCacheValue >
 		VolatileCacheEntry< K, V > get( final K key );
 
-	public void loadIfNotValid( final Object key ) throws InterruptedException; // TODO: remove and use VolatileCacheEntry.loadIfNotValid directly
-
 	public void finalizeRemovedCacheEntries(); // TODO: rename to cleanUp() ?
 
 	public void clearCache();
