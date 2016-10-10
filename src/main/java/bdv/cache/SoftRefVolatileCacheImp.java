@@ -69,7 +69,11 @@ public class SoftRefVolatileCacheImp implements VolatileCache
 		@Override
 		public void loadIfNotValid() throws InterruptedException
 		{
-			// TODO: assumption for following synchronisation pattern is that isValid() will never go from true to false. When invalidation API is added, that might change.
+			/*
+			 * TODO: the assumption for following synchronisation pattern is
+			 * that isValid() will never go from true to false. When
+			 * invalidation API is added, that might change.
+			 */
 			if ( !value.isValid() )
 			{
 				synchronized ( this )
