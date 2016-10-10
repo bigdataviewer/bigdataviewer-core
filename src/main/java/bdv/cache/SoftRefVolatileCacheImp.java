@@ -1,11 +1,5 @@
 package bdv.cache;
 
-import java.lang.ref.Reference;
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.SoftReference;
-import java.lang.ref.WeakReference;
-import java.util.concurrent.ConcurrentHashMap;
-
 import bdv.img.cache.VolatileGlobalCellCache;
 
 public class SoftRefVolatileCacheImp implements VolatileCache
@@ -22,46 +16,30 @@ public class SoftRefVolatileCacheImp implements VolatileCache
 	{
 		final Entry< K, V > entry = new Entry<>( key, value, loader );
 		if ( value.isValid() )
-			softReferenceCache.put( key, new MySoftReference<>( entry, finalizeQueue ) );
+			cache.putSoft( key, entry );
 		else
-			softReferenceCache.put( key, new MyWeakReference<>( entry, finalizeQueue ) );
+			cache.putWeak( key, entry );
 		return entry;
 	}
 
-	@SuppressWarnings( "unchecked" )
 	@Override
 	public < K, V extends VolatileCacheValue >
 		VolatileCacheEntry< K, V > get( final K key )
 	{
-		final Reference< Entry< ?, ? > > ref = softReferenceCache.get( key );
-		return ref == null ? null : ( VolatileCacheEntry< K, V > ) ref.get();
+		return cache.get( key );
 	}
 
 	@Override
 	public void clearCache()
 	{
-		for ( final Reference< Entry< ?, ? > > ref : softReferenceCache.values() )
-			ref.clear();
-		softReferenceCache.clear();
+		cache.clearCache();
 	}
 
 
 	@Override
 	public void finalizeRemovedCacheEntries()
 	{
-		synchronized ( softReferenceCache )
-		{
-			for ( int i = 0; i < MAX_PER_FRAME_FINALIZE_ENTRIES; ++i )
-			{
-				final Reference< ? extends Entry< ?, ? > > poll = finalizeQueue.poll();
-				if ( poll == null )
-					break;
-				final Object key = ( ( GetKey< ? > ) poll ).getKey();
-				final Reference< Entry< ?, ? > > ref = softReferenceCache.get( key );
-				if ( ref == poll )
-					softReferenceCache.remove( key );
-			}
-		}
+		cache.finalizeRemovedCacheEntries();
 	}
 
 	class Entry< K, V extends VolatileCacheValue > implements VolatileCacheEntry< K, V >
@@ -100,7 +78,7 @@ public class SoftRefVolatileCacheImp implements VolatileCache
 					{
 						value = loader.load( key );
 						enqueueFrame = Long.MAX_VALUE;
-						softReferenceCache.put( key, new MySoftReference<>( this, finalizeQueue ) );
+						cache.putSoft( key, this );
 						notifyAll();
 					}
 				}
@@ -132,50 +110,7 @@ public class SoftRefVolatileCacheImp implements VolatileCache
 		}
 	}
 
-	private static interface GetKey< K >
-	{
-		public K getKey();
-	}
-
-	private static class MySoftReference< K > extends SoftReference< Entry< ?, ? > > implements GetKey< K >
-	{
-		private final K key;
-
-		public MySoftReference( final Entry< K, ? > referent, final ReferenceQueue< ? super Entry< ?, ? > > q )
-		{
-			super( referent, q );
-			key = referent.key;
-		}
-
-		@Override
-		public K getKey()
-		{
-			return key;
-		}
-	}
-
-	private static class MyWeakReference< K > extends WeakReference< Entry< ?, ? > > implements GetKey< K >
-	{
-		private final K key;
-
-		public MyWeakReference( final Entry< K, ? > referent, final ReferenceQueue< ? super Entry< ?, ? > > q )
-		{
-			super( referent, q );
-			key = referent.key;
-		}
-
-		@Override
-		public K getKey()
-		{
-			return key;
-		}
-	}
-
-	private static final int MAX_PER_FRAME_FINALIZE_ENTRIES = 500;
-
-	private final ConcurrentHashMap< Object, Reference< Entry< ?, ? > > > softReferenceCache = new ConcurrentHashMap<>();
-
-	private final ReferenceQueue< Entry< ?, ? > > finalizeQueue = new ReferenceQueue<>();
+	private final WeakSoftCache cache = WeakSoftCacheImp.getInstance();
 
 	private SoftRefVolatileCacheImp()
 	{}
