@@ -76,7 +76,7 @@ public class CacheHints
 
 	/**
 	 * Get the priority with which cell requests from this
-	 * {@link VolatileCellCache cache} are enqueud if they are enqueud.
+	 * {@link VolatileCellCache cache} are enqueued if they are enqueued.
 	 *
 	 * @return the priority with which requests are enqueued
 	 */

@@ -92,7 +92,7 @@ public class BlockingFetchQueues< E >
 	 * @param priority
 	 *            lower values mean higher priority
 	 * @param enqueuToFront
-	 *            if true, enqueu element at the front (LIFO). if false, enqueue
+	 *            if true, enqueue element at the front (LIFO). if false, enqueue
 	 *            element at the back (FIFO)
 	 */
 	public void put( final E element, final int priority, final boolean enqueuToFront )
