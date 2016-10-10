@@ -28,15 +28,11 @@
  */
 package bdv.img.cache;
 
-import java.util.ArrayList;
-
-import bdv.cache.SoftRefVolatileCacheImp;
 import bdv.cache.VolatileCache;
-import bdv.cache.VolatileCacheEntry;
 import bdv.cache.VolatileCacheValue;
 import bdv.cache.VolatileCacheValueLoader;
-import bdv.img.cache.CacheIoTiming.IoStatistics;
 import bdv.img.cache.CacheIoTiming.IoTimeBudget;
+import bdv.img.cache.FetcherThreads.Fetcher;
 import bdv.img.cache.VolatileImgCells.CellCache;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 
@@ -126,105 +122,7 @@ public class VolatileGlobalCellCache implements Cache
 		}
 	}
 
-	protected VolatileCache volatileCache = SoftRefVolatileCacheImp.getInstance();
-
-	protected final BlockingFetchQueues< Object > queue;
-
-	protected volatile long currentQueueFrame = 0;
-
-	class Fetcher extends Thread
-	{
-		@Override
-		public final void run()
-		{
-			Object key = null;
-			while ( true )
-			{
-				while ( key == null )
-					try
-					{
-						key = queue.take();
-					}
-					catch ( final InterruptedException e )
-					{}
-				long waitMillis = pauseUntilTimeMillis - System.currentTimeMillis();
-				while ( waitMillis > 0 )
-				{
-					try
-					{
-						synchronized ( lock )
-						{
-							lock.wait( waitMillis );
-						}
-					}
-					catch ( final InterruptedException e )
-					{}
-					waitMillis = pauseUntilTimeMillis - System.currentTimeMillis();
-				}
-				try
-				{
-					final VolatileCacheEntry< ?, ? > entry = volatileCache.get( key );
-					if ( entry != null )
-						entry.loadIfNotValid();
-					key = null;
-				}
-				catch ( final InterruptedException e )
-				{}
-			}
-		}
-
-		private final Object lock = new Object();
-
-		private volatile long pauseUntilTimeMillis = 0;
-
-		public void pauseUntil( final long timeMillis )
-		{
-			pauseUntilTimeMillis = timeMillis;
-			interrupt();
-		}
-
-		public void wakeUp()
-		{
-			pauseUntilTimeMillis = 0;
-			synchronized ( lock )
-			{
-				lock.notify();
-			}
-		}
-	}
-
-	/**
-	 * pause all {@link Fetcher} threads for the specified number of milliseconds.
-	 */
-	public void pauseFetcherThreadsFor( final long ms )
-	{
-		pauseFetcherThreadsUntil( System.currentTimeMillis() + ms );
-	}
-
-	/**
-	 * pause all {@link Fetcher} threads until the given time (see
-	 * {@link System#currentTimeMillis()}).
-	 */
-	public void pauseFetcherThreadsUntil( final long timeMillis )
-	{
-		for ( final Fetcher f : fetchers )
-			f.pauseUntil( timeMillis );
-	}
-
-	/**
-	 * Wake up all Fetcher threads immediately. This ends any
-	 * {@link #pauseFetcherThreadsFor(long)} and
-	 * {@link #pauseFetcherThreadsUntil(long)} set earlier.
-	 */
-	public void wakeFetcherThreads()
-	{
-		for ( final Fetcher f : fetchers )
-			f.wakeUp();
-	}
-
-	private final ArrayList< Fetcher > fetchers;
-
-	private final CacheIoTiming cacheIoTiming;
+	protected final LoadingVolatileCache volatileCache; // TODO rename
 
 	@Deprecated
 	public VolatileGlobalCellCache( final int maxNumTimepoints, final int maxNumSetups, final int maxNumLevels, final int numFetcherThreads )
@@ -240,92 +138,15 @@ public class VolatileGlobalCellCache implements Cache
 	public VolatileGlobalCellCache( final int maxNumLevels, final int numFetcherThreads )
 	{
 		this.maxNumLevels = maxNumLevels;
-
-		cacheIoTiming = new CacheIoTiming();
-		queue = new BlockingFetchQueues< Object >( maxNumLevels );
-		fetchers = new ArrayList< Fetcher >();
-		for ( int i = 0; i < numFetcherThreads; ++i )
-		{
-			final Fetcher f = new Fetcher();
-			f.setDaemon( true );
-			f.setName( "Fetcher-" + i );
-			fetchers.add( f );
-			f.start();
-		}
+		volatileCache = new LoadingVolatileCache( maxNumLevels, numFetcherThreads );
 	}
 
 	/**
-	 * Enqueue the {@link VolatileCacheEntry} if it hasn't been enqueued for this frame
-	 * already.
+	 * pause all {@link Fetcher} threads for the specified number of milliseconds.
 	 */
-	protected void enqueueEntry( final VolatileCacheEntry< ?, ? > entry, final int priority, final boolean enqueuToFront )
+	public void pauseFetcherThreadsFor( final long ms )
 	{
-		if ( entry.getEnqueueFrame() < currentQueueFrame )
-		{
-			entry.setEnqueueFrame( currentQueueFrame );
-			queue.put( entry.getKey(), priority, enqueuToFront );
-		}
-	}
-
-	/**
-	 * Load the data for the {@link VolatileCacheEntry} if it is not yet loaded (valid) and
-	 * there is enough {@link IoTimeBudget} left. Otherwise, enqueue the
-	 * {@link VolatileCacheEntry} if it hasn't been enqueued for this frame already.
-	 */
-	protected void loadOrEnqueue( final VolatileCacheEntry< ?, ? > entry, final int priority, final boolean enqueuToFront )
-	{
-		final IoStatistics stats = cacheIoTiming.getThreadGroupIoStatistics();
-		final IoTimeBudget budget = stats.getIoTimeBudget();
-		final long timeLeft = budget.timeLeft( priority );
-		if ( timeLeft > 0 )
-		{
-			synchronized ( entry )
-			{
-				if ( entry.getValue().isValid() )
-					return;
-				enqueueEntry( entry, priority, enqueuToFront );
-				final long t0 = stats.getIoNanoTime();
-				stats.start();
-				try
-				{
-					entry.wait( timeLeft  / 1000000l, 1 );
-				}
-				catch ( final InterruptedException e )
-				{}
-				stats.stop();
-				final long t = stats.getIoNanoTime() - t0;
-				budget.use( t, priority );
-			}
-		}
-		else
-			enqueueEntry( entry, priority, enqueuToFront );
-	}
-
-	private void loadEntryWithCacheHints( final VolatileCacheEntry< ?, ? > entry, final CacheHints cacheHints )
-	{
-		switch ( cacheHints.getLoadingStrategy() )
-		{
-		case VOLATILE:
-		default:
-			enqueueEntry( entry, cacheHints.getQueuePriority(), cacheHints.isEnqueuToFront() );
-			break;
-		case BLOCKING:
-			while ( true )
-				try
-				{
-					entry.loadIfNotValid();
-					break;
-				}
-				catch ( final InterruptedException e )
-				{}
-			break;
-		case BUDGETED:
-			if ( !entry.getValue().isValid() )
-				loadOrEnqueue( entry, cacheHints.getQueuePriority(), cacheHints.isEnqueuToFront() );
-			break;
-		case DONTLOAD:
-			break;
-		}
+		volatileCache.getFetcherThreads().pauseFetcherThreadsFor( ms );
 	}
 
 	/**
@@ -356,16 +177,8 @@ public class VolatileGlobalCellCache implements Cache
 	 */
 	public < V extends VolatileCacheValue > V getGlobalIfCached( final Key key, final CacheHints cacheHints )
 	{
-		final VolatileCacheEntry< Key, V > entry = volatileCache.get( key );
-		if ( entry != null )
-		{
-			loadEntryWithCacheHints( entry, cacheHints );
-			return entry.getValue();
-		}
-		return null;
+		return volatileCache.getGlobalIfCached( key, cacheHints );
 	}
-
-	private final Object cacheLock = new Object();
 
 	/**
 	 * Create a new cell with the specified coordinates, if it isn't in the
@@ -390,20 +203,7 @@ public class VolatileGlobalCellCache implements Cache
 	 */
 	public < K, V extends VolatileCacheValue > V createGlobal( final K key, final CacheHints cacheHints, final VolatileCacheValueLoader< K, V > cacheLoader )
 	{
-		VolatileCacheEntry< K, V > entry = null;
-
-		synchronized ( cacheLock )
-		{
-			entry = volatileCache.get( key );
-			if ( entry == null )
-			{
-				final V value = cacheLoader.createEmptyValue( key );
-				entry = volatileCache.put( key, value, cacheLoader );
-			}
-		}
-
-		loadEntryWithCacheHints( entry, cacheHints );
-		return entry.getValue();
+		return volatileCache.createGlobal( key, cacheHints, cacheLoader );
 	}
 
 	/**
@@ -418,9 +218,7 @@ public class VolatileGlobalCellCache implements Cache
 	@Override
 	public void prepareNextFrame()
 	{
-		queue.clear();
-		volatileCache.finalizeRemovedCacheEntries();
-		++currentQueueFrame;
+		volatileCache.prepareNextFrame();
 	}
 
 	/**
@@ -437,10 +235,7 @@ public class VolatileGlobalCellCache implements Cache
 	@Override
 	public void initIoTimeBudget( final long[] partialBudget )
 	{
-		final IoStatistics stats = cacheIoTiming.getThreadGroupIoStatistics();
-		if ( stats.getIoTimeBudget() == null )
-			stats.setIoTimeBudget( new IoTimeBudget( maxNumLevels ) );
-		stats.getIoTimeBudget().reset( partialBudget );
+		volatileCache.initIoTimeBudget( partialBudget );
 	}
 
 	/**
@@ -450,7 +245,7 @@ public class VolatileGlobalCellCache implements Cache
 	@Override
 	public CacheIoTiming getCacheIoTiming()
 	{
-		return cacheIoTiming;
+		return volatileCache.getCacheIoTiming();
 	}
 
 	/**
@@ -459,11 +254,7 @@ public class VolatileGlobalCellCache implements Cache
 	 */
 	public void clearCache()
 	{
-		// TODO: we should only clear out our own cache entries not the entire global cache!
 		volatileCache.clearCache();
-		prepareNextFrame();
-		// TODO: add a full clear to BlockingFetchQueues.
-		// (BlockingFetchQueues.clear() moves stuff to the prefetchQueue.)
 	}
 
 	/**

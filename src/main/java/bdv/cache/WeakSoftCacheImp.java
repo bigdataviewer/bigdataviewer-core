@@ -16,15 +16,15 @@ public class WeakSoftCacheImp implements WeakSoftCache
 	}
 
 	@Override
-	public < K, V > void putSoft( final K key, final V value )
-	{
-		softReferenceCache.put( key, new MySoftReference<>( key, value, finalizeQueue ) );
-	}
-
-	@Override
 	public < K, V > void putWeak( final K key, final V value )
 	{
 		softReferenceCache.put( key, new MyWeakReference<>( key, value, finalizeQueue ) );
+	}
+
+	@Override
+	public < K, V > void putSoft( final K key, final V value )
+	{
+		softReferenceCache.put( key, new MySoftReference<>( key, value, finalizeQueue ) );
 	}
 
 	@SuppressWarnings( "unchecked" )

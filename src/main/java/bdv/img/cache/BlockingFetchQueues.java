@@ -41,8 +41,13 @@ import java.util.concurrent.locks.ReentrantLock;
  * priority non-empty queue. Furthermore, there is a prefetch deque of bounded
  * size to provides elements when all the queues are exhausted. {@link #clear()}
  * empties all queues, and moves the removed elements to the prefetch queue.
- *
+ * <p>
  * Locking is adapted from {@link ArrayBlockingQueue}.
+ * <p>
+ * {@link BlockingFetchQueues} is constructed with the number of priority levels
+ * <em>n</em>. Priorities are consecutive integers <em>0 ... n-1</em>, where 0
+ * is the highest priority. Priorities of {@link #put(Object, int, boolean)
+ * enqueued} entries are clamped to the range <em>0 ... n-1</em>.
  *
  * @param <E>
  *            element type.
@@ -52,6 +57,8 @@ import java.util.concurrent.locks.ReentrantLock;
 public class BlockingFetchQueues< E >
 {
 	private final ArrayDeque< E >[] queues;
+
+	private final int maxPriority;
 
 	private final int prefetchCapacity;
 
@@ -74,7 +81,10 @@ public class BlockingFetchQueues< E >
 	@SuppressWarnings( "unchecked" )
 	public BlockingFetchQueues( final int numPriorities, final int prefetchCapacity )
 	{
+		if ( numPriorities < 1 )
+			throw new IllegalArgumentException( "expected numPriorities >= 1" );
 		queues = new ArrayDeque[ numPriorities ];
+		maxPriority = numPriorities - 1;
 		for ( int i = 0; i < numPriorities; ++i )
 			queues[ i ] = new ArrayDeque< E >();
 		this.prefetchCapacity = prefetchCapacity;
@@ -92,10 +102,32 @@ public class BlockingFetchQueues< E >
 	 * @param priority
 	 *            lower values mean higher priority
 	 * @param enqueuToFront
-	 *            if true, enqueue element at the front (LIFO). if false, enqueue
-	 *            element at the back (FIFO)
+	 *            if true, enqueue element at the front (LIFO). if false,
+	 *            enqueue element at the back (FIFO)
 	 */
 	public void put( final E element, final int priority, final boolean enqueuToFront )
+	{
+		put_unsafe( element, Math.max( Math.min( priority, maxPriority ), 0 ), enqueuToFront );
+	}
+
+	/**
+	 * Equivalent to {@link #put(Object, int, boolean)}, but priorities are not
+	 * clamped to the allowed range. Will throw an
+	 * {@link ArrayIndexOutOfBoundsException} if {@code priority < 0} or
+	 * {@code priority >= numPriorities}.
+	 * <p>
+	 * Add element to the queue of the specified priority. The element can be
+	 * added to the front or back of the queue.
+	 *
+	 * @param element
+	 *            the element to enqueue
+	 * @param priority
+	 *            lower values mean higher priority
+	 * @param enqueuToFront
+	 *            if true, enqueue element at the front (LIFO). if false,
+	 *            enqueue element at the back (FIFO)
+	 */
+	public void put_unsafe( final E element, final int priority, final boolean enqueuToFront )
 	{
 		final ReentrantLock lock = this.lock;
 		lock.lock();

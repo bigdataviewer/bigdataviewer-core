@@ -12,13 +12,18 @@ package bdv.cache;
  */
 public interface VolatileCacheEntry< K, V extends VolatileCacheValue >
 {
+	// TODO: this is all just used from LoadingVolatileCache. shouldn't be here in this generic package
 	public K getKey();
 
+	// TODO: this is all just used from LoadingVolatileCache. shouldn't be here in this generic package
 	public V getValue();
 
+	// TODO: this is all just used from LoadingVolatileCache. shouldn't be here in this generic package
 	public long getEnqueueFrame();
 
+	// TODO: this is all just used from LoadingVolatileCache. shouldn't be here in this generic package
 	public void setEnqueueFrame( long f );
 
+	// TODO: this is all just used from LoadingVolatileCache. shouldn't be here in this generic package
 	public void loadIfNotValid() throws InterruptedException;
 }
