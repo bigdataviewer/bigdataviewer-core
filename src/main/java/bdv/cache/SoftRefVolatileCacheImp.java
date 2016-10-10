@@ -20,20 +20,21 @@ public class SoftRefVolatileCacheImp implements VolatileCache
 	public < K, V extends VolatileCacheValue >
 		VolatileCacheEntry< K, V > put( final K key, final V value, final VolatileCacheValueLoader< K, V > loader )
 	{
-		final Entry< K, V > entry = new Entry< K, V >( key, value, loader );
+		final Entry< K, V > entry = new Entry<>( key, value, loader );
 		if ( value.isValid() )
-			softReferenceCache.put( key, new MySoftReference< K >( entry, finalizeQueue ) );
+			softReferenceCache.put( key, new MySoftReference<>( entry, finalizeQueue ) );
 		else
-			softReferenceCache.put( key, new MyWeakReference< K >( entry, finalizeQueue ) );
+			softReferenceCache.put( key, new MyWeakReference<>( entry, finalizeQueue ) );
 		return entry;
 	}
 
+	@SuppressWarnings( "unchecked" )
 	@Override
 	public < K, V extends VolatileCacheValue >
 		VolatileCacheEntry< K, V > get( final K key )
 	{
 		final Reference< Entry< ?, ? > > ref = softReferenceCache.get( key );
-			return ref == null ? null : ( VolatileCacheEntry< K, V > ) ref.get();
+		return ref == null ? null : ( VolatileCacheEntry< K, V > ) ref.get();
 	}
 
 	@Override
@@ -99,7 +100,7 @@ public class SoftRefVolatileCacheImp implements VolatileCache
 					{
 						value = loader.load( key );
 						enqueueFrame = Long.MAX_VALUE;
-						softReferenceCache.put( key, new MySoftReference< K >( this, finalizeQueue ) );
+						softReferenceCache.put( key, new MySoftReference<>( this, finalizeQueue ) );
 						notifyAll();
 					}
 				}
@@ -172,9 +173,9 @@ public class SoftRefVolatileCacheImp implements VolatileCache
 
 	private static final int MAX_PER_FRAME_FINALIZE_ENTRIES = 500;
 
-	private final ConcurrentHashMap< Object, Reference< Entry< ?, ? > > > softReferenceCache = new ConcurrentHashMap< Object, Reference< Entry< ?, ? > > >();
+	private final ConcurrentHashMap< Object, Reference< Entry< ?, ? > > > softReferenceCache = new ConcurrentHashMap<>();
 
-	private final ReferenceQueue< Entry< ?, ? > > finalizeQueue = new ReferenceQueue< Entry< ?, ? > >();
+	private final ReferenceQueue< Entry< ?, ? > > finalizeQueue = new ReferenceQueue<>();
 
 	private SoftRefVolatileCacheImp()
 	{}
