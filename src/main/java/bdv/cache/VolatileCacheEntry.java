@@ -10,7 +10,7 @@ package bdv.cache;
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
-public interface VolatileCacheEntry< K, V extends VolatileCacheValue >
+public interface VolatileCacheEntry
 {
 	/**
 	 * If this entry's value is not currently

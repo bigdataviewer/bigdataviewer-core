@@ -290,7 +290,7 @@ public class LoadingVolatileCache< K, V extends VolatileCacheValue > implements 
 		}
 	}
 
-	class Entry implements VolatileCacheEntry< K, V >
+	class Entry implements VolatileCacheEntry
 	{
 		private final K key;
 

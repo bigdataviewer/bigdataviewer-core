@@ -30,7 +30,7 @@ public class FetcherThreads
 	private final ArrayList< Fetcher > fetchers;
 
 	public FetcherThreads(
-			final WeakSoftCache< ?, ? extends VolatileCacheEntry< ?, ? > > cache,
+			final WeakSoftCache< ?, ? extends VolatileCacheEntry > cache,
 			final BlockingFetchQueues< ? > queue,
 			final int numFetcherThreads )
 	{
@@ -45,7 +45,7 @@ public class FetcherThreads
 	 * @param threadIndexToName a function for naming fetcher threads (takes an index and returns a name).
 	 */
 	public FetcherThreads(
-			final WeakSoftCache< ?, ? extends VolatileCacheEntry< ?, ? > > cache,
+			final WeakSoftCache< ?, ? extends VolatileCacheEntry > cache,
 			final BlockingFetchQueues< ? > queue,
 			final int numFetcherThreads,
 			final IntFunction< String > threadIndexToName )
@@ -92,7 +92,7 @@ public class FetcherThreads
 
 	static class Fetcher extends Thread
 	{
-		private final WeakSoftCache< ?, ? extends VolatileCacheEntry< ?, ? > > cache;
+		private final WeakSoftCache< ?, ? extends VolatileCacheEntry > cache;
 
 		private final BlockingFetchQueues< ? > queue;
 
@@ -101,7 +101,7 @@ public class FetcherThreads
 		private volatile long pauseUntilTimeMillis = 0;
 
 		public Fetcher(
-				final WeakSoftCache< ?, ? extends VolatileCacheEntry< ?, ? > > cache,
+				final WeakSoftCache< ?, ? extends VolatileCacheEntry > cache,
 				final BlockingFetchQueues< ? > queue )
 		{
 			this.cache = cache;
@@ -137,7 +137,7 @@ public class FetcherThreads
 				}
 				try
 				{
-					final VolatileCacheEntry< ?, ? > entry = cache.get( key );
+					final VolatileCacheEntry entry = cache.get( key );
 					if ( entry != null )
 						entry.loadIfNotValid();
 					key = null;
