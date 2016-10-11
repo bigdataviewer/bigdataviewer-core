@@ -141,8 +141,7 @@ public class LoadingVolatileCache< K, V extends VolatileCacheValue > implements 
 			entry = cache.get( key );
 			if ( entry == null )
 			{
-				final V value = cacheLoader.createEmptyValue( key );
-				entry = new Entry( key, value, cacheLoader );
+				entry = new Entry( key, cacheLoader );
 				cache.putWeak( key, entry );
 			}
 		}
@@ -314,23 +313,21 @@ public class LoadingVolatileCache< K, V extends VolatileCacheValue > implements 
 		private long enqueueFrame;
 
 		/**
-		 * Create a new cache entry. The {@link #getEnqueueFrame() enqueue
-		 * frame} is initialized to {@code -1}, indicating that the entry has
-		 * never been enqueued for fetching.
+		 * Create a new cache entry with the given key. The value is initialized
+		 * using {@link VolatileCacheValueLoader#createEmptyValue(Object)}. The
+		 * {@link #getEnqueueFrame() enqueue frame} is initialized to {@code -1}
+		 * indicating that the entry has never been enqueued for fetching.
 		 *
 		 * @param key
 		 *            the key (needed for loading the data if it is not valid).
-		 * @param data
-		 *            the current data (probably not
-		 *            {@link VolatileCacheValue#isValid() valid} initially).
 		 * @param loader
 		 *            for {@link VolatileCacheValueLoader#load(Object) loading}
 		 *            valid data given the key.
 		 */
-		public Entry( final K key, final V data, final VolatileCacheValueLoader< ? super K, ? extends V > loader )
+		public Entry( final K key, final VolatileCacheValueLoader< ? super K, ? extends V > loader )
 		{
 			this.key = key;
-			this.value = data;
+			this.value = loader.createEmptyValue( key );
 			this.loader = loader;
 			enqueueFrame = -1;
 		}
