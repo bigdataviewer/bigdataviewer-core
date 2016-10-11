@@ -119,7 +119,7 @@ public class VolatileGlobalCellCache implements Cache
 		}
 	}
 
-	protected final LoadingVolatileCache volatileCache; // TODO rename
+	protected final LoadingVolatileCache< Key > volatileCache; // TODO rename
 
 	@Deprecated
 	public VolatileGlobalCellCache( final int maxNumTimepoints, final int maxNumSetups, final int maxNumLevels, final int numFetcherThreads )
@@ -134,7 +134,7 @@ public class VolatileGlobalCellCache implements Cache
 	 */
 	public VolatileGlobalCellCache( final int maxNumLevels, final int numFetcherThreads )
 	{
-		volatileCache = new LoadingVolatileCache( maxNumLevels, numFetcherThreads );
+		volatileCache = new LoadingVolatileCache<>( maxNumLevels, numFetcherThreads );
 	}
 
 	/**
@@ -197,7 +197,7 @@ public class VolatileGlobalCellCache implements Cache
 	 *            {@link LoadingStrategy}, queue priority, and queue order.
 	 * @return a cell with the specified coordinates.
 	 */
-	public < K, V extends VolatileCacheValue > V createGlobal( final K key, final CacheHints cacheHints, final VolatileCacheValueLoader< K, V > cacheLoader )
+	public < V extends VolatileCacheValue > V createGlobal( final Key key, final CacheHints cacheHints, final VolatileCacheValueLoader< Key, V > cacheLoader )
 	{
 		return volatileCache.createGlobal( key, cacheHints, cacheLoader );
 	}

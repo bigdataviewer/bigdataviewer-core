@@ -7,32 +7,34 @@ import java.lang.ref.WeakReference;
 import java.util.concurrent.ConcurrentHashMap;
 
 //TODO: rename, refactor, document
-public class WeakSoftCacheImp implements WeakSoftCache
+public class WeakSoftCacheImp< K, V > implements WeakSoftCache< K, V >
 {
-	// TODO: this should be a singleton, but for now we create new instances, because bdv cache keys don't identify the viewer (yet).
-	public static WeakSoftCacheImp getInstance()
-	{
-		return new WeakSoftCacheImp();
-	}
+	private static final int MAX_PER_FRAME_FINALIZE_ENTRIES = 500; // TODO rename
+
+	private final ConcurrentHashMap< K, Reference< V > > softReferenceCache = new ConcurrentHashMap<>();
+
+	private final ReferenceQueue< V > finalizeQueue = new ReferenceQueue<>();
+
+	WeakSoftCacheImp()
+	{}
 
 	@Override
-	public < K, V > void putWeak( final K key, final V value )
+	public void putWeak( final K key, final V value )
 	{
 		softReferenceCache.put( key, new MyWeakReference<>( key, value, finalizeQueue ) );
 	}
 
 	@Override
-	public < K, V > void putSoft( final K key, final V value )
+	public void putSoft( final K key, final V value )
 	{
 		softReferenceCache.put( key, new MySoftReference<>( key, value, finalizeQueue ) );
 	}
 
-	@SuppressWarnings( "unchecked" )
 	@Override
-	public < K, V > V get( final K key )
+	public V get( final Object key )
 	{
-		final Reference< ? > ref = softReferenceCache.get( key );
-		return ref == null ? null : ( V ) ref.get();
+		final Reference< V > ref = softReferenceCache.get( key );
+		return ref == null ? null : ref.get();
 	}
 
 	@Override
@@ -99,15 +101,4 @@ public class WeakSoftCacheImp implements WeakSoftCache
 			return key;
 		}
 	}
-
-	private static final int MAX_PER_FRAME_FINALIZE_ENTRIES = 500;
-
-	private final ConcurrentHashMap< Object, Reference< ? > > softReferenceCache = new ConcurrentHashMap<>();
-
-	private final ReferenceQueue< Object > finalizeQueue = new ReferenceQueue<>();
-
-	private WeakSoftCacheImp()
-	{}
-
-//	private static WeakSoftCacheImp instance = new WeakSoftCacheImp();
 }

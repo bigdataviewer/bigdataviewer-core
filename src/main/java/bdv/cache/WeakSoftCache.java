@@ -1,15 +1,20 @@
 package bdv.cache;
 
 // TODO: rename, refactor, document
-public interface WeakSoftCache
+public interface WeakSoftCache< K, V >
 {
-	public < K, V > void putWeak( final K key, final V value ); // V == Entry
+	public void putWeak( final K key, final V value );
 
-	public < K, V > void putSoft( final K key, final V value ); // V == Entry
+	public void putSoft( final K key, final V value );
 
-	public < K, V > V get( final K key ); // V == Entry
+	public V get( final Object key );
 
 	public void finalizeRemovedCacheEntries(); // TODO: rename to cleanUp() ?
 
 	public void clearCache();
+
+	public static < K, V > WeakSoftCache< K, V > getInstance()
+	{
+		return new WeakSoftCacheImp<>();
+	}
 }

@@ -18,7 +18,7 @@ public class FetcherThreads
 	private final ArrayList< Fetcher > fetchers;
 
 	public FetcherThreads(
-			final WeakSoftCache cache,
+			final WeakSoftCache< ?, ? extends VolatileCacheEntry< ?, ? > > cache,
 			final BlockingFetchQueues< ? > queue,
 			final int numFetcherThreads )
 	{
@@ -64,7 +64,7 @@ public class FetcherThreads
 
 	static class Fetcher extends Thread
 	{
-		private final WeakSoftCache cache;
+		private final WeakSoftCache< ?, ? extends VolatileCacheEntry< ?, ? > > cache;
 
 		private final BlockingFetchQueues< ? > queue;
 
@@ -73,7 +73,7 @@ public class FetcherThreads
 		private volatile long pauseUntilTimeMillis = 0;
 
 		public Fetcher(
-				final WeakSoftCache cache,
+				final WeakSoftCache< ?, ? extends VolatileCacheEntry< ?, ? > > cache,
 				final BlockingFetchQueues< ? > queue )
 		{
 			this.cache = cache;

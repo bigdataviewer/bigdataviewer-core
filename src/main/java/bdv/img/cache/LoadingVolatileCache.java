@@ -32,7 +32,6 @@ import bdv.cache.VolatileCacheEntry;
 import bdv.cache.VolatileCacheValue;
 import bdv.cache.VolatileCacheValueLoader;
 import bdv.cache.WeakSoftCache;
-import bdv.cache.WeakSoftCacheImp;
 import bdv.img.cache.CacheIoTiming.IoStatistics;
 import bdv.img.cache.CacheIoTiming.IoTimeBudget;
 
@@ -44,11 +43,11 @@ import bdv.img.cache.CacheIoTiming.IoTimeBudget;
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
-public class LoadingVolatileCache implements Cache
+public class LoadingVolatileCache< K > implements Cache
 {
 	private final int maxNumLevels;
 
-	private final WeakSoftCache cache = WeakSoftCacheImp.getInstance();
+	private final WeakSoftCache< K, Entry< ? > > cache = WeakSoftCache.getInstance();
 
 	private final BlockingFetchQueues< Object > queue;
 
@@ -78,7 +77,7 @@ public class LoadingVolatileCache implements Cache
 	 * Enqueue the {@link VolatileCacheEntry} if it hasn't been enqueued for this frame
 	 * already.
 	 */
-	private void enqueueEntry( final Entry< ?, ? > entry, final int priority, final boolean enqueuToFront )
+	private void enqueueEntry( final Entry< ? > entry, final int priority, final boolean enqueuToFront )
 	{
 		if ( entry.getEnqueueFrame() < currentQueueFrame )
 		{
@@ -92,7 +91,7 @@ public class LoadingVolatileCache implements Cache
 	 * there is enough {@link IoTimeBudget} left. Otherwise, enqueue the
 	 * {@link VolatileCacheEntry} if it hasn't been enqueued for this frame already.
 	 */
-	private void loadOrEnqueue( final Entry< ?, ? > entry, final int priority, final boolean enqueuToFront )
+	private void loadOrEnqueue( final Entry< ? > entry, final int priority, final boolean enqueuToFront )
 	{
 		final IoStatistics stats = cacheIoTiming.getThreadGroupIoStatistics();
 		final IoTimeBudget budget = stats.getIoTimeBudget();
@@ -121,7 +120,7 @@ public class LoadingVolatileCache implements Cache
 			enqueueEntry( entry, priority, enqueuToFront );
 	}
 
-	private void loadEntryWithCacheHints( final Entry< ?, ? > entry, final CacheHints cacheHints )
+	private void loadEntryWithCacheHints( final Entry< ? > entry, final CacheHints cacheHints )
 	{
 		switch ( cacheHints.getLoadingStrategy() )
 		{
@@ -174,9 +173,10 @@ public class LoadingVolatileCache implements Cache
 	 *            {@link LoadingStrategy}, queue priority, and queue order.
 	 * @return a cell with the specified coordinates or null.
 	 */
-	public < K, V extends VolatileCacheValue > V getGlobalIfCached( final K key, final CacheHints cacheHints )
+	public < V extends VolatileCacheValue > V getGlobalIfCached( final K key, final CacheHints cacheHints )
 	{
-		final Entry< K, V > entry = cache.get( key );
+		@SuppressWarnings( "unchecked" )
+		final Entry< V > entry = ( Entry< V > ) cache.get( key );
 		if ( entry != null )
 		{
 			loadEntryWithCacheHints( entry, cacheHints );
@@ -206,13 +206,14 @@ public class LoadingVolatileCache implements Cache
 	 *            {@link LoadingStrategy}, queue priority, and queue order.
 	 * @return a cell with the specified coordinates.
 	 */
-	public < K, V extends VolatileCacheValue > V createGlobal( final K key, final CacheHints cacheHints, final VolatileCacheValueLoader< K, V > cacheLoader )
+	@SuppressWarnings( "unchecked" )
+	public < V extends VolatileCacheValue > V createGlobal( final K key, final CacheHints cacheHints, final VolatileCacheValueLoader< K, V > cacheLoader )
 	{
-		Entry< K, V > entry = null;
+		Entry< V > entry = null;
 
 		synchronized ( cacheLock )
 		{
-			entry = cache.get( key );
+			entry = ( Entry< V > ) cache.get( key );
 			if ( entry == null )
 			{
 				final V value = cacheLoader.createEmptyValue( key );
@@ -290,7 +291,7 @@ public class LoadingVolatileCache implements Cache
 		return fetchers;
 	}
 
-	class Entry< K, V extends VolatileCacheValue > implements VolatileCacheEntry< K, V >
+	class Entry< V extends VolatileCacheValue > implements VolatileCacheEntry< K, V >
 	{
 		private final K key;
 
