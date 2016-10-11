@@ -21,7 +21,11 @@ import bdv.cache.WeakSoftCache;
  * {@link FetcherThreads} are employed by {@link LoadingVolatileCache} to
  * asynchronously load data.
  *
- * TODO add shutdown() method
+ * <p>
+ * TODO Add shutdown() method.
+ *
+ * <p>
+ * TODO This uses {@code WeakSoftCache<?,? extends VolatileCacheEntry>} only for {@code get()}, could be replaced with something less restrictive?
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */

@@ -40,9 +40,7 @@ import bdv.cache.util.BlockingFetchQueues;
  * <p>
  * The number of priority levels <em>n</em> is fixed when the
  * {@link LoadingVolatileCache} is constructed. Priorities are consecutive
- * integers <em>0 ... n-1</em>, where 0 is the highest priority. Priorities of
- * {@link #put(Object, int, boolean) enqueued} entries are clamped to the range
- * <em>0 ... n-1</em>.
+ * integers <em>0 ... n-1</em>, where 0 is the highest priority.
  * <p>
  * In BigDataViewer, priorities usually correspond to resolution levels in some
  * way. For example this can be used to load low-resolution data first.

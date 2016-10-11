@@ -290,6 +290,13 @@ public class LoadingVolatileCache< K, V extends VolatileCacheValue > implements 
 		}
 	}
 
+	/**
+	 * The value type of the underlying {@link WeakSoftCache}.
+	 *
+	 *
+	 *
+	 * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+	 */
 	class Entry implements VolatileCacheEntry
 	{
 		private final K key;
@@ -333,7 +340,7 @@ public class LoadingVolatileCache< K, V extends VolatileCacheValue > implements 
 		{
 			/*
 			 * TODO: the assumption for following synchronisation pattern is
-			 * that isValid() will never go from true to false. When
+			 * that value.isValid() will never go from true to false. When
 			 * invalidation API is added, that might change.
 			 */
 			if ( !value.isValid() )
