@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.function.IntFunction;
 
 import bdv.cache.LoadingVolatileCache;
-import bdv.cache.VolatileCacheEntry;
 import bdv.cache.VolatileCacheValue;
 import bdv.cache.WeakSoftCache;
 
@@ -13,9 +12,9 @@ import bdv.cache.WeakSoftCache;
  * following in a loop:
  * <ol>
  * <li>Take the next {@code key} from a queue.</li>
- * <li>Get the {@link VolatileCacheEntry} with that {@code key} from a cache (if
+ * <li>Get the {@link Loadable} with that {@code key} from a cache (if
  * it exists).</li>
- * <li>{@link VolatileCacheEntry#loadIfNotValid() load} the entry's data (unless
+ * <li>{@link Loadable#loadIfNotValid() load} the entry's data (unless
  * it is already loaded).</li>
  * </ol>
  * {@link FetcherThreads} are employed by {@link LoadingVolatileCache} to
@@ -31,10 +30,41 @@ import bdv.cache.WeakSoftCache;
  */
 public class FetcherThreads
 {
+	/**
+	 * Something that can be loaded.
+	 * The assumption is that this {@link #loadIfNotValid()},
+	 * the value can be made valid.
+	 *
+	 * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+	 */
+	public interface Loadable
+	{
+		/**
+		 * If this entry's value is not currently valid, then load it. After the
+		 * method returns, the value is guaranteed to be valid.
+		 * <p>
+		 * This must be implemented in a thread-safe manner. Multiple threads
+		 * are allowed to call this method at the same time. The expected
+		 * behaviour is that the value is loaded only once and the result is
+		 * visible on all threads.
+		 * <p>
+		 * Note, that loading may be implemented either as
+		 * <ol>
+		 * <li>modify the existing value and change its state to valid, or</li>
+		 * <li>replace the existing value by a valid one (this is done in
+		 * {@link LoadingVolatileCache}).</li>
+		 * </ol>
+		 *
+		 * @throws InterruptedException
+		 *             if the loading operation was interrupted.
+		 */
+		public void loadIfNotValid() throws InterruptedException;
+	}
+
 	private final ArrayList< Fetcher > fetchers;
 
 	public FetcherThreads(
-			final WeakSoftCache< ?, ? extends VolatileCacheEntry > cache,
+			final WeakSoftCache< ?, ? extends Loadable > cache,
 			final BlockingFetchQueues< ? > queue,
 			final int numFetcherThreads )
 	{
@@ -49,7 +79,7 @@ public class FetcherThreads
 	 * @param threadIndexToName a function for naming fetcher threads (takes an index and returns a name).
 	 */
 	public FetcherThreads(
-			final WeakSoftCache< ?, ? extends VolatileCacheEntry > cache,
+			final WeakSoftCache< ?, ? extends Loadable > cache,
 			final BlockingFetchQueues< ? > queue,
 			final int numFetcherThreads,
 			final IntFunction< String > threadIndexToName )
@@ -96,7 +126,7 @@ public class FetcherThreads
 
 	static class Fetcher extends Thread
 	{
-		private final WeakSoftCache< ?, ? extends VolatileCacheEntry > cache;
+		private final WeakSoftCache< ?, ? extends Loadable > cache;
 
 		private final BlockingFetchQueues< ? > queue;
 
@@ -105,7 +135,7 @@ public class FetcherThreads
 		private volatile long pauseUntilTimeMillis = 0;
 
 		public Fetcher(
-				final WeakSoftCache< ?, ? extends VolatileCacheEntry > cache,
+				final WeakSoftCache< ?, ? extends Loadable > cache,
 				final BlockingFetchQueues< ? > queue )
 		{
 			this.cache = cache;
@@ -141,7 +171,7 @@ public class FetcherThreads
 				}
 				try
 				{
-					final VolatileCacheEntry entry = cache.get( key );
+					final Loadable entry = cache.get( key );
 					if ( entry != null )
 						entry.loadIfNotValid();
 					key = null;
