@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package bdv.img.cache;
+package bdv.cache.util;
 
 import java.util.ArrayDeque;
 import java.util.concurrent.ArrayBlockingQueue;

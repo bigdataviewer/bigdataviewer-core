@@ -28,10 +28,13 @@
  */
 package bdv.img.cache;
 
-import bdv.cache.VolatileCacheValue;
+import bdv.cache.Cache;
+import bdv.cache.CacheHints;
+import bdv.cache.CacheIoTiming;
+import bdv.cache.CacheIoTiming.IoTimeBudget;
+import bdv.cache.LoadingStrategy;
+import bdv.cache.LoadingVolatileCache;
 import bdv.cache.VolatileCacheValueLoader;
-import bdv.img.cache.CacheIoTiming.IoTimeBudget;
-import bdv.img.cache.FetcherThreads.Fetcher;
 import bdv.img.cache.VolatileImgCells.CellCache;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 
@@ -119,7 +122,7 @@ public class VolatileGlobalCellCache implements Cache
 		}
 	}
 
-	protected final LoadingVolatileCache< Key > volatileCache; // TODO rename
+	protected final LoadingVolatileCache< Key, VolatileCell< ? > > volatileCache; // TODO rename
 
 	@Deprecated
 	public VolatileGlobalCellCache( final int maxNumTimepoints, final int maxNumSetups, final int maxNumLevels, final int numFetcherThreads )
@@ -171,7 +174,7 @@ public class VolatileGlobalCellCache implements Cache
 	 *            {@link LoadingStrategy}, queue priority, and queue order.
 	 * @return a cell with the specified coordinates or null.
 	 */
-	public < V extends VolatileCacheValue > V getGlobalIfCached( final Key key, final CacheHints cacheHints )
+	public VolatileCell< ? > getGlobalIfCached( final Key key, final CacheHints cacheHints )
 	{
 		return volatileCache.getGlobalIfCached( key, cacheHints );
 	}
@@ -197,7 +200,7 @@ public class VolatileGlobalCellCache implements Cache
 	 *            {@link LoadingStrategy}, queue priority, and queue order.
 	 * @return a cell with the specified coordinates.
 	 */
-	public < V extends VolatileCacheValue > V createGlobal( final Key key, final CacheHints cacheHints, final VolatileCacheValueLoader< Key, V > cacheLoader )
+	public VolatileCell< ? > createGlobal( final Key key, final CacheHints cacheHints, final VolatileCacheValueLoader< Key, ? extends VolatileCell< ? > > cacheLoader )
 	{
 		return volatileCache.createGlobal( key, cacheHints, cacheLoader );
 	}
@@ -312,14 +315,14 @@ public class VolatileGlobalCellCache implements Cache
 		public VolatileCell< A > get( final long index )
 		{
 			final Key key = new Key( timepoint, setup, level, index, null, null );
-			return getGlobalIfCached( key, cacheHints );
+			return ( VolatileCell< A > ) getGlobalIfCached( key, cacheHints );
 		}
 
 		@Override
 		public VolatileCell< A > load( final long index, final int[] cellDims, final long[] cellMin )
 		{
 			final Key key = new Key( timepoint, setup, level, index, cellDims, cellMin );
-			return createGlobal( key, cacheHints, loader );
+			return ( VolatileCell< A > ) createGlobal( key, cacheHints, loader );
 		}
 
 		@Override

@@ -28,7 +28,7 @@
  */
 package bdv.viewer.render;
 
-import bdv.img.cache.CacheHints;
+import bdv.cache.CacheHints;
 
 public interface SetCacheHints
 {

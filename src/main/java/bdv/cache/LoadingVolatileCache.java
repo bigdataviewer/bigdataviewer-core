@@ -26,14 +26,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package bdv.img.cache;
+package bdv.cache;
 
-import bdv.cache.VolatileCacheEntry;
-import bdv.cache.VolatileCacheValue;
-import bdv.cache.VolatileCacheValueLoader;
-import bdv.cache.WeakSoftCache;
-import bdv.img.cache.CacheIoTiming.IoStatistics;
-import bdv.img.cache.CacheIoTiming.IoTimeBudget;
+import bdv.cache.CacheIoTiming.IoStatistics;
+import bdv.cache.CacheIoTiming.IoTimeBudget;
+import bdv.cache.util.BlockingFetchQueues;
+import bdv.cache.util.FetcherThreads;
+import bdv.img.cache.VolatileGlobalCellCache;
 
 
 /**

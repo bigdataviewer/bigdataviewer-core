@@ -28,6 +28,7 @@
  */
 package bdv.img.cache;
 
+import bdv.cache.CacheHints;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;

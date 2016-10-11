@@ -43,7 +43,7 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.real.FloatType;
 import bdv.ViewerImgLoader;
 import bdv.ViewerSetupImgLoader;
-import bdv.img.cache.Cache;
+import bdv.cache.Cache;
 
 //@Deprecated
 public class LegacyViewerImgLoaderExtWrapper< T, V extends Volatile< T >, I extends LegacyViewerImgLoader< T, V > & LegacyImgLoader< T > > implements ViewerImgLoader, ImgLoader

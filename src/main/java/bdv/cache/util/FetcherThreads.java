@@ -1,4 +1,4 @@
-package bdv.img.cache;
+package bdv.cache.util;
 
 import java.util.ArrayList;
 

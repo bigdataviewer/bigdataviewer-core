@@ -31,8 +31,8 @@ package bdv.viewer.render;
 import java.util.ArrayList;
 
 import net.imglib2.realtransform.AffineTransform3D;
-import bdv.img.cache.CacheHints;
-import bdv.img.cache.LoadingStrategy;
+import bdv.cache.CacheHints;
+import bdv.cache.LoadingStrategy;
 import bdv.util.MipmapTransforms;
 import bdv.viewer.Source;
 

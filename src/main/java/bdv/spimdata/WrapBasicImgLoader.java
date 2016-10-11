@@ -41,7 +41,7 @@ import net.imglib2.Volatile;
 import net.imglib2.realtransform.AffineTransform3D;
 import bdv.ViewerImgLoader;
 import bdv.ViewerSetupImgLoader;
-import bdv.img.cache.Cache;
+import bdv.cache.Cache;
 
 public class WrapBasicImgLoader implements ViewerImgLoader
 {

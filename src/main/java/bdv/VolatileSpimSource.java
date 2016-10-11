@@ -34,7 +34,7 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.NumericType;
-import bdv.img.cache.CacheHints;
+import bdv.cache.CacheHints;
 import bdv.img.cache.CachedCellImg;
 import bdv.viewer.render.DefaultMipmapOrdering;
 import bdv.viewer.render.MipmapOrdering;

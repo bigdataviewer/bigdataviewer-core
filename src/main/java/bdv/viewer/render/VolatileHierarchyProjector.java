@@ -37,6 +37,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import bdv.cache.CacheIoTiming;
+import bdv.cache.CacheIoTiming.IoStatistics;
 import net.imglib2.Cursor;
 import net.imglib2.FinalInterval;
 import net.imglib2.IterableInterval;
@@ -52,8 +54,6 @@ import net.imglib2.type.numeric.integer.ByteType;
 import net.imglib2.ui.AbstractInterruptibleProjector;
 import net.imglib2.ui.util.StopWatch;
 import net.imglib2.view.Views;
-import bdv.img.cache.CacheIoTiming;
-import bdv.img.cache.CacheIoTiming.IoStatistics;
 
 /**
  * {@link VolatileProjector} for a hierarchy of {@link Volatile} inputs.  After each

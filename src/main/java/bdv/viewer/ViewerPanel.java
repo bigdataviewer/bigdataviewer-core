@@ -62,7 +62,7 @@ import javax.swing.event.ChangeListener;
 
 import org.jdom2.Element;
 
-import bdv.img.cache.Cache;
+import bdv.cache.Cache;
 import bdv.util.Affine3DHelpers;
 import bdv.util.InvokeOnEDT;
 import bdv.util.Prefs;

@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package bdv.img.cache;
+package bdv.cache;
 
 import java.util.concurrent.ConcurrentHashMap;
 

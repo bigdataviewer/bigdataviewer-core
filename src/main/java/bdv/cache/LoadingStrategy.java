@@ -26,9 +26,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package bdv.img.cache;
+package bdv.cache;
 
-import bdv.img.cache.CacheIoTiming.IoTimeBudget;
+import bdv.cache.CacheIoTiming.IoTimeBudget;
 
 /**
  * Describes how the cache processes requests for cells with missing data.

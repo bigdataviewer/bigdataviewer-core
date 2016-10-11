@@ -28,8 +28,8 @@
  */
 package bdv;
 
+import bdv.cache.Cache;
 import mpicbg.spim.data.generic.sequence.BasicMultiResolutionImgLoader;
-import bdv.img.cache.Cache;
 
 public interface ViewerImgLoader extends BasicMultiResolutionImgLoader
 {
