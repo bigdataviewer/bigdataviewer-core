@@ -31,7 +31,7 @@ package bdv.cache;
 import bdv.cache.util.BlockingFetchQueues;
 
 /**
- * Hints to the {@link LoadingVolatileCache} on how to handle data requests.
+ * Hints to a {@link LoadingVolatileCache} on how to handle data requests.
  * Consists of the {@link LoadingStrategy} for entries, the priority with which
  * to enqueue entries to the {@link BlockingFetchQueues} (if they are enqueued)
  * and whether they should be enqueued to the front (most recent requests are
