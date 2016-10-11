@@ -32,6 +32,7 @@ import bdv.cache.CacheIoTiming.IoStatistics;
 import bdv.cache.CacheIoTiming.IoTimeBudget;
 import bdv.cache.util.BlockingFetchQueues;
 import bdv.cache.util.FetcherThreads;
+import bdv.cache.util.FetcherThreads.Loader;
 import bdv.img.cache.VolatileGlobalCellCache;
 
 
@@ -42,21 +43,21 @@ import bdv.img.cache.VolatileGlobalCellCache;
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
-public class LoadingVolatileCache< K, V extends VolatileCacheValue > implements Cache
+public final class LoadingVolatileCache< K, V extends VolatileCacheValue > implements Cache
 {
-	private final int maxNumLevels;
-
 	private final WeakSoftCache< K, Entry > cache = WeakSoftCache.getInstance();
 
-	private final BlockingFetchQueues< Object > queue;
+	private final Object cacheLock = new Object();
+
+	private final CacheIoTiming cacheIoTiming = new CacheIoTiming();
+
+	private final int maxNumLevels;
+
+	private final BlockingFetchQueues< K > queue;
+
+	private final FetcherThreads< K > fetchers;
 
 	private volatile long currentQueueFrame = 0;
-
-	private final CacheIoTiming cacheIoTiming;
-
-	private final FetcherThreads fetchers;
-
-	private final Object cacheLock = new Object();
 
 	/**
 	 * @param maxNumLevels
@@ -68,10 +69,8 @@ public class LoadingVolatileCache< K, V extends VolatileCacheValue > implements 
 	public LoadingVolatileCache( final int maxNumLevels, final int numFetcherThreads )
 	{
 		this.maxNumLevels = maxNumLevels;
-
-		cacheIoTiming = new CacheIoTiming();
 		queue = new BlockingFetchQueues<>( maxNumLevels );
-		fetchers = new FetcherThreads( cache, queue, numFetcherThreads );
+		fetchers = new FetcherThreads<>( queue, new EntryLoader(), numFetcherThreads );
 	}
 
 	/**
@@ -210,10 +209,12 @@ public class LoadingVolatileCache< K, V extends VolatileCacheValue > implements 
 		// (BlockingFetchQueues.clear() moves stuff to the prefetchQueue.)
 	}
 
-	public FetcherThreads getFetcherThreads()
+	public FetcherThreads< K > getFetcherThreads()
 	{
 		return fetchers;
 	}
+
+	// ================ private methods =====================
 
 	/**
 	 * Enqueue the {@link Entry} if it hasn't been enqueued for this frame
@@ -290,16 +291,33 @@ public class LoadingVolatileCache< K, V extends VolatileCacheValue > implements 
 	}
 
 	/**
+	 * TODO
+	 * TODO
+	 * TODO
+	 * TODO
+	 * TODO
+	 * TODO
+	 */
+	final class EntryLoader implements Loader< K >
+	{
+		@Override
+		public void load( final K key ) throws InterruptedException
+		{
+			final Entry entry = cache.get( key );
+			if ( entry != null )
+				entry.loadIfNotValid();
+		}
+	}
+
+	/**
 	 * The value type of the underlying {@link WeakSoftCache}.
 	 *
 	 * TODO
 	 * A cache entry associating a key to a value that maybe invalid (usually a {@link VolatileCacheValue}).
 	 * Using {@link #loadIfNotValid()}, the value can be made valid (or replaced by a valid value).
 	 * TODO
-	 *
-	 * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
 	 */
-	class Entry implements FetcherThreads.Loadable
+	final class Entry
 	{
 		private final K key;
 
@@ -357,7 +375,6 @@ public class LoadingVolatileCache< K, V extends VolatileCacheValue > implements 
 		 * BigDataViewer).</li>
 		 * </ol>
 		 */
-		@Override
 		public void loadIfNotValid() throws InterruptedException
 		{
 			/*

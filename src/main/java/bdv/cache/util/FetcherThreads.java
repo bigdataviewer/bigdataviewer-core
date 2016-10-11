@@ -5,70 +5,59 @@ import java.util.function.IntFunction;
 
 import bdv.cache.LoadingVolatileCache;
 import bdv.cache.VolatileCacheValue;
-import bdv.cache.WeakSoftCache;
 
 /**
- * A set of threads that load {@link VolatileCacheValue}s. Each thread does the
- * following in a loop:
+ * A set of threads that load data. Each thread does the following in a loop:
  * <ol>
  * <li>Take the next {@code key} from a queue.</li>
- * <li>Get the {@link Loadable} with that {@code key} from a cache (if
- * it exists).</li>
- * <li>{@link Loadable#loadIfNotValid() load} the entry's data (unless
- * it is already loaded).</li>
+ * <li>Try {@link Loader#load() loading} the key's data (retry until that
+ * succeeds).</li>
  * </ol>
  * {@link FetcherThreads} are employed by {@link LoadingVolatileCache} to
- * asynchronously load data.
+ * asynchronously load {@link VolatileCacheValue}s.
  *
  * <p>
  * TODO Add shutdown() method.
  *
  * <p>
- * TODO This uses {@code WeakSoftCache<?,? extends VolatileCacheEntry>} only for {@code get()}, could be replaced with something less restrictive?
+ * TODO This uses {@code WeakSoftCache<?,? extends VolatileCacheEntry>} only for
+ * {@code get()}, could be replaced with something less restrictive?
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
-public class FetcherThreads
+public class FetcherThreads< K >
 {
 	/**
-	 * Something that can be loaded.
-	 * The assumption is that this {@link #loadIfNotValid()},
-	 * the value can be made valid.
+	 * Loads data associated with a key.
 	 *
-	 * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+	 * @param <K>
+	 *            the key type.
 	 */
-	public interface Loadable
+	public interface Loader< K >
 	{
 		/**
-		 * If this entry's value is not currently valid, then load it. After the
-		 * method returns, the value is guaranteed to be valid.
+		 * If this key's data is not yet valid, then load it. After the method
+		 * returns, the data is guaranteed to be valid.
 		 * <p>
 		 * This must be implemented in a thread-safe manner. Multiple threads
-		 * are allowed to call this method at the same time. The expected
-		 * behaviour is that the value is loaded only once and the result is
-		 * visible on all threads.
-		 * <p>
-		 * Note, that loading may be implemented either as
-		 * <ol>
-		 * <li>modify the existing value and change its state to valid, or</li>
-		 * <li>replace the existing value by a valid one (this is done in
-		 * {@link LoadingVolatileCache}).</li>
-		 * </ol>
+		 * are allowed to call this method at the same time with the same key.
+		 * The expected behaviour is that the data is loaded only once and the
+		 * result is made visible on all threads.
 		 *
 		 * @throws InterruptedException
 		 *             if the loading operation was interrupted.
 		 */
-		public void loadIfNotValid() throws InterruptedException;
+		public void load( K key ) throws InterruptedException;
 	}
 
-	private final ArrayList< Fetcher > fetchers;
+	private final ArrayList< Fetcher< K > > fetchers;
 
 	public FetcherThreads(
-			final WeakSoftCache< ?, ? extends Loadable > cache,
-			final BlockingFetchQueues< ? > queue,
+			final BlockingFetchQueues< K > queue,
+			final Loader< K > loader,
 			final int numFetcherThreads )
 	{
-		this( cache, queue, numFetcherThreads, i -> String.format( "Fetcher-%d", i ) );
+		this( queue, loader, numFetcherThreads, i -> String.format( "Fetcher-%d", i ) );
 	}
 
 	/**
@@ -79,15 +68,15 @@ public class FetcherThreads
 	 * @param threadIndexToName a function for naming fetcher threads (takes an index and returns a name).
 	 */
 	public FetcherThreads(
-			final WeakSoftCache< ?, ? extends Loadable > cache,
-			final BlockingFetchQueues< ? > queue,
+			final BlockingFetchQueues< K > queue,
+			final Loader< K > loader,
 			final int numFetcherThreads,
 			final IntFunction< String > threadIndexToName )
 	{
 		fetchers = new ArrayList<>( numFetcherThreads );
 		for ( int i = 0; i < numFetcherThreads; ++i )
 		{
-			final Fetcher f = new Fetcher( cache, queue );
+			final Fetcher< K > f = new Fetcher<>( queue, loader );
 			f.setDaemon( true );
 			f.setName( threadIndexToName.apply( i ) );
 			fetchers.add( f );
@@ -109,7 +98,7 @@ public class FetcherThreads
 	 */
 	public void pauseFetcherThreadsUntil( final long timeMillis )
 	{
-		for ( final Fetcher f : fetchers )
+		for ( final Fetcher< K > f : fetchers )
 			f.pauseUntil( timeMillis );
 	}
 
@@ -120,32 +109,32 @@ public class FetcherThreads
 	 */
 	public void wakeFetcherThreads()
 	{
-		for ( final Fetcher f : fetchers )
+		for ( final Fetcher< K > f : fetchers )
 			f.wakeUp();
 	}
 
-	static class Fetcher extends Thread
+	static final class Fetcher< K > extends Thread
 	{
-		private final WeakSoftCache< ?, ? extends Loadable > cache;
+		private final BlockingFetchQueues< K > queue;
 
-		private final BlockingFetchQueues< ? > queue;
+		private final Loader< K > loader;
 
 		private final Object lock = new Object();
 
 		private volatile long pauseUntilTimeMillis = 0;
 
 		public Fetcher(
-				final WeakSoftCache< ?, ? extends Loadable > cache,
-				final BlockingFetchQueues< ? > queue )
+				final BlockingFetchQueues< K > queue,
+				final Loader< K > loader )
 		{
-			this.cache = cache;
 			this.queue = queue;
+			this.loader = loader;
 		}
 
 		@Override
 		public final void run()
 		{
-			Object key = null;
+			K key = null;
 			while ( true )
 			{
 				while ( key == null )
@@ -171,9 +160,7 @@ public class FetcherThreads
 				}
 				try
 				{
-					final Loadable entry = cache.get( key );
-					if ( entry != null )
-						entry.loadIfNotValid();
+					loader.load( key );
 					key = null;
 				}
 				catch ( final InterruptedException e )
