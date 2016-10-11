@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -31,21 +31,21 @@ package bdv.cache;
 import bdv.cache.CacheIoTiming.IoTimeBudget;
 
 /**
- * Describes how the cache processes requests for cells with missing data.
+ * Describes how the cache processes requests for entries with missing data.
  *
  * Depending on the {@link LoadingStrategy} the following actions are performed
- * if the cell data has not been loaded yet:
+ * if the entry's data has not been loaded yet:
  * <ul>
  *   <li> {@link LoadingStrategy#VOLATILE}:
- *        Enqueue the cell for asynchronous loading by a fetcher thread.
+ *        Enqueue the entry for asynchronous loading by a fetcher thread.
  *   <li> {@link LoadingStrategy#BLOCKING}:
- *        Load the cell data immediately.
+ *        Load the data immediately (on the current thread).
  *   <li> {@link LoadingStrategy#BUDGETED}:
- *        Load the cell data immediately if there is enough {@link IoTimeBudget}
+ *        Load the data immediately if there is enough {@link IoTimeBudget}
  *        left for the current thread group. Otherwise enqueue the cell for
  *        asynchronous loading by a fetcher thread.
  *   <li> {@link LoadingStrategy#DONTLOAD}:
- *        Do nothing.
+ *        Do nothing (entry remains invalid).
  * </ul>
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;

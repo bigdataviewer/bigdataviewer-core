@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -34,8 +34,8 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
- * Queueing structure (intended for cells to be fetched). There is an array of
- * {@link ArrayDeque}s, ordered by priority. Elements are
+ * Queueing structure (intended for cache entries to be fetched). There is an
+ * array of {@link ArrayDeque}s, ordered by priority. Elements are
  * {@link #put(Object, int, boolean)} with a priority and added to one of the
  * queues, accordingly. {@link #take()} returns an element from the highest
  * priority non-empty queue. Furthermore, there is a prefetch deque of bounded
@@ -67,10 +67,10 @@ public class BlockingFetchQueues< E >
 	/** Number of elements in the queue */
 	private int count;
 
-	/** Main lock guarding all access */
+	/** Main lock guarding all accesses */
 	private final ReentrantLock lock;
 
-	/** Condition for waiting takes */
+	/** Condition for waiting take()s */
 	private final Condition notEmpty;
 
 	public BlockingFetchQueues( final int numPriorities )

@@ -42,11 +42,11 @@ import bdv.img.cache.VolatileGlobalCellCache;
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
-public class LoadingVolatileCache< K > implements Cache
+public class LoadingVolatileCache< K, V extends VolatileCacheValue > implements Cache
 {
 	private final int maxNumLevels;
 
-	private final WeakSoftCache< K, Entry< ? > > cache = WeakSoftCache.getInstance();
+	private final WeakSoftCache< K, Entry > cache = WeakSoftCache.getInstance();
 
 	private final BlockingFetchQueues< Object > queue;
 
@@ -60,8 +60,10 @@ public class LoadingVolatileCache< K > implements Cache
 
 	/**
 	 * @param maxNumLevels
-	 *            the highest occurring TODO TODO mipmap TODO TODO level plus 1.
+	 *            the number of priority levels.
 	 * @param numFetcherThreads
+	 *            the number of threads to create for asynchronous loading of
+	 *            cache entries.
 	 */
 	public LoadingVolatileCache( final int maxNumLevels, final int numFetcherThreads )
 	{
@@ -73,88 +75,14 @@ public class LoadingVolatileCache< K > implements Cache
 	}
 
 	/**
-	 * Enqueue the {@link VolatileCacheEntry} if it hasn't been enqueued for this frame
-	 * already.
-	 */
-	private void enqueueEntry( final Entry< ? > entry, final int priority, final boolean enqueuToFront )
-	{
-		if ( entry.getEnqueueFrame() < currentQueueFrame )
-		{
-			entry.setEnqueueFrame( currentQueueFrame );
-			queue.put( entry.getKey(), priority, enqueuToFront );
-		}
-	}
-
-	/**
-	 * Load the data for the {@link VolatileCacheEntry} if it is not yet loaded (valid) and
-	 * there is enough {@link IoTimeBudget} left. Otherwise, enqueue the
-	 * {@link VolatileCacheEntry} if it hasn't been enqueued for this frame already.
-	 */
-	private void loadOrEnqueue( final Entry< ? > entry, final int priority, final boolean enqueuToFront )
-	{
-		final IoStatistics stats = cacheIoTiming.getThreadGroupIoStatistics();
-		final IoTimeBudget budget = stats.getIoTimeBudget();
-		final long timeLeft = budget.timeLeft( priority );
-		if ( timeLeft > 0 )
-		{
-			synchronized ( entry )
-			{
-				if ( entry.getValue().isValid() )
-					return;
-				enqueueEntry( entry, priority, enqueuToFront );
-				final long t0 = stats.getIoNanoTime();
-				stats.start();
-				try
-				{
-					entry.wait( timeLeft  / 1000000l, 1 );
-				}
-				catch ( final InterruptedException e )
-				{}
-				stats.stop();
-				final long t = stats.getIoNanoTime() - t0;
-				budget.use( t, priority );
-			}
-		}
-		else
-			enqueueEntry( entry, priority, enqueuToFront );
-	}
-
-	private void loadEntryWithCacheHints( final Entry< ? > entry, final CacheHints cacheHints )
-	{
-		switch ( cacheHints.getLoadingStrategy() )
-		{
-		case VOLATILE:
-		default:
-			enqueueEntry( entry, cacheHints.getQueuePriority(), cacheHints.isEnqueuToFront() );
-			break;
-		case BLOCKING:
-			while ( true )
-				try
-				{
-					entry.loadIfNotValid();
-					break;
-				}
-				catch ( final InterruptedException e )
-				{}
-			break;
-		case BUDGETED:
-			if ( !entry.getValue().isValid() )
-				loadOrEnqueue( entry, cacheHints.getQueuePriority(), cacheHints.isEnqueuToFront() );
-			break;
-		case DONTLOAD:
-			break;
-		}
-	}
-
-	/**
-	 * Get a cell if it is in the cache or null. Note, that a cell being in the
-	 * cache only means that there is a data array, but not necessarily that the
-	 * data has already been loaded.
+	 * Get a value if it is in the cache or {@code null}. Note, that a value
+	 * being in the cache only means that there is data, but not necessarily
+	 * that the data is {@link VolatileCacheValue#isValid() valid}.
 	 * <p>
-	 * If the cell data has not been loaded, do the following, depending on the
+	 * If the value is not valid, do the following, depending on the
 	 * {@link LoadingStrategy}:
 	 * <ul>
-	 * <li>{@link LoadingStrategy#VOLATILE}: Enqueue the cell for asynchronous
+	 * <li>{@link LoadingStrategy#VOLATILE}: Enqueue the entry for asynchronous
 	 * loading by a fetcher thread, if it has not been enqueued in the current
 	 * frame already.
 	 * <li>{@link LoadingStrategy#BLOCKING}: Load the cell data immediately.
@@ -172,10 +100,9 @@ public class LoadingVolatileCache< K > implements Cache
 	 *            {@link LoadingStrategy}, queue priority, and queue order.
 	 * @return a cell with the specified coordinates or null.
 	 */
-	public < V extends VolatileCacheValue > V getGlobalIfCached( final K key, final CacheHints cacheHints )
+	public V getGlobalIfCached( final K key, final CacheHints cacheHints )
 	{
-		@SuppressWarnings( "unchecked" )
-		final Entry< V > entry = ( Entry< V > ) cache.get( key );
+		final Entry entry = cache.get( key );
 		if ( entry != null )
 		{
 			loadEntryWithCacheHints( entry, cacheHints );
@@ -205,18 +132,17 @@ public class LoadingVolatileCache< K > implements Cache
 	 *            {@link LoadingStrategy}, queue priority, and queue order.
 	 * @return a cell with the specified coordinates.
 	 */
-	@SuppressWarnings( "unchecked" )
-	public < V extends VolatileCacheValue > V createGlobal( final K key, final CacheHints cacheHints, final VolatileCacheValueLoader< K, V > cacheLoader )
+	public V createGlobal( final K key, final CacheHints cacheHints, final VolatileCacheValueLoader< ? super K, ? extends V > cacheLoader )
 	{
-		Entry< V > entry = null;
+		Entry entry = null;
 
 		synchronized ( cacheLock )
 		{
-			entry = ( Entry< V > ) cache.get( key );
+			entry = cache.get( key );
 			if ( entry == null )
 			{
 				final V value = cacheLoader.createEmptyValue( key );
-				entry = new Entry<>( key, value, cacheLoader );
+				entry = new Entry( key, value, cacheLoader );
 				cache.putWeak( key, entry );
 			}
 		}
@@ -290,13 +216,87 @@ public class LoadingVolatileCache< K > implements Cache
 		return fetchers;
 	}
 
-	class Entry< V extends VolatileCacheValue > implements VolatileCacheEntry< K, V >
+	/**
+	 * Enqueue the {@link Entry} if it hasn't been enqueued for this frame
+	 * already.
+	 */
+	private void enqueueEntry( final Entry entry, final int priority, final boolean enqueuToFront )
+	{
+		if ( entry.getEnqueueFrame() < currentQueueFrame )
+		{
+			entry.setEnqueueFrame( currentQueueFrame );
+			queue.put( entry.getKey(), priority, enqueuToFront );
+		}
+	}
+
+	/**
+	 * Load the data for the {@link Entry} if it is not yet loaded (valid) and
+	 * there is enough {@link IoTimeBudget} left. Otherwise, enqueue the
+	 * {@link Entry} if it hasn't been enqueued for this frame already.
+	 */
+	private void loadOrEnqueue( final Entry entry, final int priority, final boolean enqueuToFront )
+	{
+		final IoStatistics stats = cacheIoTiming.getThreadGroupIoStatistics();
+		final IoTimeBudget budget = stats.getIoTimeBudget();
+		final long timeLeft = budget.timeLeft( priority );
+		if ( timeLeft > 0 )
+		{
+			synchronized ( entry )
+			{
+				if ( entry.getValue().isValid() )
+					return;
+				enqueueEntry( entry, priority, enqueuToFront );
+				final long t0 = stats.getIoNanoTime();
+				stats.start();
+				try
+				{
+					entry.wait( timeLeft  / 1000000l, 1 );
+				}
+				catch ( final InterruptedException e )
+				{}
+				stats.stop();
+				final long t = stats.getIoNanoTime() - t0;
+				budget.use( t, priority );
+			}
+		}
+		else
+			enqueueEntry( entry, priority, enqueuToFront );
+	}
+
+	private void loadEntryWithCacheHints( final Entry entry, final CacheHints cacheHints )
+	{
+		switch ( cacheHints.getLoadingStrategy() )
+		{
+		case VOLATILE:
+		default:
+			enqueueEntry( entry, cacheHints.getQueuePriority(), cacheHints.isEnqueuToFront() );
+			break;
+		case BLOCKING:
+			while ( true )
+				try
+				{
+					entry.loadIfNotValid();
+					break;
+				}
+				catch ( final InterruptedException e )
+				{}
+			break;
+		case BUDGETED:
+			if ( !entry.getValue().isValid() )
+				loadOrEnqueue( entry, cacheHints.getQueuePriority(), cacheHints.isEnqueuToFront() );
+			break;
+		case DONTLOAD:
+			break;
+		}
+	}
+
+	class Entry implements VolatileCacheEntry< K, V >
 	{
 		private final K key;
 
 		private V value;
 
-		private final VolatileCacheValueLoader< K, V > loader;
+		private final VolatileCacheValueLoader< ? super K, ? extends V > loader;
 
 		/**
 		 * When was this entry last enqueued for loading (see
@@ -306,7 +306,21 @@ public class LoadingVolatileCache< K > implements Cache
 		 */
 		private long enqueueFrame;
 
-		public Entry( final K key, final V data, final VolatileCacheValueLoader< K, V > loader )
+		/**
+		 * Create a new cache entry. The {@link #getEnqueueFrame() enqueue
+		 * frame} is initialized to {@code -1}, indicating that the entry has
+		 * never been enqueued for fetching.
+		 *
+		 * @param key
+		 *            the key (needed for loading the data if it is not valid).
+		 * @param data
+		 *            the current data (probably not
+		 *            {@link VolatileCacheValue#isValid() valid} initially).
+		 * @param loader
+		 *            for {@link VolatileCacheValueLoader#load(Object) loading}
+		 *            valid data given the key.
+		 */
+		public Entry( final K key, final V data, final VolatileCacheValueLoader< ? super K, ? extends V > loader )
 		{
 			this.key = key;
 			this.value = data;

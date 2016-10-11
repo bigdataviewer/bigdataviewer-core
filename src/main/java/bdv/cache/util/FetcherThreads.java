@@ -1,14 +1,26 @@
 package bdv.cache.util;
 
 import java.util.ArrayList;
+import java.util.function.IntFunction;
 
+import bdv.cache.LoadingVolatileCache;
 import bdv.cache.VolatileCacheEntry;
+import bdv.cache.VolatileCacheValue;
 import bdv.cache.WeakSoftCache;
 
 /**
- * TODO javadoc
- * TODO add constructor with format string for thread names
- * TODO add start() method
+ * A set of threads that load {@link VolatileCacheValue}s. Each thread does the
+ * following in a loop:
+ * <ol>
+ * <li>Take the next {@code key} from a queue.</li>
+ * <li>Get the {@link VolatileCacheEntry} with that {@code key} from a cache (if
+ * it exists).</li>
+ * <li>{@link VolatileCacheEntry#loadIfNotValid() load} the entry's data (unless
+ * it is already loaded).</li>
+ * </ol>
+ * {@link FetcherThreads} are employed by {@link LoadingVolatileCache} to
+ * asynchronously load data.
+ *
  * TODO add shutdown() method
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
@@ -22,19 +34,35 @@ public class FetcherThreads
 			final BlockingFetchQueues< ? > queue,
 			final int numFetcherThreads )
 	{
+		this( cache, queue, numFetcherThreads, i -> String.format( "Fetcher-%d", i ) );
+	}
+
+	/**
+	 *
+	 * @param cache the cache that contains entries to load.
+	 * @param queue the queue from which request keys are taken.
+	 * @param numFetcherThreads how many parallel fetcher threads to start.
+	 * @param threadIndexToName a function for naming fetcher threads (takes an index and returns a name).
+	 */
+	public FetcherThreads(
+			final WeakSoftCache< ?, ? extends VolatileCacheEntry< ?, ? > > cache,
+			final BlockingFetchQueues< ? > queue,
+			final int numFetcherThreads,
+			final IntFunction< String > threadIndexToName )
+	{
 		fetchers = new ArrayList<>( numFetcherThreads );
 		for ( int i = 0; i < numFetcherThreads; ++i )
 		{
 			final Fetcher f = new Fetcher( cache, queue );
 			f.setDaemon( true );
-			f.setName( "Fetcher-" + i );
+			f.setName( threadIndexToName.apply( i ) );
 			fetchers.add( f );
 			f.start();
 		}
 	}
 
 	/**
-	 * pause all {@link Fetcher} threads for the specified number of milliseconds.
+	 * Pause all Fetcher threads for the specified number of milliseconds.
 	 */
 	public void pauseFetcherThreadsFor( final long ms )
 	{
@@ -42,7 +70,7 @@ public class FetcherThreads
 	}
 
 	/**
-	 * pause all {@link Fetcher} threads until the given time (see
+	 * pause all Fetcher threads until the given time (see
 	 * {@link System#currentTimeMillis()}).
 	 */
 	public void pauseFetcherThreadsUntil( final long timeMillis )

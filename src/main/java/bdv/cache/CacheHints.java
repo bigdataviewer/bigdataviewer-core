@@ -29,15 +29,23 @@
 package bdv.cache;
 
 import bdv.cache.util.BlockingFetchQueues;
-import bdv.img.cache.VolatileGlobalCellCache.VolatileCellCache;
 
 /**
- * Hints to the {@link LoadingVolatileCache cache} on how to handle cell requests.
- * Consists of the {@link LoadingStrategy} for cells, the priority with which to
- * enqueue cells to the {@link BlockingFetchQueues} (if they are enqueued) and
- * whether they should be enqueued to the front (most recent requests are
+ * Hints to the {@link LoadingVolatileCache} on how to handle data requests.
+ * Consists of the {@link LoadingStrategy} for entries, the priority with which
+ * to enqueue entries to the {@link BlockingFetchQueues} (if they are enqueued)
+ * and whether they should be enqueued to the front (most recent requests are
  * handled first) or back (requests are handled in order) of the respective
  * priority level.
+ * <p>
+ * The number of priority levels <em>n</em> is fixed when the
+ * {@link LoadingVolatileCache} is constructed. Priorities are consecutive
+ * integers <em>0 ... n-1</em>, where 0 is the highest priority. Priorities of
+ * {@link #put(Object, int, boolean) enqueued} entries are clamped to the range
+ * <em>0 ... n-1</em>.
+ * <p>
+ * In BigDataViewer, priorities usually correspond to resolution levels in some
+ * way. For example this can be used to load low-resolution data first.
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
@@ -76,10 +84,11 @@ public class CacheHints
 	}
 
 	/**
-	 * Get the priority with which cell requests from this
-	 * {@link VolatileCellCache cache} are enqueued if they are enqueued.
+	 * Get the priority with which entry requests are enqueued (if they are
+	 * enqueued).
 	 *
-	 * @return the priority with which requests are enqueued
+	 * @return the priority with which requests are enqueued. lower values mean
+	 *         higher priority.
 	 */
 	public int getQueuePriority()
 	{

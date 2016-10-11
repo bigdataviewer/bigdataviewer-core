@@ -1,8 +1,9 @@
 package bdv.cache;
 
 /**
- * Value (or placeholder for value) that is stored in a cache and may be
- * initially invalid. The value can only go from invalid state to valid, never
+ * Value (or placeholder for value) that is stored in a
+ * {@link VolatileCacheEntry} and may be invalid. The value associated with a
+ * {@link VolatileCacheEntry} can only go from invalid state to valid, never
  * vice-versa.
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
@@ -10,8 +11,7 @@ package bdv.cache;
 public interface VolatileCacheValue
 {
 	/**
-	 * Check whether the value is currently valid. The value can only go from
-	 * invalid state to valid, never vice-versa.
+	 * Check whether this value is currently valid.
 	 *
 	 * @return whether the value is valid.
 	 */
