@@ -38,8 +38,6 @@ import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 
 public class VolatileGlobalCellCache implements Cache
 {
-	private final int maxNumLevels;
-
 	/**
 	 * Key for a cell identified by timepoint, setup, level, and index
 	 * (flattened spatial coordinate).
@@ -137,7 +135,6 @@ public class VolatileGlobalCellCache implements Cache
 	 */
 	public VolatileGlobalCellCache( final int maxNumLevels, final int numFetcherThreads )
 	{
-		this.maxNumLevels = maxNumLevels;
 		volatileCache = new LoadingVolatileCache( maxNumLevels, numFetcherThreads );
 	}
 
