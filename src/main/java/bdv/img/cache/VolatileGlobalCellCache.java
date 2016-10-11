@@ -311,6 +311,7 @@ public class VolatileGlobalCellCache implements Cache
 			this.loader = new CacheArrayLoaderWrapper<>( cacheArrayLoader );
 		}
 
+		@SuppressWarnings( "unchecked" )
 		@Override
 		public VolatileCell< A > get( final long index )
 		{
@@ -318,6 +319,7 @@ public class VolatileGlobalCellCache implements Cache
 			return ( VolatileCell< A > ) getGlobalIfCached( key, cacheHints );
 		}
 
+		@SuppressWarnings( "unchecked" )
 		@Override
 		public VolatileCell< A > load( final long index, final int[] cellDims, final long[] cellMin )
 		{
