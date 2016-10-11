@@ -28,7 +28,6 @@
  */
 package bdv.img.cache;
 
-import bdv.cache.VolatileCache;
 import bdv.cache.VolatileCacheEntry;
 import bdv.cache.VolatileCacheValue;
 import bdv.cache.VolatileCacheValueLoader;
@@ -79,7 +78,7 @@ public class LoadingVolatileCache implements Cache
 	 * Enqueue the {@link VolatileCacheEntry} if it hasn't been enqueued for this frame
 	 * already.
 	 */
-	private void enqueueEntry( final VolatileCacheEntry< ?, ? > entry, final int priority, final boolean enqueuToFront )
+	private void enqueueEntry( final Entry< ?, ? > entry, final int priority, final boolean enqueuToFront )
 	{
 		if ( entry.getEnqueueFrame() < currentQueueFrame )
 		{
@@ -93,7 +92,7 @@ public class LoadingVolatileCache implements Cache
 	 * there is enough {@link IoTimeBudget} left. Otherwise, enqueue the
 	 * {@link VolatileCacheEntry} if it hasn't been enqueued for this frame already.
 	 */
-	private void loadOrEnqueue( final VolatileCacheEntry< ?, ? > entry, final int priority, final boolean enqueuToFront )
+	private void loadOrEnqueue( final Entry< ?, ? > entry, final int priority, final boolean enqueuToFront )
 	{
 		final IoStatistics stats = cacheIoTiming.getThreadGroupIoStatistics();
 		final IoTimeBudget budget = stats.getIoTimeBudget();
@@ -122,7 +121,7 @@ public class LoadingVolatileCache implements Cache
 			enqueueEntry( entry, priority, enqueuToFront );
 	}
 
-	private void loadEntryWithCacheHints( final VolatileCacheEntry< ?, ? > entry, final CacheHints cacheHints )
+	private void loadEntryWithCacheHints( final Entry< ?, ? > entry, final CacheHints cacheHints )
 	{
 		switch ( cacheHints.getLoadingStrategy() )
 		{
@@ -177,7 +176,7 @@ public class LoadingVolatileCache implements Cache
 	 */
 	public < K, V extends VolatileCacheValue > V getGlobalIfCached( final K key, final CacheHints cacheHints )
 	{
-		final VolatileCacheEntry< K, V > entry = cache.get( key );
+		final Entry< K, V > entry = cache.get( key );
 		if ( entry != null )
 		{
 			loadEntryWithCacheHints( entry, cacheHints );
@@ -338,25 +337,21 @@ public class LoadingVolatileCache implements Cache
 			}
 		}
 
-		@Override
 		public K getKey()
 		{
 			return key;
 		}
 
-		@Override
 		public V getValue()
 		{
 			return value;
 		}
 
-		@Override
 		public long getEnqueueFrame()
 		{
 			return enqueueFrame;
 		}
 
-		@Override
 		public void setEnqueueFrame( final long f )
 		{
 			enqueueFrame = f;

@@ -28,7 +28,6 @@
  */
 package bdv.img.cache;
 
-import bdv.cache.VolatileCache;
 import bdv.cache.VolatileCacheValue;
 import bdv.cache.VolatileCacheValueLoader;
 import bdv.img.cache.CacheIoTiming.IoTimeBudget;
