@@ -92,7 +92,7 @@ public class CacheIoTiming
 
 	public static class IoStatistics
 	{
-		private final ConcurrentHashMap< Thread, StopWatch > perThreadStopWatches = new ConcurrentHashMap< Thread, StopWatch >();
+		private final ConcurrentHashMap< Thread, StopWatch > perThreadStopWatches = new ConcurrentHashMap<>();
 
 		private final StopWatch stopWatch;
 
@@ -170,7 +170,7 @@ public class CacheIoTiming
 		}
 	}
 
-	private final ConcurrentHashMap< ThreadGroup, IoStatistics > perThreadGroupIoStatistics = new ConcurrentHashMap< ThreadGroup, IoStatistics >();
+	private final ConcurrentHashMap< ThreadGroup, IoStatistics > perThreadGroupIoStatistics = new ConcurrentHashMap<>();
 
 	public IoStatistics getThreadGroupIoStatistics()
 	{

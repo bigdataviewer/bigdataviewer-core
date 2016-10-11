@@ -272,14 +272,14 @@ public class VolatileGlobalCellCache implements Cache
 		@Override
 		public VolatileCell< A > createEmptyValue( final Key key )
 		{
-			final VolatileCell< A > cell = new VolatileCell< A >( key.cellDims, key.cellMin, loader.emptyArray( key.getCellDims() ) );
+			final VolatileCell< A > cell = new VolatileCell<>( key.cellDims, key.cellMin, loader.emptyArray( key.getCellDims() ) );
 			return cell;
 		}
 
 		@Override
 		public VolatileCell< A > load( final Key key ) throws InterruptedException
 		{
-			final VolatileCell< A > cell = new VolatileCell< A >( key.cellDims, key.cellMin, loader.loadArray( key.timepoint, key.setup, key.level, key.cellDims, key.cellMin ) );
+			final VolatileCell< A > cell = new VolatileCell<>( key.cellDims, key.cellMin, loader.loadArray( key.timepoint, key.setup, key.level, key.cellDims, key.cellMin ) );
 			return cell;
 		}
 	}
@@ -309,7 +309,7 @@ public class VolatileGlobalCellCache implements Cache
 			this.setup = setup;
 			this.level = level;
 			this.cacheHints = cacheHints;
-			this.loader = new CacheArrayLoaderWrapper< A >( cacheArrayLoader );
+			this.loader = new CacheArrayLoaderWrapper<>( cacheArrayLoader );
 		}
 
 		@Override

@@ -86,9 +86,9 @@ public class BlockingFetchQueues< E >
 		queues = new ArrayDeque[ numPriorities ];
 		maxPriority = numPriorities - 1;
 		for ( int i = 0; i < numPriorities; ++i )
-			queues[ i ] = new ArrayDeque< E >();
+			queues[ i ] = new ArrayDeque<>();
 		this.prefetchCapacity = prefetchCapacity;
-		prefetch = new ArrayDeque< E >( prefetchCapacity );
+		prefetch = new ArrayDeque<>( prefetchCapacity );
 		lock = new ReentrantLock();
 		notEmpty = lock.newCondition();
 	}
