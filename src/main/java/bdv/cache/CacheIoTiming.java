@@ -183,14 +183,4 @@ public class CacheIoTiming
 		}
 		return statistics;
 	}
-
-	public long getThreadGroupIoNanoTime()
-	{
-		return getThreadGroupIoStatistics().getIoNanoTime();
-	}
-
-	public long getThreadGroupIoBytes()
-	{
-		return getThreadGroupIoStatistics().getIoBytes();
-	}
 }
