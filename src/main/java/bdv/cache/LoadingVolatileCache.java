@@ -72,7 +72,7 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 
 	private final CacheIoTiming cacheIoTiming = new CacheIoTiming();
 
-	private final int maxNumLevels;
+	private final int numPriorityLevels;
 
 	private final BlockingFetchQueues< K > queue;
 
@@ -85,16 +85,16 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 	 * priority levels and number of {@link FetcherThreads} for asynchronous
 	 * loading of cache entries.
 	 *
-	 * @param maxNumLevels
-	 *            the number of priority levels.
+	 * @param numPriorityLevels
+	 *            the number of priority levels (see {@link CacheHints}).
 	 * @param numFetcherThreads
 	 *            the number of threads to create for asynchronous loading of
 	 *            cache entries.
 	 */
-	public LoadingVolatileCache( final int maxNumLevels, final int numFetcherThreads )
+	public LoadingVolatileCache( final int numPriorityLevels, final int numFetcherThreads )
 	{
-		this.maxNumLevels = maxNumLevels;
-		queue = new BlockingFetchQueues<>( maxNumLevels );
+		this.numPriorityLevels = numPriorityLevels;
+		queue = new BlockingFetchQueues<>( numPriorityLevels );
 		fetchers = new FetcherThreads<>( queue, new EntryLoader(), numFetcherThreads );
 	}
 
@@ -207,7 +207,7 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 	{
 		final IoStatistics stats = cacheIoTiming.getThreadGroupIoStatistics();
 		if ( stats.getIoTimeBudget() == null )
-			stats.setIoTimeBudget( new IoTimeBudget( maxNumLevels ) );
+			stats.setIoTimeBudget( new IoTimeBudget( numPriorityLevels ) );
 		stats.getIoTimeBudget().reset( partialBudget );
 	}
 
