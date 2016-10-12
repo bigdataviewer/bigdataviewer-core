@@ -253,7 +253,7 @@ public class VolatileGlobalCellCache implements Cache
 	 */
 	public void clearCache()
 	{
-		volatileCache.clearCache();
+		volatileCache.invalidateAll();
 	}
 
 	/**

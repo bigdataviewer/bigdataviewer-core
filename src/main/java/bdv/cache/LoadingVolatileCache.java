@@ -243,10 +243,9 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 	 * Remove all references to loaded data as well as all enqueued requests
 	 * from the cache.
 	 */
-	public void clearCache()
+	public void invalidateAll()
 	{
-		// TODO: we should only clear out our own cache entries not the entire global cache!
-		cache.clearCache();
+		cache.invalidateAll();
 		prepareNextFrame();
 		// TODO: add a full clear to BlockingFetchQueues.
 		// (BlockingFetchQueues.clear() moves stuff to the prefetchQueue.)

@@ -16,7 +16,10 @@ public interface WeakSoftCache< K, V >
 	 */
 	public void cleanUp();
 
-	public void clearCache();
+	/**
+	 * Discards all entries in the cache.
+	 */
+	void invalidateAll();
 
 	public static < K, V > WeakSoftCache< K, V > getInstance()
 	{

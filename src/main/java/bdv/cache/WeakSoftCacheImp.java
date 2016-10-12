@@ -38,7 +38,7 @@ public class WeakSoftCacheImp< K, V > implements WeakSoftCache< K, V >
 	}
 
 	@Override
-	public void clearCache()
+	public void invalidateAll()
 	{
 		for ( final Reference< ? > ref : softReferenceCache.values() )
 			ref.clear();
