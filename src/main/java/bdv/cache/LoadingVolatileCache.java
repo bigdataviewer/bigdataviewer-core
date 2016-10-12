@@ -66,7 +66,7 @@ import bdv.img.cache.VolatileGlobalCellCache;
  */
 public final class LoadingVolatileCache< K, V extends VolatileCacheValue > implements Cache
 {
-	private final WeakSoftCache< K, Entry > cache = WeakSoftCache.getInstance();
+	private final WeakSoftCache< K, Entry > cache = WeakSoftCache.newInstance();
 
 	private final Object cacheLock = new Object();
 

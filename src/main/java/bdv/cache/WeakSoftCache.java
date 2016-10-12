@@ -21,7 +21,13 @@ public interface WeakSoftCache< K, V >
 	 */
 	void invalidateAll();
 
-	public static < K, V > WeakSoftCache< K, V > getInstance()
+	/**
+	 * Create a new {@link WeakSoftCache}.
+	 * <p>
+	 * This is here so we can swap out implementations easily and will probably
+	 * be replaced by a scijava service later.
+	 */
+	public static < K, V > WeakSoftCache< K, V > newInstance()
 	{
 		return new WeakSoftCacheImp<>();
 	}
