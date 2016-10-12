@@ -205,7 +205,7 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 	public void prepareNextFrame()
 	{
 		queue.clear();
-		cache.finalizeRemovedCacheEntries();
+		cache.cleanUp();
 		++currentQueueFrame;
 	}
 

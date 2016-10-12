@@ -9,7 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 //TODO: rename, refactor, document
 public class WeakSoftCacheImp< K, V > implements WeakSoftCache< K, V >
 {
-	private static final int MAX_PER_FRAME_FINALIZE_ENTRIES = 500; // TODO rename
+	public static final int MAX_PER_FRAME_FINALIZE_ENTRIES = 500;
 
 	private final ConcurrentHashMap< K, Reference< V > > softReferenceCache = new ConcurrentHashMap<>();
 
@@ -45,8 +45,13 @@ public class WeakSoftCacheImp< K, V > implements WeakSoftCache< K, V >
 		softReferenceCache.clear();
 	}
 
+	/**
+	 * Remove references from the cache that have been garbage-collected.
+	 * To avoid long run-times, per call to {@code cleanUp()}, at most
+	 * {@link #MAX_PER_FRAME_FINALIZE_ENTRIES} are processed.
+	 */
 	@Override
-	public void finalizeRemovedCacheEntries()
+	public void cleanUp()
 	{
 		synchronized ( softReferenceCache )
 		{

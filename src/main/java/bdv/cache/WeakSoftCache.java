@@ -9,7 +9,12 @@ public interface WeakSoftCache< K, V >
 
 	public V get( final Object key );
 
-	public void finalizeRemovedCacheEntries(); // TODO: rename to cleanUp() ?
+	/**
+	 * Performs pending maintenance operations needed by the cache. Exactly
+	 * which activities are performed is implementation-dependent. This should
+	 * be called periodically
+	 */
+	public void cleanUp();
 
 	public void clearCache();
 
