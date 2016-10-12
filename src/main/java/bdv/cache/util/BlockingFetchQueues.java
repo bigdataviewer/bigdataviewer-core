@@ -39,7 +39,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * {@link #put(Object, int, boolean)} with a priority and added to one of the
  * queues, accordingly. {@link #take()} returns an element from the highest
  * priority non-empty queue. Furthermore, there is a prefetch deque of bounded
- * size to provides elements when all the queues are exhausted. {@link #clear()}
+ * size to provides elements when all the queues are exhausted. {@link #clearToPrefetch()}
  * empties all queues, and moves the removed elements to the prefetch queue.
  * <p>
  * Locking is adapted from {@link ArrayBlockingQueue}.
@@ -175,11 +175,11 @@ public class BlockingFetchQueues< E >
 	}
 
 	/**
-	 * Atomically removes all of the elements from this queue. The queue will be
-	 * empty after this call returns. Removed elements are moved to the
+	 * Atomically removes all of the elements from this queue. All queues will
+	 * be empty after this call returns. Removed elements are moved to the
 	 * {@link #prefetch} deque.
 	 */
-	public void clear()
+	public void clearToPrefetch()
 	{
 		final ReentrantLock lock = this.lock;
 		lock.lock();
@@ -219,7 +219,29 @@ public class BlockingFetchQueues< E >
 			// update count: only prefetch is non-empty now
 			count = prefetch.size();
 
-//			System.out.println( "prefetch size after clear = " + prefetch.size() );
+//			System.out.println( "prefetch size after clearToPrefetch = " + prefetch.size() );
+		}
+		finally
+		{
+			lock.unlock();
+		}
+	}
+
+	/**
+	 * Atomically removes all of the elements from this queue. All queues, as
+	 * well as the {@link #prefetch} deque, will be empty after this call
+	 * returns.
+	 */
+	public void clear()
+	{
+		final ReentrantLock lock = this.lock;
+		lock.lock();
+		try
+		{
+			for ( final ArrayDeque< E > queue : queues )
+				queue.clear();
+			prefetch.clear();
+			count = 0;
 		}
 		finally
 		{

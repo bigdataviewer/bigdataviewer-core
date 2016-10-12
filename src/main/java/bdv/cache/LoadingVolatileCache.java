@@ -204,7 +204,7 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 	@Override
 	public void prepareNextFrame()
 	{
-		queue.clear();
+		queue.clearToPrefetch();
 		cache.cleanUp();
 		++currentQueueFrame;
 	}
@@ -245,10 +245,9 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 	 */
 	public void invalidateAll()
 	{
+		queue.clear();
 		cache.invalidateAll();
 		prepareNextFrame();
-		// TODO: add a full clear to BlockingFetchQueues.
-		// (BlockingFetchQueues.clear() moves stuff to the prefetchQueue.)
 	}
 
 	public FetcherThreads< K > getFetcherThreads()
