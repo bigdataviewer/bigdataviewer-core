@@ -1,10 +1,12 @@
 package bdv.cache;
 
 /**
- * Loader that can create {@link VolatileCacheValue}s for specified keys.
+ * Loader that can create values for specified keys.
  *
- * @param <K> key type.
- * @param <V> value type.
+ * @param <K>
+ *            key type.
+ * @param <V>
+ *            value type.
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */

@@ -129,32 +129,48 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 		final Entry entry = cache.get( key );
 		if ( entry != null )
 		{
-			loadEntryWithCacheHints( entry, cacheHints );
+			if ( !entry.getValue().isValid() )
+				loadEntryWithCacheHints( entry, cacheHints );
+
 			return entry.getValue();
 		}
 		return null;
 	}
 
 	/**
-	 * Create a new cell with the specified coordinates, if it isn't in the
-	 * cache already. Depending on the {@link LoadingStrategy}, do the
-	 * following:
+	 * Add a new key to the cache, unless it is already present. If the key is
+	 * new, after adding the key to the cache, it is immediately associated with
+	 * a value. However, that value may be initially
+	 * {@link VolatileCacheValue#isValid() invalid}. When the value is made
+	 * valid (loaded) depends on the provided {@link CacheHints}, specifically
+	 * the {@link CacheHints#getLoadingStrategy() loading strategy}. The
+	 * strategy may be to load the value immediately, to load it immediately if
+	 * there is enough IO budget left, to enqueue it for asynchronous loading,
+	 * or to not load it at all.
+	 * <p>
+	 * The {@code cacheLoader} will be used both to provide the initial
+	 * (invalid) value and to load the (valid) value.
+	 * <p>
+	 * Whether the key was already present in the cache or not, if the value is
+	 * not valid do the following, depending on the {@link LoadingStrategy}:
 	 * <ul>
-	 * <li>{@link LoadingStrategy#VOLATILE}: Enqueue the cell for asynchronous
-	 * loading by a fetcher thread.
-	 * <li>{@link LoadingStrategy#BLOCKING}: Load the cell data immediately.
-	 * <li>{@link LoadingStrategy#BUDGETED}: Load the cell data immediately if
-	 * there is enough {@link IoTimeBudget} left for the current thread group.
-	 * Otherwise enqueue for asynchronous loading.
+	 * <li>{@link LoadingStrategy#VOLATILE}: Enqueue the key for asynchronous
+	 * loading by a fetcher thread, if it has not been enqueued in the current
+	 * frame already.
+	 * <li>{@link LoadingStrategy#BLOCKING}: Load the data immediately.
+	 * <li>{@link LoadingStrategy#BUDGETED}: Load the data immediately if there
+	 * is enough {@link IoTimeBudget} left for the current thread group.
+	 * Otherwise enqueue for asynchronous loading, if it has not been enqueued
+	 * in the current frame already.
 	 * <li>{@link LoadingStrategy#DONTLOAD}: Do nothing.
 	 * </ul>
 	 *
 	 * @param key
-	 *            coordinate of the cell (comprising timepoint, setup, level,
-	 *            and flattened index).
+	 *            the key to query.
 	 * @param cacheHints
 	 *            {@link LoadingStrategy}, queue priority, and queue order.
-	 * @return a cell with the specified coordinates.
+	 * @param cacheLoader
+	 * @return the value with the specified key in the cache.
 	 */
 	public V createGlobal( final K key, final CacheHints cacheHints, final VolatileCacheValueLoader< ? super K, ? extends V > cacheLoader )
 	{
@@ -170,7 +186,9 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 			}
 		}
 
-		loadEntryWithCacheHints( entry, cacheHints );
+		if ( !entry.getValue().isValid() )
+			loadEntryWithCacheHints( entry, cacheHints );
+
 		return entry.getValue();
 	}
 
@@ -197,10 +215,10 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 	 *
 	 * @param partialBudget
 	 *            Initial budget (in nanoseconds) for priority levels 0 through
-	 *            <em>n</em>. The budget for level <em>i&gt;j</em> must always be
-	 *            smaller-equal the budget for level <em>j</em>. If <em>n</em>
-	 *            is smaller than the maximum number of mipmap levels, the
-	 *            remaining priority levels are filled up with budget[n].
+	 *            <em>n</em>. The budget for level <em>i &gt; j</em> must always
+	 *            be smaller-equal the budget for level <em>j</em>. If
+	 *            <em>n</em> is smaller than the number of priority levels, the
+	 *            remaining priority levels are filled up with @code{budget[n]}.
 	 */
 	@Override
 	public void initIoTimeBudget( final long[] partialBudget )
@@ -240,6 +258,36 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 	}
 
 	// ================ private methods =====================
+
+	/**
+	 * Load or enqueue the specified {@link Entry}, depending on the
+	 * {@link LoadingStrategy} given in {@code cacheHints}.
+	 */
+	private void loadEntryWithCacheHints( final Entry entry, final CacheHints cacheHints )
+	{
+		switch ( cacheHints.getLoadingStrategy() )
+		{
+		case VOLATILE:
+		default:
+			enqueueEntry( entry, cacheHints.getQueuePriority(), cacheHints.isEnqueuToFront() );
+			break;
+		case BLOCKING:
+			while ( true )
+				try
+				{
+					entry.loadIfNotValid();
+					break;
+				}
+				catch ( final InterruptedException e )
+				{}
+			break;
+		case BUDGETED:
+			loadOrEnqueue( entry, cacheHints.getQueuePriority(), cacheHints.isEnqueuToFront() );
+			break;
+		case DONTLOAD:
+			break;
+		}
+	}
 
 	/**
 	 * Enqueue the {@link Entry} if it hasn't been enqueued for this frame
@@ -288,43 +336,21 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 			enqueueEntry( entry, priority, enqueuToFront );
 	}
 
-	private void loadEntryWithCacheHints( final Entry entry, final CacheHints cacheHints )
-	{
-		switch ( cacheHints.getLoadingStrategy() )
-		{
-		case VOLATILE:
-		default:
-			enqueueEntry( entry, cacheHints.getQueuePriority(), cacheHints.isEnqueuToFront() );
-			break;
-		case BLOCKING:
-			while ( true )
-				try
-				{
-					entry.loadIfNotValid();
-					break;
-				}
-				catch ( final InterruptedException e )
-				{}
-			break;
-		case BUDGETED:
-			if ( !entry.getValue().isValid() )
-				loadOrEnqueue( entry, cacheHints.getQueuePriority(), cacheHints.isEnqueuToFront() );
-			break;
-		case DONTLOAD:
-			break;
-		}
-	}
-
 	/**
-	 * TODO
-	 * TODO
-	 * TODO
-	 * TODO
-	 * TODO
-	 * TODO
+	 * A {@link Loader} that is used by fetcher threads to load values. Loading
+	 * value associated with a specific key is achieved by trying to get the
+	 * corresponding {@link Entry} from the {@link WeakSoftCache}, and and
+	 * forwarding to {@link Entry#loadIfNotValid()}.
 	 */
 	final class EntryLoader implements Loader< K >
 	{
+		/**
+		 * If this key's data is not yet valid, then load it. After the method
+		 * returns, the data is guaranteed to be valid.
+		 *
+		 * @throws InterruptedException
+		 *             if the loading operation was interrupted.
+		 */
 		@Override
 		public void load( final K key ) throws InterruptedException
 		{
@@ -335,12 +361,18 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 	}
 
 	/**
-	 * The value type of the underlying {@link WeakSoftCache}.
-	 *
-	 * TODO
-	 * A cache entry associating a key to a value that maybe invalid (usually a {@link VolatileCacheValue}).
-	 * Using {@link #loadIfNotValid()}, the value can be made valid (or replaced by a valid value).
-	 * TODO
+	 * This is the value type of the underlying {@link WeakSoftCache}.
+	 * <p>
+	 * Besides the current value (of type {@code V extends}
+	 * {@link VolatileCacheValue}), the {@link Entry} keeps information related
+	 * to queuing and loading the value if it is invalid.
+	 * <p>
+	 * The {@code key} and a {@code loader} are both required to implement
+	 * {@link #loadIfNotValid}.
+	 * <p>
+	 * {@code enqueueFrame} keeps track of when the entry was last added to
+	 * fetch queue. This is used to prevent entries from being enqueued more
+	 * than once per frame.
 	 */
 	final class Entry
 	{
@@ -379,26 +411,17 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 		}
 
 		/**
-		 * TODO
-		 * TODO
-		 * TODO
-		 * TODO
-		 * TODO
-		 * TODO
-		 * If this entry's value is not currently valid, then load it. After the
+		 * If the {@code value} is not currently
+		 * {@link VolatileCacheValue#isValid() valid}, then load it. After the
 		 * method returns, the value is guaranteed to be valid.
 		 * <p>
-		 * This must be implemented in a thread-safe manner. Multiple threads are
-		 * allowed to call this method at the same time. The expected behaviour is
-		 * that the value is loaded only once and the result is visible on all
-		 * threads.
-		 * <p>
-		 * Note, that loading may be implemented either as
-		 * <ol>
-		 * <li>modify the existing value and change its state to valid, or</li>
-		 * <li>replace the existing value by a valid one (this is done in
-		 * BigDataViewer).</li>
-		 * </ol>
+		 * This must be implemented in a thread-safe manner. Multiple threads
+		 * are allowed to call this method at the same time. The intended
+		 * behaviour is that the value is loaded only once and the result is
+		 * visible on all threads.
+		 *
+		 * @throws InterruptedException
+		 *             if the loading operation was interrupted.
 		 */
 		public void loadIfNotValid() throws InterruptedException
 		{
