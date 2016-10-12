@@ -19,10 +19,6 @@ import bdv.cache.VolatileCacheValue;
  * <p>
  * TODO Add shutdown() method.
  *
- * <p>
- * TODO This uses {@code WeakSoftCache<?,? extends VolatileCacheEntry>} only for
- * {@code get()}, could be replaced with something less restrictive?
- *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 public class FetcherThreads< K >
