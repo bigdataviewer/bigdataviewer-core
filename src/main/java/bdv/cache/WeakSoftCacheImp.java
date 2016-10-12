@@ -6,7 +6,17 @@ import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.util.concurrent.ConcurrentHashMap;
 
-//TODO: rename, refactor, document
+/**
+ * Implementation of {@link WeakSoftCache} using {@link WeakReference}s and
+ * {@link SoftReference}s in a {@link ConcurrentHashMap}.
+ *
+ * @param <K>
+ *            key type
+ * @param <V>
+ *            value type
+ *
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+ */
 public class WeakSoftCacheImp< K, V > implements WeakSoftCache< K, V >
 {
 	public static final int MAX_PER_FRAME_FINALIZE_ENTRIES = 500;
