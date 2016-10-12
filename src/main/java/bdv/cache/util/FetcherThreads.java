@@ -52,6 +52,15 @@ public class FetcherThreads< K >
 
 	private final ArrayList< Fetcher< K > > fetchers;
 
+	/**
+	 * Create (and start) a set of fetcher threads.
+	 * <p>
+	 * Fetcher threads are named {@code Fetcher-0} ... {@code Fetcher-n}.
+	 *
+	 * @param queue the queue from which request keys are taken.
+	 * @param loader loads data associated with keys.
+	 * @param numFetcherThreads how many parallel fetcher threads to start.
+	 */
 	public FetcherThreads(
 			final BlockingFetchQueues< K > queue,
 			final Loader< K > loader,
@@ -61,9 +70,10 @@ public class FetcherThreads< K >
 	}
 
 	/**
+	 * Create (and start) a set of fetcher threads.
 	 *
-	 * @param cache the cache that contains entries to load.
 	 * @param queue the queue from which request keys are taken.
+	 * @param loader loads data associated with keys.
 	 * @param numFetcherThreads how many parallel fetcher threads to start.
 	 * @param threadIndexToName a function for naming fetcher threads (takes an index and returns a name).
 	 */

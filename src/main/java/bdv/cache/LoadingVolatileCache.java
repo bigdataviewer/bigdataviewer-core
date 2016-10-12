@@ -37,9 +37,30 @@ import bdv.img.cache.VolatileGlobalCellCache;
 
 
 /**
- * TODO rename
- * TODO revise javadoc
+ * A loading cache mapping keys to {@link VolatileCacheValue}s. The cache spawns
+ * a set of {@link FetcherThreads} that asynchronously load data for cached
+ * values.
+ * <p>
+ * Using {@link #createGlobal(Object, CacheHints, VolatileCacheValueLoader)}, a
+ * key is added to the cache, specifying a {@link VolatileCacheValueLoader} to
+ * provide the value for the key. After adding the key to the cache, it is
+ * immediately associated with a value. However, that value may be initially
+ * {@link VolatileCacheValue#isValid() invalid}. When the value is made valid
+ * (loaded) depends on the provided {@link CacheHints}, specifically the
+ * {@link CacheHints#getLoadingStrategy() loading strategy}. The strategy may be
+ * to load the value immediately, to load it immediately if there is enough IO
+ * budget left, to enqueue it for asynchronous loading, or to not load it at
+ * all.
+ * <p>
+ * Using {@link #getGlobalIfCached(Object, CacheHints)} a value for the
+ * specified key is returned if the key is in the cache (otherwise {@code null}
+ * is returned). Again, the returned value may be invalid, and when the value is
+ * loaded depends on the provided {@link CacheHints}.
  *
+ * @param <K>
+ *            the key type.
+ * @param <V>
+ *            the value type.
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
@@ -60,6 +81,10 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 	private volatile long currentQueueFrame = 0;
 
 	/**
+	 * Create a new {@link LoadingVolatileCache} with the specified number of
+	 * priority levels and number of {@link FetcherThreads} for asynchronous
+	 * loading of cache entries.
+	 *
 	 * @param maxNumLevels
 	 *            the number of priority levels.
 	 * @param numFetcherThreads
@@ -74,30 +99,30 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 	}
 
 	/**
-	 * Get a value if it is in the cache or {@code null}. Note, that a value
-	 * being in the cache only means that there is data, but not necessarily
-	 * that the data is {@link VolatileCacheValue#isValid() valid}.
+	 * Get the value for the specified key if the key is in the cache (otherwise
+	 * return {@code null}). Note, that a value being in the cache only means
+	 * that there is data, but not necessarily that the data is
+	 * {@link VolatileCacheValue#isValid() valid}.
 	 * <p>
-	 * If the value is not valid, do the following, depending on the
+	 * If the value is present but not valid, do the following, depending on the
 	 * {@link LoadingStrategy}:
 	 * <ul>
-	 * <li>{@link LoadingStrategy#VOLATILE}: Enqueue the entry for asynchronous
+	 * <li>{@link LoadingStrategy#VOLATILE}: Enqueue the key for asynchronous
 	 * loading by a fetcher thread, if it has not been enqueued in the current
 	 * frame already.
-	 * <li>{@link LoadingStrategy#BLOCKING}: Load the cell data immediately.
-	 * <li>{@link LoadingStrategy#BUDGETED}: Load the cell data immediately if
-	 * there is enough {@link IoTimeBudget} left for the current thread group.
+	 * <li>{@link LoadingStrategy#BLOCKING}: Load the data immediately.
+	 * <li>{@link LoadingStrategy#BUDGETED}: Load the data immediately if there
+	 * is enough {@link IoTimeBudget} left for the current thread group.
 	 * Otherwise enqueue for asynchronous loading, if it has not been enqueued
 	 * in the current frame already.
 	 * <li>{@link LoadingStrategy#DONTLOAD}: Do nothing.
 	 * </ul>
 	 *
 	 * @param key
-	 *            coordinate of the cell (comprising timepoint, setup, level,
-	 *            and flattened index).
+	 *            the key to query.
 	 * @param cacheHints
 	 *            {@link LoadingStrategy}, queue priority, and queue order.
-	 * @return a cell with the specified coordinates or null.
+	 * @return the value with the specified key in the cache or {@code null}.
 	 */
 	public V getGlobalIfCached( final K key, final CacheHints cacheHints )
 	{
