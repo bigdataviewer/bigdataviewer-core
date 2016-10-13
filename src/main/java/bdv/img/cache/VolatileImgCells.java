@@ -28,7 +28,11 @@
  */
 package bdv.img.cache;
 
+import bdv.cache.Cache;
 import bdv.cache.CacheHints;
+import bdv.cache.CacheIoTiming.IoTimeBudget;
+import bdv.cache.LoadingStrategy;
+import bdv.cache.util.BlockingFetchQueues;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
@@ -66,7 +70,39 @@ public class VolatileImgCells< A extends VolatileAccess > extends AbstractCells<
 
 		/**
 		 * Set {@link CacheHints hints} on how to handle cell requests for this
-		 * cache.
+		 * cache. The hints comprise {@link LoadingStrategy}, queue priority,
+		 * and queue order.
+		 * <p>
+		 * Whenever a cell is requested ({@link #get(long)},
+		 * {@link #load(long, int[], long[])}) its data may be
+		 * {@link VolatileCell#isValid() invalid}, meaning that the cell data
+		 * has not been loaded yet. In this case, the {@link LoadingStrategy}
+		 * determines when the data should be loaded:
+		 * <ul>
+		 * <li>{@link LoadingStrategy#VOLATILE}: Enqueue the cell for
+		 * asynchronous loading by a fetcher thread, if it has not been enqueued
+		 * in the current frame already.
+		 * <li>{@link LoadingStrategy#BLOCKING}: Load the cell data immediately.
+		 * <li>{@link LoadingStrategy#BUDGETED}: Load the cell data immediately
+		 * if there is enough {@link IoTimeBudget} left for the current thread
+		 * group. Otherwise enqueue for asynchronous loading, if it has not been
+		 * enqueued in the current frame already.
+		 * <li>{@link LoadingStrategy#DONTLOAD}: Do nothing.
+		 * </ul>
+		 * <p>
+		 * If a cell is enqueued, it is enqueued in the queue with the specified
+		 * {@link CacheHints#getQueuePriority() queue priority}. Priorities are
+		 * consecutive integers <em>0 ... n-1</em>, where 0 is the highest
+		 * priority. Requests with priority <em>i &lt j</em> will be handled
+		 * before requests with priority <em>j</em>.
+		 * <p>
+		 * Finally, the {@link CacheHints#isEnqueuToFront() queue order}
+		 * determines whether the cell is enqueued to the front or to the back
+		 * of the queue with the specified priority.
+		 * <p>
+		 * Note, that the queues are
+		 * {@link BlockingFetchQueues#clearToPrefetch() cleared} whenever a
+		 * {@link Cache#prepareNextFrame() new frame} is rendered.
 		 *
 		 * @param cacheHints
 		 *            describe handling of cell requests for this cache.
