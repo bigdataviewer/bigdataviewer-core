@@ -13,19 +13,17 @@ public interface VolatileCacheValueLoader< V extends VolatileCacheValue >
 {
 	/**
 	 * Create an empty, that is, invalid (see
-	 * {@link VolatileCacheValue#isValid()}) value for the given key.
+	 * {@link VolatileCacheValue#isValid()}) value.
 	 *
-	 * @param key
-	 * @return
+	 * @return an empty placeholder value
 	 */
 	public V createEmptyValue();
 
 	/**
-	 * Load the value for the given key. The returned value is
-	 * {@link VolatileCacheValue#isValid() valid}.
+	 * Load the value. The returned value is {@link VolatileCacheValue#isValid()
+	 * valid}.
 	 *
-	 * @param key
-	 * @return
+	 * @return the loaded value
 	 * @throws InterruptedException
 	 */
 	public V load() throws InterruptedException;

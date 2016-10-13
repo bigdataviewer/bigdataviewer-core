@@ -195,10 +195,12 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 	/**
 	 * Prepare the cache for providing data for the "next frame":
 	 * <ul>
-	 * <li>the contents of fetch queues is moved to the prefetch.
-	 * <li>some cleaning up of garbage collected entries ({@link VolatileCache#finalizeRemovedCacheEntries()}).
-	 * <li>the internal frame counter is incremented, which will enable
-	 * previously enqueued requests to be enqueued again for the new frame.
+	 * <li>Move pending cell request to the prefetch queue (
+	 * {@link BlockingFetchQueues#clearToPrefetch()}).
+	 * <li>Perform pending cache maintenance operations (
+	 * {@link WeakSoftCache#cleanUp()}).
+	 * <li>Increment the internal frame counter, which will enable previously
+	 * enqueued requests to be enqueued again for the new frame.
 	 * </ul>
 	 */
 	@Override

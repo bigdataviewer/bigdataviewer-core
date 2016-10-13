@@ -10,7 +10,7 @@ import bdv.cache.VolatileCacheValue;
  * A set of threads that load data. Each thread does the following in a loop:
  * <ol>
  * <li>Take the next {@code key} from a queue.</li>
- * <li>Try {@link Loader#load() loading} the key's data (retry until that
+ * <li>Try {@link Loader#load(Object) loading} the key's data (retry until that
  * succeeds).</li>
  * </ol>
  * {@link FetcherThreads} are employed by {@link LoadingVolatileCache} to

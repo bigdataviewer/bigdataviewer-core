@@ -93,7 +93,7 @@ public class VolatileImgCells< A extends VolatileAccess > extends AbstractCells<
 		 * If a cell is enqueued, it is enqueued in the queue with the specified
 		 * {@link CacheHints#getQueuePriority() queue priority}. Priorities are
 		 * consecutive integers <em>0 ... n-1</em>, where 0 is the highest
-		 * priority. Requests with priority <em>i &lt j</em> will be handled
+		 * priority. Requests with priority <em>i &lt; j</em> will be handled
 		 * before requests with priority <em>j</em>.
 		 * <p>
 		 * Finally, the {@link CacheHints#isEnqueuToFront() queue order}

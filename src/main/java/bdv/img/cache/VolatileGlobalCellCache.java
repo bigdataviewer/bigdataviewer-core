@@ -33,6 +33,8 @@ import bdv.cache.CacheHints;
 import bdv.cache.CacheIoTiming;
 import bdv.cache.LoadingVolatileCache;
 import bdv.cache.VolatileCacheValueLoader;
+import bdv.cache.WeakSoftCache;
+import bdv.cache.util.BlockingFetchQueues;
 import bdv.img.cache.VolatileImgCells.CellCache;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 
@@ -119,7 +121,7 @@ public class VolatileGlobalCellCache implements CacheControl
 	}
 
 	/**
-	 * pause all {@link Fetcher} threads for the specified number of milliseconds.
+	 * pause all fetcher threads for the specified number of milliseconds.
 	 */
 	public void pauseFetcherThreadsFor( final long ms )
 	{
@@ -129,10 +131,12 @@ public class VolatileGlobalCellCache implements CacheControl
 	/**
 	 * Prepare the cache for providing data for the "next frame":
 	 * <ul>
-	 * <li>the contents of fetch queues is moved to the prefetch.
-	 * <li>some cleaning up of garbage collected entries ({@link VolatileCache#finalizeRemovedCacheEntries()}).
-	 * <li>the internal frame counter is incremented, which will enable
-	 * previously enqueued requests to be enqueued again for the new frame.
+	 * <li>Move pending cell request to the prefetch queue (
+	 * {@link BlockingFetchQueues#clearToPrefetch()}).
+	 * <li>Perform pending cache maintenance operations (
+	 * {@link WeakSoftCache#cleanUp()}).
+	 * <li>Increment the internal frame counter, which will enable previously
+	 * enqueued requests to be enqueued again for the new frame.
 	 * </ul>
 	 */
 	@Override
