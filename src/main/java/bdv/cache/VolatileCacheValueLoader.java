@@ -1,16 +1,15 @@
 package bdv.cache;
 
 /**
- * Loader that can create values for specified keys.
+ * Loader that can load a specific value, and also create an create an
+ * {@link VolatileCacheValue#isValid() invalid} placeholder for it.
  *
- * @param <K>
- *            key type.
  * @param <V>
  *            value type.
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
-public interface VolatileCacheValueLoader< K, V extends VolatileCacheValue >
+public interface VolatileCacheValueLoader< V extends VolatileCacheValue >
 {
 	/**
 	 * Create an empty, that is, invalid (see
@@ -19,7 +18,7 @@ public interface VolatileCacheValueLoader< K, V extends VolatileCacheValue >
 	 * @param key
 	 * @return
 	 */
-	public V createEmptyValue( K key );
+	public V createEmptyValue();
 
 	/**
 	 * Load the value for the given key. The returned value is
@@ -29,5 +28,5 @@ public interface VolatileCacheValueLoader< K, V extends VolatileCacheValue >
 	 * @return
 	 * @throws InterruptedException
 	 */
-	public V load( K key ) throws InterruptedException;
+	public V load() throws InterruptedException;
 }

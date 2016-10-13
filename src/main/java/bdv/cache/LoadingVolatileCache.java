@@ -172,7 +172,7 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 	 * @param cacheLoader
 	 * @return the value with the specified key in the cache.
 	 */
-	public V createGlobal( final K key, final CacheHints cacheHints, final VolatileCacheValueLoader< ? super K, ? extends V > cacheLoader )
+	public V createGlobal( final K key, final CacheHints cacheHints, final VolatileCacheValueLoader< ? extends V > cacheLoader )
 	{
 		Entry entry = null;
 
@@ -378,7 +378,7 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 
 		private V value;
 
-		private final VolatileCacheValueLoader< ? super K, ? extends V > loader;
+		private final VolatileCacheValueLoader< ? extends V > loader;
 
 		/**
 		 * When was this entry last enqueued for loading (see
@@ -400,10 +400,10 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 		 *            for {@link VolatileCacheValueLoader#load(Object) loading}
 		 *            valid data given the key.
 		 */
-		public Entry( final K key, final VolatileCacheValueLoader< ? super K, ? extends V > loader )
+		public Entry( final K key, final VolatileCacheValueLoader< ? extends V > loader )
 		{
 			this.key = key;
-			this.value = loader.createEmptyValue( key );
+			this.value = loader.createEmptyValue();
 			this.loader = loader;
 			enqueueFrame = -1;
 		}
@@ -434,7 +434,7 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 				{
 					if ( !value.isValid() )
 					{
-						value = loader.load( key );
+						value = loader.load();
 						enqueueFrame = Long.MAX_VALUE;
 						cache.putSoft( key, this );
 						notifyAll();
