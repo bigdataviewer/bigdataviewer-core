@@ -39,8 +39,7 @@ import bdv.img.cache.VolatileGlobalCellCache;
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
-// TODO rename. CacheControl?
-public interface Cache
+public interface CacheControl
 {
 	/**
 	 * Prepare the cache for providing data for the "next frame".
@@ -65,7 +64,7 @@ public interface Cache
 	 */
 	public CacheIoTiming getCacheIoTiming();
 
-	public static class Dummy implements Cache
+	public static class Dummy implements CacheControl
 	{
 		private CacheIoTiming cacheIoTiming;
 

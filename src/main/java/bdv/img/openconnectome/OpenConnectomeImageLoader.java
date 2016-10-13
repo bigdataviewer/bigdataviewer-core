@@ -39,7 +39,7 @@ import com.google.gson.JsonSyntaxException;
 import bdv.AbstractViewerSetupImgLoader;
 import bdv.ViewerImgLoader;
 import bdv.ViewerSetupImgLoader;
-import bdv.cache.Cache;
+import bdv.cache.CacheControl;
 import bdv.cache.CacheHints;
 import bdv.cache.LoadingStrategy;
 import bdv.img.cache.CachedCellImg;
@@ -268,7 +268,7 @@ public class OpenConnectomeImageLoader extends AbstractViewerSetupImgLoader< Uns
 	}
 
 	@Override
-	public Cache getCache()
+	public CacheControl getCacheControl()
 	{
 		return cache;
 	}

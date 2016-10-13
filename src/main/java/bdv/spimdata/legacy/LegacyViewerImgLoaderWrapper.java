@@ -37,7 +37,7 @@ import net.imglib2.Volatile;
 import net.imglib2.realtransform.AffineTransform3D;
 import bdv.ViewerImgLoader;
 import bdv.ViewerSetupImgLoader;
-import bdv.cache.Cache;
+import bdv.cache.CacheControl;
 
 //@Deprecated
 public class LegacyViewerImgLoaderWrapper< T, V extends Volatile< T >, I extends LegacyViewerImgLoader< T, V > > implements ViewerImgLoader
@@ -65,7 +65,7 @@ public class LegacyViewerImgLoaderWrapper< T, V extends Volatile< T >, I extends
 	}
 
 	@Override
-	public Cache getCache()
+	public CacheControl getCacheControl()
 	{
 		return legacyImgLoader.getCache();
 	}

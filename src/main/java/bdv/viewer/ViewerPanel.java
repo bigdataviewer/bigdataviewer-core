@@ -62,7 +62,7 @@ import javax.swing.event.ChangeListener;
 
 import org.jdom2.Element;
 
-import bdv.cache.Cache;
+import bdv.cache.CacheControl;
 import bdv.util.Affine3DHelpers;
 import bdv.util.InvokeOnEDT;
 import bdv.util.Prefs;
@@ -221,9 +221,9 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 	protected final ViewerOptions.Values options;
 
-	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimePoints, final Cache cache )
+	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimePoints, final CacheControl cacheControl )
 	{
-		this( sources, numTimePoints, cache, ViewerOptions.options() );
+		this( sources, numTimePoints, cacheControl, ViewerOptions.options() );
 	}
 
 	/**
@@ -231,12 +231,12 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 *            the {@link SourceAndConverter sources} to display.
 	 * @param numTimepoints
 	 *            number of available timepoints.
-	 * @param cache
+	 * @param cacheControl
 	 *            to control IO budgeting and fetcher queue.
 	 * @param optional
 	 *            optional parameters. See {@link ViewerOptions#options()}.
 	 */
-	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimepoints, final Cache cache, final ViewerOptions optional )
+	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimepoints, final CacheControl cacheControl, final ViewerOptions optional )
 	{
 		super( new BorderLayout(), false );
 		options = optional.values;
@@ -275,7 +275,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 				renderingExecutorService,
 				options.isUseVolatileIfAvailable(),
 				options.getAccumulateProjectorFactory(),
-				cache );
+				cacheControl );
 
 		mouseCoordinates = new MouseCoordinateListener();
 		display.addHandler( mouseCoordinates );

@@ -52,7 +52,7 @@ import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.io.InputTriggerDescription;
 import org.scijava.ui.behaviour.io.yaml.YamlConfigIO;
 
-import bdv.cache.Cache;
+import bdv.cache.CacheControl;
 import bdv.export.ProgressWriter;
 import bdv.export.ProgressWriterConsole;
 import bdv.spimdata.SpimDataMinimal;
@@ -328,7 +328,7 @@ public class BigDataViewer
 			final ArrayList< SourceAndConverter< ? > > sources,
 			final AbstractSpimData< ? > spimData,
 			final int numTimepoints,
-			final Cache cache,
+			final CacheControl cache,
 			final String windowTitle,
 			final ProgressWriter progressWriter,
 			final ViewerOptions options )
@@ -479,7 +479,7 @@ public class BigDataViewer
 
 		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
 		final int numTimepoints = seq.getTimePoints().size();
-		final Cache cache = ( ( ViewerImgLoader ) seq.getImgLoader() ).getCache();
+		final CacheControl cache = ( ( ViewerImgLoader ) seq.getImgLoader() ).getCacheControl();
 
 		final BigDataViewer bdv = new BigDataViewer( converterSetups, sources, spimData, numTimepoints, cache, windowTitle, progressWriter, options );
 
@@ -503,7 +503,7 @@ public class BigDataViewer
 			final ArrayList< ConverterSetup > converterSetups,
 			final ArrayList< SourceAndConverter< ? > > sources,
 			final int numTimepoints,
-			final Cache cache,
+			final CacheControl cache,
 			final String windowTitle,
 			final ProgressWriter progressWriter,
 			final ViewerOptions options )
@@ -724,7 +724,7 @@ public class BigDataViewer
 		final ArrayList< SourceAndConverter< ? > > sources;
 		final AbstractSpimData< ? > spimData;
 		final int numTimepoints;
-		final Cache cache;
+		final CacheControl cache;
 		final String windowTitle;
 		final ProgressWriter progressWriter;
 		final ViewerOptions options;
@@ -747,7 +747,7 @@ public class BigDataViewer
 
 			final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
 			numTimepoints = seq.getTimePoints().size();
-			cache = ( ( ViewerImgLoader ) seq.getImgLoader() ).getCache();
+			cache = ( ( ViewerImgLoader ) seq.getImgLoader() ).getCacheControl();
 
 			WrapBasicImgLoader.removeWrapperIfPresent( spimData );
 		}

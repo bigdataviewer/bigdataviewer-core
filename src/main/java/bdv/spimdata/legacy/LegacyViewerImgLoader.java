@@ -28,7 +28,7 @@
  */
 package bdv.spimdata.legacy;
 
-import bdv.cache.Cache;
+import bdv.cache.CacheControl;
 import mpicbg.spim.data.legacy.LegacyBasicImgLoader;
 import mpicbg.spim.data.sequence.ViewId;
 import net.imglib2.RandomAccessibleInterval;
@@ -50,5 +50,5 @@ public interface LegacyViewerImgLoader< T, V extends Volatile< T > > extends Leg
 
 	public int numMipmapLevels( final int setupId );
 
-	public Cache getCache();
+	public CacheControl getCache();
 }

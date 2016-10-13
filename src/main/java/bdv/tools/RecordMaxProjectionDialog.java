@@ -70,7 +70,7 @@ import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
 import net.imglib2.util.LinAlgHelpers;
-import bdv.cache.Cache;
+import bdv.cache.CacheControl;
 import bdv.export.ProgressWriter;
 import bdv.util.Prefs;
 import bdv.viewer.ViewerPanel;
@@ -361,7 +361,7 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 		final MyTarget target = new MyTarget();
 		final MultiResolutionRenderer renderer = new MultiResolutionRenderer(
 				target, new PainterThread( null ), new double[] { 1 }, 0, false, 1, null, false,
-				viewer.getOptionValues().getAccumulateProjectorFactory(), new Cache.Dummy() );
+				viewer.getOptionValues().getAccumulateProjectorFactory(), new CacheControl.Dummy() );
 		progressWriter.setProgress( 0 );
 		for ( int timepoint = minTimepointIndex; timepoint <= maxTimepointIndex; ++timepoint )
 		{

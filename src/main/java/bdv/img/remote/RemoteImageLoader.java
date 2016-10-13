@@ -141,7 +141,7 @@ public class RemoteImageLoader implements ViewerImgLoader
 	}
 
 	@Override
-	public VolatileGlobalCellCache getCache()
+	public VolatileGlobalCellCache getCacheControl()
 	{
 		tryopen();
 		return cache;

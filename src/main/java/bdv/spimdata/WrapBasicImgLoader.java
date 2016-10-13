@@ -41,7 +41,7 @@ import net.imglib2.Volatile;
 import net.imglib2.realtransform.AffineTransform3D;
 import bdv.ViewerImgLoader;
 import bdv.ViewerSetupImgLoader;
-import bdv.cache.Cache;
+import bdv.cache.CacheControl;
 
 public class WrapBasicImgLoader implements ViewerImgLoader
 {
@@ -95,7 +95,7 @@ public class WrapBasicImgLoader implements ViewerImgLoader
 
 	private static final AffineTransform3D[] mipmapTransforms = new AffineTransform3D[] { new AffineTransform3D() };
 
-	private static final Cache cache = new Cache.Dummy();
+	private static final CacheControl cache = new CacheControl.Dummy();
 
 	private final HashMap< Integer, WrapSetupImgLoader< ?, ? > > wrapped;
 
@@ -117,7 +117,7 @@ public class WrapBasicImgLoader implements ViewerImgLoader
 	}
 
 	@Override
-	public Cache getCache()
+	public CacheControl getCacheControl()
 	{
 		return cache;
 	}

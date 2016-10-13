@@ -28,7 +28,7 @@
  */
 package bdv;
 
-import bdv.cache.Cache;
+import bdv.cache.CacheControl;
 import mpicbg.spim.data.generic.sequence.BasicMultiResolutionImgLoader;
 
 public interface ViewerImgLoader extends BasicMultiResolutionImgLoader
@@ -36,5 +36,5 @@ public interface ViewerImgLoader extends BasicMultiResolutionImgLoader
 	@Override
 	public ViewerSetupImgLoader< ?, ? > getSetupImgLoader( final int setupId );
 
-	public Cache getCache();
+	public CacheControl getCacheControl();
 }

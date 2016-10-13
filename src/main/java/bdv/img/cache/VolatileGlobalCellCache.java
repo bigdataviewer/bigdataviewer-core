@@ -28,7 +28,7 @@
  */
 package bdv.img.cache;
 
-import bdv.cache.Cache;
+import bdv.cache.CacheControl;
 import bdv.cache.CacheHints;
 import bdv.cache.CacheIoTiming;
 import bdv.cache.LoadingVolatileCache;
@@ -36,7 +36,7 @@ import bdv.cache.VolatileCacheValueLoader;
 import bdv.img.cache.VolatileImgCells.CellCache;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 
-public class VolatileGlobalCellCache implements Cache
+public class VolatileGlobalCellCache implements CacheControl
 {
 	/**
 	 * Key for a cell identified by timepoint, setup, level, and index

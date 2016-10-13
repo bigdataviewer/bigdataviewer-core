@@ -48,7 +48,7 @@ import net.imglib2.type.volatiles.VolatileUnsignedShortType;
 import net.imglib2.util.Fraction;
 import bdv.AbstractViewerSetupImgLoader;
 import bdv.ViewerImgLoader;
-import bdv.cache.Cache;
+import bdv.cache.CacheControl;
 import bdv.cache.CacheHints;
 import bdv.cache.LoadingStrategy;
 import bdv.img.cache.CacheArrayLoader;
@@ -162,7 +162,7 @@ public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T
 	}
 
 	@Override
-	public Cache getCache()
+	public CacheControl getCacheControl()
 	{
 		open();
 		return cache;

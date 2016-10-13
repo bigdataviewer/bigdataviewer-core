@@ -54,7 +54,7 @@ import net.imglib2.ui.Renderer;
 import net.imglib2.ui.SimpleInterruptibleProjector;
 import net.imglib2.ui.TransformListener;
 import net.imglib2.ui.util.GuiUtil;
-import bdv.cache.Cache;
+import bdv.cache.CacheControl;
 import bdv.cache.LoadingStrategy;
 import bdv.img.cache.CachedCellImg;
 import bdv.viewer.Interpolation;
@@ -118,7 +118,7 @@ import bdv.viewer.state.ViewerState;
  * image for display. The number of passes required until all data is valid
  * might differ between visible sources.
  * <p>
- * Rendering timing is tied to a {@link Cache} control for IO budgeting, etc.
+ * Rendering timing is tied to a {@link CacheControl} control for IO budgeting, etc.
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
@@ -255,7 +255,7 @@ public class MultiResolutionRenderer
 	/**
 	 * Controls IO budgeting and fetcher queue.
 	 */
-	protected final Cache cache;
+	protected final CacheControl cacheControl;
 
 	/**
 	 * Whether volatile versions of sources should be used if available.
@@ -264,7 +264,7 @@ public class MultiResolutionRenderer
 
 	/**
 	 * Whether a repaint was {@link #requestRepaint() requested}. This will
-	 * cause {@link Cache#prepareNextFrame()}.
+	 * cause {@link CacheControl#prepareNextFrame()}.
 	 */
 	protected boolean newFrameRequest;
 
@@ -309,7 +309,7 @@ public class MultiResolutionRenderer
 	 *            available.
 	 * @param accumulateProjectorFactory
 	 *            can be used to customize how sources are combined.
-	 * @param cache
+	 * @param cacheControl
 	 *            the cache controls IO budgeting and fetcher queue.
 	 */
 	public MultiResolutionRenderer(
@@ -322,7 +322,7 @@ public class MultiResolutionRenderer
 			final ExecutorService renderingExecutorService,
 			final boolean useVolatileIfAvailable,
 			final AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory,
-			final Cache cache )
+			final CacheControl cacheControl )
 	{
 		this.display = wrapTransformAwareRenderTarget( display );
 		this.painterThread = painterThread;
@@ -347,7 +347,7 @@ public class MultiResolutionRenderer
 		this.renderingExecutorService = renderingExecutorService;
 		this.useVolatileIfAvailable = useVolatileIfAvailable;
 		this.accumulateProjectorFactory = accumulateProjectorFactory;
-		this.cache = cache;
+		this.cacheControl = cacheControl;
 		newFrameRequest = false;
 		previousTimepoint = -1;
 	}
@@ -475,7 +475,7 @@ public class MultiResolutionRenderer
 
 			clearQueue = newFrameRequest;
 			if ( clearQueue )
-				cache.prepareNextFrame();
+				cacheControl.prepareNextFrame();
 			createProjector = newFrameRequest || resized || ( requestedScreenScaleIndex != currentScreenScaleIndex );
 			newFrameRequest = false;
 
@@ -613,7 +613,7 @@ public class MultiResolutionRenderer
 			final int screenScaleIndex,
 			final ARGBScreenImage screenImage )
 	{
-		cache.initIoTimeBudget( null ); // clear time budget such that prefetching doesn't wait for loading blocks.
+		cacheControl.initIoTimeBudget( null ); // clear time budget such that prefetching doesn't wait for loading blocks.
 		final List< SourceState< ? > > sourceStates = viewerState.getSources();
 		final List< Integer > visibleSourceIndices = viewerState.getVisibleSourceIndices();
 		VolatileProjector projector;
@@ -646,7 +646,7 @@ public class MultiResolutionRenderer
 		}
 		previousTimepoint = viewerState.getCurrentTimepoint();
 		viewerState.getViewerTransform( currentProjectorTransform );
-		cache.initIoTimeBudget( iobudget );
+		cacheControl.initIoTimeBudget( iobudget );
 		return projector;
 	}
 
@@ -750,7 +750,7 @@ public class MultiResolutionRenderer
 			if ( hints.renewHintsAfterPaintingOnce() )
 				newFrameRequest = true;
 		}
-		return new VolatileHierarchyProjector< T, ARGBType >( renderList, source.getConverter(), screenImage, maskArray, numRenderingThreads, renderingExecutorService, cache.getCacheIoTiming() );
+		return new VolatileHierarchyProjector< T, ARGBType >( renderList, source.getConverter(), screenImage, maskArray, numRenderingThreads, renderingExecutorService, cacheControl.getCacheIoTiming() );
 	}
 
 	private static < T > RandomAccessible< T > getTransformedSource( final ViewerState viewerState, final Source< T > source, final AffineTransform3D screenScaleTransform, final int mipmapIndex )

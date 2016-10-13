@@ -28,7 +28,7 @@
  */
 package bdv.img.cache;
 
-import bdv.cache.Cache;
+import bdv.cache.CacheControl;
 import bdv.cache.CacheHints;
 import bdv.cache.CacheIoTiming.IoTimeBudget;
 import bdv.cache.LoadingStrategy;
@@ -102,7 +102,7 @@ public class VolatileImgCells< A extends VolatileAccess > extends AbstractCells<
 		 * <p>
 		 * Note, that the queues are
 		 * {@link BlockingFetchQueues#clearToPrefetch() cleared} whenever a
-		 * {@link Cache#prepareNextFrame() new frame} is rendered.
+		 * {@link CacheControl#prepareNextFrame() new frame} is rendered.
 		 *
 		 * @param cacheHints
 		 *            describe handling of cell requests for this cache.

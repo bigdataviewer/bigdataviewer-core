@@ -227,7 +227,7 @@ public class CatmaidImageLoader extends AbstractViewerSetupImgLoader< ARGBType, 
 	}
 
 	@Override
-	public VolatileGlobalCellCache getCache()
+	public VolatileGlobalCellCache getCacheControl()
 	{
 		return cache;
 	}
