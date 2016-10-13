@@ -273,7 +273,7 @@ public class VolatileGlobalCellCache implements Cache
 		public VolatileCell< A > get( final long index )
 		{
 			final Key key = new Key( timepoint, setup, level, index );
-			return ( VolatileCell< A > ) volatileCache.getGlobalIfCached( key, cacheHints );
+			return ( VolatileCell< A > ) volatileCache.getIfPresent( key, cacheHints );
 		}
 
 		@SuppressWarnings( "unchecked" )
@@ -282,7 +282,7 @@ public class VolatileGlobalCellCache implements Cache
 		{
 			final Key key = new Key( timepoint, setup, level, index );
 			final VolatileCellLoader< A > loader = new VolatileCellLoader<>( cacheArrayLoader, timepoint, setup, level, cellDims, cellMin );
-			return ( VolatileCell< A > ) volatileCache.createGlobal( key, cacheHints, loader );
+			return ( VolatileCell< A > ) volatileCache.get( key, cacheHints, loader );
 		}
 
 		@Override

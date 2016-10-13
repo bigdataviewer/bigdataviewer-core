@@ -41,10 +41,10 @@ import bdv.img.cache.VolatileGlobalCellCache;
  * a set of {@link FetcherThreads} that asynchronously load data for cached
  * values.
  * <p>
- * Using {@link #createGlobal(Object, CacheHints, VolatileCacheValueLoader)}, a
- * key is added to the cache, specifying a {@link VolatileCacheValueLoader} to
- * provide the value for the key. After adding the key to the cache, it is
- * immediately associated with a value. However, that value may be initially
+ * Using {@link #get(Object, CacheHints, VolatileCacheValueLoader)}, a key is
+ * added to the cache, specifying a {@link VolatileCacheValueLoader} to provide
+ * the value for the key. After adding the key to the cache, it is immediately
+ * associated with a value. However, that value may be initially
  * {@link VolatileCacheValue#isValid() invalid}. When the value is made valid
  * (loaded) depends on the provided {@link CacheHints}, specifically the
  * {@link CacheHints#getLoadingStrategy() loading strategy}. The strategy may be
@@ -52,10 +52,10 @@ import bdv.img.cache.VolatileGlobalCellCache;
  * budget left, to enqueue it for asynchronous loading, or to not load it at
  * all.
  * <p>
- * Using {@link #getGlobalIfCached(Object, CacheHints)} a value for the
- * specified key is returned if the key is in the cache (otherwise {@code null}
- * is returned). Again, the returned value may be invalid, and when the value is
- * loaded depends on the provided {@link CacheHints}.
+ * Using {@link #getIfPresent(Object, CacheHints)} a value for the specified key
+ * is returned if the key is in the cache (otherwise {@code null} is returned).
+ * Again, the returned value may be invalid, and when the value is loaded
+ * depends on the provided {@link CacheHints}.
  *
  * @param <K>
  *            the key type.
@@ -124,7 +124,7 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 	 *            {@link LoadingStrategy}, queue priority, and queue order.
 	 * @return the value with the specified key in the cache or {@code null}.
 	 */
-	public V getGlobalIfCached( final K key, final CacheHints cacheHints )
+	public V getIfPresent( final K key, final CacheHints cacheHints )
 	{
 		final Entry entry = cache.get( key );
 		if ( entry != null )
@@ -172,7 +172,7 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 	 * @param cacheLoader
 	 * @return the value with the specified key in the cache.
 	 */
-	public V createGlobal( final K key, final CacheHints cacheHints, final VolatileCacheValueLoader< ? extends V > cacheLoader )
+	public V get( final K key, final CacheHints cacheHints, final VolatileCacheValueLoader< ? extends V > cacheLoader )
 	{
 		Entry entry = null;
 
