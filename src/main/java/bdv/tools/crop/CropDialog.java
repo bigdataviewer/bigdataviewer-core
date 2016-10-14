@@ -288,7 +288,6 @@ public class CropDialog extends JDialog
 	 * @param hdf5File
 	 * @param xmlFile
 	 */
-	@SuppressWarnings( "unchecked" )
 	public void cropGlobal( final int minTimepointIndex, final int maxTimepointIndex, final File hdf5File, final File xmlFile ) throws SpimDataException
 	{
 		final AffineTransform3D globalToCropTransform = new AffineTransform3D();
