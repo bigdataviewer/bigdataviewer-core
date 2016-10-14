@@ -85,7 +85,7 @@ public class RemoteImageLoader implements ViewerImgLoader
 	public RemoteImageLoader( final String baseUrl, final boolean doOpen ) throws IOException
 	{
 		this.baseUrl = baseUrl;
-		setupImgLoaders = new HashMap< Integer, SetupImgLoader >();
+		setupImgLoaders = new HashMap<>();
 		if ( doOpen )
 			open();
 	}
@@ -172,7 +172,7 @@ public class RemoteImageLoader implements ViewerImgLoader
 	protected < T > RandomAccessibleInterval< T > getMissingDataImage( final ViewLevelId id, final T constant )
 	{
 		final long[] d = getDimsAndExistence( id ).getDimensions();
-		return Views.interval( new ConstantRandomAccessible< T >( constant, 3 ), new FinalInterval( d ) );
+		return Views.interval( new ConstantRandomAccessible<>( constant, 3 ), new FinalInterval( d ) );
 	}
 
 	public DimsAndExistence getDimsAndExistence( final ViewLevelId id )
@@ -213,9 +213,9 @@ public class RemoteImageLoader implements ViewerImgLoader
 
 		final int priority = mipmapInfo.getMaxLevel() - level;
 		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
-		final CellCache< VolatileShortArray > c = cache.new VolatileCellCache< VolatileShortArray >( timepointId, setupId, level, cacheHints, shortLoader );
-		final VolatileImgCells< VolatileShortArray > cells = new VolatileImgCells< VolatileShortArray >( c, new Fraction(), dimensions, cellDimensions );
-		final CachedCellImg< T, VolatileShortArray > img = new CachedCellImg< T, VolatileShortArray >( cells );
+		final CellCache< VolatileShortArray > c = cache.new VolatileCellCache<>( timepointId, setupId, level, cacheHints, shortLoader );
+		final VolatileImgCells< VolatileShortArray > cells = new VolatileImgCells<>( c, new Fraction(), dimensions, cellDimensions );
+		final CachedCellImg< T, VolatileShortArray > img = new CachedCellImg<>( cells );
 		return img;
 	}
 

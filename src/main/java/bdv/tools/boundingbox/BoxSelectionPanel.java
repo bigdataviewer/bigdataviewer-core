@@ -61,7 +61,7 @@ public class BoxSelectionPanel extends JPanel
 		final int n = selection.numDimensions();
 		this.selection = selection;
 		ranges = new BoundedInterval[ n ];
-		listeners = new ArrayList< SelectionUpdateListener >();
+		listeners = new ArrayList<>();
 
 		setLayout( new BoxLayout( this, BoxLayout.PAGE_AXIS ) );
 		for ( int d = 0; d < n; ++d )

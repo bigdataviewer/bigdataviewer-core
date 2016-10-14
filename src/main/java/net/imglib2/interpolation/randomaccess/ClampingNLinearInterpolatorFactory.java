@@ -69,7 +69,7 @@ public class ClampingNLinearInterpolatorFactory< T extends NumericType< T > > im
 		}
 		else
 			// fall back to (non-clamping) NLinearInterpolator
-			return new NLinearInterpolator< T >( randomAccessible );
+			return new NLinearInterpolator<>( randomAccessible );
 	}
 
 	/**

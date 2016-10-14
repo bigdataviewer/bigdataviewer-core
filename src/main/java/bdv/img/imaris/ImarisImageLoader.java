@@ -94,7 +94,7 @@ public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T
 		this.mipmapInfo = mipmapInfo;
 		this.mipmapDimensions = mipmapDimensions;
 		this.sequenceDescription = sequenceDescription;
-		this.setupImgLoaders = new HashMap< Integer, SetupImgLoader >();
+		this.setupImgLoaders = new HashMap<>();
 	}
 
 	private boolean isOpen = false;
@@ -155,9 +155,9 @@ public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T
 
 		final int priority = mipmapInfo.getMaxLevel() - level;
 		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
-		final CellCache< A > c = cache.new VolatileCellCache< A >( timepointId, setupId, level, cacheHints, loader );
-		final VolatileImgCells< A > cells = new VolatileImgCells< A >( c, new Fraction(), dimensions, cellDimensions );
-		final CachedCellImg< T, A > img = new CachedCellImg< T, A >( cells );
+		final CellCache< A > c = cache.new VolatileCellCache<>( timepointId, setupId, level, cacheHints, loader );
+		final VolatileImgCells< A > cells = new VolatileImgCells<>( c, new Fraction(), dimensions, cellDimensions );
+		final CachedCellImg< T, A > img = new CachedCellImg<>( cells );
 		return img;
 	}
 

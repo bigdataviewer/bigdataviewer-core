@@ -142,11 +142,11 @@ public class WriteSequenceToHdf5
 			final int numCellCreatorThreads,
 			final ProgressWriter progressWriter )
 	{
-		final HashMap< Integer, Integer > timepointIdSequenceToPartition = new HashMap< Integer, Integer >();
+		final HashMap< Integer, Integer > timepointIdSequenceToPartition = new HashMap<>();
 		for ( final TimePoint timepoint : seq.getTimePoints().getTimePointsOrdered() )
 			timepointIdSequenceToPartition.put( timepoint.getId(), timepoint.getId() );
 
-		final HashMap< Integer, Integer > setupIdSequenceToPartition = new HashMap< Integer, Integer >();
+		final HashMap< Integer, Integer > setupIdSequenceToPartition = new HashMap<>();
 		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
 			setupIdSequenceToPartition.put( setup.getId(), setup.getId() );
 
@@ -204,7 +204,7 @@ public class WriteSequenceToHdf5
 			final int numCellCreatorThreads,
 			final ProgressWriter progressWriter )
 	{
-		final HashMap< Integer, ExportMipmapInfo > perSetupMipmapInfo = new HashMap< Integer, ExportMipmapInfo >();
+		final HashMap< Integer, ExportMipmapInfo > perSetupMipmapInfo = new HashMap<>();
 		final ExportMipmapInfo mipmapInfo = new ExportMipmapInfo( resolutions, subdivisions );
 		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
 			perSetupMipmapInfo.put( setup.getId(), mipmapInfo );
@@ -370,10 +370,10 @@ public class WriteSequenceToHdf5
 		progressWriter.setProgress( 0 );
 
 		// get sequence timepointIds for the timepoints contained in this partition
-		final ArrayList< Integer > timepointIdsSequence = new ArrayList< Integer >( partition.getTimepointIdSequenceToPartition().keySet() );
+		final ArrayList< Integer > timepointIdsSequence = new ArrayList<>( partition.getTimepointIdSequenceToPartition().keySet() );
 		Collections.sort( timepointIdsSequence );
 		final int numTimepoints = timepointIdsSequence.size();
-		final ArrayList< Integer > setupIdsSequence = new ArrayList< Integer >( partition.getSetupIdSequenceToPartition().keySet() );
+		final ArrayList< Integer > setupIdsSequence = new ArrayList<>( partition.getSetupIdSequenceToPartition().keySet() );
 		Collections.sort( setupIdsSequence );
 
 		// get the BasicImgLoader that supplies the images
@@ -423,7 +423,7 @@ public class WriteSequenceToHdf5
 			progressWriter.out().printf( "proccessing timepoint %d / %d\n", ++timepointIndex, numTimepoints );
 
 			// assemble the viewsetups that are present in this timepoint
-			final ArrayList< Integer > setupsTimePoint = new ArrayList< Integer >();
+			final ArrayList< Integer > setupsTimePoint = new ArrayList<>();
 
 			for ( final int setupIdSequence : setupIdsSequence )
 				if ( seq.getViewDescriptions().get( new ViewId( timepointIdSequence, setupIdSequence ) ).isPresent() )
@@ -535,9 +535,9 @@ public class WriteSequenceToHdf5
 
 		static LoopBackImageLoader create( final IHDF5Reader existingHdf5Reader, final int timepointIdPartition, final int setupIdPartition, final Dimensions imageDimensions )
 		{
-			final HashMap< Integer, TimePoint > timepoints = new HashMap< Integer, TimePoint >();
+			final HashMap< Integer, TimePoint > timepoints = new HashMap<>();
 			timepoints.put( timepointIdPartition, new TimePoint( timepointIdPartition ) );
-			final HashMap< Integer, BasicViewSetup > setups = new HashMap< Integer, BasicViewSetup >();
+			final HashMap< Integer, BasicViewSetup > setups = new HashMap<>();
 			setups.put( setupIdPartition, new BasicViewSetup( setupIdPartition, null, imageDimensions, null ) );
 			final SequenceDescriptionMinimal seq = new SequenceDescriptionMinimal( new TimePoints( timepoints ), setups, null, null );
 			return new LoopBackImageLoader( existingHdf5Reader, seq );

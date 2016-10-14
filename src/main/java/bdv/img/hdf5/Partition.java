@@ -75,8 +75,8 @@ public class Partition
 	public Partition( final String path, final int[] timepointIdsSequence, final int[] setupIdsSequence, final int[] timepointIdsPartition, final int[] setupIdsPartition )
 	{
 		this.path = path;
-		timepointIdSequenceToPartition = new HashMap< Integer, Integer >();
-		setupIdSequenceToPartition = new HashMap< Integer, Integer >();
+		timepointIdSequenceToPartition = new HashMap<>();
+		setupIdSequenceToPartition = new HashMap<>();
 
 		for ( int i = 0; i < timepointIdsSequence.length; ++i )
 			timepointIdSequenceToPartition.put( timepointIdsSequence[ i ], timepointIdsPartition[ i ] );
@@ -174,17 +174,17 @@ public class Partition
 		final int numTimepoints = timepoints.size();
 		final int numSetups = setups.size();
 
-		final ArrayList< Integer > timepointSplits = new ArrayList< Integer >();
+		final ArrayList< Integer > timepointSplits = new ArrayList<>();
 		timepointSplits.add( 0 );
 		if ( timepointsPerPartition > 0 )
 			for ( int t = timepointsPerPartition; t < numTimepoints; t += timepointsPerPartition )
 				timepointSplits.add( t );
 		timepointSplits.add( numTimepoints );
 
-		final ArrayList< HashMap< Integer, Integer > > timepointMaps = new ArrayList< HashMap< Integer, Integer > >();
+		final ArrayList< HashMap< Integer, Integer > > timepointMaps = new ArrayList<>();
 		for ( int i = 0; i < timepointSplits.size() - 1; ++i )
 		{
-			final HashMap< Integer, Integer > timepointIdSequenceToPartition = new HashMap< Integer, Integer >();
+			final HashMap< Integer, Integer > timepointIdSequenceToPartition = new HashMap<>();
 			for ( int t = timepointSplits.get( i ); t < timepointSplits.get( i + 1 ); ++t )
 			{
 				final int id = timepoints.get( t ).getId();
@@ -193,17 +193,17 @@ public class Partition
 			timepointMaps.add( timepointIdSequenceToPartition );
 		}
 
-		final ArrayList< Integer > setupSplits = new ArrayList< Integer >();
+		final ArrayList< Integer > setupSplits = new ArrayList<>();
 		setupSplits.add( 0 );
 		if ( setupsPerPartition > 0 )
 			for ( int s = setupsPerPartition; s < numSetups; s += setupsPerPartition )
 				setupSplits.add( s );
 		setupSplits.add( numSetups );
 
-		final ArrayList< HashMap< Integer, Integer > > setupMaps = new ArrayList< HashMap< Integer, Integer > >();
+		final ArrayList< HashMap< Integer, Integer > > setupMaps = new ArrayList<>();
 		for ( int i = 0; i < setupSplits.size() - 1; ++i )
 		{
-			final HashMap< Integer, Integer > setupIdSequenceToPartition = new HashMap< Integer, Integer >();
+			final HashMap< Integer, Integer > setupIdSequenceToPartition = new HashMap<>();
 			for ( int s = setupSplits.get( i ); s < setupSplits.get( i + 1 ); ++s )
 			{
 				final int id = setups.get( s ).getId();
@@ -212,7 +212,7 @@ public class Partition
 			setupMaps.add( setupIdSequenceToPartition );
 		}
 
-		final ArrayList< Partition > partitions = new ArrayList< Partition >();
+		final ArrayList< Partition > partitions = new ArrayList<>();
 		for ( int t = 0; t < timepointMaps.size(); ++t )
 		{
 			for ( int s = 0; s < setupMaps.size(); ++s )

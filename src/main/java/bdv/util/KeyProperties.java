@@ -52,12 +52,12 @@ public final class KeyProperties implements KeyStrokeAdder.Factory
 
 	private final HashMap< String, HashSet< KeyStroke > > actionToKeysMap;
 
-	private static final HashSet< KeyStroke > emptySet = new HashSet< KeyStroke >();
+	private static final HashSet< KeyStroke > emptySet = new HashSet<>();
 
 	public KeyProperties( final Properties properties )
 	{
-		allKeys = new HashSet< KeyStroke >();
-		actionToKeysMap = new HashMap< String, HashSet<KeyStroke> >();
+		allKeys = new HashSet<>();
+		actionToKeysMap = new HashMap<>();
 		if ( properties != null )
 		{
 			final Set< Entry< Object, Object > > entries = properties.entrySet();
@@ -74,7 +74,7 @@ public final class KeyProperties implements KeyStrokeAdder.Factory
 					HashSet< KeyStroke > keys = actionToKeysMap.get( action );
 					if ( keys == null )
 					{
-						keys = new HashSet< KeyStroke >();
+						keys = new HashSet<>();
 						actionToKeysMap.put( action, keys );
 					}
 					keys.add( key );
@@ -183,7 +183,7 @@ public final class KeyProperties implements KeyStrokeAdder.Factory
 		for ( final Entry< String, HashSet< KeyStroke > > actionToKeysEntry : actionToKeysMap.entrySet() )
 		{
 			final String action = actionToKeysEntry.getKey();
-			final ArrayList< String > triggers = new ArrayList< >();
+			final ArrayList< String > triggers = new ArrayList<>();
 			for ( final KeyStroke key : actionToKeysEntry.getValue() )
 				triggers.add( key.toString() );
 			descriptions.add( new InputTriggerDescription( triggers.toArray( new String[ 0 ] ), action, "bdv" ) );

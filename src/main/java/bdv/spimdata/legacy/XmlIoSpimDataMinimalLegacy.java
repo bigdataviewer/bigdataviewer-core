@@ -98,7 +98,7 @@ public class XmlIoSpimDataMinimalLegacy
 		{
 			final int first = Integer.parseInt( timepoints.getChildText( "first" ) );
 			final int last = Integer.parseInt( timepoints.getChildText( "last" ) );
-			final ArrayList< TimePoint > tps = new ArrayList< TimePoint >();
+			final ArrayList< TimePoint > tps = new ArrayList<>();
 			for ( int i = first, t = 0; i <= last; ++i, ++t )
 				tps.add( new TimePoint( t ) );
 			return new TimePoints( tps );
@@ -111,10 +111,10 @@ public class XmlIoSpimDataMinimalLegacy
 
 	private static Map< Integer, ? extends BasicViewSetup > createViewSetupsFromXml( final Element sequenceDescription )
 	{
-		final HashMap< Integer, BasicViewSetup > setups = new HashMap< Integer, BasicViewSetup >();
-		final HashMap< Integer, Angle > angles = new HashMap< Integer, Angle >();
-		final HashMap< Integer, Channel > channels = new HashMap< Integer, Channel >();
-		final HashMap< Integer, Illumination > illuminations = new HashMap< Integer, Illumination >();
+		final HashMap< Integer, BasicViewSetup > setups = new HashMap<>();
+		final HashMap< Integer, Angle > angles = new HashMap<>();
+		final HashMap< Integer, Channel > channels = new HashMap<>();
+		final HashMap< Integer, Illumination > illuminations = new HashMap<>();
 
 		for ( final Element elem : sequenceDescription.getChildren( "ViewSetup" ) )
 		{
@@ -167,7 +167,7 @@ public class XmlIoSpimDataMinimalLegacy
 		if ( classn.equals( "viewer.hdf5.Hdf5ImageLoader" ) || classn.equals( "bdv.img.hdf5.Hdf5ImageLoader" ) )
 		{
 			final String path = loadPath( elem, "hdf5", basePath ).toString();
-			final ArrayList< Partition > partitions = new ArrayList< Partition >();
+			final ArrayList< Partition > partitions = new ArrayList<>();
 			for ( final Element p : elem.getChildren( "partition" ) )
 				partitions.add( partitionFromXml( p, basePath ) );
 			return new Hdf5ImageLoader( new File( path ), partitions, sequenceDescription );
@@ -226,14 +226,14 @@ public class XmlIoSpimDataMinimalLegacy
 		final int setupStart = Integer.parseInt( elem.getChildText( "setupStart" ) );
 		final int setupLength = Integer.parseInt( elem.getChildText( "setupLength" ) );
 
-		final HashMap< Integer, Integer > timepointIdSequenceToPartition = new HashMap< Integer, Integer >();
+		final HashMap< Integer, Integer > timepointIdSequenceToPartition = new HashMap<>();
 		for ( int tPartition = timepointStart; tPartition < timepointStart + timepointLength; ++tPartition )
 		{
 			final int tSequence = tPartition + timepointOffset;
 			timepointIdSequenceToPartition.put( tSequence, tPartition );
 		}
 
-		final HashMap< Integer, Integer > setupIdSequenceToPartition = new HashMap< Integer, Integer >();
+		final HashMap< Integer, Integer > setupIdSequenceToPartition = new HashMap<>();
 		for ( int sPartition = setupStart; sPartition < setupStart + setupLength; ++sPartition )
 		{
 			final int sSequence = sPartition + setupOffset;
@@ -246,7 +246,7 @@ public class XmlIoSpimDataMinimalLegacy
 	protected static ViewRegistrations createRegistrationsFromXml( final Element sequenceDescriptionElem )
 	{
 		final Element elem = sequenceDescriptionElem.getChild( "ViewRegistrations" );
-		final ArrayList< ViewRegistration > regs = new ArrayList< ViewRegistration >();
+		final ArrayList< ViewRegistration > regs = new ArrayList<>();
 		for ( final Element vr : elem.getChildren( "ViewRegistration" ) )
 		{
 			final int timepointId = XmlHelpers.getInt( vr, "timepoint" );

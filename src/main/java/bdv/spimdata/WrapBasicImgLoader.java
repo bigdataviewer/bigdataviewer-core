@@ -105,7 +105,7 @@ public class WrapBasicImgLoader implements ViewerImgLoader
 	public WrapBasicImgLoader( final BasicImgLoader source, final Map< Integer, ? > setupsMap )
 	{
 		this.source = source;
-		wrapped = new HashMap< Integer, WrapSetupImgLoader< ?, ? > >();
+		wrapped = new HashMap<>();
 		for ( final int setupId : setupsMap.keySet() )
 			wrapped.put( setupId, new WrapSetupImgLoader( source.getSetupImgLoader( setupId ) ) );
 	}

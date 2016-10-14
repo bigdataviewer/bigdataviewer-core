@@ -53,10 +53,10 @@ public class XmlIoSpimDataMinimal extends XmlIoAbstractSpimData< SequenceDescrip
 	public XmlIoSpimDataMinimal()
 	{
 		super( SpimDataMinimal.class,
-				new XmlIoAbstractSequenceDescription< BasicViewSetup, SequenceDescriptionMinimal >(
+				new XmlIoAbstractSequenceDescription<>(
 						SequenceDescriptionMinimal.class,
 						new XmlIoTimePoints(),
-						new XmlIoBasicViewSetups< BasicViewSetup >( BasicViewSetup.class ),
+						new XmlIoBasicViewSetups<>( BasicViewSetup.class ),
 						new XmlIoMissingViews() ),
 				new XmlIoViewRegistrations() );
 	}

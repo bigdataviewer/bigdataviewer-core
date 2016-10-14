@@ -77,8 +77,8 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 		bindings = inputActionBindings;
 		frozenTransform = new AffineTransform3D();
 		liveTransform = new AffineTransform3D();
-		sourcesToModify = new ArrayList< TransformedSource< ? > >();
-		sourcesToFix = new ArrayList< TransformedSource< ? > >();
+		sourcesToModify = new ArrayList<>();
+		sourcesToFix = new ArrayList<>();
 
 		final KeyStroke abortKey = KeyStroke.getKeyStroke( KeyEvent.VK_ESCAPE, 0 );
 		final Action abortAction = new AbstractAction( "abort manual transformation" )
@@ -148,7 +148,7 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 		if ( !active )
 		{ // Enter manual edit mode
 			final ViewerState state = viewer.getState();
-			final List< Integer > indices = new ArrayList< Integer >();
+			final List< Integer > indices = new ArrayList<>();
 			switch ( state.getDisplayMode() )
 			{
 			case FUSED:

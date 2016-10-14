@@ -161,9 +161,9 @@ public class VisibilityAndGroupingDialog extends JDialog
 		{
 			super( new GridBagLayout() );
 			this.visibility = visibilityAndGrouping;
-			currentButtons = new ArrayList< JRadioButton >();
-			fusedBoxes = new ArrayList< JCheckBox >();
-			visibleBoxes = new ArrayList< JCheckBox >();
+			currentButtons = new ArrayList<>();
+			fusedBoxes = new ArrayList<>();
+			visibleBoxes = new ArrayList<>();
 			recreateContent();
 			update();
 		}
@@ -397,10 +397,10 @@ public class VisibilityAndGroupingDialog extends JDialog
 		{
 			super( new GridBagLayout() );
 			this.visibility = visibilityAndGrouping;
-			nameFields = new ArrayList< JTextField >();
-			currentButtons = new ArrayList< JRadioButton >();
-			fusedBoxes = new ArrayList< JCheckBox >();
-			assignBoxes = new ArrayList< JCheckBox >();
+			nameFields = new ArrayList<>();
+			currentButtons = new ArrayList<>();
+			fusedBoxes = new ArrayList<>();
+			assignBoxes = new ArrayList<>();
 			numSources = visibilityAndGrouping.numSources();
 			numGroups = visibilityAndGrouping.numGroups();
 			recreateContent();

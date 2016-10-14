@@ -67,7 +67,7 @@ public class Downsample
 		}
 		final RandomAccessibleInterval< T > requiredInput = Views.interval( input, new FinalInterval( minRequiredInput, maxRequiredInput ) );
 
-		final RectangleShape.NeighborhoodsAccessible< T > neighborhoods = new RectangleShape.NeighborhoodsAccessible< T >( requiredInput, spanInterval, f );
+		final RectangleShape.NeighborhoodsAccessible< T > neighborhoods = new RectangleShape.NeighborhoodsAccessible<>( requiredInput, spanInterval, f );
 		final RandomAccess< Neighborhood< T > > block = neighborhoods.randomAccess();
 
 		long size = 1;

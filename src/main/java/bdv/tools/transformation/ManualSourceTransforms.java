@@ -39,7 +39,7 @@ public class ManualSourceTransforms
 
 	public ManualSourceTransforms( final List< AffineTransform3D > transforms )
 	{
-		this.transforms = new ArrayList< AffineTransform3D >( transforms );
+		this.transforms = new ArrayList<>( transforms );
 	}
 
 	public List< AffineTransform3D > getTransforms()

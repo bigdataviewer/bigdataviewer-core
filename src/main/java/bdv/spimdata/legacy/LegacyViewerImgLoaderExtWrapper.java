@@ -55,7 +55,7 @@ public class LegacyViewerImgLoaderExtWrapper< T, V extends Volatile< T >, I exte
 	public LegacyViewerImgLoaderExtWrapper( final I legacyImgLoader )
 	{
 		this.legacyImgLoader = legacyImgLoader;
-		setupImgLoaders = new HashMap< Integer, SetupImgLoaderWrapper >();
+		setupImgLoaders = new HashMap<>();
 	}
 
 	@Override

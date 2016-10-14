@@ -69,11 +69,11 @@ public class Imaris
 			throw new RuntimeException( e );
 		}
 
-		final HashMap< Integer, double[] > levelToResolution = new HashMap< Integer, double[] >();
-		final HashMap< Integer, int[] > levelToSubdivision = new HashMap< Integer, int[] >();
-		final HashMap< Integer, long[] > levelToDimensions = new HashMap< Integer, long[] >();
-		final HashMap< Integer, TimePoint > timepointMap = new HashMap< Integer, TimePoint >();
-		final HashMap< Integer, BasicViewSetup > setupMap = new HashMap< Integer, BasicViewSetup >();
+		final HashMap< Integer, double[] > levelToResolution = new HashMap<>();
+		final HashMap< Integer, int[] > levelToSubdivision = new HashMap<>();
+		final HashMap< Integer, long[] > levelToDimensions = new HashMap<>();
+		final HashMap< Integer, TimePoint > timepointMap = new HashMap<>();
+		final HashMap< Integer, BasicViewSetup > setupMap = new HashMap<>();
 
 		String path = "DataSetInfo/Image";
 		final double[] extMax = new double[] {
@@ -235,7 +235,7 @@ public class Imaris
 		seq.setImgLoader( imgLoader );
 
 		final File basePath = new File( fn ).getParentFile();
-		final HashMap< ViewId, ViewRegistration > registrations = new HashMap< ViewId, ViewRegistration >();
+		final HashMap< ViewId, ViewRegistration > registrations = new HashMap<>();
 		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
 		{
 			final int setupId = setup.getId();

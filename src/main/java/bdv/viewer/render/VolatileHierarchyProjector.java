@@ -65,7 +65,7 @@ import net.imglib2.view.Views;
  */
 public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends NumericType< B > > extends AbstractInterruptibleProjector< A, B > implements VolatileProjector
 {
-	protected final ArrayList< RandomAccessible< A > > sources = new ArrayList< RandomAccessible< A > >();
+	protected final ArrayList< RandomAccessible< A > > sources = new ArrayList<>();
 
 	private final byte[] maskArray;
 
@@ -270,7 +270,7 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 			valid = true;
 			numInvalidPixels.set( 0 );
 
-			final ArrayList< Callable< Void > > tasks = new ArrayList< Callable< Void > >( numTasks );
+			final ArrayList< Callable< Void > > tasks = new ArrayList<>( numTasks );
 			for ( int taskNum = 0; taskNum < numTasks; ++taskNum )
 			{
 				final int myOffset = width * ( int ) ( taskNum * taskHeight );

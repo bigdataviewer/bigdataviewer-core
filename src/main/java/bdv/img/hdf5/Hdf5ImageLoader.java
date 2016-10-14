@@ -155,10 +155,10 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 	{
 		this.existingHdf5Reader = existingHdf5Reader;
 		this.hdf5File = hdf5File;
-		setupImgLoaders = new HashMap< Integer, SetupImgLoader >();
-		cachedDimsAndExistence = new HashMap< ViewLevelId, DimsAndExistence >();
+		setupImgLoaders = new HashMap<>();
+		cachedDimsAndExistence = new HashMap<>();
 		this.sequenceDescription = sequenceDescription;
-		partitions = new ArrayList< Partition >();
+		partitions = new ArrayList<>();
 		if ( hdf5Partitions != null )
 			partitions.addAll( hdf5Partitions );
 		if ( doOpen )
@@ -433,7 +433,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 				final int[] cellDimensions = computeCellDimensions(
 						dimsLong,
 						mipmapInfo.getSubdivisions()[ level ] );
-				final CellImgFactory< UnsignedShortType > factory = new CellImgFactory< UnsignedShortType >( cellDimensions );
+				final CellImgFactory< UnsignedShortType > factory = new CellImgFactory<>( cellDimensions );
 				@SuppressWarnings( "unchecked" )
 				final CellImg< UnsignedShortType, ShortArray, DefaultCell< ShortArray > > cellImg =
 					( CellImg< UnsignedShortType, ShortArray, DefaultCell< ShortArray > > ) factory.create( dimsLong, new UnsignedShortType() );
@@ -541,9 +541,9 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 
 			final int priority = mipmapInfo.getMaxLevel() - level;
 			final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
-			final CellCache< VolatileShortArray > c = cache.new VolatileCellCache< VolatileShortArray >( timepointId, setupId, level, cacheHints, shortLoader );
-			final VolatileImgCells< VolatileShortArray > cells = new VolatileImgCells< VolatileShortArray >( c, new Fraction(), dimensions, cellDimensions );
-			final CachedCellImg< T, VolatileShortArray > img = new CachedCellImg< T, VolatileShortArray >( cells );
+			final CellCache< VolatileShortArray > c = cache.new VolatileCellCache<>( timepointId, setupId, level, cacheHints, shortLoader );
+			final VolatileImgCells< VolatileShortArray > cells = new VolatileImgCells<>( c, new Fraction(), dimensions, cellDimensions );
+			final CachedCellImg< T, VolatileShortArray > img = new CachedCellImg<>( cells );
 			return img;
 		}
 
@@ -556,7 +556,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 		protected < T > RandomAccessibleInterval< T > getMissingDataImage( final ViewLevelId id, final T constant )
 		{
 			final long[] d = getDimsAndExistence( id ).getDimensions();
-			return Views.interval( new ConstantRandomAccessible< T >( constant, 3 ), new FinalInterval( d ) );
+			return Views.interval( new ConstantRandomAccessible<>( constant, 3 ), new FinalInterval( d ) );
 		}
 
 		@Override
@@ -577,7 +577,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 			final ImgFactory< FloatType > imgFactory;
 			if ( Intervals.numElements( ushortImg ) <= Integer.MAX_VALUE )
 			{
-				imgFactory = new ArrayImgFactory< FloatType >();
+				imgFactory = new ArrayImgFactory<>();
 			}
 			else
 			{
@@ -586,14 +586,14 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 				final int[] cellDimensions = computeCellDimensions(
 						dimsLong,
 						mipmapInfo.getSubdivisions()[ level ] );
-				imgFactory = new CellImgFactory< FloatType >( cellDimensions );
+				imgFactory = new CellImgFactory<>( cellDimensions );
 			}
 			final Img< FloatType > floatImg = imgFactory.create( ushortImg, f );
 
 			// set up executor service
 			final int numProcessors = Runtime.getRuntime().availableProcessors();
 			final ExecutorService taskExecutor = Executors.newFixedThreadPool( numProcessors );
-			final ArrayList< Callable< Void > > tasks = new ArrayList< Callable< Void > >();
+			final ArrayList< Callable< Void > > tasks = new ArrayList<>();
 
 			// set up all tasks
 			final int numPortions = numProcessors * 2;

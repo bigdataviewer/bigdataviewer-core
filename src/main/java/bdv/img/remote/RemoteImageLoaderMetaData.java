@@ -75,8 +75,8 @@ public class RemoteImageLoaderMetaData
 
 	public RemoteImageLoaderMetaData( final Hdf5ImageLoader imgLoader, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
 	{
-		perSetupMipmapInfo = new HashMap< Integer, MipmapInfo >();
-		dimsAndExistence = new HashMap< ViewLevelId, DimsAndExistence >();
+		perSetupMipmapInfo = new HashMap<>();
+		dimsAndExistence = new HashMap<>();
 
 		final List< TimePoint > timepoints = sequenceDescription.getTimePoints().getTimePointsOrdered();
 		maxNumTimepoints = timepoints.get( timepoints.size() - 1 ).getId() + 1;
@@ -114,7 +114,7 @@ public class RemoteImageLoaderMetaData
 	 */
 	protected HashMap< ViewLevelId, int[] > createCellsDimensions()
 	{
-		final HashMap< ViewLevelId, int[] > cellsDimensions = new HashMap< ViewLevelId, int[] >();
+		final HashMap< ViewLevelId, int[] > cellsDimensions = new HashMap<>();
 		for ( final Entry< ViewLevelId, DimsAndExistence > entry : dimsAndExistence.entrySet() )
 		{
 			final ViewLevelId id = entry.getKey();

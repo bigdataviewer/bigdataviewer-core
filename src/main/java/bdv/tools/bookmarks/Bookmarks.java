@@ -42,7 +42,7 @@ public class Bookmarks
 
 	public Bookmarks()
 	{
-		bookmarks = new HashMap< String, AffineTransform3D >();
+		bookmarks = new HashMap<>();
 	}
 
 	public Element toXml()

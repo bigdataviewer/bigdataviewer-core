@@ -64,13 +64,13 @@ public class ChangeAttributeId
 		final List< ? extends BasicViewSetup > setups = spimData.getSequenceDescription().getViewSetupsOrdered();
 
 		// attributes occurring in spimData (to make sure every attribute is processed only once)
-		final Set< Entity > occurringAttributes = new HashSet< Entity >();
+		final Set< Entity > occurringAttributes = new HashSet<>();
 
 		// maps attribute name to set of attributes of that name that should be changed
-		final Map< String, Set< Entity > > attributeNameToChangeSet = new HashMap< String, Set< Entity > >();
+		final Map< String, Set< Entity > > attributeNameToChangeSet = new HashMap<>();
 
 		// maps attribute name to map from old attribute id to new attribute id
-		final Map< String, Map< Integer, Integer > > attributeNameToIdMap = new HashMap< String, Map< Integer, Integer > >();
+		final Map< String, Map< Integer, Integer > > attributeNameToIdMap = new HashMap<>();
 
 		for ( final BasicViewSetup setup : setups )
 		{
@@ -83,7 +83,7 @@ public class ChangeAttributeId
 					Set< Integer > used = idsInUse.get( attributeName );
 					if ( used == null )
 					{
-						used = new HashSet< Integer >();
+						used = new HashSet<>();
 						idsInUse.put( attributeName, used );
 					}
 
@@ -96,14 +96,14 @@ public class ChangeAttributeId
 						Set< Entity > changeSet = attributeNameToChangeSet.get( attributeName );
 						if ( changeSet == null )
 						{
-							changeSet = new HashSet< Entity >();
+							changeSet = new HashSet<>();
 							attributeNameToChangeSet.put( attributeName, changeSet );
 						}
 
 						Map< Integer, Integer > idMap = attributeNameToIdMap.get( attributeName );
 						if ( idMap == null )
 						{
-							idMap = new HashMap< Integer, Integer >();
+							idMap = new HashMap<>();
 							attributeNameToIdMap.put( attributeName, idMap );
 						}
 
@@ -143,7 +143,7 @@ public class ChangeAttributeId
 	{
 		final List< ? extends BasicViewSetup > setups = spimData.getSequenceDescription().getViewSetupsOrdered();
 
-		final Set< Entity > attributes = new HashSet< Entity >();
+		final Set< Entity > attributes = new HashSet<>();
 		for ( final BasicViewSetup setup : setups )
 		{
 			final Entity attribute = setup.getAttributes().get( attributeName );

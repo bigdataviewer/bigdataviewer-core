@@ -63,7 +63,7 @@ public class MergeTools
 	 */
 	public static SpimDataMinimal merge( final File basePath, final SpimDataMinimal... spimDatas )
 	{
-		return merge( basePath, new ArrayList< SpimDataMinimal >( Arrays.asList( spimDatas ) ) );
+		return merge( basePath, new ArrayList<>( Arrays.asList( spimDatas ) ) );
 	}
 
 	/**
@@ -85,7 +85,7 @@ public class MergeTools
 		/*
 		 * aggregate timepoints.
 		 */
-		final HashMap< Integer, TimePoint > aggregateTpIds = new HashMap< Integer, TimePoint >();
+		final HashMap< Integer, TimePoint > aggregateTpIds = new HashMap<>();
 		for ( final SpimDataMinimal spimData : spimDatas )
 		{
 			final SequenceDescriptionMinimal seq = spimData.getSequenceDescription();
@@ -104,7 +104,7 @@ public class MergeTools
 		/*
 		 * aggregate setups.
 		 */
-		final HashMap< Integer, BasicViewSetup > aggregateSetups = new HashMap< Integer, BasicViewSetup >();
+		final HashMap< Integer, BasicViewSetup > aggregateSetups = new HashMap<>();
 		for ( final SpimDataMinimal spimData : spimDatas )
 		{
 			final SequenceDescriptionMinimal seq = spimData.getSequenceDescription();
@@ -115,7 +115,7 @@ public class MergeTools
 		/*
 		 * aggregate registrations and determine missing views.
 		 */
-		final HashMap< ViewId, ViewRegistration > aggregateRegs = new HashMap< ViewId, ViewRegistration >();
+		final HashMap< ViewId, ViewRegistration > aggregateRegs = new HashMap<>();
 		for ( final SpimDataMinimal spimData : spimDatas )
 		{
 			for ( final ViewRegistration reg : spimData.getViewRegistrations().getViewRegistrationsOrdered() )
@@ -125,7 +125,7 @@ public class MergeTools
 							"Error: setup " + reg.getViewSetupId() + " timepoint " + reg.getTimePointId() + " present in multiple sequences!" );
 			}
 		}
-		final ArrayList< ViewId > aggregateMissingViewIds = new ArrayList< ViewId >();
+		final ArrayList< ViewId > aggregateMissingViewIds = new ArrayList<>();
 		for ( final BasicViewSetup setup : aggregateSetups.values() )
 		{
 			for ( final TimePoint timepoint : aggregateTimepoints.getTimePointsOrdered() )

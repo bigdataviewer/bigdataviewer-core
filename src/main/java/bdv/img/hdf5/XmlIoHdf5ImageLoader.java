@@ -64,7 +64,7 @@ public class XmlIoHdf5ImageLoader implements XmlIoBasicImgLoader< Hdf5ImageLoade
 	public Hdf5ImageLoader fromXml( final Element elem, final File basePath, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
 	{
 		final String path = loadPath( elem, "hdf5", basePath ).toString();
-		final ArrayList< Partition > partitions = new ArrayList< Partition >();
+		final ArrayList< Partition > partitions = new ArrayList<>();
 		for ( final Element p : elem.getChildren( "partition" ) )
 			partitions.add( partitionFromXml( p, basePath ) );
 		return new Hdf5ImageLoader( new File( path ), partitions, sequenceDescription );
@@ -94,7 +94,7 @@ public class XmlIoHdf5ImageLoader implements XmlIoBasicImgLoader< Hdf5ImageLoade
 
 	private static Pair< int[], int[] > idMapToVectors( final Map< Integer, Integer > setupIdMap )
 	{
-		final ArrayList< Integer > seqIdList = new ArrayList< Integer >( setupIdMap.keySet() );
+		final ArrayList< Integer > seqIdList = new ArrayList<>( setupIdMap.keySet() );
 		Collections.sort( seqIdList );
 		final int[] seqIds = new int[ seqIdList.size() ];
 		final int[] parIds = new int[ seqIdList.size() ];
@@ -105,7 +105,7 @@ public class XmlIoHdf5ImageLoader implements XmlIoBasicImgLoader< Hdf5ImageLoade
 			parIds[ i ] = setupIdMap.get( seqId );
 			++i;
 		}
-		return new ValuePair< int[], int[] >( seqIds, parIds );
+		return new ValuePair<>( seqIds, parIds );
 	}
 
 	private Partition partitionFromXml( final Element elem, final File basePath )

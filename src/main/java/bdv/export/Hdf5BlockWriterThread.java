@@ -53,7 +53,7 @@ class Hdf5BlockWriterThread extends Thread implements IHDF5Access
 	public Hdf5BlockWriterThread( final IHDF5Access hdf5Access, final int queueLength )
 	{
 		this.hdf5Access = hdf5Access;
-		queue = new ArrayBlockingQueue< Hdf5BlockWriterThread.Hdf5Task >( queueLength );
+		queue = new ArrayBlockingQueue<>( queueLength );
 		shutdown = false;
 		setName( "HDF5BlockWriterQueue" );
 	}
@@ -72,7 +72,7 @@ class Hdf5BlockWriterThread extends Thread implements IHDF5Access
 			hdf5Access = new HDF5Access( hdf5Writer );
 		}
 		this.hdf5Access = hdf5Access;
-		queue = new ArrayBlockingQueue< Hdf5BlockWriterThread.Hdf5Task >( queueLength );
+		queue = new ArrayBlockingQueue<>( queueLength );
 		shutdown = false;
 		setName( "HDF5BlockWriterQueue" );
 	}

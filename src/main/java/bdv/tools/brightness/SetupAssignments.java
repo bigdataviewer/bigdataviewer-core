@@ -100,9 +100,9 @@ public class SetupAssignments
 	 */
 	public SetupAssignments( final ArrayList< ConverterSetup > converterSetups, final double fullRangeMin, final double fullRangeMax, final double defaultRangeMin, final double defaultRangeMax )
 	{
-		setups = new ArrayList< ConverterSetup >( converterSetups );
-		minMaxGroups = new ArrayList< MinMaxGroup >();
-		setupToGroup = new HashMap< ConverterSetup, MinMaxGroup >();
+		setups = new ArrayList<>( converterSetups );
+		minMaxGroups = new ArrayList<>();
+		setupToGroup = new HashMap<>();
 		this.fullRangeMin = fullRangeMin;
 		this.fullRangeMax = fullRangeMax;
 		this.defaultRangeMin = defaultRangeMin;

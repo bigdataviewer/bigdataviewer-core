@@ -178,7 +178,7 @@ public class BrightnessDialog extends JDialog
 		{
 			super();
 			this.setupAssignments = assignments;
-			buttons = new ArrayList< JButton >();
+			buttons = new ArrayList<>();
 			colorChooser = new JColorChooser();
 
 			setLayout( new BoxLayout( this, BoxLayout.LINE_AXIS ) );
@@ -262,7 +262,7 @@ public class BrightnessDialog extends JDialog
 			super();
 			this.setupAssignments = assignments;
 			this.rememberSizes = rememberSizes;
-			minMaxPanels = new ArrayList< MinMaxPanel >();
+			minMaxPanels = new ArrayList<>();
 
 			setLayout( new BoxLayout( this, BoxLayout.PAGE_AXIS ) );
 			setBorder( BorderFactory.createEmptyBorder( 2, 2, 2, 2 ) );
@@ -367,7 +367,7 @@ public class BrightnessDialog extends JDialog
 
 			add( sliders, BorderLayout.CENTER );
 
-			boxes = new ArrayList< JCheckBox >();
+			boxes = new ArrayList<>();
 			final JPanel boxesPanel = new JPanel();
 			boxesPanel.setLayout( new BoxLayout( boxesPanel, BoxLayout.LINE_AXIS ) );
 

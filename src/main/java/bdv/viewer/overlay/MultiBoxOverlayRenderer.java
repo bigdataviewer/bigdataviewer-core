@@ -73,7 +73,7 @@ public class MultiBoxOverlayRenderer
 		box = new MultiBoxOverlay();
 		boxInterval = Intervals.createMinSize( 10, 10, 160, 120 );
 		virtualScreenInterval = Intervals.createMinSize( 0, 0, screenWidth, screenHeight );
-		boxSources = new ArrayList< IntervalAndTransform >();
+		boxSources = new ArrayList<>();
 	}
 
 	public synchronized void paint( final Graphics2D g )

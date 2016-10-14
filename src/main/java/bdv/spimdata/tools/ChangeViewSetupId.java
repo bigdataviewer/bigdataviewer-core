@@ -69,7 +69,7 @@ public class ChangeViewSetupId
 		final List< ? extends BasicViewSetup > setups = seq.getViewSetupsOrdered();
 
 		// maps old setup id to new setup id
-		final Map< Integer, Integer > oldIdToNewIdMap = new HashMap< Integer, Integer >();
+		final Map< Integer, Integer > oldIdToNewIdMap = new HashMap<>();
 
 		for ( final BasicViewSetup setup : setups )
 		{

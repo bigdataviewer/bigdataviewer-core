@@ -59,7 +59,7 @@ public class ProposeMipmaps
 	 */
 	public static Map< Integer, ExportMipmapInfo > proposeMipmaps( final AbstractSequenceDescription< ?, ?, ? > seq )
 	{
-		final HashMap< Integer, ExportMipmapInfo > perSetupExportMipmapInfo = new HashMap< Integer, ExportMipmapInfo >();
+		final HashMap< Integer, ExportMipmapInfo > perSetupExportMipmapInfo = new HashMap<>();
 		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
 			perSetupExportMipmapInfo.put( setup.getId(), proposeMipmaps( setup ) );
 		return perSetupExportMipmapInfo;
@@ -83,8 +83,8 @@ public class ProposeMipmaps
 		final int[] res = new int[] { 1, 1, 1 };
 		final long[] size = new long[ 3 ];
 
-		final ArrayList< int[] > resolutions = new ArrayList< int[] >();
-		final ArrayList< int[] > subdivisions = new ArrayList< int[] >();
+		final ArrayList< int[] > resolutions = new ArrayList<>();
+		final ArrayList< int[] > subdivisions = new ArrayList<>();
 
 //		for ( int level = 0;; ++level )
 		while( true )

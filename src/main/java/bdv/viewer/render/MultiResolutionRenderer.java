@@ -330,8 +330,8 @@ public class MultiResolutionRenderer
 		currentScreenScaleIndex = -1;
 		this.screenScales = screenScales.clone();
 		this.doubleBuffered = doubleBuffered;
-		renderIdQueue = new ArrayDeque< Integer >();
-		bufferedImageToRenderId = new HashMap< BufferedImage, Integer >();
+		renderIdQueue = new ArrayDeque<>();
+		bufferedImageToRenderId = new HashMap<>();
 		renderImages = new ARGBScreenImage[ screenScales.length ][ 0 ];
 		renderMaskArrays = new byte[ 0 ][];
 		screenImages = new ARGBScreenImage[ screenScales.length ][ 3 ];
@@ -618,7 +618,7 @@ public class MultiResolutionRenderer
 		final List< Integer > visibleSourceIndices = viewerState.getVisibleSourceIndices();
 		VolatileProjector projector;
 		if ( visibleSourceIndices.isEmpty() )
-			projector = new EmptyProjector< ARGBType >( screenImage );
+			projector = new EmptyProjector<>( screenImage );
 		else if ( visibleSourceIndices.size() == 1 )
 		{
 			final int i = visibleSourceIndices.get( 0 );
@@ -626,9 +626,9 @@ public class MultiResolutionRenderer
 		}
 		else
 		{
-			final ArrayList< VolatileProjector > sourceProjectors = new ArrayList< VolatileProjector >();
-			final ArrayList< ARGBScreenImage > sourceImages = new ArrayList< ARGBScreenImage >();
-			final ArrayList< Source< ? > > sources = new ArrayList< Source< ? > >();
+			final ArrayList< VolatileProjector > sourceProjectors = new ArrayList<>();
+			final ArrayList< ARGBScreenImage > sourceImages = new ArrayList<>();
+			final ArrayList< Source< ? > > sources = new ArrayList<>();
 			int j = 0;
 			for ( final int i : visibleSourceIndices )
 			{
@@ -694,7 +694,7 @@ public class MultiResolutionRenderer
 		{
 			final AffineTransform3D screenScaleTransform = screenScaleTransforms[ currentScreenScaleIndex ];
 			final int bestLevel = viewerState.getBestMipMapLevel( screenScaleTransform, sourceIndex );
-			return new SimpleVolatileProjector< T, ARGBType >(
+			return new SimpleVolatileProjector<>(
 					getTransformedSource( viewerState, source.getSpimSource(), screenScaleTransform, bestLevel ),
 					source.getConverter(), screenImage, numRenderingThreads );
 		}
@@ -709,7 +709,7 @@ public class MultiResolutionRenderer
 			final byte[] maskArray )
 	{
 		final AffineTransform3D screenScaleTransform = screenScaleTransforms[ currentScreenScaleIndex ];
-		final ArrayList< RandomAccessible< T > > renderList = new ArrayList< RandomAccessible< T > >();
+		final ArrayList< RandomAccessible< T > > renderList = new ArrayList<>();
 		final Source< T > spimSource = source.getSpimSource();
 		final int t = viewerState.getCurrentTimepoint();
 
@@ -750,7 +750,7 @@ public class MultiResolutionRenderer
 			if ( hints.renewHintsAfterPaintingOnce() )
 				newFrameRequest = true;
 		}
-		return new VolatileHierarchyProjector< T, ARGBType >( renderList, source.getConverter(), screenImage, maskArray, numRenderingThreads, renderingExecutorService, cacheControl.getCacheIoTiming() );
+		return new VolatileHierarchyProjector<>( renderList, source.getConverter(), screenImage, maskArray, numRenderingThreads, renderingExecutorService, cacheControl.getCacheIoTiming() );
 	}
 
 	private static < T > RandomAccessible< T > getTransformedSource( final ViewerState viewerState, final Source< T > source, final AffineTransform3D screenScaleTransform, final int mipmapIndex )

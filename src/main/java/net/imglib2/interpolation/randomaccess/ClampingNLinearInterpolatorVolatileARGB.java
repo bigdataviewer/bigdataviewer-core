@@ -104,7 +104,7 @@ public class ClampingNLinearInterpolatorVolatileARGB< T extends AbstractVolatile
 	@Override
 	public ClampingNLinearInterpolatorVolatileARGB< T > copy()
 	{
-		return new ClampingNLinearInterpolatorVolatileARGB< T >( this );
+		return new ClampingNLinearInterpolatorVolatileARGB<>( this );
 	}
 
 	@Override

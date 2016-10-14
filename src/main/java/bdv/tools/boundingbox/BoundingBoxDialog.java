@@ -105,7 +105,7 @@ public class BoundingBoxDialog extends JDialog
 		// create a procedural RealRandomAccessible that will render the bounding box
 		final UnsignedShortType insideValue = new UnsignedShortType( 1000 ); // inside the box pixel value is 1000
 		final UnsignedShortType outsideValue = new UnsignedShortType( 0 ); // outside is 0
-		boxRealRandomAccessible = new BoxRealRandomAccessible< UnsignedShortType >( initialInterval, insideValue, outsideValue );
+		boxRealRandomAccessible = new BoxRealRandomAccessible<>( initialInterval, insideValue, outsideValue );
 
 		// create a bdv.viewer.Source providing data from the bbox RealRandomAccessible
 		final RealRandomAccessibleSource< UnsignedShortType > boxSource = new RealRandomAccessibleSource< UnsignedShortType >( boxRealRandomAccessible, new UnsignedShortType(), "selection" )
@@ -118,7 +118,7 @@ public class BoundingBoxDialog extends JDialog
 		};
 
 		// set up a converter from the source type (UnsignedShortType in this case) to ARGBType
-		final RealARGBColorConverter< UnsignedShortType > converter = new RealARGBColorConverter.Imp1< UnsignedShortType >( 0, 3000 );
+		final RealARGBColorConverter< UnsignedShortType > converter = new RealARGBColorConverter.Imp1<>( 0, 3000 );
 		converter.setColor( new ARGBType( 0x00994499 ) ); // set bounding box color to magenta
 
 		// create a ConverterSetup (can be used by the brightness dialog to adjust the converter settings)
@@ -126,8 +126,8 @@ public class BoundingBoxDialog extends JDialog
 		boxConverterSetup.setViewer( viewer );
 
 		// create a SourceAndConverter (can be added to the viewer for display)
-		final TransformedSource< UnsignedShortType > ts = new TransformedSource< UnsignedShortType >( boxSource );
-		boxSourceAndConverter = new SourceAndConverter< UnsignedShortType >( ts, converter );
+		final TransformedSource< UnsignedShortType > ts = new TransformedSource<>( boxSource );
+		boxSourceAndConverter = new SourceAndConverter<>( ts, converter );
 
 		// create an Overlay to show 3D wireframe box
 		boxOverlay = new BoundingBoxOverlay( new BoundingBoxOverlaySource()

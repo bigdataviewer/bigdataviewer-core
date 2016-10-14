@@ -60,7 +60,7 @@ public class SourceGroup
 	public SourceGroup( final String name, final ViewerState owner )
 	{
 		this.owner = owner;
-		sourceIds = new TreeSet< Integer >();
+		sourceIds = new TreeSet<>();
 		this.name = name;
 		isActive = true;
 		isCurrent = false;
@@ -69,7 +69,7 @@ public class SourceGroup
 	public SourceGroup( final SourceGroup g, final ViewerState owner )
 	{
 		this.owner = owner;
-		sourceIds = new TreeSet< Integer >( g.sourceIds );
+		sourceIds = new TreeSet<>( g.sourceIds );
 		name = g.name;
 		isActive = g.isActive;
 		isCurrent = g.isCurrent;

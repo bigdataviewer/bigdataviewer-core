@@ -177,23 +177,23 @@ public class BigDataViewer
 		}
 		final double typeMin = Math.max( 0, Math.min( type.getMinValue(), 65535 ) );
 		final double typeMax = Math.max( 0, Math.min( type.getMaxValue(), 65535 ) );
-		final RealARGBColorConverter< V > vconverter = new RealARGBColorConverter.Imp0< V >( typeMin, typeMax );
+		final RealARGBColorConverter< V > vconverter = new RealARGBColorConverter.Imp0<>( typeMin, typeMax );
 		vconverter.setColor( new ARGBType( 0xffffffff ) );
-		final RealARGBColorConverter< T > converter = new RealARGBColorConverter.Imp1< T >( typeMin, typeMax );
+		final RealARGBColorConverter< T > converter = new RealARGBColorConverter.Imp1<>( typeMin, typeMax );
 		converter.setColor( new ARGBType( 0xffffffff ) );
 
 		final int setupId = setup.getId();
 		final String setupName = createSetupName( setup );
-		final VolatileSpimSource< T, V > vs = new VolatileSpimSource< T, V >( spimData, setupId, setupName );
+		final VolatileSpimSource< T, V > vs = new VolatileSpimSource<>( spimData, setupId, setupName );
 		final SpimSource< T > s = vs.nonVolatile();
 
 		// Decorate each source with an extra transformation, that can be
 		// edited manually in this viewer.
-		final TransformedSource< V > tvs = new TransformedSource< V >( vs );
-		final TransformedSource< T > ts = new TransformedSource< T >( s, tvs );
+		final TransformedSource< V > tvs = new TransformedSource<>( vs );
+		final TransformedSource< T > ts = new TransformedSource<>( s, tvs );
 
-		final SourceAndConverter< V > vsoc = new SourceAndConverter< V >( tvs, vconverter );
-		final SourceAndConverter< T > soc = new SourceAndConverter< T >( ts, converter, vsoc );
+		final SourceAndConverter< V > vsoc = new SourceAndConverter<>( tvs, vconverter );
+		final SourceAndConverter< T > soc = new SourceAndConverter<>( ts, converter, vsoc );
 
 		sources.add( soc );
 		converterSetups.add( new RealARGBColorConverterSetup( setupId, converter, vconverter ) );
@@ -208,17 +208,17 @@ public class BigDataViewer
 	{
 		final double typeMin = type.getMinValue();
 		final double typeMax = type.getMaxValue();
-		final RealARGBColorConverter< T > converter = new RealARGBColorConverter.Imp1< T >( typeMin, typeMax );
+		final RealARGBColorConverter< T > converter = new RealARGBColorConverter.Imp1<>( typeMin, typeMax );
 		converter.setColor( new ARGBType( 0xffffffff ) );
 
 		final int setupId = setup.getId();
 		final String setupName = createSetupName( setup );
-		final SpimSource< T > s = new SpimSource< T >( spimData, setupId, setupName );
+		final SpimSource< T > s = new SpimSource<>( spimData, setupId, setupName );
 
 		// Decorate each source with an extra transformation, that can be
 		// edited manually in this viewer.
-		final TransformedSource< T > ts = new TransformedSource< T >( s );
-		final SourceAndConverter< T > soc = new SourceAndConverter< T >( ts, converter );
+		final TransformedSource< T > ts = new TransformedSource<>( s );
+		final SourceAndConverter< T > soc = new SourceAndConverter<>( ts, converter );
 
 		sources.add( soc );
 		converterSetups.add( new RealARGBColorConverterSetup( setupId, converter ) );
@@ -241,16 +241,16 @@ public class BigDataViewer
 
 		final int setupId = setup.getId();
 		final String setupName = createSetupName( setup );
-		final VolatileSpimSource< ARGBType, VolatileARGBType > vs = new VolatileSpimSource< ARGBType, VolatileARGBType >( spimData, setupId, setupName );
+		final VolatileSpimSource< ARGBType, VolatileARGBType > vs = new VolatileSpimSource<>( spimData, setupId, setupName );
 		final SpimSource< ARGBType > s = vs.nonVolatile();
 
 		// Decorate each source with an extra transformation, that can be
 		// edited manually in this viewer.
-		final TransformedSource< VolatileARGBType > tvs = new TransformedSource< VolatileARGBType >( vs );
-		final TransformedSource< ARGBType > ts = new TransformedSource< ARGBType >( s, tvs );
+		final TransformedSource< VolatileARGBType > tvs = new TransformedSource<>( vs );
+		final TransformedSource< ARGBType > ts = new TransformedSource<>( s, tvs );
 
-		final SourceAndConverter< VolatileARGBType > vsoc = new SourceAndConverter< VolatileARGBType >( tvs, vconverter );
-		final SourceAndConverter< ARGBType > soc = new SourceAndConverter< ARGBType >( ts, converter, vsoc );
+		final SourceAndConverter< VolatileARGBType > vsoc = new SourceAndConverter<>( tvs, vconverter );
+		final SourceAndConverter< ARGBType > soc = new SourceAndConverter<>( ts, converter, vsoc );
 
 		sources.add( soc );
 		converterSetups.add( new RealARGBColorConverterSetup( setupId, converter, vconverter ) );
@@ -267,12 +267,12 @@ public class BigDataViewer
 
 		final int setupId = setup.getId();
 		final String setupName = createSetupName( setup );
-		final SpimSource< ARGBType > s = new SpimSource< ARGBType >( spimData, setupId, setupName );
+		final SpimSource< ARGBType > s = new SpimSource<>( spimData, setupId, setupName );
 
 		// Decorate each source with an extra transformation, that can be
 		// edited manually in this viewer.
-		final TransformedSource< ARGBType > ts = new TransformedSource< ARGBType >( s );
-		final SourceAndConverter< ARGBType > soc = new SourceAndConverter< ARGBType >( ts, converter );
+		final TransformedSource< ARGBType > ts = new TransformedSource<>( s );
+		final SourceAndConverter< ARGBType > soc = new SourceAndConverter<>( ts, converter );
 
 		sources.add( soc );
 		converterSetups.add( new RealARGBColorConverterSetup( setupId, converter ) );
@@ -473,8 +473,8 @@ public class BigDataViewer
 			System.err.println( "WARNING:\nOpening <SpimData> dataset that is not suited for interactive browsing.\nConsider resaving as HDF5 for better performance." );
 		}
 
-		final ArrayList< ConverterSetup > converterSetups = new ArrayList< ConverterSetup >();
-		final ArrayList< SourceAndConverter< ? > > sources = new ArrayList< SourceAndConverter< ? > >();
+		final ArrayList< ConverterSetup > converterSetups = new ArrayList<>();
+		final ArrayList< SourceAndConverter< ? > > sources = new ArrayList<>();
 		initSetups( spimData, converterSetups, sources );
 
 		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
@@ -741,8 +741,8 @@ public class BigDataViewer
 				System.err.println( "WARNING:\nOpening <SpimData> dataset that is not suited for interactive browsing.\nConsider resaving as HDF5 for better performance." );
 			}
 
-			converterSetups = new ArrayList< ConverterSetup >();
-			sources = new ArrayList< SourceAndConverter< ? > >();
+			converterSetups = new ArrayList<>();
+			sources = new ArrayList<>();
 			initSetups( spimData, converterSetups, sources );
 
 			final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();

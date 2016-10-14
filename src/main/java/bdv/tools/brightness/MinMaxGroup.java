@@ -78,7 +78,7 @@ public class MinMaxGroup extends BoundedIntervalDouble
 		super( rangeMin, rangeMax, currentMin, currentMax, minIntervalSize );
 		this.fullRangeMin = fullRangeMin;
 		this.fullRangeMax = fullRangeMax;
-		setups = new LinkedHashSet< ConverterSetup >();
+		setups = new LinkedHashSet<>();
 		updateListener = null;
 	}
 

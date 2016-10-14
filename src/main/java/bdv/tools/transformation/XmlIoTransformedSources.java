@@ -52,7 +52,7 @@ public class XmlIoTransformedSources
 
 	public ManualSourceTransforms fromXml( final Element elem )
 	{
-		final ArrayList< AffineTransform3D > transforms = new ArrayList< AffineTransform3D >();
+		final ArrayList< AffineTransform3D > transforms = new ArrayList<>();
 		for ( final Element t : elem.getChildren( SOURCETRANSFORM_TAG ) )
 			transforms.add( fromXmlAffine( t ) );
 		return new ManualSourceTransforms( transforms );

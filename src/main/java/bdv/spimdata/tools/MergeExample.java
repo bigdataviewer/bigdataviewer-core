@@ -74,11 +74,11 @@ public class MergeExample
 	{
 		final XmlIoSpimDataMinimal io = new XmlIoSpimDataMinimal();
 
-		final HashMap< String, Set< Integer > > attributeIdsInUse = new HashMap< String, Set< Integer > >();
-		final HashSet< Integer > setupIdsInUse = new HashSet< Integer >();
-		final ArrayList< Partition > newPartitions = new ArrayList< Partition >();
-		final Map< Integer, ExportMipmapInfo > newMipmapInfos = new HashMap< Integer, ExportMipmapInfo >();
-		final ArrayList< SpimDataMinimal > spimDatas = new ArrayList< SpimDataMinimal >();
+		final HashMap< String, Set< Integer > > attributeIdsInUse = new HashMap<>();
+		final HashSet< Integer > setupIdsInUse = new HashSet<>();
+		final ArrayList< Partition > newPartitions = new ArrayList<>();
+		final Map< Integer, ExportMipmapInfo > newMipmapInfos = new HashMap<>();
+		final ArrayList< SpimDataMinimal > spimDatas = new ArrayList<>();
 		for ( int i = 0; i < inputFilenames.size(); ++i )
 		{
 			final String fn = inputFilenames.get( i );
@@ -95,7 +95,7 @@ public class MergeExample
 			for ( final Partition partition : partitions )
 			{
 				final Map< Integer, Integer > seqToPart = partition.getSetupIdSequenceToPartition();
-				final Map< Integer, Integer > newSeqToPart = new HashMap< Integer, Integer >();
+				final Map< Integer, Integer > newSeqToPart = new HashMap<>();
 				for ( final Entry< Integer, Integer > entry : seqToPart.entrySet() )
 				{
 					final int oldSeq = entry.getKey();

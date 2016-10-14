@@ -47,7 +47,7 @@ public class SequenceDescriptionMinimal extends AbstractSequenceDescription< Bas
 	@Override
 	protected BasicViewDescription< BasicViewSetup > createViewDescription( final int timepointId, final int setupId )
 	{
-		return new BasicViewDescription< BasicViewSetup >( timepointId, setupId, true, this );
+		return new BasicViewDescription<>( timepointId, setupId, true, this );
 	}
 
 	/**

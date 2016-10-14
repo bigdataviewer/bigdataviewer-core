@@ -66,7 +66,7 @@ public class MergePartitionList
 			throws IllegalArgumentException
 	{
 		final Hdf5ImageLoader imgLoader = getHdf5ImageLoader( seq );
-		final HashMap< Integer, ExportMipmapInfo > perSetupMipmapInfo = new HashMap< Integer, ExportMipmapInfo >();
+		final HashMap< Integer, ExportMipmapInfo > perSetupMipmapInfo = new HashMap<>();
 		for ( final int setupId : seq.getViewSetups().keySet() )
 		{
 			final MipmapInfo info = imgLoader.getSetupImgLoader( setupId ).getMipmapInfo();;
@@ -92,16 +92,16 @@ public class MergePartitionList
 	{
 		// create partition list for existing dataset
 		final Hdf5ImageLoader imgLoader = getHdf5ImageLoader( seq );
-		final ArrayList< Partition > partitions = new ArrayList< Partition >( imgLoader.getPartitions() );
+		final ArrayList< Partition > partitions = new ArrayList<>( imgLoader.getPartitions() );
 		if ( partitions.isEmpty() )
 		{
 			// maps every existing timepoint id to itself
-			final Map< Integer, Integer > timepointIdentityMap = new HashMap< Integer, Integer >();
+			final Map< Integer, Integer > timepointIdentityMap = new HashMap<>();
 			for ( final TimePoint tp : seq.getTimePoints().getTimePointsOrdered() )
 				timepointIdentityMap.put( tp.getId(), tp.getId() );
 
 			// maps every existing setup id to itself
-			final Map< Integer, Integer > setupIdentityMap = new HashMap< Integer, Integer >();
+			final Map< Integer, Integer > setupIdentityMap = new HashMap<>();
 			for ( final int s : seq.getViewSetups().keySet() )
 				setupIdentityMap.put( s, s );
 

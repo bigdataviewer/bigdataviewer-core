@@ -242,7 +242,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		options = optional.values;
 
 		final int numGroups = 10;
-		final ArrayList< SourceGroup > groups = new ArrayList< SourceGroup >( numGroups );
+		final ArrayList< SourceGroup > groups = new ArrayList<>( numGroups );
 		for ( int i = 0; i < numGroups; ++i )
 			groups.add( new SourceGroup( "group " + Integer.toString( i + 1 ), null ) );
 		state = new ViewerState( sources, groups, numTimepoints );
@@ -257,7 +257,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 		painterThread = new PainterThread( this );
 		viewerTransform = new AffineTransform3D();
-		display = new InteractiveDisplayCanvasComponent< AffineTransform3D >(
+		display = new InteractiveDisplayCanvasComponent<>(
 				options.getWidth(), options.getHeight(), options.getTransformEventHandlerFactory() );
 		display.addTransformListener( this );
 		renderTarget = new TransformAwareBufferedImageOverlayRenderer();
@@ -298,13 +298,13 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		visibilityAndGrouping = new VisibilityAndGrouping( state );
 		visibilityAndGrouping.addUpdateListener( this );
 
-		transformListeners = new CopyOnWriteArrayList< TransformListener< AffineTransform3D > >();
-		lastRenderTransformListeners = new CopyOnWriteArrayList< TransformListener< AffineTransform3D > >();
-		timePointListeners = new CopyOnWriteArrayList< TimePointListener >();
+		transformListeners = new CopyOnWriteArrayList<>();
+		lastRenderTransformListeners = new CopyOnWriteArrayList<>();
+		timePointListeners = new CopyOnWriteArrayList<>();
 
 		msgOverlay = options.getMsgOverlay();
 
-		overlayAnimators = new ArrayList< OverlayAnimator >();
+		overlayAnimators = new ArrayList<>();
 		overlayAnimators.add( msgOverlay );
 		overlayAnimators.add( new TextOverlayAnimator( "Press <F1> for help.", 3000, TextPosition.CENTER ) );
 
@@ -467,7 +467,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		boolean requiresRepaint = multiBoxOverlayRenderer.isHighlightInProgress();
 
 		final long currentTimeMillis = System.currentTimeMillis();
-		final ArrayList< OverlayAnimator > overlayAnimatorsToRemove = new ArrayList< OverlayAnimator >();
+		final ArrayList< OverlayAnimator > overlayAnimatorsToRemove = new ArrayList<>();
 		for ( final OverlayAnimator animator : overlayAnimators )
 		{
 			animator.paint( ( Graphics2D ) g, currentTimeMillis );

@@ -71,7 +71,7 @@ public class IntervalBoundingBox
 	 */
 	public static List< RealLocalizable > getCorners( final RealInterval interval )
 	{
-		final ArrayList< RealLocalizable > corners = new ArrayList< RealLocalizable >();
+		final ArrayList< RealLocalizable > corners = new ArrayList<>();
 		final int n = interval.numDimensions();
 		final int[] tmp = new int[ n ];
 		Arrays.fill( tmp, 2 );

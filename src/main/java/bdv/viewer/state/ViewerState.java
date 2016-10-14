@@ -121,11 +121,11 @@ public class ViewerState
 	 */
 	public ViewerState( final List< SourceAndConverter< ? > > sources, final List< SourceGroup > sourceGroups, final int numTimePoints )
 	{
-		this.sources = new ArrayList< SourceState< ? > >( sources.size() );
+		this.sources = new ArrayList<>( sources.size() );
 		for ( final SourceAndConverter< ? > source : sources )
 			this.sources.add( SourceState.create( source, this ) );
 		unmodifiableSources = Collections.unmodifiableList( this.sources );
-		groups = new ArrayList< SourceGroup >( sourceGroups.size() );
+		groups = new ArrayList<>( sourceGroups.size() );
 		for ( final SourceGroup g : sourceGroups )
 			groups.add( g.copy( this ) );
 		unmodifiableGroups = Collections.unmodifiableList( this.groups );
@@ -145,11 +145,11 @@ public class ViewerState
 	 */
 	protected ViewerState( final ViewerState s )
 	{
-		sources = new ArrayList< SourceState< ? > >( s.sources.size() );
+		sources = new ArrayList<>( s.sources.size() );
 		for ( final SourceState< ? > source : s.sources )
 			this.sources.add( source.copy( this ) );
 		unmodifiableSources = Collections.unmodifiableList( sources );
-		groups = new ArrayList< SourceGroup >( s.groups.size() );
+		groups = new ArrayList<>( s.groups.size() );
 		for ( final SourceGroup group : s.groups )
 			this.groups.add( group.copy( this ) );
 		unmodifiableGroups = Collections.unmodifiableList( groups );
@@ -403,7 +403,7 @@ public class ViewerState
 		for( final SourceGroup group : groups )
 		{
 			final SortedSet< Integer > ids = group.getSourceIds();
-			final ArrayList< Integer > oldids = new ArrayList< Integer >( ids );
+			final ArrayList< Integer > oldids = new ArrayList<>( ids );
 			ids.clear();
 			for ( final int id : oldids )
 			{
@@ -446,7 +446,7 @@ public class ViewerState
 	 */
 	public synchronized List< Integer > getVisibleSourceIndices()
 	{
-		final ArrayList< Integer > visible = new ArrayList< Integer >();
+		final ArrayList< Integer > visible = new ArrayList<>();
 		switch ( displayMode )
 		{
 		case SINGLE:
@@ -464,11 +464,11 @@ public class ViewerState
 					visible.add( i );
 			break;
 		case FUSEDGROUP:
-			final TreeSet< Integer > gactive = new TreeSet< Integer >();
+			final TreeSet< Integer > gactive = new TreeSet<>();
 			for ( final SourceGroup group : groups )
 				if ( group.isActive() )
 					gactive.addAll( group.getSourceIds() );
-			for ( final int sourceId : new ArrayList< Integer >( gactive ) )
+			for ( final int sourceId : new ArrayList<>( gactive ) )
 				if ( isPresent( sourceId ) )
 					visible.add( sourceId );
 			break;

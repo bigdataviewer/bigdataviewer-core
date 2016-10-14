@@ -313,15 +313,15 @@ public class CropDialog extends JDialog
 		// TODO: fix comment
 		// List of all sources. if they are not of UnsignedShortType, cropping
 		// will not work...
-		final ArrayList< Source< ? > > sources = new ArrayList< Source< ? > >();
+		final ArrayList< Source< ? > > sources = new ArrayList<>();
 		// Map from setup id to BasicViewSetup. These are setups from the
 		// original sequence if available, or newly created ones otherwise.
 		// This contains all BasicViewSetups for the new cropped sequence.
-		final HashMap< Integer, BasicViewSetup > cropSetups = new HashMap< Integer, BasicViewSetup >();
+		final HashMap< Integer, BasicViewSetup > cropSetups = new HashMap<>();
 		// Map from setup id to index of corresponding source in sources list.
 		// This is needed because the CropImgLoader is asked for (timepointId,
 		// setupId) pair and needs to retrieve from corresponding source.
-		final HashMap< Integer, Integer > setupIdToSourceIndex = new HashMap< Integer, Integer >();
+		final HashMap< Integer, Integer > setupIdToSourceIndex = new HashMap<>();
 		for( final SourceState< ? > s : viewer.getState().getSources() )
 		{
 			Source< ? > source = s.getSpimSource();
@@ -352,9 +352,9 @@ public class CropDialog extends JDialog
 		// of the original sequence). This is needed because the CropImgLoader
 		// is asked for (timepointId, setupId) pair and needs to retrieve by
 		// timepoint index from its sources.
-		final HashMap< Integer, Integer > timepointIdToTimepointIndex = new HashMap< Integer, Integer >();
+		final HashMap< Integer, Integer > timepointIdToTimepointIndex = new HashMap<>();
 		// This contains all TimePoints for the new cropped sequence.
-		final ArrayList< TimePoint > timepointsToCrop = new ArrayList< TimePoint >();
+		final ArrayList< TimePoint > timepointsToCrop = new ArrayList<>();
 		for ( int tp = minTimepointIndex; tp <= maxTimepointIndex; ++tp )
 		{
 			final TimePoint timepoint = sequenceTimepointsOrdered.get( tp );
@@ -369,7 +369,7 @@ public class CropDialog extends JDialog
 		// Gather ExportMipmapInfo for all setups of the cropped sequence.
 		// Re-use mipmapInfos for setups of the original sequence. Use default
 		// for newly created setups.
-		final HashMap< Integer, ExportMipmapInfo > perSetupMipmapInfo = new HashMap< Integer, ExportMipmapInfo >();
+		final HashMap< Integer, ExportMipmapInfo > perSetupMipmapInfo = new HashMap<>();
 		final Hdf5ImageLoader loader = ( Hdf5ImageLoader ) sequenceDescription.getImgLoader();
 		for ( final int setupId : cropSetups.keySet() )
 		{
@@ -388,7 +388,7 @@ public class CropDialog extends JDialog
 		WriteSequenceToHdf5.writeHdf5File( seq, perSetupMipmapInfo, true, hdf5File, null, null, numThreads, null );
 
 		// Build ViewRegistrations with adjusted transforms.
-		final ArrayList< ViewRegistration > registrations = new ArrayList< ViewRegistration >();
+		final ArrayList< ViewRegistration > registrations = new ArrayList<>();
 		for ( final TimePoint timepoint : timepointsToCrop )
 		{
 			final int timepointId = timepoint.getId();

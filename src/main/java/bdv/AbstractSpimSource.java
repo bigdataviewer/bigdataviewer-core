@@ -92,7 +92,7 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 		timePointsOrdered = seq.getTimePoints().getTimePointsOrdered();
 		viewRegistrations = spimData.getViewRegistrations().getViewRegistrations();
 		missingViews = seq.getMissingViews() == null
-				? new HashSet< ViewId >()
+				? new HashSet<>()
 				: seq.getMissingViews().getMissingViews();
 		voxelDimensions = seq.getViewSetups().get( setupId ).getVoxelSize();
 		numMipmapLevels = ( ( ViewerImgLoader ) seq.getImgLoader() ).getSetupImgLoader( setupId ).numMipmapLevels();
@@ -102,8 +102,8 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 		for ( int level = 0; level < numMipmapLevels; level++ )
 			currentSourceTransforms[ level ] = new AffineTransform3D();
 		interpolatorFactories = new InterpolatorFactory[ numInterpolationMethods ];
-		interpolatorFactories[ iNearestNeighborMethod ] = new NearestNeighborInterpolatorFactory< T >();
-		interpolatorFactories[ iNLinearMethod ] = new ClampingNLinearInterpolatorFactory< T >();
+		interpolatorFactories[ iNearestNeighborMethod ] = new NearestNeighborInterpolatorFactory<>();
+		interpolatorFactories[ iNLinearMethod ] = new ClampingNLinearInterpolatorFactory<>();
 	}
 
 	protected void loadTimepoint( final int timepointIndex )

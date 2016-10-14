@@ -96,7 +96,7 @@ public class ClampingNLinearInterpolatorVolatileRealType< R extends RealType< R 
 	@Override
 	public ClampingNLinearInterpolatorVolatileRealType< R, T > copy()
 	{
-		return new ClampingNLinearInterpolatorVolatileRealType< R, T >( this );
+		return new ClampingNLinearInterpolatorVolatileRealType<>( this );
 	}
 
 	@Override

@@ -58,7 +58,7 @@ public class TransformAwareBufferedImageOverlayRenderer extends BufferedImageOve
 		super();
 		pendingTransform = new AffineTransform3D();
 		paintedTransform = new AffineTransform3D();
-		paintedTransformListeners = new CopyOnWriteArrayList< TransformListener< AffineTransform3D > >();
+		paintedTransformListeners = new CopyOnWriteArrayList<>();
 	}
 
 	@Override

@@ -63,7 +63,7 @@ public class ManualTransformation
 	public Element toXml()
 	{
 		final List< TransformedSource< ? > > sources = getTransformedSources();
-		final ArrayList< AffineTransform3D > transforms = new ArrayList< AffineTransform3D >( sources.size() );
+		final ArrayList< AffineTransform3D > transforms = new ArrayList<>( sources.size() );
 		for ( final TransformedSource< ? > s : sources )
 		{
 			final AffineTransform3D t = new AffineTransform3D();
@@ -87,7 +87,7 @@ public class ManualTransformation
 
 	private ArrayList< TransformedSource< ? > > getTransformedSources()
 	{
-		final ArrayList< TransformedSource< ? > > list = new ArrayList< TransformedSource< ? > >();
+		final ArrayList< TransformedSource< ? > > list = new ArrayList<>();
 		final List< ? extends SourceAndConverter< ? > > sourceList = ( sources != null )
 				? sources
 				: viewer.getState().getSources();

@@ -78,7 +78,7 @@ public class CropImgLoader implements BasicImgLoader
 		this.globalToCropTransform = globalToCropTransform;
 		this.cropInterval = cropInterval;
 		this.timepointIdToTimepointIndex = timepointIdToTimepointIndex;
-		this.setupImgLoaders = new HashMap< Integer, SetupImgLoader< ? > >();
+		this.setupImgLoaders = new HashMap<>();
 		for ( final Entry< Integer, Integer > entry : setupIdToSourceIndex.entrySet() )
 			setupImgLoaders.put( entry.getKey(), createSetupImgLoader( sources.get( entry.getValue() ) ) );
 	}
@@ -124,7 +124,7 @@ public class CropImgLoader implements BasicImgLoader
 		final AffineTransform3D cropToSource = globalToSource.copy();
 		cropToSource.concatenate( cropToGlobal );
 
-		final ArrayList< RealPoint > sourceCorners = new ArrayList< RealPoint >();
+		final ArrayList< RealPoint > sourceCorners = new ArrayList<>();
 		for ( final RealLocalizable corner : IntervalBoundingBox.getCorners( interval ) )
 		{
 			final RealPoint sourceCorner = new RealPoint( n );
@@ -154,12 +154,12 @@ public class CropImgLoader implements BasicImgLoader
 			0, 0, 1, sourceInterval.min( 2 ) );
 		croppedSourceTransform.preConcatenate( sourceToGlobal );
 
-		return new ValuePair< RandomAccessibleInterval<T>, AffineTransform3D >( croppedSourceImg, croppedSourceTransform );
+		return new ValuePair<>( croppedSourceImg, croppedSourceTransform );
 	}
 
 	private < T > SetupImgLoader< T > createSetupImgLoader( final Source< T > source )
 	{
-		return new SetupImgLoader< T >( source );
+		return new SetupImgLoader<>( source );
 	}
 
 	public class SetupImgLoader< T > implements BasicSetupImgLoader< T >

@@ -83,7 +83,7 @@ public class DefaultMipmapOrdering implements MipmapOrdering
 			final boolean prefetchEnqueuToFront )
 	{
 		this.source = source;
-		precomputedLevels = new ArrayList< Level >();
+		precomputedLevels = new ArrayList<>();
 		final int numMipmapLevels = source.getNumMipmapLevels();
 		final int maxLevel = numMipmapLevels - 1;
 		for ( int level = 0; level < numMipmapLevels; ++level )
@@ -107,7 +107,7 @@ public class DefaultMipmapOrdering implements MipmapOrdering
 		final int numMipmapLevels = source.getNumMipmapLevels();
 		final int maxLevel = numMipmapLevels - 1;
 		boolean renewHintsAfterPaintingOnce = false;
-		final ArrayList< Level > levels = new ArrayList< Level >();
+		final ArrayList< Level > levels = new ArrayList<>();
 		if ( timepoint != previousTimepoint )
 		{
 			// When scrolling through time, we often get frames for which no

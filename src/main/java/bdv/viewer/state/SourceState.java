@@ -79,7 +79,7 @@ public class SourceState< T > extends SourceAndConverter< T >
 			if ( soc == null )
 				return null;
 			else
-				return new VolatileSourceState< T, V >( soc, owner, data );
+				return new VolatileSourceState<>( soc, owner, data );
 		}
 	}
 
@@ -119,7 +119,7 @@ public class SourceState< T > extends SourceAndConverter< T >
 
 	public SourceState< T > copy( final ViewerState owner )
 	{
-		return new SourceState< T >( this, owner );
+		return new SourceState<>( this, owner );
 	}
 
 	/**
@@ -169,7 +169,7 @@ public class SourceState< T > extends SourceAndConverter< T >
 	 */
 	public static < T > SourceState< T > create( final SourceAndConverter< T > soc, final ViewerState owner )
 	{
-		return new SourceState< T >( soc, owner );
+		return new SourceState<>( soc, owner );
 	}
 
 	@Override

@@ -84,7 +84,7 @@ public abstract class AccumulateProjector< A, B > implements VolatileProjector
 			final ExecutorService executorService )
 	{
 		this.sourceProjectors = sourceProjectors;
-		this.sources = new ArrayList< IterableInterval< A > >();
+		this.sources = new ArrayList<>();
 		for ( final RandomAccessible< A > source : sources )
 			this.sources.add( Views.flatIterable( Views.interval( source, target ) ) );
 		this.target = target;
@@ -125,7 +125,7 @@ public abstract class AccumulateProjector< A, B > implements VolatileProjector
 		final int numTasks = Math.min( numThreads * 10, height );
 		final double taskLength = ( double ) length / numTasks;
 		final int numSources = sources.size();
-		final ArrayList< Callable< Void > > tasks = new ArrayList< Callable< Void > >( numTasks );
+		final ArrayList< Callable< Void > > tasks = new ArrayList<>( numTasks );
 		for ( int taskNum = 0; taskNum < numTasks; ++taskNum )
 		{
 			final int myOffset = ( int ) ( taskNum * taskLength );

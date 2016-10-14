@@ -50,7 +50,7 @@ public class BoundingBoxUtil
 
 	public static Interval getSourcesBoundingBox( final ViewerState state, final int minTimepointIndex, final int maxTimepointIndex )
 	{
-		final ArrayList< Source< ? > > sources = new ArrayList< Source< ? > >();
+		final ArrayList< Source< ? > > sources = new ArrayList<>();
 		for ( final SourceState< ? > source : state.getSources() )
 			sources.add( source.getSpimSource() );
 		return getSourcesBoundingBox( sources, minTimepointIndex, maxTimepointIndex );
@@ -105,7 +105,7 @@ public class BoundingBoxUtil
 
 	public static RealInterval getSourcesBoundingBoxReal( final ViewerState state, final int minTimepointIndex, final int maxTimepointIndex )
 	{
-		final ArrayList< Source< ? > > sources = new ArrayList< Source< ? > >();
+		final ArrayList< Source< ? > > sources = new ArrayList<>();
 		for ( final SourceState< ? > source : state.getSources() )
 			sources.add( source.getSpimSource() );
 		return getSourcesBoundingBoxReal( sources, minTimepointIndex, maxTimepointIndex );

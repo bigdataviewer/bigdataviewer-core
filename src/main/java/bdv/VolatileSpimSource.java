@@ -54,7 +54,7 @@ public class VolatileSpimSource< T extends NumericType< T >, V extends Volatile<
 	public VolatileSpimSource( final AbstractSpimData< ? > spimData, final int setup, final String name )
 	{
 		super( spimData, setup, name );
-		nonVolatileSource = new SpimSource< T >( spimData, setup, name );
+		nonVolatileSource = new SpimSource<>( spimData, setup, name );
 		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
 		imgLoader = ( ViewerSetupImgLoader< ?, V > ) ( ( ViewerImgLoader ) seq.getImgLoader() ).getSetupImgLoader( setup );
 		if ( MipmapOrdering.class.isInstance( imgLoader ) )

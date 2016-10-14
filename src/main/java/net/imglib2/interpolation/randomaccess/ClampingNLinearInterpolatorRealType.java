@@ -91,7 +91,7 @@ public class ClampingNLinearInterpolatorRealType< T extends RealType< T > > exte
 	@Override
 	public ClampingNLinearInterpolatorRealType< T > copy()
 	{
-		return new ClampingNLinearInterpolatorRealType< T >( this );
+		return new ClampingNLinearInterpolatorRealType<>( this );
 	}
 
 	@Override

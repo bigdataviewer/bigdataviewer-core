@@ -103,7 +103,7 @@ public class VisibilityAndGrouping
 
 	public VisibilityAndGrouping( final ViewerState viewerState )
 	{
-		updateListeners = new CopyOnWriteArrayList< UpdateListener >();
+		updateListeners = new CopyOnWriteArrayList<>();
 		state = viewerState;
 		io = new XmlIoViewerState();
 	}

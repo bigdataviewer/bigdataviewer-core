@@ -220,9 +220,9 @@ public class CatmaidImageLoader extends AbstractViewerSetupImgLoader< ARGBType, 
 
 		final int priority = numScales - 1 - level;
 		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
-		final CellCache< VolatileIntArray > c = cache.new VolatileCellCache< VolatileIntArray >( timepointId, setupId, level, cacheHints, loader );
-		final VolatileImgCells< VolatileIntArray > cells = new VolatileImgCells< VolatileIntArray >( c, new Fraction(), dimensions, blockDimensions[ level ] );
-		final CachedCellImg< T, VolatileIntArray > img = new CachedCellImg< T, VolatileIntArray >( cells );
+		final CellCache< VolatileIntArray > c = cache.new VolatileCellCache<>( timepointId, setupId, level, cacheHints, loader );
+		final VolatileImgCells< VolatileIntArray > cells = new VolatileImgCells<>( c, new Fraction(), dimensions, blockDimensions[ level ] );
+		final CachedCellImg< T, VolatileIntArray > img = new CachedCellImg<>( cells );
 		return img;
 	}
 
