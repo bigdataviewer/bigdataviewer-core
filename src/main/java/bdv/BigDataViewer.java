@@ -49,7 +49,6 @@ import org.jdom2.input.SAXBuilder;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
-import org.scijava.ui.behaviour.io.InputTriggerDescription;
 import org.scijava.ui.behaviour.io.yaml.YamlConfigIO;
 
 import bdv.cache.CacheControl;
@@ -74,7 +73,6 @@ import bdv.tools.crop.CropDialog;
 import bdv.tools.transformation.ManualTransformation;
 import bdv.tools.transformation.ManualTransformationEditor;
 import bdv.tools.transformation.TransformedSource;
-import bdv.util.KeyProperties;
 import bdv.viewer.NavigationActions;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerFrame;
@@ -641,19 +639,6 @@ public class BigDataViewer
 				catch ( final IOException e )
 				{}
 			}
-		}
-
-		// try to load and convert old KeyProperties file "bigdataviewer.keys.properties" in current directory
-		if ( conf == null && new File( "bigdataviewer.keys.properties" ).exists() )
-		{
-			final ArrayList< InputTriggerDescription > descriptions = KeyProperties.readPropertyFile().getInputTriggerDescriptions();
-			conf = new InputTriggerConfig( descriptions );
-			try
-			{
-				YamlConfigIO.write( descriptions, "bdvkeyconfig.yaml" );
-			}
-			catch ( final IOException e )
-			{}
 		}
 
 		if ( conf == null )
