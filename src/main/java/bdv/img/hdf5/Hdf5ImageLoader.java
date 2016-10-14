@@ -199,7 +199,6 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 
 				cachedDimsAndExistence.clear();
 
-				final List< TimePoint > timepoints = sequenceDescription.getTimePoints().getTimePointsOrdered();
 				try
 				{
 					hdf5Access = new HDF5AccessHack( hdf5Reader );

@@ -74,15 +74,12 @@ public class BookmarksEditor
 
 	private final InputMap inputMap;
 
-	private final Bookmarks bookmarks;
-
 	private BookmarkTextOverlayAnimator animator;
 
 	public BookmarksEditor( final ViewerPanel viewer, final InputActionBindings inputActionBindings, final Bookmarks bookmarks )
 	{
 		this.viewer = viewer;
 		bindings = inputActionBindings;
-		this.bookmarks = bookmarks;
 		inputMapsToBlock = new ArrayList<>( Arrays.asList( "bdv", "navigation" ) );
 
 		final KeyStroke abortKey = KeyStroke.getKeyStroke( KeyEvent.VK_ESCAPE, 0 );

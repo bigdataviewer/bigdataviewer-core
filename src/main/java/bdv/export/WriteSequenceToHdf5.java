@@ -627,8 +627,6 @@ public class WriteSequenceToHdf5
 		{
 			progressWriter.out().println( "writing level " + level );
 
-			final long t0 = System.currentTimeMillis();
-
 			final RandomAccessibleInterval< UnsignedShortType > sourceImg;
 			final int[] factor;
 			final boolean useLoopBack;
