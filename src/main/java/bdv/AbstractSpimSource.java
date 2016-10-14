@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -33,6 +33,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import bdv.viewer.Interpolation;
+import bdv.viewer.Source;
 import mpicbg.spim.data.generic.AbstractSpimData;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.registration.ViewRegistration;
@@ -48,8 +50,6 @@ import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.NumericType;
 import net.imglib2.view.Views;
-import bdv.viewer.Interpolation;
-import bdv.viewer.Source;
 
 public abstract class AbstractSpimSource< T extends NumericType< T > > implements Source< T >
 {
@@ -170,15 +170,6 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 		if ( t != currentTimePointIndex )
 			loadTimepoint( t );
 		transform.set( currentSourceTransforms[ level ] );
-	}
-
-	@Override
-	@Deprecated
-	public AffineTransform3D getSourceTransform( final int t, final int level )
-	{
-		final AffineTransform3D transform = new AffineTransform3D();
-		getSourceTransform( t, level, transform );
-		return transform;
 	}
 
 	@Override

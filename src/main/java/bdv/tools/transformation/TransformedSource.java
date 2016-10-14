@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -28,16 +28,16 @@
  */
 package bdv.tools.transformation;
 
-import mpicbg.spim.data.sequence.VoxelDimensions;
-import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.RealRandomAccessible;
-import net.imglib2.realtransform.AffineTransform3D;
 import bdv.cache.CacheHints;
 import bdv.viewer.Interpolation;
 import bdv.viewer.Source;
 import bdv.viewer.render.DefaultMipmapOrdering;
 import bdv.viewer.render.MipmapOrdering;
 import bdv.viewer.render.SetCacheHints;
+import mpicbg.spim.data.sequence.VoxelDimensions;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.RealRandomAccessible;
+import net.imglib2.realtransform.AffineTransform3D;
 
 /**
  * A {@link Source} that wraps another {@link Source} and allows to decorate it
@@ -216,15 +216,6 @@ public class TransformedSource< T > implements Source< T >, MipmapOrdering, SetC
 	{
 		source.getSourceTransform( t, level, transform );
 		transform.preConcatenate( sourceTransform );
-	}
-
-	@Override
-	@Deprecated
-	public AffineTransform3D getSourceTransform( final int t, final int level )
-	{
-		final AffineTransform3D transform = new AffineTransform3D();
-		getSourceTransform( t, level, transform );
-		return transform;
 	}
 
 	@Override
