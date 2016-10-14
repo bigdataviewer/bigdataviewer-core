@@ -2,7 +2,6 @@ package net.imglib2.display;
 
 import net.imglib2.converter.Converter;
 import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.volatiles.VolatileARGBType;
 import net.imglib2.util.Util;
 
