@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -37,6 +37,14 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CountDownLatch;
 
+import bdv.img.hdf5.Hdf5ImageLoader;
+import bdv.img.hdf5.Partition;
+import bdv.img.hdf5.Util;
+import bdv.spimdata.SequenceDescriptionMinimal;
+import ch.systemsx.cisd.hdf5.HDF5Factory;
+import ch.systemsx.cisd.hdf5.HDF5IntStorageFeatures;
+import ch.systemsx.cisd.hdf5.IHDF5Reader;
+import ch.systemsx.cisd.hdf5.IHDF5Writer;
 import mpicbg.spim.data.XmlHelpers;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicImgLoader;
@@ -58,14 +66,6 @@ import net.imglib2.iterator.LocalizingIntervalIterator;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.view.Views;
-import bdv.img.hdf5.Hdf5ImageLoader;
-import bdv.img.hdf5.Partition;
-import bdv.img.hdf5.Util;
-import bdv.spimdata.SequenceDescriptionMinimal;
-import ch.systemsx.cisd.hdf5.HDF5Factory;
-import ch.systemsx.cisd.hdf5.HDF5IntStorageFeatures;
-import ch.systemsx.cisd.hdf5.IHDF5Reader;
-import ch.systemsx.cisd.hdf5.IHDF5Writer;
 
 /**
  * Create a hdf5 files containing image data from all views and all timepoints
@@ -961,85 +961,5 @@ public class WriteSequenceToHdf5
 
 		for ( int j = 0; j < numBlockPixels; ++j )
 			out.next().setReal( accumulator[ j ] * scale );
-	}
-
-	/**
-	 * DEPRECATED. Use
-	 * {@link #writeHdf5File(AbstractSequenceDescription, Map, boolean, File, LoopbackHeuristic, AfterEachPlane, int, ProgressWriter)}
-	 * instead.
-	 */
-	@Deprecated
-	public static void writeHdf5File(
-			final AbstractSequenceDescription< ?, ?, ? > seq,
-			final Map< Integer, ExportMipmapInfo > perSetupMipmapInfo,
-			final boolean deflate,
-			final File hdf5File,
-			final LoopbackHeuristic loopbackHeuristic,
-			final AfterEachPlane afterEachPlane,
-			final ProgressWriter progressWriter )
-	{
-		final int numThreads = Math.max( 1, Runtime.getRuntime().availableProcessors() - 2 );
-		writeHdf5File( seq, perSetupMipmapInfo, deflate, hdf5File, loopbackHeuristic, afterEachPlane, numThreads, progressWriter );
-	}
-
-	/**
-	 * DEPRECATED. Use
-	 * {@link #writeHdf5File(AbstractSequenceDescription, int[][], int[][], boolean, File, LoopbackHeuristic, AfterEachPlane, int, ProgressWriter)}
-	 * instead.
-	 */
-	@Deprecated
-	public static void writeHdf5File(
-			final AbstractSequenceDescription< ?, ?, ? > seq,
-			final int[][] resolutions,
-			final int[][] subdivisions,
-			final boolean deflate,
-			final File hdf5File,
-			final LoopbackHeuristic loopbackHeuristic,
-			final AfterEachPlane afterEachPlane,
-			final ProgressWriter progressWriter )
-	{
-		final int numThreads = Math.max( 1, Runtime.getRuntime().availableProcessors() - 2 );
-		writeHdf5File( seq, resolutions, subdivisions, deflate, hdf5File, loopbackHeuristic, afterEachPlane, numThreads, progressWriter );
-	}
-
-	/**
-	 * DEPRECATED. Use
-	 * {@link #writeHdf5PartitionFile(AbstractSequenceDescription, Map, boolean, Partition, LoopbackHeuristic, AfterEachPlane, int, ProgressWriter)}
-	 * instead.
-	 */
-	@Deprecated
-	public static void writeHdf5PartitionFile(
-			final AbstractSequenceDescription< ?, ?, ? > seq,
-			final Map< Integer, ExportMipmapInfo > perSetupMipmapInfo,
-			final boolean deflate,
-			final Partition partition,
-			final LoopbackHeuristic loopbackHeuristic,
-			final AfterEachPlane afterEachPlane,
-			final ProgressWriter progressWriter )
-	{
-		final int numThreads = Math.max( 1, Runtime.getRuntime().availableProcessors() - 2 );
-		writeHdf5PartitionFile( seq, perSetupMipmapInfo, deflate, partition, loopbackHeuristic, afterEachPlane, numThreads, progressWriter );
-	}
-
-	/**
-	 * DEPRECATED. Use
-	 * {@link #writeViewToHdf5PartitionFile(RandomAccessibleInterval, Partition, int, int, ExportMipmapInfo, boolean, boolean, LoopbackHeuristic, AfterEachPlane, int, ProgressWriter)}
-	 * instead.
-	 */
-	@Deprecated
-	public static void writeViewToHdf5PartitionFile(
-			final RandomAccessibleInterval< UnsignedShortType > img,
-			final Partition partition,
-			final int timepointIdPartition,
-			final int setupIdPartition,
-			final ExportMipmapInfo mipmapInfo,
-			final boolean writeMipmapInfo,
-			final boolean deflate,
-			final LoopbackHeuristic loopbackHeuristic,
-			final AfterEachPlane afterEachPlane,
-			final ProgressWriter progressWriter )
-	{
-		final int numThreads = Math.max( 1, Runtime.getRuntime().availableProcessors() - 2 );
-		writeViewToHdf5PartitionFile( img, partition, timepointIdPartition, setupIdPartition, mipmapInfo, writeMipmapInfo, deflate, loopbackHeuristic, afterEachPlane, numThreads, progressWriter );
 	}
 }
