@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -40,6 +40,18 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import bdv.AbstractViewerSetupImgLoader;
+import bdv.ViewerImgLoader;
+import bdv.cache.CacheHints;
+import bdv.cache.LoadingStrategy;
+import bdv.img.cache.CachedCellImg;
+import bdv.img.cache.VolatileGlobalCellCache;
+import bdv.img.cache.VolatileImgCells;
+import bdv.img.cache.VolatileImgCells.CellCache;
+import bdv.util.ConstantRandomAccessible;
+import bdv.util.MipmapTransforms;
+import ch.systemsx.cisd.hdf5.HDF5Factory;
+import ch.systemsx.cisd.hdf5.IHDF5Reader;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.generic.sequence.ImgLoaderHint;
@@ -76,18 +88,6 @@ import net.imglib2.type.volatiles.VolatileUnsignedShortType;
 import net.imglib2.util.Fraction;
 import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
-import bdv.AbstractViewerSetupImgLoader;
-import bdv.ViewerImgLoader;
-import bdv.cache.CacheHints;
-import bdv.cache.LoadingStrategy;
-import bdv.img.cache.CachedCellImg;
-import bdv.img.cache.VolatileGlobalCellCache;
-import bdv.img.cache.VolatileImgCells;
-import bdv.img.cache.VolatileImgCells.CellCache;
-import bdv.util.ConstantRandomAccessible;
-import bdv.util.MipmapTransforms;
-import ch.systemsx.cisd.hdf5.HDF5Factory;
-import ch.systemsx.cisd.hdf5.IHDF5Reader;
 
 public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 {
@@ -200,8 +200,6 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 				cachedDimsAndExistence.clear();
 
 				final List< TimePoint > timepoints = sequenceDescription.getTimePoints().getTimePointsOrdered();
-				final int maxNumTimepoints = timepoints.get( timepoints.size() - 1 ).getId() + 1;
-				final int maxNumSetups = setups.get( setups.size() - 1 ).getId() + 1;
 				try
 				{
 					hdf5Access = new HDF5AccessHack( hdf5Reader );
@@ -212,7 +210,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 					hdf5Access = new HDF5Access( hdf5Reader );
 				}
 				shortLoader = new Hdf5VolatileShortArrayLoader( hdf5Access );
-				cache = new VolatileGlobalCellCache( maxNumTimepoints, maxNumSetups, maxNumLevels, 1 );
+				cache = new VolatileGlobalCellCache( maxNumLevels, 1 );
 			}
 		}
 	}

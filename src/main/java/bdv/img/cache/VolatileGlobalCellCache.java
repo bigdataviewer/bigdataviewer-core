@@ -104,12 +104,6 @@ public class VolatileGlobalCellCache implements CacheControl
 
 	protected final LoadingVolatileCache< Key, VolatileCell< ? > > volatileCache; // TODO rename
 
-	@Deprecated
-	public VolatileGlobalCellCache( final int maxNumTimepoints, final int maxNumSetups, final int maxNumLevels, final int numFetcherThreads )
-	{
-		this( maxNumLevels, numFetcherThreads );
-	}
-
 	/**
 	 * @param maxNumLevels
 	 *            the highest occurring mipmap level plus 1.

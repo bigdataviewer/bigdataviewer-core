@@ -87,7 +87,7 @@ public class OpenConnectomeImageLoader extends AbstractViewerSetupImgLoader< Uns
 		blockDimensions = info.getLevelCellDimensions();
 		mipmapTransforms = info.getLevelTransforms( mode );
 
-		cache = new VolatileGlobalCellCache( 1, 1, numScales, 10 );
+		cache = new VolatileGlobalCellCache( numScales, 10 );
 		System.out.println( info.getOffsets( mode )[ 0 ][ 2 ] + " " + imageDimensions[ 0 ][ 2 ] );
 
 		loader = new OpenConnectomeVolatileArrayLoader(
