@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -58,17 +58,6 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.filechooser.FileFilter;
 
-import mpicbg.spim.data.SpimDataException;
-import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
-import mpicbg.spim.data.generic.sequence.BasicViewSetup;
-import mpicbg.spim.data.registration.ViewRegistration;
-import mpicbg.spim.data.registration.ViewRegistrations;
-import mpicbg.spim.data.sequence.TimePoint;
-import mpicbg.spim.data.sequence.TimePoints;
-import mpicbg.spim.data.sequence.ViewId;
-import net.imglib2.RealInterval;
-import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.util.Intervals;
 import bdv.AbstractSpimSource;
 import bdv.export.ExportMipmapInfo;
 import bdv.export.WriteSequenceToHdf5;
@@ -82,6 +71,17 @@ import bdv.tools.transformation.TransformedSource;
 import bdv.viewer.Source;
 import bdv.viewer.ViewerPanel;
 import bdv.viewer.state.SourceState;
+import mpicbg.spim.data.SpimDataException;
+import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
+import mpicbg.spim.data.generic.sequence.BasicViewSetup;
+import mpicbg.spim.data.registration.ViewRegistration;
+import mpicbg.spim.data.registration.ViewRegistrations;
+import mpicbg.spim.data.sequence.TimePoint;
+import mpicbg.spim.data.sequence.TimePoints;
+import mpicbg.spim.data.sequence.ViewId;
+import net.imglib2.RealInterval;
+import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.util.Intervals;
 
 public class CropDialog extends JDialog
 {
@@ -300,7 +300,7 @@ public class CropDialog extends JDialog
 		final int x = 0;
 		final int y = 0;
 		final int z = - d / 2;
-		final RealInterval cropInterval = Intervals.createMinSizeReal( x, y, z, w, h, d );
+		final RealInterval cropInterval = Intervals.createMinMaxReal( x, y, z, x + w, y + h, z + d );
 
 		// list of timepoints of the original sequence
 		final List< TimePoint > sequenceTimepointsOrdered = sequenceDescription.getTimePoints().getTimePointsOrdered();
