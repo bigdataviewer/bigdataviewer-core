@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -38,6 +38,7 @@ import bdv.cache.WeakSoftCache;
 import bdv.cache.util.BlockingFetchQueues;
 import bdv.img.cache.VolatileImgCells.CellCache;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
+import net.imglib2.img.cell.CellImg;
 
 public class VolatileGlobalCellCache implements CacheControl
 {
@@ -174,6 +175,20 @@ public class VolatileGlobalCellCache implements CacheControl
 	public void clearCache()
 	{
 		volatileCache.invalidateAll();
+	}
+
+	/**
+	 * <em>For internal use.</em>
+	 * <p>
+	 * Get the {@link LoadingVolatileCache} that handles cell loading. This is
+	 * used by bigdataviewer-server to directly issue Cell requests without
+	 * having {@link CellImg}s and associated {@link VolatileCellCache}s.
+	 *
+	 * @return the cache that handles cell loading
+	 */
+	public LoadingVolatileCache< Key, VolatileCell< ? > > getLoadingVolatileCache()
+	{
+		return volatileCache;
 	}
 
 	/**
