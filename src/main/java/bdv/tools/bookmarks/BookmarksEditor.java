@@ -44,6 +44,8 @@ import javax.swing.KeyStroke;
 
 import org.scijava.ui.behaviour.util.InputActionBindings;
 
+import bdv.tools.bookmarks.bookmark.Bookmark;
+import bdv.tools.bookmarks.bookmark.DynamicBookmark;
 import bdv.util.Affine3DHelpers;
 import bdv.viewer.ViewerPanel;
 import bdv.viewer.animate.RotationAnimator;
@@ -57,6 +59,7 @@ public class BookmarksEditor
 	{
 		INACTIVE,
 		SET,
+		SET_DYNAMIC_BOOKMARK,
 		RECALL_TRANSFORM,
 		RECALL_ORIENTATION
 	}
@@ -122,11 +125,33 @@ public class BookmarksEditor
 							final double cY = viewer.getDisplay().getHeight() / 2.0;
 							t.set( t.get( 0, 3 ) - cX, 0, 3 );
 							t.set( t.get( 1, 3 ) - cY, 1, 3 );
-							bookmarks.put( key, t );
+							
+							Bookmark bookmark = new Bookmark(key, t);
+							bookmarks.put( bookmark );
+							
 							animator.fadeOut( "set bookmark: " + key, 500 );
 							viewer.requestRepaint();
 						}
 							break;
+						case SET_DYNAMIC_BOOKMARK:
+						{
+							final AffineTransform3D transform = new AffineTransform3D();
+							viewer.getState().getViewerTransform( transform );
+							final double cX = viewer.getDisplay().getWidth() / 2.0;
+							final double cY = viewer.getDisplay().getHeight() / 2.0;
+							transform.set( transform.get( 0, 3 ) - cX, 0, 3 );
+							transform.set( transform.get( 1, 3 ) - cY, 1, 3 );
+							
+							int timepoint = viewer.getState().getCurrentTimepoint();
+							
+							DynamicBookmark bookmark = new DynamicBookmark(key, transform, timepoint);
+							bookmarks.put( bookmark );
+							
+							animator.fadeOut( "set dynamic bookmark: " + key, 500 );
+							viewer.requestRepaint();
+						}
+							break;
+							
 						case RECALL_TRANSFORM:
 						{
 							final AffineTransform3D t = bookmarks.get( key );
@@ -192,6 +217,11 @@ public class BookmarksEditor
 	public synchronized void initSetBookmark()
 	{
 		init( Mode.SET, "set bookmark: " );
+	}
+	
+	public synchronized void initSetDynamicBookmark()
+	{
+		init( Mode.SET_DYNAMIC_BOOKMARK, "set dynamic bookmark: " );
 	}
 
 	public synchronized void initGoToBookmark()

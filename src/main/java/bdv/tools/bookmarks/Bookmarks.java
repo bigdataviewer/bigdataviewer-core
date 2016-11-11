@@ -31,15 +31,16 @@ package bdv.tools.bookmarks;
 
 import java.util.HashMap;
 import java.util.Map.Entry;
-
-import mpicbg.spim.data.XmlHelpers;
 import net.imglib2.realtransform.AffineTransform3D;
 
 import org.jdom2.Element;
 
+import bdv.tools.bookmarks.bookmark.Bookmark;
+import bdv.tools.bookmarks.bookmark.DynamicBookmark;
+
 public class Bookmarks
 {
-	private final HashMap< String, AffineTransform3D > bookmarks;
+	private final HashMap< String, Bookmark > bookmarks;
 
 	public Bookmarks()
 	{
@@ -49,14 +50,10 @@ public class Bookmarks
 	public Element toXml()
 	{
 		final Element elem = new Element( "Bookmarks" );
-		for ( final Entry< String, AffineTransform3D > entry : bookmarks.entrySet() )
+		for ( final Entry< String, Bookmark > entry : bookmarks.entrySet() )
 		{
-			final String key = entry.getKey();
-			final AffineTransform3D transform = entry.getValue();
-
-			final Element elemBookmark = new Element( "Bookmark" );
-			elemBookmark.addContent( XmlHelpers.textElement( "key", key ) );
-			elemBookmark.addContent( XmlHelpers.affineTransform3DElement( "transform", transform ) );
+			final Bookmark bookmark = entry.getValue();
+			Element elemBookmark = bookmark.toXmlNode();
 			elem.addContent( elemBookmark );
 		}
 		return elem;
@@ -70,22 +67,37 @@ public class Bookmarks
 		if ( elemBookmarks == null )
 			return;
 
-		for ( final Element elem : elemBookmarks.getChildren( "Bookmark" ) )
+		for ( final Element elem : elemBookmarks.getChildren( Bookmark.XmlElementBookmarkName ) )
 		{
-			final String key = XmlHelpers.getText( elem, "key" );
-			final AffineTransform3D transform = XmlHelpers.getAffineTransform3D( elem, "transform" );
-			bookmarks.put( key, transform );
+			Bookmark bookmark = new Bookmark(elem);	
+			bookmarks.put( bookmark.getKey(), bookmark );
+		}
+		
+		for ( final Element elem : elemBookmarks.getChildren( DynamicBookmark.XmlElementBookmarkName ) )
+		{
+			DynamicBookmark bookmark = new DynamicBookmark(elem);
+			bookmarks.put( bookmark.getKey(), bookmark );
 		}
 	}
 
-	public void put( final String key, final AffineTransform3D transform )
+	public void put( final Bookmark bookmark )
 	{
-		bookmarks.put( key, transform );
+		bookmarks.put( bookmark.getKey(), bookmark );
+	}
+	
+	public Bookmark getBookmark( final String key )
+	{
+		return bookmarks.get( key );
 	}
 
 	public AffineTransform3D get( final String key )
 	{
-		return bookmarks.get( key );
+		Bookmark bookmark = getBookmark( key );
+		if(bookmark != null){
+			return bookmark.getAffineTransform3D();
+		}
+		
+		return null;
 	}
 }
 

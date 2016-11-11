@@ -60,6 +60,7 @@ public class BigDataViewerActions extends Actions
 	public static final String RECORD_MOVIE = "record movie";
 	public static final String RECORD_MAX_PROJECTION_MOVIE = "record max projection movie";
 	public static final String SET_BOOKMARK = "set bookmark";
+	public static final String SET_DYNAMIC_BOOKMARK = "set dynamic bookmark";
 	public static final String GO_TO_BOOKMARK = "go to bookmark";
 	public static final String GO_TO_BOOKMARK_ROTATION = "go to bookmark rotation";
 
@@ -75,6 +76,8 @@ public class BigDataViewerActions extends Actions
 	static final String[] GO_TO_BOOKMARK_KEYS              = new String[] { "B" };
 	static final String[] GO_TO_BOOKMARK_ROTATION_KEYS     = new String[] { "O" };
 	static final String[] SET_BOOKMARK_KEYS                = new String[] { "shift B" };
+	// TODO
+	static final String[] SET_DYNAMIC_BOOKMARK_KEYS          = new String[] { "shift D" };
 
 	/**
 	 * Create BigDataViewer actions and install them in the specified
@@ -154,6 +157,7 @@ public class BigDataViewerActions extends Actions
 		runnableAction( bookmarksEditor::initGoToBookmark, GO_TO_BOOKMARK, GO_TO_BOOKMARK_KEYS );
 		runnableAction( bookmarksEditor::initGoToBookmarkRotation, GO_TO_BOOKMARK_ROTATION, GO_TO_BOOKMARK_ROTATION_KEYS );
 		runnableAction( bookmarksEditor::initSetBookmark, SET_BOOKMARK, SET_BOOKMARK_KEYS );
+		runnableAction( bookmarksEditor::initSetDynamicBookmark, SET_DYNAMIC_BOOKMARK, SET_DYNAMIC_BOOKMARK_KEYS );
 	}
 
 	public void manualTransform( final ManualTransformationEditor manualTransformationEditor )

@@ -133,6 +133,11 @@ public class BigDataViewer
 	{
 		bookmarkEditor.initSetBookmark();
 	}
+	
+	public void initSetDynamicBookmark()
+	{
+		bookmarkEditor.initSetDynamicBookmark();
+	}
 
 	public void initGoToBookmark()
 	{
