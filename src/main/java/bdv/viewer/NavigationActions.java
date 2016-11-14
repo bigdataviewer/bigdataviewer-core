@@ -77,7 +77,7 @@ public class NavigationActions extends Actions
 
 	public NavigationActions( final KeyStrokeAdder.Factory keyConfig )
 	{
-		super( keyConfig, new String[] { "navigation" } );
+		super( keyConfig, new String[] { "bdv", "navigation" } );
 	}
 
 	public void alignPlaneAction( final ViewerPanel viewer, final AlignPlane plane, final String... defaultKeyStrokes )
