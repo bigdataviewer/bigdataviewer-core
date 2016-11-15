@@ -1012,6 +1012,14 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	public void stop()
 	{
 		painterThread.interrupt();
+		try
+		{
+			painterThread.join( 0 );
+		}
+		catch ( final InterruptedException e )
+		{
+			e.printStackTrace();
+		}
 		renderingExecutorService.shutdown();
 		state.kill();
 		imageRenderer.kill();
