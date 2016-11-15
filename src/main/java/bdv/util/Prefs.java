@@ -122,25 +122,35 @@ public class Prefs
 
 	private static Prefs readPropertyFile()
 	{
-		final File file = new File( "bigdataviewer.properties" );
-		return readPropertyFile( file );
-	}
-
-	private static Prefs readPropertyFile( final File file )
-	{
-		try
+		// try "bdvkeyconfig.yaml" in current directory
+		// then "~/.bdv/bdvkeyconfig.yaml"
+		final File[] files = new File[] {
+				new File( "bigdataviewer.properties" ),
+				new File( System.getProperty( "user.home" ) + "/.bdv/bigdataviewer.properties" ) };
+		for ( final File file : files )
 		{
-			final InputStream stream = new FileInputStream( file );
-			final Properties config = new Properties();
-			config.load( stream );
-			return new Prefs( config );
-		}
-		catch ( final IOException e )
-		{
-			System.out.println( "Cannot find the config file :" + file + ". Using default settings." );
-			System.out.println( e.getMessage() );
+			if ( file.isFile() )
+			{
+				try
+				{
+					return readPropertyFile( file );
+				}
+				catch ( final IOException e )
+				{
+					System.err.println( "Cannot read config file :" + file );
+					e.printStackTrace();
+				}
+			}
 		}
 		return new Prefs( null );
+	}
+
+	private static Prefs readPropertyFile( final File file ) throws IOException
+	{
+		final InputStream stream = new FileInputStream( file );
+		final Properties config = new Properties();
+		config.load( stream );
+		return new Prefs( config );
 	}
 
 	public static Properties getDefaultProperties()
