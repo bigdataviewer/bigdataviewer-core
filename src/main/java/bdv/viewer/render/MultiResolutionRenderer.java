@@ -550,7 +550,10 @@ public class MultiResolutionRenderer
 						Thread.sleep( 1 );
 					}
 					catch ( final InterruptedException e )
-					{}
+					{
+						// restore interrupted state
+						Thread.currentThread().interrupt();
+					}
 					requestRepaint( currentScreenScaleIndex );
 				}
 			}
