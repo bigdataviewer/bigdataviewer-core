@@ -44,9 +44,10 @@ import javax.swing.KeyStroke;
 
 import org.scijava.ui.behaviour.util.InputActionBindings;
 
-import bdv.tools.bookmarks.bookmark.Bookmark;
+import bdv.tools.bookmarks.bookmark.SimpleBookmark;
 import bdv.tools.bookmarks.bookmark.DynamicBookmark;
 import bdv.util.Affine3DHelpers;
+import bdv.viewer.TimePointListener;
 import bdv.viewer.ViewerPanel;
 import bdv.viewer.animate.RotationAnimator;
 import bdv.viewer.animate.SimilarityTransformAnimator;
@@ -59,9 +60,9 @@ public class BookmarksEditor
 	{
 		INACTIVE,
 		SET,
-		SET_DYNAMIC_BOOKMARK,
+		CREATE_DYNAMIC_BOOKMARK,
 		RECALL_TRANSFORM,
-		RECALL_ORIENTATION
+		RECALL_ORIENTATION,
 	}
 
 	private Mode mode = Mode.INACTIVE;
@@ -126,34 +127,76 @@ public class BookmarksEditor
 							t.set( t.get( 0, 3 ) - cX, 0, 3 );
 							t.set( t.get( 1, 3 ) - cY, 1, 3 );
 							
-							Bookmark bookmark = new Bookmark(key, t);
+							SimpleBookmark bookmark = new SimpleBookmark(key, t);
 							bookmarks.put( bookmark );
 							
 							animator.fadeOut( "set bookmark: " + key, 500 );
 							viewer.requestRepaint();
 						}
 							break;
-						case SET_DYNAMIC_BOOKMARK:
-						{
-							final AffineTransform3D transform = new AffineTransform3D();
-							viewer.getState().getViewerTransform( transform );
-							final double cX = viewer.getDisplay().getWidth() / 2.0;
-							final double cY = viewer.getDisplay().getHeight() / 2.0;
-							transform.set( transform.get( 0, 3 ) - cX, 0, 3 );
-							transform.set( transform.get( 1, 3 ) - cY, 1, 3 );
-							
-							int timepoint = viewer.getState().getCurrentTimepoint();
-							
-							DynamicBookmark bookmark = new DynamicBookmark(key, transform, timepoint);
+						case CREATE_DYNAMIC_BOOKMARK:
+						{				
+							DynamicBookmark bookmark = new DynamicBookmark(key);
 							bookmarks.put( bookmark );
 							
-							animator.fadeOut( "set dynamic bookmark: " + key, 500 );
+							animator.fadeOut( "create dynamic bookmark: " + key, 500 );
 							viewer.requestRepaint();
 						}
 							break;
-							
 						case RECALL_TRANSFORM:
 						{
+							final SimpleBookmark simpleBookmark = bookmarks.getSimpleBookmark(key);
+							final DynamicBookmark dynamicBookmark = bookmarks.getDynamicBookmark(key);
+							if(simpleBookmark != null){
+								final AffineTransform3D t = simpleBookmark.getAffineTransform3D();
+								if ( t != null )
+								{
+									final AffineTransform3D c = new AffineTransform3D();
+									viewer.getState().getViewerTransform( c );
+									final double cX = viewer.getDisplay().getWidth() / 2.0;
+									final double cY = viewer.getDisplay().getHeight() / 2.0;
+									c.set( c.get( 0, 3 ) - cX, 0, 3 );
+									c.set( c.get( 1, 3 ) - cY, 1, 3 );
+									viewer.setTransformAnimator( new SimilarityTransformAnimator( c, t, cX, cY, 300 ) );
+								}
+							} else if(dynamicBookmark != null){
+								int currentTimepoint = viewer.getState().getCurrentTimepoint();
+								final int previousTimepoint = dynamicBookmark.getPreviousTimepoint(currentTimepoint);
+								final int nextTimepoint = dynamicBookmark.getNextTimepoint(currentTimepoint);
+								
+								AffineTransform3D previousTransform = dynamicBookmark.getTransform(previousTimepoint);
+								AffineTransform3D nextTransform = dynamicBookmark.getTransform(nextTimepoint);
+								
+								if(previousTransform == null){
+									previousTransform = new AffineTransform3D();
+									viewer.getState().getViewerTransform( previousTransform );
+								}
+								
+								if(nextTransform == null){
+									nextTransform = previousTransform;
+								}
+								
+								
+								final double centerX = viewer.getDisplay().getWidth() / 2.0;
+								final double centerY = viewer.getDisplay().getHeight() / 2.0;
+								
+								SimilarityTransformAnimator transAnimator = new SimilarityTransformAnimator( previousTransform, nextTransform, centerX, centerY, nextTimepoint - previousTimepoint );
+								transAnimator.setTime(0);
+								AffineTransform3D targetTransform = transAnimator.getCurrent(currentTimepoint - previousTimepoint);
+								
+								if ( targetTransform != null )
+								{
+									final AffineTransform3D viewTransform = new AffineTransform3D();
+									viewer.getState().getViewerTransform( viewTransform );
+									viewTransform.set( viewTransform.get( 0, 3 ) - centerX, 0, 3 );
+									viewTransform.set( viewTransform.get( 1, 3 ) - centerY, 1, 3 );
+									targetTransform.set( targetTransform.get( 0, 3 ) - centerX, 0, 3 );
+									targetTransform.set( targetTransform.get( 1, 3 ) - centerY, 1, 3 );
+									viewer.setTransformAnimator( new SimilarityTransformAnimator( viewTransform, targetTransform, centerX, centerY, 300 ) );
+								}
+							}
+							
+							/*
 							final AffineTransform3D t = bookmarks.get( key );
 							if ( t != null )
 							{
@@ -165,6 +208,7 @@ public class BookmarksEditor
 								c.set( c.get( 1, 3 ) - cY, 1, 3 );
 								viewer.setTransformAnimator( new SimilarityTransformAnimator( c, t, cX, cY, 300 ) );
 							}
+							*/
 							animator.fadeOut( "go to bookmark: " + key, 500 );
 						}
 							break;
@@ -193,6 +237,14 @@ public class BookmarksEditor
 				}
 			}
 		} );
+	
+		viewer.addTimePointListener(new TimePointListener() {
+			
+			@Override
+			public void timePointChanged(int timePointIndex) {
+				
+			}
+		});
 	}
 
 	public synchronized void abort()
@@ -219,9 +271,9 @@ public class BookmarksEditor
 		init( Mode.SET, "set bookmark: " );
 	}
 	
-	public synchronized void initSetDynamicBookmark()
+	public synchronized void initCreateDynamicBookmark()
 	{
-		init( Mode.SET_DYNAMIC_BOOKMARK, "set dynamic bookmark: " );
+		init( Mode.CREATE_DYNAMIC_BOOKMARK, "create dynamic bookmark: " );
 	}
 
 	public synchronized void initGoToBookmark()

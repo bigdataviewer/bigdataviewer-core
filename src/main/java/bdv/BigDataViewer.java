@@ -136,7 +136,7 @@ public class BigDataViewer
 	
 	public void initSetDynamicBookmark()
 	{
-		bookmarkEditor.initSetDynamicBookmark();
+		bookmarkEditor.initCreateDynamicBookmark();
 	}
 
 	public void initGoToBookmark()
@@ -696,7 +696,7 @@ public class BigDataViewer
 //		final String fn = "/Users/Pietzsch/Desktop/bdv example/drosophila 2.xml";
 //		final String fn = "/Users/pietzsch/Desktop/data/clusterValia/140219-1/valia-140219-1.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/data/catmaid.xml";
-		final String fn = "src/main/resources/openconnectome-bock11-neariso.xml";
+//		final String fn = "src/main/resources/openconnectome-bock11-neariso.xml";
 //		final String fn = "/home/saalfeld/catmaid.xml";
 //		final String fn = "/home/saalfeld/catmaid-fafb00-v9.xml";
 //		final String fn = "/home/saalfeld/catmaid-fafb00-sample_A_cutout_3k.xml";
@@ -714,6 +714,9 @@ public class BigDataViewer
 //		final String fn = "/Users/pietzsch/Desktop/data/clusterValia/140219-1/valia-140219-1.xml";
 //		final String fn = "/Users/pietzsch/workspace/data/111010_weber_full.xml";
 //		final String fn = "/Volumes/projects/tomancak_lightsheet/Mette/ZeissZ1SPIM/Maritigrella/021013_McH2BsGFP_CAAX-mCherry/11-use/hdf5/021013_McH2BsGFP_CAAX-mCherry-11-use.xml";
+		final String fn = "C:\\Users\\maxkl\\Desktop\\weber_full\\111010_weber_full.xml";		
+		
+		
 		try
 		{
 			System.setProperty( "apple.laf.useScreenMenuBar", "true" );
