@@ -6,9 +6,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.TreeSet;
 
 import org.jdom2.Element;
 
+import bdv.viewer.animate.SimilarityTransformAnimator;
 import mpicbg.spim.data.XmlHelpers;
 import net.imglib2.realtransform.AffineTransform3D;
 
@@ -87,54 +89,104 @@ public class DynamicBookmark implements IBookmark{
 			setTimepoint(timepoint, transform);
 		}
 	}
-	
-	public int getPreviousTimepoint(int currentTimepoint){
-		if( timepoints.get(currentTimepoint) != null){
-			return currentTimepoint;
-		}
-		
-		List<Integer> list = new ArrayList<>(timepoints.keySet());
-		Collections.sort(list);
-		
-		int closest = 0;
-		int lastDiff = Integer.MAX_VALUE;
-		
-		for (int element : list) {
-	       int diff = currentTimepoint - element;
-	       if(diff >= 0 && diff < lastDiff){
-	    	   closest = element;
-	    	   lastDiff = diff;
-	       }
-	    }
-		
-		return closest;
+	/**
+	 * Returns the greatest timepoint less than or equal to the given timepoinr,
+	 * or null if there is no such timepoint.
+	 * 
+	 * @param timepoint the reference value
+	 * @return previous timepoint which is less or equals the given timepoint or null
+	 */
+	public Integer getPreviousTimepoint(int timepoint){
+		TreeSet<Integer> timepointTreeSet = new TreeSet<Integer>(timepoints.keySet());
+		return timepointTreeSet.floor(timepoint);
 	}
 	
-	public int getNextTimepoint(int currentTimepoint){
-		List<Integer> list = new ArrayList<>(timepoints.keySet());
-		Collections.sort(list);
-		
-		int closest = 0;
-		int lastDiff = Integer.MAX_VALUE;
-		
-		for (int element : list) {
-	       int diff = element - currentTimepoint;
-	       if(diff > 0 && diff < lastDiff){
-	    	   closest = element;
-	    	   lastDiff = diff;
-	       }
-	    }
-		
-		return closest;
+	/**
+	 * Returns the least timepoint strictly greater than the given timepoint,
+	 * or null if there is no such timepoint.
+	 * @param timepoint the reference value
+	 * @return next timepoint which is greater than the given timepoint or null
+	 */
+	public Integer getNextTimepoint(int timepoint){
+		TreeSet<Integer> timepointTreeSet = new TreeSet<Integer>(timepoints.keySet());
+		return timepointTreeSet.higher(timepoint);
 	}
 	
-	public AffineTransform3D getPreviousTransform(int currentTimepoint){
-		int previousTimepoint = getPreviousTimepoint(currentTimepoint);
+	/**
+	 * Returns the transform from the {@link #getPreviousTimepoint(int) previous timepoint}.
+	 * 
+	 * @param timepoint the reference value
+	 * @return previous transform or null
+	 */
+	public AffineTransform3D getPreviousTransform(int timepoint){
+		Integer previousTimepoint = getPreviousTimepoint(timepoint);
+		if(previousTimepoint == null)
+			return null;
+		
 		return timepoints.get(previousTimepoint);
 	}
 	
-	public AffineTransform3D getNextTransform(int currentTimepoint){
-		int nextTimepoint = getNextTimepoint(currentTimepoint);
+	/**
+	 * Returns the transform from the {@link #getNextTimepoint(int) next timepoint}.
+	 * 
+	 * @param timepoint the reference value
+	 * @return next transform or null
+	 */
+	public AffineTransform3D getNextTransform(int timepoint){
+		Integer nextTimepoint = getNextTimepoint(timepoint);
+		if(nextTimepoint == null)
+			return null;
+		
 		return timepoints.get(nextTimepoint);
+	}
+	
+	/**
+	 * Returns interpolated transform between {@link #getPreviousTransform(int) previous} and {@link #getNextTransform(int) next} transform for given timepoint.
+	 * 
+	 * @param timepoint 
+	 * @param cX
+	 * @param cY
+	 * @return
+	 */
+	public AffineTransform3D getInterpolatedTransform(final int timepoint, final double cX, final double cY) {
+
+		// get previous transform. if null, use default transform
+		AffineTransform3D previousTransform = getPreviousTransform(timepoint);
+		if (previousTransform == null) {
+			previousTransform = new AffineTransform3D();
+
+			// TODO Should we use the current view transform instead of the
+			// default transform?
+			// viewer.getState().getViewerTransform( previousTransform );
+		}
+
+		// get next transform
+		// if null (there is no next transform), return previous transform
+		AffineTransform3D nextTransform = getNextTransform(timepoint);
+		if (nextTransform == null) {
+			return previousTransform;
+		}
+
+		// get previous timepoint, if null use 0
+		Integer previousTimepoint = getPreviousTimepoint(timepoint);
+		if (previousTimepoint == null) {
+			previousTimepoint = 0;
+		}
+
+		// get next timepoint. Cannot be null, since there is no nextTransform.
+		Integer nextTimepoint = getNextTimepoint(timepoint);
+		if (nextTimepoint == null) {
+			nextTimepoint = previousTimepoint;
+		}
+
+		SimilarityTransformAnimator transAnimator = new SimilarityTransformAnimator(previousTransform, nextTransform,
+				cX, cY, nextTimepoint - previousTimepoint);
+		transAnimator.setTime(0);
+		AffineTransform3D targetTransform = transAnimator.getCurrent(timepoint - previousTimepoint);
+
+		targetTransform.set( targetTransform.get( 0, 3 ) - cX, 0, 3 );
+		targetTransform.set( targetTransform.get( 1, 3 ) - cY, 1, 3 );
+		
+		return targetTransform;
 	}
 }

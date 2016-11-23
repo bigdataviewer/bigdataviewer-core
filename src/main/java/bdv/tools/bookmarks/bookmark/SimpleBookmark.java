@@ -27,11 +27,11 @@ public class SimpleBookmark implements IBookmark {
 		return this.key;
 	}
 	
-	public AffineTransform3D getAffineTransform3D() {
+	public AffineTransform3D getTransform() {
 		return this.transform;
 	}
 
-	public void setAffineTransform3D(AffineTransform3D transform) {
+	public void setTransform(AffineTransform3D transform) {
 		this.transform = transform;
 	}
 	

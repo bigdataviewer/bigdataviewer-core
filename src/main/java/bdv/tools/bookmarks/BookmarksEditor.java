@@ -145,70 +145,22 @@ public class BookmarksEditor
 							break;
 						case RECALL_TRANSFORM:
 						{
-							final SimpleBookmark simpleBookmark = bookmarks.getSimpleBookmark(key);
-							final DynamicBookmark dynamicBookmark = bookmarks.getDynamicBookmark(key);
-							if(simpleBookmark != null){
-								final AffineTransform3D t = simpleBookmark.getAffineTransform3D();
-								if ( t != null )
-								{
-									final AffineTransform3D c = new AffineTransform3D();
-									viewer.getState().getViewerTransform( c );
-									final double cX = viewer.getDisplay().getWidth() / 2.0;
-									final double cY = viewer.getDisplay().getHeight() / 2.0;
-									c.set( c.get( 0, 3 ) - cX, 0, 3 );
-									c.set( c.get( 1, 3 ) - cY, 1, 3 );
-									viewer.setTransformAnimator( new SimilarityTransformAnimator( c, t, cX, cY, 300 ) );
-								}
-							} else if(dynamicBookmark != null){
-								int currentTimepoint = viewer.getState().getCurrentTimepoint();
-								final int previousTimepoint = dynamicBookmark.getPreviousTimepoint(currentTimepoint);
-								final int nextTimepoint = dynamicBookmark.getNextTimepoint(currentTimepoint);
-								
-								AffineTransform3D previousTransform = dynamicBookmark.getTransform(previousTimepoint);
-								AffineTransform3D nextTransform = dynamicBookmark.getTransform(nextTimepoint);
-								
-								if(previousTransform == null){
-									previousTransform = new AffineTransform3D();
-									viewer.getState().getViewerTransform( previousTransform );
-								}
-								
-								if(nextTransform == null){
-									nextTransform = previousTransform;
-								}
-								
-								
-								final double centerX = viewer.getDisplay().getWidth() / 2.0;
-								final double centerY = viewer.getDisplay().getHeight() / 2.0;
-								
-								SimilarityTransformAnimator transAnimator = new SimilarityTransformAnimator( previousTransform, nextTransform, centerX, centerY, nextTimepoint - previousTimepoint );
-								transAnimator.setTime(0);
-								AffineTransform3D targetTransform = transAnimator.getCurrent(currentTimepoint - previousTimepoint);
-								
-								if ( targetTransform != null )
-								{
-									final AffineTransform3D viewTransform = new AffineTransform3D();
-									viewer.getState().getViewerTransform( viewTransform );
-									viewTransform.set( viewTransform.get( 0, 3 ) - centerX, 0, 3 );
-									viewTransform.set( viewTransform.get( 1, 3 ) - centerY, 1, 3 );
-									targetTransform.set( targetTransform.get( 0, 3 ) - centerX, 0, 3 );
-									targetTransform.set( targetTransform.get( 1, 3 ) - centerY, 1, 3 );
-									viewer.setTransformAnimator( new SimilarityTransformAnimator( viewTransform, targetTransform, centerX, centerY, 300 ) );
-								}
-							}
+							final int currentTimepoint = viewer.getState().getCurrentTimepoint();
+							final double cX = viewer.getDisplay().getWidth() / 2.0;
+							final double cY = viewer.getDisplay().getHeight() / 2.0;
 							
-							/*
-							final AffineTransform3D t = bookmarks.get( key );
-							if ( t != null )
+							final AffineTransform3D targetTransform = bookmarks.getTransform(key, currentTimepoint, cX, cY);
+							
+							if ( targetTransform != null )
 							{
-								final AffineTransform3D c = new AffineTransform3D();
-								viewer.getState().getViewerTransform( c );
-								final double cX = viewer.getDisplay().getWidth() / 2.0;
-								final double cY = viewer.getDisplay().getHeight() / 2.0;
-								c.set( c.get( 0, 3 ) - cX, 0, 3 );
-								c.set( c.get( 1, 3 ) - cY, 1, 3 );
-								viewer.setTransformAnimator( new SimilarityTransformAnimator( c, t, cX, cY, 300 ) );
+								final AffineTransform3D viewTransform = new AffineTransform3D();
+								viewer.getState().getViewerTransform( viewTransform );
+								
+								viewTransform.set( viewTransform.get( 0, 3 ) - cX, 0, 3 );
+								viewTransform.set( viewTransform.get( 1, 3 ) - cY, 1, 3 );
+								viewer.setTransformAnimator( new SimilarityTransformAnimator( viewTransform, targetTransform, cX, cX, 300 ) );
 							}
-							*/
+						
 							animator.fadeOut( "go to bookmark: " + key, 500 );
 						}
 							break;
@@ -253,6 +205,8 @@ public class BookmarksEditor
 			animator.clear();
 		done();
 	}
+	
+	
 
 	protected synchronized void init( final Mode mode, final String message )
 	{
