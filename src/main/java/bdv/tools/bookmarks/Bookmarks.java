@@ -37,115 +37,94 @@ import org.jdom2.Element;
 
 import bdv.tools.bookmarks.bookmark.SimpleBookmark;
 import bdv.viewer.ViewerPanel;
+import bdv.viewer.animate.SimilarityTransformAnimator;
+import bdv.viewer.state.ViewerState;
 import bdv.tools.bookmarks.bookmark.DynamicBookmark;
 import bdv.tools.bookmarks.bookmark.IBookmark;
 
-public class Bookmarks
-{
-	private final HashMap< String, IBookmark > bookmarks;
-	private IBookmark activeBookmark;
-	
-	public Bookmarks()
-	{
+public class Bookmarks {
+	private final HashMap<String, IBookmark> bookmarks;
+
+	public Bookmarks() {
 		bookmarks = new HashMap<>();
 	}
 
-	public Element toXml()
-	{
-		final Element elem = new Element( "Bookmarks" );
-		for ( final Entry< String, IBookmark > entry : bookmarks.entrySet() )
-		{
+	public Element toXml() {
+		final Element elem = new Element("Bookmarks");
+		for (final Entry<String, IBookmark> entry : bookmarks.entrySet()) {
 			final IBookmark bookmark = entry.getValue();
 			Element elemBookmark = bookmark.toXmlNode();
-			elem.addContent( elemBookmark );
+			elem.addContent(elemBookmark);
 		}
 		return elem;
 	}
 
-	public void restoreFromXml( final Element parent )
-	{
+	public void restoreFromXml(final Element parent) {
 		bookmarks.clear();
 
-		final Element elemBookmarks = parent.getChild( "Bookmarks" );
-		if ( elemBookmarks == null )
+		final Element elemBookmarks = parent.getChild("Bookmarks");
+		if (elemBookmarks == null)
 			return;
 
-		for ( final Element elem : elemBookmarks.getChildren( SimpleBookmark.XML_ELEM_BOOKMARK_NAME ) )
-		{
-			SimpleBookmark bookmark = new SimpleBookmark(elem);	
-			bookmarks.put( bookmark.getKey(), bookmark );
+		for (final Element elem : elemBookmarks.getChildren(SimpleBookmark.XML_ELEM_BOOKMARK_NAME)) {
+			SimpleBookmark bookmark = new SimpleBookmark(elem);
+			bookmarks.put(bookmark.getKey(), bookmark);
 		}
-		
-		for ( final Element elem : elemBookmarks.getChildren( DynamicBookmark.XML_ELEM_BOOKMARK_NAME ) )
-		{
+
+		for (final Element elem : elemBookmarks.getChildren(DynamicBookmark.XML_ELEM_BOOKMARK_NAME)) {
 			DynamicBookmark bookmark = new DynamicBookmark(elem);
-			bookmarks.put( bookmark.getKey(), bookmark );
+			bookmarks.put(bookmark.getKey(), bookmark);
 		}
 	}
 
-	public void put( final IBookmark bookmark )
-	{
-		bookmarks.put( bookmark.getKey(), bookmark );
+	public void put(final IBookmark bookmark) {
+		bookmarks.put(bookmark.getKey(), bookmark);
 	}
-	
-	public IBookmark getBookmark( final String key )
-	{
-		return bookmarks.get( key );
+
+	public IBookmark getBookmark(final String key) {
+		return bookmarks.get(key);
 	}
-	
-	public SimpleBookmark getSimpleBookmark( final String key )
-	{
+
+	public SimpleBookmark getSimpleBookmark(final String key) {
 		IBookmark bookmark = getBookmark(key);
-		if(bookmark instanceof SimpleBookmark){
+		if (bookmark instanceof SimpleBookmark) {
 			return (SimpleBookmark) bookmark;
 		}
-		
+
 		return null;
 	}
-	
-	public DynamicBookmark getDynamicBookmark( final String key )
-	{
+
+	public DynamicBookmark getDynamicBookmark(final String key) {
 		IBookmark bookmark = getBookmark(key);
-		if(bookmark instanceof DynamicBookmark){
+		if (bookmark instanceof DynamicBookmark) {
 			return (DynamicBookmark) bookmark;
 		}
-		
+
 		return null;
 	}
 
 	// TODO remove
-	public AffineTransform3D get( final String key )
-	{
-		SimpleBookmark bookmark = getSimpleBookmark( key );
-		if(bookmark != null){
-			return bookmark.getAffineTransform3D();
+	public AffineTransform3D get(final String key) {
+		SimpleBookmark bookmark = getSimpleBookmark(key);
+		if (bookmark != null) {
+			return bookmark.getTransform();
 		}
-		
+
 		return null;
 	}
 
-	public AffineTransform3D getTransform(String key, int timepoint) {
+	public AffineTransform3D getTransform(final String key, final int currentTimepoint, final double cX, final double cY) {
 		
-		SimpleBookmark sb = getSimpleBookmark(key);
-		if(sb != null){
-			return sb.getAffineTransform3D();
+		final SimpleBookmark simpleBookmark = getSimpleBookmark(key);
+		if (simpleBookmark != null) {
+			return simpleBookmark.getTransform();
 		}
-		
-		DynamicBookmark db = getDynamicBookmark(key);
-		if(db != null){
-			
-			int previousTimepoint = db.getPreviousTimepoint(timepoint);
-			int nextTimepoint = db.getNextTimepoint(timepoint);
-			
-			AffineTransform3D previousTransform = db.getTransform(previousTimepoint);
-			AffineTransform3D nextTransform = db.getTransform(nextTimepoint);
-			
-			
-			
+
+		final DynamicBookmark dynamicBookmark = getDynamicBookmark(key);
+		if (dynamicBookmark != null) {
+			return dynamicBookmark.getInterpolatedTransform(currentTimepoint, cX, cY);
 		}
-		
+
 		return null;
-		
 	}
 }
-
