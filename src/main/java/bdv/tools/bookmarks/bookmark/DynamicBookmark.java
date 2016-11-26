@@ -26,7 +26,7 @@ public class DynamicBookmark implements IBookmark{
 	private final String key;
 	private final HashMap<Integer, AffineTransform3D> timepoints;
 
-	public DynamicBookmark(String key) {
+	public DynamicBookmark(final String key) {
 		this.key = key;
 		this.timepoints = new HashMap<>();
 	}
@@ -43,15 +43,15 @@ public class DynamicBookmark implements IBookmark{
 		return this.key;
 	}
 	
-	public AffineTransform3D getTransform(int timepoint){
+	public AffineTransform3D getTransform(final int timepoint){
 		return timepoints.get(timepoint);
 	}
 	
-	public void setTimepoint(int timepoint, AffineTransform3D transform){
+	public void setTimepoint(final int timepoint, final AffineTransform3D transform){
 		timepoints.put(timepoint, transform);
 	}
 	
-	public void removeTimepoint(int timepoint){
+	public void removeTimepoint(final int timepoint){
 		this.timepoints.remove(timepoints);
 	}
 	
@@ -60,7 +60,7 @@ public class DynamicBookmark implements IBookmark{
 		final Element elemBookmark = new Element( XML_ELEM_BOOKMARK_NAME );
 		elemBookmark.addContent( XmlHelpers.textElement( XML_ELEM_KEY_NAME, this.key ) );
 
-		Element elemKeyframes = new Element( XML_ELEM_KEYFRAMES_NAME );
+		final Element elemKeyframes = new Element( XML_ELEM_KEYFRAMES_NAME );
 		
 		for ( final Entry< Integer, AffineTransform3D> entry : timepoints.entrySet() )
 		{
@@ -75,17 +75,17 @@ public class DynamicBookmark implements IBookmark{
 		return elemBookmark;
 	}
 	
-	private String restoreKeyFromXml(Element parent){
+	private String restoreKeyFromXml(final Element parent){
 		return XmlHelpers.getText( parent, XML_ELEM_KEY_NAME );
 	}
 	
-	private void restoreKeyframesFromXml(Element parent){
+	private void restoreKeyframesFromXml(final Element parent){
 		final Element elemKeyframes = parent.getChild( XML_ELEM_KEYFRAMES_NAME );
 		
 		for ( final Element elemKeyframe : elemKeyframes.getChildren( XML_ELEM_KEYFRAME_NAME ) )
 		{
-			int timepoint = XmlHelpers.getInt( elemKeyframe, XML_ELEM_TIMEPOINT_NAME );
-			AffineTransform3D transform = XmlHelpers.getAffineTransform3D( elemKeyframe, XML_ELEM_TRANSFORM_NAME );
+			final int timepoint = XmlHelpers.getInt( elemKeyframe, XML_ELEM_TIMEPOINT_NAME );
+			final AffineTransform3D transform = XmlHelpers.getAffineTransform3D( elemKeyframe, XML_ELEM_TRANSFORM_NAME );
 			setTimepoint(timepoint, transform);
 		}
 	}
@@ -96,8 +96,8 @@ public class DynamicBookmark implements IBookmark{
 	 * @param timepoint the reference value
 	 * @return previous timepoint which is less or equals the given timepoint or null
 	 */
-	public Integer getPreviousTimepoint(int timepoint){
-		TreeSet<Integer> timepointTreeSet = new TreeSet<Integer>(timepoints.keySet());
+	public Integer getPreviousTimepoint(final int timepoint){
+		final TreeSet<Integer> timepointTreeSet = new TreeSet<Integer>(timepoints.keySet());
 		return timepointTreeSet.floor(timepoint);
 	}
 	
@@ -108,7 +108,7 @@ public class DynamicBookmark implements IBookmark{
 	 * @return next timepoint which is greater than the given timepoint or null
 	 */
 	public Integer getNextTimepoint(int timepoint){
-		TreeSet<Integer> timepointTreeSet = new TreeSet<Integer>(timepoints.keySet());
+		final TreeSet<Integer> timepointTreeSet = new TreeSet<Integer>(timepoints.keySet());
 		return timepointTreeSet.higher(timepoint);
 	}
 	
@@ -118,8 +118,8 @@ public class DynamicBookmark implements IBookmark{
 	 * @param timepoint the reference value
 	 * @return previous transform or null
 	 */
-	public AffineTransform3D getPreviousTransform(int timepoint){
-		Integer previousTimepoint = getPreviousTimepoint(timepoint);
+	public AffineTransform3D getPreviousTransform(final int timepoint){
+		final Integer previousTimepoint = getPreviousTimepoint(timepoint);
 		if(previousTimepoint == null)
 			return null;
 		
@@ -132,8 +132,8 @@ public class DynamicBookmark implements IBookmark{
 	 * @param timepoint the reference value
 	 * @return next transform or null
 	 */
-	public AffineTransform3D getNextTransform(int timepoint){
-		Integer nextTimepoint = getNextTimepoint(timepoint);
+	public AffineTransform3D getNextTransform(final int timepoint){
+		final Integer nextTimepoint = getNextTimepoint(timepoint);
 		if(nextTimepoint == null)
 			return null;
 		
@@ -150,43 +150,32 @@ public class DynamicBookmark implements IBookmark{
 	 */
 	public AffineTransform3D getInterpolatedTransform(final int timepoint, final double cX, final double cY) {
 
-		// get previous transform. if null, use default transform
-		AffineTransform3D previousTransform = getPreviousTransform(timepoint);
-		if (previousTransform == null) {
+		final Integer previousTimepoint = getPreviousTimepoint(timepoint);
+		final AffineTransform3D previousTransform;
+		// if previous timepoint is null, use default transform as previous transform
+		if(previousTimepoint == null){
 			previousTransform = new AffineTransform3D();
-
-			// TODO Should we use the current view transform instead of the
-			// default transform?
+			//previousTransform.set( previousTransform.get( 0, 3 ) - cX, 0, 3 );
+			//previousTransform.set( previousTransform.get( 1, 3 ) - cY, 1, 3 );
+			// TODO Should we use the current view transform instead of the default transform?
 			// viewer.getState().getViewerTransform( previousTransform );
 		}
-
-		// get next transform
-		// if null (there is no next transform), return previous transform
-		AffineTransform3D nextTransform = getNextTransform(timepoint);
-		if (nextTransform == null) {
+		else{
+			previousTransform = getTransform(previousTimepoint);
+		}
+		
+		final Integer nextTimepoint = getNextTimepoint(timepoint);
+		// if next timepoint is null, return previous transform
+		if(nextTimepoint == null){
 			return previousTransform;
 		}
+		final AffineTransform3D nextTransform = getTransform(nextTimepoint);
 
-		// get previous timepoint, if null use 0
-		Integer previousTimepoint = getPreviousTimepoint(timepoint);
-		if (previousTimepoint == null) {
-			previousTimepoint = 0;
-		}
-
-		// get next timepoint. Cannot be null, since there is no nextTransform.
-		Integer nextTimepoint = getNextTimepoint(timepoint);
-		if (nextTimepoint == null) {
-			nextTimepoint = previousTimepoint;
-		}
-
-		SimilarityTransformAnimator transAnimator = new SimilarityTransformAnimator(previousTransform, nextTransform,
+		final SimilarityTransformAnimator transAnimator = new SimilarityTransformAnimator(previousTransform, nextTransform,
 				cX, cY, nextTimepoint - previousTimepoint);
 		transAnimator.setTime(0);
-		AffineTransform3D targetTransform = transAnimator.getCurrent(timepoint - previousTimepoint);
+		final AffineTransform3D targetTransform = transAnimator.getCurrent(timepoint - previousTimepoint);
 
-		targetTransform.set( targetTransform.get( 0, 3 ) - cX, 0, 3 );
-		targetTransform.set( targetTransform.get( 1, 3 ) - cY, 1, 3 );
-		
 		return targetTransform;
 	}
 }

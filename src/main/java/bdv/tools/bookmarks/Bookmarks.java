@@ -103,16 +103,6 @@ public class Bookmarks {
 		return null;
 	}
 
-	// TODO remove
-	public AffineTransform3D get(final String key) {
-		SimpleBookmark bookmark = getSimpleBookmark(key);
-		if (bookmark != null) {
-			return bookmark.getTransform();
-		}
-
-		return null;
-	}
-
 	public AffineTransform3D getTransform(final String key, final int currentTimepoint, final double cX, final double cY) {
 		
 		final SimpleBookmark simpleBookmark = getSimpleBookmark(key);

@@ -80,6 +80,8 @@ public class BookmarksEditor
 	private final InputMap inputMap;
 
 	private BookmarkTextOverlayAnimator animator;
+	
+	private DynamicBookmark activeDynamicBookmark;
 
 	public BookmarksEditor( final ViewerPanel viewer, final InputActionBindings inputActionBindings, final Bookmarks bookmarks )
 	{
@@ -130,14 +132,19 @@ public class BookmarksEditor
 							SimpleBookmark bookmark = new SimpleBookmark(key, t);
 							bookmarks.put( bookmark );
 							
+							activeDynamicBookmark = null;
+							
 							animator.fadeOut( "set bookmark: " + key, 500 );
 							viewer.requestRepaint();
 						}
 							break;
 						case CREATE_DYNAMIC_BOOKMARK:
 						{				
-							DynamicBookmark bookmark = new DynamicBookmark(key);
-							bookmarks.put( bookmark );
+							
+							DynamicBookmark dynamicBookmark = new DynamicBookmark(key);
+							bookmarks.put( dynamicBookmark );
+							
+							activeDynamicBookmark = dynamicBookmark;
 							
 							animator.fadeOut( "create dynamic bookmark: " + key, 500 );
 							viewer.requestRepaint();
@@ -149,6 +156,10 @@ public class BookmarksEditor
 							final double cX = viewer.getDisplay().getWidth() / 2.0;
 							final double cY = viewer.getDisplay().getHeight() / 2.0;
 							
+							// set dynamic bookmark if the key is associated with a dynamic bookmark,
+							// otherwise it will set null
+							activeDynamicBookmark = bookmarks.getDynamicBookmark(key);
+							
 							final AffineTransform3D targetTransform = bookmarks.getTransform(key, currentTimepoint, cX, cY);
 							
 							if ( targetTransform != null )
@@ -156,8 +167,14 @@ public class BookmarksEditor
 								final AffineTransform3D viewTransform = new AffineTransform3D();
 								viewer.getState().getViewerTransform( viewTransform );
 								
+								
+								/*
 								viewTransform.set( viewTransform.get( 0, 3 ) - cX, 0, 3 );
 								viewTransform.set( viewTransform.get( 1, 3 ) - cY, 1, 3 );
+								
+								targetTransform.set( targetTransform.get( 0, 3 ) - cX, 0, 3 );
+								targetTransform.set( targetTransform.get( 1, 3 ) - cY, 1, 3 );
+								*/
 								viewer.setTransformAnimator( new SimilarityTransformAnimator( viewTransform, targetTransform, cX, cX, 300 ) );
 							}
 						
@@ -166,15 +183,23 @@ public class BookmarksEditor
 							break;
 						case RECALL_ORIENTATION:
 						{
-							final AffineTransform3D t = bookmarks.get( key );
-							if ( t != null )
+							final int currentTimepoint = viewer.getState().getCurrentTimepoint();
+							final double cX = viewer.getDisplay().getWidth() / 2.0;
+							final double cY = viewer.getDisplay().getHeight() / 2.0;
+							
+							// set dynamic bookmark if the key is associated with a dynamic bookmark,
+							// otherwise it will set null
+							activeDynamicBookmark = bookmarks.getDynamicBookmark(key);
+							
+							final AffineTransform3D targetTransform = bookmarks.getTransform(key, currentTimepoint, cX, cY);
+							if ( targetTransform != null )
 							{
 								final AffineTransform3D c = new AffineTransform3D();
 								viewer.getState().getViewerTransform( c );
 								final Point p = new Point( 2 );
 								viewer.getMouseCoordinates( p );
 								final double[] qTarget = new double[ 4 ];
-								Affine3DHelpers.extractRotation( t, qTarget );
+								Affine3DHelpers.extractRotation( targetTransform, qTarget );
 								viewer.setTransformAnimator(
 										new RotationAnimator( c, p.getDoublePosition( 0 ), p.getDoublePosition( 1 ), qTarget, 300 ) );
 							}
@@ -194,7 +219,17 @@ public class BookmarksEditor
 			
 			@Override
 			public void timePointChanged(int timePointIndex) {
-				
+				if(activeDynamicBookmark != null){
+					
+					final double cX = viewer.getDisplay().getWidth() / 2.0;
+					final double cY = viewer.getDisplay().getHeight() / 2.0;
+					
+					final AffineTransform3D targetTransform = activeDynamicBookmark.getInterpolatedTransform(timePointIndex, cX, cY);
+					if ( targetTransform != null )
+					{
+						viewer.setCurrentViewerTransform(targetTransform);
+					}
+				}
 			}
 		});
 	}
