@@ -1,11 +1,5 @@
 package bdv.tools.bookmarks.bookmark;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map.Entry;
-import java.util.Set;
 import java.util.TreeSet;
 
 import org.jdom2.Element;
@@ -122,10 +116,10 @@ public class DynamicBookmark implements IBookmark {
 	 */
 	public AffineTransform3D getInterpolatedTransform(final int timepoint, final double cX, final double cY) {
 
-		if(keyframes.size() < 1){
+		if (keyframes.size() < 1) {
 			return null;
 		}
-		
+
 		KeyFrame previousKeyframe = getPreviousKeyFrame(timepoint);
 		final KeyFrame nextKeyframe = getNextKeyFrame(timepoint);
 
@@ -138,17 +132,17 @@ public class DynamicBookmark implements IBookmark {
 			return transform;
 		}
 		int animatorTimepoint = Math.min(timepoint, previousKeyframe.getTimepoint());
-		
+
 		final SimilarityTransformAnimator transAnimator = new SimilarityTransformAnimator(
 				previousKeyframe.getTransform(), nextKeyframe.getTransform(), cX, cY,
 				nextKeyframe.getTimepoint() - animatorTimepoint);
 		transAnimator.setTime(0);
-		
+
 		final AffineTransform3D targetTransform = transAnimator.getCurrent(timepoint - animatorTimepoint);
-		
-		targetTransform.set( targetTransform.get( 0, 3 ) - cX, 0, 3 );
-		targetTransform.set( targetTransform.get( 1, 3 ) - cY, 1, 3 );
-		
+
+		targetTransform.set(targetTransform.get(0, 3) - cX, 0, 3);
+		targetTransform.set(targetTransform.get(1, 3) - cY, 1, 3);
+
 		return targetTransform;
 	}
 }
