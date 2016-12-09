@@ -167,14 +167,9 @@ public class BookmarksEditor
 								final AffineTransform3D viewTransform = new AffineTransform3D();
 								viewer.getState().getViewerTransform( viewTransform );
 								
-								
-								/*
 								viewTransform.set( viewTransform.get( 0, 3 ) - cX, 0, 3 );
 								viewTransform.set( viewTransform.get( 1, 3 ) - cY, 1, 3 );
 								
-								targetTransform.set( targetTransform.get( 0, 3 ) - cX, 0, 3 );
-								targetTransform.set( targetTransform.get( 1, 3 ) - cY, 1, 3 );
-								*/
 								viewer.setTransformAnimator( new SimilarityTransformAnimator( viewTransform, targetTransform, cX, cX, 300 ) );
 							}
 						
@@ -224,9 +219,12 @@ public class BookmarksEditor
 					final double cX = viewer.getDisplay().getWidth() / 2.0;
 					final double cY = viewer.getDisplay().getHeight() / 2.0;
 					
-					final AffineTransform3D targetTransform = activeDynamicBookmark.getInterpolatedTransform(timePointIndex, cX, cY);
+					final AffineTransform3D targetTransform = activeDynamicBookmark.getInterpolatedTransform(timePointIndex, cX, cY).copy();
 					if ( targetTransform != null )
 					{
+						targetTransform.set( targetTransform.get( 0, 3 ) + cX, 0, 3 );
+						targetTransform.set( targetTransform.get( 1, 3 ) + cY, 1, 3 );
+						
 						viewer.setCurrentViewerTransform(targetTransform);
 					}
 				}
