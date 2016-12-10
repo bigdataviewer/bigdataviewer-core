@@ -301,6 +301,27 @@ public class BookmarksEditor
 		}
 	}
 	
+	public synchronized void removeKeyframe()
+	{
+		useBookmarkTextOverlayAnimator();
+		if(activeDynamicBookmark != null){
+
+			int timepoint = viewer.getState().getCurrentTimepoint();			
+			KeyFrame keyframe = new KeyFrame(timepoint, null);
+			boolean removed = activeDynamicBookmark.remove(keyframe);
+			
+			if(removed){
+				animator.fadeOut( "key frame removed", 1000 );
+			}
+			else{
+				animator.fadeOut( "no key frame at this timepoint", 1000 );
+			}
+		}
+		else{
+			animator.fadeOut( "no active dynamic bookmark", 1000 );
+		}
+	}
+	
 	public synchronized void nextKeyframe()
 	{
 		useBookmarkTextOverlayAnimator();

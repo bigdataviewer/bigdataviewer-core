@@ -66,6 +66,7 @@ public class BigDataViewerActions extends Actions
 	// TODO
 	public static final String SET_DYNAMIC_BOOKMARK = "set dynamic bookmark";
 	public static final String ADD_KEYFRAME = "add key frame";
+	public static final String REMOVE_KEYFRAME = "remove key frame";
 	static final String NEXT_KEYFRAME = "next key frame";
 	static final String PREVIOUS_KEYFRAME = "previous key frame";
 
@@ -85,6 +86,7 @@ public class BigDataViewerActions extends Actions
 	// TODO
 	static final String[] SET_DYNAMIC_BOOKMARK_KEYS        = new String[] { "shift D" };
 	static final String[] ADD_KEYFRAME_KEYS                = new String[] { "K" };
+	static final String[] REMOVE_KEYFRAME_KEYS             = new String[] { "shift K" };
 	static final String[] NEXT_KEYFRAME_KEYS               = new String[] { "U" };
 	static final String[] PREVIOUS_KEYFRAME_KEYS           = new String[] { "Z" };
 
@@ -168,6 +170,7 @@ public class BigDataViewerActions extends Actions
 		runnableAction( bookmarksEditor::initSetBookmark, SET_BOOKMARK, SET_BOOKMARK_KEYS );
 		runnableAction( bookmarksEditor::initCreateDynamicBookmark, SET_DYNAMIC_BOOKMARK, SET_DYNAMIC_BOOKMARK_KEYS );
 		runnableAction( bookmarksEditor::addKeyframe, ADD_KEYFRAME, ADD_KEYFRAME_KEYS );
+		runnableAction( bookmarksEditor::removeKeyframe, REMOVE_KEYFRAME, REMOVE_KEYFRAME_KEYS );
 		runnableAction( bookmarksEditor::nextKeyframe, NEXT_KEYFRAME, NEXT_KEYFRAME_KEYS );
 		runnableAction( bookmarksEditor::previousKeyframe, PREVIOUS_KEYFRAME, PREVIOUS_KEYFRAME_KEYS );
 	}

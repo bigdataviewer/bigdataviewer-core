@@ -39,8 +39,12 @@ public class DynamicBookmark implements IBookmark {
 	}
 
 	public void add(final KeyFrame keyframe) {
-		keyframes.remove(keyframe);
+		remove(keyframe);
 		keyframes.add(keyframe);
+	}
+	
+	public boolean remove(final KeyFrame keyframe) {
+		return keyframes.remove(keyframe);
 	}
 
 	@Override
