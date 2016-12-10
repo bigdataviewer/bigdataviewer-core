@@ -85,8 +85,8 @@ public class BigDataViewerActions extends Actions
 	// TODO
 	static final String[] SET_DYNAMIC_BOOKMARK_KEYS        = new String[] { "shift D" };
 	static final String[] ADD_KEYFRAME_KEYS                = new String[] { "K" };
-	static final String[] NEXT_KEYFRAME_KEYS               = new String[] { "TAB" };
-	static final String[] PREVIOUS_KEYFRAME_KEYS           = new String[] { "shift TAB" };
+	static final String[] NEXT_KEYFRAME_KEYS               = new String[] { "U" };
+	static final String[] PREVIOUS_KEYFRAME_KEYS           = new String[] { "Z" };
 
 	/**
 	 * Create BigDataViewer actions and install them in the specified

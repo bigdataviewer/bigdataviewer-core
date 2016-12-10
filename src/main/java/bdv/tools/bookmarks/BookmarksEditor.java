@@ -309,8 +309,8 @@ public class BookmarksEditor
 			int currentTimepoint = viewer.getState().getCurrentTimepoint();
 			KeyFrame nextKeyframe = activeDynamicBookmark.getNextKeyFrame(currentTimepoint);
 			if(nextKeyframe != null && nextKeyframe.getTimepoint() > currentTimepoint ){
-				viewer.getState().setCurrentTimepoint(currentTimepoint);
-				animator.fadeOut( "next key frame at " + nextKeyframe.getTimepoint(), 1000 );
+				viewer.setTimepoint(nextKeyframe.getTimepoint());
+				animator.fadeOut( "go to next key frame", 1000 );
 			}
 			else{
 				animator.fadeOut( "no next key frame available", 1000 );
@@ -320,13 +320,14 @@ public class BookmarksEditor
 	
 	public synchronized void previousKeyframe()
 	{
+		useBookmarkTextOverlayAnimator();
 		if(activeDynamicBookmark != null){
 			
 			int currentTimepoint = viewer.getState().getCurrentTimepoint();
 			KeyFrame previousKeyframe = activeDynamicBookmark.getPreviousKeyFrame(currentTimepoint);
 			if(previousKeyframe != null && previousKeyframe.getTimepoint() < currentTimepoint ){
-				viewer.getState().setCurrentTimepoint(currentTimepoint);
-				animator.fadeOut( "previous key frame at " + previousKeyframe.getTimepoint(), 1000 );
+				viewer.setTimepoint(previousKeyframe.getTimepoint());
+				animator.fadeOut( "go to previous key frame", 1000 );
 			}
 			else{
 				animator.fadeOut( "no previous key frame available", 1000 );

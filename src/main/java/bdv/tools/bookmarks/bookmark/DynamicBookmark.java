@@ -78,6 +78,20 @@ public class DynamicBookmark implements IBookmark {
 	}
 
 	/**
+	 * Returns the greatest keyframe by timepoint less than to the
+	 * given timepoint, or null if there is no such timepoint.
+	 * 
+	 * @param timepoint
+	 *            the reference value
+	 * @return previous keyframe by timepoint which is less the given
+	 *         timepoint or null
+	 */
+	public KeyFrame getPreviousKeyFrame(final int timepoint) {
+		KeyFrame k = new KeyFrame(timepoint, null);
+		return keyframes.lower(k);
+	}
+	
+	/**
 	 * Returns the greatest keyframe by timepoint less than or equal to the
 	 * given timepoint, or null if there is no such timepoint.
 	 * 
@@ -86,7 +100,7 @@ public class DynamicBookmark implements IBookmark {
 	 * @return previous keyframe by timepoint which is less or equals the given
 	 *         timepoint or null
 	 */
-	public KeyFrame getPreviousKeyFrame(final int timepoint) {
+	public KeyFrame getPreviousOrEqualKeyFrame(final int timepoint) {
 		KeyFrame k = new KeyFrame(timepoint, null);
 		return keyframes.floor(k);
 	}
@@ -121,7 +135,7 @@ public class DynamicBookmark implements IBookmark {
 			return null;
 		}
 
-		KeyFrame previousKeyframe = getPreviousKeyFrame(timepoint);
+		KeyFrame previousKeyframe = getPreviousOrEqualKeyFrame(timepoint);
 		final KeyFrame nextKeyframe = getNextKeyFrame(timepoint);
 
 		if (previousKeyframe == null) {
