@@ -46,6 +46,7 @@ import org.scijava.ui.behaviour.util.InputActionBindings;
 
 import bdv.tools.bookmarks.bookmark.SimpleBookmark;
 import bdv.tools.bookmarks.bookmark.DynamicBookmark;
+import bdv.tools.bookmarks.bookmark.KeyFrame;
 import bdv.util.Affine3DHelpers;
 import bdv.viewer.TimePointListener;
 import bdv.viewer.ViewerPanel;
@@ -63,6 +64,7 @@ public class BookmarksEditor
 		CREATE_DYNAMIC_BOOKMARK,
 		RECALL_TRANSFORM,
 		RECALL_ORIENTATION,
+		ADD_KEYFRAME
 	}
 
 	private Mode mode = Mode.INACTIVE;
@@ -100,10 +102,12 @@ public class BookmarksEditor
 
 			private static final long serialVersionUID = 1L;
 		};
+		
 		actionMap = new ActionMap();
 		inputMap = new InputMap();
 		actionMap.put( "abort bookmark", abortAction );
 		inputMap.put( abortKey, "abort bookmark" );
+		
 		bindings.addActionMap( "bookmarks", actionMap );
 
 		viewer.getDisplay().addKeyListener( new KeyAdapter()
@@ -140,14 +144,12 @@ public class BookmarksEditor
 							break;
 						case CREATE_DYNAMIC_BOOKMARK:
 						{				
-							
 							DynamicBookmark dynamicBookmark = new DynamicBookmark(key);
 							bookmarks.put( dynamicBookmark );
 							
 							activeDynamicBookmark = dynamicBookmark;
 							
 							animator.fadeOut( "create dynamic bookmark: " + key, 500 );
-							viewer.requestRepaint();
 						}
 							break;
 						case RECALL_TRANSFORM:
@@ -239,17 +241,19 @@ public class BookmarksEditor
 		done();
 	}
 	
-	
+	private void useBookmarkTextOverlayAnimator(){
+		if ( animator != null )
+			animator.clear();
+		animator = new BookmarkTextOverlayAnimator( viewer );
+		viewer.addOverlayAnimator( animator );
+	}
 
 	protected synchronized void init( final Mode mode, final String message )
 	{
 		initialKey = true;
 		this.mode = mode;
 		bindings.addInputMap( "bookmarks", inputMap, inputMapsToBlock );
-		if ( animator != null )
-			animator.clear();
-		animator = new BookmarkTextOverlayAnimator( viewer );
-		viewer.addOverlayAnimator( animator );
+		useBookmarkTextOverlayAnimator();
 		animator.fadeIn( message, 100 );
 	}
 
@@ -271,6 +275,63 @@ public class BookmarksEditor
 	public void initGoToBookmarkRotation()
 	{
 		init( Mode.RECALL_ORIENTATION, "go to bookmark orientation: " );
+	}
+	
+	public synchronized void addKeyframe()
+	{
+		useBookmarkTextOverlayAnimator();
+		if(activeDynamicBookmark != null){
+			
+			final AffineTransform3D t = new AffineTransform3D();
+			viewer.getState().getViewerTransform( t );
+			final double cX = viewer.getDisplay().getWidth() / 2.0;
+			final double cY = viewer.getDisplay().getHeight() / 2.0;
+			t.set( t.get( 0, 3 ) - cX, 0, 3 );
+			t.set( t.get( 1, 3 ) - cY, 1, 3 );
+			
+			int timepoint = viewer.getState().getCurrentTimepoint();
+			
+			KeyFrame keyframe = new KeyFrame(timepoint, t);
+			activeDynamicBookmark.add(keyframe);
+			
+			animator.fadeOut( "key frame added to " + activeDynamicBookmark.getKey(), 1000 );
+		}
+		else{
+			animator.fadeOut( "no active dynamic bookmark", 1000 );
+		}
+	}
+	
+	public synchronized void nextKeyframe()
+	{
+		useBookmarkTextOverlayAnimator();
+		if(activeDynamicBookmark != null){
+			
+			int currentTimepoint = viewer.getState().getCurrentTimepoint();
+			KeyFrame nextKeyframe = activeDynamicBookmark.getNextKeyFrame(currentTimepoint);
+			if(nextKeyframe != null && nextKeyframe.getTimepoint() > currentTimepoint ){
+				viewer.getState().setCurrentTimepoint(currentTimepoint);
+				animator.fadeOut( "next key frame at " + nextKeyframe.getTimepoint(), 1000 );
+			}
+			else{
+				animator.fadeOut( "no next key frame available", 1000 );
+			}
+		}
+	}
+	
+	public synchronized void previousKeyframe()
+	{
+		if(activeDynamicBookmark != null){
+			
+			int currentTimepoint = viewer.getState().getCurrentTimepoint();
+			KeyFrame previousKeyframe = activeDynamicBookmark.getPreviousKeyFrame(currentTimepoint);
+			if(previousKeyframe != null && previousKeyframe.getTimepoint() < currentTimepoint ){
+				viewer.getState().setCurrentTimepoint(currentTimepoint);
+				animator.fadeOut( "previous key frame at " + previousKeyframe.getTimepoint(), 1000 );
+			}
+			else{
+				animator.fadeOut( "no previous key frame available", 1000 );
+			}
+		}
 	}
 
 	public synchronized void done()

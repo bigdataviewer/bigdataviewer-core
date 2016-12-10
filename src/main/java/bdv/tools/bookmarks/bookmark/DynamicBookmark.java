@@ -38,7 +38,8 @@ public class DynamicBookmark implements IBookmark {
 		return this.key;
 	}
 
-	public void setTimepoint(final KeyFrame keyframe) {
+	public void add(final KeyFrame keyframe) {
+		keyframes.remove(keyframe);
 		keyframes.add(keyframe);
 	}
 
@@ -72,7 +73,7 @@ public class DynamicBookmark implements IBookmark {
 		for (final Element elemKeyframe : elemKeyframes.getChildren(XML_ELEM_KEYFRAME_NAME)) {
 			final int timepoint = XmlHelpers.getInt(elemKeyframe, XML_ELEM_TIMEPOINT_NAME);
 			final AffineTransform3D transform = XmlHelpers.getAffineTransform3D(elemKeyframe, XML_ELEM_TRANSFORM_NAME);
-			setTimepoint(new KeyFrame(timepoint, transform));
+			add(new KeyFrame(timepoint, transform));
 		}
 	}
 

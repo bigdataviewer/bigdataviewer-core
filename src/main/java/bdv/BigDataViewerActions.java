@@ -65,7 +65,9 @@ public class BigDataViewerActions extends Actions
 	
 	// TODO
 	public static final String SET_DYNAMIC_BOOKMARK = "set dynamic bookmark";
-	
+	public static final String ADD_KEYFRAME = "add key frame";
+	static final String NEXT_KEYFRAME = "next key frame";
+	static final String PREVIOUS_KEYFRAME = "previous key frame";
 
 	static final String[] BRIGHTNESS_SETTINGS_KEYS         = new String[] { "S" };
 	static final String[] VISIBILITY_AND_GROUPING_KEYS     = new String[] { "F6" };
@@ -82,7 +84,9 @@ public class BigDataViewerActions extends Actions
 	
 	// TODO
 	static final String[] SET_DYNAMIC_BOOKMARK_KEYS        = new String[] { "shift D" };
-	
+	static final String[] ADD_KEYFRAME_KEYS                = new String[] { "K" };
+	static final String[] NEXT_KEYFRAME_KEYS               = new String[] { "TAB" };
+	static final String[] PREVIOUS_KEYFRAME_KEYS           = new String[] { "shift TAB" };
 
 	/**
 	 * Create BigDataViewer actions and install them in the specified
@@ -163,6 +167,9 @@ public class BigDataViewerActions extends Actions
 		runnableAction( bookmarksEditor::initGoToBookmarkRotation, GO_TO_BOOKMARK_ROTATION, GO_TO_BOOKMARK_ROTATION_KEYS );
 		runnableAction( bookmarksEditor::initSetBookmark, SET_BOOKMARK, SET_BOOKMARK_KEYS );
 		runnableAction( bookmarksEditor::initCreateDynamicBookmark, SET_DYNAMIC_BOOKMARK, SET_DYNAMIC_BOOKMARK_KEYS );
+		runnableAction( bookmarksEditor::addKeyframe, ADD_KEYFRAME, ADD_KEYFRAME_KEYS );
+		runnableAction( bookmarksEditor::nextKeyframe, NEXT_KEYFRAME, NEXT_KEYFRAME_KEYS );
+		runnableAction( bookmarksEditor::previousKeyframe, PREVIOUS_KEYFRAME, PREVIOUS_KEYFRAME_KEYS );
 	}
 
 	public void manualTransform( final ManualTransformationEditor manualTransformationEditor )
