@@ -36,6 +36,8 @@ import bdv.cache.LoadingVolatileCache;
 import bdv.cache.VolatileCacheValue;
 
 /**
+ * TODO revise javadoc
+ *
  * A set of threads that load data. Each thread does the following in a loop:
  * <ol>
  * <li>Take the next {@code key} from a queue.</li>
@@ -50,32 +52,9 @@ import bdv.cache.VolatileCacheValue;
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
-public class FetcherThreads< K >
+public class FetcherThreads
 {
-	/**
-	 * Loads data associated with a key.
-	 *
-	 * @param <K>
-	 *            the key type.
-	 */
-	public interface Loader< K >
-	{
-		/**
-		 * If this key's data is not yet valid, then load it. After the method
-		 * returns, the data is guaranteed to be valid.
-		 * <p>
-		 * This must be implemented in a thread-safe manner. Multiple threads
-		 * are allowed to call this method at the same time with the same key.
-		 * The expected behaviour is that the data is loaded only once and the
-		 * result is made visible on all threads.
-		 *
-		 * @throws InterruptedException
-		 *             if the loading operation was interrupted.
-		 */
-		public void load( K key ) throws InterruptedException;
-	}
-
-	private final ArrayList< Fetcher< K > > fetchers;
+	private final ArrayList< Fetcher > fetchers;
 
 	/**
 	 * Create (and start) a set of fetcher threads.
@@ -87,11 +66,10 @@ public class FetcherThreads< K >
 	 * @param numFetcherThreads how many parallel fetcher threads to start.
 	 */
 	public FetcherThreads(
-			final BlockingFetchQueues< K > queue,
-			final Loader< K > loader,
+			final BlockingFetchQueues< Loader > queue,
 			final int numFetcherThreads )
 	{
-		this( queue, loader, numFetcherThreads, i -> String.format( "Fetcher-%d", i ) );
+		this( queue, numFetcherThreads, i -> String.format( "Fetcher-%d", i ) );
 	}
 
 	/**
@@ -103,15 +81,14 @@ public class FetcherThreads< K >
 	 * @param threadIndexToName a function for naming fetcher threads (takes an index and returns a name).
 	 */
 	public FetcherThreads(
-			final BlockingFetchQueues< K > queue,
-			final Loader< K > loader,
+			final BlockingFetchQueues< Loader > queue,
 			final int numFetcherThreads,
 			final IntFunction< String > threadIndexToName )
 	{
 		fetchers = new ArrayList<>( numFetcherThreads );
 		for ( int i = 0; i < numFetcherThreads; ++i )
 		{
-			final Fetcher< K > f = new Fetcher<>( queue, loader );
+			final Fetcher f = new Fetcher( queue );
 			f.setDaemon( true );
 			f.setName( threadIndexToName.apply( i ) );
 			fetchers.add( f );
@@ -133,7 +110,7 @@ public class FetcherThreads< K >
 	 */
 	public void pauseFetcherThreadsUntil( final long timeMillis )
 	{
-		for ( final Fetcher< K > f : fetchers )
+		for ( final Fetcher f : fetchers )
 			f.pauseUntil( timeMillis );
 	}
 
@@ -144,38 +121,33 @@ public class FetcherThreads< K >
 	 */
 	public void wakeFetcherThreads()
 	{
-		for ( final Fetcher< K > f : fetchers )
+		for ( final Fetcher f : fetchers )
 			f.wakeUp();
 	}
 
-	static final class Fetcher< K > extends Thread
+	static final class Fetcher extends Thread
 	{
-		private final BlockingFetchQueues< K > queue;
-
-		private final Loader< K > loader;
+		private final BlockingFetchQueues< Loader > queue;
 
 		private final Object lock = new Object();
 
 		private volatile long pauseUntilTimeMillis = 0;
 
-		public Fetcher(
-				final BlockingFetchQueues< K > queue,
-				final Loader< K > loader )
+		public Fetcher( final BlockingFetchQueues< Loader > queue )
 		{
 			this.queue = queue;
-			this.loader = loader;
 		}
 
 		@Override
 		public final void run()
 		{
-			K key = null;
+			Loader loader = null;
 			while ( true )
 			{
-				while ( key == null )
+				while ( loader == null )
 					try
 					{
-						key = queue.take();
+						loader = queue.take();
 					}
 					catch ( final InterruptedException e )
 					{}
@@ -195,8 +167,8 @@ public class FetcherThreads< K >
 				}
 				try
 				{
-					loader.load( key );
-					key = null;
+					loader.load();
+					loader = null;
 				}
 				catch ( final InterruptedException e )
 				{}

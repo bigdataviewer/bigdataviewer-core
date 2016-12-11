@@ -33,7 +33,7 @@ import bdv.cache.CacheIoTiming.IoStatistics;
 import bdv.cache.CacheIoTiming.IoTimeBudget;
 import bdv.cache.util.BlockingFetchQueues;
 import bdv.cache.util.FetcherThreads;
-import bdv.cache.util.FetcherThreads.Loader;
+import bdv.cache.util.Loader;
 import bdv.img.cache.VolatileGlobalCellCache;
 
 
@@ -75,9 +75,9 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 
 	private final int numPriorityLevels;
 
-	private final BlockingFetchQueues< K > queue;
+	private final BlockingFetchQueues< Loader > queue;
 
-	private final FetcherThreads< K > fetchers;
+	private final FetcherThreads fetchers;
 
 	private volatile long currentQueueFrame = 0;
 
@@ -96,7 +96,7 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 	{
 		this.numPriorityLevels = numPriorityLevels;
 		queue = new BlockingFetchQueues<>( numPriorityLevels );
-		fetchers = new FetcherThreads<>( queue, new EntryLoader(), numFetcherThreads );
+		fetchers = new FetcherThreads( queue, numFetcherThreads );
 	}
 
 	/**
@@ -253,7 +253,7 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 		prepareNextFrame();
 	}
 
-	public FetcherThreads< K > getFetcherThreads()
+	public FetcherThreads getFetcherThreads()
 	{
 		return fetchers;
 	}
@@ -299,7 +299,7 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 		if ( entry.getEnqueueFrame() < currentQueueFrame )
 		{
 			entry.setEnqueueFrame( currentQueueFrame );
-			queue.put( entry.getKey(), priority, enqueuToFront );
+			queue.put( new EntryLoader( entry.getKey() ), priority, enqueuToFront );
 		}
 	}
 
@@ -343,8 +343,15 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 	 * corresponding {@link Entry} from the {@link WeakSoftCache}, and and
 	 * forwarding to {@link Entry#loadIfNotValid()}.
 	 */
-	final class EntryLoader implements Loader< K >
+	final class EntryLoader implements Loader
 	{
+		private final K key;
+
+		public EntryLoader( final K key )
+		{
+			this.key = key;
+		}
+
 		/**
 		 * If this key's data is not yet valid, then load it. After the method
 		 * returns, the data is guaranteed to be valid.
@@ -353,7 +360,7 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 		 *             if the loading operation was interrupted.
 		 */
 		@Override
-		public void load( final K key ) throws InterruptedException
+		public void load() throws InterruptedException
 		{
 			final Entry entry = cache.get( key );
 			if ( entry != null )

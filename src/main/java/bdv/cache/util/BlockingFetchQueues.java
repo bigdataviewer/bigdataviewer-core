@@ -35,6 +35,8 @@ import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 
 /**
+ * TODO revise javadoc
+ *
  * Queueing structure (intended for cache entries to be fetched). There is an
  * array of {@link ArrayDeque}s, ordered by priority. Elements are
  * {@link #put(Object, int, boolean)} with a priority and added to one of the
