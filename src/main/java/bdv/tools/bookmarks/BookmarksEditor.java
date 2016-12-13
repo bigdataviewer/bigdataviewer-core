@@ -136,7 +136,7 @@ public class BookmarksEditor
 							SimpleBookmark bookmark = new SimpleBookmark(key, t);
 							bookmarks.put( bookmark );
 							
-							activeDynamicBookmark = null;
+							setActiveDynamicBookmark(null);
 							
 							animator.fadeOut( "set bookmark: " + key, 500 );
 							viewer.requestRepaint();
@@ -147,7 +147,7 @@ public class BookmarksEditor
 							DynamicBookmark dynamicBookmark = new DynamicBookmark(key);
 							bookmarks.put( dynamicBookmark );
 							
-							activeDynamicBookmark = dynamicBookmark;
+							setActiveDynamicBookmark(dynamicBookmark);
 							
 							animator.fadeOut( "create dynamic bookmark: " + key, 500 );
 						}
@@ -160,7 +160,7 @@ public class BookmarksEditor
 							
 							// set dynamic bookmark if the key is associated with a dynamic bookmark,
 							// otherwise it will set null
-							activeDynamicBookmark = bookmarks.getDynamicBookmark(key);
+							setActiveDynamicBookmark(bookmarks.getDynamicBookmark(key));
 							
 							final AffineTransform3D targetTransform = bookmarks.getTransform(key, currentTimepoint, cX, cY);
 							
@@ -186,7 +186,7 @@ public class BookmarksEditor
 							
 							// set dynamic bookmark if the key is associated with a dynamic bookmark,
 							// otherwise it will set null
-							activeDynamicBookmark = bookmarks.getDynamicBookmark(key);
+							setActiveDynamicBookmark(bookmarks.getDynamicBookmark(key));
 							
 							final AffineTransform3D targetTransform = bookmarks.getTransform(key, currentTimepoint, cX, cY);
 							if ( targetTransform != null )
@@ -221,7 +221,7 @@ public class BookmarksEditor
 					final double cX = viewer.getDisplay().getWidth() / 2.0;
 					final double cY = viewer.getDisplay().getHeight() / 2.0;
 					
-					final AffineTransform3D targetTransform = activeDynamicBookmark.getInterpolatedTransform(timePointIndex, cX, cY).copy();
+					final AffineTransform3D targetTransform = activeDynamicBookmark.getInterpolatedTransform(timePointIndex, cX, cY);
 					if ( targetTransform != null )
 					{
 						targetTransform.set( targetTransform.get( 0, 3 ) + cX, 0, 3 );
@@ -241,7 +241,12 @@ public class BookmarksEditor
 		done();
 	}
 	
-	private void useBookmarkTextOverlayAnimator(){
+	private synchronized void setActiveDynamicBookmark(DynamicBookmark bookmark){
+		this.activeDynamicBookmark = bookmark;
+		viewer.getSourceInfoOverlayRenderer().setActiveBookmark(bookmark);
+	}
+	
+	private synchronized void useBookmarkTextOverlayAnimator(){
 		if ( animator != null )
 			animator.clear();
 		animator = new BookmarkTextOverlayAnimator( viewer );

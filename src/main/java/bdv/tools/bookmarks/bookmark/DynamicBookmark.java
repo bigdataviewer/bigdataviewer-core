@@ -148,7 +148,7 @@ public class DynamicBookmark implements IBookmark {
 
 		if (nextKeyframe == null) {
 			AffineTransform3D transform = previousKeyframe.getTransform();
-			return transform;
+			return transform.copy();
 		}
 		int animatorTimepoint = Math.min(timepoint, previousKeyframe.getTimepoint());
 

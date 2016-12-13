@@ -36,6 +36,7 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import java.util.List;
 
+import bdv.tools.bookmarks.bookmark.IBookmark;
 import bdv.viewer.DisplayMode;
 import bdv.viewer.state.SourceGroup;
 import bdv.viewer.state.SourceState;
@@ -57,18 +58,33 @@ public class SourceInfoOverlayRenderer
 	protected String groupName;
 
 	protected String timepointString;
+	
+	protected String activeBookmarkString;
 
+	public SourceInfoOverlayRenderer(){
+		activeBookmarkString = "";
+	}
+	
 	public synchronized void paint( final Graphics2D g )
 	{
 		g.setFont( new Font( "Monospaced", Font.PLAIN, 12 ) );
 		g.drawString( sourceName, ( int ) g.getClipBounds().getWidth() / 2, 12 );
 		g.drawString( groupName, ( int ) g.getClipBounds().getWidth() / 2, 25 );
 		g.drawString( timepointString, ( int ) g.getClipBounds().getWidth() - 170, 12 );
+		g.drawString( activeBookmarkString, ( int ) g.getClipBounds().getWidth() - 170, 38 );
 	}
 
 	public synchronized void setTimePointsOrdered( final List< TimePoint > timePointsOrdered )
 	{
 		this.timePointsOrdered = timePointsOrdered;
+	}
+	
+	public synchronized void setActiveBookmark( final IBookmark bookmark )
+	{
+		if ( bookmark != null )
+			activeBookmarkString = String.format( "active bookmark: %s", bookmark.getKey() );
+		else
+			activeBookmarkString = "";
 	}
 
 	/**
