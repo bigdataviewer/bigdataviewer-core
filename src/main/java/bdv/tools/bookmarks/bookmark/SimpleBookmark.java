@@ -22,6 +22,11 @@ public class SimpleBookmark implements IBookmark {
 		this.key = key;
 		this.transform = transform;
 	}
+	
+	protected SimpleBookmark(SimpleBookmark s) {
+		this.key = s.key;
+		this.transform = s.transform.copy();
+	}
 
 	public String getKey() {
 		return this.key;
@@ -41,4 +46,10 @@ public class SimpleBookmark implements IBookmark {
 		elemBookmark.addContent( XmlHelpers.affineTransform3DElement( XML_ELEM_TRANSFORM_NAME, this.transform ) );
 		return elemBookmark;
 	}
+
+	@Override
+	public SimpleBookmark copy() {
+		return new SimpleBookmark(this);
+	}
+	
 }

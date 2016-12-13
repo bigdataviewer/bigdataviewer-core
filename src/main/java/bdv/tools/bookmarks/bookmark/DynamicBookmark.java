@@ -32,6 +32,12 @@ public class DynamicBookmark implements IBookmark {
 
 		restoreKeyframesFromXml(element);
 	}
+	
+	public DynamicBookmark(DynamicBookmark d) {
+		this.key = d.key;
+		this.keyframes = new TreeSet<>(new KeyFrameComparator());
+		for(KeyFrame k : d.keyframes) this.keyframes.add(k.copy());
+	}
 
 	@Override
 	public String getKey() {
@@ -163,5 +169,10 @@ public class DynamicBookmark implements IBookmark {
 		targetTransform.set(targetTransform.get(1, 3) - cY, 1, 3);
 
 		return targetTransform;
+	}
+
+	@Override
+	public DynamicBookmark copy() {
+		return new DynamicBookmark(this);
 	}
 }

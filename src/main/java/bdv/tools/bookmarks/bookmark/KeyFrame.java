@@ -11,6 +11,11 @@ public class KeyFrame {
 		this.timepoint = timepoint;
 		this.transform = transform;
 	}
+	
+	protected KeyFrame(KeyFrame k){
+		this.timepoint = k.timepoint;
+		this.transform = k.transform.copy();
+	}
 
 	public int getTimepoint() {
 		return timepoint;
@@ -26,5 +31,9 @@ public class KeyFrame {
 
 	public void setTransform(AffineTransform3D transform) {
 		this.transform = transform;
+	}
+	
+	public KeyFrame copy(){
+		return new KeyFrame(this);
 	}
 }

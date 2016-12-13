@@ -9,4 +9,6 @@ public interface IBookmark {
 	String getKey();
 	
 	Element toXmlNode();
+	
+	IBookmark copy();
 }
