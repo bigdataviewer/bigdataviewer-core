@@ -64,7 +64,8 @@ public class BookmarksEditor
 		CREATE_DYNAMIC_BOOKMARK,
 		RECALL_TRANSFORM,
 		RECALL_ORIENTATION,
-		ADD_KEYFRAME
+		ADD_KEYFRAME,
+		RENAME
 	}
 
 	private Mode mode = Mode.INACTIVE;
@@ -83,6 +84,7 @@ public class BookmarksEditor
 
 	private BookmarkTextOverlayAnimator animator;
 	
+	// TODO manage active bookmark from Bookmark class?
 	private DynamicBookmark activeDynamicBookmark;
 
 	public BookmarksEditor( final ViewerPanel viewer, final InputActionBindings inputActionBindings, final Bookmarks bookmarks )
@@ -203,6 +205,13 @@ public class BookmarksEditor
 							animator.fadeOut( "go to bookmark orientation: " + key, 500 );
 						}
 							break;
+						case RENAME:{
+							if(activeDynamicBookmark != null){
+								
+							}
+							
+						}
+							break;
 						default:
 							break;
 						}
@@ -282,6 +291,13 @@ public class BookmarksEditor
 		init( Mode.RECALL_ORIENTATION, "go to bookmark orientation: " );
 	}
 	
+	public void initRenameBookmark(){
+		if(activeDynamicBookmark != null)
+		{
+			init( Mode.RENAME, String.format("rename active bookmark %s:", activeDynamicBookmark.getKey()));
+		}
+	}
+	
 	public synchronized void addKeyframe()
 	{
 		useBookmarkTextOverlayAnimator();
@@ -345,7 +361,7 @@ public class BookmarksEditor
 	}
 	
 	public synchronized void previousKeyframe()
-	{
+	{		
 		useBookmarkTextOverlayAnimator();
 		if(activeDynamicBookmark != null){
 			

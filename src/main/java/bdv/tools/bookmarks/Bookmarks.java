@@ -36,9 +36,6 @@ import net.imglib2.realtransform.AffineTransform3D;
 import org.jdom2.Element;
 
 import bdv.tools.bookmarks.bookmark.SimpleBookmark;
-import bdv.viewer.ViewerPanel;
-import bdv.viewer.animate.SimilarityTransformAnimator;
-import bdv.viewer.state.ViewerState;
 import bdv.tools.bookmarks.bookmark.DynamicBookmark;
 import bdv.tools.bookmarks.bookmark.IBookmark;
 
@@ -61,11 +58,13 @@ public class Bookmarks {
 
 	public void restoreFromXml(final Element parent) {
 		bookmarks.clear();
+		// TODO clear active bookmark
 
 		final Element elemBookmarks = parent.getChild("Bookmarks");
 		if (elemBookmarks == null)
 			return;
 
+		// TODO abstract
 		for (final Element elem : elemBookmarks.getChildren(SimpleBookmark.XML_ELEM_BOOKMARK_NAME)) {
 			SimpleBookmark bookmark = new SimpleBookmark(elem);
 			bookmarks.put(bookmark.getKey(), bookmark);
@@ -81,12 +80,31 @@ public class Bookmarks {
 		bookmarks.put(bookmark.getKey(), bookmark);
 	}
 
-	public IBookmark getBookmark(final String key) {
+	public IBookmark get(final String key) {
 		return bookmarks.get(key);
 	}
+	
+	public <T extends IBookmark> T get(final String key, Class<T> clazz) {
+		IBookmark bookmark = bookmarks.get(key);
+		
+		if(clazz.isInstance(bookmark)){
+			return clazz.cast(bookmark);
+		}
 
+		return null;
+	}
+	
+	public IBookmark remove(final String key){
+		return bookmarks.remove(key);
+	}
+	
+	public void rename(String oldKey, String newKey){
+		// TODO
+	}
+
+	// TODO replace with generic method
 	public SimpleBookmark getSimpleBookmark(final String key) {
-		IBookmark bookmark = getBookmark(key);
+		IBookmark bookmark = get(key);
 		if (bookmark instanceof SimpleBookmark) {
 			return (SimpleBookmark) bookmark;
 		}
@@ -94,8 +112,9 @@ public class Bookmarks {
 		return null;
 	}
 
+	// TODO replace with generic method
 	public DynamicBookmark getDynamicBookmark(final String key) {
-		IBookmark bookmark = getBookmark(key);
+		IBookmark bookmark = get(key);
 		if (bookmark instanceof DynamicBookmark) {
 			return (DynamicBookmark) bookmark;
 		}

@@ -33,7 +33,7 @@ public class DynamicBookmark implements IBookmark {
 		restoreKeyframesFromXml(element);
 	}
 	
-	public DynamicBookmark(DynamicBookmark d) {
+	protected DynamicBookmark(DynamicBookmark d) {
 		this.key = d.key;
 		this.keyframes = new TreeSet<>(new KeyFrameComparator());
 		for(KeyFrame k : d.keyframes) this.keyframes.add(k.copy());
@@ -153,8 +153,8 @@ public class DynamicBookmark implements IBookmark {
 		}
 
 		if (nextKeyframe == null) {
-			AffineTransform3D transform = previousKeyframe.getTransform();
-			return transform.copy();
+			AffineTransform3D transform = previousKeyframe.getTransform().copy();
+			return transform;
 		}
 		int animatorTimepoint = Math.min(timepoint, previousKeyframe.getTimepoint());
 
