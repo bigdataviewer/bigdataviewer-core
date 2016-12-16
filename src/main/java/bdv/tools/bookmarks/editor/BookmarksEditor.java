@@ -27,7 +27,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package bdv.tools.bookmarks;
+package bdv.tools.bookmarks.editor;
 
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyAdapter;
@@ -45,6 +45,8 @@ import javax.swing.KeyStroke;
 import org.scijava.ui.behaviour.util.InputActionBindings;
 
 import bdv.tools.bookmarks.bookmark.SimpleBookmark;
+import bdv.tools.bookmarks.BookmarkTextOverlayAnimator;
+import bdv.tools.bookmarks.Bookmarks;
 import bdv.tools.bookmarks.bookmark.DynamicBookmark;
 import bdv.tools.bookmarks.bookmark.KeyFrame;
 import bdv.util.Affine3DHelpers;
@@ -84,6 +86,8 @@ public class BookmarksEditor
 
 	private BookmarkTextOverlayAnimator animator;
 	
+	private BookmarkRenameEditor bookmarkRenameEditor;
+	
 	// TODO manage active bookmark from Bookmark class?
 	private DynamicBookmark activeDynamicBookmark;
 
@@ -112,6 +116,24 @@ public class BookmarksEditor
 		
 		bindings.addActionMap( "bookmarks", actionMap );
 
+		bookmarkRenameEditor = new BookmarkRenameEditor(viewer, inputActionBindings, bookmarks);
+		bookmarkRenameEditor.addListener(new BookmarkRenameEditorListener() {
+			
+			@Override
+			public void bookmarkRenameFinished(String oldKey, String newKey) {
+				bookmarks.rename(oldKey, newKey);
+				setActiveDynamicBookmark(bookmarks.getDynamicBookmark(newKey));
+				
+				String message = String.format("bookmark %s renamed to %s", oldKey, newKey);
+				fadeOut(message, 1500);
+			}
+			
+			@Override
+			public void bookmarkRenameAborted(String oldKey) {
+				fadeOut("rename bookmark aborted", 1500);
+			}
+		});
+		
 		viewer.getDisplay().addKeyListener( new KeyAdapter()
 		{
 			@Override
@@ -206,10 +228,13 @@ public class BookmarksEditor
 						}
 							break;
 						case RENAME:{
-							if(activeDynamicBookmark != null){
-								
+							if(bookmarks.get(key) == null){
+								fadeOut("bookmark with the key " + key + " could not be found ", 1500);
 							}
-							
+							else{
+								fadeIn("rename bookmark " + key + " to: ", 500);
+								bookmarkRenameEditor.init(key);
+							}
 						}
 							break;
 						default:
@@ -255,11 +280,22 @@ public class BookmarksEditor
 		viewer.getSourceInfoOverlayRenderer().setActiveBookmark(bookmark);
 	}
 	
-	private synchronized void useBookmarkTextOverlayAnimator(){
+	private void fadeIn(String message, long duration ){
 		if ( animator != null )
 			animator.clear();
 		animator = new BookmarkTextOverlayAnimator( viewer );
 		viewer.addOverlayAnimator( animator );
+		
+		animator.fadeIn(message, duration);
+	}
+	
+	private void fadeOut(String message, long duration ){
+		if ( animator != null )
+			animator.clear();
+		animator = new BookmarkTextOverlayAnimator( viewer );
+		viewer.addOverlayAnimator( animator );
+		
+		animator.fadeOut(message, duration);
 	}
 
 	protected synchronized void init( final Mode mode, final String message )
@@ -267,8 +303,7 @@ public class BookmarksEditor
 		initialKey = true;
 		this.mode = mode;
 		bindings.addInputMap( "bookmarks", inputMap, inputMapsToBlock );
-		useBookmarkTextOverlayAnimator();
-		animator.fadeIn( message, 100 );
+		fadeIn( message, 100 );
 	}
 
 	public synchronized void initSetBookmark()
@@ -292,15 +327,11 @@ public class BookmarksEditor
 	}
 	
 	public void initRenameBookmark(){
-		if(activeDynamicBookmark != null)
-		{
-			init( Mode.RENAME, String.format("rename active bookmark %s:", activeDynamicBookmark.getKey()));
-		}
+		init( Mode.RENAME, String.format("bookmark key to rename: "));
 	}
 	
 	public synchronized void addKeyframe()
 	{
-		useBookmarkTextOverlayAnimator();
 		if(activeDynamicBookmark != null){
 			
 			final AffineTransform3D t = new AffineTransform3D();
@@ -315,16 +346,15 @@ public class BookmarksEditor
 			KeyFrame keyframe = new KeyFrame(timepoint, t);
 			activeDynamicBookmark.add(keyframe);
 			
-			animator.fadeOut( "key frame added to " + activeDynamicBookmark.getKey(), 1000 );
+			fadeOut( "key frame added to " + activeDynamicBookmark.getKey(), 1000 );
 		}
 		else{
-			animator.fadeOut( "no active dynamic bookmark", 1000 );
+			fadeOut( "no active dynamic bookmark", 1000 );
 		}
 	}
 	
 	public synchronized void removeKeyframe()
 	{
-		useBookmarkTextOverlayAnimator();
 		if(activeDynamicBookmark != null){
 
 			int timepoint = viewer.getState().getCurrentTimepoint();			
@@ -332,47 +362,45 @@ public class BookmarksEditor
 			boolean removed = activeDynamicBookmark.remove(keyframe);
 			
 			if(removed){
-				animator.fadeOut( "key frame removed", 1000 );
+				fadeOut( "key frame removed", 1000 );
 			}
 			else{
-				animator.fadeOut( "no key frame at this timepoint", 1000 );
+				fadeOut( "no key frame at this timepoint", 1000 );
 			}
 		}
 		else{
-			animator.fadeOut( "no active dynamic bookmark", 1000 );
+			fadeOut( "no active dynamic bookmark", 1000 );
 		}
 	}
 	
 	public synchronized void nextKeyframe()
 	{
-		useBookmarkTextOverlayAnimator();
 		if(activeDynamicBookmark != null){
 			
 			int currentTimepoint = viewer.getState().getCurrentTimepoint();
 			KeyFrame nextKeyframe = activeDynamicBookmark.getNextKeyFrame(currentTimepoint);
 			if(nextKeyframe != null && nextKeyframe.getTimepoint() > currentTimepoint ){
 				viewer.setTimepoint(nextKeyframe.getTimepoint());
-				animator.fadeOut( "go to next key frame", 1000 );
+				fadeOut( "go to next key frame", 1000 );
 			}
 			else{
-				animator.fadeOut( "no next key frame available", 1000 );
+				fadeOut( "no next key frame available", 1000 );
 			}
 		}
 	}
 	
 	public synchronized void previousKeyframe()
 	{		
-		useBookmarkTextOverlayAnimator();
 		if(activeDynamicBookmark != null){
 			
 			int currentTimepoint = viewer.getState().getCurrentTimepoint();
 			KeyFrame previousKeyframe = activeDynamicBookmark.getPreviousKeyFrame(currentTimepoint);
 			if(previousKeyframe != null && previousKeyframe.getTimepoint() < currentTimepoint ){
 				viewer.setTimepoint(previousKeyframe.getTimepoint());
-				animator.fadeOut( "go to previous key frame", 1000 );
+				fadeOut( "go to previous key frame", 1000 );
 			}
 			else{
-				animator.fadeOut( "no previous key frame available", 1000 );
+				fadeOut( "no previous key frame available", 1000 );
 			}
 		}
 	}

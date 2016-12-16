@@ -43,7 +43,7 @@ import bdv.tools.RecordMaxProjectionDialog;
 import bdv.tools.RecordMovieDialog;
 import bdv.tools.ToggleDialogAction;
 import bdv.tools.VisibilityAndGroupingDialog;
-import bdv.tools.bookmarks.BookmarksEditor;
+import bdv.tools.bookmarks.editor.BookmarksEditor;
 import bdv.tools.brightness.BrightnessDialog;
 import bdv.tools.crop.CropDialog;
 import bdv.tools.transformation.ManualTransformationEditor;
@@ -67,8 +67,9 @@ public class BigDataViewerActions extends Actions
 	public static final String SET_DYNAMIC_BOOKMARK = "set dynamic bookmark";
 	public static final String ADD_KEYFRAME = "add key frame";
 	public static final String REMOVE_KEYFRAME = "remove key frame";
-	static final String NEXT_KEYFRAME = "next key frame";
-	static final String PREVIOUS_KEYFRAME = "previous key frame";
+	public static final String NEXT_KEYFRAME = "next key frame";
+	public static final String PREVIOUS_KEYFRAME = "previous key frame";
+	public static final String RENAME_BOOKMARK = "rename bookmark";
 
 	static final String[] BRIGHTNESS_SETTINGS_KEYS         = new String[] { "S" };
 	static final String[] VISIBILITY_AND_GROUPING_KEYS     = new String[] { "F6" };
@@ -89,6 +90,7 @@ public class BigDataViewerActions extends Actions
 	static final String[] REMOVE_KEYFRAME_KEYS             = new String[] { "shift K" };
 	static final String[] NEXT_KEYFRAME_KEYS               = new String[] { "U" };
 	static final String[] PREVIOUS_KEYFRAME_KEYS           = new String[] { "Z" };
+	static final String[] RENAME_BOOKMARK_KEYS             = new String[] { "R" };
 
 	/**
 	 * Create BigDataViewer actions and install them in the specified
@@ -173,6 +175,7 @@ public class BigDataViewerActions extends Actions
 		runnableAction( bookmarksEditor::removeKeyframe, REMOVE_KEYFRAME, REMOVE_KEYFRAME_KEYS );
 		runnableAction( bookmarksEditor::nextKeyframe, NEXT_KEYFRAME, NEXT_KEYFRAME_KEYS );
 		runnableAction( bookmarksEditor::previousKeyframe, PREVIOUS_KEYFRAME, PREVIOUS_KEYFRAME_KEYS );
+		runnableAction( bookmarksEditor::initRenameBookmark, RENAME_BOOKMARK, RENAME_BOOKMARK_KEYS );
 	}
 
 	public void manualTransform( final ManualTransformationEditor manualTransformationEditor )

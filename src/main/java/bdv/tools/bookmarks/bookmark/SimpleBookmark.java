@@ -27,6 +27,11 @@ public class SimpleBookmark implements IBookmark {
 		this.key = s.key;
 		this.transform = s.transform.copy();
 	}
+	
+	protected SimpleBookmark(SimpleBookmark s, String newKey) {
+		this.key = newKey;
+		this.transform = s.transform.copy();
+	}
 
 	public String getKey() {
 		return this.key;
@@ -52,4 +57,8 @@ public class SimpleBookmark implements IBookmark {
 		return new SimpleBookmark(this);
 	}
 	
+	@Override
+	public SimpleBookmark copy(String newKey) {
+		return new SimpleBookmark(this, newKey);
+	}
 }

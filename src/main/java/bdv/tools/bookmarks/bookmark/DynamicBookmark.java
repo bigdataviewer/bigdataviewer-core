@@ -38,6 +38,12 @@ public class DynamicBookmark implements IBookmark {
 		this.keyframes = new TreeSet<>(new KeyFrameComparator());
 		for(KeyFrame k : d.keyframes) this.keyframes.add(k.copy());
 	}
+	
+	protected DynamicBookmark(DynamicBookmark d, String newKey) {
+		this.key = newKey;
+		this.keyframes = new TreeSet<>(new KeyFrameComparator());
+		for(KeyFrame k : d.keyframes) this.keyframes.add(k.copy());
+	}
 
 	@Override
 	public String getKey() {
@@ -174,5 +180,10 @@ public class DynamicBookmark implements IBookmark {
 	@Override
 	public DynamicBookmark copy() {
 		return new DynamicBookmark(this);
+	}
+	
+	@Override
+	public DynamicBookmark copy(String newKey) {
+		return new DynamicBookmark(this, newKey);
 	}
 }

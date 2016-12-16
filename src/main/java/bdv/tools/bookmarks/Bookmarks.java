@@ -99,7 +99,11 @@ public class Bookmarks {
 	}
 	
 	public void rename(String oldKey, String newKey){
-		// TODO
+		IBookmark bookmark = remove(oldKey);
+		if(bookmark != null){
+			IBookmark newBookmark = bookmark.copy(newKey);
+			put(newBookmark);
+		}
 	}
 
 	// TODO replace with generic method

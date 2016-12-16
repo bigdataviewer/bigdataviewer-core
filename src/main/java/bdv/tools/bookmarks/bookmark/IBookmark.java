@@ -2,8 +2,6 @@ package bdv.tools.bookmarks.bookmark;
 
 import org.jdom2.Element;
 
-import net.imglib2.realtransform.AffineTransform3D;
-
 public interface IBookmark {
 	
 	String getKey();
@@ -11,4 +9,6 @@ public interface IBookmark {
 	Element toXmlNode();
 	
 	IBookmark copy();
+	
+	IBookmark copy(String newKey);
 }
