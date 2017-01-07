@@ -70,6 +70,7 @@ public class BigDataViewerActions extends Actions
 	public static final String NEXT_KEYFRAME = "next key frame";
 	public static final String PREVIOUS_KEYFRAME = "previous key frame";
 	public static final String RENAME_BOOKMARK = "rename bookmark";
+	public static final String DELETE_BOOKMARK = "delete bookmark";
 
 	static final String[] BRIGHTNESS_SETTINGS_KEYS         = new String[] { "S" };
 	static final String[] VISIBILITY_AND_GROUPING_KEYS     = new String[] { "F6" };
@@ -91,6 +92,7 @@ public class BigDataViewerActions extends Actions
 	static final String[] NEXT_KEYFRAME_KEYS               = new String[] { "U" };
 	static final String[] PREVIOUS_KEYFRAME_KEYS           = new String[] { "Z" };
 	static final String[] RENAME_BOOKMARK_KEYS             = new String[] { "R" };
+	static final String[] DELETE_BOOKMARK_KEYS             = new String[] { "ctrl B" };
 
 	/**
 	 * Create BigDataViewer actions and install them in the specified
@@ -176,6 +178,7 @@ public class BigDataViewerActions extends Actions
 		runnableAction( bookmarksEditor::nextKeyframe, NEXT_KEYFRAME, NEXT_KEYFRAME_KEYS );
 		runnableAction( bookmarksEditor::previousKeyframe, PREVIOUS_KEYFRAME, PREVIOUS_KEYFRAME_KEYS );
 		runnableAction( bookmarksEditor::initRenameBookmark, RENAME_BOOKMARK, RENAME_BOOKMARK_KEYS );
+		runnableAction( bookmarksEditor::initDeleteBookmark, DELETE_BOOKMARK, DELETE_BOOKMARK_KEYS );
 	}
 
 	public void manualTransform( final ManualTransformationEditor manualTransformationEditor )

@@ -67,7 +67,8 @@ public class BookmarksEditor
 		RECALL_TRANSFORM,
 		RECALL_ORIENTATION,
 		ADD_KEYFRAME,
-		RENAME
+		RENAME,
+		DELETE
 	}
 
 	private Mode mode = Mode.INACTIVE;
@@ -237,6 +238,16 @@ public class BookmarksEditor
 							}
 						}
 							break;
+						case DELETE:{
+							if(bookmarks.get(key) == null){
+								fadeOut("bookmark with the key " + key + " could not be found ", 1500);
+							}
+							else{
+								bookmarks.remove(key);
+								fadeOut("delete bookmark: " + key, 500);
+							}
+						}
+							break;
 						default:
 							break;
 						}
@@ -321,13 +332,17 @@ public class BookmarksEditor
 		init( Mode.RECALL_TRANSFORM, "go to bookmark: " );
 	}
 
-	public void initGoToBookmarkRotation()
+	public synchronized void initGoToBookmarkRotation()
 	{
 		init( Mode.RECALL_ORIENTATION, "go to bookmark orientation: " );
 	}
 	
-	public void initRenameBookmark(){
+	public synchronized void initRenameBookmark(){
 		init( Mode.RENAME, String.format("bookmark key to rename: "));
+	}
+	
+	public synchronized void initDeleteBookmark(){
+		init( Mode.DELETE, String.format("delete bookmark: "));
 	}
 	
 	public synchronized void addKeyframe()
