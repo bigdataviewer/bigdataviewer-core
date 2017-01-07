@@ -64,6 +64,7 @@ import javax.swing.event.ChangeListener;
 import org.jdom2.Element;
 
 import bdv.cache.CacheControl;
+import bdv.tools.bookmarks.bookmark.IBookmark;
 import bdv.util.Affine3DHelpers;
 import bdv.util.InvokeOnEDT;
 import bdv.util.Prefs;
@@ -722,6 +723,22 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		sliderTime.setModel( new DefaultBoundedRangeModel( state.getCurrentTimepoint(), 0, 0, numTimepoints - 1 ) );
 		revalidate();
 		requestRepaint();
+	}
+	
+	/**
+	 * Get the currently active bookmark.
+	 */
+	public synchronized IBookmark getActiveBookmark(){
+		return state.getActiveBookmark();
+	}
+	
+	/**
+	 * Set the active bookmark
+	 * @param bookmark
+	 * 			the active bookmark
+	 */
+	public synchronized void setActiveBookmark(final IBookmark bookmark){
+		this.state.setActiveBookmark(bookmark);
 	}
 
 	/**

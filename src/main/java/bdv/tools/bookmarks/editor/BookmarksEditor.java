@@ -48,6 +48,7 @@ import bdv.tools.bookmarks.bookmark.SimpleBookmark;
 import bdv.tools.bookmarks.BookmarkTextOverlayAnimator;
 import bdv.tools.bookmarks.Bookmarks;
 import bdv.tools.bookmarks.bookmark.DynamicBookmark;
+import bdv.tools.bookmarks.bookmark.IBookmark;
 import bdv.tools.bookmarks.bookmark.KeyFrame;
 import bdv.util.Affine3DHelpers;
 import bdv.viewer.TimePointListener;
@@ -88,9 +89,6 @@ public class BookmarksEditor
 	private BookmarkTextOverlayAnimator animator;
 	
 	private BookmarkRenameEditor bookmarkRenameEditor;
-	
-	// TODO manage active bookmark from Bookmark class?
-	private DynamicBookmark activeDynamicBookmark;
 
 	public BookmarksEditor( final ViewerPanel viewer, final InputActionBindings inputActionBindings, final Bookmarks bookmarks )
 	{
@@ -261,12 +259,13 @@ public class BookmarksEditor
 			
 			@Override
 			public void timePointChanged(int timePointIndex) {
-				if(activeDynamicBookmark != null){
+				DynamicBookmark dynamicBookmark = getActiveDynamicBookmark();
+				if(dynamicBookmark != null){
 					
 					final double cX = viewer.getDisplay().getWidth() / 2.0;
 					final double cY = viewer.getDisplay().getHeight() / 2.0;
 					
-					final AffineTransform3D targetTransform = activeDynamicBookmark.getInterpolatedTransform(timePointIndex, cX, cY);
+					final AffineTransform3D targetTransform = dynamicBookmark.getInterpolatedTransform(timePointIndex, cX, cY);
 					if ( targetTransform != null )
 					{
 						targetTransform.set( targetTransform.get( 0, 3 ) + cX, 0, 3 );
@@ -287,8 +286,17 @@ public class BookmarksEditor
 	}
 	
 	private synchronized void setActiveDynamicBookmark(DynamicBookmark bookmark){
-		this.activeDynamicBookmark = bookmark;
-		viewer.getSourceInfoOverlayRenderer().setActiveBookmark(bookmark);
+		viewer.setActiveBookmark(bookmark);
+	}
+	
+	private synchronized DynamicBookmark getActiveDynamicBookmark(){
+		IBookmark bookmark = viewer.getActiveBookmark();
+		
+		if(bookmark instanceof DynamicBookmark){
+			return (DynamicBookmark) bookmark;
+		}
+		
+		return null;
 	}
 	
 	private void fadeIn(String message, long duration ){
@@ -347,7 +355,8 @@ public class BookmarksEditor
 	
 	public synchronized void addKeyframe()
 	{
-		if(activeDynamicBookmark != null){
+		DynamicBookmark dynamicBookmark = getActiveDynamicBookmark();
+		if(dynamicBookmark != null){
 			
 			final AffineTransform3D t = new AffineTransform3D();
 			viewer.getState().getViewerTransform( t );
@@ -359,9 +368,9 @@ public class BookmarksEditor
 			int timepoint = viewer.getState().getCurrentTimepoint();
 			
 			KeyFrame keyframe = new KeyFrame(timepoint, t);
-			activeDynamicBookmark.add(keyframe);
+			dynamicBookmark.add(keyframe);
 			
-			fadeOut( "key frame added to " + activeDynamicBookmark.getKey(), 1000 );
+			fadeOut( "key frame added to " + dynamicBookmark.getKey(), 1000 );
 		}
 		else{
 			fadeOut( "no active dynamic bookmark", 1000 );
@@ -370,11 +379,12 @@ public class BookmarksEditor
 	
 	public synchronized void removeKeyframe()
 	{
-		if(activeDynamicBookmark != null){
+		DynamicBookmark dynamicBookmark = getActiveDynamicBookmark();
+		if(dynamicBookmark != null){
 
 			int timepoint = viewer.getState().getCurrentTimepoint();			
 			KeyFrame keyframe = new KeyFrame(timepoint, null);
-			boolean removed = activeDynamicBookmark.remove(keyframe);
+			boolean removed = dynamicBookmark.remove(keyframe);
 			
 			if(removed){
 				fadeOut( "key frame removed", 1000 );
@@ -390,10 +400,11 @@ public class BookmarksEditor
 	
 	public synchronized void nextKeyframe()
 	{
-		if(activeDynamicBookmark != null){
+		DynamicBookmark dynamicBookmark = getActiveDynamicBookmark();
+		if(dynamicBookmark != null){
 			
 			int currentTimepoint = viewer.getState().getCurrentTimepoint();
-			KeyFrame nextKeyframe = activeDynamicBookmark.getNextKeyFrame(currentTimepoint);
+			KeyFrame nextKeyframe = dynamicBookmark.getNextKeyFrame(currentTimepoint);
 			if(nextKeyframe != null && nextKeyframe.getTimepoint() > currentTimepoint ){
 				viewer.setTimepoint(nextKeyframe.getTimepoint());
 				fadeOut( "go to next key frame", 1000 );
@@ -406,10 +417,11 @@ public class BookmarksEditor
 	
 	public synchronized void previousKeyframe()
 	{		
-		if(activeDynamicBookmark != null){
+		DynamicBookmark dynamicBookmark = getActiveDynamicBookmark();
+		if(dynamicBookmark != null){
 			
 			int currentTimepoint = viewer.getState().getCurrentTimepoint();
-			KeyFrame previousKeyframe = activeDynamicBookmark.getPreviousKeyFrame(currentTimepoint);
+			KeyFrame previousKeyframe = dynamicBookmark.getPreviousKeyFrame(currentTimepoint);
 			if(previousKeyframe != null && previousKeyframe.getTimepoint() < currentTimepoint ){
 				viewer.setTimepoint(previousKeyframe.getTimepoint());
 				fadeOut( "go to previous key frame", 1000 );

@@ -61,10 +61,6 @@ public class SourceInfoOverlayRenderer
 	
 	protected String activeBookmarkString;
 
-	public SourceInfoOverlayRenderer(){
-		activeBookmarkString = "";
-	}
-	
 	public synchronized void paint( final Graphics2D g )
 	{
 		g.setFont( new Font( "Monospaced", Font.PLAIN, 12 ) );
@@ -77,14 +73,6 @@ public class SourceInfoOverlayRenderer
 	public synchronized void setTimePointsOrdered( final List< TimePoint > timePointsOrdered )
 	{
 		this.timePointsOrdered = timePointsOrdered;
-	}
-	
-	public synchronized void setActiveBookmark( final IBookmark bookmark )
-	{
-		if ( bookmark != null )
-			activeBookmarkString = String.format( "active bookmark: %s", bookmark.getKey() );
-		else
-			activeBookmarkString = "";
 	}
 
 	/**
@@ -112,6 +100,12 @@ public class SourceInfoOverlayRenderer
 				timepointString = String.format( "t = %s", timePointsOrdered.get( t ).getName() );
 			else
 				timepointString = String.format( "t = %d", t );
+			
+			final IBookmark bookmark = state.getActiveBookmark();
+			if ( bookmark != null )
+				activeBookmarkString = String.format( "active bookmark: %s", bookmark.getKey() );
+			else
+				activeBookmarkString = "";
 		}
 	}
 }

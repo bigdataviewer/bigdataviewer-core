@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
+import bdv.tools.bookmarks.bookmark.IBookmark;
 import bdv.util.MipmapTransforms;
 import bdv.viewer.DisplayMode;
 import bdv.viewer.Interpolation;
@@ -73,6 +74,8 @@ public class ViewerState
 	 * number of available timepoints.
 	 */
 	private int numTimepoints;
+	
+	private IBookmark activeBookmark;
 
 	/**
 	 * Transformation set by the interactive viewer. Transforms from global
@@ -161,6 +164,8 @@ public class ViewerState
 		currentSource = s.currentSource;
 		currentGroup = s.currentGroup;
 		currentTimepoint = s.currentTimepoint;
+		if(s.activeBookmark != null)
+			activeBookmark = s.activeBookmark.copy();
 	}
 
 	public synchronized ViewerState copy()
@@ -331,6 +336,27 @@ public class ViewerState
 	public synchronized void setCurrentTimepoint( final int timepoint )
 	{
 		currentTimepoint = timepoint;
+	}
+	
+	/**
+	 * Get the active bookmark.
+	 *
+	 * @return active bookmark
+	 */
+	public synchronized IBookmark getActiveBookmark()
+	{
+		return activeBookmark;
+	}
+
+	/**
+	 * Set the active bookmark.
+	 *
+	 * @param bookmark
+	 *            active bookmark.
+	 */
+	public synchronized void setActiveBookmark( final IBookmark bookmark )
+	{
+		activeBookmark = bookmark;
 	}
 
 	/**
