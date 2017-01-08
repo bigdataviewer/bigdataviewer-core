@@ -283,6 +283,8 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		display.addHandler( mouseCoordinates );
 
 		sliderTime = new JSlider( SwingConstants.HORIZONTAL, 0, numTimepoints - 1, 0 );
+		//sliderTime.setUI(new CustomSliderUI(sliderTime));
+		
 		sliderTime.addChangeListener( new ChangeListener()
 		{
 			@Override
