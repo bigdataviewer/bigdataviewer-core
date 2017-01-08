@@ -39,6 +39,7 @@ import static bdv.viewer.VisibilityAndGrouping.Event.VISIBILITY_CHANGED;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -54,7 +55,11 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import javax.swing.Action;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.DefaultBoundedRangeModel;
+import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.SwingConstants;
@@ -64,6 +69,7 @@ import javax.swing.event.ChangeListener;
 import org.jdom2.Element;
 
 import bdv.cache.CacheControl;
+import bdv.tools.bookmarks.bookmark.DynamicBookmark;
 import bdv.tools.bookmarks.bookmark.IBookmark;
 import bdv.util.Affine3DHelpers;
 import bdv.util.InvokeOnEDT;
@@ -223,12 +229,19 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 	protected final ViewerOptions.Values options;
 
+	protected final JButton previousKeyframeButton;
+
+	protected final JButton addKeyframeButton;
+
+	protected final JButton nextKeyframeButton;
+
 	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimePoints, final CacheControl cacheControl )
 	{
 		this( sources, numTimePoints, cacheControl, ViewerOptions.options() );
 	}
 
 	/**
+	 * @wbp.parser.constructor
 	 * @param sources
 	 *            the {@link SourceAndConverter sources} to display.
 	 * @param numTimepoints
@@ -282,6 +295,26 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		mouseCoordinates = new MouseCoordinateListener();
 		display.addHandler( mouseCoordinates );
 
+		add( display, BorderLayout.CENTER );
+			
+		JPanel sliderPanel = new JPanel();
+		sliderPanel.setLayout(new BoxLayout(sliderPanel, BoxLayout.X_AXIS));
+		
+		previousKeyframeButton = new JButton("<<");
+		sliderPanel.add(previousKeyframeButton);
+		
+		sliderPanel.add(Box.createRigidArea(new Dimension(5, 5)));
+		
+		addKeyframeButton = new JButton("+");
+		sliderPanel.add(addKeyframeButton);
+		
+		sliderPanel.add(Box.createRigidArea(new Dimension(5, 5)));
+		
+		nextKeyframeButton = new JButton(">>");
+		sliderPanel.add(nextKeyframeButton);
+		
+		sliderPanel.add(Box.createRigidArea(new Dimension(5, 5)));
+
 		sliderTime = new JSlider( SwingConstants.HORIZONTAL, 0, numTimepoints - 1, 0 );
 		//sliderTime.setUI(new CustomSliderUI(sliderTime));
 		
@@ -294,10 +327,10 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 					setTimepoint( sliderTime.getValue() );
 			}
 		} );
-
-		add( display, BorderLayout.CENTER );
-		if ( numTimepoints > 1 )
-			add( sliderTime, BorderLayout.SOUTH );
+		
+		sliderPanel.add(sliderTime);
+		if(numTimepoints > 1)
+			add(sliderPanel, BorderLayout.SOUTH);
 
 		visibilityAndGrouping = new VisibilityAndGrouping( state );
 		visibilityAndGrouping.addUpdateListener( this );
@@ -322,9 +355,29 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 			}
 		} );
 
+		setKeyframeButtonEnable(false);
+		
 		painterThread.start();
 	}
 
+	public void addPreviousKeyframeButtonAction(Action action) {
+		previousKeyframeButton.addActionListener(action);	
+	}
+	
+	public void addAddKeyframeButtonAction(Action action) {
+		addKeyframeButton.addActionListener(action);	
+	}
+	
+	public void addNextKeyframeButtonAction(Action action) {
+		nextKeyframeButton.addActionListener(action);	
+	}
+	
+	public void setKeyframeButtonEnable(boolean enable){
+		previousKeyframeButton.setEnabled(enable);
+		addKeyframeButton.setEnabled(enable);
+		nextKeyframeButton.setEnabled(enable);
+	}
+	
 	public void addSource( final SourceAndConverter< ? > sourceAndConverter )
 	{
 		synchronized ( visibilityAndGrouping )
@@ -741,6 +794,9 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 */
 	public synchronized void setActiveBookmark(final IBookmark bookmark){
 		this.state.setActiveBookmark(bookmark);
+		
+		final boolean enableKeyframeButtons = bookmark instanceof DynamicBookmark;
+		setKeyframeButtonEnable(enableKeyframeButtons);
 	}
 
 	/**
