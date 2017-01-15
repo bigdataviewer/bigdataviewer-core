@@ -41,6 +41,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JSeparator;
 import javax.swing.filechooser.FileFilter;
 
 import org.jdom2.Document;
@@ -64,6 +65,7 @@ import bdv.tools.RecordMaxProjectionDialog;
 import bdv.tools.RecordMovieDialog;
 import bdv.tools.VisibilityAndGroupingDialog;
 import bdv.tools.bookmarks.Bookmarks;
+import bdv.tools.bookmarks.dialog.BookmarkManagementDialog;
 import bdv.tools.bookmarks.editor.BookmarksEditor;
 import bdv.tools.brightness.BrightnessDialog;
 import bdv.tools.brightness.ConverterSetup;
@@ -114,6 +116,8 @@ public class BigDataViewer
 
 	protected final VisibilityAndGroupingDialog activeSourcesDialog;
 
+	protected final BookmarkManagementDialog bookmarkManagementDialog;
+	
 	protected final HelpDialog helpDialog;
 
 	protected final ManualTransformationEditor manualTransformationEditor;
@@ -381,6 +385,8 @@ public class BigDataViewer
 
 		activeSourcesDialog = new VisibilityAndGroupingDialog( viewerFrame, viewer.getVisibilityAndGrouping() );
 
+		bookmarkManagementDialog = new BookmarkManagementDialog(viewerFrame, bookmarks);
+		
 		helpDialog = new HelpDialog( viewerFrame );
 
 		fileChooser = new JFileChooser();
@@ -460,6 +466,19 @@ public class BigDataViewer
 		miManualTransform.setText( "Manual Transform" );
 		menu.add( miManualTransform );
 
+		menu = new JMenu("Bookmarks");
+		menubar.add( menu );
+		
+		final JMenuItem miBookmarkMgmt = new JMenuItem(actionMap.get( BigDataViewerActions.OPEN_BOOKMARK_MANAGEMENT ));
+		miBookmarkMgmt.setText( "Bookmark Management" );
+		menu.add( miBookmarkMgmt );
+		
+		menu.add(new JSeparator());
+		
+		final JMenuItem miDeselectBookmark = new JMenuItem( actionMap.get( BigDataViewerActions.DESELECT_BOOKMARK ));
+		miDeselectBookmark.setText( "Deselect Bookmark" );
+		menu.add( miDeselectBookmark );
+		
 		menu = new JMenu( "Help" );
 		menubar.add( menu );
 

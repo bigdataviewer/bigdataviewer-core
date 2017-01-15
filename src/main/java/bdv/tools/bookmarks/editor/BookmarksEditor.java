@@ -353,6 +353,11 @@ public class BookmarksEditor
 		init( Mode.DELETE, String.format("delete bookmark: "));
 	}
 	
+	public synchronized void deselectBookmark()
+	{		
+		setActiveDynamicBookmark(null);
+	}
+	
 	public synchronized void addKeyframe()
 	{
 		DynamicBookmark dynamicBookmark = getActiveDynamicBookmark();

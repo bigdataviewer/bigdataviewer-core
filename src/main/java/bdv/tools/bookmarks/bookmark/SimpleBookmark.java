@@ -36,6 +36,11 @@ public class SimpleBookmark implements IBookmark {
 	public String getKey() {
 		return this.key;
 	}
+
+	@Override
+	public String getTypeName() {
+		return "Simple Bookmark";
+	}
 	
 	public AffineTransform3D getTransform() {
 		return this.transform;

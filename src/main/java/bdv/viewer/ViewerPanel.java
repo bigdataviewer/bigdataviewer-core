@@ -797,6 +797,8 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		
 		final boolean enableKeyframeButtons = bookmark instanceof DynamicBookmark;
 		setKeyframeButtonEnable(enableKeyframeButtons);
+		
+		display.repaint();
 	}
 
 	/**

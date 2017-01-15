@@ -49,6 +49,11 @@ public class DynamicBookmark implements IBookmark {
 	public String getKey() {
 		return this.key;
 	}
+	
+	@Override
+	public String getTypeName() {
+		return "Dynamic Bookmark";
+	}
 
 	public void add(final KeyFrame keyframe) {
 		remove(keyframe);

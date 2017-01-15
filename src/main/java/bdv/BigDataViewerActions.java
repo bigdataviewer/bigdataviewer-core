@@ -43,6 +43,7 @@ import bdv.tools.RecordMaxProjectionDialog;
 import bdv.tools.RecordMovieDialog;
 import bdv.tools.ToggleDialogAction;
 import bdv.tools.VisibilityAndGroupingDialog;
+import bdv.tools.bookmarks.dialog.BookmarkManagementDialog;
 import bdv.tools.bookmarks.editor.BookmarksEditor;
 import bdv.tools.brightness.BrightnessDialog;
 import bdv.tools.crop.CropDialog;
@@ -71,6 +72,9 @@ public class BigDataViewerActions extends Actions
 	public static final String PREVIOUS_KEYFRAME = "previous key frame";
 	public static final String RENAME_BOOKMARK = "rename bookmark";
 	public static final String DELETE_BOOKMARK = "delete bookmark";
+	public static final String DESELECT_BOOKMARK = "deselect bookmark";
+	
+	public static final String OPEN_BOOKMARK_MANAGEMENT = "open bookmark management";
 
 	static final String[] BRIGHTNESS_SETTINGS_KEYS         = new String[] { "S" };
 	static final String[] VISIBILITY_AND_GROUPING_KEYS     = new String[] { "F6" };
@@ -93,6 +97,7 @@ public class BigDataViewerActions extends Actions
 	static final String[] PREVIOUS_KEYFRAME_KEYS           = new String[] { "Z" };
 	static final String[] RENAME_BOOKMARK_KEYS             = new String[] { "R" };
 	static final String[] DELETE_BOOKMARK_KEYS             = new String[] { "ctrl B" };
+	
 
 	/**
 	 * Create BigDataViewer actions and install them in the specified
@@ -118,6 +123,7 @@ public class BigDataViewerActions extends Actions
 		actions.dialog( bdv.cropDialog );
 		actions.dialog( bdv.movieDialog );
 		actions.dialog( bdv.movieMaxProjectDialog );
+		actions.dialog( bdv.bookmarkManagementDialog );
 		actions.bookmarks( bdv.bookmarkEditor );
 		actions.manualTransform( bdv.manualTransformationEditor );
 		actions.runnableAction( bdv::loadSettings, LOAD_SETTINGS, LOAD_SETTINGS_KEYS );
@@ -166,6 +172,11 @@ public class BigDataViewerActions extends Actions
 	{
 		toggleDialogAction( recordMaxProjectionDialog, RECORD_MAX_PROJECTION_MOVIE, RECORD_MAX_PROJECTION_MOVIE_KEYS );
 	}
+	
+	public void dialog( final BookmarkManagementDialog dialog )
+	{
+		toggleDialogAction( dialog, OPEN_BOOKMARK_MANAGEMENT );
+	}
 
 	public void bookmarks( final BookmarksEditor bookmarksEditor )
 	{
@@ -179,8 +190,8 @@ public class BigDataViewerActions extends Actions
 		runnableAction( bookmarksEditor::previousKeyframe, PREVIOUS_KEYFRAME, PREVIOUS_KEYFRAME_KEYS );
 		runnableAction( bookmarksEditor::initRenameBookmark, RENAME_BOOKMARK, RENAME_BOOKMARK_KEYS );
 		runnableAction( bookmarksEditor::initDeleteBookmark, DELETE_BOOKMARK, DELETE_BOOKMARK_KEYS );
+		runnableAction( bookmarksEditor::deselectBookmark, DESELECT_BOOKMARK );
 	}
-
 	public void manualTransform( final ManualTransformationEditor manualTransformationEditor )
 	{
 		runnableAction( manualTransformationEditor::toggle, MANUAL_TRANSFORM, MANUAL_TRANSFORM_KEYS );

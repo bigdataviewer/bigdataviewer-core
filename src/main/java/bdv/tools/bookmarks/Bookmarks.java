@@ -29,6 +29,7 @@
  */
 package bdv.tools.bookmarks;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map.Entry;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -80,6 +81,10 @@ public class Bookmarks {
 		bookmarks.put(bookmark.getKey(), bookmark);
 	}
 
+	public Collection<IBookmark> getAll(){
+		return bookmarks.values();
+	}
+	
 	public IBookmark get(final String key) {
 		return bookmarks.get(key);
 	}
