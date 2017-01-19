@@ -36,4 +36,16 @@ public class KeyFrame {
 	public KeyFrame copy(){
 		return new KeyFrame(this);
 	}
+	
+	public boolean equals(Object other){
+		if (getClass() != other.getClass()) {
+			return false;
+		}
+		
+		if(other instanceof KeyFrame){
+			KeyFrame k = (KeyFrame) other;
+			return this.timepoint == k.getTimepoint();
+		}
+		return false;
+	}
 }
