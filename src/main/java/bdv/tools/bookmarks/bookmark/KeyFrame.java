@@ -1,5 +1,6 @@
 package bdv.tools.bookmarks.bookmark;
 
+import java.util.Objects;
 import net.imglib2.realtransform.AffineTransform3D;
 
 public class KeyFrame {
@@ -37,6 +38,7 @@ public class KeyFrame {
 		return new KeyFrame(this);
 	}
 	
+    @Override
 	public boolean equals(Object other){
 		if (getClass() != other.getClass()) {
 			return false;
@@ -48,4 +50,10 @@ public class KeyFrame {
 		}
 		return false;
 	}
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getClass(), this.timepoint);
+    }
+    
 }

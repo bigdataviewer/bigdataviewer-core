@@ -29,6 +29,12 @@
  */
 package bdv.viewer;
 
+import bdv.cache.CacheControl;
+import bdv.tools.bookmarks.bookmark.DynamicBookmark;
+import bdv.tools.bookmarks.bookmark.IBookmark;
+import bdv.util.Affine3DHelpers;
+import bdv.util.InvokeOnEDT;
+import bdv.util.Prefs;
 import static bdv.viewer.VisibilityAndGrouping.Event.CURRENT_SOURCE_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.DISPLAY_MODE_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.GROUP_ACTIVITY_CHANGED;
@@ -36,7 +42,21 @@ import static bdv.viewer.VisibilityAndGrouping.Event.GROUP_NAME_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.NUM_SOURCES_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.SOURCE_ACTVITY_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.VISIBILITY_CHANGED;
-
+import bdv.viewer.animate.AbstractTransformAnimator;
+import bdv.viewer.animate.MessageOverlayAnimator;
+import bdv.viewer.animate.OverlayAnimator;
+import bdv.viewer.animate.RotationAnimator;
+import bdv.viewer.animate.TextOverlayAnimator;
+import bdv.viewer.animate.TextOverlayAnimator.TextPosition;
+import bdv.viewer.overlay.MultiBoxOverlayRenderer;
+import bdv.viewer.overlay.ScaleBarOverlayRenderer;
+import bdv.viewer.overlay.SourceInfoOverlayRenderer;
+import bdv.viewer.render.MultiResolutionRenderer;
+import bdv.viewer.render.TransformAwareBufferedImageOverlayRenderer;
+import bdv.viewer.state.SourceGroup;
+import bdv.viewer.state.SourceState;
+import bdv.viewer.state.ViewerState;
+import bdv.viewer.state.XmlIoViewerState;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Dimension;
@@ -54,41 +74,14 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
 import javax.swing.Action;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultBoundedRangeModel;
 import javax.swing.JButton;
 import javax.swing.JPanel;
-import javax.swing.JSlider;
-import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-
-import org.jdom2.Element;
-
-import bdv.cache.CacheControl;
-import bdv.tools.bookmarks.bookmark.DynamicBookmark;
-import bdv.tools.bookmarks.bookmark.IBookmark;
-import bdv.util.Affine3DHelpers;
-import bdv.util.InvokeOnEDT;
-import bdv.util.Prefs;
-import bdv.viewer.animate.AbstractTransformAnimator;
-import bdv.viewer.animate.MessageOverlayAnimator;
-import bdv.viewer.animate.OverlayAnimator;
-import bdv.viewer.animate.RotationAnimator;
-import bdv.viewer.animate.TextOverlayAnimator;
-import bdv.viewer.animate.TextOverlayAnimator.TextPosition;
-import bdv.viewer.overlay.MultiBoxOverlayRenderer;
-import bdv.viewer.overlay.ScaleBarOverlayRenderer;
-import bdv.viewer.overlay.SourceInfoOverlayRenderer;
-import bdv.viewer.render.MultiResolutionRenderer;
-import bdv.viewer.render.TransformAwareBufferedImageOverlayRenderer;
-import bdv.viewer.state.SourceGroup;
-import bdv.viewer.state.SourceState;
-import bdv.viewer.state.ViewerState;
-import bdv.viewer.state.XmlIoViewerState;
 import net.imglib2.Positionable;
 import net.imglib2.RealLocalizable;
 import net.imglib2.RealPoint;
@@ -100,6 +93,7 @@ import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.TransformEventHandler;
 import net.imglib2.ui.TransformListener;
 import net.imglib2.util.LinAlgHelpers;
+import org.jdom2.Element;
 
 
 /**
@@ -160,7 +154,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 */
 	protected final InteractiveDisplayCanvasComponent< AffineTransform3D > display;
 
-	protected final JSlider sliderTime;
+	protected final JKeyFrameSlider sliderTime;
 
 	/**
 	 * Thread that triggers repainting of the display.
@@ -315,8 +309,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		
 		sliderPanel.add(Box.createRigidArea(new Dimension(5, 5)));
 
-		sliderTime = new JSlider( SwingConstants.HORIZONTAL, 0, numTimepoints - 1, 0 );
-		//sliderTime.setUI(new CustomSliderUI(sliderTime));
+		sliderTime = new JKeyFrameSlider(0, numTimepoints - 1, 0);
 		
 		sliderTime.addChangeListener( new ChangeListener()
 		{
@@ -792,11 +785,17 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 * @param bookmark
 	 * 			the active bookmark
 	 */
-	public synchronized void setActiveBookmark(final IBookmark bookmark){
+	public synchronized void setActiveBookmark(final IBookmark bookmark) {
 		this.state.setActiveBookmark(bookmark);
 		
 		final boolean enableKeyframeButtons = bookmark instanceof DynamicBookmark;
 		setKeyframeButtonEnable(enableKeyframeButtons);
+        
+        if (bookmark instanceof DynamicBookmark) {
+            sliderTime.setDynamicBookmarks((DynamicBookmark) bookmark);
+        } else {
+            sliderTime.setDynamicBookmarks(null);
+        }
 		
 		display.repaint();
 	}

@@ -2,23 +2,15 @@ package bdv.viewer;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Component;
-import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.MenuItem;
-import java.awt.Point;
 import java.awt.RenderingHints;
 import java.awt.Stroke;
-import java.awt.event.MouseEvent;
-import java.awt.geom.GeneralPath;
 import javax.swing.JComponent;
-import javax.swing.JFrame;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 import javax.swing.JSlider;
 import javax.swing.SwingConstants;
-import javax.swing.SwingUtilities;
 import javax.swing.plaf.basic.BasicSliderUI;
 
 public class CustomSliderUI extends BasicSliderUI  {
@@ -34,6 +26,7 @@ public class CustomSliderUI extends BasicSliderUI  {
 		JPopupMenu menu = new  JPopupMenu();
 		JMenuItem menuItem = new JMenuItem("test");
 		menu.add(menuItem);
+        
 		slider.setComponentPopupMenu(menu);
 		
 		/*
