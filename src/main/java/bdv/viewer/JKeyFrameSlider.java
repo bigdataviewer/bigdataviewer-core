@@ -30,6 +30,7 @@ import bdv.tools.bookmarks.bookmark.KeyFrame;
 import java.awt.Color;
 import java.awt.Graphics;
 import javax.swing.JSlider;
+import javax.swing.plaf.basic.BasicSliderUI;
 
 /**
  *
@@ -82,6 +83,8 @@ public final class JKeyFrameSlider extends JSlider {
             
             g.fillRect(posX, 0, 2, height);
         }
+        
+        ((BasicSliderUI) getUI()).paintThumb(g);
     }
     
     private int[] convertKeyFramesAsArray() {

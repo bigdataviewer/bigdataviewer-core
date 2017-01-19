@@ -1,7 +1,7 @@
 package bdv.tools.bookmarks.bookmark;
 
 import bdv.viewer.animate.SimilarityTransformAnimator;
-import java.util.Collections;
+import static java.util.Collections.unmodifiableSet;
 import java.util.Set;
 import java.util.TreeSet;
 import mpicbg.spim.data.XmlHelpers;
@@ -56,7 +56,7 @@ public class DynamicBookmark implements IBookmark {
      * @return  Returns never {@code null}.
      */
     public Set<KeyFrame> getFrameSet() {
-        return Collections.unmodifiableSet(this.keyframes);
+        return unmodifiableSet(this.keyframes);
     }
 	
 	@Override
