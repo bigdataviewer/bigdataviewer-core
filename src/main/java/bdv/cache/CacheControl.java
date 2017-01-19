@@ -29,6 +29,8 @@
  */
 package bdv.cache;
 
+import java.util.concurrent.CopyOnWriteArrayList;
+
 import bdv.img.cache.VolatileGlobalCellCache;
 
 /**
@@ -54,10 +56,49 @@ public interface CacheControl
 	 */
 	public void prepareNextFrame();
 
+	/**
+	 * {@link CacheControl} that does nothing.
+	 */
 	public static class Dummy implements CacheControl
 	{
 		@Override
 		public void prepareNextFrame()
 		{}
+	}
+
+	/**
+	 * {@link CacheControl} backed by a set of {@link CacheControl}s.
+	 * {@link #prepareNextFrame()} forwards to all of them.
+	 */
+	public static class CacheControls implements CacheControl
+	{
+		private final CopyOnWriteArrayList< CacheControl > cacheControls = new CopyOnWriteArrayList<>();
+
+		public synchronized void addCacheControl( final CacheControl cacheControl, final int index )
+		{
+			cacheControls.remove( cacheControl );
+			final int s = cacheControls.size();
+			cacheControls.add( index < 0 ? 0 : index > s ? s : index, cacheControl );
+		}
+
+		public synchronized void addCacheControl( final CacheControl cacheControl )
+		{
+			if ( !cacheControls.contains( cacheControl ) )
+			{
+				cacheControls.add( cacheControl );
+			}
+		}
+
+		public synchronized void removeCacheControl( final CacheControl cacheControl )
+		{
+			cacheControls.remove( cacheControl );
+		}
+
+		@Override
+		public void prepareNextFrame()
+		{
+			for ( final CacheControl c : cacheControls )
+				c.prepareNextFrame();
+		}
 	}
 }
