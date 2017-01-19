@@ -26,6 +26,7 @@
 package bdv.viewer;
 
 import bdv.tools.bookmarks.bookmark.DynamicBookmark;
+import bdv.tools.bookmarks.bookmark.DynamicBookmarkChangedListener;
 import bdv.tools.bookmarks.bookmark.KeyFrame;
 import java.awt.Color;
 import java.awt.Graphics;
@@ -37,9 +38,20 @@ import javax.swing.plaf.basic.BasicSliderUI;
  * @author Riebe, Moritz (moritz.riebe@mz-solutions.de)
  */
 public final class JKeyFrameSlider extends JSlider {
+	
+	private class ChangeListener implements DynamicBookmarkChangedListener {
+
+		@Override
+		public void changed() {
+			repaint();
+		}
+		
+	}
     
+	private final DynamicBookmarkChangedListener bookmarkChangedListener = new ChangeListener();
     /** Current dynamic bookmark or null if no bookmark is selected. */
     private DynamicBookmark bookmark = null;
+    
 
     public JKeyFrameSlider() {
         this(0, 100, 50);
@@ -59,7 +71,16 @@ public final class JKeyFrameSlider extends JSlider {
      * @param bookmark     bookmark or {@code null} to reset dyn. bookmark.
      */
     public void setDynamicBookmarks(DynamicBookmark bookmark) {
-        this.bookmark = bookmark;
+        if(this.bookmark != null){
+        	bookmark.removeDynamicBookmarkChangedListener(bookmarkChangedListener);
+        }
+    	
+    	this.bookmark = bookmark;
+       
+    	if(this.bookmark != null){
+        	bookmark.addDynamicBookmarkChangedListener(bookmarkChangedListener);
+        }
+        
         repaint();
     }
     

@@ -2,6 +2,10 @@ package bdv.tools.bookmarks.bookmark;
 
 import bdv.viewer.animate.SimilarityTransformAnimator;
 import static java.util.Collections.unmodifiableSet;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import mpicbg.spim.data.XmlHelpers;
@@ -20,6 +24,8 @@ public class DynamicBookmark implements IBookmark {
 	private final String key;
 
 	private final TreeSet<KeyFrame> keyframes;
+	
+	private final List<DynamicBookmarkChangedListener> listeners = Collections.synchronizedList(new ArrayList<>());
 
 	public DynamicBookmark(final String key) {
 		this.key = key;
@@ -66,11 +72,18 @@ public class DynamicBookmark implements IBookmark {
 
 	public void add(final KeyFrame keyframe) {
 		remove(keyframe);
-		keyframes.add(keyframe);
+		boolean b = keyframes.add(keyframe);
+		if(b){
+			fireDynamicBookmarkChanged();
+		}
 	}
 	
 	public boolean remove(final KeyFrame keyframe) {
-		return keyframes.remove(keyframe);
+		boolean b = keyframes.remove(keyframe);
+		if(b){
+			fireDynamicBookmarkChanged();
+		}
+		return b;
 	}
 
 	@Override
@@ -199,5 +212,20 @@ public class DynamicBookmark implements IBookmark {
 	@Override
 	public DynamicBookmark copy(String newKey) {
 		return new DynamicBookmark(this, newKey);
+	}
+	
+	
+	public void addDynamicBookmarkChangedListener(DynamicBookmarkChangedListener l){
+		listeners.add(l);
+	}
+	
+	public void removeDynamicBookmarkChangedListener(DynamicBookmarkChangedListener l){
+		listeners.remove(l);
+	}
+	
+	private void fireDynamicBookmarkChanged(){
+		for(DynamicBookmarkChangedListener l : listeners){
+			l.changed();
+		}
 	}
 }
