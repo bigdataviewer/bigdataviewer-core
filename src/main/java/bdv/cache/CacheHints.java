@@ -68,6 +68,10 @@ public class CacheHints
 		this.queuePriority = queuePriority;
 		this.enqueuToFront = enqueuToFront;
 
+		int value = loadingStrategy.hashCode();
+		value = 31 * value + queuePriority;
+		value = 31 * value + Boolean.hashCode( enqueuToFront );
+		hashcode = value;
 	}
 
 	/**
@@ -106,5 +110,25 @@ public class CacheHints
 	public boolean isEnqueuToFront()
 	{
 		return enqueuToFront;
+	}
+
+
+	@Override
+	public boolean equals( final Object other )
+	{
+		if ( this == other )
+			return true;
+		if ( !( other instanceof CacheHints ) )
+			return false;
+		final CacheHints that = ( CacheHints ) other;
+		return ( this.loadingStrategy == that.loadingStrategy ) && ( this.queuePriority == that.queuePriority ) && ( this.enqueuToFront == that.enqueuToFront );
+	}
+
+	private final int hashcode;
+
+	@Override
+	public int hashCode()
+	{
+		return hashcode;
 	}
 }
