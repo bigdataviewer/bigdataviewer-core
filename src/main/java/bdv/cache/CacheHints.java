@@ -131,4 +131,10 @@ public class CacheHints
 	{
 		return hashcode;
 	}
+
+	@Override
+	public String toString()
+	{
+		return "(" + loadingStrategy + ", " + queuePriority + ", " + Boolean.toString( enqueuToFront ) + ")";
+	}
 }
