@@ -40,13 +40,11 @@ public class KeyFrame {
 	
     @Override
 	public boolean equals(Object other){
-		if (getClass() != other.getClass()) {
-			return false;
-		}
-		
 		if(other instanceof KeyFrame){
-			KeyFrame k = (KeyFrame) other;
-			return this.timepoint == k.getTimepoint();
+			if (getClass() == other.getClass()) {
+				KeyFrame k = (KeyFrame) other;
+				return this.timepoint == k.getTimepoint();
+			}
 		}
 		return false;
 	}

@@ -40,7 +40,11 @@ import javax.swing.JSeparator;
  */
 public final class KeyFramePopupMenu extends JPopupMenu {
     
-    private final JMenuItem itemSelectKF = new JMenuItem();
+	private static final long serialVersionUID = 1L;
+
+	
+	private final JMenuItem itemCopyKF = new JMenuItem();
+	private final JMenuItem itemSetTransformKF = new JMenuItem();
     private final JMenuItem itemRemoveKF = new JMenuItem();
     
     private final JMenuItem itemOpenBookmarkManager = new JMenuItem();
@@ -54,18 +58,22 @@ public final class KeyFramePopupMenu extends JPopupMenu {
     }
     
     private void initComponents() {
-        add(itemSelectKF);
+        add(itemCopyKF);
+        add(itemSetTransformKF);
         add(itemRemoveKF);
         add(sepContextFromNonContext);
         add(itemOpenBookmarkManager);
         
-        itemSelectKF.setText("Select Key-Frame");
-        itemSelectKF.addActionListener(this::onActionPerformedEventItemSelectKF);
+        itemCopyKF.setText("Copy");
+        itemCopyKF.addActionListener(this::onActionPerformedEventItemSelectKF);
         
-        itemRemoveKF.setText("Remove Key-Frame-Flag");
+        itemSetTransformKF.setText("Set transformation");
+        itemSetTransformKF.addActionListener(this::onActionPerformedEventItemRemoveFK);
+        
+        itemRemoveKF.setText("Remove");
         itemRemoveKF.addActionListener(this::onActionPerformedEventItemRemoveFK);
         
-        itemOpenBookmarkManager.setText("Open Bookmark Management..");
+        itemOpenBookmarkManager.setText("Open Bookmark Management...");
         itemOpenBookmarkManager.addActionListener(this::onActionPerformedEventOpenBookmarkManager);
         
         setKeyFrameFlagSelected(null);
@@ -74,7 +82,8 @@ public final class KeyFramePopupMenu extends JPopupMenu {
     protected void setKeyFrameFlagSelected(KeyFrame selectedKeyFrameOrNull) {
         final boolean visibleKeyFrameActions = (null != selectedKeyFrameOrNull);
         
-        this.itemSelectKF.setVisible(visibleKeyFrameActions);
+        this.itemCopyKF.setVisible(visibleKeyFrameActions);
+        this.itemSetTransformKF.setVisible(visibleKeyFrameActions);
         this.itemRemoveKF.setVisible(visibleKeyFrameActions);
         this.sepContextFromNonContext.setVisible(visibleKeyFrameActions);
         
