@@ -31,13 +31,13 @@ import bdv.tools.bookmarks.bookmark.KeyFrame;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.lang.reflect.Field;
 import javax.swing.JPopupMenu;
 import javax.swing.JSlider;
 import javax.swing.SwingUtilities;
-import javax.swing.event.PopupMenuEvent;
-import javax.swing.event.PopupMenuListener;
 import javax.swing.plaf.SliderUI;
 import javax.swing.plaf.basic.BasicSliderUI;
 
@@ -58,18 +58,6 @@ public final class JKeyFrameSlider extends JSlider {
 
 	}
 	
-	private class MySliderUI extends BasicSliderUI{
-
-		public MySliderUI(JSlider b) {
-			super(b);
-		}
-		
-		public int getTrackWidth(){
-			return trackRect.width;
-		}
-		
-	}
-
 	private final int numTimepoints;
 	
 	/** KeyFrame-Flag (red-Line) Width. */
@@ -96,8 +84,6 @@ public final class JKeyFrameSlider extends JSlider {
 
 	private KeyFrame currentHoverKeyframe = null;
 
-	private int trackWidth;
-	
 	public JKeyFrameSlider() {
 		this(0, 100, 50);
 	}
@@ -175,41 +161,10 @@ public final class JKeyFrameSlider extends JSlider {
 		throw new IllegalStateException(JKeyFrameSlider.class.getSimpleName() + " cannot be set");
 	}
 
-	/*
-	private boolean isKeyFrameFlagMouseHover() {
-		return currentHoverKeyframe != null;
-	}
-	*/
-
-	/*
-	private KeyFrame getKeyFrameFlagMouseOver() {
-		if (isKeyFrameFlagMouseHover() == false) {
-			return null;
-		}
-
-		for (KeyFrame singleFrame : bookmark.getFrameSet()) {
-			if (singleFrame.getTimepoint() == this.currentHoverKeyframe) {
-				return singleFrame;
-			}
-		}
-
-		return null;
-	}
-	*/
-
 	@Override
 	public void paint(Graphics g) {
 		super.paint(g);
 
-		// TODO
-		/*
-		if(getUI() instanceof BasicSliderUI){
-			final MySliderUI mySliderUI =  (MySliderUI) getUI();
-			if(mySliderUI != null)
-				this.trackWidth = mySliderUI.getTrackWidth();
-		}
-		*/
-		
 		if (null == bookmark) {
 			return;
 		}
@@ -257,19 +212,53 @@ public final class JKeyFrameSlider extends JSlider {
 		
 		this.currentHoverKeyframe = null;
 	}
-
-	/*
-	private int[] convertKeyFramesAsArray() {
-		return bookmark.getFrameSet().stream().mapToInt(KeyFrame::getTimepoint).toArray();
-	}
-	*/
+    
+    /**
+     * Returns the {@code trackRect} of {@link BasicSliderUI} to determine the correct position of
+     * the slider thumb.
+     * 
+     * <p>If the selected LookAndFeel doesn't inherit from {@link BasicSliderUI}, a fallback
+     * implementation is used instead.</p>
+     * 
+     * @return      Rectangle of track part - returns never {@code null}.
+     */
+    private Rectangle getTrackRect() {
+        final SliderUI sliderUI = getUI();
+        
+        final boolean fallbackNeeded = (sliderUI instanceof BasicSliderUI == false);
+        if (fallbackNeeded) {
+            return getVisibleRect();
+        }
+        
+        final BasicSliderUI basicSliderUI = (BasicSliderUI) sliderUI;
+        final Class<? extends BasicSliderUI> uiClazz = BasicSliderUI.class;
+        
+        try {
+            final Field trackRectField = uiClazz.getDeclaredField("trackRect");
+            
+            trackRectField.setAccessible(true);
+            
+            final Rectangle result = (Rectangle) trackRectField.get(basicSliderUI);
+            
+            if (null == result) {
+                return getVisibleRect();
+            }
+            
+            return result;
+            
+        } catch (Exception ex) {
+            // shit happens
+            return getVisibleRect();
+        }
+    }
 
 	private int determineSliderXPositionOf(int timepoint) {
-		final double sliderWidth = getWidth();
-		// TODO sliderWidth -> trackWidth
-		return (int) ((sliderWidth / numTimepoints) * timepoint);
+        final Rectangle trackRect = getTrackRect();
+        
+        final double trackOffsetX = trackRect.getX();
+        final double trackWidth = trackRect.getWidth();
 		
-		//return (int) (sliderWidth * ((double) timepoint / sliderWidth));
+		return (int) (((trackWidth / numTimepoints) * timepoint) + trackOffsetX);
 	}
 
 	private class MouseHoverEventAdapter extends MouseAdapter {
@@ -295,7 +284,7 @@ public final class JKeyFrameSlider extends JSlider {
 				popupMenu.setVisible(false);
 				determineKeyFrameHoverFlag(-1);
 			} else {
-				if(!popupMenu.isShowing()){
+				if (!popupMenu.isShowing()) {
 					determineKeyFrameHoverFlag(event.getX());
 				}
 			}
@@ -317,9 +306,9 @@ public final class JKeyFrameSlider extends JSlider {
 			if (event.isPopupTrigger()) {
 				popupMenu.setKeyFrameFlagSelected(currentHoverKeyframe);
 				popupMenu.show(JKeyFrameSlider.this, event.getX(), event.getY());
-			}
-			else if(SwingUtilities.isLeftMouseButton(event)){
-				if(currentHoverKeyframe != null){
+                
+			} else if (SwingUtilities.isLeftMouseButton(event) && event.getClickCount() == 1) {
+				if(currentHoverKeyframe != null) {
 					setValue(currentHoverKeyframe.getTimepoint());
 				}
 			}
