@@ -724,37 +724,35 @@ public class MultiResolutionRenderer
 		final SetCacheHints sls = SetCacheHints.class.isInstance( spimSource ) ?
 				( SetCacheHints ) spimSource : SetCacheHints.empty;
 
-		if ( ordering != null )
+		final AffineTransform3D screenTransform = new AffineTransform3D();
+		viewerState.getViewerTransform( screenTransform );
+		screenTransform.preConcatenate( screenScaleTransform );
+		final MipmapHints hints = ordering.getMipmapHints( screenTransform, t, previousTimepoint );
+		final List< Level > levels = hints.getLevels();
+
+		if ( prefetchCells )
 		{
-			final AffineTransform3D screenTransform = new AffineTransform3D();
-			viewerState.getViewerTransform( screenTransform );
-			screenTransform.preConcatenate( screenScaleTransform );
-			final MipmapHints hints = ordering.getMipmapHints( screenTransform, t, previousTimepoint );
-			final List< Level > levels = hints.getLevels();
-
-			if ( prefetchCells )
-			{
-				Collections.sort( levels, MipmapOrdering.prefetchOrderComparator );
-				for ( final Level l : levels )
-				{
-					if ( l.getPrefetchCacheHints() == null || l.getPrefetchCacheHints().getLoadingStrategy() != LoadingStrategy.DONTLOAD )
-					{
-						sls.setCacheHints( l.getMipmapLevel(), l.getPrefetchCacheHints() );
-						prefetch( viewerState, spimSource, screenScaleTransform, l.getMipmapLevel(), screenImage );
-					}
-				}
-			}
-
-			Collections.sort( levels, MipmapOrdering.renderOrderComparator );
+			Collections.sort( levels, MipmapOrdering.prefetchOrderComparator );
 			for ( final Level l : levels )
 			{
-				sls.setCacheHints( l.getMipmapLevel(), l.getRenderCacheHints() );
-				renderList.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, l.getMipmapLevel() ) );
+				if ( l.getPrefetchCacheHints() == null || l.getPrefetchCacheHints().getLoadingStrategy() != LoadingStrategy.DONTLOAD )
+				{
+					sls.setCacheHints( l.getMipmapLevel(), l.getPrefetchCacheHints() );
+					prefetch( viewerState, spimSource, screenScaleTransform, l.getMipmapLevel(), screenImage );
+				}
 			}
-
-			if ( hints.renewHintsAfterPaintingOnce() )
-				newFrameRequest = true;
 		}
+
+		Collections.sort( levels, MipmapOrdering.renderOrderComparator );
+		for ( final Level l : levels )
+		{
+			sls.setCacheHints( l.getMipmapLevel(), l.getRenderCacheHints() );
+			renderList.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, l.getMipmapLevel() ) );
+		}
+
+		if ( hints.renewHintsAfterPaintingOnce() )
+			newFrameRequest = true;
+
 		return new VolatileHierarchyProjector<>( renderList, source.getConverter(), screenImage, maskArray, numRenderingThreads, renderingExecutorService );
 	}
 
