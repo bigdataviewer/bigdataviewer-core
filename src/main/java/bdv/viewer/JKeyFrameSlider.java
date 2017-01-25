@@ -32,6 +32,8 @@ import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Rectangle;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.lang.reflect.Field;
@@ -57,16 +59,16 @@ public final class JKeyFrameSlider extends JSlider {
 		}
 
 	}
-	
+
 	private final int numTimepoints;
-	
+
 	/** KeyFrame-Flag (red-Line) Width. */
 	private static final int KF_FLAG_WIDTH = 1;
 	private static final int KF_FLAG_WIDTH_HOVER = 8;
-	private static final int KF_FLAG_MOUSE_RADIUS = (KF_FLAG_WIDTH_HOVER/2) + 3;
-	
+	private static final int KF_FLAG_MOUSE_RADIUS = (KF_FLAG_WIDTH_HOVER / 2) + 3;
+
 	private static final Color CL_KF_FLAG_NORMAL = Color.RED;
-	private static final Color CL_KF_FLAG_HOVER = Color.BLUE.darker();
+	private static final Color CL_KF_FLAG_HOVER = Color.BLUE;
 
 	private static enum KeyFrameFlagState {
 		NORMAL, HOVER
@@ -84,6 +86,8 @@ public final class JKeyFrameSlider extends JSlider {
 
 	private KeyFrame currentHoverKeyframe = null;
 
+	private boolean isControlPressed = false;
+
 	public JKeyFrameSlider() {
 		this(0, 100, 50);
 	}
@@ -95,18 +99,19 @@ public final class JKeyFrameSlider extends JSlider {
 	public JKeyFrameSlider(int min, int max, int value) {
 		super(min, max, value);
 		this.numTimepoints = max;
-		
+
 		initComponent();
 	}
 
 	private void initComponent() {
 		addMouseListener(new MouseHoverEventAdapter());
 		addMouseMotionListener(new MouseHoverEventAdapter());
-		
+		addKeyListener(new KeyEventAdapter());
+
 		setMinimumSize(new Dimension((int) getMinimumSize().getWidth(), 26));
 		setPreferredSize(new Dimension((int) getPreferredSize().getWidth(), 26));
 
-		setFocusable(false);
+		// setFocusable(false);
 	}
 
 	/**
@@ -194,7 +199,7 @@ public final class JKeyFrameSlider extends JSlider {
 
 	private void determineKeyFrameHoverFlag(int inputComponentXCoord) {
 
-		if(inputComponentXCoord >= 0 && this.bookmark != null){
+		if (inputComponentXCoord >= 0 && this.bookmark != null) {
 			for (KeyFrame keyframe : this.bookmark.getFrameSet()) {
 				final int anyValidPosX = determineSliderXPositionOf(keyframe.getTimepoint());
 
@@ -209,62 +214,77 @@ public final class JKeyFrameSlider extends JSlider {
 				}
 			}
 		}
-		
+
 		this.currentHoverKeyframe = null;
 	}
-    
-    /**
-     * Returns the {@code trackRect} of {@link BasicSliderUI} to determine the correct position of
-     * the slider thumb.
-     * 
-     * <p>If the selected LookAndFeel doesn't inherit from {@link BasicSliderUI}, a fallback
-     * implementation is used instead.</p>
-     * 
-     * @return      Rectangle of track part - returns never {@code null}.
-     */
-    private Rectangle getTrackRect() {
-        final SliderUI sliderUI = getUI();
-        
-        final boolean fallbackNeeded = (sliderUI instanceof BasicSliderUI == false);
-        if (fallbackNeeded) {
-            return getVisibleRect();
-        }
-        
-        final BasicSliderUI basicSliderUI = (BasicSliderUI) sliderUI;
-        final Class<? extends BasicSliderUI> uiClazz = BasicSliderUI.class;
-        
-        try {
-            final Field trackRectField = uiClazz.getDeclaredField("trackRect");
-            
-            trackRectField.setAccessible(true);
-            
-            final Rectangle result = (Rectangle) trackRectField.get(basicSliderUI);
-            
-            if (null == result) {
-                return getVisibleRect();
-            }
-            
-            return result;
-            
-        } catch (Exception ex) {
-            // shit happens
-            return getVisibleRect();
-        }
-    }
+
+	/**
+	 * Returns the {@code trackRect} of {@link BasicSliderUI} to determine the
+	 * correct position of the slider thumb.
+	 * 
+	 * <p>
+	 * If the selected LookAndFeel doesn't inherit from {@link BasicSliderUI}, a
+	 * fallback implementation is used instead.
+	 * </p>
+	 * 
+	 * @return Rectangle of track part - returns never {@code null}.
+	 */
+	private Rectangle getTrackRect() {
+		final SliderUI sliderUI = getUI();
+
+		final boolean fallbackNeeded = (sliderUI instanceof BasicSliderUI == false);
+		if (fallbackNeeded) {
+			return getVisibleRect();
+		}
+
+		final BasicSliderUI basicSliderUI = (BasicSliderUI) sliderUI;
+		final Class<? extends BasicSliderUI> uiClazz = BasicSliderUI.class;
+
+		try {
+			final Field trackRectField = uiClazz.getDeclaredField("trackRect");
+
+			trackRectField.setAccessible(true);
+
+			final Rectangle result = (Rectangle) trackRectField.get(basicSliderUI);
+
+			if (null == result) {
+				return getVisibleRect();
+			}
+
+			return result;
+
+		} catch (Exception ex) {
+			return getVisibleRect();
+		}
+	}
 
 	private int determineSliderXPositionOf(int timepoint) {
-        final Rectangle trackRect = getTrackRect();
-        
-        final double trackOffsetX = trackRect.getX();
-        final double trackWidth = trackRect.getWidth();
-		
+		final Rectangle trackRect = getTrackRect();
+
+		final double trackOffsetX = trackRect.getX();
+		final double trackWidth = trackRect.getWidth();
+
 		return (int) (((trackWidth / numTimepoints) * timepoint) + trackOffsetX);
+	}
+
+	private class KeyEventAdapter extends KeyAdapter {
+
+		@Override
+		public void keyPressed(KeyEvent e) {
+			isControlPressed = e.isControlDown();
+		}
+
+		@Override
+		public void keyReleased(KeyEvent e) {
+			isControlPressed = e.isControlDown();
+		}
 	}
 
 	private class MouseHoverEventAdapter extends MouseAdapter {
 
 		@Override
 		public void mouseMoved(MouseEvent e) {
+			System.out.println("mouseMoved " + e);
 			updateComponent(e);
 		}
 
@@ -275,6 +295,14 @@ public final class JKeyFrameSlider extends JSlider {
 
 		@Override
 		public void mouseEntered(MouseEvent e) {
+			updateComponent(e);
+		}
+
+		@Override
+		public void mouseDragged(MouseEvent e) {
+			// when user drags the thumb, we need to update the hovered keyframe
+			// otherwise the thumb will jump back to the currently as hovered marked keyframe
+			// though the keyframe is not actually hovered
 			updateComponent(e);
 		}
 
@@ -295,6 +323,15 @@ public final class JKeyFrameSlider extends JSlider {
 		@Override
 		public void mouseReleased(MouseEvent e) {
 			maybeTriggerPopupMenu(e);
+
+			if (SwingUtilities.isLeftMouseButton(e) && e.getClickCount() == 1) {
+				// when left mouse button is released the thumb will jump
+				// to the currently hovered keyframe (snapping)
+				// to prevent this behavior the user can press the control key
+				if (currentHoverKeyframe != null && !isControlPressed) {
+					setValue(currentHoverKeyframe.getTimepoint());
+				}
+			}
 		}
 
 		@Override
@@ -306,14 +343,7 @@ public final class JKeyFrameSlider extends JSlider {
 			if (event.isPopupTrigger()) {
 				popupMenu.setKeyFrameFlagSelected(currentHoverKeyframe);
 				popupMenu.show(JKeyFrameSlider.this, event.getX(), event.getY());
-                
-			} else if (SwingUtilities.isLeftMouseButton(event) && event.getClickCount() == 1) {
-				if(currentHoverKeyframe != null) {
-					setValue(currentHoverKeyframe.getTimepoint());
-				}
 			}
 		}
-
 	}
-
 }
