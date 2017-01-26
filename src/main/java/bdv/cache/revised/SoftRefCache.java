@@ -6,108 +6,125 @@ import java.lang.ref.SoftReference;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Supplier;
 
 import com.google.common.util.concurrent.ExecutionError;
 import com.google.common.util.concurrent.UncheckedExecutionException;
 
 public class SoftRefCache< K, V > implements Cache< K, V >
 {
-	private final EntryCache< K, Entry > entryCache = new EntryCache<>();
+	final ConcurrentHashMap< K, Entry > map = new ConcurrentHashMap<>();
+
+	final ReferenceQueue< V > queue = new ReferenceQueue<>();
+
+	final class CacheSoftReference extends SoftReference< V >
+	{
+		private final Entry entry;
+
+		public CacheSoftReference( final V referent, final Entry entry )
+		{
+			super( referent, queue );
+			this.entry = entry;
+		}
+
+		public void clean()
+		{
+			map.remove( entry.getKey(), entry );
+		}
+	}
 
 	final class Entry
 	{
-		private V value;
+		private final K key;
 
-		public Entry()
+		private SoftReference< V > ref;
+
+		private boolean loaded;
+
+		public Entry( final K key )
 		{
-			this.value = null;
+			this.key = key;
+			this.ref = new SoftReference<>( null );
+			this.loaded = false;
+		}
+
+		public K getKey()
+		{
+			return key;
 		}
 
 		public V getValue()
 		{
-			return value;
+			return ref.get();
 		}
 
 		public void setValue( final V value )
 		{
-			this.value = value;
+			this.loaded = true;
+			this.ref = new CacheSoftReference( value, this );
+		}
+
+		public boolean wasLoaded()
+		{
+			return loaded;
 		}
 	}
 
 	@Override
 	public V getIfPresent( final Object key )
 	{
-		final Entry entry = entryCache.get( key );
+		final Entry entry = map.get( key );
 		return entry == null ? null : entry.getValue();
 	}
 
 	@Override
 	public V get( final K key, final Callable< ? extends V > loader ) throws ExecutionException
 	{
-		final Entry entry = entryCache.computeIfAbsent( key, () -> new Entry() );
-		if ( entry.getValue() == null )
+		final Entry entry = map.computeIfAbsent( key, ( k ) -> new Entry( k ) );
+		V value = entry.getValue();
+		if ( value == null )
 		{
 			synchronized ( entry )
 			{
-				if ( entry.getValue() == null )
+				// check that we still have the live entry in the map
+				if ( entry == map.get( key ) )
 				{
-					try
+					if ( entry.wasLoaded() )
 					{
-						entry.setValue( loader.call() );
+						/*
+						 * The entry was already loaded, but its value has been
+						 * garbage collected. We need to create a new entry
+						 */
+						map.remove( key, entry );
+						value = get( key, loader );
 					}
-					catch ( final InterruptedException e )
+					else
 					{
-						Thread.currentThread().interrupt();
-						throw new ExecutionException( e );
-					}
-					catch ( final RuntimeException e )
-					{
-						throw new UncheckedExecutionException( e );
-					}
-					catch ( final Exception e )
-					{
-						throw new ExecutionException( e );
-					}
-					catch ( final Error e )
-					{
-						throw new ExecutionError( e );
+						try
+						{
+							value = loader.call();
+							entry.setValue( value );
+						}
+						catch ( final InterruptedException e )
+						{
+							Thread.currentThread().interrupt();
+							throw new ExecutionException( e );
+						}
+						catch ( final RuntimeException e )
+						{
+							throw new UncheckedExecutionException( e );
+						}
+						catch ( final Exception e )
+						{
+							throw new ExecutionException( e );
+						}
+						catch ( final Error e )
+						{
+							throw new ExecutionError( e );
+						}
 					}
 				}
 			}
-		}
-
-		return entry.getValue();
-	}
-}
-
-class EntryCache< K, V >
-{
-	final ConcurrentHashMap< K, Reference< V > > map = new ConcurrentHashMap<>();
-
-	final ReferenceQueue< V > queue = new ReferenceQueue<>();
-
-	public V get( final Object key )
-	{
-		final Reference< V > ref = map.get( key );
-		return ref == null ? null : ref.get();
-	}
-
-	public V computeIfAbsent( final K key, final Supplier<? extends V> supplier )
-	{
-		V value = get( key );
-		if ( value == null )
-		{
-			synchronized ( this )
-			{
-				value = get( key );
-				if ( value == null )
-				{
-					value = supplier.get();
-					map.put( key, new CacheSoftReference( key, value ) );
-				}
-			}
-			cleanUp( 10 );
+			cleanUp( 50 );
 		}
 		return value;
 	}
@@ -134,60 +151,4 @@ class EntryCache< K, V >
 		}
 		return i;
 	}
-
-	class CacheSoftReference extends SoftReference< V >
-	{
-		private final K key;
-
-		public CacheSoftReference( final K key, final V referent )
-		{
-			super( referent, queue );
-			this.key = key;
-		}
-
-		public void clean()
-		{
-			map.remove( key, this );
-		}
-	}
-
-//  TODO: remove if not needed:
-//	public void invalidateAll()
-//	{
-//		for ( final Reference< ? > ref : map.values() )
-//			ref.clear();
-//		map.clear();
-//	}
-//
-//	/**
-//	 * Returns the approximate number of entries in this cache.
-//	 */
-//	public long size()
-//	{
-//		return map.size();
-//	}
-//
-//	public V computeIfAbsent( final K key, final Function<? super K,? extends V> mappingFunction )
-//	{
-//		V value = get( key );
-//		if ( value == null )
-//		{
-//			synchronized ( this )
-//			{
-//				value = get( key );
-//				if ( value == null )
-//				{
-//					value = mappingFunction.apply( key );
-//					map.put( key, new CacheSoftReference( key, value ) );
-//				}
-//			}
-//		}
-//		return value;
-//	}
-//
-//	public void put( final K key, final V value )
-//	{
-//		map.put( key, new CacheSoftReference( key, value ) );
-//		cleanUp( 10 );
-//	}
 }
