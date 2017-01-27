@@ -54,35 +54,10 @@ public interface CacheControl
 	 */
 	public void prepareNextFrame();
 
-	/**
-	 * (Re-)initialize the IO time budget.
-	 */
-	public void initIoTimeBudget( final long[] partialBudget );
-
-	/**
-	 * Get the {@link CacheIoTiming} that provides per thread-group IO
-	 * statistics and budget.
-	 */
-	public CacheIoTiming getCacheIoTiming();
-
 	public static class Dummy implements CacheControl
 	{
-		private CacheIoTiming cacheIoTiming;
-
 		@Override
 		public void prepareNextFrame()
 		{}
-
-		@Override
-		public void initIoTimeBudget( final long[] partialBudget )
-		{}
-
-		@Override
-		public CacheIoTiming getCacheIoTiming()
-		{
-			if ( cacheIoTiming == null )
-				cacheIoTiming = new CacheIoTiming();
-			return cacheIoTiming;
-		}
 	}
 }

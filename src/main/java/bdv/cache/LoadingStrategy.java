@@ -29,7 +29,7 @@
  */
 package bdv.cache;
 
-import bdv.cache.CacheIoTiming.IoTimeBudget;
+import bdv.cache.iotiming.IoTimeBudget;
 
 /**
  * Describes how the cache processes requests for entries with missing data.

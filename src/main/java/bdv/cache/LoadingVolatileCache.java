@@ -29,8 +29,9 @@
  */
 package bdv.cache;
 
-import bdv.cache.CacheIoTiming.IoStatistics;
-import bdv.cache.CacheIoTiming.IoTimeBudget;
+import bdv.cache.iotiming.CacheIoTiming;
+import bdv.cache.iotiming.IoStatistics;
+import bdv.cache.iotiming.IoTimeBudget;
 import bdv.cache.util.BlockingFetchQueues;
 import bdv.cache.util.FetcherThreads;
 import bdv.cache.util.Loader;
@@ -65,21 +66,13 @@ import bdv.img.cache.VolatileGlobalCellCache;
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
-public final class LoadingVolatileCache< K, V extends VolatileCacheValue > implements CacheControl
+public final class LoadingVolatileCache< K, V extends VolatileCacheValue >
 {
-	private final WeakSoftCache< K, Entry > cache = WeakSoftCache.newInstance();
+	private final WeakSoftCache< K, Entry > cache;
 
 	private final Object cacheLock = new Object();
 
-	private final CacheIoTiming cacheIoTiming = new CacheIoTiming();
-
-	private final int numPriorityLevels;
-
 	private final BlockingFetchQueues< Loader > queue;
-
-	private final FetcherThreads fetchers;
-
-	private volatile long currentQueueFrame = 0;
 
 	/**
 	 * Create a new {@link LoadingVolatileCache} with the specified number of
@@ -92,11 +85,18 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 	 *            the number of threads to create for asynchronous loading of
 	 *            cache entries.
 	 */
-	public LoadingVolatileCache( final int numPriorityLevels, final int numFetcherThreads )
+//	public LoadingVolatileCache( final int numPriorityLevels, final int numFetcherThreads )
+//	{
+//		queue = new BlockingFetchQueues<>( numPriorityLevels );
+//		fetchers = new FetcherThreads( queue, numFetcherThreads );
+//	}
+
+	public LoadingVolatileCache(
+			final WeakSoftCacheFactory cacheFactory,
+			final BlockingFetchQueues< Loader > queue )
 	{
-		this.numPriorityLevels = numPriorityLevels;
-		queue = new BlockingFetchQueues<>( numPriorityLevels );
-		fetchers = new FetcherThreads( queue, numFetcherThreads );
+		this.cache = cacheFactory.newInstance();
+		this.queue = queue;
 	}
 
 	/**
@@ -194,68 +194,11 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 	}
 
 	/**
-	 * Prepare the cache for providing data for the "next frame":
-	 * <ul>
-	 * <li>Move pending cell request to the prefetch queue (
-	 * {@link BlockingFetchQueues#clearToPrefetch()}).
-	 * <li>Perform pending cache maintenance operations (
-	 * {@link WeakSoftCache#cleanUp()}).
-	 * <li>Increment the internal frame counter, which will enable previously
-	 * enqueued requests to be enqueued again for the new frame.
-	 * </ul>
-	 */
-	@Override
-	public void prepareNextFrame()
-	{
-		queue.clearToPrefetch();
-		cache.cleanUp();
-		++currentQueueFrame;
-	}
-
-	/**
-	 * (Re-)initialize the IO time budget, that is, the time that can be spent
-	 * in blocking IO per frame/
-	 *
-	 * @param partialBudget
-	 *            Initial budget (in nanoseconds) for priority levels 0 through
-	 *            <em>n</em>. The budget for level <em>i &gt; j</em> must always
-	 *            be smaller-equal the budget for level <em>j</em>. If
-	 *            <em>n</em> is smaller than the number of priority levels, the
-	 *            remaining priority levels are filled up with @code{budget[n]}.
-	 */
-	@Override
-	public void initIoTimeBudget( final long[] partialBudget )
-	{
-		final IoStatistics stats = cacheIoTiming.getThreadGroupIoStatistics();
-		if ( stats.getIoTimeBudget() == null )
-			stats.setIoTimeBudget( new IoTimeBudget( numPriorityLevels ) );
-		stats.getIoTimeBudget().reset( partialBudget );
-	}
-
-	/**
-	 * Get the {@link CacheIoTiming} that provides per thread-group IO
-	 * statistics and budget.
-	 */
-	@Override
-	public CacheIoTiming getCacheIoTiming()
-	{
-		return cacheIoTiming;
-	}
-
-	/**
-	 * Remove all references to loaded data as well as all enqueued requests
-	 * from the cache.
+	 * Remove all references to loaded data.
 	 */
 	public void invalidateAll()
 	{
-		queue.clear();
 		cache.invalidateAll();
-		prepareNextFrame();
-	}
-
-	public FetcherThreads getFetcherThreads()
-	{
-		return fetchers;
 	}
 
 	// ================ private methods =====================
@@ -296,6 +239,7 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 	 */
 	private void enqueueEntry( final Entry entry, final int priority, final boolean enqueuToFront )
 	{
+		final long currentQueueFrame = queue.getCurrentFrame();
 		if ( entry.getEnqueueFrame() < currentQueueFrame )
 		{
 			entry.setEnqueueFrame( currentQueueFrame );
@@ -310,7 +254,7 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 	 */
 	private void loadOrEnqueue( final Entry entry, final int priority, final boolean enqueuToFront )
 	{
-		final IoStatistics stats = cacheIoTiming.getThreadGroupIoStatistics();
+		final IoStatistics stats = CacheIoTiming.getIoStatistics();
 		final IoTimeBudget budget = stats.getIoTimeBudget();
 		final long timeLeft = budget.timeLeft( priority );
 		if ( timeLeft > 0 )
@@ -388,7 +332,7 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 
 		private V value;
 
-		private final VolatileCacheValueLoader< ? extends V > loader;
+		private VolatileCacheValueLoader< ? extends V > loader;
 
 		/**
 		 * When was this entry last enqueued for loading (see
@@ -445,6 +389,7 @@ public final class LoadingVolatileCache< K, V extends VolatileCacheValue > imple
 					if ( !value.isValid() )
 					{
 						value = loader.load();
+						loader = null;
 						enqueueFrame = Long.MAX_VALUE;
 						cache.putSoft( key, this );
 						notifyAll();

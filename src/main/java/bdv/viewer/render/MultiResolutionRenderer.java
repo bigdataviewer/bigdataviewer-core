@@ -38,6 +38,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
+import bdv.cache.CacheControl;
+import bdv.cache.LoadingStrategy;
+import bdv.cache.iotiming.CacheIoTiming;
+import bdv.img.cache.CachedCellImg;
+import bdv.viewer.Interpolation;
+import bdv.viewer.Source;
+import bdv.viewer.render.MipmapOrdering.Level;
+import bdv.viewer.render.MipmapOrdering.MipmapHints;
+import bdv.viewer.state.SourceState;
+import bdv.viewer.state.ViewerState;
 import net.imglib2.Dimensions;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
@@ -55,15 +65,6 @@ import net.imglib2.ui.Renderer;
 import net.imglib2.ui.SimpleInterruptibleProjector;
 import net.imglib2.ui.TransformListener;
 import net.imglib2.ui.util.GuiUtil;
-import bdv.cache.CacheControl;
-import bdv.cache.LoadingStrategy;
-import bdv.img.cache.CachedCellImg;
-import bdv.viewer.Interpolation;
-import bdv.viewer.Source;
-import bdv.viewer.render.MipmapOrdering.Level;
-import bdv.viewer.render.MipmapOrdering.MipmapHints;
-import bdv.viewer.state.SourceState;
-import bdv.viewer.state.ViewerState;
 
 /**
  * A {@link Renderer} that uses a coarse-to-fine rendering scheme. First, a
@@ -617,7 +618,7 @@ public class MultiResolutionRenderer
 			final int screenScaleIndex,
 			final ARGBScreenImage screenImage )
 	{
-		cacheControl.initIoTimeBudget( null ); // clear time budget such that prefetching doesn't wait for loading blocks.
+		CacheIoTiming.getIoTimeBudget().clear(); // clear time budget such that prefetching doesn't wait for loading blocks.
 		final List< SourceState< ? > > sourceStates = viewerState.getSources();
 		final List< Integer > visibleSourceIndices = viewerState.getVisibleSourceIndices();
 		VolatileProjector projector;
@@ -650,7 +651,7 @@ public class MultiResolutionRenderer
 		}
 		previousTimepoint = viewerState.getCurrentTimepoint();
 		viewerState.getViewerTransform( currentProjectorTransform );
-		cacheControl.initIoTimeBudget( iobudget );
+		CacheIoTiming.getIoTimeBudget().reset( iobudget );
 		return projector;
 	}
 
@@ -754,7 +755,7 @@ public class MultiResolutionRenderer
 			if ( hints.renewHintsAfterPaintingOnce() )
 				newFrameRequest = true;
 		}
-		return new VolatileHierarchyProjector<>( renderList, source.getConverter(), screenImage, maskArray, numRenderingThreads, renderingExecutorService, cacheControl.getCacheIoTiming() );
+		return new VolatileHierarchyProjector<>( renderList, source.getConverter(), screenImage, maskArray, numRenderingThreads, renderingExecutorService );
 	}
 
 	private static < T > RandomAccessible< T > getTransformedSource( final ViewerState viewerState, final Source< T > source, final AffineTransform3D screenScaleTransform, final int mipmapIndex )

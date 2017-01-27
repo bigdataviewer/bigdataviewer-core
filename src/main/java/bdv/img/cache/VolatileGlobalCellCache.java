@@ -31,7 +31,6 @@ package bdv.img.cache;
 
 import bdv.cache.CacheControl;
 import bdv.cache.CacheHints;
-import bdv.cache.CacheIoTiming;
 import bdv.cache.LoadingVolatileCache;
 import bdv.cache.VolatileCacheValueLoader;
 import bdv.cache.WeakSoftCache;
@@ -104,6 +103,12 @@ public class VolatileGlobalCellCache implements CacheControl
 		}
 	}
 
+	private final WeakSoftCacheFactory cacheFactory = new WeakSoftCacheFactory();
+
+	private final BlockingFetchQueues< Loader > queue;
+
+	private final FetcherThreads fetchers;
+
 	protected final LoadingVolatileCache< Key, VolatileCell< ? > > volatileCache; // TODO rename
 
 	/**
@@ -113,15 +118,18 @@ public class VolatileGlobalCellCache implements CacheControl
 	 */
 	public VolatileGlobalCellCache( final int maxNumLevels, final int numFetcherThreads )
 	{
-		volatileCache = new LoadingVolatileCache<>( maxNumLevels, numFetcherThreads );
+		queue = new BlockingFetchQueues<>( maxNumLevels );
+		fetchers = new FetcherThreads( queue, numFetcherThreads );
+		volatileCache = new LoadingVolatileCache<>( cacheFactory, queue );
 	}
 
 	/**
 	 * pause all fetcher threads for the specified number of milliseconds.
 	 */
+	// TODO remove on next opportunity (when API is broken anyways...)
 	public void pauseFetcherThreadsFor( final long ms )
 	{
-		volatileCache.getFetcherThreads().pauseFetcherThreadsFor( ms );
+		fetchers.pauseFetcherThreadsFor( ms );
 	}
 
 	/**
@@ -138,34 +146,8 @@ public class VolatileGlobalCellCache implements CacheControl
 	@Override
 	public void prepareNextFrame()
 	{
-		volatileCache.prepareNextFrame();
-	}
-
-	/**
-	 * (Re-)initialize the IO time budget, that is, the time that can be spent
-	 * in blocking IO per frame/
-	 *
-	 * @param partialBudget
-	 *            Initial budget (in nanoseconds) for priority levels 0 through
-	 *            <em>n</em>. The budget for level <em>i&gt;j</em> must always be
-	 *            smaller-equal the budget for level <em>j</em>. If <em>n</em>
-	 *            is smaller than the maximum number of mipmap levels, the
-	 *            remaining priority levels are filled up with budget[n].
-	 */
-	@Override
-	public void initIoTimeBudget( final long[] partialBudget )
-	{
-		volatileCache.initIoTimeBudget( partialBudget );
-	}
-
-	/**
-	 * Get the {@link CacheIoTiming} that provides per thread-group IO
-	 * statistics and budget.
-	 */
-	@Override
-	public CacheIoTiming getCacheIoTiming()
-	{
-		return volatileCache.getCacheIoTiming();
+		queue.clearToPrefetch();
+		cacheFactory.cleanUp();
 	}
 
 	/**
@@ -175,6 +157,7 @@ public class VolatileGlobalCellCache implements CacheControl
 	public void clearCache()
 	{
 		volatileCache.invalidateAll();
+		queue.clear();
 	}
 
 	/**
