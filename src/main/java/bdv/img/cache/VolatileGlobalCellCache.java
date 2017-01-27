@@ -135,7 +135,7 @@ public class VolatileGlobalCellCache implements CacheControl
 	// TODO remove on next opportunity (when API is broken anyways...)
 	public void pauseFetcherThreadsFor( final long ms )
 	{
-		fetchers.pauseFetcherThreadsFor( ms );
+		fetchers.pauseFor( ms );
 	}
 
 	/**

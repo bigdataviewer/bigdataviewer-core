@@ -100,16 +100,16 @@ public class FetcherThreads
 	/**
 	 * Pause all Fetcher threads for the specified number of milliseconds.
 	 */
-	public void pauseFetcherThreadsFor( final long ms )
+	public void pauseFor( final long ms )
 	{
-		pauseFetcherThreadsUntil( System.currentTimeMillis() + ms );
+		pauseUntil( System.currentTimeMillis() + ms );
 	}
 
 	/**
 	 * pause all Fetcher threads until the given time (see
 	 * {@link System#currentTimeMillis()}).
 	 */
-	public void pauseFetcherThreadsUntil( final long timeMillis )
+	public void pauseUntil( final long timeMillis )
 	{
 		for ( final Fetcher f : fetchers )
 			f.pauseUntil( timeMillis );
@@ -117,10 +117,10 @@ public class FetcherThreads
 
 	/**
 	 * Wake up all Fetcher threads immediately. This ends any
-	 * {@link #pauseFetcherThreadsFor(long)} and
-	 * {@link #pauseFetcherThreadsUntil(long)} set earlier.
+	 * {@link #pauseFor(long)} and
+	 * {@link #pauseUntil(long)} set earlier.
 	 */
-	public void wakeFetcherThreads()
+	public void wakeUp()
 	{
 		for ( final Fetcher f : fetchers )
 			f.wakeUp();
