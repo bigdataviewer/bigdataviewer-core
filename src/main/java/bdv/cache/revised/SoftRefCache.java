@@ -7,9 +7,6 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
-import com.google.common.util.concurrent.ExecutionError;
-import com.google.common.util.concurrent.UncheckedExecutionException;
-
 public class SoftRefCache< K, V > implements Cache< K, V >
 {
 	final ConcurrentHashMap< K, Entry > map = new ConcurrentHashMap<>();
@@ -109,17 +106,9 @@ public class SoftRefCache< K, V > implements Cache< K, V >
 							Thread.currentThread().interrupt();
 							throw new ExecutionException( e );
 						}
-						catch ( final RuntimeException e )
-						{
-							throw new UncheckedExecutionException( e );
-						}
 						catch ( final Exception e )
 						{
 							throw new ExecutionException( e );
-						}
-						catch ( final Error e )
-						{
-							throw new ExecutionError( e );
 						}
 					}
 				}
