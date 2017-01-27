@@ -23,8 +23,9 @@ public interface Cache< K, V >
 	 */
 	V get( K key, Callable< ? extends V > loader ) throws ExecutionException;
 
+	void invalidateAll();
+
 //	void cleanUp();
 //	void invalidate( Object key );
-//	void invalidateAll();
 //	long size();
 }

@@ -150,4 +150,11 @@ public class SoftRefCache< K, V > implements Cache< K, V >
 		}
 		return i;
 	}
+
+	@Override
+	public void invalidateAll()
+	{
+		// TODO
+		throw new UnsupportedOperationException( "not implemented yet" );
+	}
 }

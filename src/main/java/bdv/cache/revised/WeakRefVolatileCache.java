@@ -204,6 +204,12 @@ public class WeakRefVolatileCache< K, V extends VolatileCacheValue > implements 
 		return i;
 	}
 
+	@Override
+	public void invalidateAll()
+	{
+		// TODO
+		throw new UnsupportedOperationException( "not implemented yet" );
+	}
 
 
 

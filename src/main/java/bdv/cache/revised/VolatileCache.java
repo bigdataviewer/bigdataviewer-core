@@ -24,8 +24,9 @@ public interface VolatileCache< K, V >
 	 */
 	V get( K key, VolatileLoader< ? extends V > loader, final CacheHints cacheHints ) throws ExecutionException;
 
+	void invalidateAll();
+
 //	void cleanUp();
 //	void invalidate( Object key );
-//	void invalidateAll();
 //	long size();
 }
