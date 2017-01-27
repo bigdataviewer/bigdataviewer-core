@@ -149,7 +149,7 @@ public class WeakRefVolatileCache< K, V extends VolatileCacheValue > implements 
 		final Entry entry = map.computeIfAbsent( key,
 				( k ) -> {
 					final V value = backingCache.getIfPresent( k );
-					if ( value == null )
+					if ( value != null )
 						return new Entry( k, value );
 					else
 						return new Entry( k, loader );
