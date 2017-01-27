@@ -131,8 +131,7 @@ public class SoftRefCache< K, V > implements Cache< K, V >
 
 	/**
 	 * Remove references from the cache that have been garbage-collected. To
-	 * avoid long run-times, per call to {@code cleanUp()}, at most
-	 * {@code maxElements} are processed.
+	 * avoid long run-times at most {@code maxElements} are processed.
 	 *
 	 * @param maxElements
 	 *            how many references to clean up at most.
