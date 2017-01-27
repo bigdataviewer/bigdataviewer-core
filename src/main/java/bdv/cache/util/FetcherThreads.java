@@ -30,9 +30,10 @@
 package bdv.cache.util;
 
 import java.util.ArrayList;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.function.IntFunction;
 
-import bdv.cache.LoadingVolatileCache;
 import bdv.cache.VolatileCacheValue;
 
 /**
@@ -41,7 +42,7 @@ import bdv.cache.VolatileCacheValue;
  * A set of threads that load data. Each thread does the following in a loop:
  * <ol>
  * <li>Take the next {@code key} from a queue.</li>
- * <li>Try {@link Loader#load(Object) loading} the key's data (retry until that
+ * <li>Try {@link Callable< ? >#load(Object) loading} the key's data (retry until that
  * succeeds).</li>
  * </ol>
  * {@link FetcherThreads} are employed by {@link LoadingVolatileCache} to
@@ -66,7 +67,7 @@ public class FetcherThreads
 	 * @param numFetcherThreads how many parallel fetcher threads to start.
 	 */
 	public FetcherThreads(
-			final BlockingFetchQueues< Loader > queue,
+			final BlockingFetchQueues< Callable< ? > > queue,
 			final int numFetcherThreads )
 	{
 		this( queue, numFetcherThreads, i -> String.format( "Fetcher-%d", i ) );
@@ -81,7 +82,7 @@ public class FetcherThreads
 	 * @param threadIndexToName a function for naming fetcher threads (takes an index and returns a name).
 	 */
 	public FetcherThreads(
-			final BlockingFetchQueues< Loader > queue,
+			final BlockingFetchQueues< Callable< ? > > queue,
 			final int numFetcherThreads,
 			final IntFunction< String > threadIndexToName )
 	{
@@ -127,13 +128,13 @@ public class FetcherThreads
 
 	static final class Fetcher extends Thread
 	{
-		private final BlockingFetchQueues< Loader > queue;
+		private final BlockingFetchQueues< Callable< ? > > queue;
 
 		private final Object lock = new Object();
 
 		private volatile long pauseUntilTimeMillis = 0;
 
-		public Fetcher( final BlockingFetchQueues< Loader > queue )
+		public Fetcher( final BlockingFetchQueues< Callable< ? > > queue )
 		{
 			this.queue = queue;
 		}
@@ -141,7 +142,7 @@ public class FetcherThreads
 		@Override
 		public final void run()
 		{
-			Loader loader = null;
+			Callable< ? > loader = null;
 			while ( true )
 			{
 				while ( loader == null )
@@ -167,11 +168,20 @@ public class FetcherThreads
 				}
 				try
 				{
-					loader.load();
+					loader.call();
 					loader = null;
 				}
 				catch ( final InterruptedException e )
 				{}
+				catch ( final ExecutionException e )
+				{
+					if ( ! ( e.getCause() instanceof InterruptedException ) )
+						e.printStackTrace();
+				}
+				catch ( final Exception e )
+				{
+					e.printStackTrace();
+				}
 			}
 		}
 
