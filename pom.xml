@@ -53,6 +53,11 @@
 			<groupId>org.scijava</groupId>
 			<artifactId>ui-behaviour</artifactId>
 		</dependency>
+		<dependency>
+		    <groupId>org.sat4j</groupId>
+		    <artifactId>org.sat4j.core</artifactId>
+		    <version>2.3.1</version>
+		</dependency>		
 	</dependencies>
 
 	<developers>
