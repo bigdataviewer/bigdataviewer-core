@@ -8,24 +8,22 @@ public class Literal implements Comparable< Literal >
 
 	protected final int t;
 
+	protected final String type;
+
 	protected final boolean negated;
 
-	public Literal( final State s, final int t )
-	{
-		this( s, t, false );
-	}
-
-	public Literal( final State s, final int t, final boolean negated )
+	public Literal( final State s, final int t, final String type, final boolean negated )
 	{
 		assert ( t >= 0 );
 		this.s = s;
 		this.t = t;
+		this.type = type;
 		this.negated = negated;
 	}
 
 	public Literal getVariable()
 	{
-		return negated ? new Literal( s, t ) : this;
+		return negated ? new Literal( s, t, type, false ) : this;
 	}
 
 	public boolean negated()
@@ -36,7 +34,7 @@ public class Literal implements Comparable< Literal >
 	@Override
 	public int hashCode()
 	{
-		return 31 * ( 31 * s.hashCode() + t ) + Boolean.hashCode( negated );
+		return 31 * ( 31 * ( 31 * s.hashCode() + t ) + Boolean.hashCode( negated ) ) + type.hashCode();
 	}
 
 	@Override
@@ -47,13 +45,14 @@ public class Literal implements Comparable< Literal >
 		final Literal other = ( Literal ) obj;
 		return ( other.negated == this.negated )
 				&& ( other.t == this.t )
-				&& ( other.s == this.s );
+				&& ( other.s == this.s )
+				&& ( other.type == this.type );
 	}
 
 	@Override
 	public String toString()
 	{
-		return ( negated ? "¬": "" ) + "p_" + s + t;
+		return ( negated ? "¬": "" ) + type + "_" + s + t;
 	}
 
 	@Override
@@ -73,11 +72,16 @@ public class Literal implements Comparable< Literal >
 
 	public static Literal var( final State s, final int t )
 	{
-		return new Literal( s, t );
+		return new Literal( s, t, "p", false );
+	}
+
+	public static Literal fvar( final State s, final int t )
+	{
+		return new Literal( s, t, "f", false );
 	}
 
 	public static Literal not( final Literal literal )
 	{
-		return new Literal( literal.s, literal.t, !literal.negated );
+		return new Literal( literal.s, literal.t, literal.type, !literal.negated );
 	}
 }
