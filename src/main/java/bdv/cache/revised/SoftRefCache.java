@@ -82,10 +82,10 @@ public class SoftRefCache< K, V > implements Cache< K, V >
 		{
 			synchronized ( entry )
 			{
-				// check that we still have the live entry in the map
-				if ( entry == map.get( key ) )
+				if ( entry.wasLoaded() )
 				{
-					if ( entry.wasLoaded() )
+					value = entry.getValue();
+					if ( value == null )
 					{
 						/*
 						 * The entry was already loaded, but its value has been
@@ -94,22 +94,22 @@ public class SoftRefCache< K, V > implements Cache< K, V >
 						map.remove( key, entry );
 						value = get( key, loader );
 					}
-					else
+				}
+				else
+				{
+					try
 					{
-						try
-						{
-							value = loader.call();
-							entry.setValue( value );
-						}
-						catch ( final InterruptedException e )
-						{
-							Thread.currentThread().interrupt();
-							throw new ExecutionException( e );
-						}
-						catch ( final Exception e )
-						{
-							throw new ExecutionException( e );
-						}
+						value = loader.call();
+						entry.setValue( value );
+					}
+					catch ( final InterruptedException e )
+					{
+						Thread.currentThread().interrupt();
+						throw new ExecutionException( e );
+					}
+					catch ( final Exception e )
+					{
+						throw new ExecutionException( e );
 					}
 				}
 			}
