@@ -1,7 +1,9 @@
 package verify;
 
+import static verify.Literal.bvar;
 import static verify.Literal.fvar;
 import static verify.Literal.not;
+import static verify.Literal.qvar;
 import static verify.Literal.var;
 //import static verify.SatPlayground.State.*;
 import static verify.SatPlayground.State.A;
@@ -22,9 +24,6 @@ import org.sat4j.specs.ISolver;
 import org.sat4j.specs.TimeoutException;
 import org.sat4j.tools.ModelIterator;
 
-import net.imglib2.util.Pair;
-import net.imglib2.util.ValuePair;
-
 public class SatPlayground
 {
 	public static enum State
@@ -32,17 +31,59 @@ public class SatPlayground
 		A,B,C,D,E;
 	}
 
+	public static class Transition
+	{
+		final State from;
+
+		final State to;
+
+		public Transition( final State from, final State to )
+		{
+			this.from = from;
+			this.to = to;
+		}
+
+		@Override
+		public int hashCode()
+		{
+			return 31 * from.hashCode() + to.hashCode();
+		}
+
+		@Override
+		public boolean equals( final Object obj )
+		{
+			if ( ! ( obj instanceof Transition ) )
+				return false;
+			final Transition other = ( Transition ) obj;
+			return this.from == other.from && this.to == other.to;
+		}
+
+		@Override
+		public String toString()
+		{
+			return "(" + from + "->" + to + ")";
+		}
+	}
+
+	public static Transition transition( final State from, final State to )
+	{
+		return new Transition( from, to );
+	}
+
 	public static int[][] defaultTransitions = new int[][] {
-		{ 1, 1, 1, 1, 1 },
-		{ 0, 1, 1, 1, 1 },
-		{ 0, 0, 1, 1, 1 },
+		{ 1, 1, 0, 0, 0 },
+		{ 0, 1, 1, 0, 0 },
+		{ 0, 0, 1, 1, 0 },
 		{ 0, 0, 0, 1, 1 },
 		{ 0, 0, 0, 0, 1 },
 	};
 
 	public static final LiteralIndexBimap map = new LiteralIndexBimap();
 
-	public static void addDefaultConstraints( final ISolver solver, final int t ) throws ContradictionException
+	public static void addDefaultConstraints(
+			final ISolver solver,
+			final int t,
+			final Collection< Transition > disabledTransitions ) throws ContradictionException
 	{
 		final State[] ss = State.values();
 		solver.addExactly(
@@ -52,6 +93,17 @@ public class SatPlayground
 								.collect( Collectors.toList() ) ),
 				1 );
 
+		for ( int step = 0; step < ss.length; ++step )
+		{
+			final int fstep = step;
+			solver.addExactly(
+					map.clause(
+							Arrays.stream( ss )
+									.map( s -> qvar( s, t, fstep ) )
+									.collect( Collectors.toList() ) ),
+					1 );
+		}
+
 		if ( t > 0 )
 		{
 			for ( int r = 0; r < ss.length; ++r )
@@ -59,11 +111,29 @@ public class SatPlayground
 				for ( int c = 0; c < ss.length; ++c )
 				{
 					if ( defaultTransitions[ r ][ c ] == 0 )
-					{
+						solver.addClause( map.clause( bvar( ss[ r ], ss[ c ], t ) ) );
+
+					for ( int step = 0; step < ss.length - 1; ++step )
 						solver.addClause( map.clause(
-								not( var( ss[ r ], t - 1 ) ),
-								not( var( ss[ c ], t ) ) ) );
-					}
+								not( bvar( ss[ r ], ss[ c ], t ) ),
+								not( qvar( ss[ r ], t, step ) ),
+								not( qvar( ss[ c ], t, step + 1 ) ) ) );
+
+					solver.addClause( map.clause(
+							not( var( ss[ r ], t - 1 ) ),
+							qvar( ss[ r ], t, 0 ) ) );
+
+//					solver.addClause( map.clause(
+//							var( ss[ r ], t - 1 ),
+//							not( qvar( ss[ r ], t, 0 ) ) ) );
+
+					solver.addClause( map.clause(
+							var( ss[ c ], t ),
+							not( qvar( ss[ c ], t, ss.length - 1 ) ) ) );
+
+//					solver.addClause( map.clause(
+//							not( var( ss[ c ], t ) ),
+//							qvar( ss[ c ], t, ss.length - 1 ) ) );
 				}
 			}
 		}
@@ -218,6 +288,8 @@ public class SatPlayground
 	{
 		ArrayList< Literal > forceVars = new ArrayList<>();
 
+		ArrayList< Transition > disabledTransitions = new ArrayList<>();
+
 		ArrayList< Constraint > constraints = new ArrayList<>();
 
 		ISolver solver = SolverFactory.newDefault();
@@ -227,7 +299,7 @@ public class SatPlayground
 			for ( final Constraint constraint : constraints )
 				constraint.add( solver, t );
 
-			addDefaultConstraints( solver, t );
+			addDefaultConstraints( solver, t, disabledTransitions );
 		}
 
 		public void fixForcedVars( final int up_to_t ) throws ContradictionException
@@ -485,28 +557,28 @@ public class SatPlayground
 		}
 	}
 
-	static class Transition extends Program
+	static class ForceTransition extends Program
 	{
-		private final Collection< Pair< State, State > > arrows;
+		private final Collection< Transition > arrows;
 
-		public Transition( final Collection< Pair< State, State > > arrows, final String name )
+		public ForceTransition( final Collection< Transition > arrows, final String name )
 		{
 			super( name );
 			this.arrows = arrows;
 		}
 
-		public Transition( final State from, final State to, final String name )
+		public ForceTransition( final State from, final State to, final String name )
 		{
-			this( Arrays.asList( new ValuePair<>( from, to ) ), name );
+			this( Arrays.asList( transition( from, to ) ), name );
 		}
 
 		@Override
 		protected void modifyState( final ProblemState state ) throws ContradictionException
 		{
-			for ( final Pair< State, State > arrow : arrows )
+			for ( final Transition arrow : arrows )
 			{
-				state.constraints.add( new TransitionConstraint( arrow.getA(), arrow.getB(), t ) );
-				state.forceVars.add( fvar( arrow.getA(), t ) );
+				state.constraints.add( new TransitionConstraint( arrow.from, arrow.to, t ) );
+				state.forceVars.add( fvar( arrow.from, t ) );
 			}
 			state.applyConstraints( t );
 		}
@@ -643,10 +715,10 @@ public class SatPlayground
 		                new GetValue( v2,  "        v = entry.getValue();         " )
 		         .then( new Branch( Arrays.asList( A, C, D, E ), v2,
 		                                   "        if ( v == null ) {            ",
-		                    new Transition( Arrays.asList(
-		                    		new ValuePair<>( A, D ),
-		                    		new ValuePair<>( B, D ),
-		                    		new ValuePair<>( C, D ) ),
+		                    new ForceTransition( Arrays.asList(
+		                    		transition( A, D ),
+		                    		transition( B, D ),
+		                    		transition( C, D ) ),
 		                                   "            map.remove( key, entry ); " )
 		             .then( new Nop(       "            return get( key, loader );" ) ),
 		                                   "        } else {                      ",
