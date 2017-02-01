@@ -67,30 +67,6 @@ public class SatPlayground
 				}
 			}
 		}
-
-		for( final State s : ss )
-		{
-			solver.addClause( map.clause(
-					not( fvar( s, t ) ),
-					var( s, t ) ) );
-		}
-	}
-
-	public static void addForcedTransitionConstraints( final ISolver solver, final int t ) throws ContradictionException
-	{
-		addForcedTransitionConstraints( solver, t, null );
-	}
-
-	public static void addForcedTransitionConstraints( final ISolver solver, final int t, final State state ) throws ContradictionException
-	{
-		final State[] ss = State.values();
-		for( final State s : ss )
-		{
-			if ( s.equals( state ) )
-				solver.addClause( map.clause( fvar ( s, t ) ) );
-			else
-				solver.addClause( map.clause( not( fvar ( s, t ) ) ) );
-		}
 	}
 
 	public interface Constraint
@@ -177,6 +153,37 @@ public class SatPlayground
 		}
 	}
 
+	public static class LockConcurrentModificationConstraint implements Constraint
+	{
+		private final State state;
+
+		private final int from_t;
+
+		public LockConcurrentModificationConstraint( final State state, final int from_t )
+		{
+			this.state = state;
+			this.from_t = from_t;
+		}
+
+		@Override
+		public void add( final ISolver solver, final int t ) throws ContradictionException
+		{
+			if ( t > from_t )
+			{
+				solver.addClause( map.clause(
+						not( var( state, t - 1 ) ),
+						var( state, t ),
+						fvar( state, t ) ) );
+			}
+		}
+
+		@Override
+		public String toString()
+		{
+			return "! s(" + from_t + ")=" + state + " ⇒ s(t)=" + state;
+		}
+	}
+
 	public static class TransitionConstraint implements Constraint
 	{
 		private final State from;
@@ -209,6 +216,8 @@ public class SatPlayground
 
 	static class ProblemState
 	{
+		ArrayList< Literal > forceVars = new ArrayList<>();
+
 		ArrayList< Constraint > constraints = new ArrayList<>();
 
 		ISolver solver = SolverFactory.newDefault();
@@ -219,7 +228,21 @@ public class SatPlayground
 				constraint.add( solver, t );
 
 			addDefaultConstraints( solver, t );
-//			addForcedTransitionConstraints( solver, t );
+		}
+
+		public void fixForcedVars( final int up_to_t ) throws ContradictionException
+		{
+			for ( int t = 0; t <= up_to_t; ++t )
+			{
+				for ( final State s : State.values() )
+				{
+					final Literal v = fvar ( s, t );
+					if ( forceVars.contains( v ) )
+						solver.addClause( map.clause( v ) );
+					else
+						solver.addClause( map.clause( not( v ) ) );
+				}
+			}
 		}
 	}
 
@@ -277,6 +300,7 @@ public class SatPlayground
 				try
 				{
 					final ProblemState state = getState();
+					state.fixForcedVars( t );
 					state.solver.addClause( map.clause( var( s, t ) ) );
 					if ( state.solver.isSatisfiable() )
 					{
@@ -428,8 +452,36 @@ public class SatPlayground
 		@Override
 		protected void modifyState( final ProblemState state ) throws ContradictionException
 		{
-			state.constraints.add( new HoldStateConstraint( A, t ) );
+//			state.constraints.add( new HoldStateConstraint( A, t ) );
+			state.constraints.add( new LockConcurrentModificationConstraint( A, t ) );
 			state.applyConstraints( t );
+		}
+	}
+
+	static class SetValue extends Program
+	{
+		private final ValueRef ref;
+
+		public SetValue( final ValueRef ref, final String name )
+		{
+			super( name );
+			this.ref = ref;
+		}
+
+		@Override
+		protected void modifyState( final ProblemState state ) throws ContradictionException
+		{
+			state.constraints.add( new TransitionConstraint( A, B, t ) );
+			state.forceVars.add( fvar( A, t ) );
+			state.constraints.add( new HoldStateConstraint( B, t ) );
+			state.applyConstraints( t );
+		}
+
+		@Override
+		protected void init()
+		{
+			super.init();
+			ref.t = t;
 		}
 	}
 
@@ -452,7 +504,10 @@ public class SatPlayground
 		protected void modifyState( final ProblemState state ) throws ContradictionException
 		{
 			for ( final Pair< State, State > arrow : arrows )
+			{
 				state.constraints.add( new TransitionConstraint( arrow.getA(), arrow.getB(), t ) );
+				state.forceVars.add( fvar( arrow.getA(), t ) );
+			}
 			state.applyConstraints( t );
 		}
 	}
@@ -568,22 +623,14 @@ public class SatPlayground
 
 	static final boolean DEBUG = false;
 
-	static final ArrayList< Integer > DEBUGAT = new ArrayList<>( Arrays.asList( 3, 4 ) );
+//	static final ArrayList< Integer > DEBUGAT = new ArrayList<>( Arrays.asList( 3, 4 ) );
+	static final ArrayList< Integer > DEBUGAT = new ArrayList<>();
 
 	public static void main( final String[] args ) throws ContradictionException, TimeoutException
 	{
 		final ValueRef v1 = new ValueRef();
 		final ValueRef v2 = new ValueRef();
-//		final Program p =
-//		        new Init(            "entry = computeIfAbsent(); " )
-//		 .then( new GetValue( v,     "v = entry.getValue();      " ) )
-//		 .then( new Lock(            "synchronized( entry ) {    " ) )
-//		 .then( new Branch( Arrays.asList( B ), 1,
-//		                             "if ( v != null ) {         ",
-//		        new Nop(             "    nop if                 " ),
-//		                             "} else {                   ",
-//		        new Nop(             "    nop else               " ) ) )
-//		 .root();
+		final ValueRef v3 = new ValueRef();
 
 		final Program p =
 		        new Init(                  "entry = computeIfAbsent();            " )
@@ -607,13 +654,11 @@ public class SatPlayground
 		                ) ),
 		                                   "    } else {                          ",
 		                new Nop(           "        v = loader.call();            " )
-		         .then( new Transition( A, B,
-		                                   "        entry.setValue( v );          " ) )
-//		         .then( new Nop(           "        entry.setValue( v );          " ) )
+		         .then( new SetValue( v3,  "        entry.setValue( v );          " ) )
 		         .then( new Nop(           "        return v;                     " ) )
 		            ) ),
 		                                   "} else {                              ",
-		        new Nop(                   "    nop else                          " ) ) )
+		        new Nop(                   "    return v;                         " ) ) )
 		 .root();
 
 		p.recursivelyPrintPossibleStates();
