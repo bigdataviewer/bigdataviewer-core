@@ -1,8 +1,6 @@
 package verify;
 
-import static verify.SatPlayground.State.A;
-
-import verify.SatPlayground.State;
+import static verify.State.A;
 
 public class Literal implements Comparable< Literal >
 {
@@ -102,24 +100,34 @@ public class Literal implements Comparable< Literal >
 		return c;
 	}
 
-	public static Literal var( final State s, final int t )
+	public static Literal p( final State s, final int t )
 	{
 		return new Literal( s, A, t, 0, "p", false );
 	}
 
-	public static Literal fvar( final State s, final int t )
+	public static Literal q( final State s, final int t, final int v )
 	{
-		return new Literal( s, A, t, 0, "f", false );
+		return new Literal( s, A, t, v, "q", false );
 	}
 
-	public static Literal bvar( final State s, final State s2, final int t )
+	public static Literal f( final State s, final State s2, final int t )
+	{
+		return new Literal( s, s2, t, 0, "f", false );
+	}
+
+	public static Literal f( final Transition tr, final int t )
+	{
+		return f( tr.from, tr.to, t );
+	}
+
+	public static Literal b( final State s, final State s2, final int t )
 	{
 		return new Literal( s, s2, t, 0, "b", false );
 	}
 
-	public static Literal qvar( final State s, final int t, final int step )
+	public static Literal b( final Transition tr, final int t )
 	{
-		return new Literal( s, A, t, step, "q", false );
+		return b( tr.from, tr.to, t );
 	}
 
 	public static Literal not( final Literal literal )
