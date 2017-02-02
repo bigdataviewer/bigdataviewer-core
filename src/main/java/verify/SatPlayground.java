@@ -10,6 +10,7 @@ import static verify.State.B;
 import static verify.State.C;
 import static verify.State.D;
 import static verify.State.E;
+import static verify.State.F;
 import static verify.Transition.allTransitions;
 import static verify.Transition.transition;
 
@@ -289,7 +290,7 @@ public class SatPlayground
 			return state;
 		}
 
-		protected void printPossibleStates()
+		protected void printPossibleStates( final int padlen )
 		{
 			final State[] ss = State.values();
 			final ArrayList< State > possible = new ArrayList<>();
@@ -311,7 +312,8 @@ public class SatPlayground
 					e.printStackTrace();
 				}
 			}
-			System.out.println( "(" + t + ") " + name + " : " + possible );
+			final String padded = String.format("%1$-" + padlen + "s", name );
+			System.out.println( "(" + t + ") " + padded + " : " + possible );
 		}
 
 		protected void debugprintPossibleStates()
@@ -355,15 +357,20 @@ public class SatPlayground
 
 		public void recursivelyPrintPossibleStates()
 		{
+			recursivelyPrintPossibleStates( maxNameLength() );
+		}
+
+		protected void recursivelyPrintPossibleStates( final int padlen )
+		{
 			init();
-			printPossibleStates();
+			printPossibleStates( padlen );
 			if ( DEBUG || DEBUGAT.contains( t ) )
 			{
 				debugprintPossibleStates();
 				System.out.println();
 			}
 			for ( final Program child : children )
-				child.recursivelyPrintPossibleStates();
+				child.recursivelyPrintPossibleStates( padlen );
 		}
 
 		public Program root()
@@ -371,6 +378,14 @@ public class SatPlayground
 			return ( parent == null )
 					? this
 					: parent.root();
+		}
+
+		private int maxNameLength()
+		{
+			int maxNameLength = name.length();
+			for ( final Program child : children )
+				maxNameLength = Math.max( maxNameLength, child.maxNameLength() );
+			return maxNameLength;
 		}
 	}
 
@@ -395,107 +410,45 @@ public class SatPlayground
 		}
 	}
 
-	static class Init extends Program
+	static class BranchCondition
 	{
-		public Init( final String name )
-		{
-			super( name );
-		}
+		final ValueRef v;
 
-		@Override
-		protected void modifyState( final ProblemState state ) throws ContradictionException
+		final Collection< State > states;
+
+		public BranchCondition(
+				final ValueRef v,
+				final Collection< State > states )
 		{
-			state.add( new StateSetConstraint( 0, A, B, C ) );
+			this.v = v;
+			this.states = states;
 		}
 	}
 
-	static class GetValue extends Program
+	static class IfSeq
 	{
-		private final ValueRef ref;
+		final String name;
 
-		public GetValue( final ValueRef ref, final String name )
-		{
-			super( name );
-			this.ref = ref;
-		}
+		final Program program;
 
-		@Override
-		protected void modifyState( final ProblemState state ) throws ContradictionException
+		public IfSeq( final String name, final Program program )
 		{
-			state.add( new ConditionalBlockConstraint( B, t, transition( B, C ) ) );
-		}
-
-		@Override
-		protected void init()
-		{
-			super.init();
-			ref.t = t;
+			this.name = name;
+			this.program = program;
 		}
 	}
 
-	static class Lock extends Program
+	static class ElseSeq
 	{
-		public Lock( final String name )
+		final String name;
+
+		final Program program;
+
+		public ElseSeq( final String name, final Program program )
 		{
-			super( name );
+			this.name = name;
+			this.program = program;
 		}
-
-		@Override
-		protected void modifyState( final ProblemState state ) throws ContradictionException
-		{
-			state.block( transition( A, B ) );
-		}
-	}
-
-	static class SetValue extends Program
-	{
-		private final ValueRef ref;
-
-		public SetValue( final ValueRef ref, final String name )
-		{
-			super( name );
-			this.ref = ref;
-		}
-
-		@Override
-		protected void modifyState( final ProblemState state ) throws ContradictionException
-		{
-			state.block( transition( B, C ) );
-			state.force( transition( A, B ) );
-		}
-
-		@Override
-		protected void init()
-		{
-			super.init();
-			ref.t = t;
-		}
-	}
-
-	static class RemoveEntryFromMap extends Program
-	{
-		public RemoveEntryFromMap( final String name )
-		{
-			super( name );
-		}
-
-		@Override
-		protected void modifyState( final ProblemState state ) throws ContradictionException
-		{
-			state.force( transition( C, D ) );
-		}
-	}
-
-	static class Nop extends Program
-	{
-		public Nop( final String name)
-		{
-			super( name );
-		}
-
-		@Override
-		protected void modifyState( final ProblemState state ) throws ContradictionException
-		{}
 	}
 
 	static class Branch extends Program
@@ -509,7 +462,7 @@ public class SatPlayground
 				final String elseName,
 				final Program elseProg )
 		{
-			this ( ifStates, null, ifName, ifProg, elseName, elseProg );
+			this ( new BranchCondition( null, ifStates ), ifName, ifProg, elseName, elseProg );
 		}
 
 		public Branch(
@@ -520,7 +473,7 @@ public class SatPlayground
 				final String elseName,
 				final Program elseProg )
 		{
-			this ( ifStates, new ValueRef( at_t ), ifName, ifProg, elseName, elseProg );
+			this ( new BranchCondition( new ValueRef( at_t ), ifStates ), ifName, ifProg, elseName, elseProg );
 		}
 
 		public Branch(
@@ -531,9 +484,20 @@ public class SatPlayground
 				final String elseName,
 				final Program elseProg )
 		{
-			super( "Branch (this should never be printed)" );
-			this.ref = valueRef;
+			this( new BranchCondition( valueRef, ifStates ), ifName, ifProg, elseName, elseProg );
+		}
 
+		public Branch(
+				final BranchCondition condition,
+				final String ifName,
+				final Program ifProg,
+				final String elseName,
+				final Program elseProg )
+		{
+			super( "(--branch--)" );
+			this.ref = condition.v;
+
+			final Collection< State > ifStates = condition.states;
 			final ArrayList< State > elseStates = new ArrayList<>( Arrays.asList( State.values() ) );
 			elseStates.removeAll( ifStates );
 
@@ -575,7 +539,7 @@ public class SatPlayground
 		}
 
 		@Override
-		protected void printPossibleStates()
+		protected void printPossibleStates( final int padlen )
 		{}
 
 		@Override
@@ -592,8 +556,247 @@ public class SatPlayground
 		}
 	}
 
-	static final boolean DEBUG = false;
+	static class Nop extends Program
+	{
+		public Nop( final String name)
+		{
+			super( name );
+		}
 
+		@Override
+		protected void modifyState( final ProblemState state ) throws ContradictionException
+		{}
+	}
+
+
+
+// ====================================================================================================================
+// ====================================================================================================================
+// ====================================================================================================================
+// ====================================================================================================================
+// ====================================================================================================================
+
+	/**
+	 *
+	 */
+	static class Init extends Program
+	{
+		public Init( final String name )
+		{
+			super( name );
+		}
+
+		@Override
+		protected void modifyState( final ProblemState state ) throws ContradictionException
+		{
+			state.add( new StateSetConstraint( 0, A, B, C, D ) );
+		}
+	}
+
+	/**
+	 *
+	 */
+	static class GetValue extends Program
+	{
+		private final ValueRef ref;
+
+		public GetValue( final ValueRef ref, final String name )
+		{
+			super( name );
+			this.ref = ref;
+		}
+
+		@Override
+		protected void modifyState( final ProblemState state ) throws ContradictionException
+		{
+			state.add( new ConditionalBlockConstraint( B, t, transition( B, D ) ) );
+			state.add( new ConditionalBlockConstraint( C, t, transition( C, D ) ) );
+		}
+
+		@Override
+		protected void init()
+		{
+			super.init();
+			ref.t = t;
+		}
+	}
+
+	/**
+	 *
+	 */
+	static class Lock extends Program
+	{
+		public Lock( final String name )
+		{
+			super( name );
+		}
+
+		@Override
+		protected void modifyState( final ProblemState state ) throws ContradictionException
+		{
+			state.block( transition( A, B ) );
+			state.block( transition( A, C ) );
+			state.block( transition( B, C ) );
+		}
+	}
+
+	/**
+	 *
+	 */
+	static class SetInvalid extends Program
+	{
+		private final ValueRef ref;
+
+		public SetInvalid( final ValueRef ref, final String name )
+		{
+			super( name );
+			this.ref = ref;
+		}
+
+		@Override
+		protected void modifyState( final ProblemState state ) throws ContradictionException
+		{
+			state.force( transition( A, B ) );
+
+			state.block( transition( B, D ) );
+		}
+
+		@Override
+		protected void init()
+		{
+			super.init();
+			ref.t = t;
+		}
+	}
+
+	/**
+	 *
+	 */
+	static class SetValid extends Program
+	{
+		private final ValueRef ref;
+
+		public SetValid( final ValueRef ref, final String name )
+		{
+			super( name );
+			this.ref = ref;
+		}
+
+		@Override
+		protected void modifyState( final ProblemState state ) throws ContradictionException
+		{
+			state.force( transition( A, C ) );
+			state.force( transition( B, C ) );
+
+			state.block( transition( C, D ) );
+		}
+
+		@Override
+		protected void init()
+		{
+			super.init();
+			ref.t = t;
+		}
+	}
+
+	/**
+	 *
+	 */
+	static class RemoveEntryFromMap extends Program
+	{
+		public RemoveEntryFromMap( final String name )
+		{
+			super( name );
+		}
+
+		@Override
+		protected void modifyState( final ProblemState state ) throws ContradictionException
+		{
+			state.force( transition( D, E ) );
+		}
+	}
+
+
+
+	public static Program nop( final String name )
+	{
+		return new Nop( name );
+	}
+
+	public static Program init( final String name )
+	{
+		return new Init( name );
+	}
+
+	public static Program getv( final String name, final ValueRef v )
+	{
+		return new GetValue( v, name );
+	}
+
+	public static Program seti( final String name, final ValueRef v )
+	{
+		return new SetInvalid( v, name );
+	}
+
+	public static Program setv( final String name, final ValueRef v )
+	{
+		return new SetValid( v, name );
+	}
+
+	public static Program lock( final String name )
+	{
+		return new Lock( name );
+	}
+
+	public static Program remove( final String name )
+	{
+		return new RemoveEntryFromMap( name );
+	}
+
+	public static Program branch( final BranchCondition c, final IfSeq ifseq, final ElseSeq elseseq )
+	{
+		return new Branch( c, ifseq.name, ifseq.program, elseseq.name, elseseq.program );
+	}
+
+	public static BranchCondition cond( final ValueRef v, final State ... states )
+	{
+		return new BranchCondition( v, Arrays.asList( states ) );
+	}
+
+	public static BranchCondition cond( final State ... states )
+	{
+		return new BranchCondition( null, Arrays.asList( states ) );
+	}
+
+	public static IfSeq ifseq( final String name, final Program ... steps )
+	{
+		return new IfSeq( name, seq( steps ) );
+	}
+
+	public static ElseSeq elseseq( final String name, final Program ... steps )
+	{
+		return new ElseSeq( name, seq( steps ) );
+	}
+
+	public static Program seq( final Program ... steps )
+	{
+		if ( steps.length == 0 )
+		{
+			return nop( "empty" );
+		}
+		else
+		{
+			for ( int i = 1; i < steps.length; ++i )
+				steps[ i - 1 ].then( steps[ i ] );
+			return steps[ 0 ];
+		}
+	}
+
+
+
+
+
+	static final boolean DEBUG = false;
 //	static final ArrayList< Integer > DEBUGAT = new ArrayList<>( Arrays.asList( 3, 4 ) );
 	static final ArrayList< Integer > DEBUGAT = new ArrayList<>();
 
@@ -602,61 +805,147 @@ public class SatPlayground
 		final ValueRef v1 = new ValueRef();
 		final ValueRef v2 = new ValueRef();
 		final ValueRef v3 = new ValueRef();
+		final ValueRef v4 = new ValueRef();
 
-		final Program p =
-		        new Init(                  "entry = computeIfAbsent();            " )
-		 .then( new GetValue( v1,          "v = entry.getValue();                 " ) )
-		 .then( new Branch( Arrays.asList( A, C, D, E ), v1,
-		                                   "if ( v == null ) {                    ",
-		            new Lock(              "    synchronized ( entry )            " )
-		     .then( new Branch( Arrays.asList( B, C, D, E ),
-		                                   "    if ( entry.loaded ) {             ",
-		                new GetValue( v2,  "        v = entry.getValue();         " )
-		         .then( new Branch( Arrays.asList( A, C, D, E ), v2,
-		                                   "        if ( v == null ) {            ",
-		                    new RemoveEntryFromMap(
-		                                   "            map.remove( key, entry ); " )
-		             .then( new Nop(       "            return get( key, loader );" ) ),
-		                                   "        } else {                      ",
-		                    new Nop(       "            return v;                 " )
-		                ) ),
-		                                   "    } else {                          ",
-		                new Nop(           "        v = loader.call();            " )
-		         .then( new SetValue( v3,  "        entry.setValue( v );          " ) )
-		         .then( new Nop(           "        return v;                     " ) )
-		            ) ),
-		                                   "} else {                              ",
-		        new Nop(                   "    return v;                         " ) ) )
-		 .root();
-
+		System.out.println( "CacheHints == VOLATILE" );
+		System.out.println( "======================" );
+		Program p = seq
+		(
+			init(                                "entry = computeIfAbsent();" ),
+			getv(                                "v = entry.getValue();", v1 ),
+			branch( cond( v1, A, D, E, F ),
+				ifseq(                           "if ( v == null ) {",
+					lock(                        "    synchronized ( entry ) {" ),
+					branch( cond( A ),
+						ifseq(                   "        if ( loaded == NOTLOADED ) {",
+							nop(                 "            v = loader.getInvalid();" ),
+							seti(                "            entry.setInvalid( v );", v2 ),
+							nop(                 "            enqueue();" ),
+							nop(                 "            return v;" )
+						),
+						elseseq(                 "        } else {",
+							branch( cond( B ),
+								ifseq(           "            if ( loaded == INVALID ) {",
+									getv(        "                v = entry.getValue();", v3 ),
+									branch( cond( v3, B, C ),
+										ifseq(   "                if ( v != null ) { ",
+											nop( "                    enqueue();" ),
+											nop( "                    return v;" )
+										),
+										elseseq( "                } else { // v == null ",
+											remove( "                    map.remove( key, entry );" ),
+											nop( "                    return get( key, loader, hints );" )
+										)
+									)
+								),
+								elseseq(         "            } else { // loaded == VALID",
+									getv(        "                v = entry.getValue();", v4 ),
+									branch( cond( v4, B, C ),
+										ifseq(   "                if ( v != null ) { ",
+											nop( "                     return v;")
+										),
+										elseseq( "                } else { // v == null ",
+											remove( "                    map.remove( key, entry );" ),
+											nop( "                    return get( key, loader, hints );" )
+										)
+									)
+								)
+							)
+						)
+					)
+				),
+				elseseq(           "} else { // v != null ",
+					nop(           "    if ( !v.isValid() ) { enqueue(); } " ),
+					nop(           "    return v; // strong ref (1)" )
+				)
+			)
+		);
 		p.recursivelyPrintPossibleStates();
 
-//		System.out.println();
-//		System.out.println( "traces:" );
-//		p.children.get( 0 ).children.get( 0 ).children.get( 0 ).children.get( 0 ).children.get( 0 ).printPossibleTraces();
+		System.out.println();
+		System.out.println();
+
+		System.out.println( "CacheHints == DONTLOAD" );
+		System.out.println( "======================" );
+		p = seq
+		(
+			init(                                "entry = computeIfAbsent();" ),
+			getv(                                "v = entry.getValue();", v1 ),
+			branch( cond( v1, A, D, E, F ),
+				ifseq(                           "if ( v == null ) {",
+					lock(                        "    synchronized ( entry ) {" ),
+					branch( cond( A ),
+						ifseq(                   "        if ( loaded == NOTLOADED ) {",
+							nop(                 "            v = loader.getInvalid();" ),
+							seti(                "            entry.setInvalid( v );", v2 ),
+							nop(                 "            return v;" )
+						),
+						elseseq(                 "        } else { // loaded == INVALID || VALID ",
+							getv(        "                v = entry.getValue();", v4 ),
+							branch( cond( v4, B, C ),
+								ifseq(   "                if ( v != null ) { ",
+									nop( "                     return v;")
+								),
+								elseseq( "                } else { // v == null ",
+									remove( "                    map.remove( key, entry );" ),
+									nop( "                    return get( key, loader, hints );" )
+								)
+							)
+						)
+					)
+				),
+				elseseq(           "} else { // v != null ",
+					nop(           "    return v; // strong ref (1)" )
+				)
+			)
+		);
+		p.recursivelyPrintPossibleStates();
+
+		System.out.println();
+		System.out.println();
+
+		System.out.println( "CacheHints == BUDGETED" );
+		System.out.println( "======================" );
 
 
+		System.out.println();
+		System.out.println();
 
+		System.out.println( "CacheHints == BLOCKING" );
+		System.out.println( "======================" );
+		p = seq
+		(
+			init(                                "entry = computeIfAbsent();" ),
+			getv(                                "v = entry.getValue();", v1 ),
+			branch( cond( v1, A, D, E, F ),
+				ifseq(                           "if ( v == null ) {",
+					lock(                        "    synchronized ( entry ) {" ),
+					branch( cond( A ),
+						ifseq(                   "        if ( loaded == NOTLOADED ) {",
+							nop(                 "            v = loader.getInvalid();" ),
+							seti(                "            entry.setInvalid( v );", v2 ),
+							nop(                 "            return v;" )
+						),
+						elseseq(                 "        } else { // loaded == INVALID || VALID ",
+							getv(        "                v = entry.getValue();", v4 ),
+							branch( cond( v4, B, C ),
+								ifseq(   "                if ( v != null ) { ",
+									nop( "                     return v;")
+								),
+								elseseq( "                } else { // v == null ",
+									remove( "                    map.remove( key, entry );" ),
+									nop( "                    return get( key, loader, hints );" )
+								)
+							)
+						)
+					)
+				),
+				elseseq(           "} else { // v != null ",
+					nop(           "    return v; // strong ref (1)" )
+				)
+			)
+		);
+		p.recursivelyPrintPossibleStates();
 
-
-
-//		final ISolver solver = SolverFactory.newDefault();
-//		solver.addClause( map.clause( var( A, 0 ) ) );
-//		solver.addClause( map.clause( not( var( A, 0 ) ), var( B, 0 ) ) );
-//		solver.addClause( map.clause( not( var( B, 0 ) ), not( var( C, 0 ) ) ) );
-//		solver.addClause( map.clause( var( C, 0 ), var( D, 0 ), var( E, 0 ) ) );
-//		addDefaultConstraints( solver, 0 );
-//		addDefaultConstraints( solver, 1 );
-//		final IProblem problem = solver;
-//		final boolean satisfiable = problem.isSatisfiable();
-//		System.out.println( satisfiable );
-//		final ModelIterator mi = new ModelIterator( solver );
-//		boolean unsat = true;
-//		while ( mi.isSatisfiable() )
-//		{
-//			unsat = false;
-//			final int[] model = mi.model();
-//			System.out.println( map.model( model ) );
-//		}
 	}
 }
