@@ -313,7 +313,8 @@ public class SatPlayground
 				}
 			}
 			final String padded = String.format("%1$-" + padlen + "s", name );
-			System.out.println( "(" + t + ") " + padded + " : " + possible );
+			final String time = String.format("%1$" + 5 + "s", String.format( "(%d) ", t ) );
+			System.out.println( time + padded + " : " + possible );
 		}
 
 		protected void debugprintPossibleStates()
@@ -494,12 +495,33 @@ public class SatPlayground
 				final String elseName,
 				final Program elseProg )
 		{
+			this( condition, ifName, ifProg, null, elseName, elseProg );
+		}
+
+		public Branch(
+				final BranchCondition condition,
+				final String ifName,
+				final Program ifProg,
+				final BranchCondition elsecondition,
+				final String elseName,
+				final Program elseProg )
+		{
 			super( "(--branch--)" );
 			this.ref = condition.v;
 
 			final Collection< State > ifStates = condition.states;
-			final ArrayList< State > elseStates = new ArrayList<>( Arrays.asList( State.values() ) );
-			elseStates.removeAll( ifStates );
+			final ArrayList< State > elseStates = new ArrayList<>();
+			if ( elsecondition != null )
+			{
+				elseStates.addAll( elsecondition.states );
+				if ( elsecondition.v != condition.v )
+					throw new IllegalArgumentException();
+			}
+			else
+			{
+				elseStates.addAll( Arrays.asList( State.values() ) );
+				elseStates.removeAll( ifStates );
+			}
 
 			final Program pTrue = new Program( ifName )
 			{
@@ -643,6 +665,25 @@ public class SatPlayground
 	/**
 	 *
 	 */
+	static class Unlock extends Program
+	{
+		public Unlock( final String name )
+		{
+			super( name );
+		}
+
+		@Override
+		protected void modifyState( final ProblemState state ) throws ContradictionException
+		{
+			state.unblock( transition( A, B ) );
+			state.unblock( transition( A, C ) );
+			state.unblock( transition( B, C ) );
+		}
+	}
+
+	/**
+	 *
+	 */
 	static class SetInvalid extends Program
 	{
 		private final ValueRef ref;
@@ -748,6 +789,11 @@ public class SatPlayground
 		return new Lock( name );
 	}
 
+	public static Program unlock( final String name )
+	{
+		return new Unlock( name );
+	}
+
 	public static Program remove( final String name )
 	{
 		return new RemoveEntryFromMap( name );
@@ -756,6 +802,11 @@ public class SatPlayground
 	public static Program branch( final BranchCondition c, final IfSeq ifseq, final ElseSeq elseseq )
 	{
 		return new Branch( c, ifseq.name, ifseq.program, elseseq.name, elseseq.program );
+	}
+
+	public static Program branch( final BranchCondition ifcond, final IfSeq ifseq, final BranchCondition elsecond, final ElseSeq elseseq )
+	{
+		return new Branch( ifcond, ifseq.name, ifseq.program, elsecond, elseseq.name, elseseq.program );
 	}
 
 	public static BranchCondition cond( final ValueRef v, final State ... states )
@@ -806,6 +857,7 @@ public class SatPlayground
 		final ValueRef v2 = new ValueRef();
 		final ValueRef v3 = new ValueRef();
 		final ValueRef v4 = new ValueRef();
+		final ValueRef v5 = new ValueRef();
 
 		System.out.println( "CacheHints == VOLATILE" );
 		System.out.println( "======================" );
@@ -824,7 +876,8 @@ public class SatPlayground
 							nop(                 "            return v;" )
 						),
 						elseseq(                 "        } else {",
-							branch( cond( B ),
+							branch(
+								cond( B, D, E, F ),
 								ifseq(           "            if ( loaded == INVALID ) {",
 									getv(        "                v = entry.getValue();", v3 ),
 									branch( cond( v3, B, C ),
@@ -838,6 +891,7 @@ public class SatPlayground
 										)
 									)
 								),
+								cond( A, C, D, E, F ),
 								elseseq(         "            } else { // loaded == VALID",
 									getv(        "                v = entry.getValue();", v4 ),
 									branch( cond( v4, B, C ),
@@ -854,9 +908,9 @@ public class SatPlayground
 						)
 					)
 				),
-				elseseq(           "} else { // v != null ",
-					nop(           "    if ( !v.isValid() ) { enqueue(); } " ),
-					nop(           "    return v; // strong ref (1)" )
+				elseseq(                         "} else { // v != null ",
+					nop(                         "    if ( !v.isValid() ) { enqueue(); } " ),
+					nop(                         "    return v; // strong ref (1)" )
 				)
 			)
 		);
@@ -881,21 +935,107 @@ public class SatPlayground
 							nop(                 "            return v;" )
 						),
 						elseseq(                 "        } else { // loaded == INVALID || VALID ",
-							getv(        "                v = entry.getValue();", v4 ),
+							getv(                "                v = entry.getValue();", v4 ),
 							branch( cond( v4, B, C ),
-								ifseq(   "                if ( v != null ) { ",
-									nop( "                     return v;")
+								ifseq(           "                if ( v != null ) { ",
+									nop(         "                     return v;")
 								),
-								elseseq( "                } else { // v == null ",
-									remove( "                    map.remove( key, entry );" ),
-									nop( "                    return get( key, loader, hints );" )
+								elseseq(         "                } else { // v == null ",
+									remove(      "                    map.remove( key, entry );" ),
+									nop(         "                    return get( key, loader, hints );" )
 								)
 							)
 						)
 					)
 				),
-				elseseq(           "} else { // v != null ",
-					nop(           "    return v; // strong ref (1)" )
+				elseseq(                        "} else { // v != null ",
+					nop(                        "    return v; // strong ref (1)" )
+				)
+			)
+		);
+		p.recursivelyPrintPossibleStates();
+
+		System.out.println();
+		System.out.println();
+
+		System.out.println( "CacheHints == BLOCKING" );
+		System.out.println( "======================" );
+		p = seq
+		(
+			init(                                           "entry = computeIfAbsent()" ),
+			getv(                                           "v = entry.getValue();", v1 ),
+			branch( cond( v1, B, C ),
+				ifseq(                                      "if ( v != null ) {",
+					branch( cond( v1, C ),
+						ifseq(                              "    if ( v.isValid() )",
+							nop(                            "        return v;" )
+						),
+						elseseq(                            "    } else {",
+							nop(                            "        // continue below..." )
+						)
+					)
+				),
+				elseseq(                                    "} // else {",
+					lock(                                   "synchronized ( entry ) {" ),
+					branch(
+						cond( C, D, E, F ),
+						ifseq(                              "    if ( loaded == VALID ) {",
+							getv(                           "        v = entry.getValue();", v2 ),
+							branch( cond( v2, A, D, E, F ),
+								ifseq(                      "        if ( v == null ) {",
+									remove(                 "            map.remove( key, entry );" ),
+									nop(                    "            return get( key, loader, hints );" )
+								),
+								elseseq(                    "        } else {",
+									nop(                    "            return v;" )
+								)
+							)
+						),
+						cond( A, B, D, E, F ),
+						elseseq(                            "    } else { // loaded == NOTLOADED || INVALID",
+							unlock(                         "} // end synchronization" ),
+							nop(                            "lv = backingCache.get( key, loader );" ),
+							lock(                           "synchronized ( entry ) {" ),
+							getv(                           "    v = entry.getValue();", v3 ),
+							branch(
+								cond( C, D, E, F ),
+								ifseq(                      "    if ( loaded == VALID ) {",
+									branch( cond( v3, A, D, E, F ),
+										ifseq(              "        if ( v == null ) {",
+											remove(         "            map.remove( key, entry );" ),
+											nop(            "            return get( key, loader, hints );" )
+										),
+										elseseq(            "        } else {",
+											nop(            "            return v;" )
+										)
+									)
+								),
+								cond( A, B, D, E, F ),
+								elseseq(                    "    } else { // loaded == NOTLOADED || INVALID",
+									branch( cond( A ),
+										ifseq(              "        if ( loaded == NOTLOADED ) { ",
+											setv(           "            entry.setValid( lv );", v4 ),
+											nop(            "            notifyAll();" ),
+											nop(            "            return lv;" )
+										),
+										elseseq(            "        } else {",
+											branch( cond( v3, A, D, E, F ),
+												ifseq(      "            if ( v == null ) {",
+													remove( "                map.remove( key, entry );" ),
+													nop(    "                return get( key, loader, hints );" )
+												),
+												elseseq(    "            } else {",
+													setv(   "            entry.setValid( lv );", v5 ),
+													nop(    "            notifyAll();" ),
+													nop(    "            return lv;" )
+												)
+											)
+										)
+									)
+								)
+							)
+						)
+					)
 				)
 			)
 		);
@@ -906,46 +1046,68 @@ public class SatPlayground
 
 		System.out.println( "CacheHints == BUDGETED" );
 		System.out.println( "======================" );
-
-
-		System.out.println();
-		System.out.println();
-
-		System.out.println( "CacheHints == BLOCKING" );
-		System.out.println( "======================" );
 		p = seq
 		(
-			init(                                "entry = computeIfAbsent();" ),
-			getv(                                "v = entry.getValue();", v1 ),
-			branch( cond( v1, A, D, E, F ),
-				ifseq(                           "if ( v == null ) {",
-					lock(                        "    synchronized ( entry ) {" ),
-					branch( cond( A ),
-						ifseq(                   "        if ( loaded == NOTLOADED ) {",
-							nop(                 "            v = loader.getInvalid();" ),
-							seti(                "            entry.setInvalid( v );", v2 ),
-							nop(                 "            return v;" )
+			init(                                   "entry = computeIfAbsent()" ),
+			getv(                                   "v = entry.getValue();", v1 ),
+			branch( cond( v1, B, C ),
+				ifseq(                              "if ( v != null ) {",
+					branch( cond( v1, C ),
+						ifseq(                      "    if ( v.isValid() ) {",
+							nop(                    "        return v;" )
 						),
-						elseseq(                 "        } else { // loaded == INVALID || VALID ",
-							getv(        "                v = entry.getValue();", v4 ),
-							branch( cond( v4, B, C ),
-								ifseq(   "                if ( v != null ) { ",
-									nop( "                     return v;")
+						elseseq(                    "    } else {",
+							nop(                    "        // continue below" )
+						)
+					)
+				),
+				elseseq(                            "} // else {",
+					lock(                           "synchronized ( entry ) {" ),
+					branch(
+						cond( C, D, E, F ),
+						ifseq(                      "    if ( loaded == VALID )",
+							getv(                   "        v = entry.getValue();", v2 ),
+							branch( cond( v2, A, D, E, F ),
+								ifseq(              "        if ( v == null ) {",
+									remove(         "            map.remove( key, entry );" ),
+									nop(            "            return get( key, loader, hints );" )
 								),
-								elseseq( "                } else { // v == null ",
-									remove( "                    map.remove( key, entry );" ),
-									nop( "                    return get( key, loader, hints );" )
+								elseseq(            "        } else {",
+									nop(            "            return v;" )
+									)
+								)
+							),
+						cond( A, B, D, E, F ),
+						elseseq(                    "    } else { // loaded == NOTLOADED || INVALID",
+							nop(                    "        enqueue();" ),
+							unlock(                 "        entry.wait( timeLeft ); // releases lock" ),
+							lock(                   "                                // lock reacquired" ),
+							branch( cond( B, C, D, E, F ),
+								ifseq(              "        if ( loaded == VALID || INVALID ) {",
+									getv(           "            v = entry.getValue();", v3 ),
+									branch( cond( v3, A, D, E, F ),
+										ifseq(      "            if ( v == null ) {",
+											remove( "                map.remove( key, entry );" ),
+											nop(    "                return get( key, loader, hints );" )
+										),
+										elseseq(    "            } else {",
+											nop(    "                return v;" )
+										)
+									)
+								),
+								elseseq(            "        } else { // loaded == NOTLOADED",
+									getv(           "            v = loader.getInvalid();", v4 ),
+									seti(           "            entry.setInvalid( v );", v4 ),
+									nop(            "            return v;" )
 								)
 							)
 						)
 					)
-				),
-				elseseq(           "} else { // v != null ",
-					nop(           "    return v; // strong ref (1)" )
 				)
 			)
 		);
 		p.recursivelyPrintPossibleStates();
+
 
 	}
 }
