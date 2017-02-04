@@ -84,12 +84,14 @@ public class WeakRefVolatileCache< K, V extends VolatileCacheValue > implements 
 			ref = new CacheWeakReference( value, this );
 		}
 
+		// Precondition: caller must hold lock on this.
 		public void setValid( final V value )
 		{
 			loaded = VALID;
 			ref = new CacheWeakReference( value, this );
 			loader = null;
 			enqueueFrame = Long.MAX_VALUE;
+			notifyAll();
 		}
 
 		public void clean( final CacheWeakReference ref )
