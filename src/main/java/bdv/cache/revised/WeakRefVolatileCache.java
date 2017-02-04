@@ -48,6 +48,9 @@ public class WeakRefVolatileCache< K, V extends VolatileCacheValue > implements 
 		}
 	}
 
+	/*
+	 * Possible states of Entry.loaded
+	 */
 	static final int NOTLOADED = 0;
 	static final int INVALID = 1;
 	static final int VALID = 2;
@@ -112,16 +115,13 @@ public class WeakRefVolatileCache< K, V extends VolatileCacheValue > implements 
 		if ( v != null && v.isValid() )
 			return v;
 
+		cleanUp( 50 );
 		switch ( hints.getLoadingStrategy() )
 		{
 		case BLOCKING:
 			return getBlocking( entry );
 		case BUDGETED:
-			final int priority = hints.getQueuePriority();
-			final IoStatistics stats = CacheIoTiming.getIoStatistics();
-			final IoTimeBudget budget = stats.getIoTimeBudget();
-			final long timeLeft = budget.timeLeft( priority );
-			if ( timeLeft > 0 )
+			if ( estimatedBugdetTimeLeft( hints ) > 0 )
 				return getBudgeted( entry, hints );
 		case VOLATILE:
 			enqueue( entry, hints );
@@ -131,18 +131,27 @@ public class WeakRefVolatileCache< K, V extends VolatileCacheValue > implements 
 		}
 	}
 
+	private long estimatedBugdetTimeLeft( final CacheHints hints )
+	{
+		final int priority = hints.getQueuePriority();
+		final IoStatistics stats = CacheIoTiming.getIoStatistics();
+		final IoTimeBudget budget = stats.getIoTimeBudget();
+		return budget.estimateTimeLeft( priority );
+	}
+
 	@Override
 	public V get( final K key, final VolatileLoader< ? extends V > loader, final CacheHints hints ) throws ExecutionException
 	{
 		/*
 		 * Get existing entry for key or create it.
 		 */
-		final Entry entry = map.computeIfAbsent( key, k -> new Entry( key, loader ) );
+		final Entry entry = map.computeIfAbsent( key, k -> new Entry( k, loader ) );
 
 		V v = entry.getValue();
 		if ( v != null && v.isValid() )
 			return v;
 
+		cleanUp( 50 );
 		switch ( hints.getLoadingStrategy() )
 		{
 		case BLOCKING:
@@ -158,8 +167,6 @@ public class WeakRefVolatileCache< K, V extends VolatileCacheValue > implements 
 			v = getDontLoad( entry );
 			break;
 		}
-
-		cleanUp( 10 );
 
 		if ( v == null )
 			return get( key, loader, hints );
@@ -298,6 +305,7 @@ public class WeakRefVolatileCache< K, V extends VolatileCacheValue > implements 
 			V v = entry.getValue();
 			if ( v == null && entry.loaded != NOTLOADED )
 			{
+//				printEntryCollected( "map.remove getBudgeted 1", entry );
 				map.remove( entry.key, entry );
 				return null;
 			}
@@ -338,6 +346,7 @@ public class WeakRefVolatileCache< K, V extends VolatileCacheValue > implements 
 				}
 				else
 				{
+//					printEntryCollected( "map.remove getBudgeted 2", entry );
 					map.remove( entry.key, entry );
 					return null;
 				}
@@ -354,6 +363,7 @@ public class WeakRefVolatileCache< K, V extends VolatileCacheValue > implements 
 			final V v = entry.getValue();
 			if ( v == null && entry.loaded != NOTLOADED )
 			{
+//				printEntryCollected( "map.remove getBlocking 1", entry );
 				map.remove( entry.key, entry );
 				return null;
 			}
@@ -369,6 +379,7 @@ public class WeakRefVolatileCache< K, V extends VolatileCacheValue > implements 
 			final V v = entry.getValue();
 			if ( v == null && entry.loaded != NOTLOADED )
 			{
+//				printEntryCollected( "map.remove getBlocking 2", entry );
 				map.remove( entry.key, entry );
 				return null;
 			}
@@ -394,5 +405,25 @@ public class WeakRefVolatileCache< K, V extends VolatileCacheValue > implements 
 			entry.enqueueFrame = currentQueueFrame;
 			fetchQueue.put( new FetchEntry( entry.key ), hints.getQueuePriority(), hints.isEnqueuToFront() );
 		}
+	}
+
+	/**
+	 * For debugging. Print stack trace when an Entry's value has been collected while we want
+	 * to load it.
+	 *
+	 * @param title
+	 * @param entry
+	 */
+	private synchronized void printEntryCollected( final String title, final Entry entry )
+	{
+		final String state = entry.loaded == 0
+				? "NOTLOADED"
+				: ( entry.loaded == 1
+						? "INVALID"
+						: ( entry.loaded == 2
+								? "VALID"
+								: "UNDEFINED" ) );
+		System.out.println( title + " entry.loaded = " + state );
+//		new Throwable().printStackTrace( System.out );
 	}
 }

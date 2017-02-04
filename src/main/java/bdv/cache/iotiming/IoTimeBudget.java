@@ -87,4 +87,18 @@ public class IoTimeBudget
 		for ( ; l < budget.length && budget[ l ] > budget[ l - 1 ]; ++l )
 			budget[ l ] = budget[ l - 1 ];
 	}
+
+	/**
+	 * Returns how much time is left for the specified priority level.
+	 *
+	 * @param level
+	 *            priority level. must be greater &ge; 0.
+	 * @return time left for the specified priority level.
+	 */
+	public long estimateTimeLeft( final int level )
+	{
+		final long[] b = budget;
+		final int blevel = Math.min( level, b.length - 1 );
+		return b[ blevel ];
+	}
 }

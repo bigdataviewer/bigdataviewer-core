@@ -25,28 +25,23 @@ public class SoftRefCache< K, V > implements Cache< K, V >
 
 		public void clean()
 		{
-			map.remove( entry.getKey(), entry );
+			map.remove( entry.key, entry );
 		}
 	}
 
 	final class Entry
 	{
-		private final K key;
+		final K key;
 
 		private SoftReference< V > ref;
 
-		private boolean loaded;
+		boolean loaded;
 
 		public Entry( final K key )
 		{
 			this.key = key;
 			this.ref = new SoftReference<>( null );
 			this.loaded = false;
-		}
-
-		public K getKey()
-		{
-			return key;
 		}
 
 		public V getValue()
@@ -58,11 +53,6 @@ public class SoftRefCache< K, V > implements Cache< K, V >
 		{
 			this.loaded = true;
 			this.ref = new CacheSoftReference( value, this );
-		}
-
-		public boolean wasLoaded()
-		{
-			return loaded;
 		}
 	}
 
@@ -82,7 +72,7 @@ public class SoftRefCache< K, V > implements Cache< K, V >
 		{
 			synchronized ( entry )
 			{
-				if ( entry.wasLoaded() )
+				if ( entry.loaded )
 				{
 					value = entry.getValue();
 					if ( value == null )
