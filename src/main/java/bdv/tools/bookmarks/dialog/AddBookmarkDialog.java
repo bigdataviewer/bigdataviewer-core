@@ -8,6 +8,8 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.KeyEvent;
 
 import javax.swing.AbstractAction;
@@ -162,6 +164,13 @@ public class AddBookmarkDialog extends JDialog {
 			}
 		});
 		
+		addComponentListener(new ComponentAdapter() {
+			
+			@Override
+			public void componentShown(ComponentEvent e) {
+				reset();
+			}
+		});
 		
 		final ActionMap am = getRootPane().getActionMap();
 		final InputMap im = getRootPane().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
@@ -204,4 +213,10 @@ public class AddBookmarkDialog extends JDialog {
 
 		return true;
 	}
+	
+	private void reset(){
+		keyField.setText("");
+		simpleBookmarkOption.setSelected(true);
+	}
+
 }
