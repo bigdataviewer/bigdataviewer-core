@@ -43,6 +43,7 @@ import bdv.tools.RecordMaxProjectionDialog;
 import bdv.tools.RecordMovieDialog;
 import bdv.tools.ToggleDialogAction;
 import bdv.tools.VisibilityAndGroupingDialog;
+import bdv.tools.bookmarks.dialog.AddBookmarkDialog;
 import bdv.tools.bookmarks.dialog.BookmarkManagementDialog;
 import bdv.tools.bookmarks.editor.BookmarksEditor;
 import bdv.tools.brightness.BrightnessDialog;
@@ -74,6 +75,7 @@ public class BigDataViewerActions extends Actions
 	public static final String DELETE_BOOKMARK = "delete bookmark";
 	public static final String DESELECT_BOOKMARK = "deselect bookmark";
 	
+	public static final String OPEN_ADD_BOOKMARK_DIALOG = "open add bookmark dialog";
 	public static final String OPEN_BOOKMARK_MANAGEMENT = "open bookmark management";
 
 	static final String[] BRIGHTNESS_SETTINGS_KEYS         = new String[] { "S" };
@@ -123,6 +125,7 @@ public class BigDataViewerActions extends Actions
 		actions.dialog( bdv.cropDialog );
 		actions.dialog( bdv.movieDialog );
 		actions.dialog( bdv.movieMaxProjectDialog );
+		actions.dialog( bdv.addBookmarkDialog );
 		actions.dialog( bdv.bookmarkManagementDialog );
 		actions.bookmarks( bdv.bookmarkEditor );
 		actions.manualTransform( bdv.manualTransformationEditor );
@@ -171,6 +174,11 @@ public class BigDataViewerActions extends Actions
 	public void dialog( final RecordMaxProjectionDialog recordMaxProjectionDialog )
 	{
 		toggleDialogAction( recordMaxProjectionDialog, RECORD_MAX_PROJECTION_MOVIE, RECORD_MAX_PROJECTION_MOVIE_KEYS );
+	}
+	
+	public void dialog( final AddBookmarkDialog dialog )
+	{
+		toggleDialogAction( dialog, OPEN_ADD_BOOKMARK_DIALOG );
 	}
 	
 	public void dialog( final BookmarkManagementDialog dialog )

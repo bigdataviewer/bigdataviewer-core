@@ -11,7 +11,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+import bdv.tools.bookmarks.bookmark.DynamicBookmark;
 import bdv.tools.bookmarks.bookmark.IBookmark;
+import bdv.tools.bookmarks.bookmark.SimpleBookmark;
 
 public class BookmarkCellPanel extends JPanel {
 
@@ -66,7 +68,6 @@ public class BookmarkCellPanel extends JPanel {
 		panel.add(typeLabel, gbc_lblType);
 		
 		JPanel panel_1 = new JPanel();
-		
 		GridBagConstraints gbc_panel_1 = new GridBagConstraints();
 		gbc_panel_1.insets = new Insets(5, 5, 5, 5);
 		gbc_panel_1.anchor = GridBagConstraints.NORTHEAST;
@@ -80,7 +81,7 @@ public class BookmarkCellPanel extends JPanel {
 		gbl_panel_1.rowWeights = new double[]{0.0, 0.0, Double.MIN_VALUE};
 		panel_1.setLayout(gbl_panel_1);
 		
-		selectButton = new JButton("Select");
+		selectButton = new JButton("Show");
 		GridBagConstraints gbc_btnSelect = new GridBagConstraints();
 		gbc_btnSelect.fill = GridBagConstraints.HORIZONTAL;
 		gbc_btnSelect.insets = new Insets(0, 0, 5, 0);
@@ -120,7 +121,14 @@ public class BookmarkCellPanel extends JPanel {
     	this.bookmark = bookmark;
     	
         keyField.setText(bookmark.getKey());
-        typeLabel.setText(bookmark.getTypeName());
+        if(bookmark instanceof SimpleBookmark){
+        	selectButton.setText("Show");
+        	typeLabel.setText("Simple Bookmark");
+        }
+        else if(bookmark instanceof DynamicBookmark){
+        	selectButton.setText("Select");
+        	typeLabel.setText("Dynamic Bookmark");
+        }
     }
     
     public IBookmark getBookmark(){

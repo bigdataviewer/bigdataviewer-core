@@ -65,6 +65,7 @@ import bdv.tools.RecordMaxProjectionDialog;
 import bdv.tools.RecordMovieDialog;
 import bdv.tools.VisibilityAndGroupingDialog;
 import bdv.tools.bookmarks.Bookmarks;
+import bdv.tools.bookmarks.dialog.AddBookmarkDialog;
 import bdv.tools.bookmarks.dialog.BookmarkManagementDialog;
 import bdv.tools.bookmarks.editor.BookmarksEditor;
 import bdv.tools.brightness.BrightnessDialog;
@@ -116,6 +117,8 @@ public class BigDataViewer
 
 	protected final VisibilityAndGroupingDialog activeSourcesDialog;
 
+	protected final AddBookmarkDialog addBookmarkDialog;
+	
 	protected final BookmarkManagementDialog bookmarkManagementDialog;
 	
 	protected final HelpDialog helpDialog;
@@ -385,6 +388,7 @@ public class BigDataViewer
 
 		activeSourcesDialog = new VisibilityAndGroupingDialog( viewerFrame, viewer.getVisibilityAndGrouping() );
 
+		addBookmarkDialog = new AddBookmarkDialog(viewerFrame, bookmarkEditor);
 		bookmarkManagementDialog = new BookmarkManagementDialog(viewerFrame, bookmarkEditor);
 		
 		helpDialog = new HelpDialog( viewerFrame );
@@ -488,6 +492,7 @@ public class BigDataViewer
 
 		viewerFrame.setJMenuBar( menubar );
 		
+		viewer.addAddBookmarkButtonAction(actionMap.get( BigDataViewerActions.OPEN_ADD_BOOKMARK_DIALOG ));
 		viewer.addPreviousKeyframeButtonAction(actionMap.get( BigDataViewerActions.PREVIOUS_KEYFRAME ) );
 		viewer.addAddKeyframeButtonAction(actionMap.get( BigDataViewerActions.ADD_KEYFRAME ) );
 		viewer.addNextKeyframeButtonAction(actionMap.get( BigDataViewerActions.NEXT_KEYFRAME ) );

@@ -29,12 +29,6 @@
  */
 package bdv.viewer;
 
-import bdv.cache.CacheControl;
-import bdv.tools.bookmarks.bookmark.DynamicBookmark;
-import bdv.tools.bookmarks.bookmark.IBookmark;
-import bdv.util.Affine3DHelpers;
-import bdv.util.InvokeOnEDT;
-import bdv.util.Prefs;
 import static bdv.viewer.VisibilityAndGrouping.Event.CURRENT_SOURCE_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.DISPLAY_MODE_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.GROUP_ACTIVITY_CHANGED;
@@ -42,6 +36,44 @@ import static bdv.viewer.VisibilityAndGrouping.Event.GROUP_NAME_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.NUM_SOURCES_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.SOURCE_ACTVITY_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.VISIBILITY_CHANGED;
+
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
+import java.awt.event.MouseMotionListener;
+import java.lang.reflect.InvocationTargetException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+
+import javax.swing.Action;
+import javax.swing.Box;
+import javax.swing.BoxLayout;
+import javax.swing.DefaultBoundedRangeModel;
+import javax.swing.JButton;
+import javax.swing.JLayeredPane;
+import javax.swing.JPanel;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
+
+import org.jdom2.Element;
+
+import bdv.cache.CacheControl;
+import bdv.tools.bookmarks.bookmark.DynamicBookmark;
+import bdv.tools.bookmarks.bookmark.IBookmark;
+import bdv.util.Affine3DHelpers;
+import bdv.util.InvokeOnEDT;
+import bdv.util.Prefs;
 import bdv.viewer.animate.AbstractTransformAnimator;
 import bdv.viewer.animate.MessageOverlayAnimator;
 import bdv.viewer.animate.OverlayAnimator;
@@ -57,31 +89,6 @@ import bdv.viewer.state.SourceGroup;
 import bdv.viewer.state.SourceState;
 import bdv.viewer.state.ViewerState;
 import bdv.viewer.state.XmlIoViewerState;
-import java.awt.BorderLayout;
-import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Font;
-import java.awt.Graphics;
-import java.awt.Graphics2D;
-import java.awt.event.ComponentAdapter;
-import java.awt.event.ComponentEvent;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import javax.swing.Action;
-import javax.swing.Box;
-import javax.swing.BoxLayout;
-import javax.swing.DefaultBoundedRangeModel;
-import javax.swing.JButton;
-import javax.swing.JPanel;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 import net.imglib2.Positionable;
 import net.imglib2.RealLocalizable;
 import net.imglib2.RealPoint;
@@ -93,7 +100,6 @@ import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.TransformEventHandler;
 import net.imglib2.ui.TransformListener;
 import net.imglib2.util.LinAlgHelpers;
-import org.jdom2.Element;
 
 
 /**
@@ -223,6 +229,8 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 	protected final ViewerOptions.Values options;
 
+	protected final JButton addBookmarkButton;
+	
 	protected final JButton previousKeyframeButton;
 
 	protected final JButton addKeyframeButton;
@@ -250,6 +258,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimepoints, final CacheControl cacheControl, final ViewerOptions optional )
 	{
 		super( new BorderLayout(), false );
+		setPreferredSize(new Dimension(600, 500));
 		options = optional.values;
 
 		final int numGroups = 10;
@@ -268,13 +277,8 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 		painterThread = new PainterThread( this );
 		viewerTransform = new AffineTransform3D();
-		display = new InteractiveDisplayCanvasComponent<>(
-				options.getWidth(), options.getHeight(), options.getTransformEventHandlerFactory() );
-		display.addTransformListener( this );
 		renderTarget = new TransformAwareBufferedImageOverlayRenderer();
 		renderTarget.setCanvasSize( options.getWidth(), options.getHeight() );
-		display.addOverlayRenderer( renderTarget );
-		display.addOverlayRenderer( this );
 
 		renderingExecutorService = Executors.newFixedThreadPool( options.getNumRenderingThreads() );
 		imageRenderer = new MultiResolutionRenderer(
@@ -289,10 +293,60 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 				cacheControl );
 
 		mouseCoordinates = new MouseCoordinateListener();
+		
+		
+		JLayeredPane contentLayeredPane = new JLayeredPane();
+		add(contentLayeredPane, BorderLayout.CENTER);
+		
+		JPanel displayPane = new JPanel();
+		displayPane.setBounds(0, 0, 450, 301);
+		contentLayeredPane.add(displayPane);
+		displayPane.setLayout(new BorderLayout(0, 0));
+		display = new InteractiveDisplayCanvasComponent<>(
+				options.getWidth(), options.getHeight(), options.getTransformEventHandlerFactory() );
+		displayPane.add(display, BorderLayout.CENTER);
+		
+		JPanel overlayButtonPane = new JPanel();
+		overlayButtonPane.setOpaque(false);
+		contentLayeredPane.setLayer(overlayButtonPane, 1);
+		overlayButtonPane.setBounds(0, 267, 450, 33);
+		contentLayeredPane.add(overlayButtonPane);
+		overlayButtonPane.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
+		
+		addBookmarkButton = new JButton("Add bookmark");
+		overlayButtonPane.add(addBookmarkButton);
+		
+		display.addTransformListener( this );
+		display.addOverlayRenderer( renderTarget );
+		display.addOverlayRenderer( this );
 		display.addHandler( mouseCoordinates );
-
-		add( display, BorderLayout.CENTER );
+		/*
+		display.addComponentListener( new ComponentAdapter()
+		{
+			@Override
+			public void componentResized( final ComponentEvent e )
+			{
+				requestRepaint();
+				//display.removeComponentListener( this );
+			}
+		} );
+		*/
+		
+		addComponentListener(new ComponentAdapter() {
 			
+			@Override
+			public void componentResized(ComponentEvent arg0) {
+				displayPane.setLocation(contentLayeredPane.getLocation());
+				displayPane.setSize(contentLayeredPane.getSize());
+				
+				int newOverlayButtonPaneY = contentLayeredPane.getLocation().y + contentLayeredPane.getSize().height - overlayButtonPane.getSize().height;
+				overlayButtonPane.setSize(contentLayeredPane.getSize().width, overlayButtonPane.getSize().height);
+				overlayButtonPane.setLocation(contentLayeredPane.getLocation().x, newOverlayButtonPaneY);
+				
+				requestRepaint();
+			}
+		});	
+				
 		JPanel sliderPanel = new JPanel();
 		sliderPanel.setLayout(new BoxLayout(sliderPanel, BoxLayout.X_AXIS));
 		
@@ -340,21 +394,15 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		overlayAnimators.add( msgOverlay );
 		overlayAnimators.add( new TextOverlayAnimator( "Press <F1> for help.", 3000, TextPosition.CENTER ) );
 
-		display.addComponentListener( new ComponentAdapter()
-		{
-			@Override
-			public void componentResized( final ComponentEvent e )
-			{
-				requestRepaint();
-				display.removeComponentListener( this );
-			}
-		} );
-
 		setKeyframeButtonEnable(false);
 		
 		painterThread.start();
 	}
 
+	public void addAddBookmarkButtonAction(Action action) {
+		addBookmarkButton.addActionListener(action);	
+	}
+	
 	public void addPreviousKeyframeButtonAction(Action action) {
 		previousKeyframeButton.addActionListener(action);	
 	}

@@ -65,11 +65,6 @@ public class DynamicBookmark implements IBookmark {
         return unmodifiableSet(this.keyframes);
     }
 	
-	@Override
-	public String getTypeName() {
-		return "Dynamic Bookmark";
-	}
-
 	public void add(final KeyFrame keyframe) {
 		remove(keyframe);
 		boolean b = keyframes.add(keyframe);

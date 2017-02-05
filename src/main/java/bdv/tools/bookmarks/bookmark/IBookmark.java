@@ -6,8 +6,6 @@ public interface IBookmark {
 	
 	String getKey();
 	
-	String getTypeName();
-	
 	Element toXmlNode();
 	
 	IBookmark copy();
