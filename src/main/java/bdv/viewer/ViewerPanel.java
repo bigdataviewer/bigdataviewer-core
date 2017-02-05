@@ -228,7 +228,9 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	protected final JButton addKeyframeButton;
 
 	protected final JButton nextKeyframeButton;
-
+	
+	protected final List<ActiveBookmarkChangedListener> activeBookmarkChangedListeners = new ArrayList<>();
+	
 	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimePoints, final CacheControl cacheControl )
 	{
 		this( sources, numTimePoints, cacheControl, ViewerOptions.options() );
@@ -786,6 +788,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 * 			the active bookmark
 	 */
 	public synchronized void setActiveBookmark(final IBookmark bookmark) {
+		IBookmark previousBookmark = this.state.getActiveBookmark();
 		this.state.setActiveBookmark(bookmark);
 		
 		final boolean enableKeyframeButtons = bookmark instanceof DynamicBookmark;
@@ -796,8 +799,20 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
         } else {
             sliderTime.setDynamicBookmarks(null);
         }
-		
+        
+        for(ActiveBookmarkChangedListener l: this.activeBookmarkChangedListeners){
+        	l.activeBookmarkChanged(previousBookmark, bookmark);
+        }
+        
 		display.repaint();
+	}
+	
+	public void addActiveBookmarkChangedListener(ActiveBookmarkChangedListener listener){
+		activeBookmarkChangedListeners.add(listener);
+	}
+	
+	public void removeActiveBookmarkChangedListener(ActiveBookmarkChangedListener listener){
+		activeBookmarkChangedListeners.remove(listener);
 	}
 
 	/**

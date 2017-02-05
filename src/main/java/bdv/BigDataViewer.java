@@ -385,7 +385,7 @@ public class BigDataViewer
 
 		activeSourcesDialog = new VisibilityAndGroupingDialog( viewerFrame, viewer.getVisibilityAndGrouping() );
 
-		bookmarkManagementDialog = new BookmarkManagementDialog(viewerFrame, bookmarks);
+		bookmarkManagementDialog = new BookmarkManagementDialog(viewerFrame, bookmarkEditor);
 		
 		helpDialog = new HelpDialog( viewerFrame );
 

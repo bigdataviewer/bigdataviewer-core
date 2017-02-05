@@ -29,8 +29,10 @@
  */
 package bdv.tools.bookmarks;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map.Entry;
 import net.imglib2.realtransform.AffineTransform3D;
 
@@ -42,9 +44,25 @@ import bdv.tools.bookmarks.bookmark.IBookmark;
 
 public class Bookmarks {
 	private final HashMap<String, IBookmark> bookmarks;
+	private final List<BookmarksCollectionChangedListener> listeners;
 
 	public Bookmarks() {
 		bookmarks = new HashMap<>();
+		listeners = new ArrayList<>();
+	}
+	
+	public void addListener(BookmarksCollectionChangedListener listener){
+		listeners.add(listener);
+	}
+	
+	public void removeListener(BookmarksCollectionChangedListener listener){
+		listeners.remove(listener);
+	}
+	
+	private void fireBookmarksCollectionChangedListener(){
+		for(BookmarksCollectionChangedListener l : listeners){
+			l.bookmarksCollectionChanged();
+		}
 	}
 
 	public Element toXml() {
@@ -75,10 +93,31 @@ public class Bookmarks {
 			DynamicBookmark bookmark = new DynamicBookmark(elem);
 			bookmarks.put(bookmark.getKey(), bookmark);
 		}
+		
+		fireBookmarksCollectionChangedListener();
 	}
 
 	public void put(final IBookmark bookmark) {
 		bookmarks.put(bookmark.getKey(), bookmark);
+		
+		fireBookmarksCollectionChangedListener();
+	}
+	
+	public IBookmark remove(final String key){
+		IBookmark bookmark = bookmarks.remove(key);
+		if(bookmark != null){
+			fireBookmarksCollectionChangedListener();
+		}
+		
+		return bookmark;
+	}
+	
+	public void rename(String oldKey, String newKey){
+		IBookmark bookmark = remove(oldKey);
+		if(bookmark != null){
+			IBookmark newBookmark = bookmark.copy(newKey);
+			put(newBookmark);
+		}
 	}
 
 	public Collection<IBookmark> getAll(){
@@ -99,18 +138,6 @@ public class Bookmarks {
 		return null;
 	}
 	
-	public IBookmark remove(final String key){
-		return bookmarks.remove(key);
-	}
-	
-	public void rename(String oldKey, String newKey){
-		IBookmark bookmark = remove(oldKey);
-		if(bookmark != null){
-			IBookmark newBookmark = bookmark.copy(newKey);
-			put(newBookmark);
-		}
-	}
-
 	// TODO replace with generic method
 	public SimpleBookmark getSimpleBookmark(final String key) {
 		IBookmark bookmark = get(key);

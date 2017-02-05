@@ -86,8 +86,6 @@ public final class JKeyFrameSlider extends JSlider {
 
 	private KeyFrame currentHoverKeyframe = null;
 
-	private boolean isControlPressed = false;
-
 	public JKeyFrameSlider() {
 		this(0, 100, 50);
 	}
@@ -106,7 +104,6 @@ public final class JKeyFrameSlider extends JSlider {
 	private void initComponent() {
 		addMouseListener(new MouseHoverEventAdapter());
 		addMouseMotionListener(new MouseHoverEventAdapter());
-		addKeyListener(new KeyEventAdapter());
 
 		setMinimumSize(new Dimension((int) getMinimumSize().getWidth(), 26));
 		setPreferredSize(new Dimension((int) getPreferredSize().getWidth(), 26));
@@ -267,19 +264,6 @@ public final class JKeyFrameSlider extends JSlider {
 		return (int) (((trackWidth / numTimepoints) * timepoint) + trackOffsetX);
 	}
 
-	private class KeyEventAdapter extends KeyAdapter {
-
-		@Override
-		public void keyPressed(KeyEvent e) {
-			isControlPressed = e.isControlDown();
-		}
-
-		@Override
-		public void keyReleased(KeyEvent e) {
-			isControlPressed = e.isControlDown();
-		}
-	}
-
 	private class MouseHoverEventAdapter extends MouseAdapter {
 
 		@Override
@@ -328,7 +312,7 @@ public final class JKeyFrameSlider extends JSlider {
 				// when left mouse button is released the thumb will jump
 				// to the currently hovered keyframe (snapping)
 				// to prevent this behavior the user can press the control key
-				if (currentHoverKeyframe != null && !isControlPressed) {
+				if (currentHoverKeyframe != null) {
 					setValue(currentHoverKeyframe.getTimepoint());
 				}
 			}

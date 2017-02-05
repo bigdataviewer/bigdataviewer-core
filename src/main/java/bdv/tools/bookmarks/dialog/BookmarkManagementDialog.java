@@ -2,13 +2,11 @@ package bdv.tools.bookmarks.dialog;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
-import java.awt.Frame;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
+import java.awt.Component;
+import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.awt.event.WindowEvent;
-import java.awt.event.WindowFocusListener;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -24,89 +22,139 @@ import javax.swing.KeyStroke;
 import javax.swing.SwingConstants;
 import javax.swing.WindowConstants;
 
-import bdv.tools.bookmarks.Bookmarks;
-
+import bdv.tools.bookmarks.BookmarksCollectionChangedListener;
+import bdv.tools.bookmarks.bookmark.IBookmark;
+import bdv.tools.bookmarks.editor.BookmarksEditor;
+import bdv.viewer.ActiveBookmarkChangedListener;
+import bdv.viewer.ViewerFrame;
 
 public class BookmarkManagementDialog extends JDialog {
+
+	private class BookmarkChangeListener implements BookmarksCollectionChangedListener {
+
+		@Override
+		public void bookmarksCollectionChanged() {
+			repaintBookmark();
+		}
+	}
+	
+	private class ActiveBookmarkChangeListener implements ActiveBookmarkChangedListener{
+
+		@Override
+		public void activeBookmarkChanged(IBookmark previousBookmark, IBookmark activeBookmark) {
+			cellEditorRenderer.setActiveBookmark(activeBookmark);
+			repaintBookmark();
+		}
+		
+	}
 
 	/**
 	 * 
 	 */
 	private static final long serialVersionUID = 6812071634159292336L;
 
+	private final BookmarksEditor bookmarksEditor;
+	
 	private final JTable bookmarkTable;
 	private final BookmarkTableModel tableModel;
+	private final BookmarkCellEditorRenderer cellEditorRenderer;
 	
-	public BookmarkManagementDialog(final Frame owner, Bookmarks bookmarks){
+	private final BookmarkChangeListener bookmarkChangedListener = new BookmarkChangeListener();
+	private final ActiveBookmarkChangeListener activeBookmarkChangeListener = new ActiveBookmarkChangeListener();
+
+	public BookmarkManagementDialog(ViewerFrame owner, BookmarksEditor bookmarksEditor) {
 		super(owner, "Bookmark Management", false);
-		//setSize(new Dimension(500, 400));
+		// setSize(new Dimension(500, 400));
+
+		this.bookmarksEditor = bookmarksEditor;
 		
-		this.tableModel = new BookmarkTableModel(bookmarks);
-		
+		bookmarksEditor.getBookmarks().addListener(bookmarkChangedListener);
+		owner.getViewerPanel().addActiveBookmarkChangedListener(activeBookmarkChangeListener);
+
+		this.tableModel = new BookmarkTableModel(bookmarksEditor.getBookmarks());
+
 		JPanel buttonPane = new JPanel();
 		buttonPane.setBackground(new Color(220, 220, 220));
 		getContentPane().add(buttonPane, BorderLayout.NORTH);
-		GridBagLayout gbl_buttonPane = new GridBagLayout();
-		gbl_buttonPane.columnWidths = new int[]{101, 0};
-		gbl_buttonPane.rowHeights = new int[]{0, 23, 0};
-		gbl_buttonPane.columnWeights = new double[]{0.0, Double.MIN_VALUE};
-		gbl_buttonPane.rowWeights = new double[]{1.0, 0.0, Double.MIN_VALUE};
-		buttonPane.setLayout(gbl_buttonPane);
-		
-		JButton btnNewButton = new JButton("Add Bookmark");
-		GridBagConstraints gbc_btnNewButton = new GridBagConstraints();
-		gbc_btnNewButton.anchor = GridBagConstraints.WEST;
-		gbc_btnNewButton.fill = GridBagConstraints.VERTICAL;
-		gbc_btnNewButton.gridx = 0;
-		gbc_btnNewButton.gridy = 1;
-		buttonPane.add(btnNewButton, gbc_btnNewButton);
-		btnNewButton.setVerticalAlignment(SwingConstants.TOP);
-		btnNewButton.setHorizontalAlignment(SwingConstants.LEFT);
-		
-		bookmarkTable = new JTable(tableModel);
-		bookmarkTable.setTableHeader(null);
-		BookmarkCellEditorRenderer compCellEditorRenderer = new BookmarkCellEditorRenderer();
-        bookmarkTable.setDefaultRenderer(Object.class, compCellEditorRenderer);
-        bookmarkTable.setDefaultEditor(Object.class, compCellEditorRenderer);
-		
-		JScrollPane scrollPane = new JScrollPane(bookmarkTable, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
-		getContentPane().add(scrollPane, BorderLayout.CENTER);
-		
-		this.addWindowFocusListener(new WindowFocusListener() {
+		buttonPane.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
+
+		JButton newButton = new JButton("Add Bookmark");
+		buttonPane.add(newButton);
+		newButton.setVerticalAlignment(SwingConstants.TOP);
+		newButton.setHorizontalAlignment(SwingConstants.LEFT);
+
+		newButton.addActionListener(new ActionListener() {
 			
 			@Override
-			public void windowLostFocus(WindowEvent e) { }
-			
-			@Override
-			public void windowGainedFocus(WindowEvent e) {
-				repaintBookmark();
+			public void actionPerformed(ActionEvent e) {
+				AddBookmarkDialog addBookmarkDialog = new AddBookmarkDialog(owner, bookmarksEditor);
+				addBookmarkDialog.setLocationRelativeTo(BookmarkManagementDialog.this);
+				addBookmarkDialog.setVisible(true);
 			}
 		});
 		
+		bookmarkTable = new JTable(tableModel);
+		bookmarkTable.setRowSelectionAllowed(false);
+		bookmarkTable.setColumnSelectionAllowed(false);
+		bookmarkTable.setCellSelectionEnabled(false);
+		bookmarkTable.setFocusable(false);
+		bookmarkTable.setTableHeader(null);
+		
+		bookmarkTable.setSelectionBackground(Color.CYAN);
+		
+		cellEditorRenderer = new BookmarkCellEditorRenderer(this);
+		bookmarkTable.setDefaultRenderer(Object.class, cellEditorRenderer);
+		bookmarkTable.setDefaultEditor(Object.class, cellEditorRenderer);
+		
+		JScrollPane scrollPane = new JScrollPane(bookmarkTable, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+				JScrollPane.HORIZONTAL_SCROLLBAR_NEVER);
+		getContentPane().add(scrollPane, BorderLayout.CENTER);
+		
 		final ActionMap am = getRootPane().getActionMap();
-		final InputMap im = getRootPane().getInputMap( JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT );
+		final InputMap im = getRootPane().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
 		final Object hideKey = new Object();
-		final Action hideAction = new AbstractAction()
-		{
+		final Action hideAction = new AbstractAction() {
 			@Override
-			public void actionPerformed( final ActionEvent e )
-			{
-				setVisible( false );
+			public void actionPerformed(final ActionEvent e) {
+				setVisible(false);
 			}
 
 			private static final long serialVersionUID = 1L;
 		};
-		im.put( KeyStroke.getKeyStroke( KeyEvent.VK_ESCAPE, 0 ), hideKey );
-		am.put( hideKey, hideAction );
-		
+		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), hideKey);
+		am.put(hideKey, hideAction);
+
 		pack();
-		setDefaultCloseOperation( WindowConstants.HIDE_ON_CLOSE );
+		setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
+	}
+
+	public void repaintBookmark() {
+		tableModel.repaint();
+		//updateRowHeights();
+		bookmarkTable.setRowHeight(new BookmarkCellPanel(this).getPreferredSize().height + 2);
 	}
 	
-	public void repaintBookmark(){
-		tableModel.repaint();
-		bookmarkTable.setRowHeight(new BookmarkCellPanel().getPreferredSize().height);
+	private void updateRowHeights()
+	{
+	    for (int row = 0; row < bookmarkTable.getRowCount(); row++)
+	    {
+	        int rowHeight = bookmarkTable.getRowHeight();
+
+	        for (int column = 0; column < bookmarkTable.getColumnCount(); column++)
+	        {
+	            Component comp = bookmarkTable.prepareRenderer(bookmarkTable.getCellRenderer(row, column), row, column);
+	            rowHeight = Math.max(rowHeight, comp.getPreferredSize().height);
+	        }
+
+	        bookmarkTable.setRowHeight(row, rowHeight + 2);
+	    }
+	}
+	
+	public void selectBookmark(IBookmark bookmark){
+		bookmarksEditor.recallTransformationOfBookmark(bookmark.getKey());
+	}
+
+	public void removeBookmark(IBookmark bookmark) {
+		bookmarksEditor.deleteBookmark(bookmark.getKey());
 	}
 }
-
