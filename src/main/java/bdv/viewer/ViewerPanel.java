@@ -351,16 +351,19 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		sliderPanel.setLayout(new BoxLayout(sliderPanel, BoxLayout.X_AXIS));
 		
 		previousKeyframeButton = new JButton("<<");
+		previousKeyframeButton.setToolTipText("Go to previous keyframe");
 		sliderPanel.add(previousKeyframeButton);
 		
 		sliderPanel.add(Box.createRigidArea(new Dimension(5, 5)));
 		
 		addKeyframeButton = new JButton("+");
+		addKeyframeButton.setToolTipText("Add a new keyframe");
 		sliderPanel.add(addKeyframeButton);
 		
 		sliderPanel.add(Box.createRigidArea(new Dimension(5, 5)));
 		
 		nextKeyframeButton = new JButton(">>");
+		nextKeyframeButton.setToolTipText("Go to next keyframe");
 		sliderPanel.add(nextKeyframeButton);
 		
 		sliderPanel.add(Box.createRigidArea(new Dimension(5, 5)));

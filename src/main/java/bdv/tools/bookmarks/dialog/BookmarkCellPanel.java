@@ -123,11 +123,11 @@ public class BookmarkCellPanel extends JPanel {
         keyField.setText(bookmark.getKey());
         if(bookmark instanceof SimpleBookmark){
         	selectButton.setText("Show");
-        	typeLabel.setText("Simple Bookmark");
+        	typeLabel.setText("Simple bookmark");
         }
         else if(bookmark instanceof DynamicBookmark){
         	selectButton.setText("Select");
-        	typeLabel.setText("Dynamic Bookmark");
+        	typeLabel.setText("Dynamic bookmark");
         }
     }
     

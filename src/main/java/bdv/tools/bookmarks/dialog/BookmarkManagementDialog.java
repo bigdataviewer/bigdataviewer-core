@@ -78,7 +78,7 @@ public class BookmarkManagementDialog extends JDialog {
 		getContentPane().add(buttonPane, BorderLayout.NORTH);
 		buttonPane.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
 
-		JButton newButton = new JButton("Add Bookmark");
+		JButton newButton = new JButton("Add bookmark");
 		buttonPane.add(newButton);
 		newButton.setVerticalAlignment(SwingConstants.TOP);
 		newButton.setHorizontalAlignment(SwingConstants.LEFT);
