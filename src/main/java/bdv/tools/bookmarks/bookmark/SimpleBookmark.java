@@ -36,6 +36,17 @@ public class SimpleBookmark implements IBookmark {
 	public String getKey() {
 		return this.key;
 	}
+	
+	@Override
+	public boolean equals(Object other){
+		if(other instanceof SimpleBookmark){
+			if (getClass() == other.getClass()) {
+				SimpleBookmark b = (SimpleBookmark) other;
+				return this.key == b.key;
+			}
+		}
+		return false;
+	}
 
 	public AffineTransform3D getTransform() {
 		return this.transform;

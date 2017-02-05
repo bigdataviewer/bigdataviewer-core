@@ -374,7 +374,18 @@ public class BookmarksEditor
 	}
 	
 	public synchronized void deleteBookmark(String key){
-		bookmarks.remove(key);
+		IBookmark removedBookmark = bookmarks.remove(key);
+		if(removedBookmark == null)
+			return;
+		
+		IBookmark acitveBookmark = viewer.getActiveBookmark();
+		if(acitveBookmark == null)
+			return;
+		
+		if(acitveBookmark.equals(removedBookmark)){
+			viewer.setActiveBookmark(null);
+		}
+			
 	}
 	
 	public synchronized void deselectBookmark()

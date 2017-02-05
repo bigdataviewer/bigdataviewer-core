@@ -55,7 +55,18 @@ public class DynamicBookmark implements IBookmark {
 	public String getKey() {
 		return this.key;
 	}
-    
+	
+	@Override
+	public boolean equals(Object other){
+		if(other instanceof DynamicBookmark){
+			if (getClass() == other.getClass()) {
+				DynamicBookmark b = (DynamicBookmark) other;
+				return this.key == b.key;
+			}
+		}
+		return false;
+	}
+	
     /**
      * Returns all KeyFrames as an unmodifiable set.
      * 
