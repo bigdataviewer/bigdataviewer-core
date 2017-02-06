@@ -268,7 +268,6 @@ public final class JKeyFrameSlider extends JSlider {
 
 		@Override
 		public void mouseMoved(MouseEvent e) {
-			System.out.println("mouseMoved " + e);
 			updateComponent(e);
 		}
 
