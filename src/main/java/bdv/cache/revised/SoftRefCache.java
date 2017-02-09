@@ -21,6 +21,12 @@ public class SoftRefCache< K, V > implements Cache< K, V >
 	{
 		private final Entry entry;
 
+		public CacheSoftReference( final V referent )
+		{
+			super( referent );
+			this.entry = null;
+		}
+
 		public CacheSoftReference( final V referent, final Entry entry )
 		{
 			super( referent, queue );
@@ -75,7 +81,7 @@ public class SoftRefCache< K, V > implements Cache< K, V >
 	{
 		final K key;
 
-		private SoftReference< V > ref;
+		private CacheSoftReference ref;
 
 		private CachePhantomReference< V > phantomRef;
 
@@ -86,7 +92,7 @@ public class SoftRefCache< K, V > implements Cache< K, V >
 		public Entry( final K key )
 		{
 			this.key = key;
-			this.ref = new SoftReference<>( null );
+			this.ref = new CacheSoftReference( null );
 			this.phantomRef = null;
 			this.remover = null;
 			this.loaded = false;
