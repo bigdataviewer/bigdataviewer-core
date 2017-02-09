@@ -8,13 +8,12 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
 
 import bdv.cache.CacheHints;
-import bdv.cache.VolatileCacheValue;
 import bdv.cache.iotiming.CacheIoTiming;
 import bdv.cache.iotiming.IoStatistics;
 import bdv.cache.iotiming.IoTimeBudget;
 import bdv.cache.util.BlockingFetchQueues;
 
-public class WeakRefVolatileCache< K, V extends VolatileCacheValue > implements VolatileCache< K, V >
+public class WeakRefVolatileCache< K, V > implements VolatileCache< K, V >
 {
 	final ConcurrentHashMap< K, Entry > map = new ConcurrentHashMap<>();
 
@@ -36,10 +35,20 @@ public class WeakRefVolatileCache< K, V extends VolatileCacheValue > implements 
 	{
 		private final Entry entry;
 
-		public CacheWeakReference( final V referent, final Entry entry )
+		final int loaded;
+
+		public CacheWeakReference( final V referent )
+		{
+			super( referent );
+			entry = null;
+			loaded = NOTLOADED;
+		}
+
+		public CacheWeakReference( final V referent, final Entry entry, final int loaded )
 		{
 			super( referent, queue );
 			this.entry = entry;
+			this.loaded = loaded;
 		}
 
 		public void clean()
@@ -57,11 +66,9 @@ public class WeakRefVolatileCache< K, V extends VolatileCacheValue > implements 
 
 	final class Entry
 	{
-		private WeakReference< V > ref;
-
 		final K key;
 
-		int loaded;
+		CacheWeakReference ref;
 
 		long enqueueFrame;
 
@@ -71,8 +78,7 @@ public class WeakRefVolatileCache< K, V extends VolatileCacheValue > implements 
 		{
 			this.key = key;
 			this.loader = loader;
-			this.ref = new WeakReference<>( null );
-			this.loaded = NOTLOADED;
+			this.ref = new CacheWeakReference( null );
 			this.enqueueFrame = -1;
 		}
 
@@ -83,15 +89,13 @@ public class WeakRefVolatileCache< K, V extends VolatileCacheValue > implements 
 
 		public void setInvalid( final V value )
 		{
-			loaded = INVALID;
-			ref = new CacheWeakReference( value, this );
+			ref = new CacheWeakReference( value, this, INVALID );
 		}
 
 		// Precondition: caller must hold lock on this.
 		public void setValid( final V value )
 		{
-			loaded = VALID;
-			ref = new CacheWeakReference( value, this );
+			ref = new CacheWeakReference( value, this, VALID );
 			loader = null;
 			enqueueFrame = Long.MAX_VALUE;
 			notifyAll();
@@ -111,8 +115,9 @@ public class WeakRefVolatileCache< K, V extends VolatileCacheValue > implements 
 		if ( entry == null )
 			return null;
 
-		final V v = entry.getValue();
-		if ( v != null && v.isValid() )
+		final CacheWeakReference ref = entry.ref;
+		final V v = ref.get();
+		if ( v != null && ref.loaded == VALID )
 			return v;
 
 		cleanUp( 50 );
@@ -147,8 +152,9 @@ public class WeakRefVolatileCache< K, V extends VolatileCacheValue > implements 
 		 */
 		final Entry entry = map.computeIfAbsent( key, k -> new Entry( k, loader ) );
 
-		V v = entry.getValue();
-		if ( v != null && v.isValid() )
+		final CacheWeakReference ref = entry.ref;
+		V v = ref.get();
+		if ( v != null && ref.loaded == VALID )
 			return v;
 
 		cleanUp( 50 );
@@ -247,7 +253,7 @@ public class WeakRefVolatileCache< K, V extends VolatileCacheValue > implements 
 			if ( v != null )
 				return v;
 
-			if ( entry.loaded != NOTLOADED )
+			if ( entry.ref.loaded != NOTLOADED )
 			{
 				map.remove( entry.key, entry );
 				return null;
@@ -270,14 +276,15 @@ public class WeakRefVolatileCache< K, V extends VolatileCacheValue > implements 
 	{
 		synchronized( entry )
 		{
-			V v = entry.getValue();
-			if ( v == null && entry.loaded != NOTLOADED )
+			final CacheWeakReference ref = entry.ref;
+			V v = ref.get();
+			if ( v == null && ref.loaded != NOTLOADED )
 			{
 				map.remove( entry.key, entry );
 				return null;
 			}
 
-			if ( entry.loaded == VALID ) // v.isValid()
+			if ( ref.loaded == VALID )
 				return v;
 
 			final V vl = backingCache.getIfPresent( entry.key );
@@ -287,7 +294,7 @@ public class WeakRefVolatileCache< K, V extends VolatileCacheValue > implements 
 				return vl;
 			}
 
-			if ( entry.loaded == NOTLOADED )
+			if ( ref.loaded == NOTLOADED )
 			{
 				v = entry.loader.createInvalid();
 				entry.setInvalid( v );
@@ -302,15 +309,16 @@ public class WeakRefVolatileCache< K, V extends VolatileCacheValue > implements 
 	{
 		synchronized( entry )
 		{
-			V v = entry.getValue();
-			if ( v == null && entry.loaded != NOTLOADED )
+			CacheWeakReference ref = entry.ref;
+			V v = ref.get();
+			if ( v == null && ref.loaded != NOTLOADED )
 			{
 //				printEntryCollected( "map.remove getBudgeted 1", entry );
 				map.remove( entry.key, entry );
 				return null;
 			}
 
-			if ( entry.loaded == VALID ) // v.isValid()
+			if ( ref.loaded == VALID )
 				return v;
 
 			enqueue( entry, hints );
@@ -335,10 +343,11 @@ public class WeakRefVolatileCache< K, V extends VolatileCacheValue > implements 
 				budget.use( t, priority );
 			}
 
-			v = entry.getValue();
+			ref = entry.ref;
+			v = ref.get();
 			if ( v == null )
 			{
-				if ( entry.loaded == NOTLOADED )
+				if ( ref.loaded == NOTLOADED )
 				{
 					v = entry.loader.createInvalid();
 					entry.setInvalid( v );
@@ -360,15 +369,16 @@ public class WeakRefVolatileCache< K, V extends VolatileCacheValue > implements 
 		VolatileLoader< ? extends V > loader;
 		synchronized( entry )
 		{
-			final V v = entry.getValue();
-			if ( v == null && entry.loaded != NOTLOADED )
+			final CacheWeakReference ref = entry.ref;
+			final V v = ref.get();
+			if ( v == null && ref.loaded != NOTLOADED )
 			{
 //				printEntryCollected( "map.remove getBlocking 1", entry );
 				map.remove( entry.key, entry );
 				return null;
 			}
 
-			if ( entry.loaded == VALID ) // v.isValid()
+			if ( ref.loaded == VALID ) // v.isValid()
 				return v;
 
 			loader = entry.loader;
@@ -376,15 +386,16 @@ public class WeakRefVolatileCache< K, V extends VolatileCacheValue > implements 
 		final V vl = backingCache.get( entry.key, loader );
 		synchronized( entry )
 		{
-			final V v = entry.getValue();
-			if ( v == null && entry.loaded != NOTLOADED )
+			final CacheWeakReference ref = entry.ref;
+			final V v = ref.get();
+			if ( v == null && ref.loaded != NOTLOADED )
 			{
 //				printEntryCollected( "map.remove getBlocking 2", entry );
 				map.remove( entry.key, entry );
 				return null;
 			}
 
-			if ( entry.loaded == VALID ) // v.isValid()
+			if ( ref.loaded == VALID ) // v.isValid()
 				return v;
 
 			// entry.loaded == INVALID
@@ -416,11 +427,11 @@ public class WeakRefVolatileCache< K, V extends VolatileCacheValue > implements 
 	 */
 	private synchronized void printEntryCollected( final String title, final Entry entry )
 	{
-		final String state = entry.loaded == 0
+		final String state = entry.ref.loaded == 0
 				? "NOTLOADED"
-				: ( entry.loaded == 1
+				: ( entry.ref.loaded == 1
 						? "INVALID"
-						: ( entry.loaded == 2
+						: ( entry.ref.loaded == 2
 								? "VALID"
 								: "UNDEFINED" ) );
 		System.out.println( title + " entry.loaded = " + state );
