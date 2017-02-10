@@ -31,12 +31,11 @@ package bdv.img.cache;
 
 import bdv.img.cache.VolatileImgCells.CellCache;
 import net.imglib2.cache.volatiles.CacheHints;
-import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 import net.imglib2.img.cell.AbstractCellImg;
 import net.imglib2.img.cell.CellImgFactory;
 import net.imglib2.type.NativeType;
 
-final public class CachedCellImg< T extends NativeType< T >, A extends VolatileAccess >
+final public class CachedCellImg< T extends NativeType< T >, A >
 		extends AbstractCellImg< T, A, VolatileCell< A >, CellImgFactory< T > >
 {
 	private final CellCache< A > cache;

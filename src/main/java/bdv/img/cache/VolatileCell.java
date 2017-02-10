@@ -29,7 +29,6 @@
  */
 package bdv.img.cache;
 
-import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 import net.imglib2.img.cell.AbstractCell;
 import net.imglib2.img.cell.CellImg;
 import net.imglib2.type.Type;
@@ -45,7 +44,7 @@ import net.imglib2.type.Type;
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 @SuppressWarnings( "serial" )
-public class VolatileCell< A extends VolatileAccess > extends AbstractCell< A >
+public class VolatileCell< A > extends AbstractCell< A >
 {
 	private final A data;
 

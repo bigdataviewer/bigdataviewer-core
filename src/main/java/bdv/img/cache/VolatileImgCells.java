@@ -42,9 +42,9 @@ import net.imglib2.img.list.AbstractLongListImg;
 import net.imglib2.util.Fraction;
 import net.imglib2.util.IntervalIndexer;
 
-public class VolatileImgCells< A extends VolatileAccess > extends AbstractCells< A, VolatileCell< A >, VolatileImgCells< A >.CachedCells >
+public class VolatileImgCells< A > extends AbstractCells< A, VolatileCell< A >, VolatileImgCells< A >.CachedCells >
 {
-	public static interface CellCache< A extends VolatileAccess >
+	public static interface CellCache< A >
 	{
 		/**
 		 * Get the cell at a specified index.

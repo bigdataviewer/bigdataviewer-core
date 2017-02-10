@@ -42,7 +42,6 @@ import net.imglib2.cache.ref.WeakRefVolatileCache;
 import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.cache.volatiles.VolatileCache;
 import net.imglib2.cache.volatiles.VolatileCacheLoader;
-import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 
 public class VolatileGlobalCellCache implements CacheControl
 {
@@ -184,7 +183,7 @@ public class VolatileGlobalCellCache implements CacheControl
 	/**
 	 * A {@link VolatileCacheValueLoader} for one specific {@link VolatileCell}.
 	 */
-	public static class VolatileCellLoader< A extends VolatileAccess > implements VolatileCacheLoader< Key, VolatileCell< A > >
+	public static class VolatileCellLoader< A > implements VolatileCacheLoader< Key, VolatileCell< A > >
 	{
 		private final CacheArrayLoader< A > cacheArrayLoader;
 
@@ -251,7 +250,7 @@ public class VolatileGlobalCellCache implements CacheControl
 	 *
 	 * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
 	 */
-	public class VolatileCellCache< A extends VolatileAccess > implements CellCache< A >
+	public class VolatileCellCache< A > implements CellCache< A >
 	{
 		private final int timepoint;
 
