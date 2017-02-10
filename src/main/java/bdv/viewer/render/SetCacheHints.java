@@ -29,7 +29,7 @@
  */
 package bdv.viewer.render;
 
-import bdv.cache.CacheHints;
+import net.imglib2.cache.volatiles.CacheHints;
 
 public interface SetCacheHints
 {

@@ -29,16 +29,20 @@
  */
 package bdv.img.cache;
 
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
+
 import bdv.cache.CacheControl;
-import bdv.cache.CacheHints;
-import bdv.cache.CacheIoTiming;
-import bdv.cache.LoadingVolatileCache;
-import bdv.cache.VolatileCacheValueLoader;
-import bdv.cache.WeakSoftCache;
-import bdv.cache.util.BlockingFetchQueues;
 import bdv.img.cache.VolatileImgCells.CellCache;
+import net.imglib2.cache.Cache;
+import net.imglib2.cache.queue.BlockingFetchQueues;
+import net.imglib2.cache.queue.FetcherThreads;
+import net.imglib2.cache.ref.SoftRefCache;
+import net.imglib2.cache.ref.WeakRefVolatileCache;
+import net.imglib2.cache.volatiles.CacheHints;
+import net.imglib2.cache.volatiles.VolatileCache;
+import net.imglib2.cache.volatiles.VolatileCacheLoader;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
-import net.imglib2.img.cell.CellImg;
 
 public class VolatileGlobalCellCache implements CacheControl
 {
@@ -104,7 +108,13 @@ public class VolatileGlobalCellCache implements CacheControl
 		}
 	}
 
-	protected final LoadingVolatileCache< Key, VolatileCell< ? > > volatileCache; // TODO rename
+	private final BlockingFetchQueues< Callable< ? > > queue;
+
+	private final FetcherThreads fetchers;
+
+	protected final Cache< Key, VolatileCell< ? > > backingCache;
+
+	protected final VolatileCache< Key, VolatileCell< ? > > volatileCache; // TODO rename
 
 	/**
 	 * @param maxNumLevels
@@ -113,15 +123,19 @@ public class VolatileGlobalCellCache implements CacheControl
 	 */
 	public VolatileGlobalCellCache( final int maxNumLevels, final int numFetcherThreads )
 	{
-		volatileCache = new LoadingVolatileCache<>( maxNumLevels, numFetcherThreads );
+		queue = new BlockingFetchQueues<>( maxNumLevels );
+		fetchers = new FetcherThreads( queue, numFetcherThreads );
+		backingCache = new SoftRefCache<>();
+		volatileCache = new WeakRefVolatileCache<>( backingCache, queue );
 	}
 
 	/**
 	 * pause all fetcher threads for the specified number of milliseconds.
 	 */
+	// TODO remove on next opportunity (when API is broken anyways...)
 	public void pauseFetcherThreadsFor( final long ms )
 	{
-		volatileCache.getFetcherThreads().pauseFetcherThreadsFor( ms );
+		fetchers.pauseFor( ms );
 	}
 
 	/**
@@ -138,34 +152,7 @@ public class VolatileGlobalCellCache implements CacheControl
 	@Override
 	public void prepareNextFrame()
 	{
-		volatileCache.prepareNextFrame();
-	}
-
-	/**
-	 * (Re-)initialize the IO time budget, that is, the time that can be spent
-	 * in blocking IO per frame/
-	 *
-	 * @param partialBudget
-	 *            Initial budget (in nanoseconds) for priority levels 0 through
-	 *            <em>n</em>. The budget for level <em>i&gt;j</em> must always be
-	 *            smaller-equal the budget for level <em>j</em>. If <em>n</em>
-	 *            is smaller than the maximum number of mipmap levels, the
-	 *            remaining priority levels are filled up with budget[n].
-	 */
-	@Override
-	public void initIoTimeBudget( final long[] partialBudget )
-	{
-		volatileCache.initIoTimeBudget( partialBudget );
-	}
-
-	/**
-	 * Get the {@link CacheIoTiming} that provides per thread-group IO
-	 * statistics and budget.
-	 */
-	@Override
-	public CacheIoTiming getCacheIoTiming()
-	{
-		return volatileCache.getCacheIoTiming();
+		queue.clearToPrefetch();
 	}
 
 	/**
@@ -175,6 +162,8 @@ public class VolatileGlobalCellCache implements CacheControl
 	public void clearCache()
 	{
 		volatileCache.invalidateAll();
+		backingCache.invalidateAll();
+		queue.clear();
 	}
 
 	/**
@@ -186,15 +175,16 @@ public class VolatileGlobalCellCache implements CacheControl
 	 *
 	 * @return the cache that handles cell loading
 	 */
-	public LoadingVolatileCache< Key, VolatileCell< ? > > getLoadingVolatileCache()
-	{
-		return volatileCache;
-	}
+	// TODO
+//	public LoadingVolatileCache< Key, VolatileCell< ? > > getLoadingVolatileCache()
+//	{
+//		return volatileCache;
+//	}
 
 	/**
 	 * A {@link VolatileCacheValueLoader} for one specific {@link VolatileCell}.
 	 */
-	public static class VolatileCellLoader< A extends VolatileAccess > implements VolatileCacheValueLoader< VolatileCell< A > >
+	public static class VolatileCellLoader< A extends VolatileAccess > implements VolatileCacheLoader< Key, VolatileCell< A > >
 	{
 		private final CacheArrayLoader< A > cacheArrayLoader;
 
@@ -242,15 +232,15 @@ public class VolatileGlobalCellCache implements CacheControl
 		}
 
 		@Override
-		public VolatileCell< A > createEmptyValue()
+		public VolatileCell< A > get( final Key key ) throws Exception
 		{
-			return new VolatileCell<>( cellDims, cellMin, cacheArrayLoader.emptyArray( cellDims ) );
+			return new VolatileCell<>( cellDims, cellMin, cacheArrayLoader.loadArray( timepoint, setup, level, cellDims, cellMin ) );
 		}
 
 		@Override
-		public VolatileCell< A > load() throws InterruptedException
+		public VolatileCell< A > createInvalid( final Key key ) throws Exception
 		{
-			return new VolatileCell<>( cellDims, cellMin, cacheArrayLoader.loadArray( timepoint, setup, level, cellDims, cellMin ) );
+			return new VolatileCell<>( cellDims, cellMin, cacheArrayLoader.emptyArray( cellDims ) );
 		}
 	}
 
@@ -287,7 +277,14 @@ public class VolatileGlobalCellCache implements CacheControl
 		public VolatileCell< A > get( final long index )
 		{
 			final Key key = new Key( timepoint, setup, level, index );
-			return ( VolatileCell< A > ) volatileCache.getIfPresent( key, cacheHints );
+			try
+			{
+				return ( VolatileCell< A > ) volatileCache.getIfPresent( key, cacheHints );
+			}
+			catch ( final ExecutionException e )
+			{
+				throw new RuntimeException( e );
+			}
 		}
 
 		@SuppressWarnings( "unchecked" )
@@ -296,7 +293,14 @@ public class VolatileGlobalCellCache implements CacheControl
 		{
 			final Key key = new Key( timepoint, setup, level, index );
 			final VolatileCellLoader< A > loader = new VolatileCellLoader<>( cacheArrayLoader, timepoint, setup, level, cellDims, cellMin );
-			return ( VolatileCell< A > ) volatileCache.get( key, cacheHints, loader );
+			try
+			{
+				return ( VolatileCell< A > ) volatileCache.get( key, loader, cacheHints );
+			}
+			catch ( final ExecutionException e )
+			{
+				throw new RuntimeException( e );
+			}
 		}
 
 		@Override

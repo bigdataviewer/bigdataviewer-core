@@ -29,7 +29,6 @@
  */
 package bdv.tools.transformation;
 
-import bdv.cache.CacheHints;
 import bdv.viewer.Interpolation;
 import bdv.viewer.Source;
 import bdv.viewer.render.DefaultMipmapOrdering;
@@ -38,6 +37,7 @@ import bdv.viewer.render.SetCacheHints;
 import mpicbg.spim.data.sequence.VoxelDimensions;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
+import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.realtransform.AffineTransform3D;
 
 /**

@@ -32,7 +32,7 @@ package bdv.viewer.render;
 import java.util.Comparator;
 import java.util.List;
 
-import bdv.cache.CacheHints;
+import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.realtransform.AffineTransform3D;
 
 public interface MipmapOrdering

@@ -33,7 +33,6 @@ import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 import net.imglib2.img.cell.AbstractCell;
 import net.imglib2.img.cell.CellImg;
 import net.imglib2.type.Type;
-import bdv.cache.VolatileCacheValue;
 
 /**
  * A {@link AbstractCell} that with volatile data. Note that these cells can be
@@ -46,25 +45,19 @@ import bdv.cache.VolatileCacheValue;
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 @SuppressWarnings( "serial" )
-public class VolatileCell< A extends VolatileAccess > extends AbstractCell< A > implements VolatileCacheValue
+public class VolatileCell< A extends VolatileAccess > extends AbstractCell< A >
 {
+	private final A data;
+
 	public VolatileCell( final int[] dimensions, final long[] min, final A data )
 	{
 		super( dimensions, min );
 		this.data = data;
 	}
 
-	private final A data;
-
 	@Override
 	public A getData()
 	{
 		return data;
-	}
-
-	@Override
-	public boolean isValid()
-	{
-		return data.isValid();
 	}
 }

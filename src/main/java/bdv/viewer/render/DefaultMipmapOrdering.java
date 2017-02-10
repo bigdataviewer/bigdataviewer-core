@@ -31,11 +31,11 @@ package bdv.viewer.render;
 
 import java.util.ArrayList;
 
-import net.imglib2.realtransform.AffineTransform3D;
-import bdv.cache.CacheHints;
-import bdv.cache.LoadingStrategy;
 import bdv.util.MipmapTransforms;
 import bdv.viewer.Source;
+import net.imglib2.cache.volatiles.CacheHints;
+import net.imglib2.cache.volatiles.LoadingStrategy;
+import net.imglib2.realtransform.AffineTransform3D;
 
 /**
  * The standard mipmap ordering strategy for local hdf5 data. Assumes that

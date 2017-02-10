@@ -38,8 +38,6 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import bdv.cache.CacheIoTiming;
-import bdv.cache.CacheIoTiming.IoStatistics;
 import net.imglib2.Cursor;
 import net.imglib2.FinalInterval;
 import net.imglib2.IterableInterval;
@@ -47,6 +45,8 @@ import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
+import net.imglib2.cache.iotiming.CacheIoTiming;
+import net.imglib2.cache.iotiming.IoStatistics;
 import net.imglib2.converter.Converter;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgs;
@@ -131,22 +131,14 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 	 */
 	protected final AtomicBoolean interrupted = new AtomicBoolean();
 
-	/**
-	 * The {@link CacheIoTiming} that is used to determine
-	 * {@link #getLastFrameIoNanoTime() io time} and
-	 * {@link #getLastFrameRenderNanoTime() render time}.
-	 */
-	protected final CacheIoTiming cacheIoTiming;
-
 	public VolatileHierarchyProjector(
 			final List< ? extends RandomAccessible< A > > sources,
 			final Converter< ? super A, B > converter,
 			final RandomAccessibleInterval< B > target,
 			final int numThreads,
-			final ExecutorService executorService,
-			final CacheIoTiming cacheIoTiming )
+			final ExecutorService executorService )
 	{
-		this( sources, converter, target, new byte[ ( int ) ( target.dimension( 0 ) * target.dimension( 1 ) ) ], numThreads, executorService, cacheIoTiming );
+		this( sources, converter, target, new byte[ ( int ) ( target.dimension( 0 ) * target.dimension( 1 ) ) ], numThreads, executorService );
 	}
 
 	public VolatileHierarchyProjector(
@@ -155,8 +147,7 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 			final RandomAccessibleInterval< B > target,
 			final byte[] maskArray,
 			final int numThreads,
-			final ExecutorService executorService,
-			final CacheIoTiming cacheIoTiming )
+			final ExecutorService executorService )
 	{
 		super( Math.max( 2, sources.get( 0 ).numDimensions() ), converter, target );
 
@@ -181,7 +172,6 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 
 		this.numThreads = numThreads;
 		this.executorService = executorService;
-		this.cacheIoTiming = cacheIoTiming;
 
 		lastFrameRenderNanoTime = -1;
 		clearMask();
@@ -244,7 +234,7 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 
 		final StopWatch stopWatch = new StopWatch();
 		stopWatch.start();
-		final IoStatistics iostat = cacheIoTiming.getThreadGroupIoStatistics();
+		final IoStatistics iostat = CacheIoTiming.getIoStatistics();
 		final long startTimeIo = iostat.getIoNanoTime();
 		final long startTimeIoCumulative = iostat.getCumulativeIoNanoTime();
 //		final long startIoBytes = iostat.getIoBytes();

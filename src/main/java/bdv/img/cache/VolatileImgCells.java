@@ -30,10 +30,10 @@
 package bdv.img.cache;
 
 import bdv.cache.CacheControl;
-import bdv.cache.CacheHints;
-import bdv.cache.CacheIoTiming.IoTimeBudget;
-import bdv.cache.LoadingStrategy;
-import bdv.cache.util.BlockingFetchQueues;
+import net.imglib2.cache.iotiming.IoTimeBudget;
+import net.imglib2.cache.queue.BlockingFetchQueues;
+import net.imglib2.cache.volatiles.CacheHints;
+import net.imglib2.cache.volatiles.LoadingStrategy;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;

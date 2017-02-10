@@ -29,6 +29,8 @@
  */
 package bdv.cache;
 
+import java.util.concurrent.CopyOnWriteArrayList;
+
 import bdv.img.cache.VolatileGlobalCellCache;
 
 /**
@@ -55,34 +57,48 @@ public interface CacheControl
 	public void prepareNextFrame();
 
 	/**
-	 * (Re-)initialize the IO time budget.
+	 * {@link CacheControl} that does nothing.
 	 */
-	public void initIoTimeBudget( final long[] partialBudget );
-
-	/**
-	 * Get the {@link CacheIoTiming} that provides per thread-group IO
-	 * statistics and budget.
-	 */
-	public CacheIoTiming getCacheIoTiming();
-
 	public static class Dummy implements CacheControl
 	{
-		private CacheIoTiming cacheIoTiming;
-
 		@Override
 		public void prepareNextFrame()
 		{}
+	}
 
-		@Override
-		public void initIoTimeBudget( final long[] partialBudget )
-		{}
+	/**
+	 * {@link CacheControl} backed by a set of {@link CacheControl}s.
+	 * {@link #prepareNextFrame()} forwards to all of them.
+	 */
+	public static class CacheControls implements CacheControl
+	{
+		private final CopyOnWriteArrayList< CacheControl > cacheControls = new CopyOnWriteArrayList<>();
 
-		@Override
-		public CacheIoTiming getCacheIoTiming()
+		public synchronized void addCacheControl( final CacheControl cacheControl, final int index )
 		{
-			if ( cacheIoTiming == null )
-				cacheIoTiming = new CacheIoTiming();
-			return cacheIoTiming;
+			cacheControls.remove( cacheControl );
+			final int s = cacheControls.size();
+			cacheControls.add( index < 0 ? 0 : index > s ? s : index, cacheControl );
+		}
+
+		public synchronized void addCacheControl( final CacheControl cacheControl )
+		{
+			if ( !cacheControls.contains( cacheControl ) )
+			{
+				cacheControls.add( cacheControl );
+			}
+		}
+
+		public synchronized void removeCacheControl( final CacheControl cacheControl )
+		{
+			cacheControls.remove( cacheControl );
+		}
+
+		@Override
+		public void prepareNextFrame()
+		{
+			for ( final CacheControl c : cacheControls )
+				c.prepareNextFrame();
 		}
 	}
 }
