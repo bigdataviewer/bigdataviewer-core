@@ -42,6 +42,7 @@ import net.imglib2.cache.ref.WeakRefVolatileCache;
 import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.cache.volatiles.VolatileCache;
 import net.imglib2.cache.volatiles.VolatileCacheLoader;
+import net.imglib2.img.cell.Cell;
 
 public class VolatileGlobalCellCache implements CacheControl
 {
@@ -111,9 +112,9 @@ public class VolatileGlobalCellCache implements CacheControl
 
 	private final FetcherThreads fetchers;
 
-	protected final Cache< Key, VolatileCell< ? > > backingCache;
+	protected final Cache< Key, Cell< ? > > backingCache;
 
-	protected final VolatileCache< Key, VolatileCell< ? > > volatileCache; // TODO rename
+	protected final VolatileCache< Key, Cell< ? > > volatileCache; // TODO rename
 
 	/**
 	 * @param maxNumLevels
@@ -175,7 +176,7 @@ public class VolatileGlobalCellCache implements CacheControl
 	 * @return the cache that handles cell loading
 	 */
 	// TODO
-//	public LoadingVolatileCache< Key, VolatileCell< ? > > getLoadingVolatileCache()
+//	public LoadingVolatileCache< Key, Cell< ? > > getLoadingVolatileCache()
 //	{
 //		return volatileCache;
 //	}
@@ -183,7 +184,7 @@ public class VolatileGlobalCellCache implements CacheControl
 	/**
 	 * A {@link VolatileCacheValueLoader} for one specific {@link VolatileCell}.
 	 */
-	public static class VolatileCellLoader< A > implements VolatileCacheLoader< Key, VolatileCell< A > >
+	public static class VolatileCellLoader< A > implements VolatileCacheLoader< Key, Cell< A > >
 	{
 		private final CacheArrayLoader< A > cacheArrayLoader;
 
@@ -231,15 +232,15 @@ public class VolatileGlobalCellCache implements CacheControl
 		}
 
 		@Override
-		public VolatileCell< A > get( final Key key ) throws Exception
+		public Cell< A > get( final Key key ) throws Exception
 		{
-			return new VolatileCell<>( cellDims, cellMin, cacheArrayLoader.loadArray( timepoint, setup, level, cellDims, cellMin ) );
+			return new Cell<>( cellDims, cellMin, cacheArrayLoader.loadArray( timepoint, setup, level, cellDims, cellMin ) );
 		}
 
 		@Override
-		public VolatileCell< A > createInvalid( final Key key ) throws Exception
+		public Cell< A > createInvalid( final Key key ) throws Exception
 		{
-			return new VolatileCell<>( cellDims, cellMin, cacheArrayLoader.emptyArray( cellDims ) );
+			return new Cell<>( cellDims, cellMin, cacheArrayLoader.emptyArray( cellDims ) );
 		}
 	}
 
@@ -273,12 +274,12 @@ public class VolatileGlobalCellCache implements CacheControl
 
 		@SuppressWarnings( "unchecked" )
 		@Override
-		public VolatileCell< A > get( final long index )
+		public Cell< A > get( final long index )
 		{
 			final Key key = new Key( timepoint, setup, level, index );
 			try
 			{
-				return ( VolatileCell< A > ) volatileCache.getIfPresent( key, cacheHints );
+				return ( Cell< A > ) volatileCache.getIfPresent( key, cacheHints );
 			}
 			catch ( final ExecutionException e )
 			{
@@ -288,13 +289,13 @@ public class VolatileGlobalCellCache implements CacheControl
 
 		@SuppressWarnings( "unchecked" )
 		@Override
-		public VolatileCell< A > load( final long index, final int[] cellDims, final long[] cellMin )
+		public Cell< A > load( final long index, final int[] cellDims, final long[] cellMin )
 		{
 			final Key key = new Key( timepoint, setup, level, index );
 			final VolatileCellLoader< A > loader = new VolatileCellLoader<>( cacheArrayLoader, timepoint, setup, level, cellDims, cellMin );
 			try
 			{
-				return ( VolatileCell< A > ) volatileCache.get( key, loader, cacheHints );
+				return ( Cell< A > ) volatileCache.get( key, loader, cacheHints );
 			}
 			catch ( final ExecutionException e )
 			{

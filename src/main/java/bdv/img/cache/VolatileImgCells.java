@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -37,11 +37,12 @@ import net.imglib2.cache.volatiles.LoadingStrategy;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
+import net.imglib2.img.cell.Cell;
 import net.imglib2.img.cell.CellGrid;
 import net.imglib2.img.list.AbstractLongListImg;
 import net.imglib2.util.Fraction;
 
-public class VolatileImgCells< A > extends AbstractLongListImg< VolatileCell< A > >
+public class VolatileImgCells< A > extends AbstractLongListImg< Cell< A > >
 {
 	public static interface CellCache< A >
 	{
@@ -50,7 +51,7 @@ public class VolatileImgCells< A > extends AbstractLongListImg< VolatileCell< A 
 		 *
 		 * @return cell at index or null if the cell is not in the cache.
 		 */
-		public VolatileCell< A > get( final long index );
+		public Cell< A > get( final long index );
 
 		/**
 		 * Load a cell into memory (eventually) and put it into the cache at the
@@ -66,7 +67,7 @@ public class VolatileImgCells< A > extends AbstractLongListImg< VolatileCell< A 
 		 *            offset of the cell in image coordinates.
 		 * @return cell at index
 		 */
-		public VolatileCell< A > load( final long index, final int[] cellDims, final long[] cellMin );
+		public Cell< A > load( final long index, final int[] cellDims, final long[] cellMin );
 
 		/**
 		 * Set {@link CacheHints hints} on how to handle cell requests for this
@@ -130,9 +131,9 @@ public class VolatileImgCells< A > extends AbstractLongListImg< VolatileCell< A 
 	}
 
 	@Override
-	protected VolatileCell< A > get( final long index )
+	protected Cell< A > get( final long index )
 	{
-			final VolatileCell< A > cell = cache.get( index );
+			final Cell< A > cell = cache.get( index );
 			if ( cell != null )
 				return cell;
 			final long[] cellMin = new long[ n ];
@@ -142,19 +143,19 @@ public class VolatileImgCells< A > extends AbstractLongListImg< VolatileCell< A 
 	}
 
 	@Override
-	protected void set( final long index, final VolatileCell< A > value )
+	protected void set( final long index, final Cell< A > value )
 	{
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public ImgFactory< VolatileCell< A > > factory()
+	public ImgFactory< Cell< A > > factory()
 	{
 		throw new UnsupportedOperationException();
 	}
 
 	@Override
-	public Img< VolatileCell< A > > copy()
+	public Img< Cell< A > > copy()
 	{
 		throw new UnsupportedOperationException();
 	}
