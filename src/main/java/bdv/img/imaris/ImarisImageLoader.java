@@ -55,6 +55,7 @@ import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.cache.volatiles.LoadingStrategy;
 import net.imglib2.img.NativeImg;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
+import net.imglib2.img.cell.CellGrid;
 import net.imglib2.img.cell.CellImg;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.NativeType;
@@ -149,11 +150,12 @@ public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T
 		final int level = id.getLevel();
 		final long[] dimensions = mipmapDimensions[ level ];
 		final int[] cellDimensions = mipmapInfo.getSubdivisions()[ level ];
+		final CellGrid grid = new CellGrid( dimensions, cellDimensions );
 
 		final int priority = mipmapInfo.getMaxLevel() - level;
 		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
-		final CellCache< A > c = cache.new VolatileCellCache<>( timepointId, setupId, level, cacheHints, loader );
-		final VolatileImgCells< A > cells = new VolatileImgCells<>( c, new Fraction(), dimensions, cellDimensions );
+		final CellCache< A > c = cache.new VolatileCellCache<>( grid, timepointId, setupId, level, cacheHints, loader );
+		final VolatileImgCells< A > cells = new VolatileImgCells<>( c, new Fraction(), grid );
 		final CachedCellImg< T, A > img = new CachedCellImg<>( cells );
 		return img;
 	}

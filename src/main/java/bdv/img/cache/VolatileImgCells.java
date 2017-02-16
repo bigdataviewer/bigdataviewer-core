@@ -36,7 +36,6 @@ import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.cache.volatiles.LoadingStrategy;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
-import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 import net.imglib2.img.cell.Cell;
 import net.imglib2.img.cell.CellGrid;
 import net.imglib2.img.list.AbstractLongListImg;
@@ -52,22 +51,6 @@ public class VolatileImgCells< A > extends AbstractLongListImg< Cell< A > >
 		 * @return cell at index or null if the cell is not in the cache.
 		 */
 		public Cell< A > get( final long index );
-
-		/**
-		 * Load a cell into memory (eventually) and put it into the cache at the
-		 * specified index. Depending on the implementation, loading may be
-		 * asynchronous, so the {@link VolatileAccess} of the returned cell may
-		 * be invalid for a while.
-		 *
-		 * @param index
-		 *            cell is stored at this index in the cache.
-		 * @param cellDims
-		 *            dimensions of the cell.
-		 * @param cellMin
-		 *            offset of the cell in image coordinates.
-		 * @return cell at index
-		 */
-		public Cell< A > load( final long index, final int[] cellDims, final long[] cellMin );
 
 		/**
 		 * Set {@link CacheHints hints} on how to handle cell requests for this
@@ -133,13 +116,7 @@ public class VolatileImgCells< A > extends AbstractLongListImg< Cell< A > >
 	@Override
 	protected Cell< A > get( final long index )
 	{
-			final Cell< A > cell = cache.get( index );
-			if ( cell != null )
-				return cell;
-			final long[] cellMin = new long[ n ];
-			final int[] cellDims  = new int[ n ];
-			grid.getCellDimensions(index, cellMin, cellDims );
-			return cache.load( index, cellDims, cellMin );
+		return cache.get( index );
 	}
 
 	@Override

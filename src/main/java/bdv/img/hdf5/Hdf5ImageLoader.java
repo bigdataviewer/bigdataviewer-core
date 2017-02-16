@@ -79,6 +79,7 @@ import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.ShortArray;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
 import net.imglib2.img.cell.Cell;
+import net.imglib2.img.cell.CellGrid;
 import net.imglib2.img.cell.CellImg;
 import net.imglib2.img.cell.CellImgFactory;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -535,11 +536,12 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 
 			final long[] dimensions = getDimsAndExistence( id ).getDimensions();
 			final int[] cellDimensions = mipmapInfo.getSubdivisions()[ level ];
+			final CellGrid grid = new CellGrid( dimensions, cellDimensions );
 
 			final int priority = mipmapInfo.getMaxLevel() - level;
 			final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
-			final CellCache< VolatileShortArray > c = cache.new VolatileCellCache<>( timepointId, setupId, level, cacheHints, shortLoader );
-			final VolatileImgCells< VolatileShortArray > cells = new VolatileImgCells<>( c, new Fraction(), dimensions, cellDimensions );
+			final CellCache< VolatileShortArray > c = cache.new VolatileCellCache<>( grid, timepointId, setupId, level, cacheHints, shortLoader );
+			final VolatileImgCells< VolatileShortArray > cells = new VolatileImgCells<>( c, new Fraction(), grid );
 			final CachedCellImg< T, VolatileShortArray > img = new CachedCellImg<>( cells );
 			return img;
 		}

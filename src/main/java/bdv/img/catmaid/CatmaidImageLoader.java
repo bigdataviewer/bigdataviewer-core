@@ -42,6 +42,7 @@ import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.cache.volatiles.LoadingStrategy;
 import net.imglib2.img.NativeImg;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
+import net.imglib2.img.cell.CellGrid;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.ARGBType;
@@ -218,11 +219,12 @@ public class CatmaidImageLoader extends AbstractViewerSetupImgLoader< ARGBType, 
 			final LoadingStrategy loadingStrategy )
 	{
 		final long[] dimensions = imageDimensions[ level ];
+		final CellGrid grid = new CellGrid( dimensions, blockDimensions[ level ] );
 
 		final int priority = numScales - 1 - level;
 		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
-		final CellCache< VolatileIntArray > c = cache.new VolatileCellCache<>( timepointId, setupId, level, cacheHints, loader );
-		final VolatileImgCells< VolatileIntArray > cells = new VolatileImgCells<>( c, new Fraction(), dimensions, blockDimensions[ level ] );
+		final CellCache< VolatileIntArray > c = cache.new VolatileCellCache<>( grid, timepointId, setupId, level, cacheHints, loader );
+		final VolatileImgCells< VolatileIntArray > cells = new VolatileImgCells<>( c, new Fraction(), grid );
 		final CachedCellImg< T, VolatileIntArray > img = new CachedCellImg<>( cells );
 		return img;
 	}

@@ -51,6 +51,7 @@ import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.cache.volatiles.LoadingStrategy;
 import net.imglib2.img.NativeImg;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileByteArray;
+import net.imglib2.img.cell.CellGrid;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.ARGBType;
@@ -259,11 +260,12 @@ public class OpenConnectomeImageLoader extends AbstractViewerSetupImgLoader< Uns
 	{
 		final long[] dimensions = imageDimensions[ level ];
 		final int[] cellDimensions = blockDimensions[ level ];
+		final CellGrid grid = new CellGrid( dimensions, cellDimensions );
 
 		final int priority = numScales - 1 - level;
 		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
-		final CellCache< VolatileByteArray > c = cache.new VolatileCellCache<>( timepointId, setupId, level, cacheHints, loader );
-		final VolatileImgCells< VolatileByteArray > cells = new VolatileImgCells<>( c, new Fraction(), dimensions, cellDimensions );
+		final CellCache< VolatileByteArray > c = cache.new VolatileCellCache<>( grid, timepointId, setupId, level, cacheHints, loader );
+		final VolatileImgCells< VolatileByteArray > cells = new VolatileImgCells<>( c, new Fraction(), grid );
 		final CachedCellImg< T, VolatileByteArray > img = new CachedCellImg<>( cells );
 		return img;
 	}
