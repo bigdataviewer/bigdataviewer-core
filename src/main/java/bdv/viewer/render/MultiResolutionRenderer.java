@@ -785,7 +785,7 @@ public class MultiResolutionRenderer
 		{
 			final CachedCellImg< ?, ? > cellImg = (bdv.img.cache.CachedCellImg< ?, ? > ) img;
 			final int[] cellDimensions = new int[ 3 ];
-			cellImg.getCells().cellDimensions( cellDimensions );
+			cellImg.getCellGrid().cellDimensions( cellDimensions );
 			final long[] dimensions = new long[ 3 ];
 			cellImg.dimensions( dimensions );
 			final RandomAccess< ? > cellsRandomAccess = cellImg.getCells().randomAccess();

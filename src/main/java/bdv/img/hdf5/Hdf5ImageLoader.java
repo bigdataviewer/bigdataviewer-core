@@ -78,9 +78,9 @@ import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.ShortArray;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
+import net.imglib2.img.cell.Cell;
 import net.imglib2.img.cell.CellImg;
 import net.imglib2.img.cell.CellImgFactory;
-import net.imglib2.img.cell.DefaultCell;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
@@ -433,12 +433,11 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 						mipmapInfo.getSubdivisions()[ level ] );
 				final CellImgFactory< UnsignedShortType > factory = new CellImgFactory<>( cellDimensions );
 				@SuppressWarnings( "unchecked" )
-				final CellImg< UnsignedShortType, ShortArray, DefaultCell< ShortArray > > cellImg =
-					( CellImg< UnsignedShortType, ShortArray, DefaultCell< ShortArray > > ) factory.create( dimsLong, new UnsignedShortType() );
-				final Cursor< DefaultCell< ShortArray > > cursor = cellImg.getCells().cursor();
+				final CellImg< UnsignedShortType, ShortArray > cellImg = ( CellImg< UnsignedShortType, ShortArray > ) factory.create( dimsLong, new UnsignedShortType() );
+				final Cursor< Cell< ShortArray > > cursor = cellImg.getCells().cursor();
 				while ( cursor.hasNext() )
 				{
-					final DefaultCell< ShortArray > cell = cursor.next();
+					final Cell< ShortArray > cell = cursor.next();
 					final short[] dataBlock = cell.getData().getCurrentStorageArray();
 					cell.dimensions( dimsInt );
 					cell.min( min );

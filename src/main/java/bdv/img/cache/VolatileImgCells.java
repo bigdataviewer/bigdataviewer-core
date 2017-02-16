@@ -37,12 +37,11 @@ import net.imglib2.cache.volatiles.LoadingStrategy;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
-import net.imglib2.img.cell.AbstractCells;
+import net.imglib2.img.cell.CellGrid;
 import net.imglib2.img.list.AbstractLongListImg;
 import net.imglib2.util.Fraction;
-import net.imglib2.util.IntervalIndexer;
 
-public class VolatileImgCells< A > extends AbstractCells< A, VolatileCell< A >, VolatileImgCells< A >.CachedCells >
+public class VolatileImgCells< A > extends AbstractLongListImg< VolatileCell< A > >
 {
 	public static interface CellCache< A >
 	{
@@ -111,60 +110,52 @@ public class VolatileImgCells< A > extends AbstractCells< A, VolatileCell< A >, 
 		public void setCacheHints( CacheHints cacheHints );
 	}
 
-	protected final CachedCells cells;
-
 	protected final CellCache< A > cache;
+
+	protected final CellGrid grid;
+
+	protected final Fraction entitiesPerPixel;
 
 	public VolatileImgCells( final CellCache< A > cache, final Fraction entitiesPerPixel, final long[] dimensions, final int[] cellDimensions )
 	{
-		super( entitiesPerPixel, dimensions, cellDimensions );
+		this( cache, entitiesPerPixel, new CellGrid( dimensions, cellDimensions ) );
+	}
+
+	public VolatileImgCells( final CellCache< A > cache, final Fraction entitiesPerPixel, final CellGrid grid )
+	{
+		super( grid.getGridDimensions() );
 		this.cache = cache;
-		cells = new CachedCells( numCells );
+		this.entitiesPerPixel = entitiesPerPixel;
+		this.grid = grid;
 	}
 
 	@Override
-	protected CachedCells cells()
+	protected VolatileCell< A > get( final long index )
 	{
-		return cells;
-	}
-
-	public class CachedCells extends AbstractLongListImg< VolatileCell< A > >
-	{
-		protected CachedCells( final long[] dim )
-		{
-			super( dim );
-		}
-
-		@Override
-		protected VolatileCell< A > get( final long index )
-		{
 			final VolatileCell< A > cell = cache.get( index );
 			if ( cell != null )
 				return cell;
-			final long[] cellGridPosition = new long[ n ];
 			final long[] cellMin = new long[ n ];
 			final int[] cellDims  = new int[ n ];
-			IntervalIndexer.indexToPosition( index, dimension, cellGridPosition );
-			getCellDimensions( cellGridPosition, cellMin, cellDims );
+			grid.getCellDimensions(index, cellMin, cellDims );
 			return cache.load( index, cellDims, cellMin );
-		}
+	}
 
-		@Override
-		public Img< VolatileCell< A > > copy()
-		{
-			throw new UnsupportedOperationException( "Not supported" );
-		}
+	@Override
+	protected void set( final long index, final VolatileCell< A > value )
+	{
+		throw new UnsupportedOperationException();
+	}
 
-		@Override
-		protected void set( final long index, final VolatileCell< A > value )
-		{
-			throw new UnsupportedOperationException( "Not supported" );
-		}
+	@Override
+	public ImgFactory< VolatileCell< A > > factory()
+	{
+		throw new UnsupportedOperationException();
+	}
 
-		@Override
-		public ImgFactory< VolatileCell< A > > factory()
-		{
-			throw new UnsupportedOperationException( "Not supported" );
-		}
+	@Override
+	public Img< VolatileCell< A > > copy()
+	{
+		throw new UnsupportedOperationException();
 	}
 }

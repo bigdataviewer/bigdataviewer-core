@@ -29,7 +29,7 @@
  */
 package bdv.img.cache;
 
-import net.imglib2.img.cell.AbstractCell;
+import net.imglib2.img.cell.Cell;
 import net.imglib2.img.cell.CellImg;
 import net.imglib2.type.Type;
 
@@ -44,19 +44,12 @@ import net.imglib2.type.Type;
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 @SuppressWarnings( "serial" )
-public class VolatileCell< A > extends AbstractCell< A >
+//TODO remove
+public class VolatileCell< A > extends Cell< A >
 {
-	private final A data;
-
 	public VolatileCell( final int[] dimensions, final long[] min, final A data )
 	{
-		super( dimensions, min );
-		this.data = data;
-	}
-
-	@Override
-	public A getData()
-	{
-		return data;
+		super( dimensions, min, data );
 	}
 }
+// TODO remove

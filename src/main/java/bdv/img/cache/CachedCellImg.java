@@ -31,18 +31,18 @@ package bdv.img.cache;
 
 import bdv.img.cache.VolatileImgCells.CellCache;
 import net.imglib2.cache.volatiles.CacheHints;
+import net.imglib2.img.ImgFactory;
 import net.imglib2.img.cell.AbstractCellImg;
-import net.imglib2.img.cell.CellImgFactory;
 import net.imglib2.type.NativeType;
 
 final public class CachedCellImg< T extends NativeType< T >, A >
-		extends AbstractCellImg< T, A, VolatileCell< A >, CellImgFactory< T > >
+		extends AbstractCellImg< T, A, VolatileCell< A >, VolatileImgCells< A > >
 {
 	private final CellCache< A > cache;
 
 	public CachedCellImg( final VolatileImgCells< A > cells )
 	{
-		super( null, cells );
+		super( cells.grid, cells, cells.entitiesPerPixel );
 		this.cache = cells.cache;
 	}
 
@@ -53,6 +53,12 @@ final public class CachedCellImg< T extends NativeType< T >, A >
 
 	@Override
 	public CachedCellImg< T, A > copy()
+	{
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public ImgFactory< T > factory()
 	{
 		throw new UnsupportedOperationException();
 	}
