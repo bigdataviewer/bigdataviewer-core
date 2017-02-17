@@ -76,8 +76,6 @@ import net.imglib2.img.NativeImg;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.ShortArray;
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
-import net.imglib2.img.cell.AbstractCellImg;
 import net.imglib2.img.cell.Cell;
 import net.imglib2.img.cell.CellGrid;
 import net.imglib2.img.cell.CellImg;
@@ -412,6 +410,16 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 		private RandomAccessibleInterval< UnsignedShortType > loadImageCompletely( final int timepointId, final int level )
 		{
 			open();
+
+			final ViewLevelId id = new ViewLevelId( timepointId, setupId, level );
+			if ( ! existsImageData( id ) )
+			{
+				System.err.println(	String.format(
+						"image data for timepoint %d setup %d level %d could not be found. Partition file missing?",
+						id.getTimePointId(), id.getViewSetupId(), id.getLevel() ) );
+				return getMissingDataImage( id, type );
+			}
+
 			Img< UnsignedShortType > img = null;
 			final DimsAndExistence dimsAndExistence = getDimsAndExistence( new ViewLevelId( timepointId, setupId, level ) );
 			final long[] dimsLong = dimsAndExistence.exists() ? dimsAndExistence.getDimensions() : null;
@@ -493,34 +501,16 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 		@Override
 		public RandomAccessibleInterval< UnsignedShortType > getImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 		{
-			final ViewLevelId id = new ViewLevelId( timepointId, setupId, level );
-			if ( ! existsImageData( id ) )
-			{
-				System.err.println(	String.format(
-						"image data for timepoint %d setup %d level %d could not be found. Partition file missing?",
-						id.getTimePointId(), id.getViewSetupId(), id.getLevel() ) );
-				return getMissingDataImage( id, new UnsignedShortType() );
-			}
-
 			if ( Arrays.asList( hints ).contains( ImgLoaderHints.LOAD_COMPLETELY ) )
 				return loadImageCompletely( timepointId, level );
 
-			return prepareCachedImage( id, LoadingStrategy.BLOCKING, type );
+			return prepareCachedImage( timepointId, level, LoadingStrategy.BLOCKING, type );
 		}
 
 		@Override
 		public RandomAccessibleInterval< VolatileUnsignedShortType > getVolatileImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 		{
-			final ViewLevelId id = new ViewLevelId( timepointId, setupId, level );
-			if ( ! existsImageData( id ) )
-			{
-				System.err.println(	String.format(
-						"image data for timepoint %d setup %d level %d could not be found. Partition file missing?",
-						id.getTimePointId(), id.getViewSetupId(), id.getLevel() ) );
-				return getMissingDataImage( id, new VolatileUnsignedShortType() );
-			}
-
-			return prepareCachedImage( id, LoadingStrategy.BUDGETED, volatileType );
+			return prepareCachedImage( timepointId, level, LoadingStrategy.BUDGETED, volatileType );
 		}
 
 		/**
@@ -528,11 +518,18 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 		 * The created image needs a {@link NativeImg#setLinkedType(net.imglib2.type.Type) linked type} before it can be used.
 		 * The type should be either {@link UnsignedShortType} and {@link VolatileUnsignedShortType}.
 		 */
-		protected < T extends NativeType< T > > AbstractCellImg< T, VolatileShortArray, ?, ? > prepareCachedImage( final ViewLevelId id, final LoadingStrategy loadingStrategy, final T type )
+		protected < T extends NativeType< T > > RandomAccessibleInterval< T > prepareCachedImage( final int timepointId, final int level, final LoadingStrategy loadingStrategy, final T type )
 		{
 			open();
-			final int timepointId = id.getTimePointId();
-			final int level = id.getLevel();
+
+			final ViewLevelId id = new ViewLevelId( timepointId, setupId, level );
+			if ( ! existsImageData( id ) )
+			{
+				System.err.println(	String.format(
+						"image data for timepoint %d setup %d level %d could not be found. Partition file missing?",
+						id.getTimePointId(), id.getViewSetupId(), id.getLevel() ) );
+				return getMissingDataImage( id, type );
+			}
 
 			final long[] dimensions = getDimsAndExistence( id ).getDimensions();
 			final int[] cellDimensions = mipmapInfo.getSubdivisions()[ level ];
