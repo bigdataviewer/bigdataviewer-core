@@ -66,6 +66,8 @@ import net.imglib2.FinalInterval;
 import net.imglib2.IterableInterval;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.cache.queue.BlockingFetchQueues;
+import net.imglib2.cache.queue.FetcherThreads;
 import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.cache.volatiles.LoadingStrategy;
 import net.imglib2.img.Img;
@@ -105,6 +107,8 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 	protected IHDF5Access hdf5Access;
 
 	protected VolatileGlobalCellCache cache;
+
+	protected FetcherThreads fetchers;
 
 	protected Hdf5VolatileShortArrayLoader shortLoader;
 
@@ -208,7 +212,11 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 					hdf5Access = new HDF5Access( hdf5Reader );
 				}
 				shortLoader = new Hdf5VolatileShortArrayLoader( hdf5Access );
-				cache = new VolatileGlobalCellCache( maxNumLevels, 1 );
+
+
+				final BlockingFetchQueues< Callable< ? > > queue = new BlockingFetchQueues<>( maxNumLevels );
+				fetchers = new FetcherThreads( queue, 1 );
+				cache = new VolatileGlobalCellCache( queue );
 			}
 		}
 	}
@@ -314,7 +322,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 			// getImageDimension() because this happens when a timepoint is
 			// loaded, and all setups for the timepoint are loaded then. We
 			// don't want to interleave this with block loading operations.
-			cache.pauseFetcherThreadsFor( 5 );
+			fetchers.pauseFor( 5 );
 			dims = hdf5Access.getDimsAndExistence( id );
 			cachedDimsAndExistence.put( id, dims );
 		}

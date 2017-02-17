@@ -115,29 +115,35 @@ public class VolatileGlobalCellCache implements CacheControl
 
 	private final BlockingFetchQueues< Callable< ? > > queue;
 
-	private final FetcherThreads fetchers;
-
 	protected final Cache< Key, Cell< ? > > backingCache;
 
 	/**
+	 * Create a new global cache with a new fetch queue served by the specified
+	 * number of fetcher threads.
+	 *
 	 * @param maxNumLevels
 	 *            the highest occurring mipmap level plus 1.
 	 * @param numFetcherThreads
+	 *            how many threads should be created to load data.
 	 */
 	public VolatileGlobalCellCache( final int maxNumLevels, final int numFetcherThreads )
 	{
 		queue = new BlockingFetchQueues<>( maxNumLevels );
-		fetchers = new FetcherThreads( queue, numFetcherThreads );
+		new FetcherThreads( queue, numFetcherThreads );
 		backingCache = new SoftRefCache<>();
 	}
 
 	/**
-	 * pause all fetcher threads for the specified number of milliseconds.
+	 * Create a new global cache with the specified fetch queue. (It is the
+	 * callers responsibility to create fetcher threads that serve the queue.)
+	 *
+	 * @param queue
+	 *            queue to which asynchronous data loading jobs are submitted
 	 */
-	// TODO remove on next opportunity (when API is broken anyways...)
-	public void pauseFetcherThreadsFor( final long ms )
+	public VolatileGlobalCellCache( final BlockingFetchQueues< Callable< ? > > queue )
 	{
-		fetchers.pauseFor( ms );
+		this.queue = queue;
+		backingCache = new SoftRefCache<>();
 	}
 
 	/**
@@ -163,9 +169,9 @@ public class VolatileGlobalCellCache implements CacheControl
 	 */
 	public void clearCache()
 	{
-//		volatileCache.invalidateAll(); // TODO: keep track of per-image-caches to be able to clear them
 		backingCache.invalidateAll();
 		queue.clear();
+		backingCache.invalidateAll();
 	}
 
 	/**
