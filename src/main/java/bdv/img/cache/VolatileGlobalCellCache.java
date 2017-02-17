@@ -29,11 +29,12 @@
  */
 package bdv.img.cache;
 
+import static bdv.img.gencache.VolatileCachedCellImg.unchecked;
+
 import java.util.concurrent.Callable;
-import java.util.concurrent.ExecutionException;
 
 import bdv.cache.CacheControl;
-import bdv.img.cache.VolatileImgCells.CellCache;
+import bdv.img.gencache.VolatileCachedCellImg;
 import net.imglib2.cache.Cache;
 import net.imglib2.cache.queue.BlockingFetchQueues;
 import net.imglib2.cache.queue.FetcherThreads;
@@ -46,6 +47,7 @@ import net.imglib2.cache.volatiles.VolatileCacheLoader;
 import net.imglib2.cache.volatiles.VolatileLoadingCache;
 import net.imglib2.img.cell.Cell;
 import net.imglib2.img.cell.CellGrid;
+import net.imglib2.type.NativeType;
 
 public class VolatileGlobalCellCache implements CacheControl
 {
@@ -182,134 +184,62 @@ public class VolatileGlobalCellCache implements CacheControl
 //	}
 
 	/**
-	 * A {@link VolatileCacheValueLoader} for one specific {@link VolatileCell}.
-	 */
-	public static class VolatileCellLoader< A > implements VolatileCacheLoader< Key, Cell< A > >
-	{
-		private final CacheArrayLoader< A > cacheArrayLoader;
-
-		private final int timepoint;
-
-		private final int setup;
-
-		private final int level;
-
-		private final int[] cellDims;
-
-		private final long[] cellMin;
-
-		/**
-		 * Create a loader for a specific cell.
-		 *
-		 * @param cacheArrayLoader
-		 *            loads cell data
-		 * @param timepoint
-		 *            timepoint coordinate of the cell
-		 * @param setup
-		 *            setup coordinate of the cell
-		 * @param level
-		 *            level coordinate of the cell
-		 * @param cellDims
-		 *            dimensions of the cell in pixels
-		 * @param cellMin
-		 *            minimum spatial coordinates of the cell in pixels
-		 */
-		public VolatileCellLoader(
-				final CacheArrayLoader< A > cacheArrayLoader,
-				final int timepoint,
-				final int setup,
-				final int level,
-				final int[] cellDims,
-				final long[] cellMin
-				)
-		{
-			this.cacheArrayLoader = cacheArrayLoader;
-			this.timepoint = timepoint;
-			this.setup = setup;
-			this.level = level;
-			this.cellDims = cellDims;
-			this.cellMin = cellMin;
-		}
-
-		@Override
-		public Cell< A > get( final Key key ) throws Exception
-		{
-			return new Cell<>( cellDims, cellMin, cacheArrayLoader.loadArray( timepoint, setup, level, cellDims, cellMin ) );
-		}
-
-		@Override
-		public Cell< A > createInvalid( final Key key ) throws Exception
-		{
-			return new Cell<>( cellDims, cellMin, cacheArrayLoader.emptyArray( cellDims ) );
-		}
-	}
-
-	/**
-	 * A {@link CellCache} that forwards to the {@link VolatileGlobalCellCache}.
+	 * Create a {@link VolatileCachedCellImg} backed by this {@link VolatileGlobalCellCache},
+	 * using the provided {@link CacheArrayLoader} to load data.
 	 *
-	 * @param <A>
-	 *
-	 * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+	 * @param grid
+	 * @param timepoint
+	 * @param setup
+	 * @param level
+	 * @param cacheHints
+	 * @param cacheArrayLoader
+	 * @param type
+	 * @return
 	 */
-	public class VolatileCellCache< A > implements CellCache< A >
+	public < T extends NativeType< T >, A > VolatileCachedCellImg< T, A > createImg(
+			final CellGrid grid,
+			final int timepoint,
+			final int setup,
+			final int level,
+			final CacheHints cacheHints,
+			final CacheArrayLoader< A > cacheArrayLoader,
+			final T type )
 	{
-		private CacheHints cacheHints;
-
-		private VolatileLoadingCache< Long, Cell< ? > > cache;
-
-		public VolatileCellCache( final CellGrid grid, final int timepoint, final int setup, final int level, final CacheHints cacheHints, final CacheArrayLoader< A > cacheArrayLoader )
-		{
-			this.cacheHints = cacheHints;
-			this.cache = Caches.withLoader(
-					new WeakRefVolatileCache<>(
-							Caches.mapKeys(
-									backingCache,
-									KeyBimap.< Long, Key >build(
-											index -> new Key( timepoint, setup, level, index ),
-											key -> key.index ) ),
-							queue ),
-					new VolatileCacheLoader< Long, Cell< ? > >()
+		final VolatileLoadingCache< Long, Cell< ? > > cache = Caches.withLoader(
+				new WeakRefVolatileCache<>(
+						Caches.mapKeys(
+								backingCache,
+								KeyBimap.< Long, Key >build(
+										index -> new Key( timepoint, setup, level, index ),
+										key -> key.index ) ),
+						queue ),
+				new VolatileCacheLoader< Long, Cell< ? > >()
+				{
+					@Override
+					public Cell< A > get( final Long key ) throws Exception
 					{
-						@Override
-						public Cell< A > get( final Long key ) throws Exception
-						{
-							final int n = grid.numDimensions();
-							final long[] cellMin = new long[ n ];
-							final int[] cellDims = new int[ n ];
-							grid.getCellDimensions( key, cellMin, cellDims );
-							return new Cell<>( cellDims, cellMin, cacheArrayLoader.loadArray( timepoint, setup, level, cellDims, cellMin ) );
-						}
+						final int n = grid.numDimensions();
+						final long[] cellMin = new long[ n ];
+						final int[] cellDims = new int[ n ];
+						grid.getCellDimensions( key, cellMin, cellDims );
+						return new Cell<>( cellDims, cellMin, cacheArrayLoader.loadArray( timepoint, setup, level, cellDims, cellMin ) );
+					}
 
-						@Override
-						public Cell< A > createInvalid( final Long key ) throws Exception
-						{
-							final int n = grid.numDimensions();
-							final long[] cellMin = new long[ n ];
-							final int[] cellDims = new int[ n ];
-							grid.getCellDimensions( key, cellMin, cellDims );
-							return new Cell<>( cellDims, cellMin, cacheArrayLoader.emptyArray( cellDims ) );
-						}
-					} );
-		}
+					@Override
+					public Cell< A > createInvalid( final Long key ) throws Exception
+					{
+						final int n = grid.numDimensions();
+						final long[] cellMin = new long[ n ];
+						final int[] cellDims = new int[ n ];
+						grid.getCellDimensions( key, cellMin, cellDims );
+						return new Cell<>( cellDims, cellMin, cacheArrayLoader.emptyArray( cellDims ) );
+					}
+				} );
 
 		@SuppressWarnings( "unchecked" )
-		@Override
-		public Cell< A > get( final long index )
-		{
-			try
-			{
-				return ( Cell< A > ) cache.get( index, cacheHints );
-			}
-			catch ( final ExecutionException e )
-			{
-				throw new RuntimeException( e );
-			}
-		}
+		final VolatileCachedCellImg< T, A > img = new VolatileCachedCellImg<>( grid, type, cacheHints,
+				unchecked( ( i, h ) -> ( Cell< A > ) cache.get( i, h ) ) );
 
-		@Override
-		public void setCacheHints( final CacheHints cacheHints )
-		{
-			this.cacheHints = cacheHints;
-		}
+		return img;
 	}
 }

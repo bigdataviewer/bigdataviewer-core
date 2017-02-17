@@ -1,8 +1,9 @@
 package bdv.img.gencache;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.ExecutionException;
 
-import net.imglib2.cache.LoadingCache;
+import bdv.img.gencache.CachedCellImg.CachedCells;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.cell.AbstractCellImg;
@@ -10,14 +11,48 @@ import net.imglib2.img.cell.Cell;
 import net.imglib2.img.cell.CellGrid;
 import net.imglib2.img.list.AbstractLongListImg;
 import net.imglib2.type.NativeType;
-import net.imglib2.util.Fraction;
 
 public class CachedCellImg< T extends NativeType< T >, A >
-		extends AbstractCellImg< T, A, Cell< A >, CachedCellImg.CachedCells< A > >
+		extends AbstractCellImg< T, A, Cell< A >, CachedCells< Cell< A > > >
 {
-	public CachedCellImg( final CellGrid grid, final LoadingCache< Long, Cell< A > > cache, final Fraction entitiesPerPixel )
+	@FunctionalInterface
+	public interface Get< T >
 	{
-		super( grid, new CachedCells<>( grid, cache ), entitiesPerPixel );
+		T get( long index );
+
+	}
+
+	@FunctionalInterface
+	public interface CheckedGet< T >
+	{
+		T get( long index ) throws ExecutionException;
+	}
+
+	public static < T > Get< T > unchecked( final CheckedGet< T > checked )
+	{
+		return index -> {
+			try
+			{
+				return checked.get( index );
+			}
+			catch ( final ExecutionException e )
+			{
+				throw new RuntimeException( e );
+			}
+		};
+	}
+
+	public CachedCellImg( final CellGrid grid, final T type, final Get< Cell< A > > get )
+	{
+		super( grid, new CachedCells<>( grid.getGridDimensions(), get ), type.getEntitiesPerPixel() );
+		try
+		{
+			VolatileCachedCellImg.linkType( type, this );
+		}
+		catch ( NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e )
+		{
+			throw new RuntimeException( e );
+		}
 	}
 
 	@Override
@@ -32,44 +67,36 @@ public class CachedCellImg< T extends NativeType< T >, A >
 		throw new UnsupportedOperationException( "not implemented yet" );
 	}
 
-	static class CachedCells< A > extends AbstractLongListImg< Cell< A > >
+	public static final class CachedCells< T > extends AbstractLongListImg< T >
 	{
-		final LoadingCache< Long, Cell< A > > cache;
+		private final Get< T > get;
 
-		protected CachedCells(
-				final CellGrid grid, final LoadingCache< Long, Cell< A > > cache )
+		protected CachedCells( final long[] dimensions, final Get< T > get )
 		{
-			super( grid.getGridDimensions() );
-			this.cache = cache;
+			super( dimensions );
+			this.get = get;
 		}
 
 		@Override
-		protected Cell< A > get( final long index )
+		protected T get( final long index )
 		{
-			try
-			{
-				return cache.get( index );
-			}
-			catch ( final ExecutionException e )
-			{
-				throw new RuntimeException( e );
-			}
+			return get.get( index );
 		}
 
 		@Override
-		protected void set( final long index, final Cell< A > value )
+		protected void set( final long index, final T value )
 		{
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public ImgFactory< Cell< A > > factory()
+		public ImgFactory< T > factory()
 		{
 			throw new UnsupportedOperationException();
 		}
 
 		@Override
-		public Img< Cell< A > > copy()
+		public Img< T > copy()
 		{
 			throw new UnsupportedOperationException();
 		}

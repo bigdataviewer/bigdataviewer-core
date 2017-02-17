@@ -29,7 +29,7 @@
  */
 package bdv;
 
-import bdv.img.cache.CachedCellImg;
+import bdv.img.gencache.VolatileCachedCellImg;
 import bdv.viewer.render.DefaultMipmapOrdering;
 import bdv.viewer.render.MipmapOrdering;
 import bdv.viewer.render.SetCacheHints;
@@ -103,8 +103,8 @@ public class VolatileSpimSource< T extends NumericType< T >, V extends Volatile<
 			// The type check is currently necessary because it might be a
 			// constant RandomAccessibleInterval (for missing images, see
 			// Hdf5ImageLoader#getMissingDataImage)
-			if ( CachedCellImg.class.isInstance( source ) )
-				( ( CachedCellImg< ?, ? > ) source ).setCacheHints( cacheHints );
+			if ( VolatileCachedCellImg.class.isInstance( source ) )
+				( ( VolatileCachedCellImg< ?, ? > ) source ).setCacheHints( cacheHints );
 		}
 	}
 }

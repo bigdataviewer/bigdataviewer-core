@@ -43,10 +43,7 @@ import java.util.concurrent.Executors;
 
 import bdv.AbstractViewerSetupImgLoader;
 import bdv.ViewerImgLoader;
-import bdv.img.cache.CachedCellImg;
 import bdv.img.cache.VolatileGlobalCellCache;
-import bdv.img.cache.VolatileImgCells;
-import bdv.img.cache.VolatileImgCells.CellCache;
 import bdv.util.ConstantRandomAccessible;
 import bdv.util.MipmapTransforms;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
@@ -78,6 +75,7 @@ import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.ShortArray;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
+import net.imglib2.img.cell.AbstractCellImg;
 import net.imglib2.img.cell.Cell;
 import net.imglib2.img.cell.CellGrid;
 import net.imglib2.img.cell.CellImg;
@@ -87,7 +85,6 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.type.volatiles.VolatileUnsignedShortType;
-import net.imglib2.util.Fraction;
 import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
 
@@ -434,7 +431,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 						mipmapInfo.getSubdivisions()[ level ] );
 				final CellImgFactory< UnsignedShortType > factory = new CellImgFactory<>( cellDimensions );
 				@SuppressWarnings( "unchecked" )
-				final CellImg< UnsignedShortType, ShortArray > cellImg = ( CellImg< UnsignedShortType, ShortArray > ) factory.create( dimsLong, new UnsignedShortType() );
+				final CellImg< UnsignedShortType, ShortArray > cellImg = ( CellImg< UnsignedShortType, ShortArray > ) factory.create( dimsLong, type );
 				final Cursor< Cell< ShortArray > > cursor = cellImg.getCells().cursor();
 				while ( cursor.hasNext() )
 				{
@@ -500,10 +497,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 			if ( Arrays.asList( hints ).contains( ImgLoaderHints.LOAD_COMPLETELY ) )
 				return loadImageCompletely( timepointId, level );
 
-			final CachedCellImg< UnsignedShortType, VolatileShortArray >  img = prepareCachedImage( id, LoadingStrategy.BLOCKING );
-			final UnsignedShortType linkedType = new UnsignedShortType( img );
-			img.setLinkedType( linkedType );
-			return img;
+			return prepareCachedImage( id, LoadingStrategy.BLOCKING, type );
 		}
 
 		@Override
@@ -517,10 +511,8 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 						id.getTimePointId(), id.getViewSetupId(), id.getLevel() ) );
 				return getMissingDataImage( id, new VolatileUnsignedShortType() );
 			}
-			final CachedCellImg< VolatileUnsignedShortType, VolatileShortArray >  img = prepareCachedImage( id, LoadingStrategy.BUDGETED );
-			final VolatileUnsignedShortType linkedType = new VolatileUnsignedShortType( img );
-			img.setLinkedType( linkedType );
-			return img;
+
+			return prepareCachedImage( id, LoadingStrategy.BUDGETED, volatileType );
 		}
 
 		/**
@@ -528,7 +520,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 		 * The created image needs a {@link NativeImg#setLinkedType(net.imglib2.type.Type) linked type} before it can be used.
 		 * The type should be either {@link UnsignedShortType} and {@link VolatileUnsignedShortType}.
 		 */
-		protected < T extends NativeType< T > > CachedCellImg< T, VolatileShortArray > prepareCachedImage( final ViewLevelId id, final LoadingStrategy loadingStrategy )
+		protected < T extends NativeType< T > > AbstractCellImg< T, VolatileShortArray, ?, ? > prepareCachedImage( final ViewLevelId id, final LoadingStrategy loadingStrategy, final T type )
 		{
 			open();
 			final int timepointId = id.getTimePointId();
@@ -540,10 +532,8 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 
 			final int priority = mipmapInfo.getMaxLevel() - level;
 			final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
-			final CellCache< VolatileShortArray > c = cache.new VolatileCellCache<>( grid, timepointId, setupId, level, cacheHints, shortLoader );
-			final VolatileImgCells< VolatileShortArray > cells = new VolatileImgCells<>( c, new Fraction(), grid );
-			final CachedCellImg< T, VolatileShortArray > img = new CachedCellImg<>( cells );
-			return img;
+
+			return cache.createImg( grid, timepointId, setupId, level, cacheHints, shortLoader, type );
 		}
 
 		/**

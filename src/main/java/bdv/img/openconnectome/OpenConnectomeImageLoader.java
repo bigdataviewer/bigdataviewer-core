@@ -41,16 +41,15 @@ import bdv.AbstractViewerSetupImgLoader;
 import bdv.ViewerImgLoader;
 import bdv.ViewerSetupImgLoader;
 import bdv.cache.CacheControl;
-import bdv.img.cache.CachedCellImg;
 import bdv.img.cache.VolatileGlobalCellCache;
-import bdv.img.cache.VolatileImgCells;
-import bdv.img.cache.VolatileImgCells.CellCache;
+import bdv.img.gencache.CachedCellImg;
 import mpicbg.spim.data.generic.sequence.ImgLoaderHint;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.cache.volatiles.LoadingStrategy;
 import net.imglib2.img.NativeImg;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileByteArray;
+import net.imglib2.img.cell.AbstractCellImg;
 import net.imglib2.img.cell.CellGrid;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.NativeType;
@@ -58,7 +57,6 @@ import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.volatiles.VolatileARGBType;
 import net.imglib2.type.volatiles.VolatileUnsignedByteType;
-import net.imglib2.util.Fraction;
 
 public class OpenConnectomeImageLoader extends AbstractViewerSetupImgLoader< UnsignedByteType, VolatileUnsignedByteType > implements ViewerImgLoader
 {
@@ -217,19 +215,13 @@ public class OpenConnectomeImageLoader extends AbstractViewerSetupImgLoader< Uns
 	@Override
 	public RandomAccessibleInterval< UnsignedByteType > getImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 	{
-		final CachedCellImg< UnsignedByteType, VolatileByteArray > img = prepareCachedImage( timepointId, 0, level, LoadingStrategy.BLOCKING );
-		final UnsignedByteType linkedType = new UnsignedByteType( img );
-		img.setLinkedType( linkedType );
-		return img;
+		return prepareCachedImage( timepointId, 0, level, LoadingStrategy.BLOCKING, type );
 	}
 
 	@Override
 	public RandomAccessibleInterval< VolatileUnsignedByteType > getVolatileImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 	{
-		final CachedCellImg< VolatileUnsignedByteType, VolatileByteArray > img = prepareCachedImage( timepointId, 0, level, LoadingStrategy.VOLATILE );
-		final VolatileUnsignedByteType linkedType = new VolatileUnsignedByteType( img );
-		img.setLinkedType( linkedType );
-		return img;
+		return prepareCachedImage( timepointId, 0, level, LoadingStrategy.VOLATILE, volatileType );
 	}
 
 	@Override
@@ -256,7 +248,7 @@ public class OpenConnectomeImageLoader extends AbstractViewerSetupImgLoader< Uns
 	 * type} before it can be used. The type should be either {@link ARGBType}
 	 * and {@link VolatileARGBType}.
 	 */
-	protected < T extends NativeType< T > > CachedCellImg< T, VolatileByteArray > prepareCachedImage( final int timepointId, final int setupId, final int level, final LoadingStrategy loadingStrategy )
+	protected < T extends NativeType< T > > AbstractCellImg< T, VolatileByteArray, ?, ? > prepareCachedImage( final int timepointId, final int setupId, final int level, final LoadingStrategy loadingStrategy, final T type )
 	{
 		final long[] dimensions = imageDimensions[ level ];
 		final int[] cellDimensions = blockDimensions[ level ];
@@ -264,10 +256,7 @@ public class OpenConnectomeImageLoader extends AbstractViewerSetupImgLoader< Uns
 
 		final int priority = numScales - 1 - level;
 		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
-		final CellCache< VolatileByteArray > c = cache.new VolatileCellCache<>( grid, timepointId, setupId, level, cacheHints, loader );
-		final VolatileImgCells< VolatileByteArray > cells = new VolatileImgCells<>( c, new Fraction(), grid );
-		final CachedCellImg< T, VolatileByteArray > img = new CachedCellImg<>( cells );
-		return img;
+		return cache.createImg( grid, timepointId, setupId, level, cacheHints, loader, type );
 	}
 
 	@Override
