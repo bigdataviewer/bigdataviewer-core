@@ -1,19 +1,16 @@
 package bdv.tools.bookmarks.dialog;
 
+import bdv.tools.bookmarks.bookmark.DynamicBookmark;
+import bdv.tools.bookmarks.bookmark.IBookmark;
+import bdv.tools.bookmarks.bookmark.SimpleBookmark;
+import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
-
-import bdv.tools.bookmarks.bookmark.DynamicBookmark;
-import bdv.tools.bookmarks.bookmark.IBookmark;
-import bdv.tools.bookmarks.bookmark.SimpleBookmark;
 
 public class BookmarkCellPanel extends JPanel {
 
@@ -27,7 +24,8 @@ public class BookmarkCellPanel extends JPanel {
 
     private IBookmark bookmark;
 
-    BookmarkCellPanel(BookmarkManagementDialog bookmarkManagementDialog) {
+    BookmarkCellPanel(IBookmark bookmark) {
+        this.bookmark = bookmark;
     	
         GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.columnWidths = new int[]{1, 1, 0};
@@ -99,22 +97,11 @@ public class BookmarkCellPanel extends JPanel {
 		typeLabel.setOpaque(false);
 		panel.setOpaque(false);
 		panel_1.setOpaque(false);
-		
-		selectButton.addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				bookmarkManagementDialog.selectBookmark(bookmark);
-			}
-		});
-		
-		removeButton.addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				bookmarkManagementDialog.removeBookmark(bookmark);
-			}
-		});
+        
+        
+        setMinimumSize(new Dimension(450, 70));
+        setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
+        setPreferredSize(new Dimension(450, 70));
     }
    
     public void setBookmark(IBookmark bookmark) {

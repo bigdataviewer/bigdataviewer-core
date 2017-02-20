@@ -1,16 +1,14 @@
 package bdv.tools.bookmarks.dialog;
 
+import bdv.tools.bookmarks.bookmark.IBookmark;
 import java.awt.Color;
 import java.awt.Component;
 import java.util.EventObject;
-
 import javax.swing.AbstractCellEditor;
 import javax.swing.JTable;
 import javax.swing.UIManager;
 import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
-
-import bdv.tools.bookmarks.bookmark.IBookmark;
 
 public class BookmarkCellEditorRenderer extends AbstractCellEditor implements TableCellRenderer, TableCellEditor {
 
@@ -21,8 +19,8 @@ public class BookmarkCellEditorRenderer extends AbstractCellEditor implements Ta
 	private IBookmark activeBookmark;
 
 	public BookmarkCellEditorRenderer(BookmarkManagementDialog bookmarkManagementDialog) {
-		renderer = new BookmarkCellPanel(bookmarkManagementDialog);
-		editor = new BookmarkCellPanel(bookmarkManagementDialog);
+		renderer = null; // new BookmarkCellPanel(bookmarkManagementDialog);
+		editor = null; // new BookmarkCellPanel(bookmarkManagementDialog);
 	}
 
 	public BookmarkCellPanel getRenderer() {
