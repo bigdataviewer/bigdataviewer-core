@@ -48,9 +48,6 @@ public final class BookmarkListView extends JPanel {
     public BookmarkListView(Bookmarks bookmarks) {
         this.bookmarks = Objects.requireNonNull(bookmarks, "bookmarks");
         
-        System.out.println("Hinzufügen der Bookmark's");
-        
-        
         this.listItemContainer = new JPanel();
         this.listItemContainer.setLayout(new BoxLayout(listItemContainer, BoxLayout.Y_AXIS));
         
@@ -72,7 +69,6 @@ public final class BookmarkListView extends JPanel {
         listItems.clear();
         
         for (IBookmark singleBookmark : this.bookmarks.getAll()) {
-            System.out.println("BOOKMARK");
             this.listItems.put(singleBookmark, new BookmarkCellPanel(singleBookmark));
         }
         
