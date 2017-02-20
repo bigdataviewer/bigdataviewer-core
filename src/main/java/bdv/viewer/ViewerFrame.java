@@ -29,24 +29,21 @@
  */
 package bdv.viewer;
 
+import bdv.BehaviourTransformEventHandler;
+import bdv.cache.CacheControl;
 import java.awt.BorderLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.List;
-
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
-
+import net.imglib2.ui.TransformEventHandler;
+import net.imglib2.ui.util.GuiUtil;
 import org.scijava.ui.behaviour.MouseAndKeyHandler;
 import org.scijava.ui.behaviour.util.InputActionBindings;
 import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
-
-import bdv.BehaviourTransformEventHandler;
-import bdv.cache.CacheControl;
-import net.imglib2.ui.TransformEventHandler;
-import net.imglib2.ui.util.GuiUtil;
 
 /**
  * A {@link JFrame} containing a {@link ViewerPanel} and associated
@@ -98,15 +95,27 @@ public class ViewerFrame extends JFrame
 		getRootPane().setDoubleBuffered( true );
 		add( viewer, BorderLayout.CENTER );
 		pack();
+        
+        setLocationRelativeTo(null);
 		setDefaultCloseOperation( WindowConstants.DISPOSE_ON_CLOSE );
-		addWindowListener( new WindowAdapter()
-		{
-			@Override
-			public void windowClosing( final WindowEvent e )
-			{
-				viewer.stop();
-			}
-		} );
+        
+        final WindowAdapter windowAdapter = new WindowAdapter() {
+            @Override
+            public void windowStateChanged(WindowEvent e) {
+                SwingUtilities.invokeLater(() -> {
+                    getContentPane().revalidate();
+                });
+            }
+            
+            @Override
+            public void windowClosing( final WindowEvent e )
+            {
+                viewer.stop();
+            }
+        };
+        
+		addWindowListener(windowAdapter);
+        addWindowStateListener(windowAdapter);
 
 		SwingUtilities.replaceUIActionMap( getRootPane(), keybindings.getConcatenatedActionMap() );
 		SwingUtilities.replaceUIInputMap( getRootPane(), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, keybindings.getConcatenatedInputMap() );
