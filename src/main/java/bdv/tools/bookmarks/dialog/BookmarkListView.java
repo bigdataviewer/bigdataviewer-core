@@ -25,32 +25,36 @@
  */
 package bdv.tools.bookmarks.dialog;
 
-import bdv.tools.bookmarks.Bookmarks;
-import bdv.tools.bookmarks.bookmark.IBookmark;
 import java.awt.BorderLayout;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
+
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
+import bdv.tools.bookmarks.bookmark.IBookmark;
+import bdv.tools.bookmarks.editor.BookmarksEditor;
+
 public final class BookmarkListView extends JPanel {
 
 	private final JScrollPane scrollPane;
 	private final JPanel listItemContainer;
-
-	private final Bookmarks bookmarks;
-
+	
+	private final BookmarksEditor bookmarksEditor;
 	private final Map<IBookmark, BookmarkCellPanel> listItems = new HashMap<>();
 
-	public BookmarkListView(Bookmarks bookmarks) {
-		this.bookmarks = Objects.requireNonNull(bookmarks, "bookmarks");
+	private IBookmark activeBookmark;
+	
+	public BookmarkListView(BookmarksEditor bookmarksEditor) {
 
+		this.bookmarksEditor = bookmarksEditor;
 		this.listItemContainer = new JPanel();
 		this.listItemContainer.setLayout(new BoxLayout(listItemContainer, BoxLayout.Y_AXIS));
 
@@ -71,16 +75,58 @@ public final class BookmarkListView extends JPanel {
 		listItems.clear();
 		this.listItemContainer.removeAll();
 
-		List<IBookmark> list = new ArrayList<IBookmark>(this.bookmarks.getAll());
+		List<IBookmark> list = new ArrayList<IBookmark>(this.bookmarksEditor.getBookmarks().getAll());
 		Collections.sort(list);
 
-		for (IBookmark singleBookmark : list) {			
-			BookmarkCellPanel panel = new BookmarkCellPanel(singleBookmark);
-			this.listItems.put(singleBookmark, panel);
+		for (IBookmark bookmark : list) {
+			BookmarkCellPanel panel = new BookmarkCellPanel(bookmark);
+			panel.setActive(bookmark.equals(this.activeBookmark));
+
+			panel.addSelectActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					IBookmark bookmark = panel.getBookmark();
+					if (bookmark != null) {
+						bookmarksEditor.recallTransformationOfBookmark(bookmark.getKey());
+					}
+				}
+			});
+
+			panel.addRemoveActionListener(new ActionListener() {
+				@Override
+				public void actionPerformed(ActionEvent e) {
+					IBookmark bookmark = panel.getBookmark();
+					if (bookmark != null) {
+						bookmarksEditor.deleteBookmark(bookmark.getKey());
+						listItemContainer.remove(panel);
+						revalidateListItemContainer();
+						setActiveBookmark(activeBookmark);
+					}
+				}
+			});
+
+			this.listItems.put(bookmark, panel);
 			this.listItemContainer.add(panel);
 		}
 
+		revalidateListItemContainer();
+	}
+
+	private void revalidateListItemContainer() {
 		this.listItemContainer.revalidate();
+		this.listItemContainer.repaint();
 		validate();
+	}
+
+	public void setActiveBookmark(IBookmark bookmark) {
+		for (BookmarkCellPanel panel : listItems.values()) {
+			panel.setActive(false);
+		}
+
+		BookmarkCellPanel panel = listItems.get(bookmark);
+		if (panel != null) {
+			panel.setActive(true);
+			this.activeBookmark = bookmark;
+		}
 	}
 }

@@ -33,32 +33,34 @@ public class BookmarkManagementDialog extends JDialog {
 			repaintBookmark();
 		}
 	}
-	
-	private class ActiveBookmarkChangeListener implements ActiveBookmarkChangedListener{
+
+	private class ActiveBookmarkChangeListener implements ActiveBookmarkChangedListener {
 
 		@Override
 		public void activeBookmarkChanged(IBookmark previousBookmark, IBookmark activeBookmark) {
-			repaintBookmark();
+			bookmarkListView.setActiveBookmark(activeBookmark);
 		}
-		
 	}
 
-    private final BookmarksEditor bookmarksEditor;
-	
+	private final ViewerFrame viewerFrame;
+	private final BookmarksEditor bookmarksEditor;
+
 	private final BookmarkChangeListener bookmarkChangedListener = new BookmarkChangeListener();
 	private final ActiveBookmarkChangeListener activeBookmarkChangeListener = new ActiveBookmarkChangeListener();
-    
-    private final BookmarkListView bookmarkListView;
+
+	private final BookmarkListView bookmarkListView;
 
 	public BookmarkManagementDialog(ViewerFrame owner, BookmarksEditor bookmarksEditor) {
 		super(owner, "Bookmark Management", false);
 		setSize(new Dimension(400, 500));
-        setLocationRelativeTo(owner);
-        
+		setLocationRelativeTo(owner);
+
+		this.viewerFrame = owner;
 		this.bookmarksEditor = bookmarksEditor;
-        System.out.println("bookmarksEditor.getBookmarks().size() = " + bookmarksEditor.getBookmarks().getAll().size());
-		this.bookmarkListView = new BookmarkListView(bookmarksEditor.getBookmarks());
-        
+		System.out.println("bookmarksEditor.getBookmarks().size() = " + bookmarksEditor.getBookmarks().getAll().size());
+		this.bookmarkListView = new BookmarkListView(bookmarksEditor);
+		this.bookmarkListView.setActiveBookmark(owner.getViewerPanel().getState().getActiveBookmark());
+
 		bookmarksEditor.getBookmarks().addListener(bookmarkChangedListener);
 		owner.getViewerPanel().addActiveBookmarkChangedListener(activeBookmarkChangeListener);
 
@@ -80,9 +82,9 @@ public class BookmarkManagementDialog extends JDialog {
 				addBookmarkDialog.setVisible(true);
 			}
 		});
-        
-        getContentPane().add(bookmarkListView, BorderLayout.CENTER);
-		
+
+		getContentPane().add(bookmarkListView, BorderLayout.CENTER);
+
 		final ActionMap am = getRootPane().getActionMap();
 		final InputMap im = getRootPane().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
 		final Object hideKey = new Object();
@@ -91,24 +93,16 @@ public class BookmarkManagementDialog extends JDialog {
 			public void actionPerformed(final ActionEvent e) {
 				setVisible(false);
 			}
-
 		};
 		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), hideKey);
 		am.put(hideKey, hideAction);
 
-		//pack();
+		// pack();
 		setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
 	}
 
 	public void repaintBookmark() {
-        this.bookmarkListView.updateListItems();
-	}
-	
-	public void selectBookmark(IBookmark bookmark){
-		bookmarksEditor.recallTransformationOfBookmark(bookmark.getKey());
-	}
-
-	public void removeBookmark(IBookmark bookmark) {
-		bookmarksEditor.deleteBookmark(bookmark.getKey());
+		this.bookmarkListView.updateListItems();
+		this.bookmarkListView.setActiveBookmark(this.viewerFrame.getViewerPanel().getState().getActiveBookmark());
 	}
 }
