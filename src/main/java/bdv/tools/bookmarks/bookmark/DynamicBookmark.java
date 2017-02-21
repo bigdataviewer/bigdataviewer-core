@@ -37,14 +37,14 @@ public class DynamicBookmark extends Bookmark {
 	}
 
 	protected DynamicBookmark(DynamicBookmark d) {
-		super(d.getKey());
+		super(d);
 		this.keyframes = new TreeSet<>(new KeyFrameComparator());
 		for (KeyFrame k : d.keyframes)
 			this.keyframes.add(k.copy());
 	}
 
 	protected DynamicBookmark(DynamicBookmark d, String newKey) {
-		super(newKey);
+		super(d, newKey);
 		this.keyframes = new TreeSet<>(new KeyFrameComparator());
 		for (KeyFrame k : d.keyframes)
 			this.keyframes.add(k.copy());

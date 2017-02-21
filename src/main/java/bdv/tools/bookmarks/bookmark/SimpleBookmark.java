@@ -22,12 +22,12 @@ public class SimpleBookmark extends Bookmark {
 	}
 	
 	protected SimpleBookmark(SimpleBookmark s) {
-		super(s.getKey());
+		super(s);
 		this.transform = s.transform.copy();
 	}
 	
 	protected SimpleBookmark(SimpleBookmark s, String newKey) {
-		super(newKey);
+		super(s, newKey);
 		this.transform = s.transform.copy();
 	}
 	

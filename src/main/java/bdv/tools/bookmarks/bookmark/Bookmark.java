@@ -17,11 +17,23 @@ public abstract class Bookmark implements Comparable<Bookmark> {
 	public Bookmark(String key) {
 		this.key = key;
 	}
-
+	
 	public Bookmark(Element element) {
 		this.key = XmlHelpers.getText(element, XML_ELEM_KEY_NAME);
 		this.title = XmlHelpers.getText(element, XML_ELEM_KEY_TITLE, "");
 		this.description = XmlHelpers.getText(element, XML_ELEM_KEY_DESCRIPTION, "");
+	}
+	
+	protected Bookmark(Bookmark b){
+		this.key = b.getKey();
+		this.title = b.getTitle();
+		this.description = b.getDescription();
+	}
+	
+	protected Bookmark(Bookmark b, String newKey){
+		this.key = newKey;
+		this.title = b.getTitle();
+		this.description = b.getDescription();
 	}
 
 	public String getKey() {
