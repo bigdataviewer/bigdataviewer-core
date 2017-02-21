@@ -28,7 +28,10 @@ package bdv.tools.bookmarks.dialog;
 import bdv.tools.bookmarks.Bookmarks;
 import bdv.tools.bookmarks.bookmark.IBookmark;
 import java.awt.BorderLayout;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import javax.swing.BorderFactory;
@@ -37,44 +40,47 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
 public final class BookmarkListView extends JPanel {
-    
-    private final JScrollPane scrollPane;
-    private final JPanel listItemContainer;
-    
-    private final Bookmarks bookmarks;
-    
-    private final Map<IBookmark, BookmarkCellPanel> listItems = new HashMap<>();
 
-    public BookmarkListView(Bookmarks bookmarks) {
-        this.bookmarks = Objects.requireNonNull(bookmarks, "bookmarks");
-        
-        this.listItemContainer = new JPanel();
-        this.listItemContainer.setLayout(new BoxLayout(listItemContainer, BoxLayout.Y_AXIS));
-        
-        this.scrollPane = new JScrollPane(this.listItemContainer,
-                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        this.scrollPane.setBorder(BorderFactory.createEmptyBorder());
-        
-        initComponents();
-        updateListItems();
-    }
-    
-    private void initComponents() {
-        setLayout(new BorderLayout());
-        add(scrollPane, BorderLayout.CENTER);
-    }
-    
-    public void updateListItems() {
-        listItems.clear();
-        
-        for (IBookmark singleBookmark : this.bookmarks.getAll()) {
-            this.listItems.put(singleBookmark, new BookmarkCellPanel(singleBookmark));
-        }
-        
-        for (BookmarkCellPanel itemPanel : listItems.values()) {
-            this.listItemContainer.add(itemPanel);
-        }
-    }
-    
+	private final JScrollPane scrollPane;
+	private final JPanel listItemContainer;
+
+	private final Bookmarks bookmarks;
+
+	private final Map<IBookmark, BookmarkCellPanel> listItems = new HashMap<>();
+
+	public BookmarkListView(Bookmarks bookmarks) {
+		this.bookmarks = Objects.requireNonNull(bookmarks, "bookmarks");
+
+		this.listItemContainer = new JPanel();
+		this.listItemContainer.setLayout(new BoxLayout(listItemContainer, BoxLayout.Y_AXIS));
+
+		this.scrollPane = new JScrollPane(this.listItemContainer, JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+				JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+		this.scrollPane.setBorder(BorderFactory.createEmptyBorder());
+
+		initComponents();
+		updateListItems();
+	}
+
+	private void initComponents() {
+		setLayout(new BorderLayout());
+		add(scrollPane, BorderLayout.CENTER);
+	}
+
+	public void updateListItems() {
+		listItems.clear();
+		this.listItemContainer.removeAll();
+
+		List<IBookmark> list = new ArrayList<IBookmark>(this.bookmarks.getAll());
+		Collections.sort(list);
+
+		for (IBookmark singleBookmark : list) {			
+			BookmarkCellPanel panel = new BookmarkCellPanel(singleBookmark);
+			this.listItems.put(singleBookmark, panel);
+			this.listItemContainer.add(panel);
+		}
+
+		this.listItemContainer.revalidate();
+		validate();
+	}
 }

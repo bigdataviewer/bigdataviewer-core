@@ -11,6 +11,8 @@ import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
+import javax.swing.border.MatteBorder;
+import java.awt.Color;
 
 public class BookmarkCellPanel extends JPanel {
 
@@ -25,6 +27,7 @@ public class BookmarkCellPanel extends JPanel {
     private IBookmark bookmark;
 
     BookmarkCellPanel(IBookmark bookmark) {
+    	setBorder(new MatteBorder(0, 0, 1, 0, (Color) new Color(0, 0, 0)));
         this.bookmark = bookmark;
     	
         GridBagLayout gridBagLayout = new GridBagLayout();
@@ -99,14 +102,10 @@ public class BookmarkCellPanel extends JPanel {
 		panel_1.setOpaque(false);
         
         
-        setMinimumSize(new Dimension(450, 70));
+        setMinimumSize(new Dimension(300, 70));
         setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
-        setPreferredSize(new Dimension(450, 70));
-    }
-   
-    public void setBookmark(IBookmark bookmark) {
-    	this.bookmark = bookmark;
-    	
+        setPreferredSize(new Dimension(300, 70));
+        
         keyField.setText(bookmark.getKey());
         if(bookmark instanceof SimpleBookmark){
         	selectButton.setText("Show");
@@ -117,7 +116,7 @@ public class BookmarkCellPanel extends JPanel {
         	typeLabel.setText("Dynamic bookmark");
         }
     }
-    
+
     public IBookmark getBookmark(){
     	return bookmark;
     }

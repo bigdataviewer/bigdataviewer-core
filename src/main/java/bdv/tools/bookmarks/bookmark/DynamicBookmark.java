@@ -234,4 +234,9 @@ public class DynamicBookmark implements IBookmark {
 			l.changed();
 		}
 	}
+	
+	@Override
+	public int compareTo(IBookmark o) {
+		return key.compareTo(o.getKey());
+	}
 }

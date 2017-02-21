@@ -2,7 +2,7 @@ package bdv.tools.bookmarks.bookmark;
 
 import org.jdom2.Element;
 
-public interface IBookmark {
+public interface IBookmark extends Comparable<IBookmark> {
 	
 	String getKey();
 	

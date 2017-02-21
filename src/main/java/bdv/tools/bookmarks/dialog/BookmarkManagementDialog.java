@@ -38,7 +38,6 @@ public class BookmarkManagementDialog extends JDialog {
 
 		@Override
 		public void activeBookmarkChanged(IBookmark previousBookmark, IBookmark activeBookmark) {
-		//	cellEditorRenderer.setActiveBookmark(activeBookmark);
 			repaintBookmark();
 		}
 		
@@ -53,7 +52,7 @@ public class BookmarkManagementDialog extends JDialog {
 
 	public BookmarkManagementDialog(ViewerFrame owner, BookmarksEditor bookmarksEditor) {
 		super(owner, "Bookmark Management", false);
-		setSize(new Dimension(580, 250));
+		setSize(new Dimension(400, 500));
         setLocationRelativeTo(owner);
         
 		this.bookmarksEditor = bookmarksEditor;
@@ -74,7 +73,6 @@ public class BookmarkManagementDialog extends JDialog {
 		newButton.setHorizontalAlignment(SwingConstants.LEFT);
 
 		newButton.addActionListener(new ActionListener() {
-			
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				AddBookmarkDialog addBookmarkDialog = new AddBookmarkDialog(owner, bookmarksEditor);
@@ -103,26 +101,7 @@ public class BookmarkManagementDialog extends JDialog {
 	}
 
 	public void repaintBookmark() {
-		//tableModel.repaint();
-		//updateRowHeights();
-		//bookmarkTable.setRowHeight(new BookmarkCellPanel(this).getPreferredSize().height + 2);
         this.bookmarkListView.updateListItems();
-	}
-	
-	private void updateRowHeights()
-	{
-//	    for (int row = 0; row < bookmarkTable.getRowCount(); row++)
-//	    {
-//	        int rowHeight = bookmarkTable.getRowHeight();
-//
-//	        for (int column = 0; column < bookmarkTable.getColumnCount(); column++)
-//	        {
-//	            Component comp = bookmarkTable.prepareRenderer(bookmarkTable.getCellRenderer(row, column), row, column);
-//	            rowHeight = Math.max(rowHeight, comp.getPreferredSize().height);
-//	        }
-//
-//	        bookmarkTable.setRowHeight(row, rowHeight + 2);
-//	    }
 	}
 	
 	public void selectBookmark(IBookmark bookmark){

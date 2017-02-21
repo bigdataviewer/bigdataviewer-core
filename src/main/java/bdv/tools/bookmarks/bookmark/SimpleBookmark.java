@@ -1,5 +1,7 @@
 package bdv.tools.bookmarks.bookmark;
 
+import java.awt.datatransfer.StringSelection;
+
 import org.jdom2.Element;
 import mpicbg.spim.data.XmlHelpers;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -71,5 +73,10 @@ public class SimpleBookmark implements IBookmark {
 	@Override
 	public SimpleBookmark copy(String newKey) {
 		return new SimpleBookmark(this, newKey);
+	}
+
+	@Override
+	public int compareTo(IBookmark o) {
+		return key.compareTo(o.getKey());
 	}
 }
