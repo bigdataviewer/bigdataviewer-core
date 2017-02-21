@@ -329,6 +329,10 @@ public class BookmarksEditor
 	}
 	
 	public synchronized void createSimpleBookmark(String key){
+		createSimpleBookmark(key, null, null);
+	}
+	
+	public synchronized void createSimpleBookmark(String key, String title, String description){
 		final AffineTransform3D t = new AffineTransform3D();
 		viewer.getState().getViewerTransform( t );
 		final double cX = viewer.getDisplay().getWidth() / 2.0;
@@ -337,16 +341,24 @@ public class BookmarksEditor
 		t.set( t.get( 1, 3 ) - cY, 1, 3 );
 		
 		SimpleBookmark bookmark = new SimpleBookmark(key, t);
+		bookmark.setTitle(title);
+		bookmark.setDescription(description);
 		bookmarks.put( bookmark );
 		
 		setActiveDynamicBookmark(null);
 	}
 	
 	public synchronized void createDynamicBookmark(String key){
-		DynamicBookmark dynamicBookmark = new DynamicBookmark(key);
-		bookmarks.put( dynamicBookmark );
+		createDynamicBookmark(key, null, null);
+	}
+	
+	public synchronized void createDynamicBookmark(String key, String title, String description){
+		DynamicBookmark bookmark = new DynamicBookmark(key);
+		bookmark.setTitle(title);
+		bookmark.setDescription(description);
+		bookmarks.put( bookmark );
 		
-		setActiveDynamicBookmark(dynamicBookmark);
+		setActiveDynamicBookmark(bookmark);
 	}
 	
 	

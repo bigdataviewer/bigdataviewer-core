@@ -12,81 +12,75 @@ import mpicbg.spim.data.XmlHelpers;
 import net.imglib2.realtransform.AffineTransform3D;
 import org.jdom2.Element;
 
-public class DynamicBookmark implements Bookmark {
+public class DynamicBookmark extends Bookmark {
 
 	public static final String XML_ELEM_BOOKMARK_NAME = "DynamicBookmark";
-	public static final String XML_ELEM_KEY_NAME = "key";
-	public static final String XML_ELEM_KEYFRAMES_NAME = "keyframes";
 	public static final String XML_ELEM_KEYFRAME_NAME = "keyframe";
+	public static final String XML_ELEM_KEYFRAMES_NAME = "keyframes";
 	public static final String XML_ELEM_TIMEPOINT_NAME = "timepoint";
 	public static final String XML_ELEM_TRANSFORM_NAME = "transform";
 
-	private final String key;
-
 	private final TreeSet<KeyFrame> keyframes;
-	
+
 	private final List<DynamicBookmarkChangedListener> listeners = Collections.synchronizedList(new ArrayList<>());
 
 	public DynamicBookmark(final String key) {
-		this.key = key;
+		super(key);
 		this.keyframes = new TreeSet<>(new KeyFrameComparator());
 	}
 
 	public DynamicBookmark(Element element) {
-		this.key = restoreKeyFromXml(element);
+		super(element);
 		this.keyframes = new TreeSet<>(new KeyFrameComparator());
 
 		restoreKeyframesFromXml(element);
 	}
-	
+
 	protected DynamicBookmark(DynamicBookmark d) {
-		this.key = d.key;
+		super(d.getKey());
 		this.keyframes = new TreeSet<>(new KeyFrameComparator());
-		for(KeyFrame k : d.keyframes) this.keyframes.add(k.copy());
+		for (KeyFrame k : d.keyframes)
+			this.keyframes.add(k.copy());
 	}
-	
+
 	protected DynamicBookmark(DynamicBookmark d, String newKey) {
-		this.key = newKey;
+		super(newKey);
 		this.keyframes = new TreeSet<>(new KeyFrameComparator());
-		for(KeyFrame k : d.keyframes) this.keyframes.add(k.copy());
+		for (KeyFrame k : d.keyframes)
+			this.keyframes.add(k.copy());
 	}
 
 	@Override
-	public String getKey() {
-		return this.key;
-	}
-	
-	@Override
-	public boolean equals(Object other){
-		if(other instanceof DynamicBookmark){
+	public boolean equals(Object other) {
+		if (other instanceof DynamicBookmark) {
 			if (getClass() == other.getClass()) {
 				DynamicBookmark b = (DynamicBookmark) other;
-				return this.key == b.key;
+				return this.getKey() == b.getKey();
 			}
 		}
 		return false;
 	}
-	
-    /**
-     * Returns all KeyFrames as an unmodifiable set.
-     * 
-     * @return  Returns never {@code null}.
-     */
-    public Set<KeyFrame> getFrameSet() {
-        return unmodifiableSet(this.keyframes);
-    }
-	
+
+	/**
+	 * Returns all KeyFrames as an unmodifiable set.
+	 * 
+	 * @return Returns never {@code null}.
+	 */
+	public Set<KeyFrame> getFrameSet() {
+		return unmodifiableSet(this.keyframes);
+	}
+
 	public void add(final KeyFrame keyframe) {
 		remove(keyframe);
 		boolean b = keyframes.add(keyframe);
-		if(b){
+		if (b) {
 			fireDynamicBookmarkChanged();
 		}
 	}
-	
+
 	public boolean remove(final KeyFrame keyframe) {
 		boolean b = keyframes.remove(keyframe);
-		if(b){
+		if (b) {
 			fireDynamicBookmarkChanged();
 		}
 		return b;
@@ -95,7 +89,9 @@ public class DynamicBookmark implements Bookmark {
 	@Override
 	public Element toXmlNode() {
 		final Element elemBookmark = new Element(XML_ELEM_BOOKMARK_NAME);
-		elemBookmark.addContent(XmlHelpers.textElement(XML_ELEM_KEY_NAME, this.key));
+		elemBookmark.addContent(XmlHelpers.textElement(XML_ELEM_KEY_NAME, this.getKey()));
+		elemBookmark.addContent(XmlHelpers.textElement(XML_ELEM_KEY_TITLE, this.getTitle()));
+		elemBookmark.addContent(XmlHelpers.textElement(XML_ELEM_KEY_DESCRIPTION, this.getDescription()));
 
 		final Element elemKeyframes = new Element(XML_ELEM_KEYFRAMES_NAME);
 
@@ -112,10 +108,6 @@ public class DynamicBookmark implements Bookmark {
 		return elemBookmark;
 	}
 
-	private String restoreKeyFromXml(final Element parent) {
-		return XmlHelpers.getText(parent, XML_ELEM_KEY_NAME);
-	}
-
 	private void restoreKeyframesFromXml(final Element parent) {
 		final Element elemKeyframes = parent.getChild(XML_ELEM_KEYFRAMES_NAME);
 
@@ -127,19 +119,19 @@ public class DynamicBookmark implements Bookmark {
 	}
 
 	/**
-	 * Returns the greatest keyframe by timepoint less than to the
-	 * given timepoint, or null if there is no such timepoint.
+	 * Returns the greatest keyframe by timepoint less than to the given
+	 * timepoint, or null if there is no such timepoint.
 	 * 
 	 * @param timepoint
 	 *            the reference value
-	 * @return previous keyframe by timepoint which is less the given
-	 *         timepoint or null
+	 * @return previous keyframe by timepoint which is less the given timepoint
+	 *         or null
 	 */
 	public KeyFrame getPreviousKeyFrame(final int timepoint) {
 		KeyFrame k = new KeyFrame(timepoint, null);
 		return keyframes.lower(k);
 	}
-	
+
 	/**
 	 * Returns the greatest keyframe by timepoint less than or equal to the
 	 * given timepoint, or null if there is no such timepoint.
@@ -214,29 +206,23 @@ public class DynamicBookmark implements Bookmark {
 	public DynamicBookmark copy() {
 		return new DynamicBookmark(this);
 	}
-	
+
 	@Override
 	public DynamicBookmark copy(String newKey) {
 		return new DynamicBookmark(this, newKey);
 	}
-	
-	
-	public void addDynamicBookmarkChangedListener(DynamicBookmarkChangedListener l){
+
+	public void addDynamicBookmarkChangedListener(DynamicBookmarkChangedListener l) {
 		listeners.add(l);
 	}
-	
-	public void removeDynamicBookmarkChangedListener(DynamicBookmarkChangedListener l){
+
+	public void removeDynamicBookmarkChangedListener(DynamicBookmarkChangedListener l) {
 		listeners.remove(l);
 	}
-	
-	private void fireDynamicBookmarkChanged(){
-		for(DynamicBookmarkChangedListener l : listeners){
+
+	private void fireDynamicBookmarkChanged() {
+		for (DynamicBookmarkChangedListener l : listeners) {
 			l.changed();
 		}
-	}
-	
-	@Override
-	public int compareTo(Bookmark o) {
-		return key.compareTo(o.getKey());
 	}
 }

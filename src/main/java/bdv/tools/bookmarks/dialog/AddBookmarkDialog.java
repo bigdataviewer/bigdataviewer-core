@@ -45,26 +45,27 @@ public class AddBookmarkDialog extends JDialog {
 	private final JRadioButton dynamicBookmarkOption;
 
 	private final BookmarksEditor bookmarksEditor;
+	private JTextField titleField;
+	private JTextField descriptionField;
 
 	private class MaxLengthTextDocument extends PlainDocument {
-		//Store maximum characters permitted
+		// Store maximum characters permitted
 		private int maxChars;
 
-		public MaxLengthTextDocument(int maxChars){
+		public MaxLengthTextDocument(int maxChars) {
 			this.maxChars = maxChars;
 		}
-		
+
 		@Override
-		public void insertString(int offs, String str, AttributeSet a)
-				throws BadLocationException {
-			if(str != null && (getLength() + str.length() <= maxChars)){
+		public void insertString(int offs, String str, AttributeSet a) throws BadLocationException {
+			if (str != null && (getLength() + str.length() <= maxChars)) {
 				super.insertString(offs, str, a);
 			}
 		}
 
-		//getter e setter omitted
+		// getter e setter omitted
 	}
-	
+
 	public AddBookmarkDialog(Frame owner, BookmarksEditor bookmarksEditor) {
 		super(owner, "Add bookmark", true);
 
@@ -77,17 +78,51 @@ public class AddBookmarkDialog extends JDialog {
 		getContentPane().add(bookmarkPanel, BorderLayout.CENTER);
 		GridBagLayout gbl_bookmarkPanel = new GridBagLayout();
 		gbl_bookmarkPanel.columnWidths = new int[] { 250, 0 };
-		gbl_bookmarkPanel.rowHeights = new int[] { 1, 1, 0, 0, 0, 0 };
+		gbl_bookmarkPanel.rowHeights = new int[] { 1, 0, 0, 0, 1, 0, 0, 0, 0, 0 };
 		gbl_bookmarkPanel.columnWeights = new double[] { 1.0, Double.MIN_VALUE };
-		gbl_bookmarkPanel.rowWeights = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE };
+		gbl_bookmarkPanel.rowWeights = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, Double.MIN_VALUE };
 		bookmarkPanel.setLayout(gbl_bookmarkPanel);
 
-		JLabel keyLabel = new JLabel("Key");
+		JLabel lblTitle = new JLabel("Title");
+		GridBagConstraints gbc_lblTitle = new GridBagConstraints();
+		gbc_lblTitle.anchor = GridBagConstraints.WEST;
+		gbc_lblTitle.insets = new Insets(0, 0, 5, 0);
+		gbc_lblTitle.gridx = 0;
+		gbc_lblTitle.gridy = 0;
+		bookmarkPanel.add(lblTitle, gbc_lblTitle);
+
+		titleField = new JTextField();
+		titleField.setColumns(10);
+		GridBagConstraints gbc_titleField = new GridBagConstraints();
+		gbc_titleField.insets = new Insets(0, 0, 5, 0);
+		gbc_titleField.fill = GridBagConstraints.HORIZONTAL;
+		gbc_titleField.gridx = 0;
+		gbc_titleField.gridy = 1;
+		bookmarkPanel.add(titleField, gbc_titleField);
+
+		JLabel lblDescription = new JLabel("Description");
+		GridBagConstraints gbc_lblDescription = new GridBagConstraints();
+		gbc_lblDescription.anchor = GridBagConstraints.WEST;
+		gbc_lblDescription.insets = new Insets(0, 0, 5, 0);
+		gbc_lblDescription.gridx = 0;
+		gbc_lblDescription.gridy = 2;
+		bookmarkPanel.add(lblDescription, gbc_lblDescription);
+
+		descriptionField = new JTextField();
+		descriptionField.setColumns(10);
+		GridBagConstraints gbc_descriptionField = new GridBagConstraints();
+		gbc_descriptionField.insets = new Insets(0, 0, 5, 0);
+		gbc_descriptionField.fill = GridBagConstraints.HORIZONTAL;
+		gbc_descriptionField.gridx = 0;
+		gbc_descriptionField.gridy = 3;
+		bookmarkPanel.add(descriptionField, gbc_descriptionField);
+
+		JLabel keyLabel = new JLabel("Key*");
 		GridBagConstraints gbc_keyLabel = new GridBagConstraints();
 		gbc_keyLabel.anchor = GridBagConstraints.NORTHWEST;
 		gbc_keyLabel.insets = new Insets(0, 0, 5, 0);
 		gbc_keyLabel.gridx = 0;
-		gbc_keyLabel.gridy = 0;
+		gbc_keyLabel.gridy = 4;
 		bookmarkPanel.add(keyLabel, gbc_keyLabel);
 
 		keyField = new JTextField();
@@ -96,10 +131,10 @@ public class AddBookmarkDialog extends JDialog {
 		gbc_keyField.insets = new Insets(0, 0, 5, 0);
 		gbc_keyField.anchor = GridBagConstraints.NORTH;
 		gbc_keyField.gridx = 0;
-		gbc_keyField.gridy = 1;
+		gbc_keyField.gridy = 5;
 		bookmarkPanel.add(keyField, gbc_keyField);
 		keyField.setColumns(10);
-		
+
 		keyField.setDocument(new MaxLengthTextDocument(1));
 
 		JLabel typeLabel = new JLabel("Type");
@@ -107,7 +142,7 @@ public class AddBookmarkDialog extends JDialog {
 		gbc_typeLabel.insets = new Insets(0, 0, 5, 0);
 		gbc_typeLabel.anchor = GridBagConstraints.WEST;
 		gbc_typeLabel.gridx = 0;
-		gbc_typeLabel.gridy = 2;
+		gbc_typeLabel.gridy = 6;
 		bookmarkPanel.add(typeLabel, gbc_typeLabel);
 
 		simpleBookmarkOption = new JRadioButton("Simple bookmark");
@@ -116,14 +151,14 @@ public class AddBookmarkDialog extends JDialog {
 		gbc_simpleBookmarkOption.insets = new Insets(0, 0, 5, 0);
 		gbc_simpleBookmarkOption.anchor = GridBagConstraints.WEST;
 		gbc_simpleBookmarkOption.gridx = 0;
-		gbc_simpleBookmarkOption.gridy = 3;
+		gbc_simpleBookmarkOption.gridy = 7;
 		bookmarkPanel.add(simpleBookmarkOption, gbc_simpleBookmarkOption);
 
 		dynamicBookmarkOption = new JRadioButton("Dynamic bookmark");
 		GridBagConstraints gbc_dynamicBookmarkOption = new GridBagConstraints();
 		gbc_dynamicBookmarkOption.anchor = GridBagConstraints.WEST;
 		gbc_dynamicBookmarkOption.gridx = 0;
-		gbc_dynamicBookmarkOption.gridy = 4;
+		gbc_dynamicBookmarkOption.gridy = 8;
 		bookmarkPanel.add(dynamicBookmarkOption, gbc_dynamicBookmarkOption);
 
 		ButtonGroup group = new ButtonGroup();
@@ -155,23 +190,23 @@ public class AddBookmarkDialog extends JDialog {
 					return;
 
 				if (simpleBookmarkOption.isSelected()) {
-					bookmarksEditor.createSimpleBookmark(keyField.getText());
+					bookmarksEditor.createSimpleBookmark(keyField.getText(), titleField.getText(), descriptionField.getText());
 				} else if (dynamicBookmarkOption.isSelected()) {
-					bookmarksEditor.createDynamicBookmark(keyField.getText());
+					bookmarksEditor.createDynamicBookmark(keyField.getText(), titleField.getText(), descriptionField.getText());
 				}
 
 				dispose();
 			}
 		});
-		
+
 		addComponentListener(new ComponentAdapter() {
-			
+
 			@Override
 			public void componentShown(ComponentEvent e) {
 				reset();
 			}
 		});
-		
+
 		final ActionMap am = getRootPane().getActionMap();
 		final InputMap im = getRootPane().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
 		final Object hideKey = new Object();
@@ -213,8 +248,10 @@ public class AddBookmarkDialog extends JDialog {
 
 		return true;
 	}
-	
-	private void reset(){
+
+	private void reset() {
+		titleField.setText("");
+		descriptionField.setText("");
 		keyField.setText("");
 		simpleBookmarkOption.setSelected(true);
 	}
