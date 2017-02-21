@@ -12,7 +12,7 @@ import mpicbg.spim.data.XmlHelpers;
 import net.imglib2.realtransform.AffineTransform3D;
 import org.jdom2.Element;
 
-public class DynamicBookmark implements IBookmark {
+public class DynamicBookmark implements Bookmark {
 
 	public static final String XML_ELEM_BOOKMARK_NAME = "DynamicBookmark";
 	public static final String XML_ELEM_KEY_NAME = "key";
@@ -236,7 +236,7 @@ public class DynamicBookmark implements IBookmark {
 	}
 	
 	@Override
-	public int compareTo(IBookmark o) {
+	public int compareTo(Bookmark o) {
 		return key.compareTo(o.getKey());
 	}
 }

@@ -29,7 +29,7 @@
  */
 package bdv.viewer.state;
 
-import bdv.tools.bookmarks.bookmark.IBookmark;
+import bdv.tools.bookmarks.bookmark.Bookmark;
 import bdv.util.MipmapTransforms;
 import bdv.viewer.DisplayMode;
 import static bdv.viewer.DisplayMode.FUSED;
@@ -73,7 +73,7 @@ public class ViewerState
 	 */
 	private int numTimepoints;
 	
-	private IBookmark activeBookmark;
+	private Bookmark activeBookmark;
 
 	/**
 	 * Transformation set by the interactive viewer. Transforms from global
@@ -341,7 +341,7 @@ public class ViewerState
 	 *
 	 * @return active bookmark
 	 */
-	public synchronized IBookmark getActiveBookmark()
+	public synchronized Bookmark getActiveBookmark()
 	{
 		return activeBookmark;
 	}
@@ -352,7 +352,7 @@ public class ViewerState
 	 * @param bookmark
 	 *            active bookmark.
 	 */
-	public synchronized void setActiveBookmark( final IBookmark bookmark ) {
+	public synchronized void setActiveBookmark( final Bookmark bookmark ) {
 		activeBookmark = bookmark;
 	}
 

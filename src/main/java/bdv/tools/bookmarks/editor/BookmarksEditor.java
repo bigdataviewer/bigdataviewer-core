@@ -48,7 +48,7 @@ import bdv.tools.bookmarks.bookmark.SimpleBookmark;
 import bdv.tools.bookmarks.BookmarkTextOverlayAnimator;
 import bdv.tools.bookmarks.Bookmarks;
 import bdv.tools.bookmarks.bookmark.DynamicBookmark;
-import bdv.tools.bookmarks.bookmark.IBookmark;
+import bdv.tools.bookmarks.bookmark.Bookmark;
 import bdv.tools.bookmarks.bookmark.KeyFrame;
 import bdv.util.Affine3DHelpers;
 import bdv.viewer.TimePointListener;
@@ -265,7 +265,7 @@ public class BookmarksEditor
 	}
 	
 	private synchronized DynamicBookmark getActiveDynamicBookmark(){
-		IBookmark bookmark = viewer.getActiveBookmark();
+		Bookmark bookmark = viewer.getActiveBookmark();
 		
 		if(bookmark instanceof DynamicBookmark){
 			return (DynamicBookmark) bookmark;
@@ -374,11 +374,11 @@ public class BookmarksEditor
 	}
 	
 	public synchronized void deleteBookmark(String key){
-		IBookmark removedBookmark = bookmarks.remove(key);
+		Bookmark removedBookmark = bookmarks.remove(key);
 		if(removedBookmark == null)
 			return;
 		
-		IBookmark acitveBookmark = viewer.getActiveBookmark();
+		Bookmark acitveBookmark = viewer.getActiveBookmark();
 		if(acitveBookmark == null)
 			return;
 		

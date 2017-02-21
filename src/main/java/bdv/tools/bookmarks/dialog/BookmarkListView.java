@@ -39,7 +39,7 @@ import javax.swing.BoxLayout;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 
-import bdv.tools.bookmarks.bookmark.IBookmark;
+import bdv.tools.bookmarks.bookmark.Bookmark;
 import bdv.tools.bookmarks.editor.BookmarksEditor;
 
 public final class BookmarkListView extends JPanel {
@@ -48,9 +48,9 @@ public final class BookmarkListView extends JPanel {
 	private final JPanel listItemContainer;
 	
 	private final BookmarksEditor bookmarksEditor;
-	private final Map<IBookmark, BookmarkCellPanel> listItems = new HashMap<>();
+	private final Map<Bookmark, BookmarkCellPanel> listItems = new HashMap<>();
 
-	private IBookmark activeBookmark;
+	private Bookmark activeBookmark;
 	
 	public BookmarkListView(BookmarksEditor bookmarksEditor) {
 
@@ -75,17 +75,17 @@ public final class BookmarkListView extends JPanel {
 		listItems.clear();
 		this.listItemContainer.removeAll();
 
-		List<IBookmark> list = new ArrayList<IBookmark>(this.bookmarksEditor.getBookmarks().getAll());
+		List<Bookmark> list = new ArrayList<Bookmark>(this.bookmarksEditor.getBookmarks().getAll());
 		Collections.sort(list);
 
-		for (IBookmark bookmark : list) {
+		for (Bookmark bookmark : list) {
 			BookmarkCellPanel panel = new BookmarkCellPanel(bookmark);
 			panel.setActive(bookmark.equals(this.activeBookmark));
 
 			panel.addSelectActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					IBookmark bookmark = panel.getBookmark();
+					Bookmark bookmark = panel.getBookmark();
 					if (bookmark != null) {
 						bookmarksEditor.recallTransformationOfBookmark(bookmark.getKey());
 					}
@@ -95,7 +95,7 @@ public final class BookmarkListView extends JPanel {
 			panel.addRemoveActionListener(new ActionListener() {
 				@Override
 				public void actionPerformed(ActionEvent e) {
-					IBookmark bookmark = panel.getBookmark();
+					Bookmark bookmark = panel.getBookmark();
 					if (bookmark != null) {
 						bookmarksEditor.deleteBookmark(bookmark.getKey());
 						listItemContainer.remove(panel);
@@ -118,7 +118,7 @@ public final class BookmarkListView extends JPanel {
 		validate();
 	}
 
-	public void setActiveBookmark(IBookmark bookmark) {
+	public void setActiveBookmark(Bookmark bookmark) {
 		for (BookmarkCellPanel panel : listItems.values()) {
 			panel.setActive(false);
 		}

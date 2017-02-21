@@ -70,7 +70,7 @@ import org.jdom2.Element;
 
 import bdv.cache.CacheControl;
 import bdv.tools.bookmarks.bookmark.DynamicBookmark;
-import bdv.tools.bookmarks.bookmark.IBookmark;
+import bdv.tools.bookmarks.bookmark.Bookmark;
 import bdv.util.Affine3DHelpers;
 import bdv.util.InvokeOnEDT;
 import bdv.util.Prefs;
@@ -829,7 +829,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	/**
 	 * Get the currently active bookmark.
 	 */
-	public synchronized IBookmark getActiveBookmark(){
+	public synchronized Bookmark getActiveBookmark(){
 		return state.getActiveBookmark();
 	}
 	
@@ -838,8 +838,8 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 * @param bookmark
 	 * 			the active bookmark
 	 */
-	public synchronized void setActiveBookmark(final IBookmark bookmark) {
-		IBookmark previousBookmark = this.state.getActiveBookmark();
+	public synchronized void setActiveBookmark(final Bookmark bookmark) {
+		Bookmark previousBookmark = this.state.getActiveBookmark();
 		this.state.setActiveBookmark(bookmark);
 		
 		final boolean enableKeyframeButtons = bookmark instanceof DynamicBookmark;

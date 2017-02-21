@@ -36,7 +36,7 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import java.util.List;
 
-import bdv.tools.bookmarks.bookmark.IBookmark;
+import bdv.tools.bookmarks.bookmark.Bookmark;
 import bdv.viewer.DisplayMode;
 import bdv.viewer.state.SourceGroup;
 import bdv.viewer.state.SourceState;
@@ -101,7 +101,7 @@ public class SourceInfoOverlayRenderer
 			else
 				timepointString = String.format( "t = %d", t );
 			
-			final IBookmark bookmark = state.getActiveBookmark();
+			final Bookmark bookmark = state.getActiveBookmark();
 			if ( bookmark != null )
 				activeBookmarkString = String.format( "active bookmark: %s", bookmark.getKey() );
 			else

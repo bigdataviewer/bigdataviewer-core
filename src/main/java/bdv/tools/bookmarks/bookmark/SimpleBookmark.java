@@ -6,7 +6,7 @@ import org.jdom2.Element;
 import mpicbg.spim.data.XmlHelpers;
 import net.imglib2.realtransform.AffineTransform3D;
 
-public class SimpleBookmark implements IBookmark {
+public class SimpleBookmark implements Bookmark {
 
 	public static final String XML_ELEM_BOOKMARK_NAME = "Bookmark" ;
 	public static final String XML_ELEM_KEY_NAME = "key" ;
@@ -76,7 +76,7 @@ public class SimpleBookmark implements IBookmark {
 	}
 
 	@Override
-	public int compareTo(IBookmark o) {
+	public int compareTo(Bookmark o) {
 		return key.compareTo(o.getKey());
 	}
 }

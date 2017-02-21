@@ -1,7 +1,7 @@
 package bdv.tools.bookmarks.dialog;
 
 import bdv.tools.bookmarks.BookmarksCollectionChangedListener;
-import bdv.tools.bookmarks.bookmark.IBookmark;
+import bdv.tools.bookmarks.bookmark.Bookmark;
 import bdv.tools.bookmarks.editor.BookmarksEditor;
 import bdv.viewer.ActiveBookmarkChangedListener;
 import bdv.viewer.ViewerFrame;
@@ -37,7 +37,7 @@ public class BookmarkManagementDialog extends JDialog {
 	private class ActiveBookmarkChangeListener implements ActiveBookmarkChangedListener {
 
 		@Override
-		public void activeBookmarkChanged(IBookmark previousBookmark, IBookmark activeBookmark) {
+		public void activeBookmarkChanged(Bookmark previousBookmark, Bookmark activeBookmark) {
 			bookmarkListView.setActiveBookmark(activeBookmark);
 		}
 	}

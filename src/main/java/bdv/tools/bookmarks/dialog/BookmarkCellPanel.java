@@ -15,7 +15,7 @@ import javax.swing.UIManager;
 import javax.swing.border.MatteBorder;
 
 import bdv.tools.bookmarks.bookmark.DynamicBookmark;
-import bdv.tools.bookmarks.bookmark.IBookmark;
+import bdv.tools.bookmarks.bookmark.Bookmark;
 import bdv.tools.bookmarks.bookmark.SimpleBookmark;
 
 public class BookmarkCellPanel extends JPanel {
@@ -30,10 +30,10 @@ public class BookmarkCellPanel extends JPanel {
 
 	private final static Color ACTIVE_COLOR = Color.CYAN;
 
-	private IBookmark bookmark;
+	private Bookmark bookmark;
 	private boolean active = false;
 
-	BookmarkCellPanel(IBookmark bookmark) {
+	BookmarkCellPanel(Bookmark bookmark) {
 		setBorder(new MatteBorder(0, 0, 1, 0, (Color) new Color(0, 0, 0)));
 		this.bookmark = bookmark;
 
@@ -122,7 +122,7 @@ public class BookmarkCellPanel extends JPanel {
 		}
 	}
 
-	public IBookmark getBookmark() {
+	public Bookmark getBookmark() {
 		return bookmark;
 	}
 

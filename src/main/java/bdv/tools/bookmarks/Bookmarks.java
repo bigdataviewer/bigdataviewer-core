@@ -40,10 +40,10 @@ import org.jdom2.Element;
 
 import bdv.tools.bookmarks.bookmark.SimpleBookmark;
 import bdv.tools.bookmarks.bookmark.DynamicBookmark;
-import bdv.tools.bookmarks.bookmark.IBookmark;
+import bdv.tools.bookmarks.bookmark.Bookmark;
 
 public class Bookmarks {
-	private final HashMap<String, IBookmark> bookmarks;
+	private final HashMap<String, Bookmark> bookmarks;
 	private final List<BookmarksCollectionChangedListener> listeners;
 
 	public Bookmarks() {
@@ -67,8 +67,8 @@ public class Bookmarks {
 
 	public Element toXml() {
 		final Element elem = new Element("Bookmarks");
-		for (final Entry<String, IBookmark> entry : bookmarks.entrySet()) {
-			final IBookmark bookmark = entry.getValue();
+		for (final Entry<String, Bookmark> entry : bookmarks.entrySet()) {
+			final Bookmark bookmark = entry.getValue();
 			Element elemBookmark = bookmark.toXmlNode();
 			elem.addContent(elemBookmark);
 		}
@@ -97,14 +97,14 @@ public class Bookmarks {
 		fireBookmarksCollectionChangedListener();
 	}
 
-	public void put(final IBookmark bookmark) {
+	public void put(final Bookmark bookmark) {
 		bookmarks.put(bookmark.getKey(), bookmark);
 		
 		fireBookmarksCollectionChangedListener();
 	}
 	
-	public IBookmark remove(final String key){
-		IBookmark bookmark = bookmarks.remove(key);
+	public Bookmark remove(final String key){
+		Bookmark bookmark = bookmarks.remove(key);
 		if(bookmark != null){
 			fireBookmarksCollectionChangedListener();
 		}
@@ -113,23 +113,23 @@ public class Bookmarks {
 	}
 	
 	public void rename(String oldKey, String newKey){
-		IBookmark bookmark = remove(oldKey);
+		Bookmark bookmark = remove(oldKey);
 		if(bookmark != null){
-			IBookmark newBookmark = bookmark.copy(newKey);
+			Bookmark newBookmark = bookmark.copy(newKey);
 			put(newBookmark);
 		}
 	}
 
-	public Collection<IBookmark> getAll(){
+	public Collection<Bookmark> getAll(){
 		return bookmarks.values();
 	}
 	
-	public IBookmark get(final String key) {
+	public Bookmark get(final String key) {
 		return bookmarks.get(key);
 	}
 	
-	public <T extends IBookmark> T get(final String key, Class<T> clazz) {
-		IBookmark bookmark = bookmarks.get(key);
+	public <T extends Bookmark> T get(final String key, Class<T> clazz) {
+		Bookmark bookmark = bookmarks.get(key);
 		
 		if(clazz.isInstance(bookmark)){
 			return clazz.cast(bookmark);
@@ -140,7 +140,7 @@ public class Bookmarks {
 	
 	// TODO replace with generic method
 	public SimpleBookmark getSimpleBookmark(final String key) {
-		IBookmark bookmark = get(key);
+		Bookmark bookmark = get(key);
 		if (bookmark instanceof SimpleBookmark) {
 			return (SimpleBookmark) bookmark;
 		}
@@ -150,7 +150,7 @@ public class Bookmarks {
 
 	// TODO replace with generic method
 	public DynamicBookmark getDynamicBookmark(final String key) {
-		IBookmark bookmark = get(key);
+		Bookmark bookmark = get(key);
 		if (bookmark instanceof DynamicBookmark) {
 			return (DynamicBookmark) bookmark;
 		}

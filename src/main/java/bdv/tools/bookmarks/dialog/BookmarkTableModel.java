@@ -8,7 +8,7 @@ import java.util.List;
 import javax.swing.table.DefaultTableModel;
 
 import bdv.tools.bookmarks.Bookmarks;
-import bdv.tools.bookmarks.bookmark.IBookmark;
+import bdv.tools.bookmarks.bookmark.Bookmark;
 
 public class BookmarkTableModel extends DefaultTableModel {
 
@@ -16,10 +16,10 @@ public class BookmarkTableModel extends DefaultTableModel {
 
     private final Bookmarks bookmarks;
     
-    private Comparator<IBookmark> bookmarkComparator = new Comparator< IBookmark >( ){
+    private Comparator<Bookmark> bookmarkComparator = new Comparator< Bookmark >( ){
 
 		@Override
-		public int compare(IBookmark arg0, IBookmark arg1) {
+		public int compare(Bookmark arg0, Bookmark arg1) {
 			return arg0.getKey().compareTo(arg1.getKey());
 		}
 		
@@ -41,10 +41,10 @@ public class BookmarkTableModel extends DefaultTableModel {
     public void repaint(){
     	removeAllRows();
     	
-    	List<IBookmark> bookmarkCollection = new ArrayList<>(this.bookmarks.getAll());
+    	List<Bookmark> bookmarkCollection = new ArrayList<>(this.bookmarks.getAll());
     	Collections.sort( bookmarkCollection, bookmarkComparator);
     	
-    	for(IBookmark b : bookmarkCollection){
+    	for(Bookmark b : bookmarkCollection){
     		addRow(new Object[]{b});
     	}
     	

@@ -2,13 +2,13 @@ package bdv.tools.bookmarks.bookmark;
 
 import org.jdom2.Element;
 
-public interface IBookmark extends Comparable<IBookmark> {
+public interface Bookmark extends Comparable<Bookmark> {
 	
 	String getKey();
 	
 	Element toXmlNode();
 	
-	IBookmark copy();
+	Bookmark copy();
 	
-	IBookmark copy(String newKey);
+	Bookmark copy(String newKey);
 }
