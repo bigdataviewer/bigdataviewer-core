@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -29,21 +29,18 @@
  */
 package bdv;
 
-import bdv.img.gencache.VolatileCachedCellImg;
 import bdv.viewer.render.DefaultMipmapOrdering;
 import bdv.viewer.render.MipmapOrdering;
-import bdv.viewer.render.SetCacheHints;
 import mpicbg.spim.data.generic.AbstractSpimData;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
-import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.NumericType;
 
 public class VolatileSpimSource< T extends NumericType< T >, V extends Volatile< T > & NumericType< V > >
 		extends AbstractSpimSource< V >
-		implements MipmapOrdering, SetCacheHints
+		implements MipmapOrdering
 {
 	protected final SpimSource< T > nonVolatileSource;
 
@@ -92,19 +89,5 @@ public class VolatileSpimSource< T extends NumericType< T >, V extends Volatile<
 	public MipmapHints getMipmapHints( final AffineTransform3D screenTransform, final int timepoint, final int previousTimepoint )
 	{
 		return mipmapOrdering.getMipmapHints( screenTransform, timepoint, previousTimepoint );
-	}
-
-	@Override
-	public void setCacheHints( final int level, final CacheHints cacheHints )
-	{
-		if ( cacheHints != null )
-		{
-			final RandomAccessibleInterval< V > source = currentSources[ level ];
-			// The type check is currently necessary because it might be a
-			// constant RandomAccessibleInterval (for missing images, see
-			// Hdf5ImageLoader#getMissingDataImage)
-			if ( VolatileCachedCellImg.class.isInstance( source ) )
-				( ( VolatileCachedCellImg< ?, ? > ) source ).setCacheHints( cacheHints );
-		}
 	}
 }
