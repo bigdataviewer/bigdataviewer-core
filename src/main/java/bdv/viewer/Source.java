@@ -69,6 +69,7 @@ public interface Source< T >
 	 */
 	public RandomAccessibleInterval< T > getSource( int t, int level );
 
+
 	/**
 	 * Get the 3D stack at timepoint index t, extended to infinity and interpolated.
 	 *
@@ -81,6 +82,14 @@ public interface Source< T >
 	 * @return the extended and interpolated {@link RandomAccessible stack}.
 	 */
 	public RealRandomAccessible< T > getInterpolatedSource( final int t, final int level, final Interpolation method );
+
+	/*
+	 * TODO: Consider adding the methods for getting Source with explicit
+	 * ThreadGroup key (in case we don't want it to be the current thread's
+	 * ThreadGroup).
+	 */
+//	public default RandomAccessibleInterval< T > getSource( int t, int level, ThreadGroup threadGroup );
+//	public RealRandomAccessible< T > getInterpolatedSource( final int t, final int level, final Interpolation method, ThreadGroup threadGroup );
 
 	/**
 	 * Get the transform from the {@link #getSource(int, int) source} at the
