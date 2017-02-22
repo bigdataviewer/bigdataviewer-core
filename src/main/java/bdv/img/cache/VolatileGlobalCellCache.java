@@ -101,7 +101,7 @@ public class VolatileGlobalCellCache implements CacheControl
 			if ( !( other instanceof VolatileGlobalCellCache.Key ) )
 				return false;
 			final Key that = ( Key ) other;
-			return ( this.timepoint == that.timepoint ) && ( this.setup == that.setup ) && ( this.level == that.level ) && ( this.index == that.index );
+			return ( this.index == that.index ) && ( this.timepoint == that.timepoint ) && ( this.setup == that.setup ) && ( this.level == that.level );
 		}
 
 		final int hashcode;
