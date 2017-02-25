@@ -184,6 +184,12 @@ public class BehaviourTransformEventHandler3D implements BehaviourTransformEvent
 	@Override
 	public void setCanvasSize( final int width, final int height, final boolean updateTransform )
 	{
+		if ( width == 0 || height == 0 ) {
+			// NB: We are probably in some intermediate layout scenario.
+			// Attempting to trigger a transform update with 0 size will result
+			// in the exception "Matrix is singular" from imglib2-realtrasform.
+			return;
+		}
 		if ( updateTransform )
 		{
 			synchronized ( affine )
