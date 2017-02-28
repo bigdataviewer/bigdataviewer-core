@@ -29,8 +29,6 @@
  */
 package bdv.img.cache;
 
-import static bdv.img.gencache.VolatileCachedCellImg.unchecked;
-
 import java.util.concurrent.Callable;
 
 import bdv.cache.CacheControl;
@@ -43,8 +41,8 @@ import net.imglib2.cache.ref.WeakRefVolatileCache;
 import net.imglib2.cache.util.Caches;
 import net.imglib2.cache.util.KeyBimap;
 import net.imglib2.cache.volatiles.CacheHints;
+import net.imglib2.cache.volatiles.UncheckedVolatileLoadingCache;
 import net.imglib2.cache.volatiles.VolatileCacheLoader;
-import net.imglib2.cache.volatiles.VolatileLoadingCache;
 import net.imglib2.img.cell.Cell;
 import net.imglib2.img.cell.CellGrid;
 import net.imglib2.type.NativeType;
@@ -211,7 +209,9 @@ public class VolatileGlobalCellCache implements CacheControl
 			final CacheArrayLoader< A > cacheArrayLoader,
 			final T type )
 	{
-		final VolatileLoadingCache< Long, Cell< ? > > cache = Caches.withLoader(
+		final UncheckedVolatileLoadingCache< Long, Cell< ? > > cache =
+				Caches.unchecked(
+				Caches.withLoader(
 				new WeakRefVolatileCache<>(
 						Caches.mapKeys(
 								backingCache,
@@ -240,11 +240,11 @@ public class VolatileGlobalCellCache implements CacheControl
 						grid.getCellDimensions( key, cellMin, cellDims );
 						return new Cell<>( cellDims, cellMin, cacheArrayLoader.emptyArray( cellDims ) );
 					}
-				} );
+				} ) );
 
 		@SuppressWarnings( "unchecked" )
 		final VolatileCachedCellImg< T, A > img = new VolatileCachedCellImg<>( grid, type, cacheHints,
-				unchecked( ( i, h ) -> ( Cell< A > ) cache.get( i, h ) ) );
+				( i, h ) -> ( Cell< A > ) cache.get( i, h ) );
 
 		return img;
 	}

@@ -1,7 +1,6 @@
 package bdv.img.gencache;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.concurrent.ExecutionException;
 
 import bdv.img.gencache.CachedCellImg.CachedCells;
 import net.imglib2.img.Img;
@@ -19,27 +18,6 @@ public class CachedCellImg< T extends NativeType< T >, A >
 	public interface Get< T >
 	{
 		T get( long index );
-
-	}
-
-	@FunctionalInterface
-	public interface CheckedGet< T >
-	{
-		T get( long index ) throws ExecutionException;
-	}
-
-	public static < T > Get< T > unchecked( final CheckedGet< T > checked )
-	{
-		return index -> {
-			try
-			{
-				return checked.get( index );
-			}
-			catch ( final ExecutionException e )
-			{
-				throw new RuntimeException( e );
-			}
-		};
 	}
 
 	public CachedCellImg( final CellGrid grid, final T type, final Get< Cell< A > > get )

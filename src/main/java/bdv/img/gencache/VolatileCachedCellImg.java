@@ -2,7 +2,6 @@ package bdv.img.gencache;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
-import java.util.concurrent.ExecutionException;
 
 import bdv.cache.CacheControl;
 import bdv.img.gencache.VolatileCachedCellImg.VolatileCachedCells;
@@ -34,32 +33,6 @@ public class VolatileCachedCellImg< T extends NativeType< T >, A >
 	public interface Get< T >
 	{
 		T get( long index, CacheHints cacheHints );
-
-	}
-
-	@FunctionalInterface
-	public interface CheckedGet< T >
-	{
-		T get( long index, CacheHints cacheHints ) throws ExecutionException;
-	}
-
-	public static < T > Get< T > unchecked( final CheckedGet< T > checked )
-	{
-		return ( index, hints ) -> {
-			try
-			{
-				return checked.get( index, hints );
-			}
-			catch ( final ExecutionException e )
-			{
-				throw new RuntimeException( e );
-			}
-		};
-	}
-
-	public VolatileCachedCellImg( final CellGrid grid, final T type, final CacheHints cacheHints, final CheckedGet< Cell< A > > get )
-	{
-		this( grid, type, cacheHints, unchecked( get ) );
 	}
 
 	public VolatileCachedCellImg( final CellGrid grid, final T type, final CacheHints cacheHints, final Get< Cell< A > > get )
