@@ -11,6 +11,7 @@ import net.imglib2.img.cell.CellGrid;
 import net.imglib2.img.list.AbstractLongListImg;
 import net.imglib2.type.NativeType;
 
+// TODO: rename to LazyCellImg and move to imglib2 core
 public class CachedCellImg< T extends NativeType< T >, A >
 		extends AbstractCellImg< T, A, Cell< A >, CachedCells< Cell< A > > >
 {

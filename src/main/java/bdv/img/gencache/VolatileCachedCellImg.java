@@ -26,6 +26,7 @@ import net.imglib2.type.NativeType;
  * @author Tobias Pietzsch
  * @author Stephan Saalfeld
  */
+//TODO: rename to VolatileLazyCellImg and move to imglib2 core ???
 public class VolatileCachedCellImg< T extends NativeType< T >, A >
 		extends AbstractCellImg< T, A, Cell< A >, VolatileCachedCells< Cell< A > > >
 {
