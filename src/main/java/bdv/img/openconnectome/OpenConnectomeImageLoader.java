@@ -41,15 +41,13 @@ import bdv.AbstractViewerSetupImgLoader;
 import bdv.ViewerImgLoader;
 import bdv.ViewerSetupImgLoader;
 import bdv.cache.CacheControl;
+import bdv.img.cache.VolatileCachedCellImg;
 import bdv.img.cache.VolatileGlobalCellCache;
-import bdv.img.gencache.CachedCellImg;
 import mpicbg.spim.data.generic.sequence.ImgLoaderHint;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.cache.volatiles.LoadingStrategy;
-import net.imglib2.img.NativeImg;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileByteArray;
-import net.imglib2.img.cell.AbstractCellImg;
 import net.imglib2.img.cell.CellGrid;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.NativeType;
@@ -243,12 +241,10 @@ public class OpenConnectomeImageLoader extends AbstractViewerSetupImgLoader< Uns
 	}
 
 	/**
-	 * (Almost) create a {@link CachedCellImg} backed by the cache. The created image
-	 * needs a {@link NativeImg#setLinkedType(net.imglib2.type.Type) linked
-	 * type} before it can be used. The type should be either {@link ARGBType}
-	 * and {@link VolatileARGBType}.
+	 * Create a {@link VolatileCachedCellImg} backed by the cache. The type
+	 * should be either {@link ARGBType} and {@link VolatileARGBType}.
 	 */
-	protected < T extends NativeType< T > > AbstractCellImg< T, VolatileByteArray, ?, ? > prepareCachedImage( final int timepointId, final int setupId, final int level, final LoadingStrategy loadingStrategy, final T type )
+	protected < T extends NativeType< T > > VolatileCachedCellImg< T, VolatileByteArray > prepareCachedImage( final int timepointId, final int setupId, final int level, final LoadingStrategy loadingStrategy, final T type )
 	{
 		final long[] dimensions = imageDimensions[ level ];
 		final int[] cellDimensions = blockDimensions[ level ];

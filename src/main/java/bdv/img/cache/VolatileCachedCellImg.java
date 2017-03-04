@@ -1,32 +1,35 @@
-package bdv.img.gencache;
+package bdv.img.cache;
 
-import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 
 import bdv.cache.CacheControl;
-import bdv.img.gencache.VolatileCachedCellImg.VolatileCachedCells;
+import bdv.img.cache.VolatileCachedCellImg.VolatileCachedCells;
+import net.imglib2.Volatile;
 import net.imglib2.cache.iotiming.IoTimeBudget;
 import net.imglib2.cache.queue.BlockingFetchQueues;
 import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.cache.volatiles.LoadingStrategy;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
-import net.imglib2.img.NativeImg;
 import net.imglib2.img.cell.AbstractCellImg;
 import net.imglib2.img.cell.Cell;
 import net.imglib2.img.cell.CellGrid;
+import net.imglib2.img.cell.LazyCellImg;
 import net.imglib2.img.list.AbstractLongListImg;
 import net.imglib2.type.NativeType;
 
 /**
+ * A {@link LazyCellImg} for {@link Volatile} accesses. The only difference to
+ * {@link LazyCellImg} is that is has {@link CacheHints}.
  *
  * @param <T>
+ *            the pixel type
  * @param <A>
+ *            the underlying native access type
  *
  * @author Tobias Pietzsch
  * @author Stephan Saalfeld
  */
-//TODO: rename to VolatileLazyCellImg and move to imglib2 core ???
 public class VolatileCachedCellImg< T extends NativeType< T >, A >
 		extends AbstractCellImg< T, A, Cell< A >, VolatileCachedCells< Cell< A > > >
 {
@@ -42,7 +45,7 @@ public class VolatileCachedCellImg< T extends NativeType< T >, A >
 		cells.cacheHints = cacheHints;
 		try
 		{
-			linkType( type, this );
+			LazyCellImg.linkType( type, this );
 		}
 		catch ( NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e )
 		{
@@ -139,29 +142,6 @@ public class VolatileCachedCellImg< T extends NativeType< T >, A >
 		public Img< T > copy()
 		{
 			throw new UnsupportedOperationException();
-		}
-	}
-
-	/**
-	 * Reflection hack because there is no T NativeType<T>.create(NativeImg<?, A>) method in ImgLib2
-	 * Note that for this method to be introduced, NativeType would need an additional generic parameter A
-	 * that specifies the accepted family of access objects that can be used in the NativeImg... big change
-	 *
-	 * @throws SecurityException
-	 * @throws NoSuchMethodException
-	 * @throws InvocationTargetException
-	 * @throws IllegalArgumentException
-	 * @throws IllegalAccessException
-	 * @throws InstantiationException
-	 */
-	@SuppressWarnings( { "rawtypes", "unchecked" } )
-	static void linkType( final NativeType t, final NativeImg img ) throws NoSuchMethodException, SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, InvocationTargetException
-	{
-		final Constructor constructor = t.getClass().getDeclaredConstructor( NativeImg.class );
-		if ( constructor != null )
-		{
-			final NativeType linkedType = ( NativeType )constructor.newInstance( img );
-			img.setLinkedType( linkedType );
 		}
 	}
 }

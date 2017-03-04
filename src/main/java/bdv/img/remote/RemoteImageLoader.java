@@ -38,8 +38,8 @@ import com.google.gson.GsonBuilder;
 
 import bdv.AbstractViewerSetupImgLoader;
 import bdv.ViewerImgLoader;
+import bdv.img.cache.VolatileCachedCellImg;
 import bdv.img.cache.VolatileGlobalCellCache;
-import bdv.img.gencache.VolatileCachedCellImg;
 import bdv.img.hdf5.DimsAndExistence;
 import bdv.img.hdf5.MipmapInfo;
 import bdv.img.hdf5.ViewLevelId;

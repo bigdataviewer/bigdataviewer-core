@@ -32,7 +32,6 @@ package bdv.img.cache;
 import java.util.concurrent.Callable;
 
 import bdv.cache.CacheControl;
-import bdv.img.gencache.VolatileCachedCellImg;
 import net.imglib2.cache.Cache;
 import net.imglib2.cache.queue.BlockingFetchQueues;
 import net.imglib2.cache.queue.FetcherThreads;

@@ -39,7 +39,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 import bdv.cache.CacheControl;
-import bdv.img.gencache.VolatileCachedCellImg;
+import bdv.img.cache.VolatileCachedCellImg;
 import bdv.viewer.Interpolation;
 import bdv.viewer.Source;
 import bdv.viewer.render.MipmapOrdering.Level;
@@ -783,7 +783,7 @@ public class MultiResolutionRenderer
 		final RandomAccessibleInterval< T > img = source.getSource( timepoint, mipmapIndex );
 		if ( VolatileCachedCellImg.class.isInstance( img ) )
 		{
-			final VolatileCachedCellImg< ?, ? > cellImg = ( VolatileCachedCellImg< ?, ? > ) img;
+			final VolatileCachedCellImg< ?, ? > cellImg = (bdv.img.cache.VolatileCachedCellImg< ?, ? > ) img;
 			final int[] cellDimensions = new int[ 3 ];
 			cellImg.getCellGrid().cellDimensions( cellDimensions );
 			final long[] dimensions = new long[ 3 ];
