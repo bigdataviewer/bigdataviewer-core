@@ -25,29 +25,28 @@
  */
 package bdv.viewer;
 
-import bdv.tools.bookmarks.bookmark.DynamicBookmark;
-import bdv.tools.bookmarks.bookmark.DynamicBookmarkChangedListener;
-import bdv.tools.bookmarks.bookmark.KeyFrame;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Rectangle;
-import java.awt.event.KeyAdapter;
-import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.lang.reflect.Field;
+
 import javax.swing.JPopupMenu;
 import javax.swing.JSlider;
 import javax.swing.SwingUtilities;
 import javax.swing.plaf.SliderUI;
 import javax.swing.plaf.basic.BasicSliderUI;
 
+import bdv.tools.bookmarks.bookmark.DynamicBookmark;
+import bdv.tools.bookmarks.bookmark.DynamicBookmarkChangedListener;
+import bdv.tools.bookmarks.bookmark.KeyFrame;
+
 /**
  * Extends the {@link JSlider}-Component with the ability to flag single
  * {@link KeyFrame}'s.
  * 
- * @author Riebe, Moritz (moritz.riebe@mz-solutions.de)
  */
 public final class JKeyFrameSlider extends JSlider {
 
@@ -108,7 +107,7 @@ public final class JKeyFrameSlider extends JSlider {
 		setMinimumSize(new Dimension((int) getMinimumSize().getWidth(), 26));
 		setPreferredSize(new Dimension((int) getPreferredSize().getWidth(), 26));
 
-		// setFocusable(false);
+		setFocusable(false);
 	}
 
 	/**
@@ -266,6 +265,8 @@ public final class JKeyFrameSlider extends JSlider {
 
 	private class MouseHoverEventAdapter extends MouseAdapter {
 
+		private boolean isPressing = false;
+		
 		@Override
 		public void mouseMoved(MouseEvent e) {
 			updateComponent(e);
@@ -273,20 +274,34 @@ public final class JKeyFrameSlider extends JSlider {
 
 		@Override
 		public void mouseExited(MouseEvent e) {
-			updateComponent(e);
+			if(!isPressing){	
+				updateComponent(e);
+			}
 		}
 
 		@Override
 		public void mouseEntered(MouseEvent e) {
-			updateComponent(e);
+			//updateComponent(e);
 		}
 
 		@Override
 		public void mouseDragged(MouseEvent e) {
-			// when user drags the thumb, we need to update the hovered keyframe
-			// otherwise the thumb will jump back to the currently as hovered marked keyframe
-			// though the keyframe is not actually hovered
-			updateComponent(e);
+			
+			if(currentHoverKeyframe == null){
+				// when user drags the thumb, we need to update the hovered keyframe
+				// otherwise the thumb will jump back to the currently as hovered marked keyframe
+				// though the keyframe is not actually hovered
+				//updateComponent(e);
+			}
+			else{
+				final Rectangle trackRect = getTrackRect();
+				int t = (int) ((e.getX() - trackRect.x) / trackRect.getWidth() * numTimepoints);
+				currentHoverKeyframe.setTimepoint( t);
+				setValue(t);
+				
+				// TODO save new timepoint
+				// TODO dragged keyframe over another keyframe (same timepoint)
+			}
 		}
 
 		private void updateComponent(MouseEvent event) {
@@ -305,12 +320,10 @@ public final class JKeyFrameSlider extends JSlider {
 
 		@Override
 		public void mouseReleased(MouseEvent e) {
+			isPressing = false;
 			maybeTriggerPopupMenu(e);
 
 			if (SwingUtilities.isLeftMouseButton(e) && e.getClickCount() == 1) {
-				// when left mouse button is released the thumb will jump
-				// to the currently hovered keyframe (snapping)
-				// to prevent this behavior the user can press the control key
 				if (currentHoverKeyframe != null) {
 					setValue(currentHoverKeyframe.getTimepoint());
 				}
@@ -319,6 +332,7 @@ public final class JKeyFrameSlider extends JSlider {
 
 		@Override
 		public void mousePressed(MouseEvent e) {
+			isPressing = true;
 			maybeTriggerPopupMenu(e);
 		}
 
