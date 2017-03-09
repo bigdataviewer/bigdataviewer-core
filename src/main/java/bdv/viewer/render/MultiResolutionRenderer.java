@@ -663,9 +663,10 @@ public class MultiResolutionRenderer
 				final RandomAccessible< A > source,
 				final Converter< ? super A, B > converter,
 				final RandomAccessibleInterval< B > target,
-				final int numThreads )
+				final int numThreads,
+				final ExecutorService executorService )
 		{
-			super( source, converter, target, numThreads );
+			super( source, converter, target, numThreads, executorService );
 		}
 
 		@Override
@@ -701,7 +702,7 @@ public class MultiResolutionRenderer
 			final int bestLevel = viewerState.getBestMipMapLevel( screenScaleTransform, sourceIndex );
 			return new SimpleVolatileProjector<>(
 					getTransformedSource( viewerState, source.getSpimSource(), screenScaleTransform, bestLevel ),
-					source.getConverter(), screenImage, numRenderingThreads );
+					source.getConverter(), screenImage, numRenderingThreads, renderingExecutorService );
 		}
 	}
 
