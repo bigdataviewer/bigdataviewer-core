@@ -46,8 +46,8 @@ import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.cache.CacheLoader;
-import net.imglib2.cache.UncheckedLoadingCache;
-import net.imglib2.cache.ref.BoundedSoftRefCache;
+import net.imglib2.cache.UncheckedCache;
+import net.imglib2.cache.ref.BoundedSoftRefLoaderCache;
 import net.imglib2.cache.util.Caches;
 import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.ClampingNLinearInterpolatorFactory;
@@ -138,9 +138,9 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 
 	protected final InterpolatorFactory< T, RandomAccessible< T > >[] interpolatorFactories;
 
-	protected final UncheckedLoadingCache< ImgKey, RandomAccessibleInterval< T > > cachedSources;
+	protected final UncheckedCache< ImgKey, RandomAccessibleInterval< T > > cachedSources;
 
-	protected final UncheckedLoadingCache< ImgKey, RealRandomAccessible< T > > cachedInterpolatedSources;
+	protected final UncheckedCache< ImgKey, RealRandomAccessible< T > > cachedInterpolatedSources;
 
 	@SuppressWarnings( "unchecked" )
 	public AbstractSpimSource( final AbstractSpimData< ? > spimData, final int setupId, final String name )
@@ -164,7 +164,7 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 			return getImage( timePointsOrdered.get( key.timepoint ).getId(), key.level );
 		};
 		cachedSources = Caches.unchecked( Caches.withLoader(
-				new BoundedSoftRefCache<>( 3 * numMipmapLevels ),
+				new BoundedSoftRefLoaderCache<>( 3 * numMipmapLevels ),
 				loader ) );
 
 		final CacheLoader< ImgKey, RealRandomAccessible< T > > interpolLoader = key -> {
@@ -175,7 +175,7 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 			return Views.interpolate( Views.extendValue( getSource( key.timepoint, key.level ), zero ), factory );
 		};
 		cachedInterpolatedSources = Caches.unchecked( Caches.withLoader(
-				new BoundedSoftRefCache<>( 3 * numMipmapLevels * numInterpolationMethods ),
+				new BoundedSoftRefLoaderCache<>( 3 * numMipmapLevels * numInterpolationMethods ),
 				interpolLoader ) );
 
 		currentSourceTransforms = new AffineTransform3D[ numMipmapLevels ];

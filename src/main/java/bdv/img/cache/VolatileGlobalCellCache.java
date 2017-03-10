@@ -32,15 +32,15 @@ package bdv.img.cache;
 import java.util.concurrent.Callable;
 
 import bdv.cache.CacheControl;
-import net.imglib2.cache.Cache;
+import net.imglib2.cache.LoaderCache;
 import net.imglib2.cache.queue.BlockingFetchQueues;
 import net.imglib2.cache.queue.FetcherThreads;
-import net.imglib2.cache.ref.SoftRefCache;
-import net.imglib2.cache.ref.WeakRefVolatileCache;
+import net.imglib2.cache.ref.SoftRefLoaderCache;
+import net.imglib2.cache.ref.WeakRefVolatileLoaderCache;
 import net.imglib2.cache.util.Caches;
 import net.imglib2.cache.util.KeyBimap;
 import net.imglib2.cache.volatiles.CacheHints;
-import net.imglib2.cache.volatiles.UncheckedVolatileLoadingCache;
+import net.imglib2.cache.volatiles.UncheckedVolatileCache;
 import net.imglib2.cache.volatiles.VolatileCacheLoader;
 import net.imglib2.img.cell.Cell;
 import net.imglib2.img.cell.CellGrid;
@@ -112,7 +112,7 @@ public class VolatileGlobalCellCache implements CacheControl
 
 	private final BlockingFetchQueues< Callable< ? > > queue;
 
-	protected final Cache< Key, Cell< ? > > backingCache;
+	protected final LoaderCache< Key, Cell< ? > > backingCache;
 
 	/**
 	 * Create a new global cache with a new fetch queue served by the specified
@@ -127,7 +127,7 @@ public class VolatileGlobalCellCache implements CacheControl
 	{
 		queue = new BlockingFetchQueues<>( maxNumLevels );
 		new FetcherThreads( queue, numFetcherThreads );
-		backingCache = new SoftRefCache<>();
+		backingCache = new SoftRefLoaderCache<>();
 	}
 
 	/**
@@ -140,7 +140,7 @@ public class VolatileGlobalCellCache implements CacheControl
 	public VolatileGlobalCellCache( final BlockingFetchQueues< Callable< ? > > queue )
 	{
 		this.queue = queue;
-		backingCache = new SoftRefCache<>();
+		backingCache = new SoftRefLoaderCache<>();
 	}
 
 	/**
@@ -208,10 +208,10 @@ public class VolatileGlobalCellCache implements CacheControl
 			final CacheArrayLoader< A > cacheArrayLoader,
 			final T type )
 	{
-		final UncheckedVolatileLoadingCache< Long, Cell< ? > > cache =
+		final UncheckedVolatileCache< Long, Cell< ? > > cache =
 				Caches.unchecked(
 				Caches.withLoader(
-				new WeakRefVolatileCache<>(
+				new WeakRefVolatileLoaderCache<>(
 						Caches.mapKeys(
 								backingCache,
 								KeyBimap.< Long, Key >build(
