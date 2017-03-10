@@ -82,7 +82,7 @@ public class TiledImageLoader< A extends VolatileAccess, T extends NativeType< T
 	}
 
 	public TiledImageLoader(
-			final List< CacheArrayLoader< A > > loaders,
+			final List< ? extends CacheArrayLoader< A > > loaders,
 			final T type,
 			final V vType,
 			final long width,
@@ -252,7 +252,7 @@ public class TiledImageLoader< A extends VolatileAccess, T extends NativeType< T
 	}
 
 	@Override
-	public ViewerSetupImgLoader< ?, ? > getSetupImgLoader( final int setupId )
+	public ViewerSetupImgLoader< T, V > getSetupImgLoader( final int setupId )
 	{
 		return setupLoaders.get( setupId );
 	}
