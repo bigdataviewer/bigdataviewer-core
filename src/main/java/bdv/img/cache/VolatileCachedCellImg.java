@@ -41,8 +41,7 @@ public class VolatileCachedCellImg< T extends NativeType< T >, A >
 
 	public VolatileCachedCellImg( final CellGrid grid, final T type, final CacheHints cacheHints, final Get< Cell< A > > get )
 	{
-		super( grid, new VolatileCachedCells<>( grid.getGridDimensions(), get, null ), type.getEntitiesPerPixel() );
-		cells.cacheHints = cacheHints;
+		super( grid, new VolatileCachedCells<>( grid.getGridDimensions(), get, cacheHints ), type.getEntitiesPerPixel() );
 		try
 		{
 			LazyCellImg.linkType( type, this );
@@ -92,7 +91,7 @@ public class VolatileCachedCellImg< T extends NativeType< T >, A >
 	 */
 	public void setCacheHints( final CacheHints cacheHints )
 	{
-		cells.cacheHints = cacheHints;
+		cells.cacheHints = ( cacheHints != null ) ? cacheHints : cells.defaultCacheHints;
 	}
 
 	@Override
@@ -111,12 +110,15 @@ public class VolatileCachedCellImg< T extends NativeType< T >, A >
 	{
 		private final Get< T > get;
 
+		final CacheHints defaultCacheHints;
+
 		CacheHints cacheHints;
 
 		protected VolatileCachedCells( final long[] dimensions, final Get< T > get, final CacheHints cacheHints )
 		{
 			super( dimensions );
 			this.get = get;
+			this.defaultCacheHints = cacheHints;
 			this.cacheHints = cacheHints;
 		}
 

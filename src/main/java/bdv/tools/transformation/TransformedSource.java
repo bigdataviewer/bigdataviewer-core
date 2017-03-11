@@ -33,11 +33,9 @@ import bdv.viewer.Interpolation;
 import bdv.viewer.Source;
 import bdv.viewer.render.DefaultMipmapOrdering;
 import bdv.viewer.render.MipmapOrdering;
-import bdv.viewer.render.SetCacheHints;
 import mpicbg.spim.data.sequence.VoxelDimensions;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
-import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.realtransform.AffineTransform3D;
 
 /**
@@ -52,7 +50,7 @@ import net.imglib2.realtransform.AffineTransform3D;
  * @param <T>
  *            the type of the original source.
  */
-public class TransformedSource< T > implements Source< T >, MipmapOrdering, SetCacheHints
+public class TransformedSource< T > implements Source< T >, MipmapOrdering
 {
 	protected final Source< T > source;
 
@@ -61,13 +59,6 @@ public class TransformedSource< T > implements Source< T >, MipmapOrdering, SetC
 	 * {@link MipmapOrdering}, or a {@link DefaultMipmapOrdering}.
 	 */
 	protected final MipmapOrdering sourceMipmapOrdering;
-
-	/**
-	 * This is either the {@link #source} itself, if it implements
-	 * {@link SetCacheHints}, or a {@link SetCacheHints} doing
-	 * nothing.
-	 */
-	protected final SetCacheHints sourceSetCacheHints;
 
 	/**
 	 * Incremental part of the extra transformation.
@@ -124,9 +115,6 @@ public class TransformedSource< T > implements Source< T >, MipmapOrdering, SetC
 
 		sourceMipmapOrdering = MipmapOrdering.class.isInstance( source ) ?
 				( MipmapOrdering ) source : new DefaultMipmapOrdering( source );
-
-		sourceSetCacheHints = SetCacheHints.class.isInstance( source ) ?
-				( SetCacheHints ) source : SetCacheHints.empty;
 
 		this.incrementalTransform = incrementalTransform;
 		this.fixedTransform = fixedTransform;
@@ -259,12 +247,6 @@ public class TransformedSource< T > implements Source< T >, MipmapOrdering, SetC
 	public int getNumMipmapLevels()
 	{
 		return source.getNumMipmapLevels();
-	}
-
-	@Override
-	public void setCacheHints( final int level, final CacheHints cacheHints )
-	{
-		sourceSetCacheHints.setCacheHints( level, cacheHints );
 	}
 
 	@Override
