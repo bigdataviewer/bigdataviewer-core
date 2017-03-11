@@ -70,16 +70,45 @@ public class DynamicBookmark extends Bookmark {
 		return unmodifiableSet(this.keyframes);
 	}
 
-	public void add(final KeyFrame keyframe) {
+	public boolean add(final KeyFrame keyframe) {
 		remove(keyframe);
-		boolean b = keyframes.add(keyframe);
+		final boolean b = keyframes.add(keyframe);
 		if (b) {
 			fireDynamicBookmarkChanged();
 		}
+		return b;
+	}
+	
+	/**
+	 * Updates the given KeyFrame with the given Timepoint.
+	 * When alreadey a KeyFrame with the given Timepoint exists, the KeyFrame will not be updated.
+	 * This method returns the updated KeyFrame or null when it could not be updated.
+	 * 
+	 * @param keyframe the KeyFrame which will be updated
+	 * @param timepoint the new Timepoint
+	 * @return the updated KeyFrame or null
+	 */
+	public KeyFrame updateWithoutOverride(final KeyFrame keyframe, final int timepoint){
+		
+		if(keyframes.contains(new KeyFrame(timepoint, null))){
+			// a keyframe with the new timepoit alrady exists
+			// dont update
+			return null;
+		}
+		else{
+			final boolean isRemoved = keyframes.remove(keyframe);
+			final KeyFrame newKeyFrame = new KeyFrame(timepoint, keyframe.getTransform());
+			if(this.keyframes.add(newKeyFrame)){
+				fireDynamicBookmarkChanged();
+				return newKeyFrame;
+			}
+		}
+		
+		return null;
 	}
 
 	public boolean remove(final KeyFrame keyframe) {
-		boolean b = keyframes.remove(keyframe);
+		final boolean b = keyframes.remove(keyframe);
 		if (b) {
 			fireDynamicBookmarkChanged();
 		}
@@ -176,13 +205,23 @@ public class DynamicBookmark extends Bookmark {
 			return null;
 		}
 
+		for(KeyFrame k : this.keyframes){
+			System.out.println("all " + k.getTimepoint());	
+		}
+		
+		System.out.println("time " + timepoint);	
 		KeyFrame previousKeyframe = getPreviousOrEqualKeyFrame(timepoint);
+		
 		final KeyFrame nextKeyframe = getNextKeyFrame(timepoint);
 
 		if (previousKeyframe == null) {
 			previousKeyframe = keyframes.first();
 		}
 
+		
+		System.out.println("previous " + previousKeyframe.getTimepoint());
+
+		
 		if (nextKeyframe == null) {
 			AffineTransform3D transform = previousKeyframe.getTransform().copy();
 			return transform;

@@ -424,6 +424,10 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		nextKeyframeButton.setEnabled(enable);
 	}
 	
+	public KeyFramePopupMenu getKeyFramePopupMenu(){
+		return this.sliderTime.getKeyFramePopupMenuPopupMenu();
+	}
+	
 	public void addSource( final SourceAndConverter< ? > sourceAndConverter )
 	{
 		synchronized ( visibilityAndGrouping )

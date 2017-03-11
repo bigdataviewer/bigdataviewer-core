@@ -84,12 +84,12 @@ public final class JKeyFrameSlider extends JSlider {
 	private DynamicBookmark bookmark = null;
 
 	private KeyFrame currentHoverKeyframe = null;
-
+	
 	public JKeyFrameSlider() {
 		this(0, 100, 50);
 	}
 
-	public JKeyFrameSlider(int min, int max) {
+	public JKeyFrameSlider( int min, int max) {
 		this(min, max, min);
 	}
 
@@ -296,10 +296,13 @@ public final class JKeyFrameSlider extends JSlider {
 			else{
 				final Rectangle trackRect = getTrackRect();
 				int t = (int) ((e.getX() - trackRect.x) / trackRect.getWidth() * numTimepoints);
-				currentHoverKeyframe.setTimepoint( t);
+				final KeyFrame updatedKeyFrame = bookmark.updateWithoutOverride(currentHoverKeyframe, t);
+				if(updatedKeyFrame != null){
+					currentHoverKeyframe = updatedKeyFrame;
+				}
 				setValue(t);
 				
-				// TODO save new timepoint
+				// TODO update view 
 				// TODO dragged keyframe over another keyframe (same timepoint)
 			}
 		}

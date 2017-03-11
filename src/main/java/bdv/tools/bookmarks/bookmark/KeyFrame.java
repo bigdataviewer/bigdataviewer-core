@@ -22,10 +22,6 @@ public class KeyFrame {
 		return timepoint;
 	}
 
-	public void setTimepoint(int timepoint) {
-		this.timepoint = timepoint;
-	}
-
 	public AffineTransform3D getTransform() {
 		return transform;
 	}
