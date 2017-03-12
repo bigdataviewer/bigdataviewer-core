@@ -28,6 +28,8 @@ import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.PlainDocument;
@@ -99,6 +101,30 @@ public class AddBookmarkDialog extends JDialog {
 		gbc_titleField.gridx = 0;
 		gbc_titleField.gridy = 1;
 		bookmarkPanel.add(titleField, gbc_titleField);
+		titleField.getDocument().addDocumentListener(new DocumentListener() {
+
+			@Override
+			public void changedUpdate(DocumentEvent arg0) {
+				setKeyFieldText();
+			}
+
+			@Override
+			public void insertUpdate(DocumentEvent arg0) {
+				setKeyFieldText();
+			}
+
+			@Override
+			public void removeUpdate(DocumentEvent arg0) {
+				setKeyFieldText();
+			}
+		    
+			private void setKeyFieldText(){
+				if(titleField.getText().length()>0){
+					keyField.setText(titleField.getText().substring(0, 1));
+				}
+			}
+			
+		  });
 
 		JLabel lblDescription = new JLabel("Description");
 		GridBagConstraints gbc_lblDescription = new GridBagConstraints();
@@ -134,7 +160,6 @@ public class AddBookmarkDialog extends JDialog {
 		gbc_keyField.gridy = 5;
 		bookmarkPanel.add(keyField, gbc_keyField);
 		keyField.setColumns(10);
-
 		keyField.setDocument(new MaxLengthTextDocument(1));
 
 		JLabel typeLabel = new JLabel("Type");
@@ -181,21 +206,10 @@ public class AddBookmarkDialog extends JDialog {
 
 		JButton addButton = new JButton("Add");
 		buttonPanel.add(addButton);
-		addButton.addActionListener(new ActionListener() {
-
+		addButton.addActionListener(new AbstractAction() {
 			@Override
-			public void actionPerformed(ActionEvent e) {
-
-				if (!isInputValid())
-					return;
-
-				if (simpleBookmarkOption.isSelected()) {
-					bookmarksEditor.createSimpleBookmark(keyField.getText(), titleField.getText(), descriptionField.getText());
-				} else if (dynamicBookmarkOption.isSelected()) {
-					bookmarksEditor.createDynamicBookmark(keyField.getText(), titleField.getText(), descriptionField.getText());
-				}
-
-				dispose();
+			public void actionPerformed(ActionEvent arg0) {
+				addBookmark();
 			}
 		});
 
@@ -207,8 +221,30 @@ public class AddBookmarkDialog extends JDialog {
 			}
 		});
 
+		setKeyBinding();
+
+		pack();
+		setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
+	}
+
+	private void setKeyBinding(){
 		final ActionMap am = getRootPane().getActionMap();
 		final InputMap im = getRootPane().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+		
+		// add Bookmark
+		final Object addKey = new Object();
+		final Action addAction = new AbstractAction() {
+			@Override
+			public void actionPerformed(final ActionEvent e) {
+				addBookmark();
+			}
+
+			private static final long serialVersionUID = 1L;
+		};
+		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), addKey);
+		am.put(addKey, addAction);
+		
+		// close dialog
 		final Object hideKey = new Object();
 		final Action hideAction = new AbstractAction() {
 			@Override
@@ -220,11 +256,9 @@ public class AddBookmarkDialog extends JDialog {
 		};
 		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), hideKey);
 		am.put(hideKey, hideAction);
-
-		pack();
-		setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
+		
 	}
-
+	
 	private boolean isInputValid() {
 
 		String key = keyField.getText();
@@ -249,6 +283,19 @@ public class AddBookmarkDialog extends JDialog {
 		return true;
 	}
 
+	private void addBookmark(){
+		if (!isInputValid())
+			return;
+
+		if (simpleBookmarkOption.isSelected()) {
+			bookmarksEditor.createSimpleBookmark(keyField.getText(), titleField.getText(), descriptionField.getText());
+		} else if (dynamicBookmarkOption.isSelected()) {
+			bookmarksEditor.createDynamicBookmark(keyField.getText(), titleField.getText(), descriptionField.getText());
+		}
+
+		dispose();
+	}
+	
 	private void reset() {
 		titleField.setText("");
 		descriptionField.setText("");
