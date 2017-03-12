@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -38,6 +38,7 @@ import net.imglib2.img.basictypeaccess.volatiles.VolatileShortAccess;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.util.Fraction;
 
 /**
  * A {@link Volatile} variant of {@link UnsignedShortType}. It uses an
@@ -57,7 +58,7 @@ public class VolatileARGBType extends AbstractVolatileNativeNumericType< ARGBTyp
 		{
 			super( img );
 		}
-		
+
 		public WrappedARGBType( final IntAccess access )
 		{
 			super( access );
@@ -112,7 +113,17 @@ public class VolatileARGBType extends AbstractVolatileNativeNumericType< ARGBTyp
 	@Override
 	public NativeImg< VolatileARGBType, ? extends VolatileIntAccess > createSuitableNativeImg( final NativeImgFactory< VolatileARGBType > storageFactory, final long[] dim )
 	{
-		throw new UnsupportedOperationException();
+		// create the container
+		@SuppressWarnings( "unchecked" )
+		final NativeImg< VolatileARGBType, ? extends VolatileIntAccess > container = ( NativeImg< VolatileARGBType, ? extends VolatileIntAccess > ) storageFactory.createIntInstance( dim, new Fraction() );
+
+		// create a Type that is linked to the container
+		final VolatileARGBType linkedType = new VolatileARGBType( container );
+
+		// pass it to the NativeContainer
+		container.setLinkedType( linkedType );
+
+		return container;
 	}
 
 	@Override

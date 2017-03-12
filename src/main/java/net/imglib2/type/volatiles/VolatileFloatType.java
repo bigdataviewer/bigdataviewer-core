@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -35,6 +35,7 @@ import net.imglib2.img.basictypeaccess.FloatAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileFloatAccess;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileFloatArray;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.util.Fraction;
 
 public class VolatileFloatType extends AbstractVolatileNativeRealType< FloatType, VolatileFloatType >
 {
@@ -101,7 +102,17 @@ public class VolatileFloatType extends AbstractVolatileNativeRealType< FloatType
 	@Override
 	public NativeImg< VolatileFloatType, ? extends VolatileFloatAccess > createSuitableNativeImg( final NativeImgFactory< VolatileFloatType > storageFactory, final long[] dim )
 	{
-		throw new UnsupportedOperationException();
+		// create the container
+		@SuppressWarnings( "unchecked" )
+		final NativeImg< VolatileFloatType, ? extends VolatileFloatAccess > container = ( NativeImg< VolatileFloatType, ? extends VolatileFloatAccess > ) storageFactory.createFloatInstance( dim, new Fraction() );
+
+		// create a Type that is linked to the container
+		final VolatileFloatType linkedType = new VolatileFloatType( container );
+
+		// pass it to the NativeContainer
+		container.setLinkedType( linkedType );
+
+		return container;
 	}
 
 	@Override
