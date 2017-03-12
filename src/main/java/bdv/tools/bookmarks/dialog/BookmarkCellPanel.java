@@ -17,26 +17,40 @@ import javax.swing.border.MatteBorder;
 import bdv.tools.bookmarks.bookmark.DynamicBookmark;
 import bdv.tools.bookmarks.bookmark.Bookmark;
 import bdv.tools.bookmarks.bookmark.SimpleBookmark;
+import javax.swing.JTextArea;
+import javax.swing.JScrollPane;
 
 public class BookmarkCellPanel extends JPanel {
 
 	private static final long serialVersionUID = 1L;
 
-	private final JTextField keyField;
+	private final static Color ACTIVE_COLOR = Color.CYAN;
+
+	private final Bookmark bookmark;
+
+	private final JLabel lblKey;
 	private final JLabel typeLabel;
+	private final JLabel lblTitle;
+	private final JLabel lblDescription;
+	
+	private final JTextField keyField;
+	private final JTextField titleField;
+	private final JScrollPane scrollPaneDescription;
+	private final JTextArea descriptionArea;
 
 	private final JButton selectButton;
 	private final JButton removeButton;
-
-	private final static Color ACTIVE_COLOR = Color.CYAN;
-
-	private Bookmark bookmark;
+	
 	private boolean active = false;
-
+	
 	BookmarkCellPanel(Bookmark bookmark) {
 		setBorder(new MatteBorder(0, 0, 1, 0, (Color) new Color(0, 0, 0)));
 		this.bookmark = bookmark;
 
+		setMinimumSize(new Dimension(300, 210));
+		setMaximumSize(new Dimension(2147483647, 210));
+		setPreferredSize(new Dimension(300, 210));
+		
 		GridBagLayout gridBagLayout = new GridBagLayout();
 		gridBagLayout.columnWidths = new int[] { 1, 1, 0 };
 		gridBagLayout.rowHeights = new int[] { 1, 0 };
@@ -44,50 +58,85 @@ public class BookmarkCellPanel extends JPanel {
 		gridBagLayout.rowWeights = new double[] { 1.0, Double.MIN_VALUE };
 		setLayout(gridBagLayout);
 
-		JPanel panel = new JPanel();
-		GridBagConstraints gbc_panel = new GridBagConstraints();
-		gbc_panel.anchor = GridBagConstraints.NORTH;
-		gbc_panel.fill = GridBagConstraints.HORIZONTAL;
-		gbc_panel.insets = new Insets(5, 5, 0, 5);
-		gbc_panel.gridx = 0;
-		gbc_panel.gridy = 0;
-		add(panel, gbc_panel);
-		GridBagLayout gbl_panel = new GridBagLayout();
-		gbl_panel.columnWidths = new int[] { 0, 0 };
-		gbl_panel.rowHeights = new int[] { 0, 0, 0 };
-		gbl_panel.columnWeights = new double[] { 1.0, Double.MIN_VALUE };
-		gbl_panel.rowWeights = new double[] { 0.0, 0.0 };
-		panel.setLayout(gbl_panel);
+		JPanel panelInfo = new JPanel();
+		GridBagConstraints gbc_panelInfo = new GridBagConstraints();
+		gbc_panelInfo.anchor = GridBagConstraints.NORTH;
+		gbc_panelInfo.fill = GridBagConstraints.HORIZONTAL;
+		gbc_panelInfo.insets = new Insets(5, 5, 0, 5);
+		gbc_panelInfo.gridx = 0;
+		gbc_panelInfo.gridy = 0;
+		add(panelInfo, gbc_panelInfo);
+		GridBagLayout gbl_panelInfo = new GridBagLayout();
+		gbl_panelInfo.columnWidths = new int[] { 0, 0 };
+		gbl_panelInfo.rowHeights = new int[] { 0, 0, 0, 0, 0, 0, 70, 0 };
+		gbl_panelInfo.columnWeights = new double[] { 1.0, Double.MIN_VALUE };
+		gbl_panelInfo.rowWeights = new double[] { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0 };
+		panelInfo.setLayout(gbl_panelInfo);
+
+		lblKey = new JLabel("Key");
+		GridBagConstraints gbc_lblKey = new GridBagConstraints();
+		gbc_lblKey.anchor = GridBagConstraints.WEST;
+		gbc_lblKey.insets = new Insets(0, 0, 5, 0);
+		gbc_lblKey.gridx = 0;
+		gbc_lblKey.gridy = 0;
+		panelInfo.add(lblKey, gbc_lblKey);
 
 		keyField = new JTextField();
 		GridBagConstraints gbc_txtKey = new GridBagConstraints();
 		gbc_txtKey.insets = new Insets(0, 0, 5, 0);
 		gbc_txtKey.fill = GridBagConstraints.HORIZONTAL;
 		gbc_txtKey.gridx = 0;
-		gbc_txtKey.gridy = 0;
-		panel.add(keyField, gbc_txtKey);
+		gbc_txtKey.gridy = 1;
+		panelInfo.add(keyField, gbc_txtKey);
 		keyField.setColumns(10);
 
-		typeLabel = new JLabel();
-		GridBagConstraints gbc_lblType = new GridBagConstraints();
-		gbc_lblType.anchor = GridBagConstraints.WEST;
-		gbc_lblType.gridx = 0;
-		gbc_lblType.gridy = 1;
-		panel.add(typeLabel, gbc_lblType);
+		typeLabel = new JLabel("Bookmark type");
+		GridBagConstraints gbc_typeLabel = new GridBagConstraints();
+		gbc_typeLabel.anchor = GridBagConstraints.WEST;
+		gbc_typeLabel.insets = new Insets(0, 0, 5, 0);
+		gbc_typeLabel.gridx = 0;
+		gbc_typeLabel.gridy = 2;
+		panelInfo.add(typeLabel, gbc_typeLabel);
 
-		JPanel panel_1 = new JPanel();
-		GridBagConstraints gbc_panel_1 = new GridBagConstraints();
-		gbc_panel_1.insets = new Insets(5, 5, 5, 5);
-		gbc_panel_1.anchor = GridBagConstraints.NORTHEAST;
-		gbc_panel_1.gridx = 1;
-		gbc_panel_1.gridy = 0;
-		add(panel_1, gbc_panel_1);
-		GridBagLayout gbl_panel_1 = new GridBagLayout();
-		gbl_panel_1.columnWidths = new int[] { 0, 0 };
-		gbl_panel_1.rowHeights = new int[] { 0, 0, 0 };
-		gbl_panel_1.columnWeights = new double[] { 0.0, Double.MIN_VALUE };
-		gbl_panel_1.rowWeights = new double[] { 0.0, 0.0, Double.MIN_VALUE };
-		panel_1.setLayout(gbl_panel_1);
+		lblTitle = new JLabel("Title");
+		GridBagConstraints gbc_lblTitle = new GridBagConstraints();
+		gbc_lblTitle.anchor = GridBagConstraints.WEST;
+		gbc_lblTitle.insets = new Insets(0, 0, 5, 0);
+		gbc_lblTitle.gridx = 0;
+		gbc_lblTitle.gridy = 3;
+		panelInfo.add(lblTitle, gbc_lblTitle);
+
+		titleField = new JTextField();
+		titleField.setText((String) null);
+		titleField.setColumns(10);
+		GridBagConstraints gbc_titleField = new GridBagConstraints();
+		gbc_titleField.insets = new Insets(0, 0, 5, 0);
+		gbc_titleField.fill = GridBagConstraints.HORIZONTAL;
+		gbc_titleField.gridx = 0;
+		gbc_titleField.gridy = 4;
+		panelInfo.add(titleField, gbc_titleField);
+		
+		lblDescription = new JLabel("Description");
+		GridBagConstraints gbc_lblDescription = new GridBagConstraints();
+		gbc_lblDescription.anchor = GridBagConstraints.WEST;
+		gbc_lblDescription.insets = new Insets(0, 0, 5, 0);
+		gbc_lblDescription.gridx = 0;
+		gbc_lblDescription.gridy = 5;
+		panelInfo.add(lblDescription, gbc_lblDescription);
+
+		JPanel panelButton = new JPanel();
+		GridBagConstraints gbc_panelButton = new GridBagConstraints();
+		gbc_panelButton.insets = new Insets(5, 5, 5, 5);
+		gbc_panelButton.anchor = GridBagConstraints.NORTHEAST;
+		gbc_panelButton.gridx = 1;
+		gbc_panelButton.gridy = 0;
+		add(panelButton, gbc_panelButton);
+		GridBagLayout gbl_panelButton = new GridBagLayout();
+		gbl_panelButton.columnWidths = new int[] { 0, 0 };
+		gbl_panelButton.rowHeights = new int[] { 0, 0, 0 };
+		gbl_panelButton.columnWeights = new double[] { 0.0, Double.MIN_VALUE };
+		gbl_panelButton.rowWeights = new double[] { 0.0, 0.0, Double.MIN_VALUE };
+		panelButton.setLayout(gbl_panelButton);
 
 		selectButton = new JButton("Show");
 		GridBagConstraints gbc_btnSelect = new GridBagConstraints();
@@ -95,24 +144,38 @@ public class BookmarkCellPanel extends JPanel {
 		gbc_btnSelect.insets = new Insets(0, 0, 5, 0);
 		gbc_btnSelect.gridx = 0;
 		gbc_btnSelect.gridy = 0;
-		panel_1.add(selectButton, gbc_btnSelect);
+		panelButton.add(selectButton, gbc_btnSelect);
 
 		removeButton = new JButton("Remove");
 		GridBagConstraints gbc_btnRemove = new GridBagConstraints();
 		gbc_btnRemove.fill = GridBagConstraints.HORIZONTAL;
 		gbc_btnRemove.gridx = 0;
 		gbc_btnRemove.gridy = 1;
-		panel_1.add(removeButton, gbc_btnRemove);
-
-		typeLabel.setOpaque(false);
-		panel.setOpaque(false);
-		panel_1.setOpaque(false);
-
-		setMinimumSize(new Dimension(300, 70));
-		setMaximumSize(new Dimension(Integer.MAX_VALUE, 70));
-		setPreferredSize(new Dimension(300, 70));
-
+		panelButton.add(removeButton, gbc_btnRemove);
+		
+		panelInfo.setOpaque(false);
+		
+		scrollPaneDescription = new JScrollPane();
+		GridBagConstraints gbc_scrollPaneDescription = new GridBagConstraints();
+		gbc_scrollPaneDescription.insets = new Insets(0, 0, 5, 0);
+		gbc_scrollPaneDescription.fill = GridBagConstraints.BOTH;
+		gbc_scrollPaneDescription.gridx = 0;
+		gbc_scrollPaneDescription.gridy = 6;
+		panelInfo.add(scrollPaneDescription, gbc_scrollPaneDescription);
+		
+		descriptionArea = new JTextArea();
+		descriptionArea.setLineWrap(true);
+		scrollPaneDescription.setViewportView(descriptionArea);
+		panelButton.setOpaque(false);
+		
+		displayBookmarkInfo();
+	}
+	
+	private void displayBookmarkInfo(){
 		keyField.setText(bookmark.getKey());
+		titleField.setText(bookmark.getTitle());
+		descriptionArea.setText(bookmark.getDescription());
+		
 		if (bookmark instanceof SimpleBookmark) {
 			selectButton.setText("Show");
 			typeLabel.setText("Simple bookmark");
