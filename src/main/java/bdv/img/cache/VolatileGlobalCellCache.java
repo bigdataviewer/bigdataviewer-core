@@ -32,16 +32,16 @@ package bdv.img.cache;
 import java.util.concurrent.Callable;
 
 import bdv.cache.CacheControl;
+import net.imglib2.cache.Cache;
+import net.imglib2.cache.CacheLoader;
 import net.imglib2.cache.LoaderCache;
 import net.imglib2.cache.queue.BlockingFetchQueues;
 import net.imglib2.cache.queue.FetcherThreads;
 import net.imglib2.cache.ref.SoftRefLoaderCache;
-import net.imglib2.cache.ref.WeakRefVolatileLoaderCache;
-import net.imglib2.cache.util.Caches;
+import net.imglib2.cache.ref.WeakRefVolatileCache;
 import net.imglib2.cache.util.KeyBimap;
 import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.cache.volatiles.UncheckedVolatileCache;
-import net.imglib2.cache.volatiles.VolatileCacheLoader;
 import net.imglib2.img.cell.Cell;
 import net.imglib2.img.cell.CellGrid;
 import net.imglib2.type.NativeType;
@@ -208,42 +208,37 @@ public class VolatileGlobalCellCache implements CacheControl
 			final CacheArrayLoader< A > cacheArrayLoader,
 			final T type )
 	{
-		final UncheckedVolatileCache< Long, Cell< ? > > cache =
-				Caches.unchecked(
-				Caches.withLoader(
-				new WeakRefVolatileLoaderCache<>(
-						Caches.mapKeys(
-								backingCache,
-								KeyBimap.< Long, Key >build(
-										index -> new Key( timepoint, setup, level, index ),
-										key -> key.index ) ),
-						queue ),
-				new VolatileCacheLoader< Long, Cell< ? > >()
-				{
-					@Override
-					public Cell< A > get( final Long key ) throws Exception
-					{
-						final int n = grid.numDimensions();
-						final long[] cellMin = new long[ n ];
-						final int[] cellDims = new int[ n ];
-						grid.getCellDimensions( key, cellMin, cellDims );
-						return new Cell<>( cellDims, cellMin, cacheArrayLoader.loadArray( timepoint, setup, level, cellDims, cellMin ) );
-					}
+		final CacheLoader< Long, Cell< ? > > loader = new CacheLoader< Long, Cell< ? > >()
+		{
+			@Override
+			public Cell< A > get( final Long key ) throws Exception
+			{
+				final int n = grid.numDimensions();
+				final long[] cellMin = new long[ n ];
+				final int[] cellDims = new int[ n ];
+				grid.getCellDimensions( key, cellMin, cellDims );
+				return new Cell<>(
+						cellDims,
+						cellMin,
+						cacheArrayLoader.loadArray( timepoint, setup, level, cellDims, cellMin ) );
+			}
+		};
 
-					@Override
-					public Cell< A > createInvalid( final Long key ) throws Exception
-					{
-						final int n = grid.numDimensions();
-						final long[] cellMin = new long[ n ];
-						final int[] cellDims = new int[ n ];
-						grid.getCellDimensions( key, cellMin, cellDims );
-						return new Cell<>( cellDims, cellMin, cacheArrayLoader.emptyArray( cellDims ) );
-					}
-				} ) );
+		final KeyBimap< Long, Key > bimap = KeyBimap.< Long, Key >build(
+				index -> new Key( timepoint, setup, level, index ),
+				key -> key.index );
+
+		final Cache< Long, Cell< ? > > cache = backingCache
+				.mapKeys( bimap )
+				.withLoader( loader );
+
+		final UncheckedVolatileCache< Long, Cell< ? > > vcache = new WeakRefVolatileCache<>(
+				cache, queue, CreateInvalidVolatileCell.get( grid, type ) )
+						.unchecked();
 
 		@SuppressWarnings( "unchecked" )
 		final VolatileCachedCellImg< T, A > img = new VolatileCachedCellImg<>( grid, type, cacheHints,
-				( i, h ) -> ( Cell< A > ) cache.get( i, h ) );
+				( i, h ) -> ( Cell< A > ) vcache.get( i, h ) );
 
 		return img;
 	}
