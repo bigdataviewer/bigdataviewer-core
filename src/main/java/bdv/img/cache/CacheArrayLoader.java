@@ -52,7 +52,10 @@ public interface CacheArrayLoader< A >
 	 *
 	 * @return number of bytes required to store one element.
 	 */
-	public int getBytesPerElement();
+	public default int getBytesPerElement()
+	{
+		return 1;
+	}
 
 	/**
 	 * Load cell data into memory. This method blocks until data is successfully
@@ -103,16 +106,4 @@ public interface CacheArrayLoader< A >
 	 * @return loaded cell data.
 	 */
 	public A loadArray( final int timepoint, final int setup, final int level, int[] dimensions, long[] min ) throws InterruptedException;
-
-	/**
-	 * Return empty cell data. Usually, the return value {@code A} is a
-	 * {@link VolatileAccess}. In this case, the returned data should be invalid
-	 * (see {@link VolatileAccess#isValid()}). It is okay to return the same
-	 * (empty and invalid) data for multiple calls to this method.
-	 *
-	 * @param dimensions
-	 *            the size of the data block to return.
-	 * @return empty (and invalid) cell data.
-	 */
-	public A emptyArray( final int[] dimensions );
 }
