@@ -6,6 +6,7 @@ import java.awt.Frame;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
@@ -72,6 +73,7 @@ public class AddBookmarkDialog extends JDialog {
 
 	public AddBookmarkDialog(Frame owner, BookmarksEditor bookmarksEditor) {
 		super(owner, "Add bookmark", true);
+		setResizable(false);
 
 		this.bookmarksEditor = bookmarksEditor;
 
@@ -165,6 +167,8 @@ public class AddBookmarkDialog extends JDialog {
 		
 		descriptionArea = new JTextArea();
 		descriptionArea.setLineWrap(true);
+		descriptionArea.setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, null);
+		descriptionArea.setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, null);
 		descriptionScrollPane.setViewportView(descriptionArea);
 
 		JLabel typeLabel = new JLabel("Type");
