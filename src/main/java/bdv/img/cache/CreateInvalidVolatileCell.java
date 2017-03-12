@@ -49,38 +49,20 @@ import net.imglib2.util.Intervals;
  */
 public class CreateInvalidVolatileCell< A extends VolatileArrayDataAccess< A > > implements CreateInvalid< Long, Cell< A > >
 {
-	public static final int INITIAL_EMPTY_SIZE = 32 * 32 * 32;
-
 	private final CellGrid grid;
 
 	private final Fraction entitiesPerPixel;
 
-	private final A creator;
-
-	private class EmptyArray
-	{
-		A data;
-
-		int numEntities;
-
-		EmptyArray( final int numEntities )
-		{
-			this.data = creator.createArray( numEntities, false );
-			this.numEntities = numEntities;
-		}
-	}
-
-	private EmptyArray theEmptyArray;
+	private final EmptyArrayCreator< A > creator;
 
 	public CreateInvalidVolatileCell(
 			final CellGrid grid,
 			final Fraction entitiesPerPixel,
-			final A creator )
+			final EmptyArrayCreator< A > creator )
 	{
 		this.grid = grid;
 		this.entitiesPerPixel = entitiesPerPixel;
 		this.creator = creator;
-		this.theEmptyArray = new EmptyArray( INITIAL_EMPTY_SIZE );
 	}
 
 	@Override
@@ -91,14 +73,8 @@ public class CreateInvalidVolatileCell< A extends VolatileArrayDataAccess< A > >
 		final int[] cellDims = new int[ grid.numDimensions() ];
 		grid.getCellDimensions( index, cellMin, cellDims );
 		final long numEntities = entitiesPerPixel.mulCeil( Intervals.numElements( cellDims ) );
-
-		EmptyArray empty = theEmptyArray;
-		if ( empty.numEntities < numEntities )
-		{
-			empty = new EmptyArray( ( int ) numEntities );
-			theEmptyArray = empty;
-		}
-		return new Cell<>( cellDims, cellMin, empty.data );
+		final A data = creator.getEmptyArray( numEntities ).data;
+		return new Cell<>( cellDims, cellMin, data );
 	}
 
 	public static < T extends NativeType< T >, A extends VolatileArrayDataAccess< A > > CreateInvalidVolatileCell< A > get(
@@ -109,10 +85,85 @@ public class CreateInvalidVolatileCell< A extends VolatileArrayDataAccess< A > >
 		return get( grid, type.getEntitiesPerPixel(), PrimitiveType.forNativeType( type ), flags );
 	}
 
-	@SuppressWarnings( "unchecked" )
 	public static < A extends VolatileArrayDataAccess< A > > CreateInvalidVolatileCell< A > get(
 			final CellGrid grid,
 			final Fraction entitiesPerPixel,
+			final PrimitiveType primitiveType,
+			final AccessFlags ... flags )
+	{
+		return new CreateInvalidVolatileCell< A >( grid, entitiesPerPixel, EmptyArrayCreator.get( primitiveType, flags ) );
+	}
+}
+
+
+class EmptyArrayCreator< A extends VolatileArrayDataAccess< A > >
+{
+	public static final int INITIAL_EMPTY_SIZE = 32 * 32 * 32;
+
+	private final A creator;
+
+	private EmptyArray< A > theEmptyArray;
+
+	static class EmptyArray< A extends VolatileArrayDataAccess< A > >
+	{
+		A data;
+
+		int numEntities;
+
+		EmptyArray( final int numEntities, final A creator )
+		{
+			this.data = creator.createArray( numEntities, false );
+			this.numEntities = numEntities;
+		}
+	}
+
+	public EmptyArrayCreator( final A creator )
+	{
+		this.creator = creator;
+		this.theEmptyArray = new EmptyArray<>( INITIAL_EMPTY_SIZE, creator );
+	}
+
+	public EmptyArray< A > getEmptyArray( final long numEntities )
+	{
+		EmptyArray< A > empty = theEmptyArray;
+		if ( empty.numEntities < numEntities )
+		{
+			empty = new EmptyArray<>( ( int ) numEntities, creator );
+			theEmptyArray = empty;
+		}
+		return empty;
+	}
+
+	static EmptyArrayCreator< DirtyVolatileByteArray > dirtyBytes;
+
+	static EmptyArrayCreator< VolatileByteArray > bytes;
+
+	static EmptyArrayCreator< DirtyVolatileCharArray > dirtyChars;
+
+	static EmptyArrayCreator< VolatileCharArray > chars;
+
+	static EmptyArrayCreator< DirtyVolatileDoubleArray > dirtyDoubles;
+
+	static EmptyArrayCreator< VolatileDoubleArray > doubles;
+
+	static EmptyArrayCreator< DirtyVolatileFloatArray > dirtyFloats;
+
+	static EmptyArrayCreator< VolatileFloatArray > floats;
+
+	static EmptyArrayCreator< DirtyVolatileIntArray > dirtyInts;
+
+	static EmptyArrayCreator< VolatileIntArray > ints;
+
+	static EmptyArrayCreator< DirtyVolatileLongArray > dirtyLongs;
+
+	static EmptyArrayCreator< VolatileLongArray > longs;
+
+	static EmptyArrayCreator< DirtyVolatileShortArray > dirtyShorts;
+
+	static EmptyArrayCreator< VolatileShortArray > shorts;
+
+	@SuppressWarnings( "unchecked" )
+	public static < A extends VolatileArrayDataAccess< A > > EmptyArrayCreator< A > get(
 			final PrimitiveType primitiveType,
 			final AccessFlags ... flags )
 	{
@@ -120,35 +171,99 @@ public class CreateInvalidVolatileCell< A extends VolatileArrayDataAccess< A > >
 		switch ( primitiveType )
 		{
 		case BYTE:
-			return dirty
-					? ( CreateInvalidVolatileCell< A > ) new CreateInvalidVolatileCell<>( grid, entitiesPerPixel, new DirtyVolatileByteArray( 0, true ) )
-					: ( CreateInvalidVolatileCell< A > ) new CreateInvalidVolatileCell<>( grid, entitiesPerPixel, new VolatileByteArray( 0, true ) );
+			if ( dirty )
+			{
+				if ( dirtyBytes == null )
+					dirtyBytes = new EmptyArrayCreator<>( new DirtyVolatileByteArray( 0, false ) );
+				return ( EmptyArrayCreator< A > ) dirtyBytes;
+			}
+			else
+			{
+				if ( bytes == null )
+					bytes = new EmptyArrayCreator<>( new VolatileByteArray( 0, false ) );
+				return ( EmptyArrayCreator< A > ) bytes;
+			}
 		case CHAR:
-			return dirty
-					? ( CreateInvalidVolatileCell< A > ) new CreateInvalidVolatileCell<>( grid, entitiesPerPixel, new DirtyVolatileCharArray( 0, true ) )
-					: ( CreateInvalidVolatileCell< A > ) new CreateInvalidVolatileCell<>( grid, entitiesPerPixel, new VolatileCharArray( 0, true ) );
+			if ( dirty )
+			{
+				if ( dirtyChars == null )
+					dirtyChars = new EmptyArrayCreator<>( new DirtyVolatileCharArray( 0, false ) );
+				return ( EmptyArrayCreator< A > ) dirtyChars;
+			}
+			else
+			{
+				if ( chars == null )
+					chars = new EmptyArrayCreator<>( new VolatileCharArray( 0, false ) );
+				return ( EmptyArrayCreator< A > ) chars;
+			}
 		case DOUBLE:
-			return dirty
-					? ( CreateInvalidVolatileCell< A > ) new CreateInvalidVolatileCell<>( grid, entitiesPerPixel, new DirtyVolatileDoubleArray( 0, true ) )
-					: ( CreateInvalidVolatileCell< A > ) new CreateInvalidVolatileCell<>( grid, entitiesPerPixel, new VolatileDoubleArray( 0, true ) );
+			if ( dirty )
+			{
+				if ( dirtyDoubles == null )
+					dirtyDoubles = new EmptyArrayCreator<>( new DirtyVolatileDoubleArray( 0, false ) );
+				return ( EmptyArrayCreator< A > ) dirtyDoubles;
+			}
+			else
+			{
+				if ( doubles == null )
+					doubles = new EmptyArrayCreator<>( new VolatileDoubleArray( 0, false ) );
+				return ( EmptyArrayCreator< A > ) doubles;
+			}
 		case FLOAT:
-			return dirty
-					? ( CreateInvalidVolatileCell< A > ) new CreateInvalidVolatileCell<>( grid, entitiesPerPixel, new DirtyVolatileFloatArray( 0, true ) )
-					: ( CreateInvalidVolatileCell< A > ) new CreateInvalidVolatileCell<>( grid, entitiesPerPixel, new VolatileFloatArray( 0, true ) );
+			if ( dirty )
+			{
+				if ( dirtyFloats == null )
+					dirtyFloats = new EmptyArrayCreator<>( new DirtyVolatileFloatArray( 0, false ) );
+				return ( EmptyArrayCreator< A > ) dirtyFloats;
+			}
+			else
+			{
+				if ( floats == null )
+					floats = new EmptyArrayCreator<>( new VolatileFloatArray( 0, false ) );
+				return ( EmptyArrayCreator< A > ) floats;
+			}
 		case INT:
-			return dirty
-					? ( CreateInvalidVolatileCell< A > ) new CreateInvalidVolatileCell<>( grid, entitiesPerPixel, new DirtyVolatileIntArray( 0, true ) )
-					: ( CreateInvalidVolatileCell< A > ) new CreateInvalidVolatileCell<>( grid, entitiesPerPixel, new VolatileIntArray( 0, true ) );
+			if ( dirty )
+			{
+				if ( dirtyInts == null )
+					dirtyInts = new EmptyArrayCreator<>( new DirtyVolatileIntArray( 0, false ) );
+				return ( EmptyArrayCreator< A > ) dirtyInts;
+			}
+			else
+			{
+				if ( ints == null )
+					ints = new EmptyArrayCreator<>( new VolatileIntArray( 0, false ) );
+				return ( EmptyArrayCreator< A > ) ints;
+			}
 		case LONG:
-			return dirty
-					? ( CreateInvalidVolatileCell< A > ) new CreateInvalidVolatileCell<>( grid, entitiesPerPixel, new DirtyVolatileLongArray( 0, true ) )
-					: ( CreateInvalidVolatileCell< A > ) new CreateInvalidVolatileCell<>( grid, entitiesPerPixel, new VolatileLongArray( 0, true ) );
+			if ( dirty )
+			{
+				if ( dirtyLongs == null )
+					dirtyLongs = new EmptyArrayCreator<>( new DirtyVolatileLongArray( 0, false ) );
+				return ( EmptyArrayCreator< A > ) dirtyLongs;
+			}
+			else
+			{
+				if ( longs == null )
+					longs = new EmptyArrayCreator<>( new VolatileLongArray( 0, false ) );
+				return ( EmptyArrayCreator< A > ) longs;
+			}
 		case SHORT:
-			return dirty
-					? ( CreateInvalidVolatileCell< A > ) new CreateInvalidVolatileCell<>( grid, entitiesPerPixel, new DirtyVolatileShortArray( 0, true ) )
-					: ( CreateInvalidVolatileCell< A > ) new CreateInvalidVolatileCell<>( grid, entitiesPerPixel, new VolatileShortArray( 0, true ) );
+			if ( dirty )
+			{
+				if ( dirtyShorts == null )
+					dirtyShorts = new EmptyArrayCreator<>( new DirtyVolatileShortArray( 0, false ) );
+				return ( EmptyArrayCreator< A > ) dirtyShorts;
+			}
+			else
+			{
+				if ( shorts == null )
+					shorts = new EmptyArrayCreator<>( new VolatileShortArray( 0, false ) );
+				return ( EmptyArrayCreator< A > ) shorts;
+			}
 		default:
 			return null;
 		}
 	}
 }
+
