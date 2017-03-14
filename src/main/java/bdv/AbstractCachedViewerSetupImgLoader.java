@@ -80,7 +80,6 @@ abstract public class AbstractCachedViewerSetupImgLoader< T extends NativeType< 
 
 	protected < S extends NativeType< S > > VolatileCachedCellImg< S, A > prepareCachedImage(
 			final int timepointId,
-			@SuppressWarnings( "hiding" ) final int setupId,
 			final int level,
 			final LoadingStrategy loadingStrategy,
 			final S t )
@@ -95,13 +94,13 @@ abstract public class AbstractCachedViewerSetupImgLoader< T extends NativeType< 
 	@Override
 	public RandomAccessibleInterval< T > getImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 	{
-		return prepareCachedImage( timepointId, setupId, level, LoadingStrategy.BLOCKING, type );
+		return prepareCachedImage( timepointId, level, LoadingStrategy.BLOCKING, type );
 	}
 
 	@Override
 	public RandomAccessibleInterval< V > getVolatileImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 	{
-		return prepareCachedImage( timepointId, setupId, level, LoadingStrategy.VOLATILE, volatileType );
+		return prepareCachedImage( timepointId, level, LoadingStrategy.VOLATILE, volatileType );
 	}
 
 	@Override
