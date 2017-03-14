@@ -62,6 +62,7 @@ import javax.swing.event.ChangeListener;
 
 import bdv.cache.CacheControl;
 import bdv.export.ProgressWriter;
+import bdv.tools.bookmarks.bookmark.DynamicBookmark;
 import bdv.util.Prefs;
 import bdv.viewer.ViewerPanel;
 import bdv.viewer.overlay.ScaleBarOverlayRenderer;
@@ -255,6 +256,7 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 
 	public void recordMovie( final int width, final int height, final int minTimepointIndex, final int maxTimepointIndex, final File dir ) throws IOException
 	{
+		/*
 		final ViewerState renderState = viewer.getState();
 		final int canvasW = viewer.getDisplay().getWidth();
 		final int canvasH = viewer.getDisplay().getHeight();
@@ -267,6 +269,8 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 		affine.set( affine.get( 0, 3 ) + width / 2, 0, 3 );
 		affine.set( affine.get( 1, 3 ) + height / 2, 1, 3 );
 		renderState.setViewerTransform( affine );
+		*/
+		
 
 		final ScaleBarOverlayRenderer scalebar = Prefs.showScaleBarInMovie() ? new ScaleBarOverlayRenderer() : null;
 
@@ -300,6 +304,8 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 		progressWriter.setProgress( 0 );
 		for ( int timepoint = minTimepointIndex; timepoint <= maxTimepointIndex; ++timepoint )
 		{
+			final ViewerState renderState = getRenderState(width, height, timepoint);
+			
 			renderState.setCurrentTimepoint( timepoint );
 			renderer.requestRepaint();
 			renderer.paint( renderState );
@@ -326,5 +332,31 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 	{
 		spinnerWidth.setValue( width );
 		spinnerHeight.setValue( height );
+	}
+	
+	private ViewerState getRenderState(final int width, final int height, final int currentTimepoint){
+		final ViewerState renderState = viewer.getState();
+		final int canvasW = viewer.getDisplay().getWidth();
+		final int canvasH = viewer.getDisplay().getHeight();
+		
+		AffineTransform3D affine = null;
+		
+		if(renderState.getActiveBookmark() instanceof DynamicBookmark){
+			final DynamicBookmark dynamicBookmark = (DynamicBookmark)renderState.getActiveBookmark();
+			affine = dynamicBookmark.getInterpolatedTransform(currentTimepoint, canvasW / 2, canvasH);
+		}
+		else{
+			affine = new AffineTransform3D();
+			renderState.getViewerTransform( affine );
+			affine.set( affine.get( 0, 3 ) - canvasW / 2, 0, 3 );
+			affine.set( affine.get( 1, 3 ) - canvasH / 2, 1, 3 );
+		}
+		
+		affine.scale( ( double ) width / canvasW );
+		affine.set( affine.get( 0, 3 ) + width / 2, 0, 3 );
+		affine.set( affine.get( 1, 3 ) + height / 2, 1, 3 );
+		renderState.setViewerTransform( affine );
+		
+		return renderState;
 	}
 }
