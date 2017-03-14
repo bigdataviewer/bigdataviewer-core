@@ -57,11 +57,11 @@ public class BookmarkManagementDialog extends JDialog {
 
 		this.viewerFrame = owner;
 		this.bookmarksEditor = bookmarksEditor;
-		System.out.println("bookmarksEditor.getBookmarks().size() = " + bookmarksEditor.getBookmarks().getAll().size());
+		System.out.println("bookmarksEditor.getBookmarks().size() = " + bookmarksEditor.getAllBookmarks().size());
 		this.bookmarkListView = new BookmarkListView(bookmarksEditor);
 		this.bookmarkListView.setActiveBookmark(owner.getViewerPanel().getState().getActiveBookmark());
 
-		bookmarksEditor.getBookmarks().addListener(bookmarkChangedListener);
+		bookmarksEditor.addBookmarksCollectionChangedListener(bookmarkChangedListener);
 		owner.getViewerPanel().addActiveBookmarkChangedListener(activeBookmarkChangeListener);
 
 		JPanel buttonPane = new JPanel();

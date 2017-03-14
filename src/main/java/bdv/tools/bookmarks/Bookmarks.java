@@ -111,13 +111,9 @@ public class Bookmarks {
 		
 		return bookmark;
 	}
-	
-	public void rename(String oldKey, String newKey){
-		Bookmark bookmark = remove(oldKey);
-		if(bookmark != null){
-			Bookmark newBookmark = bookmark.copy(newKey);
-			put(newBookmark);
-		}
+
+	public boolean containsKey(final String key){
+		return bookmarks.containsKey(key);
 	}
 
 	public Collection<Bookmark> getAll(){

@@ -75,11 +75,11 @@ public final class BookmarkListView extends JPanel {
 		listItems.clear();
 		this.listItemContainer.removeAll();
 
-		List<Bookmark> list = new ArrayList<Bookmark>(this.bookmarksEditor.getBookmarks().getAll());
+		List<Bookmark> list = new ArrayList<Bookmark>(this.bookmarksEditor.getAllBookmarks());
 		Collections.sort(list);
 
 		for (Bookmark bookmark : list) {
-			BookmarkCellPanel panel = new BookmarkCellPanel(bookmark);
+			BookmarkCellPanel panel = new BookmarkCellPanel(bookmark, bookmarksEditor);
 			panel.setActive(bookmark.equals(this.activeBookmark));
 
 			panel.addSelectActionListener(new ActionListener() {
@@ -97,7 +97,7 @@ public final class BookmarkListView extends JPanel {
 				public void actionPerformed(ActionEvent e) {
 					Bookmark bookmark = panel.getBookmark();
 					if (bookmark != null) {
-						bookmarksEditor.deleteBookmark(bookmark.getKey());
+						bookmarksEditor.removeBookmark(bookmark.getKey());
 						listItemContainer.remove(panel);
 						revalidateListItemContainer();
 						setActiveBookmark(activeBookmark);

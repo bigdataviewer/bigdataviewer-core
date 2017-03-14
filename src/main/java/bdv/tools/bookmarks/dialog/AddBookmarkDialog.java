@@ -281,7 +281,7 @@ public class AddBookmarkDialog extends JDialog {
 			return false;
 		}
 
-		if (bookmarksEditor.getBookmarks().get(key) != null) {
+		if (bookmarksEditor.containsBookmark(key)) {
 
 			String message = "The key '" + key
 					+ "' is already given to another bookmark. Please choose a different key.";
