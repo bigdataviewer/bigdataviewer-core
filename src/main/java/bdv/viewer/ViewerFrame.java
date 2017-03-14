@@ -29,21 +29,24 @@
  */
 package bdv.viewer;
 
-import bdv.BehaviourTransformEventHandler;
-import bdv.cache.CacheControl;
 import java.awt.BorderLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.List;
+
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
-import net.imglib2.ui.TransformEventHandler;
-import net.imglib2.ui.util.GuiUtil;
+
 import org.scijava.ui.behaviour.MouseAndKeyHandler;
 import org.scijava.ui.behaviour.util.InputActionBindings;
 import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
+
+import bdv.BehaviourTransformEventHandler;
+import bdv.cache.CacheControl;
+import net.imglib2.ui.TransformEventHandler;
+import net.imglib2.ui.util.GuiUtil;
 
 /**
  * A {@link JFrame} containing a {@link ViewerPanel} and associated

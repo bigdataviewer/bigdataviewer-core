@@ -29,6 +29,8 @@
  */
 package bdv;
 
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
@@ -41,6 +43,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JSeparator;
 import javax.swing.filechooser.FileFilter;
 
@@ -349,6 +352,22 @@ public class BigDataViewer
 			( ( BehaviourTransformEventHandlerFactory< ? > ) options.values.getTransformEventHandlerFactory() ).setConfig( inputTriggerConfig );
 
 		viewerFrame = new ViewerFrame( sources, numTimepoints, cache, options );
+		viewerFrame.addWindowListener(new WindowAdapter()
+	     {
+	         @Override
+	         public void windowClosing(WindowEvent e)
+	         {
+	        	 final int confirmAnswer = JOptionPane.showConfirmDialog(viewerFrame,
+	        			 	"Do you want to save your settings before you close the application?", "Closing", 
+	        	            JOptionPane.YES_NO_OPTION,
+	        	            JOptionPane.QUESTION_MESSAGE);
+	        	 
+	        	 if (confirmAnswer == JOptionPane.YES_OPTION){
+	        		 saveSettings();
+	        	 }
+	         }
+	     });
+		
 		if ( windowTitle != null )
 			viewerFrame.setTitle( windowTitle );
 		viewer = viewerFrame.getViewerPanel();
