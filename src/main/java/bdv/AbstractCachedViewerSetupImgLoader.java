@@ -1,7 +1,5 @@
 package bdv;
 
-import java.io.IOException;
-
 import bdv.img.cache.CacheArrayLoader;
 import bdv.img.cache.VolatileCachedCellImg;
 import bdv.img.cache.VolatileGlobalCellCache;
@@ -45,7 +43,7 @@ abstract public class AbstractCachedViewerSetupImgLoader< T extends NativeType< 
 			final T type,
 			final V vType,
 			final CacheArrayLoader< A > loader,
-			final VolatileGlobalCellCache cache ) throws IOException
+			final VolatileGlobalCellCache cache )
 	{
 		super( type, vType );
 		this.setupId = setupId;
