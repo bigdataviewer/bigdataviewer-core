@@ -85,7 +85,7 @@ abstract public class AbstractCachedViewerSetupImgLoader< T extends NativeType< 
 			final LoadingStrategy loadingStrategy,
 			final S t )
 	{
-		final int priority = 0;
+		final int priority = resolutions.length - 1 - level;
 		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
 		final CellGrid grid = new CellGrid( dimensions[ level ], cellDimensions[level ] );
 
@@ -95,13 +95,13 @@ abstract public class AbstractCachedViewerSetupImgLoader< T extends NativeType< 
 	@Override
 	public RandomAccessibleInterval< T > getImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 	{
-		return prepareCachedImage( timepointId, 0, level, LoadingStrategy.BLOCKING, type );
+		return prepareCachedImage( timepointId, setupId, level, LoadingStrategy.BLOCKING, type );
 	}
 
 	@Override
 	public RandomAccessibleInterval< V > getVolatileImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 	{
-		return prepareCachedImage( timepointId, 0, level, LoadingStrategy.VOLATILE, volatileType );
+		return prepareCachedImage( timepointId, setupId, level, LoadingStrategy.VOLATILE, volatileType );
 	}
 
 	@Override
