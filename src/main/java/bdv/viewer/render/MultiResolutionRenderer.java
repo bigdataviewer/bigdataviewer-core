@@ -619,7 +619,11 @@ public class MultiResolutionRenderer
 			final int screenScaleIndex,
 			final ARGBScreenImage screenImage )
 	{
-		CacheIoTiming.getIoTimeBudget().clear(); // clear time budget such that prefetching doesn't wait for loading blocks.
+		/*
+		 * This shouldn't be necessary, with
+		 * CacheHints.LoadingStrategy==VOLATILE
+		 */
+//		CacheIoTiming.getIoTimeBudget().clear(); // clear time budget such that prefetching doesn't wait for loading blocks.
 		final List< SourceState< ? > > sourceStates = viewerState.getSources();
 		final List< Integer > visibleSourceIndices = viewerState.getVisibleSourceIndices();
 		VolatileProjector projector;
@@ -764,12 +768,9 @@ public class MultiResolutionRenderer
 	{
 		final int timepoint = viewerState.getCurrentTimepoint();
 
-		if ( cacheHints != null )
-		{
-			final RandomAccessibleInterval< T > img = source.getSource( timepoint, mipmapIndex );
-			if ( VolatileCachedCellImg.class.isInstance( img ) )
-				( ( VolatileCachedCellImg< ?, ? > ) img ).setCacheHints( cacheHints );
-		}
+		final RandomAccessibleInterval< T > img = source.getSource( timepoint, mipmapIndex );
+		if ( VolatileCachedCellImg.class.isInstance( img ) )
+			( ( VolatileCachedCellImg< ?, ? > ) img ).setCacheHints( cacheHints );
 
 		final Interpolation interpolation = viewerState.getInterpolation();
 		final RealRandomAccessible< T > ipimg = source.getInterpolatedSource( timepoint, mipmapIndex, interpolation );
@@ -797,7 +798,14 @@ public class MultiResolutionRenderer
 		if ( VolatileCachedCellImg.class.isInstance( img ) )
 		{
 			final VolatileCachedCellImg< ?, ? > cellImg = ( VolatileCachedCellImg< ?, ? > ) img;
-			cellImg.setCacheHints( prefetchCacheHints );
+
+			CacheHints hints = prefetchCacheHints;
+			if ( hints == null )
+			{
+				final CacheHints d = cellImg.getDefaultCacheHints();
+				hints = new CacheHints( LoadingStrategy.VOLATILE, d.getQueuePriority(), false );
+			}
+			cellImg.setCacheHints( hints );
 			final int[] cellDimensions = new int[ 3 ];
 			cellImg.getCellGrid().cellDimensions( cellDimensions );
 			final long[] dimensions = new long[ 3 ];

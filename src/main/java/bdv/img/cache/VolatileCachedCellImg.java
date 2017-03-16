@@ -87,11 +87,17 @@ public class VolatileCachedCellImg< T extends NativeType< T >, A >
 	 * rendered.
 	 *
 	 * @param cacheHints
-	 *            describe handling of cell requests for this cache.
+	 *            describe handling of cell requests for this cache. May be
+	 *            {@code null}, in which case the default hints are restored.
 	 */
 	public void setCacheHints( final CacheHints cacheHints )
 	{
 		cells.cacheHints = ( cacheHints != null ) ? cacheHints : cells.defaultCacheHints;
+	}
+
+	public CacheHints getDefaultCacheHints()
+	{
+		return cells.defaultCacheHints;
 	}
 
 	@Override
