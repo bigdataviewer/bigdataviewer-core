@@ -693,18 +693,23 @@ public class MultiResolutionRenderer
 			final ARGBScreenImage screenImage,
 			final byte[] maskArray )
 	{
-		if ( useVolatileIfAvailable && source.asVolatile() != null )
+		if ( useVolatileIfAvailable )
 		{
-			return createSingleSourceVolatileProjector( viewerState, source.asVolatile(), sourceIndex, screenScaleIndex, screenImage, maskArray );
+			if ( source.asVolatile() != null )
+				return createSingleSourceVolatileProjector( viewerState, source.asVolatile(), sourceIndex, screenScaleIndex, screenImage, maskArray );
+			else if ( source.getSpimSource().getType() instanceof Volatile )
+			{
+				@SuppressWarnings( "unchecked" )
+				final SourceState< ? extends Volatile< ? > > vsource = ( SourceState< ? extends Volatile< ? > > ) source;
+				return createSingleSourceVolatileProjector( viewerState, vsource, sourceIndex, screenScaleIndex, screenImage, maskArray );
+			}
 		}
-		else
-		{
-			final AffineTransform3D screenScaleTransform = screenScaleTransforms[ currentScreenScaleIndex ];
-			final int bestLevel = viewerState.getBestMipMapLevel( screenScaleTransform, sourceIndex );
-			return new SimpleVolatileProjector<>(
-					getTransformedSource( viewerState, source.getSpimSource(), screenScaleTransform, bestLevel, null ),
-					source.getConverter(), screenImage, numRenderingThreads, renderingExecutorService );
-		}
+
+		final AffineTransform3D screenScaleTransform = screenScaleTransforms[ currentScreenScaleIndex ];
+		final int bestLevel = viewerState.getBestMipMapLevel( screenScaleTransform, sourceIndex );
+		return new SimpleVolatileProjector<>(
+				getTransformedSource( viewerState, source.getSpimSource(), screenScaleTransform, bestLevel, null ),
+				source.getConverter(), screenImage, numRenderingThreads, renderingExecutorService );
 	}
 
 	private < T extends Volatile< ? > > VolatileProjector createSingleSourceVolatileProjector(
