@@ -36,6 +36,7 @@ import net.imglib2.img.basictypeaccess.LongAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileLongAccess;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileLongArray;
 import net.imglib2.type.numeric.integer.UnsignedLongType;
+import net.imglib2.util.Fraction;
 
 /**
  * A {@link Volatile} variant of {@link UnsignedLongType}. It uses an underlying
@@ -108,7 +109,17 @@ public class VolatileUnsignedLongType extends AbstractVolatileNativeRealType< Un
 	@Override
 	public NativeImg< VolatileUnsignedLongType, ? extends VolatileLongAccess > createSuitableNativeImg( final NativeImgFactory< VolatileUnsignedLongType > storageFactory, final long[] dim )
 	{
-		throw new UnsupportedOperationException();
+		// create the container
+		@SuppressWarnings( "unchecked" )
+		final NativeImg< VolatileUnsignedLongType, ? extends VolatileLongAccess > container = ( NativeImg< VolatileUnsignedLongType, ? extends VolatileLongAccess > ) storageFactory.createLongInstance( dim, new Fraction() );
+
+		// create a Type that is linked to the container
+		final VolatileUnsignedLongType linkedType = new VolatileUnsignedLongType( container );
+
+		// pass it to the NativeContainer
+		container.setLinkedType( linkedType );
+
+		return container;
 	}
 
 	@Override
