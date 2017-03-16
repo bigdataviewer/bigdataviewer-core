@@ -32,6 +32,21 @@ package bdv.img.cache;
 import bdv.ViewerImgLoader;
 import bdv.img.catmaid.CatmaidImageLoader;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
+import net.imglib2.img.basictypeaccess.volatiles.VolatileArrayDataAccess;
+import net.imglib2.img.basictypeaccess.volatiles.array.DirtyVolatileByteArray;
+import net.imglib2.img.basictypeaccess.volatiles.array.DirtyVolatileCharArray;
+import net.imglib2.img.basictypeaccess.volatiles.array.DirtyVolatileDoubleArray;
+import net.imglib2.img.basictypeaccess.volatiles.array.DirtyVolatileFloatArray;
+import net.imglib2.img.basictypeaccess.volatiles.array.DirtyVolatileIntArray;
+import net.imglib2.img.basictypeaccess.volatiles.array.DirtyVolatileLongArray;
+import net.imglib2.img.basictypeaccess.volatiles.array.DirtyVolatileShortArray;
+import net.imglib2.img.basictypeaccess.volatiles.array.VolatileByteArray;
+import net.imglib2.img.basictypeaccess.volatiles.array.VolatileCharArray;
+import net.imglib2.img.basictypeaccess.volatiles.array.VolatileDoubleArray;
+import net.imglib2.img.basictypeaccess.volatiles.array.VolatileFloatArray;
+import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
+import net.imglib2.img.basictypeaccess.volatiles.array.VolatileLongArray;
+import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
 
 /**
  * Provider of {@link VolatileCell} data. This is implemented by data back-ends
@@ -55,6 +70,39 @@ public interface CacheArrayLoader< A >
 	public default int getBytesPerElement()
 	{
 		return 1;
+	}
+
+	/**
+	 * Implementing classes must override this if {@code A} is not a standard
+	 * {@link VolatileArrayDataAccess} type. The default implementation returns
+	 * {@code null}, which will let
+	 * {@link CreateInvalidVolatileCell#get(net.imglib2.img.cell.CellGrid, net.imglib2.type.NativeType, net.imglib2.cache.img.AccessFlags...) CreateInvalidVolatileCell.get(...)}
+	 * try to figure out the appropriate {@link DefaultEmptyArrayCreator}.
+	 * <p>
+	 * Default access types are
+	 * </p>
+	 * <ul>
+	 * <li>{@link DirtyVolatileByteArray}</li>
+	 * <li>{@link VolatileByteArray}</li>
+	 * <li>{@link DirtyVolatileCharArray}</li>
+	 * <li>{@link VolatileCharArray}</li>
+	 * <li>{@link DirtyVolatileDoubleArray}</li>
+	 * <li>{@link VolatileDoubleArray}</li>
+	 * <li>{@link DirtyVolatileFloatArray}</li>
+	 * <li>{@link VolatileFloatArray}</li>
+	 * <li>{@link DirtyVolatileIntArray}</li>
+	 * <li>{@link VolatileIntArray}</li>
+	 * <li>{@link DirtyVolatileLongArray}</li>
+	 * <li>{@link VolatileLongArray}</li>
+	 * <li>{@link DirtyVolatileShortArray}</li>
+	 * <li>{@link VolatileShortArray}</li>
+	 * </ul>
+	 *
+	 * @return an {@link EmptyArrayCreator} for {@code A} or null.
+	 */
+	public default EmptyArrayCreator< A > getEmptyArrayCreator()
+	{
+		return null;
 	}
 
 	/**

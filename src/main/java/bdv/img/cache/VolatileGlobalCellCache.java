@@ -232,8 +232,13 @@ public class VolatileGlobalCellCache implements CacheControl
 				.mapKeys( bimap )
 				.withLoader( loader );
 
+		final EmptyArrayCreator< A > emptyArrayCreator = cacheArrayLoader.getEmptyArrayCreator();
+		final CreateInvalidVolatileCell< ? > createInvalid = ( emptyArrayCreator == null )
+				? CreateInvalidVolatileCell.get( grid, type )
+				: new CreateInvalidVolatileCell<>( grid, type.getEntitiesPerPixel(), emptyArrayCreator );
+
 		final UncheckedVolatileCache< Long, Cell< ? > > vcache = new WeakRefVolatileCache<>(
-				cache, queue, CreateInvalidVolatileCell.get( grid, type ) )
+				cache, queue, createInvalid )
 						.unchecked();
 
 		@SuppressWarnings( "unchecked" )
