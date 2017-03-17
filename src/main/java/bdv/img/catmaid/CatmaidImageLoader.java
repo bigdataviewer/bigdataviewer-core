@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -32,21 +32,18 @@ package bdv.img.catmaid;
 import bdv.AbstractViewerSetupImgLoader;
 import bdv.ViewerImgLoader;
 import bdv.ViewerSetupImgLoader;
-import bdv.cache.CacheHints;
-import bdv.cache.LoadingStrategy;
-import bdv.img.cache.CachedCellImg;
+import bdv.img.cache.VolatileCachedCellImg;
 import bdv.img.cache.VolatileGlobalCellCache;
-import bdv.img.cache.VolatileImgCells;
-import bdv.img.cache.VolatileImgCells.CellCache;
 import mpicbg.spim.data.generic.sequence.ImgLoaderHint;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.NativeImg;
+import net.imglib2.cache.volatiles.CacheHints;
+import net.imglib2.cache.volatiles.LoadingStrategy;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
+import net.imglib2.img.cell.CellGrid;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.volatiles.VolatileARGBType;
-import net.imglib2.util.Fraction;
 
 public class CatmaidImageLoader extends AbstractViewerSetupImgLoader< ARGBType, VolatileARGBType > implements ViewerImgLoader
 {
@@ -207,24 +204,22 @@ public class CatmaidImageLoader extends AbstractViewerSetupImgLoader< ARGBType, 
 	}
 
 	/**
-	 * (Almost) create a {@link CachedCellImg} backed by the cache.
-	 * The created image needs a {@link NativeImg#setLinkedType(net.imglib2.type.Type) linked type} before it can be used.
-	 * The type should be either {@link ARGBType} and {@link VolatileARGBType}.
+	 * Create a {@link VolatileCachedCellImg} backed by the cache. The type
+	 * should be either {@link ARGBType} and {@link VolatileARGBType}.
 	 */
-	protected < T extends NativeType< T > > CachedCellImg< T, VolatileIntArray > prepareCachedImage(
+	protected < T extends NativeType< T > > VolatileCachedCellImg< T, VolatileIntArray > prepareCachedImage(
 			final int timepointId,
 			final int setupId,
 			final int level,
-			final LoadingStrategy loadingStrategy )
+			final LoadingStrategy loadingStrategy,
+			final T type )
 	{
 		final long[] dimensions = imageDimensions[ level ];
+		final CellGrid grid = new CellGrid( dimensions, blockDimensions[ level ] );
 
 		final int priority = numScales - 1 - level;
 		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
-		final CellCache< VolatileIntArray > c = cache.new VolatileCellCache<>( timepointId, setupId, level, cacheHints, loader );
-		final VolatileImgCells< VolatileIntArray > cells = new VolatileImgCells<>( c, new Fraction(), dimensions, blockDimensions[ level ] );
-		final CachedCellImg< T, VolatileIntArray > img = new CachedCellImg<>( cells );
-		return img;
+		return cache.createImg( grid, timepointId, setupId, level, cacheHints, loader, type );
 	}
 
 	@Override
@@ -242,19 +237,13 @@ public class CatmaidImageLoader extends AbstractViewerSetupImgLoader< ARGBType, 
 	@Override
 	public RandomAccessibleInterval< ARGBType > getImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 	{
-		final CachedCellImg< ARGBType, VolatileIntArray >  img = prepareCachedImage( timepointId, 0, level, LoadingStrategy.BLOCKING );
-		final ARGBType linkedType = new ARGBType( img );
-		img.setLinkedType( linkedType );
-		return img;
+		return prepareCachedImage( timepointId, 0, level, LoadingStrategy.BLOCKING, type );
 	}
 
 	@Override
 	public RandomAccessibleInterval< VolatileARGBType > getVolatileImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 	{
-		final CachedCellImg< VolatileARGBType, VolatileIntArray >  img = prepareCachedImage( timepointId, 0, level, LoadingStrategy.VOLATILE );
-		final VolatileARGBType linkedType = new VolatileARGBType( img );
-		img.setLinkedType( linkedType );
-		return img;
+		return prepareCachedImage( timepointId, 0, level, LoadingStrategy.VOLATILE, volatileType );
 	}
 
 	@Override

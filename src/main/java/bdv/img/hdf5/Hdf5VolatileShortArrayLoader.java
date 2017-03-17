@@ -29,19 +29,16 @@
  */
 package bdv.img.hdf5;
 
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
 import bdv.img.cache.CacheArrayLoader;
+import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
 
 public class Hdf5VolatileShortArrayLoader implements CacheArrayLoader< VolatileShortArray >
 {
 	private final IHDF5Access hdf5Access;
 
-	private VolatileShortArray theEmptyArray;
-
 	public Hdf5VolatileShortArrayLoader( final IHDF5Access hdf5Access )
 	{
 		this.hdf5Access = hdf5Access;
-		theEmptyArray = new VolatileShortArray( 32 * 32 * 32, false );
 	}
 
 	@Override
@@ -49,17 +46,6 @@ public class Hdf5VolatileShortArrayLoader implements CacheArrayLoader< VolatileS
 	{
 		final short[] array = hdf5Access.readShortMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min );
 		return new VolatileShortArray( array, true );
-	}
-
-	@Override
-	public VolatileShortArray emptyArray( final int[] dimensions )
-	{
-		int numEntities = 1;
-		for ( int i = 0; i < dimensions.length; ++i )
-			numEntities *= dimensions[ i ];
-		if ( theEmptyArray.getCurrentStorageArray().length < numEntities )
-			theEmptyArray = new VolatileShortArray( numEntities, false );
-		return theEmptyArray;
 	}
 
 	@Override

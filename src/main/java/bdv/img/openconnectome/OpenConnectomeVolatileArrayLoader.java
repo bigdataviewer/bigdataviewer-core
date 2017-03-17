@@ -41,8 +41,6 @@ import net.imglib2.img.basictypeaccess.volatiles.array.VolatileByteArray;
 
 public class OpenConnectomeVolatileArrayLoader implements CacheArrayLoader< VolatileByteArray >
 {
-	private VolatileByteArray theEmptyArray;
-
 	final private String tokenUrl;
 
 	final private String mode;
@@ -72,7 +70,6 @@ public class OpenConnectomeVolatileArrayLoader implements CacheArrayLoader< Vola
 			final String mode,
 			final long zMin )
 	{
-		theEmptyArray = new VolatileByteArray( 1, false );
 		this.tokenUrl = baseUrl + "/" + token + "/zip/";
 		this.mode = "/" + mode + ( mode == null || mode.equals( "" ) ? "" : "/" );
 		this.zMin = zMin;
@@ -158,16 +155,5 @@ public class OpenConnectomeVolatileArrayLoader implements CacheArrayLoader< Vola
 		}
 
 		return new VolatileByteArray( data, true );
-	}
-
-	@Override
-	public VolatileByteArray emptyArray( final int[] dimensions )
-	{
-		int numEntities = 1;
-		for ( int i = 0; i < dimensions.length; ++i )
-			numEntities *= dimensions[ i ];
-		if ( theEmptyArray.getCurrentStorageArray().length < numEntities )
-			theEmptyArray = new VolatileByteArray( numEntities, false );
-		return theEmptyArray;
 	}
 }

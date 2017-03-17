@@ -53,6 +53,8 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.DefaultBoundedRangeModel;
 import javax.swing.JPanel;
@@ -156,6 +158,13 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	protected final JSlider sliderTime;
 
 	/**
+	 * A {@link ThreadGroup} for (only) the threads used by this
+	 * {@link ViewerPanel}, that is, {@link #painterThread} and
+	 * {@link #renderingExecutorService}.
+	 */
+	protected ThreadGroup threadGroup;
+
+	/**
 	 * Thread that triggers repainting of the display.
 	 */
 	protected final PainterThread painterThread;
@@ -240,6 +249,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimepoints, final CacheControl cacheControl, final ViewerOptions optional )
 	{
 		super( new BorderLayout(), false );
+
 		options = optional.values;
 
 		final int numGroups = 10;
@@ -256,7 +266,8 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		sourceInfoOverlayRenderer = new SourceInfoOverlayRenderer();
 		scaleBarOverlayRenderer = Prefs.showScaleBar() ? new ScaleBarOverlayRenderer() : null;
 
-		painterThread = new PainterThread( this );
+		threadGroup = new ThreadGroup( this.toString() );
+		painterThread = new PainterThread( threadGroup, this );
 		viewerTransform = new AffineTransform3D();
 		display = new InteractiveDisplayCanvasComponent<>(
 				options.getWidth(), options.getHeight(), options.getTransformEventHandlerFactory() );
@@ -266,7 +277,9 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		display.addOverlayRenderer( renderTarget );
 		display.addOverlayRenderer( this );
 
-		renderingExecutorService = Executors.newFixedThreadPool( options.getNumRenderingThreads() );
+		renderingExecutorService = Executors.newFixedThreadPool(
+				options.getNumRenderingThreads(),
+				new RenderThreadFactory() );
 		imageRenderer = new MultiResolutionRenderer(
 				renderTarget, painterThread,
 				options.getScreenScales(),
@@ -1023,5 +1036,29 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		renderingExecutorService.shutdown();
 		state.kill();
 		imageRenderer.kill();
+	}
+
+	protected static final AtomicInteger panelNumber = new AtomicInteger( 1 );
+
+	protected class RenderThreadFactory implements ThreadFactory
+	{
+		private final String threadNameFormat = String.format(
+				"bdv-panel-%d-thread-%%d",
+				panelNumber.getAndIncrement() );
+
+		private final AtomicInteger threadNumber = new AtomicInteger( 1 );
+
+		@Override
+		public Thread newThread( final Runnable r )
+		{
+			final Thread t = new Thread( threadGroup, r,
+					String.format( threadNameFormat, threadNumber.getAndIncrement() ),
+					0 );
+			if ( t.isDaemon() )
+				t.setDaemon( false );
+			if ( t.getPriority() != Thread.NORM_PRIORITY )
+				t.setPriority( Thread.NORM_PRIORITY );
+			return t;
+		}
 	}
 }
