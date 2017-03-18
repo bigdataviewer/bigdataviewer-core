@@ -49,12 +49,22 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import javax.swing.Action;
 import javax.swing.Box;
@@ -62,6 +72,7 @@ import javax.swing.BoxLayout;
 import javax.swing.DefaultBoundedRangeModel;
 import javax.swing.JButton;
 import javax.swing.JLayeredPane;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -100,6 +111,9 @@ import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.TransformEventHandler;
 import net.imglib2.ui.TransformListener;
 import net.imglib2.util.LinAlgHelpers;
+import java.awt.Component;
+import javax.swing.JSlider;
+import javax.swing.SwingConstants;
 
 
 /**
@@ -238,6 +252,10 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	protected final JButton nextKeyframeButton;
 	
 	protected final List<ActiveBookmarkChangedListener> activeBookmarkChangedListeners = new ArrayList<>();
+	
+	protected final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+	
+	protected ScheduledFuture<?> playScheduledFuture;
 	
 	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimePoints, final CacheControl cacheControl )
 	{
@@ -380,6 +398,74 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 			}
 		} );
 		
+		sliderPlay = new JPlaySlider();
+		sliderPlay.setPreferredSize(new Dimension(200, 50));
+		sliderPlay.setMinimumSize(new Dimension(36, 50));
+		sliderPlay.setMaximumSize(new Dimension(36, 50));
+		sliderPlay.setAlignmentX(Component.LEFT_ALIGNMENT);
+		sliderPlay.setValue(0);
+		sliderPlay.setSnapToTicks(true);
+		sliderPlay.setMinorTickSpacing(1);
+		sliderPlay.setPaintTicks(true);
+		sliderPlay.setPaintLabels(true);
+		sliderPlay.setMajorTickSpacing(4);
+		sliderPlay.setMaximum(8);
+		sliderPlay.setMinimum(-8);
+		sliderPanel.add(sliderPlay);
+		sliderPlay.addChangeListener( new ChangeListener()
+		{
+			@Override
+			public void stateChanged( final ChangeEvent e )
+			{
+				if ( !e.getSource().equals( sliderPlay ) )
+					return;
+				
+				stopPlayExecuter();
+			
+				if(sliderPlay.getValue() == 0)
+					return;
+				
+				final int changeValue = Integer.signum(sliderPlay.getValue());
+				final int periode = 1000 / (1 * Math.abs(sliderPlay.getValue()));
+				
+				System.out.println("changeValue " + changeValue);
+				System.out.println("periode " + periode);
+				
+				playScheduledFuture = scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
+				  @Override
+				  public void run() {
+					  
+					  final int newTimepoint = state.getCurrentTimepoint() + changeValue;
+					  if(newTimepoint<0){
+						  setTimepoint(0);
+						  stopPlayExecuter();
+						  sliderPlay.setValue(0);
+					  }
+					  else if(newTimepoint > numTimepoints - 1){
+						  setTimepoint(numTimepoints -1);
+						  stopPlayExecuter();
+						  sliderPlay.setValue(0);
+					  }
+					  else{
+						  System.out.println("set timepoint " + newTimepoint);
+						  setTimepoint(newTimepoint);
+					  }
+				  }
+				}, 0, periode, TimeUnit.MILLISECONDS);
+				
+			}
+		} );
+		sliderPlay.addComponentListener(new ComponentAdapter() {
+			@Override
+			public void componentHidden(ComponentEvent e) {
+				stopPlayExecuter();
+			}
+			
+		});
+		
+		rigidArea = Box.createRigidArea(new Dimension(5, 5));
+		sliderPanel.add(rigidArea);
+		
 		sliderPanel.add(sliderTime);
 		if(numTimepoints > 1)
 			add(sliderPanel, BorderLayout.SOUTH);
@@ -400,6 +486,13 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		setKeyframeButtonEnable(false);
 		
 		painterThread.start();
+	}
+	
+	public void stopPlayExecuter(){
+		if(playScheduledFuture != null){
+			playScheduledFuture.cancel(true);
+			playScheduledFuture = null;
+		}
 	}
 
 	public void addAddBookmarkButtonAction(Action action) {
@@ -627,6 +720,8 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	}
 
 	private final static double c = Math.cos( Math.PI / 4 );
+	private Component rigidArea;
+	private JSlider sliderPlay;
 
 	/**
 	 * The planes which can be aligned with the viewer coordinate system: XY,

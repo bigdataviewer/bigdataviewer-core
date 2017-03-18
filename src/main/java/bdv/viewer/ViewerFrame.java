@@ -114,6 +114,7 @@ public class ViewerFrame extends JFrame
             public void windowClosing( final WindowEvent e )
             {
                 viewer.stop();
+                viewer.stopPlayExecuter();
             }
         };
         
