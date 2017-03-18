@@ -73,6 +73,7 @@ import net.imglib2.ui.RenderTarget;
 import net.imglib2.util.LinAlgHelpers;
 import bdv.cache.CacheControl;
 import bdv.export.ProgressWriter;
+import bdv.tools.bookmarks.bookmark.DynamicBookmark;
 import bdv.util.Prefs;
 import bdv.viewer.ViewerPanel;
 import bdv.viewer.overlay.ScaleBarOverlayRenderer;
@@ -285,6 +286,7 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 	 */
 	public void recordMovie( final int width, final int height, final int minTimepointIndex, final int maxTimepointIndex, final double stepSize, final int numSteps, final File dir ) throws IOException
 	{
+		/*
 		final ViewerState renderState = viewer.getState();
 		final int canvasW = viewer.getDisplay().getWidth();
 		final int canvasH = viewer.getDisplay().getHeight();
@@ -296,12 +298,18 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 		tGV.scale( ( double ) width / canvasW );
 		tGV.set( tGV.get( 0, 3 ) + width / 2, 0, 3 );
 		tGV.set( tGV.get( 1, 3 ) + height / 2, 1, 3 );
+		*/
+		
+		final ViewerState renderState = viewer.getState();
+		final int canvasW = viewer.getDisplay().getWidth();
+		final int canvasH = viewer.getDisplay().getHeight();
 
 		final AffineTransform3D affine = new AffineTransform3D();
 
 		// get voxel width transformed to current viewer coordinates
 		final AffineTransform3D tSV = new AffineTransform3D();
 		renderState.getSources().get( 0 ).getSpimSource().getSourceTransform( 0, 0, tSV );
+		/*
 		tSV.preConcatenate( tGV );
 		final double[] sO = new double[] { 0, 0, 0 };
 		final double[] sX = new double[] { 1, 0, 0 };
@@ -311,7 +319,8 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 		tSV.apply( sX, vX );
 		LinAlgHelpers.subtract( vO, vX, vO );
 		final double dd = LinAlgHelpers.length( vO );
-
+		 */
+		
 		final ScaleBarOverlayRenderer scalebar = Prefs.showScaleBarInMovie() ? new ScaleBarOverlayRenderer() : null;
 
 		class MyTarget implements RenderTarget
@@ -366,6 +375,21 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 		progressWriter.setProgress( 0 );
 		for ( int timepoint = minTimepointIndex; timepoint <= maxTimepointIndex; ++timepoint )
 		{
+			final AffineTransform3D tGV = getTransformation(renderState, canvasW, canvasH, timepoint);
+			tGV.scale( ( double ) width / canvasW );
+			tGV.set( tGV.get( 0, 3 ) + width / 2, 0, 3 );
+			tGV.set( tGV.get( 1, 3 ) + height / 2, 1, 3 );
+			
+			tSV.preConcatenate( tGV );
+			final double[] sO = new double[] { 0, 0, 0 };
+			final double[] sX = new double[] { 1, 0, 0 };
+			final double[] vO = new double[ 3 ];
+			final double[] vX = new double[ 3 ];
+			tSV.apply( sO, vO );
+			tSV.apply( sX, vX );
+			LinAlgHelpers.subtract( vO, vX, vO );
+			final double dd = LinAlgHelpers.length( vO );
+			
 			target.clear();
 			renderState.setCurrentTimepoint( timepoint );
 
@@ -396,6 +420,22 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 		}
 	}
 
+	private AffineTransform3D getTransformation(final ViewerState renderState, final int canvasW, final int canvasH, final int currentTimepoint){
+		
+		if(renderState.getActiveBookmark() instanceof DynamicBookmark){
+			final DynamicBookmark dynamicBookmark = (DynamicBookmark)renderState.getActiveBookmark();
+			final AffineTransform3D affine = dynamicBookmark.getInterpolatedTransform(currentTimepoint, canvasW / 2, canvasH);
+			return affine;
+		}
+		else{
+			final AffineTransform3D affine = new AffineTransform3D();
+			renderState.getViewerTransform( affine );
+			affine.set( affine.get( 0, 3 ) - canvasW / 2, 0, 3 );
+			affine.set( affine.get( 1, 3 ) - canvasH / 2, 1, 3 );
+			return affine;
+		}
+	}
+	
 	@Override
 	public void drawOverlays( final Graphics g )
 	{}
