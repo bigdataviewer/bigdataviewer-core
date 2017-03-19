@@ -52,7 +52,7 @@ public class BookmarkManagementDialog extends JDialog {
 
 	public BookmarkManagementDialog(ViewerFrame owner, BookmarksEditor bookmarksEditor) {
 		super(owner, "Bookmark Management", false);
-		setSize(new Dimension(400, 500));
+		setSize(new Dimension(500, 500));
 		setLocationRelativeTo(owner);
 
 		this.viewerFrame = owner;
