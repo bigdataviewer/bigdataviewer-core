@@ -30,6 +30,7 @@
 package bdv.tools;
 
 import java.awt.BorderLayout;
+import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -52,11 +53,13 @@ import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.WindowConstants;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -92,6 +95,11 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 	private final JSpinner spinnerWidth;
 
 	private final JSpinner spinnerHeight;
+	
+	private JProgressBar progressBar;
+	
+	private boolean isRecordThreadRunning;
+	private JButton cancelButton;
 
 	public RecordMovieDialog( final Frame owner, final ViewerPanel viewer, final ProgressWriter progressWriter )
 	{
@@ -145,13 +153,32 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 		spinnerHeight = new JSpinner();
 		spinnerHeight.setModel( new SpinnerNumberModel( 600, 10, 5000, 1 ) );
 		heightPanel.add( spinnerHeight );
+		
+		JPanel progressPanel = new JPanel();
+		progressPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
+		boxes.add(progressPanel);
+		progressPanel.setLayout(new BorderLayout(0, 0));
+		
+		progressBar = new JProgressBar();
+		progressBar.setStringPainted(true);
+		progressPanel.add(progressBar, BorderLayout.CENTER);
 
 		final JPanel buttonsPanel = new JPanel();
 		boxes.add( buttonsPanel );
-		buttonsPanel.setLayout(new BorderLayout(0, 0));
+		buttonsPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 5, 5));
+		
+		cancelButton = new JButton("Cancel");
+		cancelButton.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				isRecordThreadRunning = false;
+			}
+		});
+		buttonsPanel.add(cancelButton);
 
 		final JButton recordButton = new JButton( "Record" );
-		buttonsPanel.add( recordButton, BorderLayout.EAST );
+		buttonsPanel.add( recordButton );
 
 		spinnerMinTimepoint.addChangeListener( new ChangeListener()
 		{
@@ -220,10 +247,15 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 					public void run()
 					{
 						try
-						{
+						{			
+							isRecordThreadRunning = true;
 							recordButton.setEnabled( false );
+							
 							recordMovie( width, height, minTimepointIndex, maxTimepointIndex, dir );
+							
+							progressBar.setValue(0);
 							recordButton.setEnabled( true );
+							isRecordThreadRunning = false;
 						}
 						catch ( final Exception ex )
 						{
@@ -233,6 +265,7 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 				}.start();
 			}
 		} );
+		
 
 		final ActionMap am = getRootPane().getActionMap();
 		final InputMap im = getRootPane().getInputMap( JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT );
@@ -259,21 +292,6 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 		final ViewerState renderState = viewer.getState();
 		final int canvasW = viewer.getDisplay().getWidth();
 		final int canvasH = viewer.getDisplay().getHeight();
-		
-		/*
-		final ViewerState renderState = viewer.getState();
-		final int canvasW = viewer.getDisplay().getWidth();
-		final int canvasH = viewer.getDisplay().getHeight();
-
-		final AffineTransform3D affine = new AffineTransform3D();
-		renderState.getViewerTransform( affine );
-		affine.set( affine.get( 0, 3 ) - canvasW / 2, 0, 3 );
-		affine.set( affine.get( 1, 3 ) - canvasH / 2, 1, 3 );
-		affine.scale( ( double ) width / canvasW );
-		affine.set( affine.get( 0, 3 ) + width / 2, 0, 3 );
-		affine.set( affine.get( 1, 3 ) + height / 2, 1, 3 );
-		renderState.setViewerTransform( affine );
-		*/
 
 		final ScaleBarOverlayRenderer scalebar = Prefs.showScaleBarInMovie() ? new ScaleBarOverlayRenderer() : null;
 
@@ -304,9 +322,13 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 		final MultiResolutionRenderer renderer = new MultiResolutionRenderer(
 				target, new PainterThread( null ), new double[] { 1 }, 0, false, 1, null, false,
 				viewer.getOptionValues().getAccumulateProjectorFactory(), new CacheControl.Dummy() );
-		progressWriter.setProgress( 0 );
+		setProgress(0);
 		for ( int timepoint = minTimepointIndex; timepoint <= maxTimepointIndex; ++timepoint )
 		{
+			// stop recording if requested
+			if(!isRecordThreadRunning)
+				break;
+			
 			final AffineTransform3D affine = getTransformation(renderState, canvasW, canvasH, timepoint);
 			affine.scale( ( double ) width / canvasW );
 			affine.set( affine.get( 0, 3 ) + width / 2, 0, 3 );
@@ -326,8 +348,13 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 			}
 
 			ImageIO.write( target.bi, "png", new File( String.format( "%s/img-%03d.png", dir, timepoint ) ) );
-			progressWriter.setProgress( ( double ) (timepoint - minTimepointIndex + 1) / (maxTimepointIndex - minTimepointIndex + 1) );
+			setProgress(( double ) (timepoint - minTimepointIndex + 1) / (maxTimepointIndex - minTimepointIndex + 1));
 		}
+	}
+	
+	private synchronized  void setProgress(double progress){
+		progressWriter.setProgress( progress );
+		progressBar.setValue((int) (progress * 100));
 	}
 
 	@Override
