@@ -232,6 +232,7 @@ public class AddBookmarkDialog extends JDialog {
 		});
 
 		setKeyBinding();
+		this.getRootPane().setDefaultButton(addButton);
 
 		pack();
 		setDefaultCloseOperation(WindowConstants.HIDE_ON_CLOSE);
@@ -240,19 +241,6 @@ public class AddBookmarkDialog extends JDialog {
 	private void setKeyBinding(){
 		final ActionMap am = getRootPane().getActionMap();
 		final InputMap im = getRootPane().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
-		
-		// add Bookmark
-		final Object addKey = new Object();
-		final Action addAction = new AbstractAction() {
-			@Override
-			public void actionPerformed(final ActionEvent e) {
-				addBookmark();
-			}
-
-			private static final long serialVersionUID = 1L;
-		};
-		im.put(KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0), addKey);
-		am.put(addKey, addAction);
 		
 		// close dialog
 		final Object hideKey = new Object();
