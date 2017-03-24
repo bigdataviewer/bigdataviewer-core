@@ -26,6 +26,7 @@
 package bdv.viewer;
 
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.Rectangle;
@@ -118,7 +119,7 @@ public final class JKeyFrameSlider extends JSlider {
 	 */
 	public void setDynamicBookmarks(DynamicBookmark bookmark) {
 		this.bookmark = bookmark;
-		this.currentHoverKeyframe = null;
+		setCurrentHoverKeyframe(null);
 
 		if (this.bookmark != null) {
 			bookmark.removeDynamicBookmarkChangedListener(bookmarkChangedListener);
@@ -205,13 +206,13 @@ public final class JKeyFrameSlider extends JSlider {
 				final int mouseX = inputComponentXCoord;
 
 				if (mouseX >= lowerBound && mouseX <= upperBound) {
-					this.currentHoverKeyframe = keyframe;
+					setCurrentHoverKeyframe(keyframe);
 					return;
 				}
 			}
 		}
 
-		this.currentHoverKeyframe = null;
+		setCurrentHoverKeyframe(null);
 	}
 
 	/**
@@ -262,6 +263,15 @@ public final class JKeyFrameSlider extends JSlider {
 
 		return (int) (((trackWidth / numTimepoints) * timepoint) + trackOffsetX);
 	}
+	
+	private void setCurrentHoverKeyframe(KeyFrame hoveredKeyFrame){
+		this.currentHoverKeyframe = hoveredKeyFrame;
+		
+		if(hoveredKeyFrame != null)
+			setCursor(Cursor.getPredefinedCursor(Cursor.W_RESIZE_CURSOR));
+		else
+			setCursor(Cursor.getDefaultCursor());
+	}
 
 	private class MouseHoverEventAdapter extends MouseAdapter {
 
@@ -298,7 +308,7 @@ public final class JKeyFrameSlider extends JSlider {
 				int t = (int) ((e.getX() - trackRect.x) / trackRect.getWidth() * numTimepoints);
 				final KeyFrame updatedKeyFrame = bookmark.updateWithoutOverride(currentHoverKeyframe, t);
 				if(updatedKeyFrame != null){
-					currentHoverKeyframe = updatedKeyFrame;
+					setCurrentHoverKeyframe(updatedKeyFrame);
 				}
 				setValue(t);
 				
