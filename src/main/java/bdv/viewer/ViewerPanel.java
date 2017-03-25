@@ -403,14 +403,6 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		sliderPlay.setMinimumSize(new Dimension(36, 50));
 		sliderPlay.setMaximumSize(new Dimension(36, 50));
 		sliderPlay.setAlignmentX(Component.LEFT_ALIGNMENT);
-		sliderPlay.setValue(0);
-		sliderPlay.setSnapToTicks(true);
-		sliderPlay.setMinorTickSpacing(1);
-		sliderPlay.setPaintTicks(true);
-		sliderPlay.setPaintLabels(true);
-		sliderPlay.setMajorTickSpacing(4);
-		sliderPlay.setMaximum(8);
-		sliderPlay.setMinimum(-8);
 		sliderPanel.add(sliderPlay);
 		sliderPlay.addChangeListener( new ChangeListener()
 		{
@@ -428,9 +420,6 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 				final int changeValue = Integer.signum(sliderPlay.getValue());
 				final int periode = 1000 / (1 * Math.abs(sliderPlay.getValue()));
 				
-				System.out.println("changeValue " + changeValue);
-				System.out.println("periode " + periode);
-				
 				playScheduledFuture = scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
 				  @Override
 				  public void run() {
@@ -447,7 +436,6 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 						  sliderPlay.setValue(0);
 					  }
 					  else{
-						  System.out.println("set timepoint " + newTimepoint);
 						  setTimepoint(newTimepoint);
 					  }
 				  }
