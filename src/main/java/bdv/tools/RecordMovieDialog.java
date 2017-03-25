@@ -75,6 +75,11 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
+import java.awt.Component;
+import javax.swing.Box;
+import java.awt.GridBagLayout;
+import java.awt.GridBagConstraints;
+import java.awt.Insets;
 
 public class RecordMovieDialog extends JDialog implements OverlayRenderer
 {
@@ -157,17 +162,28 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 		JPanel progressPanel = new JPanel();
 		progressPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
 		boxes.add(progressPanel);
-		progressPanel.setLayout(new BorderLayout(0, 0));
+		GridBagLayout gbl_progressPanel = new GridBagLayout();
+		gbl_progressPanel.columnWidths = new int[]{332, 0, 0};
+		gbl_progressPanel.rowHeights = new int[]{19, 0};
+		gbl_progressPanel.columnWeights = new double[]{1.0, 0.0, Double.MIN_VALUE};
+		gbl_progressPanel.rowWeights = new double[]{1.0, Double.MIN_VALUE};
+		progressPanel.setLayout(gbl_progressPanel);
 		
 		progressBar = new JProgressBar();
 		progressBar.setStringPainted(true);
-		progressPanel.add(progressBar, BorderLayout.CENTER);
-
-		final JPanel buttonsPanel = new JPanel();
-		boxes.add( buttonsPanel );
-		buttonsPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 5, 5));
+		GridBagConstraints gbc_progressBar = new GridBagConstraints();
+		gbc_progressBar.fill = GridBagConstraints.HORIZONTAL;
+		gbc_progressBar.insets = new Insets(0, 0, 0, 5);
+		gbc_progressBar.gridx = 0;
+		gbc_progressBar.gridy = 0;
+		progressPanel.add(progressBar, gbc_progressBar);
 		
 		cancelButton = new JButton("Cancel");
+		cancelButton.setEnabled(false);
+		GridBagConstraints gbc_cancelButton = new GridBagConstraints();
+		gbc_cancelButton.gridx = 1;
+		gbc_cancelButton.gridy = 0;
+		progressPanel.add(cancelButton, gbc_cancelButton);
 		cancelButton.addActionListener(new ActionListener() {
 			
 			@Override
@@ -175,7 +191,10 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 				isRecordThreadRunning = false;
 			}
 		});
-		buttonsPanel.add(cancelButton);
+
+		final JPanel buttonsPanel = new JPanel();
+		boxes.add( buttonsPanel );
+		buttonsPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 5, 5));
 
 		final JButton recordButton = new JButton( "Record" );
 		buttonsPanel.add( recordButton );
@@ -250,11 +269,13 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 						{			
 							isRecordThreadRunning = true;
 							recordButton.setEnabled( false );
+							cancelButton.setEnabled(true);
 							
 							recordMovie( width, height, minTimepointIndex, maxTimepointIndex, dir );
 							
 							progressBar.setValue(0);
 							recordButton.setEnabled( true );
+							cancelButton.setEnabled(false);
 							isRecordThreadRunning = false;
 						}
 						catch ( final Exception ex )
