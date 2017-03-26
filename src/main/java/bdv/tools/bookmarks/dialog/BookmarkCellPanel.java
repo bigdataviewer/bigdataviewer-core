@@ -186,6 +186,7 @@ public class BookmarkCellPanel extends JPanel {
 	private void displayBookmarkInfo() {
 		keyField.setText(bookmark.getKey());
 		titleField.setText(bookmark.getTitle());
+		descriptionTextArea.setText(bookmark.getDescription());
 
 		if (bookmark instanceof SimpleBookmark) {
 			selectButton.setText("Show");
@@ -275,6 +276,24 @@ public class BookmarkCellPanel extends JPanel {
 			@Override
 			public void removeUpdate(DocumentEvent arg0) {
 				bookmark.setTitle(titleField.getText());
+			}
+		});
+		
+		descriptionTextArea.getDocument().addDocumentListener(new DocumentListener() {
+
+			@Override
+			public void changedUpdate(DocumentEvent arg0) {
+				bookmark.setDescription(descriptionTextArea.getText());
+			}
+
+			@Override
+			public void insertUpdate(DocumentEvent arg0) {
+				bookmark.setDescription(descriptionTextArea.getText());
+			}
+
+			@Override
+			public void removeUpdate(DocumentEvent arg0) {
+				bookmark.setDescription(descriptionTextArea.getText());
 			}
 		});
 	}
