@@ -125,6 +125,29 @@ public class BookmarkCellPanel extends JPanel {
 					keyField.setText(bookmark.getKey());
 			}
 		});
+		
+		lblDescription = new JLabel("Description");
+		GridBagConstraints gbc_lblDescription = new GridBagConstraints();
+		gbc_lblDescription.anchor = GridBagConstraints.WEST;
+		gbc_lblDescription.insets = new Insets(0, 0, 5, 5);
+		gbc_lblDescription.gridx = 0;
+		gbc_lblDescription.gridy = 2;
+		panelInfo.add(lblDescription, gbc_lblDescription);
+
+		scrollPane = new JScrollPane();
+		GridBagConstraints gbc_scrollPane = new GridBagConstraints();
+		gbc_scrollPane.gridwidth = 2;
+		gbc_scrollPane.fill = GridBagConstraints.BOTH;
+		gbc_scrollPane.gridx = 0;
+		gbc_scrollPane.gridy = 3;
+		panelInfo.add(scrollPane, gbc_scrollPane);
+
+		descriptionTextArea = new JTextArea();
+		scrollPane.setViewportView(descriptionTextArea);
+		descriptionTextArea.setText((String) null);
+		descriptionTextArea.setLineWrap(true);
+		descriptionTextArea.setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, null);
+		descriptionTextArea.setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, null);
 
 		JPanel panelButton = new JPanel();
 		GridBagConstraints gbc_panelButton = new GridBagConstraints();
@@ -154,30 +177,6 @@ public class BookmarkCellPanel extends JPanel {
 		gbc_btnRemove.gridx = 0;
 		gbc_btnRemove.gridy = 1;
 		panelButton.add(removeButton, gbc_btnRemove);
-
-		lblDescription = new JLabel("Description");
-		GridBagConstraints gbc_lblDescription = new GridBagConstraints();
-		gbc_lblDescription.anchor = GridBagConstraints.WEST;
-		gbc_lblDescription.insets = new Insets(0, 0, 5, 5);
-		gbc_lblDescription.gridx = 0;
-		gbc_lblDescription.gridy = 2;
-		panelInfo.add(lblDescription, gbc_lblDescription);
-
-		scrollPane = new JScrollPane();
-		GridBagConstraints gbc_scrollPane = new GridBagConstraints();
-		gbc_scrollPane.gridwidth = 2;
-		gbc_scrollPane.fill = GridBagConstraints.BOTH;
-		gbc_scrollPane.gridx = 0;
-		gbc_scrollPane.gridy = 3;
-		panelInfo.add(scrollPane, gbc_scrollPane);
-
-		descriptionTextArea = new JTextArea();
-		scrollPane.setViewportView(descriptionTextArea);
-		descriptionTextArea.setText((String) null);
-		descriptionTextArea.setLineWrap(true);
-		descriptionTextArea.setFocusTraversalKeys(KeyboardFocusManager.FORWARD_TRAVERSAL_KEYS, null);
-		descriptionTextArea.setFocusTraversalKeys(KeyboardFocusManager.BACKWARD_TRAVERSAL_KEYS, null);
-		panelButton.setOpaque(false);
 
 		displayBookmarkInfo();
 		addBookmarkInfoDocumentListener();
