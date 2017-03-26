@@ -37,6 +37,7 @@ import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.PlainDocument;
 
+import bdv.MaxLengthTextDocument;
 import bdv.tools.bookmarks.editor.BookmarksEditor;
 
 public class AddBookmarkDialog extends JDialog {
@@ -52,24 +53,6 @@ public class AddBookmarkDialog extends JDialog {
 	private final BookmarksEditor bookmarksEditor;
 	private JTextField titleField;
 	private JTextArea descriptionArea;
-
-	private class MaxLengthTextDocument extends PlainDocument {
-		// Store maximum characters permitted
-		private int maxChars;
-
-		public MaxLengthTextDocument(int maxChars) {
-			this.maxChars = maxChars;
-		}
-
-		@Override
-		public void insertString(int offs, String str, AttributeSet a) throws BadLocationException {
-			if (str != null && (getLength() + str.length() <= maxChars)) {
-				super.insertString(offs, str, a);
-			}
-		}
-
-		// getter e setter omitted
-	}
 
 	public AddBookmarkDialog(Frame owner, BookmarksEditor bookmarksEditor) {
 		super(owner, "Add bookmark", true);

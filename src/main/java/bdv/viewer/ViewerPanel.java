@@ -368,6 +368,8 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		JPanel sliderPanel = new JPanel();
 		sliderPanel.setLayout(new BoxLayout(sliderPanel, BoxLayout.X_AXIS));
 		
+		sliderPanel.add(Box.createRigidArea(new Dimension(5, 5)));
+		
 		previousKeyframeButton = new JButton("<<");
 		previousKeyframeButton.setToolTipText("Go to previous keyframe");
 		sliderPanel.add(previousKeyframeButton);
@@ -710,6 +712,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	private final static double c = Math.cos( Math.PI / 4 );
 	private Component rigidArea;
 	private JSlider sliderPlay;
+	private Component rigidArea_1;
 
 	/**
 	 * The planes which can be aligned with the viewer coordinate system: XY,

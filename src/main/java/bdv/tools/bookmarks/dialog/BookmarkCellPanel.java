@@ -7,7 +7,10 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.KeyboardFocusManager;
 import java.awt.event.ActionListener;
+import java.awt.event.FocusAdapter;
+import java.awt.event.FocusEvent;
 
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -15,11 +18,11 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
-import javax.swing.UIManager;
-import javax.swing.border.MatteBorder;
+import javax.swing.border.CompoundBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+import bdv.MaxLengthTextDocument;
 import bdv.tools.bookmarks.bookmark.Bookmark;
 import bdv.tools.bookmarks.bookmark.DynamicBookmark;
 import bdv.tools.bookmarks.bookmark.SimpleBookmark;
@@ -29,7 +32,7 @@ public class BookmarkCellPanel extends JPanel {
 
 	private static final long serialVersionUID = 1L;
 
-	private final static Color ACTIVE_COLOR = Color.CYAN;
+	private final static Color ACTIVE_COLOR = Color.decode("#6495ED");
 
 	private final Bookmark bookmark;
 	private final BookmarksEditor bookmarksEditor;
@@ -52,7 +55,6 @@ public class BookmarkCellPanel extends JPanel {
 		this.bookmark = bookmark;
 		this.bookmarksEditor = bookmarksEditor;
 
-		setBorder(new MatteBorder(0, 0, 1, 0, (Color) new Color(0, 0, 0)));
 		setMinimumSize(new Dimension(300, 125));
 		setMaximumSize(new Dimension(2147483647, 125));
 		setPreferredSize(new Dimension(267, 126));
@@ -114,6 +116,15 @@ public class BookmarkCellPanel extends JPanel {
 		gbc_txtKey.gridy = 1;
 		panelInfo.add(keyField, gbc_txtKey);
 		keyField.setColumns(10);
+		keyField.setDocument(new MaxLengthTextDocument(1));
+		keyField.addFocusListener(new FocusAdapter() {
+
+			@Override
+			public void focusLost(FocusEvent e) {
+				if (keyField.getText().length() == 0)
+					keyField.setText(bookmark.getKey());
+			}
+		});
 
 		JPanel panelButton = new JPanel();
 		GridBagConstraints gbc_panelButton = new GridBagConstraints();
@@ -144,8 +155,6 @@ public class BookmarkCellPanel extends JPanel {
 		gbc_btnRemove.gridy = 1;
 		panelButton.add(removeButton, gbc_btnRemove);
 
-		panelInfo.setOpaque(false);
-		
 		lblDescription = new JLabel("Description");
 		GridBagConstraints gbc_lblDescription = new GridBagConstraints();
 		gbc_lblDescription.anchor = GridBagConstraints.WEST;
@@ -203,9 +212,10 @@ public class BookmarkCellPanel extends JPanel {
 		this.active = active;
 
 		if (active) {
-			setBackground(ACTIVE_COLOR);
+			setBorder(BorderFactory.createMatteBorder(3, 3, 3, 3, ACTIVE_COLOR));
 		} else {
-			setBackground(UIManager.getColor("Panel.background"));
+			setBorder(new CompoundBorder(BorderFactory.createEmptyBorder(3, 3, 2, 3),
+					BorderFactory.createMatteBorder(0, 0, 1, 0, Color.BLACK)));
 		}
 	}
 
@@ -243,6 +253,7 @@ public class BookmarkCellPanel extends JPanel {
 							+ "' is already given to another bookmark. Please choose a different key.";
 					JOptionPane.showMessageDialog(BookmarkCellPanel.this, message, "Key is already in use",
 							JOptionPane.INFORMATION_MESSAGE);
+					keyField.setText(oldKey);
 				} else {
 					bookmarksEditor.renameBookmark(oldKey, newKey);
 				}
