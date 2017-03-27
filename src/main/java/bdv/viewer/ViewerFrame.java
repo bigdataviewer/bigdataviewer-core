@@ -114,6 +114,7 @@ public class ViewerFrame extends JFrame
 		final MouseAndKeyHandler mouseAndKeyHandler = new MouseAndKeyHandler();
 		mouseAndKeyHandler.setInputMap( triggerbindings.getConcatenatedInputTriggerMap() );
 		mouseAndKeyHandler.setBehaviourMap( triggerbindings.getConcatenatedBehaviourMap() );
+		mouseAndKeyHandler.setKeypressManager( optional.values.getKeyPressedManager(), viewer.getDisplay() );
 		viewer.getDisplay().addHandler( mouseAndKeyHandler );
 
 		final TransformEventHandler< ? > tfHandler = viewer.getDisplay().getTransformEventHandler();

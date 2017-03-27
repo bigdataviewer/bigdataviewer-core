@@ -59,6 +59,7 @@
 		<dependency>
 			<groupId>org.scijava</groupId>
 			<artifactId>ui-behaviour</artifactId>
+			<version>1.3.0</version>
 		</dependency>
 	</dependencies>
 
