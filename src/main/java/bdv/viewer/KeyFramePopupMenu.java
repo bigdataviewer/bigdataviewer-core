@@ -63,7 +63,7 @@ public final class KeyFramePopupMenu extends JPopupMenu {
 		add(itemSetTransformKF);
 		add(itemRemoveKF);
 
-		itemCopyKF.setText("Copy");
+		itemCopyKF.setText("Clone");
 		itemSetTransformKF.setText("Set transformation");
 		itemRemoveKF.setText("Remove");
 
