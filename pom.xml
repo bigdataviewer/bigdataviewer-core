@@ -93,8 +93,8 @@
 		<url>https://github.com/bigdataviewer/bigdataviewer-core</url>
 	</scm>
 	<ciManagement>
-		<system>Jenkins</system>
-		<url>http://jenkins.imagej.net/job/BigDataViewer-Core/</url>
+		<system>Travis CI</system>
+		<url>https://travis-ci.org/bigdataviewer/bigdataviewer-core</url>
 	</ciManagement>
 
 	<licenses>
