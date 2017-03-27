@@ -384,27 +384,14 @@ public class BookmarksEditor {
 				? null
 				: viewer.getActiveBookmark().getKey();
 
-		/*
-		final Bookmark oldBookmark = bookmarks.get(oldKey);
-		if(oldBookmark != null){
-			final Bookmark newBookmark = oldBookmark.copy(newKey);
-			
-		}
-		*/
-		
-		final Bookmark removedBookmark = removeBookmark(oldKey);
-		if (removedBookmark != null) {
-			final Bookmark newBookmark = removedBookmark.copy(newKey);
-			bookmarks.put(newBookmark);
-
-			// if old bookmark was active, set the renamed/ new bookmark as
-			// active
+		final Bookmark newBookmark = bookmarks.rename( oldKey, newKey );
+		if(newBookmark != null){
 			if (oldKey.equals(activeBookmarkKey)) {
 				viewer.setActiveBookmark(newBookmark);
 			}
-
 			return newBookmark;
 		}
+		
 		return null;
 	}
 

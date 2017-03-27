@@ -102,21 +102,23 @@ public class ViewerFrame extends JFrame
         setLocationRelativeTo(null);
 		setDefaultCloseOperation( WindowConstants.DISPOSE_ON_CLOSE );
         
-        final WindowAdapter windowAdapter = new WindowAdapter() {
-            @Override
-            public void windowStateChanged(WindowEvent e) {
-                SwingUtilities.invokeLater(() -> {
-                    getContentPane().revalidate();
-                });
-            }
-            
-            @Override
-            public void windowClosing( final WindowEvent e )
-            {
-                viewer.stop();
-                viewer.stopPlayExecuter();
-            }
-        };
+		final WindowAdapter windowAdapter = new WindowAdapter()
+		{
+			@Override
+			public void windowStateChanged( WindowEvent e )
+			{
+				SwingUtilities.invokeLater( () -> {
+					getContentPane().revalidate();
+				} );
+			}
+
+			@Override
+			public void windowClosing( final WindowEvent e )
+			{
+				viewer.stop();
+				viewer.stopPlayExecuter();
+			}
+		};
         
 		addWindowListener(windowAdapter);
         addWindowStateListener(windowAdapter);

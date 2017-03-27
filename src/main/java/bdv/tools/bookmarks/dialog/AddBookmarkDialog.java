@@ -56,6 +56,7 @@ public class AddBookmarkDialog extends JDialog {
 		super(owner, "Add bookmark", true);
 		setResizable(false);
 		setPreferredSize(new Dimension(250, 300));
+		setLocationRelativeTo(owner);
 
 		this.bookmarksEditor = bookmarksEditor;
 		getContentPane().setLayout(new BoxLayout(getContentPane(), BoxLayout.Y_AXIS));

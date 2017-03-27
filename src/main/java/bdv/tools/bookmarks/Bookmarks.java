@@ -31,140 +31,167 @@ package bdv.tools.bookmarks;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map.Entry;
-import net.imglib2.realtransform.AffineTransform3D;
 
 import org.jdom2.Element;
 
-import bdv.tools.bookmarks.bookmark.SimpleBookmark;
-import bdv.tools.bookmarks.bookmark.DynamicBookmark;
 import bdv.tools.bookmarks.bookmark.Bookmark;
+import bdv.tools.bookmarks.bookmark.DynamicBookmark;
+import bdv.tools.bookmarks.bookmark.SimpleBookmark;
+import net.imglib2.realtransform.AffineTransform3D;
 
-public class Bookmarks {
-	private final HashMap<String, Bookmark> bookmarks;
-	private final List<BookmarksCollectionChangedListener> listeners;
+public class Bookmarks
+{
+	private final LinkedHashMap< String, Bookmark > bookmarks;
 
-	public Bookmarks() {
-		bookmarks = new HashMap<>();
+	private final List< BookmarksCollectionChangedListener > listeners;
+
+	public Bookmarks()
+	{
+		bookmarks = new LinkedHashMap<>();
 		listeners = new ArrayList<>();
 	}
-	
-	public void addListener(BookmarksCollectionChangedListener listener){
-		listeners.add(listener);
+
+	public void addListener( BookmarksCollectionChangedListener listener )
+	{
+		listeners.add( listener );
 	}
-	
-	public void removeListener(BookmarksCollectionChangedListener listener){
-		listeners.remove(listener);
+
+	public void removeListener( BookmarksCollectionChangedListener listener )
+	{
+		listeners.remove( listener );
 	}
-	
-	private void fireBookmarksCollectionChangedListener(){
-		for(BookmarksCollectionChangedListener l : listeners){
+
+	private void fireBookmarksCollectionChangedListener()
+	{
+		for ( BookmarksCollectionChangedListener l : listeners )
+		{
 			l.bookmarksCollectionChanged();
 		}
 	}
 
-	public Element toXml() {
-		final Element elem = new Element("Bookmarks");
-		for (final Entry<String, Bookmark> entry : bookmarks.entrySet()) {
+	public Element toXml()
+	{
+		final Element elem = new Element( "Bookmarks" );
+		for ( final Entry< String, Bookmark > entry : bookmarks.entrySet() )
+		{
 			final Bookmark bookmark = entry.getValue();
 			Element elemBookmark = bookmark.toXmlNode();
-			elem.addContent(elemBookmark);
+			elem.addContent( elemBookmark );
 		}
 		return elem;
 	}
 
-	public void restoreFromXml(final Element parent) {
+	public void restoreFromXml( final Element parent )
+	{
 		bookmarks.clear();
 		// TODO clear active bookmark
 
-		final Element elemBookmarks = parent.getChild("Bookmarks");
-		if (elemBookmarks == null)
+		final Element elemBookmarks = parent.getChild( "Bookmarks" );
+		if ( elemBookmarks == null )
 			return;
 
 		// TODO abstract
-		for (final Element elem : elemBookmarks.getChildren(SimpleBookmark.XML_ELEM_BOOKMARK_NAME)) {
-			SimpleBookmark bookmark = new SimpleBookmark(elem);
-			bookmarks.put(bookmark.getKey(), bookmark);
+		for ( final Element elem : elemBookmarks.getChildren( SimpleBookmark.XML_ELEM_BOOKMARK_NAME ) )
+		{
+			SimpleBookmark bookmark = new SimpleBookmark( elem );
+			bookmarks.put( bookmark.getKey(), bookmark );
 		}
 
-		for (final Element elem : elemBookmarks.getChildren(DynamicBookmark.XML_ELEM_BOOKMARK_NAME)) {
-			DynamicBookmark bookmark = new DynamicBookmark(elem);
-			bookmarks.put(bookmark.getKey(), bookmark);
+		for ( final Element elem : elemBookmarks.getChildren( DynamicBookmark.XML_ELEM_BOOKMARK_NAME ) )
+		{
+			DynamicBookmark bookmark = new DynamicBookmark( elem );
+			bookmarks.put( bookmark.getKey(), bookmark );
 		}
-		
+
 		fireBookmarksCollectionChangedListener();
 	}
 
-	public void put(final Bookmark bookmark) {
-		bookmarks.put(bookmark.getKey(), bookmark);
-		
+	public void put( final Bookmark bookmark )
+	{
+		bookmarks.put( bookmark.getKey(), bookmark );
+
 		fireBookmarksCollectionChangedListener();
 	}
-	
-	public Bookmark remove(final String key){
-		Bookmark bookmark = bookmarks.remove(key);
-		if(bookmark != null){
+
+	public Bookmark remove( final String key )
+	{
+		Bookmark bookmark = bookmarks.remove( key );
+		if ( bookmark != null )
+		{
 			fireBookmarksCollectionChangedListener();
 		}
-		
+
 		return bookmark;
 	}
 
-	public boolean containsKey(final String key){
-		return bookmarks.containsKey(key);
+	public Bookmark rename( final String oldKey, final String newKey )
+	{
+		final Bookmark oldBookmark = get( oldKey );
+		if ( oldBookmark != null )
+		{
+			final Bookmark newBookmark = oldBookmark.copy( newKey );
+			final Bookmark replacedBookmark = bookmarks.replace( oldKey, newBookmark );
+			if ( replacedBookmark != null ){
+				fireBookmarksCollectionChangedListener();
+				return newBookmark;
+			}
+		}
+		return null;
 	}
 
-	public Collection<Bookmark> getAll(){
+	public boolean containsKey( final String key )
+	{
+		return bookmarks.containsKey( key );
+	}
+
+	public Collection< Bookmark > getAll()
+	{
 		return bookmarks.values();
 	}
-	
-	public Bookmark get(final String key) {
-		return bookmarks.get(key);
-	}
-	
-	public <T extends Bookmark> T get(final String key, Class<T> clazz) {
-		Bookmark bookmark = bookmarks.get(key);
-		
-		if(clazz.isInstance(bookmark)){
-			return clazz.cast(bookmark);
-		}
 
-		return null;
+	public Bookmark get( final String key )
+	{
+		return bookmarks.get( key );
 	}
-	
-	// TODO replace with generic method
-	public SimpleBookmark getSimpleBookmark(final String key) {
-		Bookmark bookmark = get(key);
-		if (bookmark instanceof SimpleBookmark) {
-			return (SimpleBookmark) bookmark;
-		}
+
+	public < T extends Bookmark > T get( final String key, Class< T > clazz )
+	{
+		Bookmark bookmark = bookmarks.get( key );
+
+		if ( clazz.isInstance( bookmark ) ) { return clazz.cast( bookmark ); }
 
 		return null;
 	}
 
 	// TODO replace with generic method
-	public DynamicBookmark getDynamicBookmark(final String key) {
-		Bookmark bookmark = get(key);
-		if (bookmark instanceof DynamicBookmark) {
-			return (DynamicBookmark) bookmark;
-		}
+	public SimpleBookmark getSimpleBookmark( final String key )
+	{
+		Bookmark bookmark = get( key );
+		if ( bookmark instanceof SimpleBookmark ) { return ( SimpleBookmark ) bookmark; }
 
 		return null;
 	}
 
-	public AffineTransform3D getTransform(final String key, final int currentTimepoint, final double cX, final double cY) {
-		
-		final SimpleBookmark simpleBookmark = getSimpleBookmark(key);
-		if (simpleBookmark != null) {
-			return simpleBookmark.getTransform();
-		}
+	// TODO replace with generic method
+	public DynamicBookmark getDynamicBookmark( final String key )
+	{
+		Bookmark bookmark = get( key );
+		if ( bookmark instanceof DynamicBookmark ) { return ( DynamicBookmark ) bookmark; }
 
-		final DynamicBookmark dynamicBookmark = getDynamicBookmark(key);
-		if (dynamicBookmark != null) {
-			return dynamicBookmark.getInterpolatedTransform(currentTimepoint, cX, cY);
-		}
+		return null;
+	}
+
+	public AffineTransform3D getTransform( final String key, final int currentTimepoint, final double cX, final double cY )
+	{
+
+		final SimpleBookmark simpleBookmark = getSimpleBookmark( key );
+		if ( simpleBookmark != null ) { return simpleBookmark.getTransform(); }
+
+		final DynamicBookmark dynamicBookmark = getDynamicBookmark( key );
+		if ( dynamicBookmark != null ) { return dynamicBookmark.getInterpolatedTransform( currentTimepoint, cX, cY ); }
 
 		return null;
 	}

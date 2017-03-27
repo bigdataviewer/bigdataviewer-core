@@ -29,7 +29,6 @@ import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -76,7 +75,6 @@ public final class BookmarkListView extends JPanel {
 		this.listItemContainer.removeAll();
 
 		List<Bookmark> list = new ArrayList<Bookmark>(this.bookmarksEditor.getAllBookmarks());
-		Collections.sort(list);
 
 		for (Bookmark bookmark : list) {
 			BookmarkCellPanel panel = new BookmarkCellPanel(bookmark, bookmarksEditor);
