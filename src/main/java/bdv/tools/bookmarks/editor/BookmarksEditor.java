@@ -358,7 +358,7 @@ public class BookmarksEditor {
 			viewTransform.set(viewTransform.get(0, 3) - cX, 0, 3);
 			viewTransform.set(viewTransform.get(1, 3) - cY, 1, 3);
 
-			viewer.setTransformAnimator(new SimilarityTransformAnimator(viewTransform, targetTransform, cX, cX, 300));
+			viewer.setTransformAnimator(new SimilarityTransformAnimator(viewTransform, targetTransform, cX, cY, 300));
 		}
 	}
 
@@ -384,6 +384,14 @@ public class BookmarksEditor {
 				? null
 				: viewer.getActiveBookmark().getKey();
 
+		/*
+		final Bookmark oldBookmark = bookmarks.get(oldKey);
+		if(oldBookmark != null){
+			final Bookmark newBookmark = oldBookmark.copy(newKey);
+			
+		}
+		*/
+		
 		final Bookmark removedBookmark = removeBookmark(oldKey);
 		if (removedBookmark != null) {
 			final Bookmark newBookmark = removedBookmark.copy(newKey);
