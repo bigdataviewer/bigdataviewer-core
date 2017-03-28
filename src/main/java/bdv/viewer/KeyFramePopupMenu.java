@@ -36,7 +36,7 @@ import bdv.tools.bookmarks.bookmark.KeyFrame;
 import bdv.tools.bookmarks.editor.BookmarksEditor;
 
 /**
- * Context-Menu for the {@link JKeyFrameSlider}-Component.
+ * Context-Menu for the {@link JKeyFramePanel}-Component.
  * 
  */
 public final class KeyFramePopupMenu extends JPopupMenu {

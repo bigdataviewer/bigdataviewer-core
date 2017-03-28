@@ -1,40 +1,15 @@
-/*
- * Copyright (c) 2017, Fiji
- * All rights reserved.
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * * Redistributions of source code must retain the above copyright notice, this
- *   list of conditions and the following disclaimer.
- * * Redistributions in binary form must reproduce the above copyright notice,
- *   this list of conditions and the following disclaimer in the documentation
- *   and/or other materials provided with the distribution.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
- * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
- * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
- * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
- * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
- * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
- * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
- * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
- * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- * POSSIBILITY OF SUCH DAMAGE.
- */
 package bdv.viewer;
 
 import java.awt.Color;
 import java.awt.Cursor;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Panel;
 import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.lang.reflect.Field;
 
-import javax.swing.JPopupMenu;
 import javax.swing.JSlider;
 import javax.swing.SwingUtilities;
 import javax.swing.plaf.SliderUI;
@@ -44,24 +19,27 @@ import bdv.tools.bookmarks.bookmark.DynamicBookmark;
 import bdv.tools.bookmarks.bookmark.DynamicBookmarkChangedListener;
 import bdv.tools.bookmarks.bookmark.KeyFrame;
 
-/**
- * Extends the {@link JSlider}-Component with the ability to flag single
- * {@link KeyFrame}'s.
- * 
- */
-public final class JKeyFrameSlider extends JSlider {
-
+public class JKeyFramePanel extends Panel
+{
 	private class ChangeListener implements DynamicBookmarkChangedListener {
 
 		@Override
 		public void changed() {
 			repaint();
 		}
-
 	}
+	
+	private final DynamicBookmarkChangedListener bookmarkChangedListener = new ChangeListener();
+	
+	final JSlider timeSlider;
+	final int numTimepoints;
+	
+	/** My Context-Menu. */
+	private final KeyFramePopupMenu popupMenu = new KeyFramePopupMenu();
 
-	private final int numTimepoints;
-
+	/** Current dynamic bookmark or null if no bookmark is selected. */
+	private DynamicBookmark bookmark = null;
+	
 	/** KeyFrame-Flag (red-Line) Width. */
 	private static final int KF_FLAG_WIDTH = 1;
 	private static final int KF_FLAG_WIDTH_HOVER = 8;
@@ -70,47 +48,30 @@ public final class JKeyFrameSlider extends JSlider {
 	private static final Color CL_KF_FLAG_NORMAL = Color.RED;
 	private static final Color CL_KF_FLAG_HOVER = Color.BLUE;
 
+	private KeyFrame currentHoverKeyframe = null;
+	
 	private static enum KeyFrameFlagState {
 		NORMAL, HOVER
 	}
-
-	////////////////////////////////////////////////////////////////////////////////////////////////
-
-	/** My Context-Menu. */
-	private final KeyFramePopupMenu popupMenu = new KeyFramePopupMenu();
-
-	private final DynamicBookmarkChangedListener bookmarkChangedListener = new ChangeListener();
-
-	/** Current dynamic bookmark or null if no bookmark is selected. */
-	private DynamicBookmark bookmark = null;
-
-	private KeyFrame currentHoverKeyframe = null;
 	
-	public JKeyFrameSlider() {
-		this(0, 100, 50);
-	}
-
-	public JKeyFrameSlider( int min, int max) {
-		this(min, max, min);
-	}
-
-	public JKeyFrameSlider(int min, int max, int value) {
-		super(min, max, value);
-		this.numTimepoints = max;
-
+	public JKeyFramePanel( final JSlider timeSlider )
+	{
+		this.timeSlider = timeSlider;
+		
+		this.numTimepoints = timeSlider.getMaximum();
 		initComponent();
 	}
-
+	
 	private void initComponent() {
 		addMouseListener(new MouseHoverEventAdapter());
 		addMouseMotionListener(new MouseHoverEventAdapter());
 
-		setMinimumSize(new Dimension((int) getMinimumSize().getWidth(), 26));
-		setPreferredSize(new Dimension((int) getPreferredSize().getWidth(), 26));
-
+		setMinimumSize(new Dimension((int) timeSlider.getWidth(), 26));
+		setPreferredSize(new Dimension((int) timeSlider.getWidth(), 26));
+		
 		setFocusable(false);
 	}
-
+	
 	/**
 	 * Sets current bookmark and updates component (repaint).
 	 * 
@@ -133,7 +94,7 @@ public final class JKeyFrameSlider extends JSlider {
 
 		repaint();
 	}
-
+	
 	/**
 	 * Returns the specific {@link KeyFramePopupMenu} of this component.
 	 * 
@@ -143,26 +104,7 @@ public final class JKeyFrameSlider extends JSlider {
 	public KeyFramePopupMenu getKeyFramePopupMenuPopupMenu() {
 		return this.popupMenu;
 	}
-
-	@Override
-	public JPopupMenu getComponentPopupMenu() {
-		// Needs to return null! If a popup menu instance is returned, it will
-		// be used... without
-		// our mouse-events depending on selected key-frames
-		return null;
-	}
-
-	/**
-	 * Setting the popup menu is not allowed for this component!.
-	 * 
-	 * @param popup
-	 *            - no -
-	 */
-	@Override
-	public void setComponentPopupMenu(JPopupMenu popup) {
-		throw new IllegalStateException(JKeyFrameSlider.class.getSimpleName() + " cannot be set");
-	}
-
+	
 	@Override
 	public void paint(Graphics g) {
 		super.paint(g);
@@ -180,8 +122,6 @@ public final class JKeyFrameSlider extends JSlider {
 				paintKeyFrameFlag(g, posX, KeyFrameFlagState.NORMAL);
 			}
 		}
-
-		((BasicSliderUI) getUI()).paintThumb(g);
 	}
 
 	private void paintKeyFrameFlag(Graphics g, int sliderPositionX, KeyFrameFlagState flagState) {
@@ -214,7 +154,25 @@ public final class JKeyFrameSlider extends JSlider {
 
 		setCurrentHoverKeyframe(null);
 	}
+	
+	private int determineSliderXPositionOf(int timepoint) {
+		final Rectangle trackRect = getTimeSliderTrackRect();
 
+		final double trackOffsetX = trackRect.getX();
+		final double trackWidth = trackRect.getWidth();
+
+		return (int) (((trackWidth / numTimepoints) * timepoint) + trackOffsetX);
+	}
+
+	private void setCurrentHoverKeyframe(KeyFrame hoveredKeyFrame){
+		this.currentHoverKeyframe = hoveredKeyFrame;
+		
+		if(hoveredKeyFrame != null)
+			setCursor(Cursor.getPredefinedCursor(Cursor.W_RESIZE_CURSOR));
+		else
+			setCursor(Cursor.getDefaultCursor());
+	}
+	
 	/**
 	 * Returns the {@code trackRect} of {@link BasicSliderUI} to determine the
 	 * correct position of the slider thumb.
@@ -226,12 +184,12 @@ public final class JKeyFrameSlider extends JSlider {
 	 * 
 	 * @return Rectangle of track part - returns never {@code null}.
 	 */
-	private Rectangle getTrackRect() {
-		final SliderUI sliderUI = getUI();
+	private Rectangle getTimeSliderTrackRect() {
+		final SliderUI sliderUI = timeSlider.getUI();
 
 		final boolean fallbackNeeded = (sliderUI instanceof BasicSliderUI == false);
 		if (fallbackNeeded) {
-			return getVisibleRect();
+			return timeSlider.getVisibleRect();
 		}
 
 		final BasicSliderUI basicSliderUI = (BasicSliderUI) sliderUI;
@@ -245,34 +203,16 @@ public final class JKeyFrameSlider extends JSlider {
 			final Rectangle result = (Rectangle) trackRectField.get(basicSliderUI);
 
 			if (null == result) {
-				return getVisibleRect();
+				return timeSlider.getVisibleRect();
 			}
 
 			return result;
 
 		} catch (Exception ex) {
-			return getVisibleRect();
+			return timeSlider.getVisibleRect();
 		}
 	}
-
-	private int determineSliderXPositionOf(int timepoint) {
-		final Rectangle trackRect = getTrackRect();
-
-		final double trackOffsetX = trackRect.getX();
-		final double trackWidth = trackRect.getWidth();
-
-		return (int) (((trackWidth / numTimepoints) * timepoint) + trackOffsetX);
-	}
 	
-	private void setCurrentHoverKeyframe(KeyFrame hoveredKeyFrame){
-		this.currentHoverKeyframe = hoveredKeyFrame;
-		
-		if(hoveredKeyFrame != null)
-			setCursor(Cursor.getPredefinedCursor(Cursor.W_RESIZE_CURSOR));
-		else
-			setCursor(Cursor.getDefaultCursor());
-	}
-
 	private class MouseHoverEventAdapter extends MouseAdapter {
 
 		private boolean isPressing = false;
@@ -304,16 +244,17 @@ public final class JKeyFrameSlider extends JSlider {
 				//updateComponent(e);
 			}
 			else{
-				final Rectangle trackRect = getTrackRect();
+				final Rectangle trackRect = getTimeSliderTrackRect();
+				
+				if(e.getX() < trackRect.x || e.getX() > trackRect.x + trackRect.getWidth())
+					return;
+				
 				int t = (int) ((e.getX() - trackRect.x) / trackRect.getWidth() * numTimepoints);
 				final KeyFrame updatedKeyFrame = bookmark.updateWithoutOverride(currentHoverKeyframe, t);
 				if(updatedKeyFrame != null){
 					setCurrentHoverKeyframe(updatedKeyFrame);
 				}
-				setValue(t);
-				
-				// TODO update view 
-				// TODO dragged keyframe over another keyframe (same timepoint)
+				timeSlider.setValue(t);
 			}
 		}
 
@@ -328,7 +269,7 @@ public final class JKeyFrameSlider extends JSlider {
 				}
 			}
 
-			SwingUtilities.invokeLater(JKeyFrameSlider.this::repaint);
+			SwingUtilities.invokeLater(JKeyFramePanel.this::repaint);
 		}
 
 		@Override
@@ -338,7 +279,7 @@ public final class JKeyFrameSlider extends JSlider {
 
 			if (SwingUtilities.isLeftMouseButton(e) && e.getClickCount() == 1) {
 				if (currentHoverKeyframe != null) {
-					setValue(currentHoverKeyframe.getTimepoint());
+					timeSlider.setValue(currentHoverKeyframe.getTimepoint());
 				}
 			}
 		}
@@ -352,8 +293,9 @@ public final class JKeyFrameSlider extends JSlider {
 		private void maybeTriggerPopupMenu(MouseEvent event) {
 			if (event.isPopupTrigger()) {
 				popupMenu.setKeyFrameFlagSelected(currentHoverKeyframe);
-				popupMenu.show(JKeyFrameSlider.this, event.getX(), event.getY());
+				popupMenu.show(JKeyFramePanel.this, event.getX(), event.getY());
 			}
 		}
 	}
+
 }

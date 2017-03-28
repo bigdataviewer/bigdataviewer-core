@@ -39,6 +39,7 @@ import static bdv.viewer.VisibilityAndGrouping.Event.VISIBILITY_CHANGED;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.FlowLayout;
 import java.awt.Font;
@@ -49,22 +50,15 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.TimeoutException;
 
 import javax.swing.Action;
 import javax.swing.Box;
@@ -72,16 +66,17 @@ import javax.swing.BoxLayout;
 import javax.swing.DefaultBoundedRangeModel;
 import javax.swing.JButton;
 import javax.swing.JLayeredPane;
-import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JSlider;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import org.jdom2.Element;
 
 import bdv.cache.CacheControl;
-import bdv.tools.bookmarks.bookmark.DynamicBookmark;
 import bdv.tools.bookmarks.bookmark.Bookmark;
+import bdv.tools.bookmarks.bookmark.DynamicBookmark;
 import bdv.util.Affine3DHelpers;
 import bdv.util.InvokeOnEDT;
 import bdv.util.Prefs;
@@ -111,9 +106,6 @@ import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.TransformEventHandler;
 import net.imglib2.ui.TransformListener;
 import net.imglib2.util.LinAlgHelpers;
-import java.awt.Component;
-import javax.swing.JSlider;
-import javax.swing.SwingConstants;
 
 
 /**
@@ -174,7 +166,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 */
 	protected final InteractiveDisplayCanvasComponent< AffineTransform3D > display;
 
-	protected final JKeyFrameSlider sliderTime;
+	protected final JSlider timeSlider;
 
 	/**
 	 * Thread that triggers repainting of the display.
@@ -387,18 +379,6 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		sliderPanel.add(nextKeyframeButton);
 		
 		sliderPanel.add(Box.createRigidArea(new Dimension(5, 5)));
-
-		sliderTime = new JKeyFrameSlider(0, numTimepoints - 1, 0);
-		
-		sliderTime.addChangeListener( new ChangeListener()
-		{
-			@Override
-			public void stateChanged( final ChangeEvent e )
-			{
-				if ( e.getSource().equals( sliderTime ) )
-					setTimepoint( sliderTime.getValue() );
-			}
-		} );
 		
 		sliderPlay = new JPlaySlider();
 		sliderPlay.setPreferredSize(new Dimension(200, 50));
@@ -456,7 +436,29 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		rigidArea = Box.createRigidArea(new Dimension(5, 5));
 		sliderPanel.add(rigidArea);
 		
-		sliderPanel.add(sliderTime);
+		timeKeyframePanel = new JPanel();
+		timeKeyframePanel.setBorder(new EmptyBorder(5, 0, 5, 0));
+		sliderPanel.add(timeKeyframePanel);
+		timeKeyframePanel.setLayout(new BoxLayout(timeKeyframePanel, BoxLayout.Y_AXIS));
+		
+		timeSlider = new JSlider(0, numTimepoints - 1, 0);
+		timeSlider.setMinimumSize(new Dimension(36, 26));
+		timeSlider.setMaximumSize(new Dimension(32767, 26));
+		
+		timeKeyframePanel.add(timeSlider);
+		
+		keyframePanel = new JKeyFramePanel(timeSlider);
+		timeKeyframePanel.add(keyframePanel);
+		
+		timeSlider.addChangeListener( new ChangeListener()
+		{
+			@Override
+			public void stateChanged( final ChangeEvent e )
+			{
+				if ( e.getSource().equals( timeSlider ) )
+					setTimepoint( timeSlider.getValue() );
+			}
+		} );
 		if(numTimepoints > 1)
 			add(sliderPanel, BorderLayout.SOUTH);
 
@@ -508,7 +510,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	}
 	
 	public KeyFramePopupMenu getKeyFramePopupMenu(){
-		return this.sliderTime.getKeyFramePopupMenuPopupMenu();
+		return this.keyframePanel.getKeyFramePopupMenuPopupMenu();
 	}
 	
 	public void addSource( final SourceAndConverter< ? > sourceAndConverter )
@@ -713,6 +715,8 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	private Component rigidArea;
 	private JSlider sliderPlay;
 	private Component rigidArea_1;
+	private JPanel timeKeyframePanel;
+	private JKeyFramePanel keyframePanel;
 
 	/**
 	 * The planes which can be aligned with the viewer coordinate system: XY,
@@ -848,7 +852,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		if ( state.getCurrentTimepoint() != timepoint )
 		{
 			state.setCurrentTimepoint( timepoint );
-			sliderTime.setValue( timepoint );
+			timeSlider.setValue( timepoint );
 			for ( final TimePointListener l : timePointListeners )
 				l.timePointChanged( timepoint );
 			requestRepaint();
@@ -861,7 +865,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	public synchronized void nextTimePoint()
 	{
 		if ( state.getNumTimepoints() > 1 )
-			sliderTime.setValue( sliderTime.getValue() + 1 );
+			timeSlider.setValue( timeSlider.getValue() + 1 );
 	}
 
 	/**
@@ -870,7 +874,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	public synchronized void previousTimePoint()
 	{
 		if ( state.getNumTimepoints() > 1 )
-			sliderTime.setValue( sliderTime.getValue() - 1 );
+			timeSlider.setValue( timeSlider.getValue() - 1 );
 	}
 
 	/**
@@ -899,9 +903,9 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		if ( numTimepoints < 1 || state.getNumTimepoints() == numTimepoints )
 			return;
 		else if ( numTimepoints == 1 && state.getNumTimepoints() > 1 )
-			remove( sliderTime );
+			remove( timeSlider );
 		else if ( numTimepoints > 1 && state.getNumTimepoints() == 1 )
-			add( sliderTime, BorderLayout.SOUTH );
+			add( timeSlider, BorderLayout.SOUTH );
 
 		state.setNumTimepoints( numTimepoints );
 		if ( state.getCurrentTimepoint() >= numTimepoints )
@@ -911,7 +915,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 			for ( final TimePointListener l : timePointListeners )
 				l.timePointChanged( timepoint );
 		}
-		sliderTime.setModel( new DefaultBoundedRangeModel( state.getCurrentTimepoint(), 0, 0, numTimepoints - 1 ) );
+		timeSlider.setModel( new DefaultBoundedRangeModel( state.getCurrentTimepoint(), 0, 0, numTimepoints - 1 ) );
 		revalidate();
 		requestRepaint();
 	}
@@ -936,9 +940,9 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		setKeyframeButtonEnable(enableKeyframeButtons);
         
         if (bookmark instanceof DynamicBookmark) {
-            sliderTime.setDynamicBookmarks((DynamicBookmark) bookmark);
+            keyframePanel.setDynamicBookmarks((DynamicBookmark) bookmark);
         } else {
-            sliderTime.setDynamicBookmarks(null);
+        	keyframePanel.setDynamicBookmarks(null);
         }
         
         for(ActiveBookmarkChangedListener l: this.activeBookmarkChangedListeners){

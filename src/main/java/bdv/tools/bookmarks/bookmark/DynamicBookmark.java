@@ -96,7 +96,7 @@ public class DynamicBookmark extends Bookmark {
 			return null;
 		}
 		else{
-			final boolean isRemoved = keyframes.remove(keyframe);
+			keyframes.remove(keyframe);
 			final KeyFrame newKeyFrame = new KeyFrame(timepoint, keyframe.getTransform());
 			if(this.keyframes.add(newKeyFrame)){
 				fireDynamicBookmarkChanged();
@@ -204,12 +204,7 @@ public class DynamicBookmark extends Bookmark {
 		if (keyframes.size() < 1) {
 			return null;
 		}
-
-		for(KeyFrame k : this.keyframes){
-			System.out.println("all " + k.getTimepoint());	
-		}
 		
-		System.out.println("time " + timepoint);	
 		KeyFrame previousKeyframe = getPreviousOrEqualKeyFrame(timepoint);
 		
 		final KeyFrame nextKeyframe = getNextKeyFrame(timepoint);
@@ -218,10 +213,6 @@ public class DynamicBookmark extends Bookmark {
 			previousKeyframe = keyframes.first();
 		}
 
-		
-		System.out.println("previous " + previousKeyframe.getTimepoint());
-
-		
 		if (nextKeyframe == null) {
 			AffineTransform3D transform = previousKeyframe.getTransform().copy();
 			return transform;
