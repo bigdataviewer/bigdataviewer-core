@@ -235,8 +235,6 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 	protected final ViewerOptions.Values options;
 
-	protected final JButton addBookmarkButton;
-	
 	protected final JButton previousKeyframeButton;
 
 	protected final JButton addKeyframeButton;
@@ -303,59 +301,25 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 				cacheControl );
 
 		mouseCoordinates = new MouseCoordinateListener();
-		
-		
-		JLayeredPane contentLayeredPane = new JLayeredPane();
-		add(contentLayeredPane, BorderLayout.CENTER);
-		
-		JPanel displayPane = new JPanel();
-		displayPane.setBounds(0, 0, 450, 301);
-		contentLayeredPane.add(displayPane);
-		displayPane.setLayout(new BorderLayout(0, 0));
+
 		display = new InteractiveDisplayCanvasComponent<>(
 				options.getWidth(), options.getHeight(), options.getTransformEventHandlerFactory() );
-		displayPane.add(display, BorderLayout.CENTER);
-		
-		JPanel overlayButtonPane = new JPanel();
-		overlayButtonPane.setOpaque(false);
-		contentLayeredPane.setLayer(overlayButtonPane, 1);
-		overlayButtonPane.setBounds(0, 267, 450, 33);
-		contentLayeredPane.add(overlayButtonPane);
-		overlayButtonPane.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
-		
-		addBookmarkButton = new JButton("Add bookmark");
-		overlayButtonPane.add(addBookmarkButton);
+		add(display, BorderLayout.CENTER);
 		
 		display.addTransformListener( this );
 		display.addOverlayRenderer( renderTarget );
 		display.addOverlayRenderer( this );
 		display.addHandler( mouseCoordinates );
-		/*
+		
 		display.addComponentListener( new ComponentAdapter()
 		{
 			@Override
 			public void componentResized( final ComponentEvent e )
 			{
 				requestRepaint();
-				//display.removeComponentListener( this );
+				display.removeComponentListener( this );
 			}
 		} );
-		*/
-		
-		addComponentListener(new ComponentAdapter() {
-			
-			@Override
-			public void componentResized(ComponentEvent arg0) {
-				displayPane.setLocation(contentLayeredPane.getLocation());
-				displayPane.setSize(contentLayeredPane.getSize());
-				
-				int newOverlayButtonPaneY = contentLayeredPane.getLocation().y + contentLayeredPane.getSize().height - overlayButtonPane.getSize().height;
-				overlayButtonPane.setSize(contentLayeredPane.getSize().width, overlayButtonPane.getSize().height);
-				overlayButtonPane.setLocation(contentLayeredPane.getLocation().x, newOverlayButtonPaneY);
-				
-				requestRepaint();
-			}
-		});	
 				
 		JPanel sliderPanel = new JPanel();
 		sliderPanel.setLayout(new BoxLayout(sliderPanel, BoxLayout.X_AXIS));
@@ -487,10 +451,6 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		}
 	}
 
-	public void addAddBookmarkButtonAction(Action action) {
-		addBookmarkButton.addActionListener(action);	
-	}
-	
 	public void addPreviousKeyframeButtonAction(Action action) {
 		previousKeyframeButton.addActionListener(action);	
 	}

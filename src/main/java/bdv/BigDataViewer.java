@@ -492,6 +492,10 @@ public class BigDataViewer
 		menu = new JMenu("Bookmarks");
 		menubar.add( menu );
 		
+		final JMenuItem miAddBookmark = new JMenuItem(actionMap.get( BigDataViewerActions.OPEN_ADD_BOOKMARK_DIALOG ));
+		miAddBookmark.setText( "Add Bookmark" );
+		menu.add( miAddBookmark );
+		
 		final JMenuItem miBookmarkMgmt = new JMenuItem(actionMap.get( BigDataViewerActions.OPEN_BOOKMARK_MANAGEMENT ));
 		miBookmarkMgmt.setText( "Bookmark Management" );
 		menu.add( miBookmarkMgmt );
@@ -511,7 +515,7 @@ public class BigDataViewer
 
 		viewerFrame.setJMenuBar( menubar );
 		
-		viewer.addAddBookmarkButtonAction(actionMap.get( BigDataViewerActions.OPEN_ADD_BOOKMARK_DIALOG ));
+		// TODO
 		viewer.addPreviousKeyframeButtonAction(actionMap.get( BigDataViewerActions.PREVIOUS_KEYFRAME ) );
 		viewer.addAddKeyframeButtonAction(actionMap.get( BigDataViewerActions.ADD_KEYFRAME ) );
 		viewer.addNextKeyframeButtonAction(actionMap.get( BigDataViewerActions.NEXT_KEYFRAME ) );
