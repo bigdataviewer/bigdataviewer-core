@@ -142,7 +142,7 @@ public class BookmarksEditor {
 							viewer.requestRepaint();
 						}
 							break;
-						case CREATE_DYNAMIC_BOOKMARK: {
+						case CREATE_DYNAMIC_BOOKMARK: {							
 							createDynamicBookmark(key);
 
 							animator.fadeOut("create dynamic bookmark: " + key, 500);
@@ -292,7 +292,10 @@ public class BookmarksEditor {
 	}
 
 	public synchronized void initCreateDynamicBookmark() {
-		init(Mode.CREATE_DYNAMIC_BOOKMARK, "create dynamic bookmark: ");
+		if(areDynamicBookmarksEnabled())
+			init(Mode.CREATE_DYNAMIC_BOOKMARK, "create dynamic bookmark: ");
+		else
+			fadeOut("dynamic bookmarks cannot be created", 1000);
 	}
 
 	public synchronized void initGoToBookmark() {
@@ -496,6 +499,14 @@ public class BookmarksEditor {
 				fadeOut("no previous key frame available", 1000);
 			}
 		}
+	}
+	
+	/**
+	 * Returns true when Dynamic Bookmarks can be created, otherwise false
+	 * @return whether Dynamic Bookmarks can be created or not
+	 */
+	public synchronized boolean areDynamicBookmarksEnabled(){
+		return viewer.getState().getNumTimepoints() > 1;
 	}
 	
 	public synchronized Collection<Bookmark> getAllBookmarks(){
