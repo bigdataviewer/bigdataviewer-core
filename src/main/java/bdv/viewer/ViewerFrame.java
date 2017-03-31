@@ -91,9 +91,11 @@ public class ViewerFrame extends JFrame
 	{
 //		super( "BigDataViewer", GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.ARGB_COLOR_MODEL ) );
 		super( "BigDataViewer", GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.RGB_COLOR_MODEL ) );
-		viewer = new ViewerPanel( sources, numTimepoints, cacheControl, optional );
+		
 		keybindings = new InputActionBindings();
 		triggerbindings = new TriggerBehaviourBindings();
+		
+		viewer = new ViewerPanel( sources, numTimepoints, cacheControl, optional, keybindings.getConcatenatedActionMap() );
 
 		getRootPane().setDoubleBuffered( true );
 		add( viewer, BorderLayout.CENTER );

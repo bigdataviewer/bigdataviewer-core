@@ -514,11 +514,6 @@ public class BigDataViewer
 		menu.add( miHelp );
 
 		viewerFrame.setJMenuBar( menubar );
-		
-		// TODO
-		viewer.addPreviousKeyframeButtonAction(actionMap.get( BigDataViewerActions.PREVIOUS_KEYFRAME ) );
-		viewer.addAddKeyframeButtonAction(actionMap.get( BigDataViewerActions.ADD_KEYFRAME ) );
-		viewer.addNextKeyframeButtonAction(actionMap.get( BigDataViewerActions.NEXT_KEYFRAME ) );
 	}
 
 	public static BigDataViewer open( final AbstractSpimData< ? > spimData, final String windowTitle, final ProgressWriter progressWriter, final ViewerOptions options )

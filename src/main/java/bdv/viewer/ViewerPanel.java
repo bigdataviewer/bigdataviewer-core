@@ -41,10 +41,11 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-import java.awt.FlowLayout;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseEvent;
@@ -60,12 +61,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
-import javax.swing.Action;
+import javax.swing.ActionMap;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.DefaultBoundedRangeModel;
 import javax.swing.JButton;
-import javax.swing.JLayeredPane;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.border.EmptyBorder;
@@ -74,6 +74,7 @@ import javax.swing.event.ChangeListener;
 
 import org.jdom2.Element;
 
+import bdv.BigDataViewerActions;
 import bdv.cache.CacheControl;
 import bdv.tools.bookmarks.bookmark.Bookmark;
 import bdv.tools.bookmarks.bookmark.DynamicBookmark;
@@ -247,9 +248,11 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	
 	protected ScheduledFuture<?> playScheduledFuture;
 	
-	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimePoints, final CacheControl cacheControl )
+	protected final ActionMap actionMap;
+	
+	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimePoints, final CacheControl cacheControl, final ActionMap actionMap )
 	{
-		this( sources, numTimePoints, cacheControl, ViewerOptions.options() );
+		this( sources, numTimePoints, cacheControl, ViewerOptions.options(), actionMap );
 	}
 
 	/**
@@ -263,11 +266,12 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 * @param optional
 	 *            optional parameters. See {@link ViewerOptions#options()}.
 	 */
-	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimepoints, final CacheControl cacheControl, final ViewerOptions optional )
+	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimepoints, final CacheControl cacheControl, final ViewerOptions optional, final ActionMap actionMap )
 	{
 		super( new BorderLayout(), false );
 		setPreferredSize(new Dimension(600, 500));
 		options = optional.values;
+		this.actionMap = actionMap;
 
 		final int numGroups = 10;
 		final ArrayList< SourceGroup > groups = new ArrayList<>( numGroups );
@@ -328,18 +332,42 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		
 		previousKeyframeButton = new JButton("<<");
 		previousKeyframeButton.setToolTipText("Go to previous keyframe");
+		previousKeyframeButton.addActionListener( new ActionListener()
+		{
+			@Override
+			public void actionPerformed( ActionEvent e )
+			{
+				actionMap.get( BigDataViewerActions.PREVIOUS_KEYFRAME ).actionPerformed( e );
+			}
+		} );
 		sliderPanel.add(previousKeyframeButton);
 		
 		sliderPanel.add(Box.createRigidArea(new Dimension(5, 5)));
 		
 		addKeyframeButton = new JButton("+");
 		addKeyframeButton.setToolTipText("Add a new keyframe");
+		addKeyframeButton.addActionListener( new ActionListener()
+		{
+			@Override
+			public void actionPerformed( ActionEvent e )
+			{
+				actionMap.get( BigDataViewerActions.ADD_KEYFRAME ).actionPerformed( e );
+			}
+		} );
 		sliderPanel.add(addKeyframeButton);
 		
 		sliderPanel.add(Box.createRigidArea(new Dimension(5, 5)));
 		
 		nextKeyframeButton = new JButton(">>");
 		nextKeyframeButton.setToolTipText("Go to next keyframe");
+		nextKeyframeButton.addActionListener( new ActionListener()
+		{
+			@Override
+			public void actionPerformed( ActionEvent e )
+			{
+				actionMap.get( BigDataViewerActions.NEXT_KEYFRAME ).actionPerformed( e );
+			}
+		} );
 		sliderPanel.add(nextKeyframeButton);
 		
 		sliderPanel.add(Box.createRigidArea(new Dimension(5, 5)));
@@ -451,18 +479,6 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		}
 	}
 
-	public void addPreviousKeyframeButtonAction(Action action) {
-		previousKeyframeButton.addActionListener(action);	
-	}
-	
-	public void addAddKeyframeButtonAction(Action action) {
-		addKeyframeButton.addActionListener(action);	
-	}
-	
-	public void addNextKeyframeButtonAction(Action action) {
-		nextKeyframeButton.addActionListener(action);	
-	}
-	
 	public void setKeyframeButtonEnable(boolean enable){
 		previousKeyframeButton.setEnabled(enable);
 		addKeyframeButton.setEnabled(enable);
