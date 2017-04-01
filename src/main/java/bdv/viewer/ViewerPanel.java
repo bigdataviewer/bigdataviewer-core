@@ -380,8 +380,8 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		
 		sliderPlay = new JPlaySlider();
 		sliderPlay.setPreferredSize(new Dimension(200, 50));
-		sliderPlay.setMinimumSize(new Dimension(36, 50));
-		sliderPlay.setMaximumSize(new Dimension(36, 50));
+		sliderPlay.setMinimumSize(new Dimension(200, 50));
+		sliderPlay.setMaximumSize(new Dimension(200, 50));
 		sliderPlay.setAlignmentX(Component.LEFT_ALIGNMENT);
 		sliderPanel.add(sliderPlay);
 		sliderPlay.addChangeListener( new ChangeListener()
@@ -691,7 +691,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 	private final static double c = Math.cos( Math.PI / 4 );
 	private Component rigidArea;
-	private JSlider sliderPlay;
+	private JPlaySlider sliderPlay;
 	private Component rigidArea_1;
 	private JPanel timeKeyframePanel;
 	private JKeyFramePanel keyframePanel;
