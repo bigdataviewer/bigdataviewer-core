@@ -32,8 +32,10 @@ package bdv.viewer;
 import java.awt.BorderLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
@@ -63,6 +65,8 @@ public class ViewerFrame extends JFrame
 	private final InputActionBindings keybindings;
 
 	private final TriggerBehaviourBindings triggerbindings;
+	
+	private final List<Action> beforeWindowClosingActions;
 
 	public ViewerFrame(
 			final List< SourceAndConverter< ? > > sources,
@@ -91,6 +95,8 @@ public class ViewerFrame extends JFrame
 	{
 //		super( "BigDataViewer", GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.ARGB_COLOR_MODEL ) );
 		super( "BigDataViewer", GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.RGB_COLOR_MODEL ) );
+		
+		beforeWindowClosingActions = new ArrayList<>();
 		
 		keybindings = new InputActionBindings();
 		triggerbindings = new TriggerBehaviourBindings();
@@ -151,5 +157,10 @@ public class ViewerFrame extends JFrame
 	public TriggerBehaviourBindings getTriggerbindings()
 	{
 		return triggerbindings;
+	}
+	
+	public void addBeforeWindowClosingAction( Action action )
+	{
+		beforeWindowClosingActions.add( action );
 	}
 }

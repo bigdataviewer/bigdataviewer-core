@@ -61,6 +61,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import javax.swing.Action;
 import javax.swing.ActionMap;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
@@ -337,7 +338,9 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 			@Override
 			public void actionPerformed( ActionEvent e )
 			{
-				actionMap.get( BigDataViewerActions.PREVIOUS_KEYFRAME ).actionPerformed( e );
+				final Action action = actionMap.get( BigDataViewerActions.PREVIOUS_KEYFRAME );
+				if(action != null)
+					action.actionPerformed( e );
 			}
 		} );
 		sliderPanel.add(previousKeyframeButton);
@@ -351,7 +354,9 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 			@Override
 			public void actionPerformed( ActionEvent e )
 			{
-				actionMap.get( BigDataViewerActions.ADD_KEYFRAME ).actionPerformed( e );
+				final Action action = actionMap.get( BigDataViewerActions.ADD_KEYFRAME );
+				if(action != null)
+					action.actionPerformed( e );
 			}
 		} );
 		sliderPanel.add(addKeyframeButton);
@@ -365,7 +370,9 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 			@Override
 			public void actionPerformed( ActionEvent e )
 			{
-				actionMap.get( BigDataViewerActions.NEXT_KEYFRAME ).actionPerformed( e );
+				final Action action = actionMap.get( BigDataViewerActions.NEXT_KEYFRAME );
+				if(action != null)
+					action.actionPerformed( e );
 			}
 		} );
 		sliderPanel.add(nextKeyframeButton);
