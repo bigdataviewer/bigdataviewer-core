@@ -58,8 +58,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
 
 import javax.swing.Action;
 import javax.swing.ActionMap;
@@ -69,6 +67,7 @@ import javax.swing.DefaultBoundedRangeModel;
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
+import javax.swing.Timer;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -247,7 +246,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	
 	protected final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
 	
-	protected ScheduledFuture<?> playScheduledFuture;
+	protected final Timer playTimer = new Timer( 0, this::onPlayTimerTick ); 
 	
 	protected final ActionMap actionMap;
 	
@@ -390,38 +389,17 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 			@Override
 			public void stateChanged( final ChangeEvent e )
 			{
-				if ( !e.getSource().equals( sliderPlay ) )
+				//if ( !e.getSource().equals( sliderPlay ) )
+				//	return;
+						
+				if(sliderPlay.getValue() == 0) {
+					stopPlayExecuter();
 					return;
+				}
 				
-				stopPlayExecuter();
-			
-				if(sliderPlay.getValue() == 0)
-					return;
-				
-				final int changeValue = Integer.signum(sliderPlay.getValue());
 				final int periode = 1000 / (1 * Math.abs(sliderPlay.getValue()));
-				
-				playScheduledFuture = scheduledExecutorService.scheduleAtFixedRate(new Runnable() {
-				  @Override
-				  public void run() {
-					  
-					  final int newTimepoint = state.getCurrentTimepoint() + changeValue;
-					  if(newTimepoint<0){
-						  setTimepoint(0);
-						  stopPlayExecuter();
-						  sliderPlay.setValue(0);
-					  }
-					  else if(newTimepoint > numTimepoints - 1){
-						  setTimepoint(numTimepoints -1);
-						  stopPlayExecuter();
-						  sliderPlay.setValue(0);
-					  }
-					  else{
-						  setTimepoint(newTimepoint);
-					  }
-				  }
-				}, 0, periode, TimeUnit.MILLISECONDS);
-				
+				playTimer.setDelay( periode );
+				playTimer.start();
 			}
 		} );
 		sliderPlay.addComponentListener(new ComponentAdapter() {
@@ -479,11 +457,28 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		painterThread.start();
 	}
 	
-	public void stopPlayExecuter(){
-		if(playScheduledFuture != null){
-			playScheduledFuture.cancel(true);
-			playScheduledFuture = null;
-		}
+	public void stopPlayExecuter() {
+		playTimer.stop();
+	}
+	
+	private void onPlayTimerTick(ActionEvent event) {
+		final int changeValue = Integer.signum(sliderPlay.getValue());
+		final int newTimepoint = state.getCurrentTimepoint() + changeValue;
+		final int numTimepoints = state.getNumTimepoints();
+		
+		if(newTimepoint<0){
+			  setTimepoint(0);
+			  stopPlayExecuter();
+			  sliderPlay.setValue(0);
+		  }
+		  else if(newTimepoint > numTimepoints - 1){
+			  setTimepoint(numTimepoints -1);
+			  stopPlayExecuter();
+			  sliderPlay.setValue(0);
+		  }
+		  else{
+			  setTimepoint(newTimepoint);
+		  }
 	}
 
 	public void setKeyframeButtonEnable(boolean enable){

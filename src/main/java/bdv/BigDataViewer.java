@@ -29,8 +29,6 @@
  */
 package bdv;
 
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
@@ -81,6 +79,7 @@ import bdv.tools.transformation.ManualTransformation;
 import bdv.tools.transformation.ManualTransformationEditor;
 import bdv.tools.transformation.TransformedSource;
 import bdv.viewer.NavigationActions;
+import bdv.viewer.SaveOnCloseFunction.UserSaveChoice;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerFrame;
 import bdv.viewer.ViewerOptions;
@@ -352,21 +351,8 @@ public class BigDataViewer
 			( ( BehaviourTransformEventHandlerFactory< ? > ) options.values.getTransformEventHandlerFactory() ).setConfig( inputTriggerConfig );
 
 		viewerFrame = new ViewerFrame( sources, numTimepoints, cache, options );
-		viewerFrame.addWindowListener(new WindowAdapter()
-	     {
-	         @Override
-	         public void windowClosing(WindowEvent e)
-	         {
-	        	 final int confirmAnswer = JOptionPane.showConfirmDialog(viewerFrame,
-	        			 	"Do you want to save your settings before you close the application?", "Closing", 
-	        	            JOptionPane.YES_NO_OPTION,
-	        	            JOptionPane.QUESTION_MESSAGE);
-	        	 
-	        	 if (confirmAnswer == JOptionPane.YES_OPTION){
-	        		 saveSettings();
-	        	 }
-	         }
-	     });
+		
+		viewerFrame.setSaveOnCloseFunction(this::onViewerFrameOnClose);
 		
 		if ( windowTitle != null )
 			viewerFrame.setTitle( windowTitle );
@@ -618,6 +604,23 @@ public class BigDataViewer
 			}
 		}
 		return false;
+	}
+	
+	private UserSaveChoice onViewerFrameOnClose() {
+		final int confirmAnswer = JOptionPane.showConfirmDialog(viewerFrame,
+			 	"Do you want to save your settings before you close the application?", "Closing", 
+	            JOptionPane.YES_NO_CANCEL_OPTION,
+	            JOptionPane.QUESTION_MESSAGE);
+	 
+		switch (confirmAnswer) {
+			case JOptionPane.YES_OPTION:
+				saveSettings();
+				return UserSaveChoice.YES;
+			case JOptionPane.NO_OPTION:
+				return UserSaveChoice.NO;
+			default:
+				return UserSaveChoice.CANCEL;
+		}
 	}
 
 	protected void saveSettings()

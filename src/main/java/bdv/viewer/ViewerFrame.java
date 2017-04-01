@@ -47,6 +47,7 @@ import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
 
 import bdv.BehaviourTransformEventHandler;
 import bdv.cache.CacheControl;
+import bdv.viewer.SaveOnCloseFunction.UserSaveChoice;
 import net.imglib2.ui.TransformEventHandler;
 import net.imglib2.ui.util.GuiUtil;
 
@@ -66,7 +67,7 @@ public class ViewerFrame extends JFrame
 
 	private final TriggerBehaviourBindings triggerbindings;
 	
-	private final List<Action> beforeWindowClosingActions;
+	private SaveOnCloseFunction funcSaveOnClose = null;
 
 	public ViewerFrame(
 			final List< SourceAndConverter< ? > > sources,
@@ -95,9 +96,7 @@ public class ViewerFrame extends JFrame
 	{
 //		super( "BigDataViewer", GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.ARGB_COLOR_MODEL ) );
 		super( "BigDataViewer", GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.RGB_COLOR_MODEL ) );
-		
-		beforeWindowClosingActions = new ArrayList<>();
-		
+			
 		keybindings = new InputActionBindings();
 		triggerbindings = new TriggerBehaviourBindings();
 		
@@ -108,7 +107,7 @@ public class ViewerFrame extends JFrame
 		pack();
         
         setLocationRelativeTo(null);
-		setDefaultCloseOperation( WindowConstants.DISPOSE_ON_CLOSE );
+		setDefaultCloseOperation( WindowConstants.DO_NOTHING_ON_CLOSE );
         
 		final WindowAdapter windowAdapter = new WindowAdapter()
 		{
@@ -123,8 +122,16 @@ public class ViewerFrame extends JFrame
 			@Override
 			public void windowClosing( final WindowEvent e )
 			{
-				viewer.stop();
-				viewer.stopPlayExecuter();
+				UserSaveChoice choice = UserSaveChoice.NO;
+				if (null != funcSaveOnClose) {
+					choice = funcSaveOnClose.invokeSaveOnClose();
+				}
+				
+				if (choice != UserSaveChoice.CANCEL) {
+					viewer.stop();
+					viewer.stopPlayExecuter();
+					dispose();
+				}
 			}
 		};
         
@@ -159,8 +166,8 @@ public class ViewerFrame extends JFrame
 		return triggerbindings;
 	}
 	
-	public void addBeforeWindowClosingAction( Action action )
-	{
-		beforeWindowClosingActions.add( action );
+	public void setSaveOnCloseFunction(SaveOnCloseFunction function) {
+		this.funcSaveOnClose = function;
 	}
+	
 }
