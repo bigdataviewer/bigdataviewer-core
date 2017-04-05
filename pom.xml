@@ -111,9 +111,7 @@
 	<properties>
 		<package-name>bdv</package-name>
 		<license.licenseName>bsd_2</license.licenseName>
-		<license.copyrightOwners>Tobias Pietzsch, Stephan Saalfeld, Stephan Preibisch,
-			Jean-Yves Tinevez, HongKee Moon, Johannes Schindelin, Curtis Rueden, John Bogovic</license.copyrightOwners>
-		<license.organizationName>BigDataViewer authors.</license.organizationName>
+		<license.copyrightOwners>BigDataViewer developers.</license.copyrightOwners>
 	</properties>
 
 	<repositories>
