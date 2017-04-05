@@ -49,8 +49,8 @@ import net.imglib2.img.basictypeaccess.volatiles.array.VolatileLongArray;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
 
 /**
- * Provider of {@link VolatileCell} data. This is implemented by data back-ends
- * to the {@link VolatileGlobalCellCache}.
+ * Provider of volatile {@link net.imglib2.img.cell.Cell} data. This is
+ * implemented by data back-ends to the {@link VolatileGlobalCellCache}.
  *
  * @param <A>
  *            type of access to cell data, currently always a

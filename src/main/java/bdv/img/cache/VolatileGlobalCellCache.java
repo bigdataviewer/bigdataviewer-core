@@ -144,15 +144,9 @@ public class VolatileGlobalCellCache implements CacheControl
 	}
 
 	/**
-	 * Prepare the cache for providing data for the "next frame":
-	 * <ul>
-	 * <li>Move pending cell request to the prefetch queue (
-	 * {@link BlockingFetchQueues#clearToPrefetch()}).
-	 * <li>Perform pending cache maintenance operations (
-	 * {@link WeakSoftCache#cleanUp()}).
-	 * <li>Increment the internal frame counter, which will enable previously
-	 * enqueued requests to be enqueued again for the new frame.
-	 * </ul>
+	 * Prepare the cache for providing data for the "next frame",
+	 * by moving pending cell request to the prefetch queue
+	 * ({@link BlockingFetchQueues#clearToPrefetch()}).
 	 */
 	@Override
 	public void prepareNextFrame()
