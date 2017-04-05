@@ -10,11 +10,52 @@
 
 	<artifactId>bigdataviewer-core</artifactId>
 	<version>4.0.2-SNAPSHOT</version>
-	<url>http://github.com/bigdataviewer/bigdataviewer-core</url>
-	<inceptionYear>2012</inceptionYear>
 
 	<name>BigDataViewer Core</name>
 	<description>BigDataViewer core classes with minimal dependencies</description>
+	<url>http://github.com/bigdataviewer/bigdataviewer-core</url>
+	<inceptionYear>2012</inceptionYear>
+	<licenses>
+		<license>
+			<name>BSD 2-Clause License</name>
+			<url>http://opensource.org/licenses/BSD-2-Clause</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+
+	<developers>
+		<developer>
+			<id>tpietzsch</id>
+			<name>Tobias Pietzsch</name>
+			<email>pietzsch@mpi-cbg.de</email>
+			<url />
+			<organization>MPI-CBG</organization>
+			<organizationUrl>http://www.mpi-cbg.de/</organizationUrl>
+			<roles>
+				<role>architect</role>
+				<role>developer</role>
+			</roles>
+			<timezone>+1</timezone>
+		</developer>
+	</developers>
+
+	<scm>
+		<connection>scm:git:git://github.com/bigdataviewer/bigdataviewer-core</connection>
+		<developerConnection>scm:git:git@github.com:bigdataviewer/bigdataviewer-core</developerConnection>
+		<tag>HEAD</tag>
+		<url>https://github.com/bigdataviewer/bigdataviewer-core</url>
+	</scm>
+	<ciManagement>
+		<system>Travis CI</system>
+		<url>https://travis-ci.org/bigdataviewer/bigdataviewer-core</url>
+	</ciManagement>
+
+	<repositories>
+		<repository>
+			<id>imagej.public</id>
+			<url>http://maven.imagej.net/content/groups/public</url>
+		</repository>
+	</repositories>
 
 	<dependencies>
 		<dependency>
@@ -63,47 +104,6 @@
 		</dependency>
 	</dependencies>
 
-	<developers>
-		<developer>
-			<id>tpietzsch</id>
-			<name>Tobias Pietzsch</name>
-			<email>pietzsch@mpi-cbg.de</email>
-			<url />
-			<organization>MPI-CBG</organization>
-			<organizationUrl>http://www.mpi-cbg.de/</organizationUrl>
-			<roles>
-				<role>architect</role>
-				<role>developer</role>
-			</roles>
-			<timezone>+1</timezone>
-		</developer>
-	</developers>
-
-	<repositories>
-		<repository>
-			<id>imagej.public</id>
-			<url>http://maven.imagej.net/content/groups/public</url>
-		</repository>
-	</repositories>
-
-	<scm>
-		<connection>scm:git:git://github.com/bigdataviewer/bigdataviewer-core</connection>
-		<developerConnection>scm:git:git@github.com:bigdataviewer/bigdataviewer-core</developerConnection>
-		<tag>HEAD</tag>
-		<url>https://github.com/bigdataviewer/bigdataviewer-core</url>
-	</scm>
-	<ciManagement>
-		<system>Travis CI</system>
-		<url>https://travis-ci.org/bigdataviewer/bigdataviewer-core</url>
-	</ciManagement>
-
-	<licenses>
-		<license>
-			<name>BSD 2-Clause License</name>
-			<url>http://opensource.org/licenses/BSD-2-Clause</url>
-			<distribution>repo</distribution>
-		</license>
-	</licenses>
 	<build>
 		<plugins>
 			<plugin>
