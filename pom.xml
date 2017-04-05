@@ -3,11 +3,13 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>sc.fiji</groupId>
-		<artifactId>pom-bigdataviewer</artifactId>
-		<version>4.0.1</version>
+		<groupId>org.scijava</groupId>
+		<artifactId>pom-scijava</artifactId>
+		<version>14.0.0</version>
+		<relativePath />
 	</parent>
 
+	<groupId>sc.fiji</groupId>
 	<artifactId>bigdataviewer-core</artifactId>
 	<version>4.0.2-SNAPSHOT</version>
 
@@ -15,6 +17,10 @@
 	<description>BigDataViewer core classes with minimal dependencies.</description>
 	<url>https://github.com/bigdataviewer/bigdataviewer-core</url>
 	<inceptionYear>2012</inceptionYear>
+	<organization>
+		<name>BigDataViewer</name>
+		<url>https://imagej.net/BigDataViewer</url>
+	</organization>
 	<licenses>
 		<license>
 			<name>Simplified BSD License</name>
@@ -80,6 +86,13 @@
 		</contributor>
 	</contributors>
 
+	<mailingLists>
+		<mailingList>
+			<name>ImageJ Forum</name>
+			<archive>http://forum.imagej.net/</archive>
+		</mailingList>
+	</mailingLists>
+
 	<scm>
 		<connection>scm:git:git://github.com/bigdataviewer/bigdataviewer-core</connection>
 		<developerConnection>scm:git:git@github.com:bigdataviewer/bigdataviewer-core</developerConnection>
@@ -96,6 +109,7 @@
 	</ciManagement>
 
 	<properties>
+		<package-name>bdv</package-name>
 		<license.licenseName>bsd_2</license.licenseName>
 		<license.copyrightOwners>Tobias Pietzsch, Stephan Saalfeld, Stephan Preibisch,
 			Jean-Yves Tinevez, HongKee Moon, Johannes Schindelin, Curtis Rueden, John Bogovic</license.copyrightOwners>
