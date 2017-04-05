@@ -12,13 +12,13 @@
 	<version>4.0.2-SNAPSHOT</version>
 
 	<name>BigDataViewer Core</name>
-	<description>BigDataViewer core classes with minimal dependencies</description>
-	<url>http://github.com/bigdataviewer/bigdataviewer-core</url>
+	<description>BigDataViewer core classes with minimal dependencies.</description>
+	<url>https://github.com/bigdataviewer/bigdataviewer-core</url>
 	<inceptionYear>2012</inceptionYear>
 	<licenses>
 		<license>
-			<name>BSD 2-Clause License</name>
-			<url>http://opensource.org/licenses/BSD-2-Clause</url>
+			<name>Simplified BSD License</name>
+			<url>https://opensource.org/licenses/BSD-2-Clause</url>
 			<distribution>repo</distribution>
 		</license>
 	</licenses>
@@ -45,15 +45,26 @@
 		<tag>HEAD</tag>
 		<url>https://github.com/bigdataviewer/bigdataviewer-core</url>
 	</scm>
+	<issueManagement>
+		<system>GitHub Issues</system>
+		<url>https://github.com/bigdataviewer/bigdataviewer-core/issues</url>
+	</issueManagement>
 	<ciManagement>
 		<system>Travis CI</system>
 		<url>https://travis-ci.org/bigdataviewer/bigdataviewer-core</url>
 	</ciManagement>
 
+	<properties>
+		<license.licenseName>bsd_2</license.licenseName>
+		<license.copyrightOwners>Tobias Pietzsch, Stephan Saalfeld, Stephan Preibisch,
+			Jean-Yves Tinevez, HongKee Moon, Johannes Schindelin, Curtis Rueden, John Bogovic</license.copyrightOwners>
+		<license.organizationName>BigDataViewer authors.</license.organizationName>
+	</properties>
+
 	<repositories>
 		<repository>
 			<id>imagej.public</id>
-			<url>http://maven.imagej.net/content/groups/public</url>
+			<url>https://maven.imagej.net/content/groups/public</url>
 		</repository>
 	</repositories>
 
@@ -103,31 +114,4 @@
 			<version>1.3.0</version>
 		</dependency>
 	</dependencies>
-
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>license-maven-plugin</artifactId>
-				<configuration>
-					<licenseName>bsd_2</licenseName>
-					<copyrightOwners>Tobias Pietzsch, Stephan Saalfeld, Stephan Preibisch,
-Jean-Yves Tinevez, HongKee Moon, Johannes Schindelin, Curtis Rueden, John Bogovic</copyrightOwners>
-					<organizationName>BigDataViewer authors</organizationName>
-					<projectName>BigDataViewer core classes with minimal dependencies</projectName>
-					<roots>
-						<root>src/main/java</root>
-						<root>src/test/java</root>
-					</roots>
-				</configuration>
-			</plugin>
-			<plugin>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
 </project>
