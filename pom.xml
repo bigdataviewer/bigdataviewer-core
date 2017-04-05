@@ -27,17 +27,58 @@
 		<developer>
 			<id>tpietzsch</id>
 			<name>Tobias Pietzsch</name>
-			<email>pietzsch@mpi-cbg.de</email>
-			<url />
-			<organization>MPI-CBG</organization>
-			<organizationUrl>http://www.mpi-cbg.de/</organizationUrl>
+			<url>https://imagej.net/User:Pietzsch</url>
 			<roles>
-				<role>architect</role>
+				<role>founder</role>
+				<role>lead</role>
 				<role>developer</role>
+				<role>debugger</role>
+				<role>reviewer</role>
+				<role>support</role>
+				<role>maintainer</role>
 			</roles>
-			<timezone>+1</timezone>
+		</developer>
+		<developer>
+			<id>ctrueden</id>
+			<name>Curtis Rueden</name>
+			<url>https://imagej.net/User:Rueden</url>
+			<roles>
+				<role>maintainer</role>
+			</roles>
 		</developer>
 	</developers>
+	<contributors>
+		<contributor>
+			<name>John Bogovic</name>
+			<url>https://imagej.net/User:Bogovic</url>
+			<properties><id>bogovicj</id></properties>
+		</contributor>
+		<contributor>
+			<name>HongKee Moon</name>
+			<url>https://imagej.net/User:Moon</url>
+			<properties><id>hkmoon</id></properties>
+		</contributor>
+		<contributor>
+			<name>Stephan Preibisch</name>
+			<url>https://imagej.net/User:StephanP</url>
+			<properties><id>StephanPreibisch</id></properties>
+		</contributor>
+		<contributor>
+			<name>Stephan Saalfeld</name>
+			<url>https://imagej.net/User:Saalfeld</url>
+			<properties><id>axtimwalde</id></properties>
+		</contributor>
+		<contributor>
+			<name>Johannes Schindelin</name>
+			<url>https://imagej.net/User:Schindelin</url>
+			<properties><id>dscho</id></properties>
+		</contributor>
+		<contributor>
+			<name>Jean-Yves Tinevez</name>
+			<url>https://imagej.net/User:JeanYvesTinevez</url>
+			<properties><id>tinevez</id></properties>
+		</contributor>
+	</contributors>
 
 	<scm>
 		<connection>scm:git:git://github.com/bigdataviewer/bigdataviewer-core</connection>
