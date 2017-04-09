@@ -78,14 +78,6 @@ public class JPlaySlider extends JPanel
 		sliderLabels[2].setHorizontalAlignment( JLabel.CENTER );
 		sliderLabels[3].setHorizontalAlignment( JLabel.CENTER );
 		sliderLabels[4].setHorizontalAlignment( JLabel.RIGHT );
-
-		/*
-		sliderLabels[0].setBackground( Color.BLUE );
-		sliderLabels[1].setBackground( Color.RED );
-		sliderLabels[2].setBackground( Color.BLUE );
-		sliderLabels[3].setBackground( Color.RED );
-		sliderLabels[4].setBackground( Color.BLUE );
-		*/
 	}
 	
 	private MouseAdapter onClickDo(Runnable action) {

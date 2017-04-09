@@ -26,8 +26,6 @@
 package bdv.tools.bookmarks.dialog;
 
 import java.awt.BorderLayout;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -79,29 +77,6 @@ public final class BookmarkListView extends JPanel {
 		for (Bookmark bookmark : list) {
 			BookmarkCellPanel panel = new BookmarkCellPanel(bookmark, bookmarksEditor);
 			panel.setActive(bookmark.equals(this.activeBookmark));
-
-			panel.addSelectActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					Bookmark bookmark = panel.getBookmark();
-					if (bookmark != null) {
-						bookmarksEditor.recallTransformationOfBookmark(bookmark.getKey());
-					}
-				}
-			});
-
-			panel.addRemoveActionListener(new ActionListener() {
-				@Override
-				public void actionPerformed(ActionEvent e) {
-					Bookmark bookmark = panel.getBookmark();
-					if (bookmark != null) {
-						bookmarksEditor.removeBookmark(bookmark.getKey());
-						listItemContainer.remove(panel);
-						revalidateListItemContainer();
-						setActiveBookmark(activeBookmark);
-					}
-				}
-			});
 
 			this.listItems.put(bookmark, panel);
 			this.listItemContainer.add(panel);
