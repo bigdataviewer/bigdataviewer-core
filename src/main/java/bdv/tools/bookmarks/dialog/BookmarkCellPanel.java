@@ -186,14 +186,10 @@ public class BookmarkCellPanel extends JPanel
 					if ( isActive )
 					{
 						bookmarksEditor.deselectBookmark();
-						if ( bookmark instanceof DynamicBookmark )
-							selectButton.setText( "Select" );
 					}
 					else
 					{
 						bookmarksEditor.recallTransformationOfBookmark( bookmark.getKey() );
-						if ( bookmark instanceof DynamicBookmark )
-							selectButton.setText( "Deselect" );
 					}
 				}
 			}
@@ -253,11 +249,15 @@ public class BookmarkCellPanel extends JPanel
 		if ( active )
 		{
 			setBorder( BorderFactory.createMatteBorder( 3, 3, 3, 3, ACTIVE_COLOR ) );
+			if ( bookmark instanceof DynamicBookmark )
+				selectButton.setText( "Deselect" );
 		}
 		else
 		{
 			setBorder( new CompoundBorder( BorderFactory.createEmptyBorder( 3, 3, 2, 3 ),
 					BorderFactory.createMatteBorder( 0, 0, 1, 0, Color.BLACK ) ) );
+			if ( bookmark instanceof DynamicBookmark )
+				selectButton.setText( "Select" );
 		}
 	}
 
