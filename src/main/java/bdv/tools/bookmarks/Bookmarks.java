@@ -134,7 +134,8 @@ public class Bookmarks
 		{
 			final Bookmark newBookmark = oldBookmark.copy( newKey );
 			final Bookmark replacedBookmark = bookmarks.replace( oldKey, newBookmark );
-			if ( replacedBookmark != null ){
+			if ( replacedBookmark != null )
+			{
 				fireBookmarksCollectionChangedListener();
 				return newBookmark;
 			}
@@ -166,31 +167,14 @@ public class Bookmarks
 		return null;
 	}
 
-	// TODO replace with generic method
-	public SimpleBookmark getSimpleBookmark( final String key )
-	{
-		Bookmark bookmark = get( key );
-		if ( bookmark instanceof SimpleBookmark ) { return ( SimpleBookmark ) bookmark; }
-
-		return null;
-	}
-
-	// TODO replace with generic method
-	public DynamicBookmark getDynamicBookmark( final String key )
-	{
-		Bookmark bookmark = get( key );
-		if ( bookmark instanceof DynamicBookmark ) { return ( DynamicBookmark ) bookmark; }
-
-		return null;
-	}
-
-	public AffineTransform3D getTransform( final String key, final int currentTimepoint, final double cX, final double cY )
+	public AffineTransform3D getTransform( final String key, final int currentTimepoint, final double cX,
+			final double cY )
 	{
 
-		final SimpleBookmark simpleBookmark = getSimpleBookmark( key );
+		final SimpleBookmark simpleBookmark = get( key, SimpleBookmark.class );
 		if ( simpleBookmark != null ) { return simpleBookmark.getTransform(); }
 
-		final DynamicBookmark dynamicBookmark = getDynamicBookmark( key );
+		final DynamicBookmark dynamicBookmark = get( key, DynamicBookmark.class );
 		if ( dynamicBookmark != null ) { return dynamicBookmark.getInterpolatedTransform( currentTimepoint, cX, cY ); }
 
 		return null;

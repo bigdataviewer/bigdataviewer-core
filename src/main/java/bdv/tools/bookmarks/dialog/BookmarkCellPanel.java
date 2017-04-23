@@ -134,7 +134,7 @@ public class BookmarkCellPanel extends JPanel
 			@Override
 			public void focusLost( FocusEvent e )
 			{
-				if ( keyField.getText().length() == 0 )
+				if ( keyField.getText().isEmpty() )
 					keyField.setText( bookmark.getKey() );
 			}
 		} );

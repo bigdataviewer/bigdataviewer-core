@@ -137,7 +137,7 @@ public class AddBookmarkDialog extends JDialog
 
 			private void setKeyFieldText()
 			{
-				if ( titleField.getText().length() > 0 )
+				if ( !titleField.getText().isEmpty() )
 				{
 					keyField.setText( titleField.getText().substring( 0, 1 ) );
 				}
@@ -204,8 +204,8 @@ public class AddBookmarkDialog extends JDialog
 		gbc_dynamicBookmarkOption.insets = new Insets( 0, 0, 0, 5 );
 		gbc_dynamicBookmarkOption.gridx = 0;
 		gbc_dynamicBookmarkOption.gridy = 6;
-		
-		if ( bookmarksEditor.areDynamicBookmarksEnabled())
+
+		if ( bookmarksEditor.areDynamicBookmarksEnabled() )
 		{
 			bookmarkPanel.add( dynamicBookmarkOption, gbc_dynamicBookmarkOption );
 			group.add( dynamicBookmarkOption );

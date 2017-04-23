@@ -59,8 +59,10 @@ import bdv.viewer.animate.SimilarityTransformAnimator;
 import net.imglib2.Point;
 import net.imglib2.realtransform.AffineTransform3D;
 
-public class BookmarksEditor {
-	static enum Mode {
+public class BookmarksEditor
+{
+	static enum Mode
+	{
 		INACTIVE, SET, CREATE_DYNAMIC_BOOKMARK, RECALL_TRANSFORM, RECALL_ORIENTATION, ADD_KEYFRAME, RENAME, DELETE
 	}
 
@@ -68,7 +70,7 @@ public class BookmarksEditor {
 
 	private volatile boolean initialKey = false;
 
-	private final ArrayList<String> inputMapsToBlock;
+	private final ArrayList< String > inputMapsToBlock;
 
 	private final ViewerPanel viewer;
 
@@ -84,17 +86,20 @@ public class BookmarksEditor {
 
 	private BookmarkRenameEditor bookmarkRenameEditor;
 
-	public BookmarksEditor(final ViewerPanel viewer, final InputActionBindings inputActionBindings,
-			final Bookmarks bookmarks) {
+	public BookmarksEditor( final ViewerPanel viewer, final InputActionBindings inputActionBindings,
+			final Bookmarks bookmarks )
+	{
 		this.viewer = viewer;
 		bindings = inputActionBindings;
-		inputMapsToBlock = new ArrayList<>(Arrays.asList("bdv", "navigation"));
+		inputMapsToBlock = new ArrayList<>( Arrays.asList( "bdv", "navigation" ) );
 		this.bookmarks = bookmarks;
 
-		final KeyStroke abortKey = KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0);
-		final Action abortAction = new AbstractAction("abort bookmark") {
+		final KeyStroke abortKey = KeyStroke.getKeyStroke( KeyEvent.VK_ESCAPE, 0 );
+		final Action abortAction = new AbstractAction( "abort bookmark" )
+		{
 			@Override
-			public void actionPerformed(final ActionEvent e) {
+			public void actionPerformed( final ActionEvent e )
+			{
 				abort();
 			}
 
@@ -103,58 +108,70 @@ public class BookmarksEditor {
 
 		actionMap = new ActionMap();
 		inputMap = new InputMap();
-		actionMap.put("abort bookmark", abortAction);
-		inputMap.put(abortKey, "abort bookmark");
+		actionMap.put( "abort bookmark", abortAction );
+		inputMap.put( abortKey, "abort bookmark" );
 
-		bindings.addActionMap("bookmarks", actionMap);
+		bindings.addActionMap( "bookmarks", actionMap );
 
-		bookmarkRenameEditor = new BookmarkRenameEditor(viewer, inputActionBindings, bookmarks);
-		bookmarkRenameEditor.addListener(new BookmarkRenameEditorListener() {
+		bookmarkRenameEditor = new BookmarkRenameEditor( viewer, inputActionBindings, bookmarks );
+		bookmarkRenameEditor.addListener( new BookmarkRenameEditorListener()
+		{
 
 			@Override
-			public void bookmarkRenameFinished(String oldKey, String newKey) {
-				renameBookmark(oldKey, newKey);
-				setActiveDynamicBookmark(bookmarks.getDynamicBookmark(newKey));
+			public void bookmarkRenameFinished( String oldKey, String newKey )
+			{
+				renameBookmark( oldKey, newKey );
+				setActiveDynamicBookmark( bookmarks.get( newKey, DynamicBookmark.class ) );
 
-				String message = String.format("bookmark %s renamed to %s", oldKey, newKey);
-				fadeOut(message, 1500);
+				String message = String.format( "bookmark %s renamed to %s", oldKey, newKey );
+				fadeOut( message, 1500 );
 			}
 
 			@Override
-			public void bookmarkRenameAborted(String oldKey) {
-				fadeOut("rename bookmark aborted", 1500);
+			public void bookmarkRenameAborted( String oldKey )
+			{
+				fadeOut( "rename bookmark aborted", 1500 );
 			}
-		});
+		} );
 
-		viewer.getDisplay().addKeyListener(new KeyAdapter() {
+		viewer.getDisplay().addKeyListener( new KeyAdapter()
+		{
 			@Override
-			public void keyTyped(final KeyEvent e) {
-				if (mode != Mode.INACTIVE) {
-					if (initialKey)
+			public void keyTyped( final KeyEvent e )
+			{
+				if ( mode != Mode.INACTIVE )
+				{
+					if ( initialKey )
 						initialKey = false;
-					else {
-						final String key = String.valueOf(e.getKeyChar());
-						switch (mode) {
-						case SET: {
-							createSimpleBookmark(key);
+					else
+					{
+						final String key = String.valueOf( e.getKeyChar() );
+						switch ( mode )
+						{
+						case SET:
+						{
+							createSimpleBookmark( key );
 
-							animator.fadeOut("set bookmark: " + key, 500);
+							animator.fadeOut( "set bookmark: " + key, 500 );
 							viewer.requestRepaint();
 						}
 							break;
-						case CREATE_DYNAMIC_BOOKMARK: {							
-							createDynamicBookmark(key);
+						case CREATE_DYNAMIC_BOOKMARK:
+						{
+							createDynamicBookmark( key );
 
-							animator.fadeOut("create dynamic bookmark: " + key, 500);
+							animator.fadeOut( "create dynamic bookmark: " + key, 500 );
 						}
 							break;
-						case RECALL_TRANSFORM: {
-							recallTransformationOfBookmark(key);
+						case RECALL_TRANSFORM:
+						{
+							recallTransformationOfBookmark( key );
 
-							animator.fadeOut("go to bookmark: " + key, 500);
+							animator.fadeOut( "go to bookmark: " + key, 500 );
 						}
 							break;
-						case RECALL_ORIENTATION: {
+						case RECALL_ORIENTATION:
+						{
 							final int currentTimepoint = viewer.getState().getCurrentTimepoint();
 							final double cX = viewer.getDisplay().getWidth() / 2.0;
 							final double cY = viewer.getDisplay().getHeight() / 2.0;
@@ -162,38 +179,47 @@ public class BookmarksEditor {
 							// set dynamic bookmark if the key is associated
 							// with a dynamic bookmark,
 							// otherwise it will set null
-							setActiveDynamicBookmark(bookmarks.getDynamicBookmark(key));
+							setActiveDynamicBookmark( bookmarks.get( key, DynamicBookmark.class ) );
 
-							final AffineTransform3D targetTransform = bookmarks.getTransform(key, currentTimepoint, cX,
-									cY);
-							if (targetTransform != null) {
+							final AffineTransform3D targetTransform = bookmarks.getTransform( key, currentTimepoint, cX,
+									cY );
+							if ( targetTransform != null )
+							{
 								final AffineTransform3D c = new AffineTransform3D();
-								viewer.getState().getViewerTransform(c);
-								final Point p = new Point(2);
-								viewer.getMouseCoordinates(p);
-								final double[] qTarget = new double[4];
-								Affine3DHelpers.extractRotation(targetTransform, qTarget);
-								viewer.setTransformAnimator(new RotationAnimator(c, p.getDoublePosition(0),
-										p.getDoublePosition(1), qTarget, 300));
+								viewer.getState().getViewerTransform( c );
+								final Point p = new Point( 2 );
+								viewer.getMouseCoordinates( p );
+								final double[] qTarget = new double[ 4 ];
+								Affine3DHelpers.extractRotation( targetTransform, qTarget );
+								viewer.setTransformAnimator( new RotationAnimator( c, p.getDoublePosition( 0 ),
+										p.getDoublePosition( 1 ), qTarget, 300 ) );
 							}
-							animator.fadeOut("go to bookmark orientation: " + key, 500);
+							animator.fadeOut( "go to bookmark orientation: " + key, 500 );
 						}
 							break;
-						case RENAME: {
-							if (bookmarks.get(key) == null) {
-								fadeOut("bookmark with the key " + key + " could not be found ", 1500);
-							} else {
-								fadeIn("rename bookmark " + key + " to: ", 500);
-								bookmarkRenameEditor.init(key);
+						case RENAME:
+						{
+							if ( bookmarks.get( key ) == null )
+							{
+								fadeOut( "bookmark with the key " + key + " could not be found ", 1500 );
+							}
+							else
+							{
+								fadeIn( "rename bookmark " + key + " to: ", 500 );
+								bookmarkRenameEditor.init( key );
 							}
 						}
 							break;
-						case DELETE: {
-							if (bookmarks.get(key) == null) {
-								fadeOut("bookmark with the key " + key + " could not be found ", 1500);
-							} else {
-								removeBookmark(key);
-								fadeOut("delete bookmark: " + key, 500);
+						case DELETE:
+						{
+							if ( bookmarks.get( key ) == null )
+							{
+								fadeOut( "bookmark with the key " + key + " could not be found ", 1500 );
+							}
+							else
+							{
+								removeBookmark( key );
+								fadeOut( "delete bookmark: " + key, 500 );
 							}
 						}
 							break;
@@ -204,331 +230,395 @@ public class BookmarksEditor {
 					}
 				}
 			}
-		});
+		} );
 
-		viewer.addTimePointListener(new TimePointListener() {
+		viewer.addTimePointListener( new TimePointListener()
+		{
 
 			@Override
-			public void timePointChanged(int timePointIndex) {
+			public void timePointChanged( int timePointIndex )
+			{
 				DynamicBookmark dynamicBookmark = getActiveDynamicBookmark();
-				if (dynamicBookmark != null) {
+				if ( dynamicBookmark != null )
+				{
 
 					final double cX = viewer.getDisplay().getWidth() / 2.0;
 					final double cY = viewer.getDisplay().getHeight() / 2.0;
 
-					final AffineTransform3D targetTransform = dynamicBookmark.getInterpolatedTransform(timePointIndex,
-							cX, cY);
-					if (targetTransform != null) {
-						targetTransform.set(targetTransform.get(0, 3) + cX, 0, 3);
-						targetTransform.set(targetTransform.get(1, 3) + cY, 1, 3);
+					final AffineTransform3D targetTransform = dynamicBookmark.getInterpolatedTransform( timePointIndex,
+							cX, cY );
+					if ( targetTransform != null )
+					{
+						targetTransform.set( targetTransform.get( 0, 3 ) + cX, 0, 3 );
+						targetTransform.set( targetTransform.get( 1, 3 ) + cY, 1, 3 );
 
-						viewer.setCurrentViewerTransform(targetTransform);
+						viewer.setCurrentViewerTransform( targetTransform );
 					}
 				}
 			}
-		});
+		} );
 
-		viewer.getKeyFramePopupMenu().setBookmarksEditor(this);
+		viewer.getKeyFramePopupMenu().setBookmarksEditor( this );
 	}
 
-	public synchronized void abort() {
-		if (animator != null)
+	public synchronized void abort()
+	{
+		if ( animator != null )
 			animator.clear();
 		done();
 	}
 
-	private synchronized void setActiveDynamicBookmark(DynamicBookmark bookmark) {
-		viewer.setActiveBookmark(bookmark);
+	private synchronized void setActiveDynamicBookmark( DynamicBookmark bookmark )
+	{
+		viewer.setActiveBookmark( bookmark );
 	}
 
-	private synchronized DynamicBookmark getActiveDynamicBookmark() {
+	private synchronized DynamicBookmark getActiveDynamicBookmark()
+	{
 		Bookmark bookmark = viewer.getActiveBookmark();
 
-		if (bookmark instanceof DynamicBookmark) {
-			return (DynamicBookmark) bookmark;
-		}
+		if ( bookmark instanceof DynamicBookmark ) { return ( DynamicBookmark ) bookmark; }
 
 		return null;
 	}
 
-	private void fadeIn(String message, long duration) {
-		if (animator != null)
+	private void fadeIn( String message, long duration )
+	{
+		if ( animator != null )
 			animator.clear();
-		animator = new BookmarkTextOverlayAnimator(viewer);
-		viewer.addOverlayAnimator(animator);
+		animator = new BookmarkTextOverlayAnimator( viewer );
+		viewer.addOverlayAnimator( animator );
 
-		animator.fadeIn(message, duration);
+		animator.fadeIn( message, duration );
 	}
 
-	private void fadeOut(String message, long duration) {
-		if (animator != null)
+	private void fadeOut( String message, long duration )
+	{
+		if ( animator != null )
 			animator.clear();
-		animator = new BookmarkTextOverlayAnimator(viewer);
-		viewer.addOverlayAnimator(animator);
+		animator = new BookmarkTextOverlayAnimator( viewer );
+		viewer.addOverlayAnimator( animator );
 
-		animator.fadeOut(message, duration);
+		animator.fadeOut( message, duration );
 	}
 
-	private AffineTransform3D getViewTransformForBookmark() {
+	private AffineTransform3D getViewTransformForBookmark()
+	{
 		final AffineTransform3D t = new AffineTransform3D();
-		viewer.getState().getViewerTransform(t);
+		viewer.getState().getViewerTransform( t );
 		final double cX = viewer.getDisplay().getWidth() / 2.0;
 		final double cY = viewer.getDisplay().getHeight() / 2.0;
-		t.set(t.get(0, 3) - cX, 0, 3);
-		t.set(t.get(1, 3) - cY, 1, 3);
+		t.set( t.get( 0, 3 ) - cX, 0, 3 );
+		t.set( t.get( 1, 3 ) - cY, 1, 3 );
 
 		return t;
 	}
 
-	protected synchronized void init(final Mode mode, final String message) {
+	protected synchronized void init( final Mode mode, final String message )
+	{
 		initialKey = true;
 		this.mode = mode;
-		bindings.addInputMap("bookmarks", inputMap, inputMapsToBlock);
-		fadeIn(message, 100);
+		bindings.addInputMap( "bookmarks", inputMap, inputMapsToBlock );
+		fadeIn( message, 100 );
 	}
 
-	public synchronized void initSetBookmark() {
-		init(Mode.SET, "set bookmark: ");
+	public synchronized void initSetBookmark()
+	{
+		init( Mode.SET, "set bookmark: " );
 	}
 
-	public synchronized void initCreateDynamicBookmark() {
-		if(areDynamicBookmarksEnabled())
-			init(Mode.CREATE_DYNAMIC_BOOKMARK, "create dynamic bookmark: ");
+	public synchronized void initCreateDynamicBookmark()
+	{
+		if ( areDynamicBookmarksEnabled() )
+			init( Mode.CREATE_DYNAMIC_BOOKMARK, "create dynamic bookmark: " );
 		else
-			fadeOut("dynamic bookmarks cannot be created", 1000);
+			fadeOut( "dynamic bookmarks cannot be created", 1000 );
 	}
 
-	public synchronized void initGoToBookmark() {
-		init(Mode.RECALL_TRANSFORM, "go to bookmark: ");
+	public synchronized void initGoToBookmark()
+	{
+		init( Mode.RECALL_TRANSFORM, "go to bookmark: " );
 	}
 
-	public synchronized void initGoToBookmarkRotation() {
-		init(Mode.RECALL_ORIENTATION, "go to bookmark orientation: ");
+	public synchronized void initGoToBookmarkRotation()
+	{
+		init( Mode.RECALL_ORIENTATION, "go to bookmark orientation: " );
 	}
 
-	public synchronized void initRenameBookmark() {
-		init(Mode.RENAME, String.format("bookmark key to rename: "));
+	public synchronized void initRenameBookmark()
+	{
+		init( Mode.RENAME, String.format( "bookmark key to rename: " ) );
 	}
 
-	public synchronized void initDeleteBookmark() {
-		init(Mode.DELETE, String.format("delete bookmark: "));
+	public synchronized void initDeleteBookmark()
+	{
+		init( Mode.DELETE, String.format( "delete bookmark: " ) );
 	}
 
-	public synchronized void createSimpleBookmark(String key) {
-		createSimpleBookmark(key, null, null);
+	public synchronized void createSimpleBookmark( String key )
+	{
+		createSimpleBookmark( key, null, null );
 	}
 
-	public synchronized void createSimpleBookmark(String key, String title, String description) {
+	public synchronized void createSimpleBookmark( String key, String title, String description )
+	{
 		final AffineTransform3D t = getViewTransformForBookmark();
-		final SimpleBookmark bookmark = new SimpleBookmark(key, t);
+		final SimpleBookmark bookmark = new SimpleBookmark( key, t );
 
-		bookmark.setTitle(title);
-		bookmark.setDescription(description);
-		bookmarks.put(bookmark);
+		bookmark.setTitle( title );
+		bookmark.setDescription( description );
+		bookmarks.put( bookmark );
 
-		setActiveDynamicBookmark(null);
+		setActiveDynamicBookmark( null );
 	}
 
-	public synchronized void createDynamicBookmark(String key) {
-		createDynamicBookmark(key, null, null);
+	public synchronized void createDynamicBookmark( String key )
+	{
+		createDynamicBookmark( key, null, null );
 	}
 
-	public synchronized void createDynamicBookmark(String key, String title, String description) {
-		DynamicBookmark bookmark = new DynamicBookmark(key);
-		bookmark.setTitle(title);
-		bookmark.setDescription(description);
-		bookmarks.put(bookmark);
+	public synchronized void createDynamicBookmark( String key, String title, String description )
+	{
+		DynamicBookmark bookmark = new DynamicBookmark( key );
+		bookmark.setTitle( title );
+		bookmark.setDescription( description );
+		bookmarks.put( bookmark );
 
-		setActiveDynamicBookmark(bookmark);
+		setActiveDynamicBookmark( bookmark );
 	}
 
-	public synchronized void recallTransformationOfBookmark(String key) {
+	public synchronized void recallTransformationOfBookmark( String key )
+	{
 		final int currentTimepoint = viewer.getState().getCurrentTimepoint();
 		final double cX = viewer.getDisplay().getWidth() / 2.0;
 		final double cY = viewer.getDisplay().getHeight() / 2.0;
 
-		// set dynamic bookmark if the key is associated with a dynamic
-		// bookmark,
-		// otherwise it will set null
-		setActiveDynamicBookmark(bookmarks.getDynamicBookmark(key));
+		setActiveDynamicBookmark( bookmarks.get( key, DynamicBookmark.class ) );
 
-		final AffineTransform3D targetTransform = bookmarks.getTransform(key, currentTimepoint, cX, cY);
+		final AffineTransform3D targetTransform = bookmarks.getTransform( key, currentTimepoint, cX, cY );
 
-		if (targetTransform != null) {
+		if ( targetTransform != null )
+		{
 			final AffineTransform3D viewTransform = new AffineTransform3D();
-			viewer.getState().getViewerTransform(viewTransform);
+			viewer.getState().getViewerTransform( viewTransform );
 
-			viewTransform.set(viewTransform.get(0, 3) - cX, 0, 3);
-			viewTransform.set(viewTransform.get(1, 3) - cY, 1, 3);
+			viewTransform.set( viewTransform.get( 0, 3 ) - cX, 0, 3 );
+			viewTransform.set( viewTransform.get( 1, 3 ) - cY, 1, 3 );
 
-			viewer.setTransformAnimator(new SimilarityTransformAnimator(viewTransform, targetTransform, cX, cY, 300));
+			viewer.setTransformAnimator( new SimilarityTransformAnimator( viewTransform, targetTransform, cX, cY, 300 ) );
 		}
 	}
 
-	public synchronized Bookmark removeBookmark(final String key) {
-		final Bookmark removedBookmark = bookmarks.remove(key);
-		if (removedBookmark == null)
+	public synchronized Bookmark removeBookmark( final String key )
+	{
+		final Bookmark removedBookmark = bookmarks.remove( key );
+		if ( removedBookmark == null )
 			return null;
 
 		final Bookmark acitveBookmark = viewer.getActiveBookmark();
-		if (acitveBookmark != null && acitveBookmark.equals(removedBookmark)) {
-			viewer.setActiveBookmark(null);
+		if ( acitveBookmark != null && acitveBookmark.equals( removedBookmark ) )
+		{
+			viewer.setActiveBookmark( null );
 		}
 
 		return removedBookmark;
 	}
 
-	public synchronized boolean containsBookmark(final String key) {
-		return bookmarks.containsKey(key);
+	public synchronized boolean containsBookmark( final String key )
+	{
+		return bookmarks.containsKey( key );
 	}
 
-	public synchronized Bookmark renameBookmark(final String oldKey, final String newKey) {
-		final String activeBookmarkKey = viewer.getActiveBookmark() == null
-				? null
+	public synchronized Bookmark renameBookmark( final String oldKey, final String newKey )
+	{
+		final String activeBookmarkKey = viewer.getActiveBookmark() == null ? null
 				: viewer.getActiveBookmark().getKey();
 
 		final Bookmark newBookmark = bookmarks.rename( oldKey, newKey );
-		if(newBookmark != null){
-			if (oldKey.equals(activeBookmarkKey)) {
-				viewer.setActiveBookmark(newBookmark);
+		if ( newBookmark != null )
+		{
+			if ( oldKey.equals( activeBookmarkKey ) )
+			{
+				viewer.setActiveBookmark( newBookmark );
 			}
 			return newBookmark;
 		}
-		
+
 		return null;
 	}
 
-	public synchronized void deselectBookmark() {
-		setActiveDynamicBookmark(null);
+	public synchronized void deselectBookmark()
+	{
+		setActiveDynamicBookmark( null );
 	}
 
-	public synchronized void addKeyframe() {
+	public synchronized void addKeyframe()
+	{
 		final DynamicBookmark dynamicBookmark = getActiveDynamicBookmark();
-		if (dynamicBookmark != null) {
+		if ( dynamicBookmark != null )
+		{
 
 			final AffineTransform3D tranform = getViewTransformForBookmark();
 			final int timepoint = viewer.getState().getCurrentTimepoint();
 
-			final KeyFrame keyframe = new KeyFrame(timepoint, tranform);
-			dynamicBookmark.add(keyframe);
+			final KeyFrame keyframe = new KeyFrame( timepoint, tranform );
+			dynamicBookmark.add( keyframe );
 
-			fadeOut("key frame added to " + dynamicBookmark.getKey(), 1000);
-		} else {
-			fadeOut("no active dynamic bookmark", 1000);
+			fadeOut( "key frame added to " + dynamicBookmark.getKey(), 1000 );
+		}
+		else
+		{
+			fadeOut( "no active dynamic bookmark", 1000 );
 		}
 	}
 
-	public synchronized void setTransformationToKeyframe(final KeyFrame keyframe) {
-		keyframe.setTransform(getViewTransformForBookmark());
+	public synchronized void setTransformationToKeyframe( final KeyFrame keyframe )
+	{
+		keyframe.setTransform( getViewTransformForBookmark() );
 	}
 
-	public synchronized void removeKeyframe() {
+	public synchronized void removeKeyframe()
+	{
 		final int timepoint = viewer.getState().getCurrentTimepoint();
-		removeKeyframe(timepoint);
+		removeKeyframe( timepoint );
 	}
 
-	public synchronized void removeKeyframe(final int timepoint) {
-		final KeyFrame keyframe = new KeyFrame(timepoint, null);
-		removeKeyframe(keyframe);
+	public synchronized void removeKeyframe( final int timepoint )
+	{
+		final KeyFrame keyframe = new KeyFrame( timepoint, null );
+		removeKeyframe( keyframe );
 	}
 
-	public synchronized void removeKeyframe(final KeyFrame keyFrame) {
+	public synchronized void removeKeyframe( final KeyFrame keyFrame )
+	{
 		final DynamicBookmark dynamicBookmark = getActiveDynamicBookmark();
-		if (dynamicBookmark != null) {
-			final boolean removed = dynamicBookmark.remove(keyFrame);
+		if ( dynamicBookmark != null )
+		{
+			final boolean removed = dynamicBookmark.remove( keyFrame );
 
-			if (removed) {
-				fadeOut("key frame removed", 1000);
-			} else {
-				fadeOut("no key frame at this timepoint", 1000);
+			if ( removed )
+			{
+				fadeOut( "key frame removed", 1000 );
 			}
-		} else {
-			fadeOut("no active dynamic bookmark", 1000);
+			else
+			{
+				fadeOut( "no key frame at this timepoint", 1000 );
+			}
+		}
+		else
+		{
+			fadeOut( "no active dynamic bookmark", 1000 );
 		}
 	}
 
-	public synchronized boolean copyKeyFrame(final KeyFrame keyframe) {
+	public synchronized boolean copyKeyFrame( final KeyFrame keyframe )
+	{
 		final DynamicBookmark dynamicBookmark = getActiveDynamicBookmark();
-		if (dynamicBookmark != null) {
+		if ( dynamicBookmark != null )
+		{
 
 			final int numTimepoint = this.viewer.getState().getNumTimepoints();
-			final int timeOneLater = Math.min(numTimepoint, keyframe.getTimepoint() + 1);
-			final int timeOneEarlier = Math.max(0, keyframe.getTimepoint() - 1);
+			final int timeOneLater = Math.min( numTimepoint, keyframe.getTimepoint() + 1 );
+			final int timeOneEarlier = Math.max( 0, keyframe.getTimepoint() - 1 );
 
-			final KeyFrame keyFrameOneLater = new KeyFrame(timeOneLater, keyframe.getTransform());
-			final KeyFrame keyFrameOneEalier = new KeyFrame(timeOneEarlier, keyframe.getTransform());
-			if (!dynamicBookmark.getFrameSet().contains(keyFrameOneLater)) {
-				return dynamicBookmark.add(keyFrameOneLater);
-			} else if (!dynamicBookmark.getFrameSet().contains(keyFrameOneEalier)) {
-				return dynamicBookmark.add(keyFrameOneEalier);
-			} else {
-				fadeOut("could not copy the keyframe", 1000);
+			final KeyFrame keyFrameOneLater = new KeyFrame( timeOneLater, keyframe.getTransform() );
+			final KeyFrame keyFrameOneEalier = new KeyFrame( timeOneEarlier, keyframe.getTransform() );
+			if ( !dynamicBookmark.getFrameSet().contains( keyFrameOneLater ) )
+			{
+				return dynamicBookmark.add( keyFrameOneLater );
 			}
-		} else {
-			fadeOut("no active dynamic bookmark", 1000);
+			else if ( !dynamicBookmark.getFrameSet().contains( keyFrameOneEalier ) )
+			{
+				return dynamicBookmark.add( keyFrameOneEalier );
+			}
+			else
+			{
+				fadeOut( "could not copy the keyframe", 1000 );
+			}
+		}
+		else
+		{
+			fadeOut( "no active dynamic bookmark", 1000 );
 		}
 
 		return false;
 	}
 
-	public synchronized void nextKeyframe() {
+	public synchronized void nextKeyframe()
+	{
 		final DynamicBookmark dynamicBookmark = getActiveDynamicBookmark();
-		if (dynamicBookmark != null) {
+		if ( dynamicBookmark != null )
+		{
 
 			final int currentTimepoint = viewer.getState().getCurrentTimepoint();
-			final KeyFrame nextKeyframe = dynamicBookmark.getNextKeyFrame(currentTimepoint);
-			if (nextKeyframe != null && nextKeyframe.getTimepoint() > currentTimepoint) {
-				viewer.setTimepoint(nextKeyframe.getTimepoint());
-				fadeOut("go to next key frame", 1000);
-			} else {
-				fadeOut("no next key frame available", 1000);
+			final KeyFrame nextKeyframe = dynamicBookmark.getNextKeyFrame( currentTimepoint );
+			if ( nextKeyframe != null && nextKeyframe.getTimepoint() > currentTimepoint )
+			{
+				viewer.setTimepoint( nextKeyframe.getTimepoint() );
+				fadeOut( "go to next key frame", 1000 );
+			}
+			else
+			{
+				fadeOut( "no next key frame available", 1000 );
 			}
 		}
 	}
 
-	public synchronized void previousKeyframe() {
+	public synchronized void previousKeyframe()
+	{
 		final DynamicBookmark dynamicBookmark = getActiveDynamicBookmark();
-		if (dynamicBookmark != null) {
+		if ( dynamicBookmark != null )
+		{
 
 			final int currentTimepoint = viewer.getState().getCurrentTimepoint();
-			final KeyFrame previousKeyframe = dynamicBookmark.getPreviousKeyFrame(currentTimepoint);
-			if (previousKeyframe != null && previousKeyframe.getTimepoint() < currentTimepoint) {
-				viewer.setTimepoint(previousKeyframe.getTimepoint());
-				fadeOut("go to previous key frame", 1000);
-			} else {
-				fadeOut("no previous key frame available", 1000);
+			final KeyFrame previousKeyframe = dynamicBookmark.getPreviousKeyFrame( currentTimepoint );
+			if ( previousKeyframe != null && previousKeyframe.getTimepoint() < currentTimepoint )
+			{
+				viewer.setTimepoint( previousKeyframe.getTimepoint() );
+				fadeOut( "go to previous key frame", 1000 );
+			}
+			else
+			{
+				fadeOut( "no previous key frame available", 1000 );
 			}
 		}
 	}
-	
+
 	/**
 	 * Returns true when Dynamic Bookmarks can be created, otherwise false
+	 * 
 	 * @return whether Dynamic Bookmarks can be created or not
 	 */
-	public synchronized boolean areDynamicBookmarksEnabled(){
+	public synchronized boolean areDynamicBookmarksEnabled()
+	{
 		return viewer.getState().getNumTimepoints() > 1;
 	}
-	
-	public synchronized Collection<Bookmark> getAllBookmarks(){
+
+	public synchronized Collection< Bookmark > getAllBookmarks()
+	{
 		return this.bookmarks.getAll();
 	}
 
-	public synchronized void done() {
+	public synchronized void done()
+	{
 		mode = Mode.INACTIVE;
 		initialKey = false;
-		bindings.removeInputMap("bookmarks");
+		bindings.removeInputMap( "bookmarks" );
 	}
 
-	public synchronized void setInputMapsToBlock(final Collection<String> idsToBlock) {
+	public synchronized void setInputMapsToBlock( final Collection< String > idsToBlock )
+	{
 		inputMapsToBlock.clear();
-		inputMapsToBlock.addAll(idsToBlock);
+		inputMapsToBlock.addAll( idsToBlock );
 	}
 
-	public void addBookmarksCollectionChangedListener(BookmarksCollectionChangedListener listener) {
-		this.bookmarks.addListener(listener);
+	public void addBookmarksCollectionChangedListener( BookmarksCollectionChangedListener listener )
+	{
+		this.bookmarks.addListener( listener );
 	}
-	
-	public void removeBookmarksCollectionChangedListener(BookmarksCollectionChangedListener listener) {
-		this.bookmarks.removeListener(listener);
+
+	public void removeBookmarksCollectionChangedListener( BookmarksCollectionChangedListener listener )
+	{
+		this.bookmarks.removeListener( listener );
 	}
 }
