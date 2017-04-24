@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -690,7 +690,8 @@ public class BigDataViewer
 //		final String fn = "/Users/Pietzsch/Desktop/bdv example/drosophila 2.xml";
 //		final String fn = "/Users/pietzsch/Desktop/data/clusterValia/140219-1/valia-140219-1.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/data/catmaid.xml";
-		final String fn = "src/main/resources/openconnectome-bock11-neariso.xml";
+//		final String fn2 = "src/main/resources/openconnectome-bock11-neariso.xml";
+		final String fn1 = "/nrs/saalfeld/tomoko/24gb_n_10_l_9_tfac_m5_xlfac_0_ylfac_0_xfac_2_yfac_5_deg_2.xml";
 //		final String fn = "/home/saalfeld/catmaid.xml";
 //		final String fn = "/home/saalfeld/catmaid-fafb00-v9.xml";
 //		final String fn = "/home/saalfeld/catmaid-fafb00-sample_A_cutout_3k.xml";
@@ -712,7 +713,10 @@ public class BigDataViewer
 		{
 			System.setProperty( "apple.laf.useScreenMenuBar", "true" );
 
-			final BigDataViewer bdv = open( fn, new File( fn ).getName(), new ProgressWriterConsole(), ViewerOptions.options() );
+			final BigDataViewer bdv1 = open( fn1, new File( fn1 ).getName(), new ProgressWriterConsole(), ViewerOptions.options() );
+//			final BigDataViewer bdv2 = open( fn2, new File( fn2 ).getName(), new ProgressWriterConsole(), ViewerOptions.options() );
+
+			bdv1.getViewerFrame().setSize( 1248, 656 );
 
 //			DumpInputConfig.writeToYaml( System.getProperty( "user.home" ) + "/.bdv/bdvkeyconfig.yaml", bdv.getViewerFrame() );
 		}

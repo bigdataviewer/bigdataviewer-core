@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -32,11 +32,11 @@ package bdv.viewer.render;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 
+import bdv.viewer.Source;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.numeric.ARGBType;
-import bdv.viewer.Source;
 
 public class AccumulateProjectorARGB extends AccumulateProjector< ARGBType, ARGBType >
 {
@@ -68,7 +68,7 @@ public class AccumulateProjectorARGB extends AccumulateProjector< ARGBType, ARGB
 	@Override
 	protected void accumulate( final Cursor< ARGBType >[] accesses, final ARGBType target )
 	{
-		int aSum = 0, rSum = 0, gSum = 0, bSum = 0;
+		int aSum = 0, rSum = 255, gSum = 255, bSum = 255;
 		for ( final Cursor< ARGBType > access : accesses )
 		{
 			final int value = access.get().get();
@@ -76,19 +76,36 @@ public class AccumulateProjectorARGB extends AccumulateProjector< ARGBType, ARGB
 			final int r = ARGBType.red( value );
 			final int g = ARGBType.green( value );
 			final int b = ARGBType.blue( value );
-			aSum += a;
-			rSum += r;
-			gSum += g;
-			bSum += b;
+//			aSum += a;
+//			rSum += r;
+//			gSum += g;
+//			bSum += b;
+			if  (!(r == 0 && g == 0 && b == 0))
+			{
+				aSum = Math.max( aSum, a );
+				rSum = Math.min( rSum, r );
+				gSum = Math.min( gSum, g );
+				bSum = Math.min( bSum, b );
+			}
 		}
-		if ( aSum > 255 )
+		if ( aSum == 0 )
+		{
 			aSum = 255;
-		if ( rSum > 255 )
-			rSum = 255;
-		if ( gSum > 255 )
-			gSum = 255;
-		if ( bSum > 255 )
-			bSum = 255;
+			rSum = 0;
+			gSum = 0;
+			bSum = 0;
+		}
+		else
+		{
+			if ( aSum > 255 )
+				aSum = 255;
+			if ( rSum > 255 )
+				rSum = 255;
+			if ( gSum > 255 )
+				gSum = 255;
+			if ( bSum > 255 )
+				bSum = 255;
+		}
 		target.set( ARGBType.rgba( rSum, gSum, bSum, aSum ) );
 	}
 }

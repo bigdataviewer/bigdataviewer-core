@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -31,6 +31,7 @@ package bdv.spimdata.tools;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -38,10 +39,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import mpicbg.spim.data.SpimDataException;
-import mpicbg.spim.data.registration.ViewRegistration;
-import mpicbg.spim.data.registration.ViewRegistrations;
-import mpicbg.spim.data.registration.ViewTransform;
 import bdv.export.ExportMipmapInfo;
 import bdv.export.WriteSequenceToHdf5;
 import bdv.img.hdf5.Hdf5ImageLoader;
@@ -49,6 +46,12 @@ import bdv.img.hdf5.Partition;
 import bdv.spimdata.SequenceDescriptionMinimal;
 import bdv.spimdata.SpimDataMinimal;
 import bdv.spimdata.XmlIoSpimDataMinimal;
+import mpicbg.spim.data.SpimDataException;
+import mpicbg.spim.data.registration.ViewRegistration;
+import mpicbg.spim.data.registration.ViewRegistrations;
+import mpicbg.spim.data.registration.ViewTransform;
+import mpicbg.spim.data.registration.ViewTransformAffine;
+import net.imglib2.realtransform.AffineTransform3D;
 
 /**
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
@@ -135,5 +138,23 @@ public class MergeExample
 
 		WriteSequenceToHdf5.writeHdf5PartitionLinkFile( seq, newMipmapInfos );
 		io.save( spimData, xmlFilename );
+	}
+
+	public static void main( final String... args ) throws SpimDataException
+	{
+		final AffineTransform3D t1 = new AffineTransform3D();
+		final AffineTransform3D t2 = new AffineTransform3D();
+		t2.set( 70, 0, 3 );
+
+		mergeHdf5Views(
+				Arrays.asList( new String[]{
+					"/groups/saalfeld/home/saalfelds/tmp/dagmar/bdv-26.xml",
+					"/groups/saalfeld/home/saalfelds/tmp/dagmar/bdv-27.xml"
+				} ),
+				Arrays.asList( new ViewTransformAffine[]{
+						new ViewTransformAffine( "t1", t1 ),
+						new ViewTransformAffine( "t2", t2 )
+				} ),
+				"/groups/saalfeld/home/saalfelds/tmp/dagmar/bdv-26-27.xml" );
 	}
 }
