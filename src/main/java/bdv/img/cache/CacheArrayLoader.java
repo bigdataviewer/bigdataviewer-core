@@ -31,6 +31,7 @@ package bdv.img.cache;
 
 import bdv.ViewerImgLoader;
 import bdv.img.catmaid.CatmaidImageLoader;
+import net.imglib2.cache.img.AccessFlags;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileArrayDataAccess;
 import net.imglib2.img.basictypeaccess.volatiles.array.DirtyVolatileByteArray;
@@ -47,6 +48,8 @@ import net.imglib2.img.basictypeaccess.volatiles.array.VolatileFloatArray;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileLongArray;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
+import net.imglib2.img.cell.CellGrid;
+import net.imglib2.type.NativeType;
 
 /**
  * Provider of volatile {@link net.imglib2.img.cell.Cell} data. This is
@@ -76,8 +79,9 @@ public interface CacheArrayLoader< A >
 	 * Implementing classes must override this if {@code A} is not a standard
 	 * {@link VolatileArrayDataAccess} type. The default implementation returns
 	 * {@code null}, which will let
-	 * {@link CreateInvalidVolatileCell#get(net.imglib2.img.cell.CellGrid, net.imglib2.type.NativeType, net.imglib2.cache.img.AccessFlags...) CreateInvalidVolatileCell.get(...)}
-	 * try to figure out the appropriate {@link DefaultEmptyArrayCreator}.
+	 * {@link CreateInvalidVolatileCell#get(CellGrid, NativeType, AccessFlags...)
+	 * CreateInvalidVolatileCell.get(...)} try to figure out the appropriate
+	 * {@link DefaultEmptyArrayCreator}.
 	 * <p>
 	 * Default access types are
 	 * </p>

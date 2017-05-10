@@ -77,7 +77,7 @@ public class CreateInvalidVolatileCell< A > implements CreateInvalid< Long, Cell
 	{
 		if ( primitiveType == PrimitiveType.UNDEFINED )
 			throw new IllegalArgumentException( "Cannot instantiate " + CreateInvalidVolatileCell.class.getSimpleName() + " for unrecognized primitive type" );
-		return new CreateInvalidVolatileCell< A >( grid, entitiesPerPixel, DefaultEmptyArrayCreator.get( primitiveType, flags ) );
+		return new CreateInvalidVolatileCell< A >( grid, entitiesPerPixel, EmptyArrayCreator.get( primitiveType, flags ) );
 	}
 }
 

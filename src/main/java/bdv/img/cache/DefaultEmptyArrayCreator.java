@@ -20,6 +20,37 @@ import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileLongArray;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
 
+/**
+ * {@link EmptyArrayCreator} implementation for standard access types. Maintains
+ * one invalid array that grows to the biggest size requested so far. The same
+ * array is reused and returned for all
+ * {@link EmptyArrayCreator#getEmptyArray(long) requests}.
+ *
+ * <p>
+ * Access types provided through {@link #get(PrimitiveType, AccessFlags...)} are
+ * </p>
+ * <ul>
+ * <li>{@link DirtyVolatileByteArray}</li>
+ * <li>{@link VolatileByteArray}</li>
+ * <li>{@link DirtyVolatileCharArray}</li>
+ * <li>{@link VolatileCharArray}</li>
+ * <li>{@link DirtyVolatileDoubleArray}</li>
+ * <li>{@link VolatileDoubleArray}</li>
+ * <li>{@link DirtyVolatileFloatArray}</li>
+ * <li>{@link VolatileFloatArray}</li>
+ * <li>{@link DirtyVolatileIntArray}</li>
+ * <li>{@link VolatileIntArray}</li>
+ * <li>{@link DirtyVolatileLongArray}</li>
+ * <li>{@link VolatileLongArray}</li>
+ * <li>{@link DirtyVolatileShortArray}</li>
+ * <li>{@link VolatileShortArray}</li>
+ * </ul>
+ *
+ * @param <A>
+ *            access type
+ *
+ * @author Tobias Pietzsch
+ */
 public class DefaultEmptyArrayCreator< A extends VolatileArrayDataAccess< A > > implements EmptyArrayCreator< A >
 {
 	public static final int INITIAL_EMPTY_SIZE = 32 * 32 * 32;
