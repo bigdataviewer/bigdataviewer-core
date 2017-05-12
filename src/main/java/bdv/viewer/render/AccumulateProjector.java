@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -47,7 +47,7 @@ public abstract class AccumulateProjector< A, B > implements VolatileProjector
 {
 	protected final ArrayList< VolatileProjector > sourceProjectors;
 
-	protected final ArrayList< IterableInterval< A > > sources;
+	protected final ArrayList< IterableInterval< ? extends A > > sources;
 
 	/**
 	 * The target interval. Pixels of the target interval should be set by
@@ -79,14 +79,14 @@ public abstract class AccumulateProjector< A, B > implements VolatileProjector
 
 	public AccumulateProjector(
 			final ArrayList< VolatileProjector > sourceProjectors,
-			final ArrayList< ? extends RandomAccessible< A > > sources,
+			final ArrayList< ? extends RandomAccessible< ? extends A > > sources,
 			final RandomAccessibleInterval< B > target,
 			final int numThreads,
 			final ExecutorService executorService )
 	{
 		this.sourceProjectors = sourceProjectors;
 		this.sources = new ArrayList<>();
-		for ( final RandomAccessible< A > source : sources )
+		for ( final RandomAccessible< ? extends A > source : sources )
 			this.sources.add( Views.flatIterable( Views.interval( source, target ) ) );
 		this.target = target;
 		this.iterableTarget = Views.flatIterable( target );
@@ -141,10 +141,10 @@ public abstract class AccumulateProjector< A, B > implements VolatileProjector
 					if ( interrupted.get() )
 						return null;
 
-					final Cursor< A >[] sourceCursors = new Cursor[ numSources ];
+					final Cursor< ? extends A >[] sourceCursors = new Cursor[ numSources ];
 					for ( int s = 0; s < numSources; ++s )
 					{
-						final Cursor< A > c = sources.get( s ).cursor();
+						final Cursor< ? extends A > c = sources.get( s ).cursor();
 						c.jumpFwd( myOffset );
 						sourceCursors[ s ] = c;
 					}
@@ -178,7 +178,7 @@ public abstract class AccumulateProjector< A, B > implements VolatileProjector
 		return !interrupted.get();
 	}
 
-	protected abstract void accumulate( final Cursor< A >[] accesses, final B target );
+	protected abstract void accumulate( final Cursor< ? extends A >[] accesses, final B target );
 
 	@Override
 	public void cancel()
