@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -32,11 +32,11 @@ package bdv.viewer.render;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 
+import bdv.viewer.Source;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.numeric.ARGBType;
-import bdv.viewer.Source;
 
 public class AccumulateProjectorARGB extends AccumulateProjector< ARGBType, ARGBType >
 {
@@ -46,7 +46,7 @@ public class AccumulateProjectorARGB extends AccumulateProjector< ARGBType, ARGB
 		public AccumulateProjectorARGB createAccumulateProjector(
 				final ArrayList< VolatileProjector > sourceProjectors,
 				final ArrayList< Source< ? > > sources,
-				final ArrayList< ? extends RandomAccessible< ARGBType > > sourceScreenImages,
+				final ArrayList< ? extends RandomAccessible< ? extends ARGBType > > sourceScreenImages,
 				final RandomAccessibleInterval< ARGBType > targetScreenImages,
 				final int numThreads,
 				final ExecutorService executorService )
@@ -57,7 +57,7 @@ public class AccumulateProjectorARGB extends AccumulateProjector< ARGBType, ARGB
 
 	public AccumulateProjectorARGB(
 			final ArrayList< VolatileProjector > sourceProjectors,
-			final ArrayList< ? extends RandomAccessible< ARGBType > > sources,
+			final ArrayList< ? extends RandomAccessible< ? extends ARGBType > > sources,
 			final RandomAccessibleInterval< ARGBType > target,
 			final int numThreads,
 			final ExecutorService executorService )
@@ -66,10 +66,10 @@ public class AccumulateProjectorARGB extends AccumulateProjector< ARGBType, ARGB
 	}
 
 	@Override
-	protected void accumulate( final Cursor< ARGBType >[] accesses, final ARGBType target )
+	protected void accumulate( final Cursor< ? extends ARGBType >[] accesses, final ARGBType target )
 	{
 		int aSum = 0, rSum = 0, gSum = 0, bSum = 0;
-		for ( final Cursor< ARGBType > access : accesses )
+		for ( final Cursor< ? extends ARGBType > access : accesses )
 		{
 			final int value = access.get().get();
 			final int a = ARGBType.alpha( value );
