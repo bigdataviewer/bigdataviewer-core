@@ -169,7 +169,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 */
 	protected final InteractiveDisplayCanvasComponent< AffineTransform3D > display;
 
-	protected final JSlider sliderTime;
+	protected final JSlider timeSlider;
 
 	/**
 	 * A {@link ThreadGroup} for (only) the threads used by this
@@ -430,28 +430,28 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		sliderPanel.add(timeKeyframePanel);
 		timeKeyframePanel.setLayout(new BoxLayout(timeKeyframePanel, BoxLayout.Y_AXIS));
 		
-		sliderTime = new JSlider(0, numTimepoints - 1, 0);
-		sliderTime.setMinimumSize(new Dimension(36, 26));
-		sliderTime.setMaximumSize(new Dimension(32767, 26));
+		timeSlider = new JSlider(0, numTimepoints - 1, 0);
+		timeSlider.setMinimumSize(new Dimension(36, 26));
+		timeSlider.setMaximumSize(new Dimension(32767, 26));
 		
-		timeKeyframePanel.add(sliderTime);
+		timeKeyframePanel.add(timeSlider);
 		
-		keyframePanel = new JKeyFramePanel(sliderTime);
+		keyframePanel = new JKeyFramePanel(timeSlider);
 		timeKeyframePanel.add(keyframePanel);
 		
-		sliderTime.addChangeListener( new ChangeListener()
+		timeSlider.addChangeListener( new ChangeListener()
 		{
 			@Override
 			public void stateChanged( final ChangeEvent e )
 			{
-				if ( e.getSource().equals( sliderTime ) )
-					setTimepoint( sliderTime.getValue() );
+				if ( e.getSource().equals( timeSlider ) )
+					setTimepoint( timeSlider.getValue() );
 			}
 		} );
 
 		add( display, BorderLayout.CENTER );
 		if ( numTimepoints > 1 )
-			add( sliderTime, BorderLayout.SOUTH );
+			add( timeSlider, BorderLayout.SOUTH );
 
 		visibilityAndGrouping = new VisibilityAndGrouping( state );
 		visibilityAndGrouping.addUpdateListener( this );
@@ -852,7 +852,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		if ( state.getCurrentTimepoint() != timepoint )
 		{
 			state.setCurrentTimepoint( timepoint );
-			sliderTime.setValue( timepoint );
+			timeSlider.setValue( timepoint );
 			for ( final TimePointListener l : timePointListeners )
 				l.timePointChanged( timepoint );
 			requestRepaint();
@@ -865,7 +865,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	public synchronized void nextTimePoint()
 	{
 		if ( state.getNumTimepoints() > 1 )
-			sliderTime.setValue( sliderTime.getValue() + 1 );
+			timeSlider.setValue( timeSlider.getValue() + 1 );
 	}
 
 	/**
@@ -874,7 +874,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	public synchronized void previousTimePoint()
 	{
 		if ( state.getNumTimepoints() > 1 )
-			sliderTime.setValue( sliderTime.getValue() - 1 );
+			timeSlider.setValue( timeSlider.getValue() - 1 );
 	}
 
 	/**
@@ -903,9 +903,9 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		if ( numTimepoints < 1 || state.getNumTimepoints() == numTimepoints )
 			return;
 		else if ( numTimepoints == 1 && state.getNumTimepoints() > 1 )
-			remove( sliderTime );
+			remove( timeSlider );
 		else if ( numTimepoints > 1 && state.getNumTimepoints() == 1 )
-			add( sliderTime, BorderLayout.SOUTH );
+			add( timeSlider, BorderLayout.SOUTH );
 
 		state.setNumTimepoints( numTimepoints );
 		if ( state.getCurrentTimepoint() >= numTimepoints )
@@ -915,7 +915,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 			for ( final TimePointListener l : timePointListeners )
 				l.timePointChanged( timepoint );
 		}
-		sliderTime.setModel( new DefaultBoundedRangeModel( state.getCurrentTimepoint(), 0, 0, numTimepoints - 1 ) );
+		timeSlider.setModel( new DefaultBoundedRangeModel( state.getCurrentTimepoint(), 0, 0, numTimepoints - 1 ) );
 		revalidate();
 		requestRepaint();
 	}
