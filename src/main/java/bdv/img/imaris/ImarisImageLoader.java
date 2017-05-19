@@ -36,13 +36,8 @@ import java.util.List;
 import bdv.AbstractViewerSetupImgLoader;
 import bdv.ViewerImgLoader;
 import bdv.cache.CacheControl;
-import bdv.cache.CacheHints;
-import bdv.cache.LoadingStrategy;
 import bdv.img.cache.CacheArrayLoader;
-import bdv.img.cache.CachedCellImg;
 import bdv.img.cache.VolatileGlobalCellCache;
-import bdv.img.cache.VolatileImgCells;
-import bdv.img.cache.VolatileImgCells.CellCache;
 import bdv.img.hdf5.MipmapInfo;
 import bdv.img.hdf5.ViewLevelId;
 import bdv.img.imaris.DataTypes.DataType;
@@ -53,14 +48,17 @@ import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.generic.sequence.ImgLoaderHint;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
+import net.imglib2.cache.volatiles.CacheHints;
+import net.imglib2.cache.volatiles.LoadingStrategy;
 import net.imglib2.img.NativeImg;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
+import net.imglib2.img.cell.AbstractCellImg;
+import net.imglib2.img.cell.CellGrid;
 import net.imglib2.img.cell.CellImg;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.volatiles.VolatileUnsignedShortType;
-import net.imglib2.util.Fraction;
 
 public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T > & NativeType< V > , A extends VolatileAccess > implements ViewerImgLoader
 {
@@ -141,7 +139,7 @@ public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T
 	 * type} before it can be used. The type should be either
 	 * {@link UnsignedShortType} and {@link VolatileUnsignedShortType}.
 	 */
-	protected < T extends NativeType< T > > CachedCellImg< T, A > prepareCachedImage( final ViewLevelId id, final LoadingStrategy loadingStrategy )
+	protected < T extends NativeType< T > > AbstractCellImg< T, A, ?, ? > prepareCachedImage( final ViewLevelId id, final LoadingStrategy loadingStrategy, final T type )
 	{
 		open();
 		final int timepointId = id.getTimePointId();
@@ -149,13 +147,11 @@ public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T
 		final int level = id.getLevel();
 		final long[] dimensions = mipmapDimensions[ level ];
 		final int[] cellDimensions = mipmapInfo.getSubdivisions()[ level ];
+		final CellGrid grid = new CellGrid( dimensions, cellDimensions );
 
 		final int priority = mipmapInfo.getMaxLevel() - level;
 		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
-		final CellCache< A > c = cache.new VolatileCellCache<>( timepointId, setupId, level, cacheHints, loader );
-		final VolatileImgCells< A > cells = new VolatileImgCells<>( c, new Fraction(), dimensions, cellDimensions );
-		final CachedCellImg< T, A > img = new CachedCellImg<>( cells );
-		return img;
+		return cache.createImg( grid, timepointId, setupId, level, cacheHints, loader, type );
 	}
 
 	@Override
@@ -186,20 +182,14 @@ public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T
 		public RandomAccessibleInterval< T > getImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 		{
 			final ViewLevelId id = new ViewLevelId( timepointId, setupId, level );
-			final CachedCellImg< T, A > img = prepareCachedImage( id, LoadingStrategy.BLOCKING );
-			final T linkedType = dataType.createLinkedType( img );
-			img.setLinkedType( linkedType );
-			return img;
+			return prepareCachedImage( id, LoadingStrategy.BLOCKING, dataType.getType() );
 		}
 
 		@Override
 		public RandomAccessibleInterval< V > getVolatileImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 		{
 			final ViewLevelId id = new ViewLevelId( timepointId, setupId, level );
-			final CachedCellImg< V, A > img = prepareCachedImage( id, LoadingStrategy.BUDGETED );
-			final V linkedType = dataType.createLinkedVolatileType( img );
-			img.setLinkedType( linkedType );
-			return img;
+			return prepareCachedImage( id, LoadingStrategy.BUDGETED, dataType.getVolatileType() );
 		}
 
 		@Override

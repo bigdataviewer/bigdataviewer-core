@@ -32,64 +32,63 @@ package net.imglib2.type.volatiles;
 import net.imglib2.Volatile;
 import net.imglib2.img.NativeImg;
 import net.imglib2.img.NativeImgFactory;
-import net.imglib2.img.basictypeaccess.ShortAccess;
-import net.imglib2.img.basictypeaccess.volatiles.VolatileShortAccess;
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.img.basictypeaccess.LongAccess;
+import net.imglib2.img.basictypeaccess.volatiles.VolatileLongAccess;
+import net.imglib2.img.basictypeaccess.volatiles.array.VolatileLongArray;
+import net.imglib2.type.numeric.integer.UnsignedLongType;
 import net.imglib2.util.Fraction;
 
 /**
- * A {@link Volatile} variant of {@link UnsignedShortType}. It uses an
- * underlying {@link UnsignedShortType} that maps into a
- * {@link VolatileShortAccess}.
+ * A {@link Volatile} variant of {@link UnsignedLongType}. It uses an underlying
+ * {@link UnsignedLongType} that maps into a {@link VolatileLongAccess}.
  *
- * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+ * @author Stephan Saalfeld
  */
-public class VolatileUnsignedShortType extends AbstractVolatileNativeRealType< UnsignedShortType, VolatileUnsignedShortType >
+public class VolatileUnsignedLongType extends AbstractVolatileNativeRealType< UnsignedLongType, VolatileUnsignedLongType >
 {
-	final protected NativeImg< ?, ? extends VolatileShortAccess > img;
+	final protected NativeImg< ?, ? extends VolatileLongAccess > img;
 
-	private static class WrappedUnsignedShortType extends UnsignedShortType
+	private static class WrappedUnsignedLongType extends UnsignedLongType
 	{
-		public WrappedUnsignedShortType( final NativeImg<?, ? extends ShortAccess> img )
+		public WrappedUnsignedLongType( final NativeImg<?, ? extends LongAccess> img )
 		{
 			super( img );
 		}
 
-		public WrappedUnsignedShortType( final ShortAccess access )
+		public WrappedUnsignedLongType( final LongAccess access )
 		{
 			super( access );
 		}
 
-		public void setAccess( final ShortAccess access )
+		public void setAccess( final LongAccess access )
 		{
 			dataAccess = access;
 		}
 	}
 
 	// this is the constructor if you want it to read from an array
-	public VolatileUnsignedShortType( final NativeImg< ?, ? extends VolatileShortAccess > img )
+	public VolatileUnsignedLongType( final NativeImg< ?, ? extends VolatileLongAccess > img )
 	{
-		super( new WrappedUnsignedShortType( img ), false );
+		super( new WrappedUnsignedLongType( img ), false );
 		this.img = img;
 	}
 
 	// this is the constructor if you want to specify the dataAccess
-	public VolatileUnsignedShortType( final VolatileShortAccess access )
+	public VolatileUnsignedLongType( final VolatileLongAccess access )
 	{
-		super( new WrappedUnsignedShortType( access ), access.isValid() );
+		super( new WrappedUnsignedLongType( access ), access.isValid() );
 		this.img = null;
 	}
 
 	// this is the constructor if you want it to be a variable
-	public VolatileUnsignedShortType( final int value )
+	public VolatileUnsignedLongType( final int value )
 	{
-		this( new VolatileShortArray( 1, true ) );
+		this( new VolatileLongArray( 1, true ) );
 		set( value );
 	}
 
 	// this is the constructor if you want it to be a variable
-	public VolatileUnsignedShortType()
+	public VolatileUnsignedLongType()
 	{
 		this( 0 );
 	}
@@ -102,20 +101,20 @@ public class VolatileUnsignedShortType extends AbstractVolatileNativeRealType< U
 	@Override
 	public void updateContainer( final Object c )
 	{
-		final VolatileShortAccess a = img.update( c );
-		( (WrappedUnsignedShortType) t ).setAccess( a );
+		final VolatileLongAccess a = img.update( c );
+		( ( WrappedUnsignedLongType ) t ).setAccess( a );
 		setValid( a.isValid() );
 	}
 
 	@Override
-	public NativeImg< VolatileUnsignedShortType, ? extends VolatileShortAccess > createSuitableNativeImg( final NativeImgFactory< VolatileUnsignedShortType > storageFactory, final long[] dim )
+	public NativeImg< VolatileUnsignedLongType, ? extends VolatileLongAccess > createSuitableNativeImg( final NativeImgFactory< VolatileUnsignedLongType > storageFactory, final long[] dim )
 	{
 		// create the container
 		@SuppressWarnings( "unchecked" )
-		final NativeImg< VolatileUnsignedShortType, ? extends VolatileShortAccess > container = ( NativeImg< VolatileUnsignedShortType, ? extends VolatileShortAccess > ) storageFactory.createShortInstance( dim, new Fraction() );
+		final NativeImg< VolatileUnsignedLongType, ? extends VolatileLongAccess > container = ( NativeImg< VolatileUnsignedLongType, ? extends VolatileLongAccess > ) storageFactory.createLongInstance( dim, new Fraction() );
 
 		// create a Type that is linked to the container
-		final VolatileUnsignedShortType linkedType = new VolatileUnsignedShortType( container );
+		final VolatileUnsignedLongType linkedType = new VolatileUnsignedLongType( container );
 
 		// pass it to the NativeContainer
 		container.setLinkedType( linkedType );
@@ -124,21 +123,21 @@ public class VolatileUnsignedShortType extends AbstractVolatileNativeRealType< U
 	}
 
 	@Override
-	public VolatileUnsignedShortType duplicateTypeOnSameNativeImg()
+	public VolatileUnsignedLongType duplicateTypeOnSameNativeImg()
 	{
-		return new VolatileUnsignedShortType( img );
+		return new VolatileUnsignedLongType( img );
 	}
 
 	@Override
-	public VolatileUnsignedShortType createVariable()
+	public VolatileUnsignedLongType createVariable()
 	{
-		return new VolatileUnsignedShortType();
+		return new VolatileUnsignedLongType();
 	}
 
 	@Override
-	public VolatileUnsignedShortType copy()
+	public VolatileUnsignedLongType copy()
 	{
-		final VolatileUnsignedShortType v = createVariable();
+		final VolatileUnsignedLongType v = createVariable();
 		v.set( this );
 		return v;
 	}

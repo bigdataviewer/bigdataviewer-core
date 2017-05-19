@@ -38,12 +38,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
+import bdv.cache.CacheControl;
+import bdv.img.cache.VolatileCachedCellImg;
+import bdv.viewer.Interpolation;
+import bdv.viewer.Source;
+import bdv.viewer.render.MipmapOrdering.Level;
+import bdv.viewer.render.MipmapOrdering.MipmapHints;
+import bdv.viewer.state.SourceState;
+import bdv.viewer.state.ViewerState;
 import net.imglib2.Dimensions;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.Volatile;
+import net.imglib2.cache.iotiming.CacheIoTiming;
+import net.imglib2.cache.volatiles.CacheHints;
+import net.imglib2.cache.volatiles.LoadingStrategy;
 import net.imglib2.converter.Converter;
 import net.imglib2.display.screenimage.awt.ARGBScreenImage;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -55,15 +66,6 @@ import net.imglib2.ui.Renderer;
 import net.imglib2.ui.SimpleInterruptibleProjector;
 import net.imglib2.ui.TransformListener;
 import net.imglib2.ui.util.GuiUtil;
-import bdv.cache.CacheControl;
-import bdv.cache.LoadingStrategy;
-import bdv.img.cache.CachedCellImg;
-import bdv.viewer.Interpolation;
-import bdv.viewer.Source;
-import bdv.viewer.render.MipmapOrdering.Level;
-import bdv.viewer.render.MipmapOrdering.MipmapHints;
-import bdv.viewer.state.SourceState;
-import bdv.viewer.state.ViewerState;
 
 /**
  * A {@link Renderer} that uses a coarse-to-fine rendering scheme. First, a
@@ -550,7 +552,10 @@ public class MultiResolutionRenderer
 						Thread.sleep( 1 );
 					}
 					catch ( final InterruptedException e )
-					{}
+					{
+						// restore interrupted state
+						Thread.currentThread().interrupt();
+					}
 					requestRepaint( currentScreenScaleIndex );
 				}
 			}
@@ -614,7 +619,11 @@ public class MultiResolutionRenderer
 			final int screenScaleIndex,
 			final ARGBScreenImage screenImage )
 	{
-		cacheControl.initIoTimeBudget( null ); // clear time budget such that prefetching doesn't wait for loading blocks.
+		/*
+		 * This shouldn't be necessary, with
+		 * CacheHints.LoadingStrategy==VOLATILE
+		 */
+//		CacheIoTiming.getIoTimeBudget().clear(); // clear time budget such that prefetching doesn't wait for loading blocks.
 		final List< SourceState< ? > > sourceStates = viewerState.getSources();
 		final List< Integer > visibleSourceIndices = viewerState.getVisibleSourceIndices();
 		VolatileProjector projector;
@@ -647,7 +656,7 @@ public class MultiResolutionRenderer
 		}
 		previousTimepoint = viewerState.getCurrentTimepoint();
 		viewerState.getViewerTransform( currentProjectorTransform );
-		cacheControl.initIoTimeBudget( iobudget );
+		CacheIoTiming.getIoTimeBudget().reset( iobudget );
 		return projector;
 	}
 
@@ -659,9 +668,10 @@ public class MultiResolutionRenderer
 				final RandomAccessible< A > source,
 				final Converter< ? super A, B > converter,
 				final RandomAccessibleInterval< B > target,
-				final int numThreads )
+				final int numThreads,
+				final ExecutorService executorService )
 		{
-			super( source, converter, target, numThreads );
+			super( source, converter, target, numThreads, executorService );
 		}
 
 		@Override
@@ -687,18 +697,23 @@ public class MultiResolutionRenderer
 			final ARGBScreenImage screenImage,
 			final byte[] maskArray )
 	{
-		if ( useVolatileIfAvailable && source.asVolatile() != null )
+		if ( useVolatileIfAvailable )
 		{
-			return createSingleSourceVolatileProjector( viewerState, source.asVolatile(), sourceIndex, screenScaleIndex, screenImage, maskArray );
+			if ( source.asVolatile() != null )
+				return createSingleSourceVolatileProjector( viewerState, source.asVolatile(), sourceIndex, screenScaleIndex, screenImage, maskArray );
+			else if ( source.getSpimSource().getType() instanceof Volatile )
+			{
+				@SuppressWarnings( "unchecked" )
+				final SourceState< ? extends Volatile< ? > > vsource = ( SourceState< ? extends Volatile< ? > > ) source;
+				return createSingleSourceVolatileProjector( viewerState, vsource, sourceIndex, screenScaleIndex, screenImage, maskArray );
+			}
 		}
-		else
-		{
-			final AffineTransform3D screenScaleTransform = screenScaleTransforms[ currentScreenScaleIndex ];
-			final int bestLevel = viewerState.getBestMipMapLevel( screenScaleTransform, sourceIndex );
-			return new SimpleVolatileProjector<>(
-					getTransformedSource( viewerState, source.getSpimSource(), screenScaleTransform, bestLevel ),
-					source.getConverter(), screenImage, numRenderingThreads );
-		}
+
+		final AffineTransform3D screenScaleTransform = screenScaleTransforms[ currentScreenScaleIndex ];
+		final int bestLevel = viewerState.getBestMipMapLevel( screenScaleTransform, sourceIndex );
+		return new SimpleVolatileProjector<>(
+				getTransformedSource( viewerState, source.getSpimSource(), screenScaleTransform, bestLevel, null ),
+				source.getConverter(), screenImage, numRenderingThreads, renderingExecutorService );
 	}
 
 	private < T extends Volatile< ? > > VolatileProjector createSingleSourceVolatileProjector(
@@ -717,48 +732,48 @@ public class MultiResolutionRenderer
 		final MipmapOrdering ordering = MipmapOrdering.class.isInstance( spimSource ) ?
 			( MipmapOrdering ) spimSource : new DefaultMipmapOrdering( spimSource );
 
-		final SetCacheHints sls = SetCacheHints.class.isInstance( spimSource ) ?
-				( SetCacheHints ) spimSource : SetCacheHints.empty;
+		final AffineTransform3D screenTransform = new AffineTransform3D();
+		viewerState.getViewerTransform( screenTransform );
+		screenTransform.preConcatenate( screenScaleTransform );
+		final MipmapHints hints = ordering.getMipmapHints( screenTransform, t, previousTimepoint );
+		final List< Level > levels = hints.getLevels();
 
-		if ( ordering != null )
+		if ( prefetchCells )
 		{
-			final AffineTransform3D screenTransform = new AffineTransform3D();
-			viewerState.getViewerTransform( screenTransform );
-			screenTransform.preConcatenate( screenScaleTransform );
-			final MipmapHints hints = ordering.getMipmapHints( screenTransform, t, previousTimepoint );
-			final List< Level > levels = hints.getLevels();
-
-			if ( prefetchCells )
-			{
-				Collections.sort( levels, MipmapOrdering.prefetchOrderComparator );
-				for ( final Level l : levels )
-				{
-					if ( l.getPrefetchCacheHints() == null || l.getPrefetchCacheHints().getLoadingStrategy() != LoadingStrategy.DONTLOAD )
-					{
-						sls.setCacheHints( l.getMipmapLevel(), l.getPrefetchCacheHints() );
-						prefetch( viewerState, spimSource, screenScaleTransform, l.getMipmapLevel(), screenImage );
-					}
-				}
-			}
-
-			Collections.sort( levels, MipmapOrdering.renderOrderComparator );
+			Collections.sort( levels, MipmapOrdering.prefetchOrderComparator );
 			for ( final Level l : levels )
 			{
-				sls.setCacheHints( l.getMipmapLevel(), l.getRenderCacheHints() );
-				renderList.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, l.getMipmapLevel() ) );
+				final CacheHints cacheHints = l.getPrefetchCacheHints();
+				if ( cacheHints == null || cacheHints.getLoadingStrategy() != LoadingStrategy.DONTLOAD )
+					prefetch( viewerState, spimSource, screenScaleTransform, l.getMipmapLevel(), cacheHints, screenImage );
 			}
-
-			if ( hints.renewHintsAfterPaintingOnce() )
-				newFrameRequest = true;
 		}
-		return new VolatileHierarchyProjector<>( renderList, source.getConverter(), screenImage, maskArray, numRenderingThreads, renderingExecutorService, cacheControl.getCacheIoTiming() );
+
+		Collections.sort( levels, MipmapOrdering.renderOrderComparator );
+		for ( final Level l : levels )
+			renderList.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, l.getMipmapLevel(), l.getRenderCacheHints() ) );
+
+		if ( hints.renewHintsAfterPaintingOnce() )
+			newFrameRequest = true;
+
+		return new VolatileHierarchyProjector<>( renderList, source.getConverter(), screenImage, maskArray, numRenderingThreads, renderingExecutorService );
 	}
 
-	private static < T > RandomAccessible< T > getTransformedSource( final ViewerState viewerState, final Source< T > source, final AffineTransform3D screenScaleTransform, final int mipmapIndex )
+	private static < T > RandomAccessible< T > getTransformedSource(
+			final ViewerState viewerState,
+			final Source< T > source,
+			final AffineTransform3D screenScaleTransform,
+			final int mipmapIndex,
+			final CacheHints cacheHints )
 	{
 		final int timepoint = viewerState.getCurrentTimepoint();
+
+		final RandomAccessibleInterval< T > img = source.getSource( timepoint, mipmapIndex );
+		if ( VolatileCachedCellImg.class.isInstance( img ) )
+			( ( VolatileCachedCellImg< ?, ? > ) img ).setCacheHints( cacheHints );
+
 		final Interpolation interpolation = viewerState.getInterpolation();
-		final RealRandomAccessible< T > img = source.getInterpolatedSource( timepoint, mipmapIndex, interpolation );
+		final RealRandomAccessible< T > ipimg = source.getInterpolatedSource( timepoint, mipmapIndex, interpolation );
 
 		final AffineTransform3D sourceToScreen = new AffineTransform3D();
 		viewerState.getViewerTransform( sourceToScreen );
@@ -767,7 +782,7 @@ public class MultiResolutionRenderer
 		sourceToScreen.concatenate( sourceTransform );
 		sourceToScreen.preConcatenate( screenScaleTransform );
 
-		return RealViews.affine( img, sourceToScreen );
+		return RealViews.affine( ipimg, sourceToScreen );
 	}
 
 	private static < T > void prefetch(
@@ -775,15 +790,24 @@ public class MultiResolutionRenderer
 			final Source< T > source,
 			final AffineTransform3D screenScaleTransform,
 			final int mipmapIndex,
+			final CacheHints prefetchCacheHints,
 			final Dimensions screenInterval )
 	{
 		final int timepoint = viewerState.getCurrentTimepoint();
 		final RandomAccessibleInterval< T > img = source.getSource( timepoint, mipmapIndex );
-		if ( CachedCellImg.class.isInstance( img ) )
+		if ( VolatileCachedCellImg.class.isInstance( img ) )
 		{
-			final CachedCellImg< ?, ? > cellImg = (bdv.img.cache.CachedCellImg< ?, ? > ) img;
+			final VolatileCachedCellImg< ?, ? > cellImg = ( VolatileCachedCellImg< ?, ? > ) img;
+
+			CacheHints hints = prefetchCacheHints;
+			if ( hints == null )
+			{
+				final CacheHints d = cellImg.getDefaultCacheHints();
+				hints = new CacheHints( LoadingStrategy.VOLATILE, d.getQueuePriority(), false );
+			}
+			cellImg.setCacheHints( hints );
 			final int[] cellDimensions = new int[ 3 ];
-			cellImg.getCells().cellDimensions( cellDimensions );
+			cellImg.getCellGrid().cellDimensions( cellDimensions );
 			final long[] dimensions = new long[ 3 ];
 			cellImg.dimensions( dimensions );
 			final RandomAccess< ? > cellsRandomAccess = cellImg.getCells().randomAccess();

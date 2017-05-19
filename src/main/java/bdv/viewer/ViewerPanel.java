@@ -58,6 +58,8 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.swing.Action;
 import javax.swing.ActionMap;
@@ -168,6 +170,13 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	protected final InteractiveDisplayCanvasComponent< AffineTransform3D > display;
 
 	protected final JSlider sliderTime;
+
+	/**
+	 * A {@link ThreadGroup} for (only) the threads used by this
+	 * {@link ViewerPanel}, that is, {@link #painterThread} and
+	 * {@link #renderingExecutorService}.
+	 */
+	protected ThreadGroup threadGroup;
 
 	/**
 	 * Thread that triggers repainting of the display.
@@ -287,12 +296,15 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		sourceInfoOverlayRenderer = new SourceInfoOverlayRenderer();
 		scaleBarOverlayRenderer = Prefs.showScaleBar() ? new ScaleBarOverlayRenderer() : null;
 
-		painterThread = new PainterThread( this );
+		threadGroup = new ThreadGroup( this.toString() );
+		painterThread = new PainterThread( threadGroup, this );
 		viewerTransform = new AffineTransform3D();
 		renderTarget = new TransformAwareBufferedImageOverlayRenderer();
 		renderTarget.setCanvasSize( options.getWidth(), options.getHeight() );
 
-		renderingExecutorService = Executors.newFixedThreadPool( options.getNumRenderingThreads() );
+		renderingExecutorService = Executors.newFixedThreadPool(
+				options.getNumRenderingThreads(),
+				new RenderThreadFactory() );
 		imageRenderer = new MultiResolutionRenderer(
 				renderTarget, painterThread,
 				options.getScreenScales(),
@@ -436,8 +448,10 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 					setTimepoint( sliderTime.getValue() );
 			}
 		} );
-		if(numTimepoints > 1)
-			add(sliderPanel, BorderLayout.SOUTH);
+
+		add( display, BorderLayout.CENTER );
+		if ( numTimepoints > 1 )
+			add( sliderTime, BorderLayout.SOUTH );
 
 		visibilityAndGrouping = new VisibilityAndGrouping( state );
 		visibilityAndGrouping.addUpdateListener( this );
@@ -452,8 +466,16 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		overlayAnimators.add( msgOverlay );
 		overlayAnimators.add( new TextOverlayAnimator( "Press <F1> for help.", 3000, TextPosition.CENTER ) );
 
-		setKeyframeButtonEnable(false);
-		
+		display.addComponentListener( new ComponentAdapter()
+		{
+			@Override
+			public void componentResized( final ComponentEvent e )
+			{
+				requestRepaint();
+				display.removeComponentListener( this );
+			}
+		} );
+
 		painterThread.start();
 	}
 	
@@ -1226,8 +1248,40 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	public void stop()
 	{
 		painterThread.interrupt();
+		try
+		{
+			painterThread.join( 0 );
+		}
+		catch ( final InterruptedException e )
+		{
+			e.printStackTrace();
+		}
 		renderingExecutorService.shutdown();
 		state.kill();
 		imageRenderer.kill();
+	}
+
+	protected static final AtomicInteger panelNumber = new AtomicInteger( 1 );
+
+	protected class RenderThreadFactory implements ThreadFactory
+	{
+		private final String threadNameFormat = String.format(
+				"bdv-panel-%d-thread-%%d",
+				panelNumber.getAndIncrement() );
+
+		private final AtomicInteger threadNumber = new AtomicInteger( 1 );
+
+		@Override
+		public Thread newThread( final Runnable r )
+		{
+			final Thread t = new Thread( threadGroup, r,
+					String.format( threadNameFormat, threadNumber.getAndIncrement() ),
+					0 );
+			if ( t.isDaemon() )
+				t.setDaemon( false );
+			if ( t.getPriority() != Thread.NORM_PRIORITY )
+				t.setPriority( Thread.NORM_PRIORITY );
+			return t;
+		}
 	}
 }

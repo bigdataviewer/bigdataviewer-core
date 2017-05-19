@@ -38,12 +38,8 @@ import com.google.gson.GsonBuilder;
 
 import bdv.AbstractViewerSetupImgLoader;
 import bdv.ViewerImgLoader;
-import bdv.cache.CacheHints;
-import bdv.cache.LoadingStrategy;
-import bdv.img.cache.CachedCellImg;
+import bdv.img.cache.VolatileCachedCellImg;
 import bdv.img.cache.VolatileGlobalCellCache;
-import bdv.img.cache.VolatileImgCells;
-import bdv.img.cache.VolatileImgCells.CellCache;
 import bdv.img.hdf5.DimsAndExistence;
 import bdv.img.hdf5.MipmapInfo;
 import bdv.img.hdf5.ViewLevelId;
@@ -51,13 +47,13 @@ import bdv.util.ConstantRandomAccessible;
 import mpicbg.spim.data.generic.sequence.ImgLoaderHint;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.NativeImg;
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
+import net.imglib2.cache.volatiles.CacheHints;
+import net.imglib2.cache.volatiles.LoadingStrategy;
+import net.imglib2.img.cell.CellGrid;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.volatiles.VolatileUnsignedShortType;
-import net.imglib2.util.Fraction;
 import net.imglib2.util.IntervalIndexer;
 import net.imglib2.view.Views;
 
@@ -190,15 +186,27 @@ public class RemoteImageLoader implements ViewerImgLoader
 	}
 
 	/**
-	 * (Almost) create a {@link CachedCellImg} backed by the cache.
-	 * The created image needs a {@link NativeImg#setLinkedType(net.imglib2.type.Type) linked type} before it can be used.
-	 * The type should be either {@link UnsignedShortType} and {@link VolatileUnsignedShortType}.
+	 * Create a {@link VolatileCachedCellImg} backed by the cache. The
+	 * {@code type} should be either {@link UnsignedShortType} and
+	 * {@link VolatileUnsignedShortType}.
 	 */
-	protected < T extends NativeType< T > > CachedCellImg< T, VolatileShortArray > prepareCachedImage( final ViewLevelId id, final LoadingStrategy loadingStrategy )
+	protected < T extends NativeType< T > > RandomAccessibleInterval< T > prepareCachedImage(
+			final ViewLevelId id,
+			final LoadingStrategy loadingStrategy,
+			final T type )
 	{
 		tryopen();
 		if ( cache == null )
 			throw new RuntimeException( "no connection open" );
+
+//		final ViewLevelId id = new ViewLevelId( timepointId, setupId, level );
+		if ( ! existsImageData( id ) )
+		{
+			System.err.println(	String.format(
+					"image data for timepoint %d setup %d level %d could not be found.",
+					id.getTimePointId(), id.getViewSetupId(), id.getLevel() ) );
+			return getMissingDataImage( id, type );
+		}
 
 		final int timepointId = id.getTimePointId();
 		final int setupId = id.getViewSetupId();
@@ -207,13 +215,11 @@ public class RemoteImageLoader implements ViewerImgLoader
 
 		final long[] dimensions = metadata.dimsAndExistence.get( id ).getDimensions();
 		final int[] cellDimensions = mipmapInfo.getSubdivisions()[ level ];
+		final CellGrid grid = new CellGrid( dimensions, cellDimensions );
 
 		final int priority = mipmapInfo.getMaxLevel() - level;
 		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
-		final CellCache< VolatileShortArray > c = cache.new VolatileCellCache<>( timepointId, setupId, level, cacheHints, shortLoader );
-		final VolatileImgCells< VolatileShortArray > cells = new VolatileImgCells<>( c, new Fraction(), dimensions, cellDimensions );
-		final CachedCellImg< T, VolatileShortArray > img = new CachedCellImg<>( cells );
-		return img;
+		return cache.createImg( grid, timepointId, setupId, level, cacheHints, shortLoader, type );
 	}
 
 	public class SetupImgLoader extends AbstractViewerSetupImgLoader< UnsignedShortType, VolatileUnsignedShortType >
@@ -230,36 +236,14 @@ public class RemoteImageLoader implements ViewerImgLoader
 		public RandomAccessibleInterval< UnsignedShortType > getImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 		{
 			final ViewLevelId id = new ViewLevelId( timepointId, setupId, level );
-			if ( ! existsImageData( id ) )
-			{
-				System.err.println(	String.format(
-						"image data for timepoint %d setup %d level %d could not be found.",
-						id.getTimePointId(), id.getViewSetupId(), id.getLevel() ) );
-				return getMissingDataImage( id, new UnsignedShortType() );
-			}
-			final CachedCellImg< UnsignedShortType, VolatileShortArray >  img = prepareCachedImage( id, LoadingStrategy.BLOCKING );
-			final UnsignedShortType linkedType = new UnsignedShortType( img );
-			img.setLinkedType( linkedType );
-			return img;
+			return prepareCachedImage( id, LoadingStrategy.BLOCKING, type );
 		}
-
-
 
 		@Override
 		public RandomAccessibleInterval< VolatileUnsignedShortType > getVolatileImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 		{
 			final ViewLevelId id = new ViewLevelId( timepointId, setupId, level );
-			if ( ! existsImageData( id ) )
-			{
-				System.err.println(	String.format(
-						"image data for timepoint %d setup %d level %d could not be found.?",
-						id.getTimePointId(), id.getViewSetupId(), id.getLevel() ) );
-				return getMissingDataImage( id, new VolatileUnsignedShortType() );
-			}
-			final CachedCellImg< VolatileUnsignedShortType, VolatileShortArray >  img = prepareCachedImage( id, LoadingStrategy.BUDGETED );
-			final VolatileUnsignedShortType linkedType = new VolatileUnsignedShortType( img );
-			img.setLinkedType( linkedType );
-			return img;
+			return prepareCachedImage( id, LoadingStrategy.BUDGETED, volatileType );
 		}
 
 		@Override

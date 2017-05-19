@@ -29,6 +29,9 @@
  */
 package bdv.viewer;
 
+import java.awt.event.KeyListener;
+
+import org.scijava.ui.behaviour.KeyPressedManager;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 
 import bdv.BehaviourTransformEventHandler3D;
@@ -186,6 +189,25 @@ public class ViewerOptions
 	}
 
 	/**
+	 * Set the {@link KeyPressedManager} to share
+	 * {@link KeyListener#keyPressed(java.awt.event.KeyEvent)} events with other
+	 * ui-behaviour windows.
+	 * <p>
+	 * The goal is to make keyboard click/drag behaviours work like mouse
+	 * click/drag: When a behaviour is initiated with a key press, the window
+	 * under the mouse receives focus and the behaviour is handled there.
+	 * </p>
+	 *
+	 * @param manager
+	 * @return
+	 */
+	public ViewerOptions shareKeyPressedEvents( final KeyPressedManager manager )
+	{
+		values.keyPressedManager = manager;
+		return this;
+	}
+
+	/**
 	 * Read-only {@link ViewerOptions} values.
 	 */
 	public static class Values
@@ -211,6 +233,8 @@ public class ViewerOptions
 		private AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory = AccumulateProjectorARGB.factory;
 
 		private InputTriggerConfig inputTriggerConfig = null;
+
+		private KeyPressedManager keyPressedManager = null;
 
 		public ViewerOptions optionsFromValues()
 		{
@@ -281,6 +305,11 @@ public class ViewerOptions
 		public InputTriggerConfig getInputTriggerConfig()
 		{
 			return inputTriggerConfig;
+		}
+
+		public KeyPressedManager getKeyPressedManager()
+		{
+			return keyPressedManager;
 		}
 	}
 }

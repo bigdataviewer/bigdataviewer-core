@@ -3,23 +3,130 @@
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
-		<groupId>sc.fiji</groupId>
-		<artifactId>pom-bigdataviewer</artifactId>
-		<version>4.0.1</version>
+		<groupId>org.scijava</groupId>
+		<artifactId>pom-scijava</artifactId>
+		<version>14.0.0</version>
+		<relativePath />
 	</parent>
 
+	<groupId>sc.fiji</groupId>
 	<artifactId>bigdataviewer-core</artifactId>
-	<version>3.0.1-SNAPSHOT</version>
-	<url>http://github.com/bigdataviewer/bigdataviewer-core</url>
-	<inceptionYear>2012</inceptionYear>
+	<version>4.1.1-SNAPSHOT</version>
 
 	<name>BigDataViewer Core</name>
-	<description>BigDataViewer core classes with minimal dependencies</description>
+	<description>BigDataViewer core classes with minimal dependencies.</description>
+	<url>https://github.com/bigdataviewer/bigdataviewer-core</url>
+	<inceptionYear>2012</inceptionYear>
+	<organization>
+		<name>BigDataViewer</name>
+		<url>https://imagej.net/BigDataViewer</url>
+	</organization>
+	<licenses>
+		<license>
+			<name>Simplified BSD License</name>
+			<url>https://opensource.org/licenses/BSD-2-Clause</url>
+			<distribution>repo</distribution>
+		</license>
+	</licenses>
+
+	<developers>
+		<developer>
+			<id>tpietzsch</id>
+			<name>Tobias Pietzsch</name>
+			<url>https://imagej.net/User:Pietzsch</url>
+			<roles>
+				<role>founder</role>
+				<role>lead</role>
+				<role>developer</role>
+				<role>debugger</role>
+				<role>reviewer</role>
+				<role>support</role>
+				<role>maintainer</role>
+			</roles>
+		</developer>
+		<developer>
+			<id>ctrueden</id>
+			<name>Curtis Rueden</name>
+			<url>https://imagej.net/User:Rueden</url>
+			<roles>
+				<role>maintainer</role>
+			</roles>
+		</developer>
+	</developers>
+	<contributors>
+		<contributor>
+			<name>John Bogovic</name>
+			<url>https://imagej.net/User:Bogovic</url>
+			<properties><id>bogovicj</id></properties>
+		</contributor>
+		<contributor>
+			<name>HongKee Moon</name>
+			<url>https://imagej.net/User:Moon</url>
+			<properties><id>hkmoon</id></properties>
+		</contributor>
+		<contributor>
+			<name>Stephan Preibisch</name>
+			<url>https://imagej.net/User:StephanP</url>
+			<properties><id>StephanPreibisch</id></properties>
+		</contributor>
+		<contributor>
+			<name>Stephan Saalfeld</name>
+			<url>https://imagej.net/User:Saalfeld</url>
+			<properties><id>axtimwalde</id></properties>
+		</contributor>
+		<contributor>
+			<name>Johannes Schindelin</name>
+			<url>https://imagej.net/User:Schindelin</url>
+			<properties><id>dscho</id></properties>
+		</contributor>
+		<contributor>
+			<name>Jean-Yves Tinevez</name>
+			<url>https://imagej.net/User:JeanYvesTinevez</url>
+			<properties><id>tinevez</id></properties>
+		</contributor>
+	</contributors>
+
+	<mailingLists>
+		<mailingList>
+			<name>ImageJ Forum</name>
+			<archive>http://forum.imagej.net/</archive>
+		</mailingList>
+	</mailingLists>
+
+	<scm>
+		<connection>scm:git:git://github.com/bigdataviewer/bigdataviewer-core</connection>
+		<developerConnection>scm:git:git@github.com:bigdataviewer/bigdataviewer-core</developerConnection>
+		<tag>HEAD</tag>
+		<url>https://github.com/bigdataviewer/bigdataviewer-core</url>
+	</scm>
+	<issueManagement>
+		<system>GitHub Issues</system>
+		<url>https://github.com/bigdataviewer/bigdataviewer-core/issues</url>
+	</issueManagement>
+	<ciManagement>
+		<system>Travis CI</system>
+		<url>https://travis-ci.org/bigdataviewer/bigdataviewer-core</url>
+	</ciManagement>
+
+	<properties>
+		<package-name>bdv</package-name>
+		<license.licenseName>bsd_2</license.licenseName>
+		<license.copyrightOwners>BigDataViewer developers.</license.copyrightOwners>
+		<enforcer.skip>true</enforcer.skip>
+	</properties>
+
+	<repositories>
+		<repository>
+			<id>imagej.public</id>
+			<url>https://maven.imagej.net/content/groups/public</url>
+		</repository>
+	</repositories>
 
 	<dependencies>
 		<dependency>
 			<groupId>net.imglib2</groupId>
 			<artifactId>imglib2</artifactId>
+			<version>4.2.0</version>
 		</dependency>
 		<dependency>
 			<groupId>net.imglib2</groupId>
@@ -27,7 +134,13 @@
 		</dependency>
 		<dependency>
 			<groupId>net.imglib2</groupId>
+			<artifactId>imglib2-cache</artifactId>
+			<version>1.0.0-beta-5</version>
+		</dependency>
+		<dependency>
+			<groupId>net.imglib2</groupId>
 			<artifactId>imglib2-ui</artifactId>
+			<version>2.0.0-beta-32</version>
 		</dependency>
 		<dependency>
 			<groupId>net.imglib2</groupId>
@@ -52,74 +165,7 @@
 		<dependency>
 			<groupId>org.scijava</groupId>
 			<artifactId>ui-behaviour</artifactId>
+			<version>1.3.0</version>
 		</dependency>
 	</dependencies>
-
-	<developers>
-		<developer>
-			<id>tpietzsch</id>
-			<name>Tobias Pietzsch</name>
-			<email>pietzsch@mpi-cbg.de</email>
-			<url />
-			<organization>MPI-CBG</organization>
-			<organizationUrl>http://www.mpi-cbg.de/</organizationUrl>
-			<roles>
-				<role>architect</role>
-				<role>developer</role>
-			</roles>
-			<timezone>+1</timezone>
-		</developer>
-	</developers>
-
-	<repositories>
-		<repository>
-			<id>imagej.public</id>
-			<url>http://maven.imagej.net/content/groups/public</url>
-		</repository>
-	</repositories>
-
-	<scm>
-		<connection>scm:git:git://github.com/bigdataviewer/bigdataviewer-core</connection>
-		<developerConnection>scm:git:git@github.com:bigdataviewer/bigdataviewer-core</developerConnection>
-		<tag>HEAD</tag>
-		<url>https://github.com/bigdataviewer/bigdataviewer-core</url>
-	</scm>
-	<ciManagement>
-		<system>Jenkins</system>
-		<url>http://jenkins.imagej.net/job/BigDataViewer-Core/</url>
-	</ciManagement>
-
-	<licenses>
-		<license>
-			<name>BSD 2-Clause License</name>
-			<url>http://opensource.org/licenses/BSD-2-Clause</url>
-			<distribution>repo</distribution>
-		</license>
-	</licenses>
-	<build>
-		<plugins>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>license-maven-plugin</artifactId>
-				<configuration>
-					<licenseName>bsd_2</licenseName>
-					<copyrightOwners>Tobias Pietzsch, Stephan Saalfeld, Stephan Preibisch,
-Jean-Yves Tinevez, HongKee Moon, Johannes Schindelin, Curtis Rueden, John Bogovic</copyrightOwners>
-					<organizationName>BigDataViewer authors</organizationName>
-					<projectName>BigDataViewer core classes with minimal dependencies</projectName>
-					<roots>
-						<root>src/main/java</root>
-						<root>src/test/java</root>
-					</roots>
-				</configuration>
-			</plugin>
-			<plugin>
-				<artifactId>maven-compiler-plugin</artifactId>
-				<configuration>
-					<source>1.8</source>
-					<target>1.8</target>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
 </project>

@@ -43,12 +43,7 @@ import java.util.concurrent.Executors;
 
 import bdv.AbstractViewerSetupImgLoader;
 import bdv.ViewerImgLoader;
-import bdv.cache.CacheHints;
-import bdv.cache.LoadingStrategy;
-import bdv.img.cache.CachedCellImg;
 import bdv.img.cache.VolatileGlobalCellCache;
-import bdv.img.cache.VolatileImgCells;
-import bdv.img.cache.VolatileImgCells.CellCache;
 import bdv.util.ConstantRandomAccessible;
 import bdv.util.MipmapTransforms;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
@@ -71,22 +66,25 @@ import net.imglib2.FinalInterval;
 import net.imglib2.IterableInterval;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.cache.queue.BlockingFetchQueues;
+import net.imglib2.cache.queue.FetcherThreads;
+import net.imglib2.cache.volatiles.CacheHints;
+import net.imglib2.cache.volatiles.LoadingStrategy;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.NativeImg;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.ShortArray;
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
+import net.imglib2.img.cell.Cell;
+import net.imglib2.img.cell.CellGrid;
 import net.imglib2.img.cell.CellImg;
 import net.imglib2.img.cell.CellImgFactory;
-import net.imglib2.img.cell.DefaultCell;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.type.volatiles.VolatileUnsignedShortType;
-import net.imglib2.util.Fraction;
 import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
 
@@ -107,6 +105,8 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 	protected IHDF5Access hdf5Access;
 
 	protected VolatileGlobalCellCache cache;
+
+	protected FetcherThreads fetchers;
 
 	protected Hdf5VolatileShortArrayLoader shortLoader;
 
@@ -210,7 +210,11 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 					hdf5Access = new HDF5Access( hdf5Reader );
 				}
 				shortLoader = new Hdf5VolatileShortArrayLoader( hdf5Access );
-				cache = new VolatileGlobalCellCache( maxNumLevels, 1 );
+
+
+				final BlockingFetchQueues< Callable< ? > > queue = new BlockingFetchQueues<>( maxNumLevels );
+				fetchers = new FetcherThreads( queue, 1 );
+				cache = new VolatileGlobalCellCache( queue );
 			}
 		}
 	}
@@ -316,7 +320,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 			// getImageDimension() because this happens when a timepoint is
 			// loaded, and all setups for the timepoint are loaded then. We
 			// don't want to interleave this with block loading operations.
-			cache.pauseFetcherThreadsFor( 5 );
+			fetchers.pauseFor( 5 );
 			dims = hdf5Access.getDimsAndExistence( id );
 			cachedDimsAndExistence.put( id, dims );
 		}
@@ -406,6 +410,16 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 		private RandomAccessibleInterval< UnsignedShortType > loadImageCompletely( final int timepointId, final int level )
 		{
 			open();
+
+			final ViewLevelId id = new ViewLevelId( timepointId, setupId, level );
+			if ( ! existsImageData( id ) )
+			{
+				System.err.println(	String.format(
+						"image data for timepoint %d setup %d level %d could not be found. Partition file missing?",
+						id.getTimePointId(), id.getViewSetupId(), id.getLevel() ) );
+				return getMissingDataImage( id, type );
+			}
+
 			Img< UnsignedShortType > img = null;
 			final DimsAndExistence dimsAndExistence = getDimsAndExistence( new ViewLevelId( timepointId, setupId, level ) );
 			final long[] dimsLong = dimsAndExistence.exists() ? dimsAndExistence.getDimensions() : null;
@@ -433,12 +447,11 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 						mipmapInfo.getSubdivisions()[ level ] );
 				final CellImgFactory< UnsignedShortType > factory = new CellImgFactory<>( cellDimensions );
 				@SuppressWarnings( "unchecked" )
-				final CellImg< UnsignedShortType, ShortArray, DefaultCell< ShortArray > > cellImg =
-					( CellImg< UnsignedShortType, ShortArray, DefaultCell< ShortArray > > ) factory.create( dimsLong, new UnsignedShortType() );
-				final Cursor< DefaultCell< ShortArray > > cursor = cellImg.getCells().cursor();
+				final CellImg< UnsignedShortType, ShortArray > cellImg = ( CellImg< UnsignedShortType, ShortArray > ) factory.create( dimsLong, type );
+				final Cursor< Cell< ShortArray > > cursor = cellImg.getCells().cursor();
 				while ( cursor.hasNext() )
 				{
-					final DefaultCell< ShortArray > cell = cursor.next();
+					final Cell< ShortArray > cell = cursor.next();
 					final short[] dataBlock = cell.getData().getCurrentStorageArray();
 					cell.dimensions( dimsInt );
 					cell.min( min );
@@ -488,39 +501,16 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 		@Override
 		public RandomAccessibleInterval< UnsignedShortType > getImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 		{
-			final ViewLevelId id = new ViewLevelId( timepointId, setupId, level );
-			if ( ! existsImageData( id ) )
-			{
-				System.err.println(	String.format(
-						"image data for timepoint %d setup %d level %d could not be found. Partition file missing?",
-						id.getTimePointId(), id.getViewSetupId(), id.getLevel() ) );
-				return getMissingDataImage( id, new UnsignedShortType() );
-			}
-
 			if ( Arrays.asList( hints ).contains( ImgLoaderHints.LOAD_COMPLETELY ) )
 				return loadImageCompletely( timepointId, level );
 
-			final CachedCellImg< UnsignedShortType, VolatileShortArray >  img = prepareCachedImage( id, LoadingStrategy.BLOCKING );
-			final UnsignedShortType linkedType = new UnsignedShortType( img );
-			img.setLinkedType( linkedType );
-			return img;
+			return prepareCachedImage( timepointId, level, LoadingStrategy.BLOCKING, type );
 		}
 
 		@Override
 		public RandomAccessibleInterval< VolatileUnsignedShortType > getVolatileImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 		{
-			final ViewLevelId id = new ViewLevelId( timepointId, setupId, level );
-			if ( ! existsImageData( id ) )
-			{
-				System.err.println(	String.format(
-						"image data for timepoint %d setup %d level %d could not be found. Partition file missing?",
-						id.getTimePointId(), id.getViewSetupId(), id.getLevel() ) );
-				return getMissingDataImage( id, new VolatileUnsignedShortType() );
-			}
-			final CachedCellImg< VolatileUnsignedShortType, VolatileShortArray >  img = prepareCachedImage( id, LoadingStrategy.BUDGETED );
-			final VolatileUnsignedShortType linkedType = new VolatileUnsignedShortType( img );
-			img.setLinkedType( linkedType );
-			return img;
+			return prepareCachedImage( timepointId, level, LoadingStrategy.BUDGETED, volatileType );
 		}
 
 		/**
@@ -528,21 +518,27 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 		 * The created image needs a {@link NativeImg#setLinkedType(net.imglib2.type.Type) linked type} before it can be used.
 		 * The type should be either {@link UnsignedShortType} and {@link VolatileUnsignedShortType}.
 		 */
-		protected < T extends NativeType< T > > CachedCellImg< T, VolatileShortArray > prepareCachedImage( final ViewLevelId id, final LoadingStrategy loadingStrategy )
+		protected < T extends NativeType< T > > RandomAccessibleInterval< T > prepareCachedImage( final int timepointId, final int level, final LoadingStrategy loadingStrategy, final T type )
 		{
 			open();
-			final int timepointId = id.getTimePointId();
-			final int level = id.getLevel();
+
+			final ViewLevelId id = new ViewLevelId( timepointId, setupId, level );
+			if ( ! existsImageData( id ) )
+			{
+				System.err.println(	String.format(
+						"image data for timepoint %d setup %d level %d could not be found. Partition file missing?",
+						id.getTimePointId(), id.getViewSetupId(), id.getLevel() ) );
+				return getMissingDataImage( id, type );
+			}
 
 			final long[] dimensions = getDimsAndExistence( id ).getDimensions();
 			final int[] cellDimensions = mipmapInfo.getSubdivisions()[ level ];
+			final CellGrid grid = new CellGrid( dimensions, cellDimensions );
 
 			final int priority = mipmapInfo.getMaxLevel() - level;
 			final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
-			final CellCache< VolatileShortArray > c = cache.new VolatileCellCache<>( timepointId, setupId, level, cacheHints, shortLoader );
-			final VolatileImgCells< VolatileShortArray > cells = new VolatileImgCells<>( c, new Fraction(), dimensions, cellDimensions );
-			final CachedCellImg< T, VolatileShortArray > img = new CachedCellImg<>( cells );
-			return img;
+
+			return cache.createImg( grid, timepointId, setupId, level, cacheHints, shortLoader, type );
 		}
 
 		/**
