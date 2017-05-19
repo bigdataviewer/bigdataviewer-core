@@ -451,7 +451,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 		add( display, BorderLayout.CENTER );
 		if ( numTimepoints > 1 )
-			add( timeSlider, BorderLayout.SOUTH );
+			add( sliderPanel, BorderLayout.SOUTH );
 
 		visibilityAndGrouping = new VisibilityAndGrouping( state );
 		visibilityAndGrouping.addUpdateListener( this );
