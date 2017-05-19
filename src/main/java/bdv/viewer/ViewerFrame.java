@@ -32,10 +32,8 @@ package bdv.viewer;
 import java.awt.BorderLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.Action;
 import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
@@ -66,7 +64,7 @@ public class ViewerFrame extends JFrame
 	private final InputActionBindings keybindings;
 
 	private final TriggerBehaviourBindings triggerbindings;
-	
+
 	private SaveOnCloseFunction funcSaveOnClose = null;
 
 	public ViewerFrame(
@@ -96,23 +94,23 @@ public class ViewerFrame extends JFrame
 	{
 //		super( "BigDataViewer", GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.ARGB_COLOR_MODEL ) );
 		super( "BigDataViewer", GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.RGB_COLOR_MODEL ) );
-			
+
 		keybindings = new InputActionBindings();
 		triggerbindings = new TriggerBehaviourBindings();
-		
+
 		viewer = new ViewerPanel( sources, numTimepoints, cacheControl, optional, keybindings.getConcatenatedActionMap() );
 
 		getRootPane().setDoubleBuffered( true );
 		add( viewer, BorderLayout.CENTER );
 		pack();
-        
-        setLocationRelativeTo(null);
+
+//		setLocationRelativeTo( null );
 		setDefaultCloseOperation( WindowConstants.DO_NOTHING_ON_CLOSE );
-        
+
 		final WindowAdapter windowAdapter = new WindowAdapter()
 		{
 			@Override
-			public void windowStateChanged( WindowEvent e )
+			public void windowStateChanged( final WindowEvent e )
 			{
 				SwingUtilities.invokeLater( () -> {
 					getContentPane().revalidate();
@@ -123,20 +121,22 @@ public class ViewerFrame extends JFrame
 			public void windowClosing( final WindowEvent e )
 			{
 				UserSaveChoice choice = UserSaveChoice.NO;
-				if (null != funcSaveOnClose) {
+				if ( null != funcSaveOnClose )
+				{
 					choice = funcSaveOnClose.invokeSaveOnClose();
 				}
-				
-				if (choice != UserSaveChoice.CANCEL) {
+
+				if ( choice != UserSaveChoice.CANCEL )
+				{
 					viewer.stop();
 					viewer.stopPlayExecuter();
 					dispose();
 				}
 			}
 		};
-        
-		addWindowListener(windowAdapter);
-        addWindowStateListener(windowAdapter);
+
+		addWindowListener( windowAdapter );
+		addWindowStateListener( windowAdapter );
 
 		SwingUtilities.replaceUIActionMap( getRootPane(), keybindings.getConcatenatedActionMap() );
 		SwingUtilities.replaceUIInputMap( getRootPane(), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, keybindings.getConcatenatedInputMap() );
@@ -150,6 +150,11 @@ public class ViewerFrame extends JFrame
 		final TransformEventHandler< ? > tfHandler = viewer.getDisplay().getTransformEventHandler();
 		if ( tfHandler instanceof BehaviourTransformEventHandler )
 			( ( BehaviourTransformEventHandler< ? > ) tfHandler ).install( triggerbindings );
+	}
+
+	public void setSaveOnCloseFunction( final SaveOnCloseFunction function )
+	{
+		this.funcSaveOnClose = function;
 	}
 
 	public ViewerPanel getViewerPanel()
@@ -166,9 +171,4 @@ public class ViewerFrame extends JFrame
 	{
 		return triggerbindings;
 	}
-	
-	public void setSaveOnCloseFunction(SaveOnCloseFunction function) {
-		this.funcSaveOnClose = function;
-	}
-	
 }

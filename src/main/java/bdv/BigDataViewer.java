@@ -120,9 +120,9 @@ public class BigDataViewer
 	protected final VisibilityAndGroupingDialog activeSourcesDialog;
 
 	protected final AddBookmarkDialog addBookmarkDialog;
-	
+
 	protected final BookmarkManagementDialog bookmarkManagementDialog;
-	
+
 	protected final HelpDialog helpDialog;
 
 	protected final ManualTransformationEditor manualTransformationEditor;
@@ -142,7 +142,7 @@ public class BigDataViewer
 	{
 		bookmarkEditor.initSetBookmark();
 	}
-	
+
 	public void initSetDynamicBookmark()
 	{
 		bookmarkEditor.initCreateDynamicBookmark();
@@ -351,9 +351,9 @@ public class BigDataViewer
 			( ( BehaviourTransformEventHandlerFactory< ? > ) options.values.getTransformEventHandlerFactory() ).setConfig( inputTriggerConfig );
 
 		viewerFrame = new ViewerFrame( sources, numTimepoints, cache, options );
-		
-		viewerFrame.setSaveOnCloseFunction(this::onViewerFrameOnClose);
-		
+
+		viewerFrame.setSaveOnCloseFunction( this::onViewerFrameOnClose );
+
 		if ( windowTitle != null )
 			viewerFrame.setTitle( windowTitle );
 		viewer = viewerFrame.getViewerPanel();
@@ -392,9 +392,9 @@ public class BigDataViewer
 
 		activeSourcesDialog = new VisibilityAndGroupingDialog( viewerFrame, viewer.getVisibilityAndGrouping() );
 
-		addBookmarkDialog = new AddBookmarkDialog(viewerFrame, bookmarkEditor);
-		bookmarkManagementDialog = new BookmarkManagementDialog(viewerFrame, bookmarkEditor);
-		
+		addBookmarkDialog = new AddBookmarkDialog( viewerFrame, bookmarkEditor );
+		bookmarkManagementDialog = new BookmarkManagementDialog( viewerFrame, bookmarkEditor );
+
 		helpDialog = new HelpDialog( viewerFrame );
 
 		fileChooser = new JFileChooser();
@@ -474,23 +474,23 @@ public class BigDataViewer
 		miManualTransform.setText( "Manual Transform" );
 		menu.add( miManualTransform );
 
-		menu = new JMenu("Bookmarks");
+		menu = new JMenu( "Bookmarks" );
 		menubar.add( menu );
-		
-		final JMenuItem miAddBookmark = new JMenuItem(actionMap.get( BigDataViewerActions.OPEN_ADD_BOOKMARK_DIALOG ));
+
+		final JMenuItem miAddBookmark = new JMenuItem( actionMap.get( BigDataViewerActions.OPEN_ADD_BOOKMARK_DIALOG ) );
 		miAddBookmark.setText( "Add Bookmark" );
 		menu.add( miAddBookmark );
-		
-		final JMenuItem miBookmarkMgmt = new JMenuItem(actionMap.get( BigDataViewerActions.OPEN_BOOKMARK_MANAGEMENT ));
+
+		final JMenuItem miBookmarkMgmt = new JMenuItem( actionMap.get( BigDataViewerActions.OPEN_BOOKMARK_MANAGEMENT ) );
 		miBookmarkMgmt.setText( "Bookmark Management" );
 		menu.add( miBookmarkMgmt );
-		
-		menu.add(new JSeparator());
-		
-		final JMenuItem miDeselectBookmark = new JMenuItem( actionMap.get( BigDataViewerActions.DESELECT_BOOKMARK ));
+
+		menu.add( new JSeparator() );
+
+		final JMenuItem miDeselectBookmark = new JMenuItem( actionMap.get( BigDataViewerActions.DESELECT_BOOKMARK ) );
 		miDeselectBookmark.setText( "Deselect Bookmark" );
 		menu.add( miDeselectBookmark );
-		
+
 		menu = new JMenu( "Help" );
 		menubar.add( menu );
 
@@ -604,21 +604,23 @@ public class BigDataViewer
 		}
 		return false;
 	}
-	
-	private UserSaveChoice onViewerFrameOnClose() {
-		final int confirmAnswer = JOptionPane.showConfirmDialog(viewerFrame,
-			 	"Do you want to save your settings before you close the application?", "Closing", 
-	            JOptionPane.YES_NO_CANCEL_OPTION,
-	            JOptionPane.QUESTION_MESSAGE);
-	 
-		switch (confirmAnswer) {
-			case JOptionPane.YES_OPTION:
-				saveSettings();
-				return UserSaveChoice.YES;
-			case JOptionPane.NO_OPTION:
-				return UserSaveChoice.NO;
-			default:
-				return UserSaveChoice.CANCEL;
+
+	private UserSaveChoice onViewerFrameOnClose()
+	{
+		final int confirmAnswer = JOptionPane.showConfirmDialog( viewerFrame,
+				"Do you want to save your settings before you close the application?", "Closing",
+				JOptionPane.YES_NO_CANCEL_OPTION,
+				JOptionPane.QUESTION_MESSAGE );
+
+		switch ( confirmAnswer )
+		{
+		case JOptionPane.YES_OPTION:
+			saveSettings();
+			return UserSaveChoice.YES;
+		case JOptionPane.NO_OPTION:
+			return UserSaveChoice.NO;
+		default:
+			return UserSaveChoice.CANCEL;
 		}
 	}
 
@@ -738,7 +740,7 @@ public class BigDataViewer
 	{
 //		final String fn = "http://tomancak-mac-17.mpi-cbg.de:8080/openspim/";
 //		final String fn = "/Users/Pietzsch/Desktop/openspim/datasetHDF.xml";
-//		final String fn = "/Users/pietzsch/workspace/data/111010_weber_full.xml";
+		final String fn = "/Users/pietzsch/workspace/data/111010_weber_full.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/spimrec2/dataset.xml";
 //		final String fn = "/Users/pietzsch/Desktop/HisYFP-SPIM/dataset.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/bdv example/drosophila 2.xml";
@@ -762,9 +764,8 @@ public class BigDataViewer
 //		final String fn = "/Users/pietzsch/Desktop/data/clusterValia/140219-1/valia-140219-1.xml";
 //		final String fn = "/Users/pietzsch/workspace/data/111010_weber_full.xml";
 //		final String fn = "/Volumes/projects/tomancak_lightsheet/Mette/ZeissZ1SPIM/Maritigrella/021013_McH2BsGFP_CAAX-mCherry/11-use/hdf5/021013_McH2BsGFP_CAAX-mCherry-11-use.xml";
-		final String fn = "C:\\Users\\maxkl\\Desktop\\weber_full\\111010_weber_full.xml";		
-		
-		
+//		final String fn = "C:\\Users\\maxkl\\Desktop\\weber_full\\111010_weber_full.xml";
+
 		try
 		{
 			System.setProperty( "apple.laf.useScreenMenuBar", "true" );

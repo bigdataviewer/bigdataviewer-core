@@ -29,20 +29,22 @@
  */
 package bdv.viewer.state;
 
-import bdv.tools.bookmarks.bookmark.Bookmark;
-import bdv.util.MipmapTransforms;
-import bdv.viewer.DisplayMode;
 import static bdv.viewer.DisplayMode.FUSED;
 import static bdv.viewer.DisplayMode.SINGLE;
-import bdv.viewer.Interpolation;
 import static bdv.viewer.Interpolation.NEARESTNEIGHBOR;
-import bdv.viewer.Source;
-import bdv.viewer.SourceAndConverter;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
+
+import bdv.tools.bookmarks.bookmark.Bookmark;
+import bdv.util.MipmapTransforms;
+import bdv.viewer.DisplayMode;
+import bdv.viewer.Interpolation;
+import bdv.viewer.Source;
+import bdv.viewer.SourceAndConverter;
 import net.imglib2.realtransform.AffineTransform3D;
 
 /**
@@ -72,7 +74,7 @@ public class ViewerState
 	 * number of available timepoints.
 	 */
 	private int numTimepoints;
-	
+
 	private Bookmark activeBookmark;
 
 	/**
@@ -335,7 +337,7 @@ public class ViewerState
 	{
 		currentTimepoint = timepoint;
 	}
-	
+
 	/**
 	 * Get the active bookmark.
 	 *
@@ -352,7 +354,8 @@ public class ViewerState
 	 * @param bookmark
 	 *            active bookmark.
 	 */
-	public synchronized void setActiveBookmark( final Bookmark bookmark ) {
+	public synchronized void setActiveBookmark( final Bookmark bookmark )
+	{
 		activeBookmark = bookmark;
 	}
 
