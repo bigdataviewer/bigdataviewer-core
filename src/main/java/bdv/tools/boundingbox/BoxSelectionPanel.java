@@ -53,16 +53,31 @@ public class BoxSelectionPanel extends JPanel
 
 	private final BoundedInterval[] ranges;
 
+	private final SliderPanel[] minSliderPanels;
+
+	private final SliderPanel[] maxSliderPanels;
+
 	private final ModifiableInterval selection;
 
 	private final ArrayList< SelectionUpdateListener > listeners;
+
+	private int cols;
 
 	public BoxSelectionPanel( final ModifiableInterval selection, final Interval rangeInterval )
 	{
 		final int n = selection.numDimensions();
 		this.selection = selection;
 		ranges = new BoundedInterval[ n ];
+		minSliderPanels = new SliderPanel[ n ];
+		maxSliderPanels = new SliderPanel[ n ];
 		listeners = new ArrayList<>();
+
+		cols = 2;
+		for ( int d = 0; d < n; ++d )
+		{
+			cols = Math.max( cols, Long.toString( rangeInterval.min( d ) ).length() );
+			cols = Math.max( cols, Long.toString( rangeInterval.max( d ) ).length() );
+		}
 
 		setLayout( new BoxLayout( this, BoxLayout.PAGE_AXIS ) );
 		for ( int d = 0; d < n; ++d )
@@ -84,11 +99,15 @@ public class BoxSelectionPanel extends JPanel
 			final String axis = ( d == 0 ) ? "x" : ( d == 1 ) ? "y" : "z";
 			final SliderPanel minPanel = new SliderPanel( axis + " min", range.getMinBoundedValue(), 1 );
 			minPanel.setBorder( BorderFactory.createEmptyBorder( 0, 10, 10, 10 ) );
+			minPanel.setNumColummns( cols );
 			sliders.add( minPanel );
 			final SliderPanel maxPanel = new SliderPanel( axis + " max", range.getMaxBoundedValue(), 1 );
 			maxPanel.setBorder( BorderFactory.createEmptyBorder( 0, 10, 10, 10 ) );
+			maxPanel.setNumColummns( cols );
 			sliders.add( maxPanel );
 			add( sliders );
+			minSliderPanels[ d ] = minPanel;
+			maxSliderPanels[ d ] = maxPanel;
 			ranges[ d ] = range;
 		}
 	}
@@ -96,8 +115,28 @@ public class BoxSelectionPanel extends JPanel
 	public void setBoundsInterval( final Interval interval )
 	{
 		final int n = selection.numDimensions();
+
+		final int oldCols = cols;
 		for ( int d = 0; d < n; ++d )
+		{
+			cols = Math.max( cols, Long.toString( interval.min( d ) ).length() );
+			cols = Math.max( cols, Long.toString( interval.max( d ) ).length() );
+		}
+
+		for ( int d = 0; d < n; ++d )
+		{
 			ranges[ d ].setRange( ( int ) interval.min( d ), ( int ) interval.max( d ) );
+		}
+
+		if ( oldCols != cols )
+		{
+			for ( int d = 0; d < n; ++d )
+			{
+				minSliderPanels[ d ].setNumColummns( cols );
+				maxSliderPanels[ d ].setNumColummns( cols );
+			}
+			invalidate();
+		}
 	}
 
 	public void addSelectionUpdateListener( final SelectionUpdateListener l )
