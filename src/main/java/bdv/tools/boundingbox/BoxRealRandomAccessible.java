@@ -29,6 +29,7 @@
  */
 package bdv.tools.boundingbox;
 
+import bdv.util.ModifiableInterval;
 import net.imglib2.Interval;
 import net.imglib2.RealInterval;
 import net.imglib2.RealPoint;
@@ -36,7 +37,6 @@ import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.type.Type;
 import net.imglib2.util.Intervals;
-import bdv.util.ModifiableInterval;
 
 // a simple imglib2 RealRandomAccessible that has one value inside a box and another value outside
 public class BoxRealRandomAccessible< T extends Type< T > > implements RealRandomAccessible< T >
@@ -48,6 +48,14 @@ public class BoxRealRandomAccessible< T extends Type< T > > implements RealRando
 	private final T insideValue;
 
 	private final T outsideValue;
+
+	public BoxRealRandomAccessible( final ModifiableInterval interval, final T insideValue, final T outsideValue )
+	{
+		n = interval.numDimensions();
+		this.interval = interval;
+		this.insideValue = insideValue.copy();
+		this.outsideValue = outsideValue.copy();
+	}
 
 	public BoxRealRandomAccessible( final Interval interval, final T insideValue, final T outsideValue )
 	{
