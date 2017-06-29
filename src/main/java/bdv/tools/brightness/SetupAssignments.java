@@ -145,16 +145,21 @@ public class SetupAssignments
 	}
 
 	/**
-	 * Remove the specified setup from the specified group. If this group is
-	 * made empty by this, it is removed from the list of groups. A new group is
-	 * created containing only the specified setup, and this new group is added
-	 * to the list of group. The settings of the new group are initialized with
-	 * the settings of the old group.
+	 * Remove the specified setup from the specified group. If this group would
+	 * be made empty by this, it is not removed from the group. Otherwise, after
+	 * being removed, a new group is created containing only the specified
+	 * setup, and this new group is added to the list of group. The settings of
+	 * the new group are initialized with the settings of the old group.
+	 * 
+	 * @return Whether or not removal was successful (so the corresponding
+	 *         checkbox can be re-checked)
 	 */
-	public void removeSetupFromGroup( final ConverterSetup setup, final MinMaxGroup group )
+	public boolean removeSetupFromGroup( final ConverterSetup setup, final MinMaxGroup group )
 	{
 		if ( setupToGroup.get( setup ) != group )
-			return;
+			return false;
+		if ( group.setups.size() == 1 )
+			return false;
 
 		final MinMaxGroup newGroup = new MinMaxGroup( group.getFullRangeMin(), group.getFullRangeMax(), group.getRangeMin(), group.getRangeMax(), setup.getDisplayRangeMin(), setup.getDisplayRangeMax(), minIntervalSize );
 		minMaxGroups.add( newGroup );
@@ -167,6 +172,7 @@ public class SetupAssignments
 
 		if ( updateListener != null )
 			updateListener.update();
+		return true;
 	}
 
 	public void setUpdateListener( final UpdateListener l )
