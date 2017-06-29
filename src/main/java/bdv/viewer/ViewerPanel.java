@@ -457,28 +457,34 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	@Override
 	public void drawOverlays( final Graphics g )
 	{
-		multiBoxOverlayRenderer.setViewerState( state );
-		multiBoxOverlayRenderer.updateVirtualScreenSize( display.getWidth(), display.getHeight() );
-		multiBoxOverlayRenderer.paint( ( Graphics2D ) g );
+		boolean requiresRepaint = false;
+		if ( Prefs.showMultibox() )
+		{
+			multiBoxOverlayRenderer.setViewerState( state );
+			multiBoxOverlayRenderer.updateVirtualScreenSize( display.getWidth(), display.getHeight() );
+			multiBoxOverlayRenderer.paint( ( Graphics2D ) g );
+			requiresRepaint = multiBoxOverlayRenderer.isHighlightInProgress();
+		}
 
-		sourceInfoOverlayRenderer.setViewerState( state );
-		sourceInfoOverlayRenderer.paint( ( Graphics2D ) g );
+		if( Prefs.showTextOverlay() )
+		{
+			sourceInfoOverlayRenderer.setViewerState( state );
+			sourceInfoOverlayRenderer.paint( ( Graphics2D ) g );
+
+			final RealPoint gPos = new RealPoint( 3 );
+			getGlobalMouseCoordinates( gPos );
+			final String mousePosGlobalString = String.format( "(%6.1f,%6.1f,%6.1f)", gPos.getDoublePosition( 0 ), gPos.getDoublePosition( 1 ), gPos.getDoublePosition( 2 ) );
+
+			g.setFont( new Font( "Monospaced", Font.PLAIN, 12 ) );
+			g.setColor( Color.white );
+			g.drawString( mousePosGlobalString, ( int ) g.getClipBounds().getWidth() - 170, 25 );
+		}
 
 		if ( Prefs.showScaleBar() )
 		{
 			scaleBarOverlayRenderer.setViewerState( state );
 			scaleBarOverlayRenderer.paint( ( Graphics2D ) g );
 		}
-
-		final RealPoint gPos = new RealPoint( 3 );
-		getGlobalMouseCoordinates( gPos );
-		final String mousePosGlobalString = String.format( "(%6.1f,%6.1f,%6.1f)", gPos.getDoublePosition( 0 ), gPos.getDoublePosition( 1 ), gPos.getDoublePosition( 2 ) );
-
-		g.setFont( new Font( "Monospaced", Font.PLAIN, 12 ) );
-		g.setColor( Color.white );
-		g.drawString( mousePosGlobalString, ( int ) g.getClipBounds().getWidth() - 170, 25 );
-
-		boolean requiresRepaint = multiBoxOverlayRenderer.isHighlightInProgress();
 
 		final long currentTimeMillis = System.currentTimeMillis();
 		final ArrayList< OverlayAnimator > overlayAnimatorsToRemove = new ArrayList<>();
