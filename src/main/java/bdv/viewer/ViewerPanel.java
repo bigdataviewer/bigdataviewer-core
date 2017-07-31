@@ -636,14 +636,22 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		final Interpolation interpolation = state.getInterpolation();
 		if ( interpolation == Interpolation.NEARESTNEIGHBOR )
 		{
-			state.setInterpolation( Interpolation.NLINEAR );
 			showMessage( "tri-linear interpolation" );
+			setInterpolation( Interpolation.NLINEAR );
 		}
 		else
 		{
-			state.setInterpolation( Interpolation.NEARESTNEIGHBOR );
 			showMessage( "nearest-neighbor interpolation" );
+			setInterpolation( Interpolation.NEARESTNEIGHBOR );
 		}
+	}
+
+	/**
+	 * Set interpolation to specified method.
+	 */
+	public synchronized void setInterpolation( final Interpolation method )
+	{
+		state.setInterpolation( method );
 		requestRepaint();
 	}
 
