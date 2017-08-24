@@ -33,6 +33,7 @@ import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -42,6 +43,7 @@ import javax.swing.KeyStroke;
 
 import org.scijava.ui.behaviour.util.InputActionBindings;
 
+import bdv.viewer.InterpolationModeListener;
 import bdv.viewer.Source;
 import bdv.viewer.ViewerPanel;
 import bdv.viewer.state.SourceGroup;
@@ -71,6 +73,8 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 	private final ActionMap actionMap;
 
 	private final InputMap inputMap;
+	
+	protected final CopyOnWriteArrayList<ManualTransformActiveListener> manualTransformActiveListeners;
 
 	public ManualTransformationEditor( final ViewerPanel viewer, final InputActionBindings inputActionBindings )
 	{
@@ -80,6 +84,7 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 		liveTransform = new AffineTransform3D();
 		sourcesToModify = new ArrayList<>();
 		sourcesToFix = new ArrayList<>();
+		manualTransformActiveListeners = new CopyOnWriteArrayList<>();
 
 		final KeyStroke abortKey = KeyStroke.getKeyStroke( KeyEvent.VK_ESCAPE, 0 );
 		final Action abortAction = new AbstractAction( "abort manual transformation" )
@@ -207,6 +212,9 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 			viewer.setCurrentViewerTransform( frozenTransform );
 			viewer.showMessage( "fixed manual transform" );
 		}
+		for (ManualTransformActiveListener l : manualTransformActiveListeners) {
+			l.manualTransformActiveChanged(active);
+		}
 	}
 
 	public synchronized void toggle()
@@ -232,5 +240,12 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 		for ( final TransformedSource< ? > source : sourcesToFix )
 			source.setIncrementalTransform( liveTransform.inverse() );
 	}
+	
+	public void addManualTransformActiveListener(final ManualTransformActiveListener l) {
+		manualTransformActiveListeners.add(l);
+	}
 
+	public void removeManualTransformActiveListener(final ManualTransformActiveListener l) {
+		manualTransformActiveListeners.remove(l);
+	}
 }
