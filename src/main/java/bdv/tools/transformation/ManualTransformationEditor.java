@@ -143,11 +143,15 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 			viewer.showMessage( "reset manual transform" );
 		}
 	}
-
-	public synchronized void toggle()
-	{
-		if ( !active )
-		{ // Enter manual edit mode
+	
+	public synchronized void setActive(final boolean a) {
+		if (this.active == a) {
+			return;
+		}
+		if (a)
+		{ 
+			active = a;
+			// Enter manual edit mode
 			final ViewerState state = viewer.getState();
 			final List< Integer > indices = new ArrayList<>();
 			switch ( state.getDisplayMode() )
@@ -202,6 +206,18 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 				source.setIncrementalTransform( tmp );
 			viewer.setCurrentViewerTransform( frozenTransform );
 			viewer.showMessage( "fixed manual transform" );
+		}
+	}
+
+	public synchronized void toggle()
+	{
+		if ( !active )
+		{ // Enter manual edit mode
+			setActive(true);
+		}
+		else
+		{ // Exit manual edit mode.
+			setActive(false);
 		}
 	}
 
