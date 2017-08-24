@@ -645,6 +645,20 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 			showMessage( "nearest-neighbor interpolation" );
 		}
 		requestRepaint();
+	public synchronized void setInterpolation(final Interpolation mode) {
+		final Interpolation interpolation = state.getInterpolation();
+		if (mode != interpolation) {
+			state.setInterpolation(mode);
+			if (mode == Interpolation.NEARESTNEIGHBOR) {
+				showMessage( "nearest-neighbor interpolation" );
+			} else if (mode == Interpolation.NLINEAR) {
+				showMessage( "tri-linear interpolation" );
+			}
+		}
+		requestRepaint();
+		for (InterpolationModeListener l : interpolationModeListeners) {
+			l.interpolationModeChanged(state.getInterpolation());
+		}
 	}
 
 	/**
