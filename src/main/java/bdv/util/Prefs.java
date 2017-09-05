@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -67,6 +67,36 @@ public class Prefs
 		return getInstance().scaleBarBgColor;
 	}
 
+	public static void showScaleBar( final boolean show )
+	{
+		getInstance().showScaleBar = show;
+	}
+
+	public static void showMultibox( final boolean show )
+	{
+		getInstance().showMultibox = show;
+	}
+
+	public static void showTextOverlay( final boolean show )
+	{
+		getInstance().showTextOverlay = show;
+	}
+
+	public static void showScaleBarInMovie( final boolean show )
+	{
+		getInstance().showScaleBarInMovie = show;
+	}
+
+	public static void scaleBarColor( final int color )
+	{
+		getInstance().scaleBarColor = color;
+	}
+
+	public static void scaleBarBgColor( final int color )
+	{
+		getInstance().scaleBarBgColor = color;
+	}
+
 	private static Prefs instance;
 
 	public static Prefs getInstance()
@@ -85,12 +115,12 @@ public class Prefs
 	private static final String SCALE_BAR_COLOR = "scale-bar-color";
 	private static final String SCALE_BAR_BG_COLOR = "scale-bar-bg-color";
 
-	private final boolean showScaleBar;
-	private final boolean showMultibox;
-	private final boolean showTextOverlay;
-	private final boolean showScaleBarInMovie;
-	private final int scaleBarColor;
-	private final int scaleBarBgColor;
+	private boolean showScaleBar;
+	private boolean showMultibox;
+	private boolean showTextOverlay;
+	private boolean showScaleBarInMovie;
+	private int scaleBarColor;
+	private int scaleBarBgColor;
 
 	private Prefs( final Properties p )
 	{
