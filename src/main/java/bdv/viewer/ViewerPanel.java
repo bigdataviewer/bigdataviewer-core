@@ -642,6 +642,9 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		setInterpolation( mode );
 	}
 
+	/**
+	 * Set the {@link Interpolation} mode.
+	 */
 	public synchronized void setInterpolation( final Interpolation mode )
 	{
 		final Interpolation interpolation = state.getInterpolation();
@@ -797,11 +800,25 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		display.repaint();
 	}
 
+	/**
+	 * Add a {@link InterpolationModeListener} to notify when the interpolation
+	 * mode is changed. Listeners will be notified <em>before</em> calling
+	 * {@link #requestRepaint()} so they have the chance to interfere.
+	 *
+	 * @param listener
+	 *            the interpolation mode listener to add.
+	 */
 	public void addInterpolationModeListener( final InterpolationModeListener listener )
 	{
 		interpolationModeListeners.add( listener );
 	}
 
+	/**
+	 * Remove a {@link InterpolationModeListener}.
+	 *
+	 * @param listener
+	 *            the interpolation mode listener to remove.
+	 */
 	public void removeInterpolationModeListener( final InterpolationModeListener listener )
 	{
 		interpolationModeListeners.remove( listener );
