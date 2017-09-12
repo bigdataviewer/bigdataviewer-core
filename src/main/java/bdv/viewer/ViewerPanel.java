@@ -661,11 +661,9 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		{
 			state.setInterpolation( mode );
 			showMessage( mode.getName() );
-		}
-		requestRepaint();
-		for ( final InterpolationModeListener l : interpolationModeListeners )
-		{
-			l.interpolationModeChanged( state.getInterpolation() );
+			for ( final InterpolationModeListener l : interpolationModeListeners )
+				l.interpolationModeChanged( state.getInterpolation() );
+			requestRepaint();
 		}
 	}
 
