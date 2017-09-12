@@ -67,6 +67,36 @@ public class Prefs
 		return getInstance().scaleBarBgColor;
 	}
 
+	public static void showScaleBar( final boolean show )
+	{
+		getInstance().showScaleBar = show;
+	}
+
+	public static void showMultibox( final boolean show )
+	{
+		getInstance().showMultibox = show;
+	}
+
+	public static void showTextOverlay( final boolean show )
+	{
+		getInstance().showTextOverlay = show;
+	}
+
+	public static void showScaleBarInMovie( final boolean show )
+	{
+		getInstance().showScaleBarInMovie = show;
+	}
+
+	public static void scaleBarColor( final int color )
+	{
+		getInstance().scaleBarColor = color;
+	}
+
+	public static void scaleBarBgColor( final int color )
+	{
+		getInstance().scaleBarBgColor = color;
+	}
+
 	private static Prefs instance;
 
 	public static Prefs getInstance()
@@ -85,12 +115,12 @@ public class Prefs
 	private static final String SCALE_BAR_COLOR = "scale-bar-color";
 	private static final String SCALE_BAR_BG_COLOR = "scale-bar-bg-color";
 
-	private final boolean showScaleBar;
-	private final boolean showMultibox;
-	private final boolean showTextOverlay;
-	private final boolean showScaleBarInMovie;
-	private final int scaleBarColor;
-	private final int scaleBarBgColor;
+	private boolean showScaleBar;
+	private boolean showMultibox;
+	private boolean showTextOverlay;
+	private boolean showScaleBarInMovie;
+	private int scaleBarColor;
+	private int scaleBarBgColor;
 
 	private Prefs( final Properties p )
 	{
