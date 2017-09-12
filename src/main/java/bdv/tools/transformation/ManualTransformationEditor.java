@@ -217,14 +217,7 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 
 	public synchronized void toggle()
 	{
-		if ( !active )
-		{ // Enter manual edit mode
-			setActive( true );
-		}
-		else
-		{ // Exit manual edit mode.
-			setActive( false );
-		}
+		setActive( !active );
 	}
 
 	@Override
