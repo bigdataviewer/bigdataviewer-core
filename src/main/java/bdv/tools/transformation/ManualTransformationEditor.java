@@ -43,7 +43,6 @@ import javax.swing.KeyStroke;
 
 import org.scijava.ui.behaviour.util.InputActionBindings;
 
-import bdv.viewer.InterpolationModeListener;
 import bdv.viewer.Source;
 import bdv.viewer.ViewerPanel;
 import bdv.viewer.state.SourceGroup;
@@ -55,7 +54,6 @@ import net.imglib2.ui.TransformListener;
 // TODO: what happens when the current source, display mode, etc is changed while the editor is active? deactivate?
 public class ManualTransformationEditor implements TransformListener< AffineTransform3D >
 {
-
 	private boolean active = false;
 
 	private final InputActionBindings bindings;
@@ -73,8 +71,8 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 	private final ActionMap actionMap;
 
 	private final InputMap inputMap;
-	
-	protected final CopyOnWriteArrayList<ManualTransformActiveListener> manualTransformActiveListeners;
+
+	protected final CopyOnWriteArrayList< ManualTransformActiveListener > manualTransformActiveListeners;
 
 	public ManualTransformationEditor( final ViewerPanel viewer, final InputActionBindings inputActionBindings )
 	{
@@ -148,13 +146,12 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 			viewer.showMessage( "reset manual transform" );
 		}
 	}
-	
-	public synchronized void setActive(final boolean a) {
-		if (this.active == a) {
-			return;
-		}
-		if (a)
-		{ 
+
+	public synchronized void setActive( final boolean a )
+	{
+		if ( this.active == a ) { return; }
+		if ( a )
+		{
 			active = a;
 			// Enter manual edit mode
 			final ViewerState state = viewer.getState();
@@ -182,9 +179,9 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 				if ( TransformedSource.class.isInstance( source ) )
 				{
 					if ( indices.contains( i ) )
-						sourcesToModify.add( (bdv.tools.transformation.TransformedSource< ? > ) source );
+						sourcesToModify.add( ( bdv.tools.transformation.TransformedSource< ? > ) source );
 					else
-						sourcesToFix.add( (bdv.tools.transformation.TransformedSource< ? > ) source );
+						sourcesToFix.add( ( bdv.tools.transformation.TransformedSource< ? > ) source );
 				}
 			}
 			active = true;
@@ -212,8 +209,9 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 			viewer.setCurrentViewerTransform( frozenTransform );
 			viewer.showMessage( "fixed manual transform" );
 		}
-		for (ManualTransformActiveListener l : manualTransformActiveListeners) {
-			l.manualTransformActiveChanged(active);
+		for ( final ManualTransformActiveListener l : manualTransformActiveListeners )
+		{
+			l.manualTransformActiveChanged( active );
 		}
 	}
 
@@ -221,11 +219,11 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 	{
 		if ( !active )
 		{ // Enter manual edit mode
-			setActive(true);
+			setActive( true );
 		}
 		else
 		{ // Exit manual edit mode.
-			setActive(false);
+			setActive( false );
 		}
 	}
 
@@ -240,12 +238,14 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 		for ( final TransformedSource< ? > source : sourcesToFix )
 			source.setIncrementalTransform( liveTransform.inverse() );
 	}
-	
-	public void addManualTransformActiveListener(final ManualTransformActiveListener l) {
-		manualTransformActiveListeners.add(l);
+
+	public void addManualTransformActiveListener( final ManualTransformActiveListener l )
+	{
+		manualTransformActiveListeners.add( l );
 	}
 
-	public void removeManualTransformActiveListener(final ManualTransformActiveListener l) {
-		manualTransformActiveListeners.remove(l);
+	public void removeManualTransformActiveListener( final ManualTransformActiveListener l )
+	{
+		manualTransformActiveListeners.remove( l );
 	}
 }

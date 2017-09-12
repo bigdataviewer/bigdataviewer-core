@@ -29,8 +29,7 @@
  */
 package bdv.tools.transformation;
 
-public interface ManualTransformActiveListener {
-	
-	public void manualTransformActiveChanged(final boolean acitve);
-
+public interface ManualTransformActiveListener
+{
+	public void manualTransformActiveChanged( final boolean acitve );
 }

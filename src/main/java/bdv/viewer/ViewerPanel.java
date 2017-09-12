@@ -209,9 +209,9 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 * interfere.
 	 */
 	protected final CopyOnWriteArrayList< TimePointListener > timePointListeners;
-	
-	protected final CopyOnWriteArrayList<InterpolationModeListener> interpolationModeListeners;
-	
+
+	protected final CopyOnWriteArrayList< InterpolationModeListener > interpolationModeListeners;
+
 	/**
 	 * Current animator for viewer transform, or null. This is for example used
 	 * to make smooth transitions when {@link #align(AlignPlane) aligning to
@@ -232,7 +232,6 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	protected final MessageOverlayAnimator msgOverlay;
 
 	protected final ViewerOptions.Values options;
-
 
 	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimePoints, final CacheControl cacheControl )
 	{
@@ -649,24 +648,31 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 			showMessage( "nearest-neighbor interpolation" );
 		}
 		requestRepaint();
-		for (InterpolationModeListener l : interpolationModeListeners) {
-			l.interpolationModeChanged(state.getInterpolation());
+		for ( final InterpolationModeListener l : interpolationModeListeners )
+		{
+			l.interpolationModeChanged( state.getInterpolation() );
 		}
 	}
-	
-	public synchronized void setInterpolation(final Interpolation mode) {
+
+	public synchronized void setInterpolation( final Interpolation mode )
+	{
 		final Interpolation interpolation = state.getInterpolation();
-		if (mode != interpolation) {
-			state.setInterpolation(mode);
-			if (mode == Interpolation.NEARESTNEIGHBOR) {
+		if ( mode != interpolation )
+		{
+			state.setInterpolation( mode );
+			if ( mode == Interpolation.NEARESTNEIGHBOR )
+			{
 				showMessage( "nearest-neighbor interpolation" );
-			} else if (mode == Interpolation.NLINEAR) {
+			}
+			else if ( mode == Interpolation.NLINEAR )
+			{
 				showMessage( "tri-linear interpolation" );
 			}
 		}
 		requestRepaint();
-		for (InterpolationModeListener l : interpolationModeListeners) {
-			l.interpolationModeChanged(state.getInterpolation());
+		for ( final InterpolationModeListener l : interpolationModeListeners )
+		{
+			l.interpolationModeChanged( state.getInterpolation() );
 		}
 	}
 
@@ -811,15 +817,17 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		overlayAnimators.add( animator );
 		display.repaint();
 	}
-	
-	public void addInterpolationModeListener(final InterpolationModeListener listener) {
-		interpolationModeListeners.add(listener);
+
+	public void addInterpolationModeListener( final InterpolationModeListener listener )
+	{
+		interpolationModeListeners.add( listener );
 	}
-	
-	public void removeInterpolationModeListener(final InterpolationModeListener listener) {
-		interpolationModeListeners.remove(listener);
+
+	public void removeInterpolationModeListener( final InterpolationModeListener listener )
+	{
+		interpolationModeListeners.remove( listener );
 	}
-	
+
 	/**
 	 * Add a {@link TransformListener} to notify about viewer transformation
 	 * changes. Listeners will be notified when a new image has been painted
