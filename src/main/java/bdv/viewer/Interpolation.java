@@ -34,6 +34,18 @@ package bdv.viewer;
  */
 public enum Interpolation
 {
-	NEARESTNEIGHBOR,
-	NLINEAR
+	NEARESTNEIGHBOR( "nearest-neighbor interpolation" ),
+	NLINEAR( "tri-linear interpolation" );
+
+	private final String name;
+
+	private Interpolation( final String name )
+	{
+		this.name = name;
+	}
+
+	public String getName()
+	{
+		return name;
+	}
 }

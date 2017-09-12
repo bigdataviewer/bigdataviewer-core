@@ -660,14 +660,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		if ( mode != interpolation )
 		{
 			state.setInterpolation( mode );
-			if ( mode == Interpolation.NEARESTNEIGHBOR )
-			{
-				showMessage( "nearest-neighbor interpolation" );
-			}
-			else if ( mode == Interpolation.NLINEAR )
-			{
-				showMessage( "tri-linear interpolation" );
-			}
+			showMessage( mode.getName() );
 		}
 		requestRepaint();
 		for ( final InterpolationModeListener l : interpolationModeListeners )
