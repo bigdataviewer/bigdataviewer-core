@@ -632,26 +632,14 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 	/**
 	 * Switch to next interpolation mode. (Currently, there are two
-	 * interpolation modes: nearest-neighbor and N-linear.
+	 * interpolation modes: nearest-neighbor and N-linear.)
 	 */
 	public synchronized void toggleInterpolation()
 	{
-		final Interpolation interpolation = state.getInterpolation();
-		if ( interpolation == Interpolation.NEARESTNEIGHBOR )
-		{
-			state.setInterpolation( Interpolation.NLINEAR );
-			showMessage( "tri-linear interpolation" );
-		}
-		else
-		{
-			state.setInterpolation( Interpolation.NEARESTNEIGHBOR );
-			showMessage( "nearest-neighbor interpolation" );
-		}
-		requestRepaint();
-		for ( final InterpolationModeListener l : interpolationModeListeners )
-		{
-			l.interpolationModeChanged( state.getInterpolation() );
-		}
+		final int i = state.getInterpolation().ordinal();
+		final int n = Interpolation.values().length;
+		final Interpolation mode = Interpolation.values()[ ( i + 1 ) % n ];
+		setInterpolation( mode );
 	}
 
 	public synchronized void setInterpolation( final Interpolation mode )
