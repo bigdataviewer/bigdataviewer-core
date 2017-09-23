@@ -227,7 +227,7 @@ public class ViewerState
 	}
 
 	/**
-	 * Get the index of the current source.
+	 * Get the index of the current group.
 	 */
 	public synchronized int getCurrentGroup()
 	{
@@ -235,7 +235,7 @@ public class ViewerState
 	}
 
 	/**
-	 * Make the source with the given index current.
+	 * Make the group with the given index current.
 	 */
 	public synchronized void setCurrentGroup( final int index )
 	{
@@ -603,7 +603,7 @@ public class ViewerState
 
 	/**
 	 * Get index of (first) {@link SourceState} that matches the given
-	 * {@link Source}.
+	 * {@link Source} or {@code -1} if not found.
 	 */
 	private int getSourceIndex( final Source< ? > source )
 	{
