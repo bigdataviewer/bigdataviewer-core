@@ -136,7 +136,7 @@ public class ViewerState
 		interpolation = NEARESTNEIGHBOR;
 		displayMode = SINGLE;
 		currentSource = sources.isEmpty() ? -1 : 0;
-		currentGroup = 0;
+		currentGroup = groups.isEmpty() ? -1 : 0;
 		currentTimepoint = 0;
 	}
 
@@ -245,6 +245,16 @@ public class ViewerState
 			currentGroup = index;
 			groups.get( currentGroup ).setCurrent( true );
 		}
+	}
+
+	/**
+	 * Make the given group current.
+	 */
+	public synchronized void setCurrentGroup( final SourceGroup group )
+	{
+		final int i = getGroupIndex( group );
+		if ( i >= 0 )
+			setCurrentGroup( i );
 	}
 
 	/**
@@ -441,6 +451,38 @@ public class ViewerState
 		}
 	}
 
+	public synchronized void addGroup( final SourceGroup group )
+	{
+		if ( group.owner == this )
+			groups.add( group );
+		else
+			groups.add( group.copy( this ) );
+		if ( currentGroup < 0 )
+			currentGroup = 0;
+	}
+
+	public synchronized void removeGroup( final SourceGroup group )
+	{
+		for ( int i = 0; i < groups.size(); )
+		{
+			if ( groups.get( i ) == group )
+				removeGroup( i );
+			else
+				i++;
+		}
+	}
+
+	protected void removeGroup( final int index )
+	{
+		groups.remove( index );
+		if ( groups.isEmpty() )
+			currentGroup = -1;
+		else if ( currentGroup == index )
+			currentGroup = 0;
+		else if ( currentGroup > index )
+			--currentGroup;
+	}
+
 	public synchronized boolean isSourceVisible( final int index )
 	{
 		switch ( displayMode )
@@ -572,5 +614,14 @@ public class ViewerState
 				return i;
 		}
 		return -1;
+	}
+
+	/**
+	 * Get index of (first) {@link SourceGroup} that matches the given
+	 * {@code group} or {@code -1} if not found.
+	 */
+	private int getGroupIndex( final SourceGroup group )
+	{
+		return groups.indexOf( group );
 	}
 }

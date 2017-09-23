@@ -80,6 +80,8 @@ public class VisibilityAndGrouping
 
 		public static final int NUM_SOURCES_CHANGED = 8;
 
+		public static final int NUM_GROUPS_CHANGED = 9;
+
 		public final int id;
 
 		public final VisibilityAndGrouping visibilityAndGrouping;

@@ -33,6 +33,7 @@ import static bdv.viewer.VisibilityAndGrouping.Event.CURRENT_SOURCE_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.DISPLAY_MODE_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.GROUP_ACTIVITY_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.GROUP_NAME_CHANGED;
+import static bdv.viewer.VisibilityAndGrouping.Event.NUM_GROUPS_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.NUM_SOURCES_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.SOURCE_ACTVITY_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.VISIBILITY_CHANGED;
@@ -354,6 +355,26 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		{
 			state.removeSource( source );
 			visibilityAndGrouping.update( NUM_SOURCES_CHANGED );
+		}
+		requestRepaint();
+	}
+
+	public void addGroup( final SourceGroup group )
+	{
+		synchronized ( visibilityAndGrouping )
+		{
+			state.addGroup( group );
+			visibilityAndGrouping.update( NUM_GROUPS_CHANGED );
+		}
+		requestRepaint();
+	}
+
+	public void removeGroup( final SourceGroup group )
+	{
+		synchronized ( visibilityAndGrouping )
+		{
+			state.removeGroup( group );
+			visibilityAndGrouping.update( NUM_GROUPS_CHANGED );
 		}
 		requestRepaint();
 	}
