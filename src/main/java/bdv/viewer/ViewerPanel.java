@@ -255,7 +255,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 		options = optional.values;
 
-		final int numGroups = 10;
+		final int numGroups = options.getNumSourceGroups();
 		final ArrayList< SourceGroup > groups = new ArrayList<>( numGroups );
 		for ( int i = 0; i < numGroups; ++i )
 			groups.add( new SourceGroup( "group " + Integer.toString( i + 1 ) ) );

@@ -138,6 +138,18 @@ public class ViewerOptions
 	}
 
 	/**
+	 * Set how many source groups there are initially.
+	 *
+	 * @param n
+	 *            How many source groups to create initially.
+	 */
+	public ViewerOptions numSourceGroups( final int n )
+	{
+		values.numSourceGroups = n;
+		return this;
+	}
+
+	/**
 	 * Set whether volatile versions of sources should be used if available.
 	 *
 	 * @param v
@@ -224,6 +236,8 @@ public class ViewerOptions
 
 		private int numRenderingThreads = 3;
 
+		private int numSourceGroups = 10;
+
 		private boolean useVolatileIfAvailable = true;
 
 		private MessageOverlayAnimator msgOverlay = new MessageOverlayAnimator( 800 );
@@ -245,6 +259,7 @@ public class ViewerOptions
 				targetRenderNanos( targetRenderNanos ).
 				doubleBuffered( doubleBuffered ).
 				numRenderingThreads( numRenderingThreads ).
+				numSourceGroups( numSourceGroups ).
 				useVolatileIfAvailable( useVolatileIfAvailable ).
 				msgOverlay( msgOverlay ).
 				transformEventHandlerFactory( transformEventHandlerFactory ).
@@ -280,6 +295,11 @@ public class ViewerOptions
 		public int getNumRenderingThreads()
 		{
 			return numRenderingThreads;
+		}
+
+		public int getNumSourceGroups()
+		{
+			return numSourceGroups;
 		}
 
 		public boolean isUseVolatileIfAvailable()
