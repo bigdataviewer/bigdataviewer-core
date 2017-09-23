@@ -258,7 +258,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		final int numGroups = 10;
 		final ArrayList< SourceGroup > groups = new ArrayList<>( numGroups );
 		for ( int i = 0; i < numGroups; ++i )
-			groups.add( new SourceGroup( "group " + Integer.toString( i + 1 ), null ) );
+			groups.add( new SourceGroup( "group " + Integer.toString( i + 1 ) ) );
 		state = new ViewerState( sources, groups, numTimepoints );
 		for ( int i = Math.min( numGroups, sources.size() ) - 1; i >= 0; --i )
 			state.getSourceGroups().get( i ).addSource( i );

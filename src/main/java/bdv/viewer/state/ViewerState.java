@@ -113,6 +113,11 @@ public class ViewerState
 	 */
 	private int currentTimepoint;
 
+	public ViewerState( final List< SourceAndConverter< ? > > sources, final int numTimePoints )
+	{
+		this( sources, null, numTimePoints );
+	}
+
 	/**
 	 *
 	 * @param sources
@@ -126,9 +131,7 @@ public class ViewerState
 		for ( final SourceAndConverter< ? > source : sources )
 			this.sources.add( SourceState.create( source, this ) );
 		unmodifiableSources = Collections.unmodifiableList( this.sources );
-		groups = new ArrayList<>( sourceGroups.size() );
-		for ( final SourceGroup g : sourceGroups )
-			groups.add( g.copy( this ) );
+		groups = ( sourceGroups == null ) ? new ArrayList<>() : new ArrayList<>( sourceGroups );
 		unmodifiableGroups = Collections.unmodifiableList( this.groups );
 		this.numTimepoints = numTimePoints;
 
@@ -152,7 +155,7 @@ public class ViewerState
 		unmodifiableSources = Collections.unmodifiableList( sources );
 		groups = new ArrayList<>( s.groups.size() );
 		for ( final SourceGroup group : s.groups )
-			this.groups.add( group.copy( this ) );
+			groups.add( group.copy() );
 		unmodifiableGroups = Collections.unmodifiableList( groups );
 		numTimepoints = s.numTimepoints;
 		viewerTransform = s.viewerTransform.copy();
@@ -453,23 +456,19 @@ public class ViewerState
 
 	public synchronized void addGroup( final SourceGroup group )
 	{
-		if ( group.owner == this )
+		if ( !groups.contains( group ) )
+		{
 			groups.add( group );
-		else
-			groups.add( group.copy( this ) );
-		if ( currentGroup < 0 )
-			currentGroup = 0;
+			if ( currentGroup < 0 )
+				currentGroup = 0;
+		}
 	}
 
 	public synchronized void removeGroup( final SourceGroup group )
 	{
-		for ( int i = 0; i < groups.size(); )
-		{
-			if ( groups.get( i ) == group )
-				removeGroup( i );
-			else
-				i++;
-		}
+		final int i = groups.indexOf( group );
+		if ( i >= 0 )
+			removeGroup( i );
 	}
 
 	protected void removeGroup( final int index )
