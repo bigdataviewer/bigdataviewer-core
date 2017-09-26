@@ -34,6 +34,9 @@ import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -75,11 +78,6 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
-import java.awt.Component;
-import javax.swing.Box;
-import java.awt.GridBagLayout;
-import java.awt.GridBagConstraints;
-import java.awt.Insets;
 
 public class RecordMovieDialog extends JDialog implements OverlayRenderer
 {
@@ -100,10 +98,11 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 	private final JSpinner spinnerWidth;
 
 	private final JSpinner spinnerHeight;
-	
+
 	private JProgressBar progressBar;
-	
+
 	private boolean isRecordThreadRunning;
+
 	private JButton cancelButton;
 
 	public RecordMovieDialog( final Frame owner, final ViewerPanel viewer, final ProgressWriter progressWriter )
@@ -158,43 +157,45 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 		spinnerHeight = new JSpinner();
 		spinnerHeight.setModel( new SpinnerNumberModel( 600, 10, 5000, 1 ) );
 		heightPanel.add( spinnerHeight );
-		
-		JPanel progressPanel = new JPanel();
-		progressPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
-		boxes.add(progressPanel);
-		GridBagLayout gbl_progressPanel = new GridBagLayout();
-		gbl_progressPanel.columnWidths = new int[]{332, 0, 0};
-		gbl_progressPanel.rowHeights = new int[]{19, 0};
-		gbl_progressPanel.columnWeights = new double[]{1.0, 0.0, Double.MIN_VALUE};
-		gbl_progressPanel.rowWeights = new double[]{1.0, Double.MIN_VALUE};
-		progressPanel.setLayout(gbl_progressPanel);
-		
+
+		final JPanel progressPanel = new JPanel();
+		progressPanel.setBorder( new EmptyBorder( 5, 5, 5, 5 ) );
+		boxes.add( progressPanel );
+		final GridBagLayout gbl_progressPanel = new GridBagLayout();
+		gbl_progressPanel.columnWidths = new int[] { 332, 0, 0 };
+		gbl_progressPanel.rowHeights = new int[] { 19, 0 };
+		gbl_progressPanel.columnWeights = new double[] { 1.0, 0.0, Double.MIN_VALUE };
+		gbl_progressPanel.rowWeights = new double[] { 1.0, Double.MIN_VALUE };
+		progressPanel.setLayout( gbl_progressPanel );
+
 		progressBar = new JProgressBar();
-		progressBar.setStringPainted(true);
-		GridBagConstraints gbc_progressBar = new GridBagConstraints();
+		progressBar.setStringPainted( true );
+		final GridBagConstraints gbc_progressBar = new GridBagConstraints();
 		gbc_progressBar.fill = GridBagConstraints.HORIZONTAL;
-		gbc_progressBar.insets = new Insets(0, 0, 0, 5);
+		gbc_progressBar.insets = new Insets( 0, 0, 0, 5 );
 		gbc_progressBar.gridx = 0;
 		gbc_progressBar.gridy = 0;
-		progressPanel.add(progressBar, gbc_progressBar);
-		
-		cancelButton = new JButton("Cancel");
-		cancelButton.setEnabled(false);
-		GridBagConstraints gbc_cancelButton = new GridBagConstraints();
+		progressPanel.add( progressBar, gbc_progressBar );
+
+		cancelButton = new JButton( "Cancel" );
+		cancelButton.setEnabled( false );
+		final GridBagConstraints gbc_cancelButton = new GridBagConstraints();
 		gbc_cancelButton.gridx = 1;
 		gbc_cancelButton.gridy = 0;
-		progressPanel.add(cancelButton, gbc_cancelButton);
-		cancelButton.addActionListener(new ActionListener() {
-			
+		progressPanel.add( cancelButton, gbc_cancelButton );
+		cancelButton.addActionListener( new ActionListener()
+		{
+
 			@Override
-			public void actionPerformed(ActionEvent e) {
+			public void actionPerformed( final ActionEvent e )
+			{
 				isRecordThreadRunning = false;
 			}
-		});
+		} );
 
 		final JPanel buttonsPanel = new JPanel();
 		boxes.add( buttonsPanel );
-		buttonsPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 5, 5));
+		buttonsPanel.setLayout( new FlowLayout( FlowLayout.RIGHT, 5, 5 ) );
 
 		final JButton recordButton = new JButton( "Record" );
 		buttonsPanel.add( recordButton );
@@ -218,7 +219,7 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 			{
 				final int min = ( Integer ) spinnerMinTimepoint.getValue();
 				final int max = ( Integer ) spinnerMaxTimepoint.getValue();
-				if (min > max)
+				if ( min > max )
 					spinnerMinTimepoint.setValue( max );
 			}
 		} );
@@ -266,16 +267,16 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 					public void run()
 					{
 						try
-						{			
+						{
 							isRecordThreadRunning = true;
 							recordButton.setEnabled( false );
-							cancelButton.setEnabled(true);
-							
+							cancelButton.setEnabled( true );
+
 							recordMovie( width, height, minTimepointIndex, maxTimepointIndex, dir );
-							
-							progressBar.setValue(0);
+
+							progressBar.setValue( 0 );
 							recordButton.setEnabled( true );
-							cancelButton.setEnabled(false);
+							cancelButton.setEnabled( false );
 							isRecordThreadRunning = false;
 						}
 						catch ( final Exception ex )
@@ -286,7 +287,6 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 				}.start();
 			}
 		} );
-		
 
 		final ActionMap am = getRootPane().getActionMap();
 		final InputMap im = getRootPane().getInputMap( JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT );
@@ -343,19 +343,19 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 		final MultiResolutionRenderer renderer = new MultiResolutionRenderer(
 				target, new PainterThread( null ), new double[] { 1 }, 0, false, 1, null, false,
 				viewer.getOptionValues().getAccumulateProjectorFactory(), new CacheControl.Dummy() );
-		setProgress(0);
+		setProgress( 0 );
 		for ( int timepoint = minTimepointIndex; timepoint <= maxTimepointIndex; ++timepoint )
 		{
 			// stop recording if requested
-			if(!isRecordThreadRunning)
+			if ( !isRecordThreadRunning )
 				break;
-			
-			final AffineTransform3D affine = getTransformation(renderState, canvasW, canvasH, timepoint);
+
+			final AffineTransform3D affine = getTransformation( renderState, canvasW, canvasH, timepoint );
 			affine.scale( ( double ) width / canvasW );
 			affine.set( affine.get( 0, 3 ) + width / 2, 0, 3 );
 			affine.set( affine.get( 1, 3 ) + height / 2, 1, 3 );
 			renderState.setViewerTransform( affine );
-			
+
 			renderState.setCurrentTimepoint( timepoint );
 			renderer.requestRepaint();
 			renderer.paint( renderState );
@@ -369,13 +369,14 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 			}
 
 			ImageIO.write( target.bi, "png", new File( String.format( "%s/img-%03d.png", dir, timepoint ) ) );
-			setProgress(( double ) (timepoint - minTimepointIndex + 1) / (maxTimepointIndex - minTimepointIndex + 1));
+			setProgress( ( double ) ( timepoint - minTimepointIndex + 1 ) / ( maxTimepointIndex - minTimepointIndex + 1 ) );
 		}
 	}
-	
-	private synchronized  void setProgress(double progress){
+
+	private synchronized void setProgress( final double progress )
+	{
 		progressWriter.setProgress( progress );
-		progressBar.setValue((int) (progress * 100));
+		progressBar.setValue( ( int ) ( progress * 100 ) );
 	}
 
 	@Override
@@ -388,15 +389,18 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 		spinnerWidth.setValue( width );
 		spinnerHeight.setValue( height );
 	}
-	
-	private AffineTransform3D getTransformation(final ViewerState renderState, final int canvasW, final int canvasH, final int currentTimepoint){
-		
-		if(renderState.getActiveBookmark() instanceof DynamicBookmark){
-			final DynamicBookmark dynamicBookmark = (DynamicBookmark)renderState.getActiveBookmark();
-			final AffineTransform3D affine = dynamicBookmark.getInterpolatedTransform(currentTimepoint, canvasW / 2, canvasH);
+
+	private AffineTransform3D getTransformation( final ViewerState renderState, final int canvasW, final int canvasH, final int currentTimepoint )
+	{
+
+		if ( renderState.getActiveBookmark() instanceof DynamicBookmark )
+		{
+			final DynamicBookmark dynamicBookmark = ( DynamicBookmark ) renderState.getActiveBookmark();
+			final AffineTransform3D affine = dynamicBookmark.getInterpolatedTransform( currentTimepoint, canvasW / 2, canvasH );
 			return affine;
 		}
-		else{
+		else
+		{
 			final AffineTransform3D affine = new AffineTransform3D();
 			renderState.getViewerTransform( affine );
 			affine.set( affine.get( 0, 3 ) - canvasW / 2, 0, 3 );

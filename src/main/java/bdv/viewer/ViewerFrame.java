@@ -122,9 +122,7 @@ public class ViewerFrame extends JFrame
 			{
 				UserSaveChoice choice = UserSaveChoice.NO;
 				if ( null != funcSaveOnClose )
-				{
 					choice = funcSaveOnClose.invokeSaveOnClose();
-				}
 
 				if ( choice != UserSaveChoice.CANCEL )
 				{

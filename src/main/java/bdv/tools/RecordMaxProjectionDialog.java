@@ -34,6 +34,9 @@ import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -82,9 +85,6 @@ import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
 import net.imglib2.util.LinAlgHelpers;
-import java.awt.GridBagLayout;
-import java.awt.GridBagConstraints;
-import java.awt.Insets;
 
 public class RecordMaxProjectionDialog extends JDialog implements OverlayRenderer
 {
@@ -109,12 +109,13 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 	private final JSpinner spinnerStepSize;
 
 	private final JSpinner spinnerNumSteps;
-	
+
 	private JProgressBar progressBar;
 
 	private boolean isRecordThreadRunning;
+
 	private JButton cancelButton;
-	
+
 	public RecordMaxProjectionDialog( final Frame owner, final ViewerPanel viewer, final ProgressWriter progressWriter )
 	{
 		super( owner, "record max projection movie", false );
@@ -181,43 +182,45 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 		spinnerNumSteps = new JSpinner();
 		spinnerNumSteps.setModel( new SpinnerNumberModel( 10, 1, 10000, 1 ) );
 		numStepsPanel.add( spinnerNumSteps );
-		
-		JPanel progressPanel = new JPanel();
-		progressPanel.setBorder(new EmptyBorder(5, 5, 5, 5));
-		boxes.add(progressPanel);
-		GridBagLayout gbl_progressPanel = new GridBagLayout();
-		gbl_progressPanel.columnWidths = new int[]{332, 0, 0};
-		gbl_progressPanel.rowHeights = new int[]{19, 0};
-		gbl_progressPanel.columnWeights = new double[]{1.0, 0.0, Double.MIN_VALUE};
-		gbl_progressPanel.rowWeights = new double[]{1.0, Double.MIN_VALUE};
-		progressPanel.setLayout(gbl_progressPanel);
-		
+
+		final JPanel progressPanel = new JPanel();
+		progressPanel.setBorder( new EmptyBorder( 5, 5, 5, 5 ) );
+		boxes.add( progressPanel );
+		final GridBagLayout gbl_progressPanel = new GridBagLayout();
+		gbl_progressPanel.columnWidths = new int[] { 332, 0, 0 };
+		gbl_progressPanel.rowHeights = new int[] { 19, 0 };
+		gbl_progressPanel.columnWeights = new double[] { 1.0, 0.0, Double.MIN_VALUE };
+		gbl_progressPanel.rowWeights = new double[] { 1.0, Double.MIN_VALUE };
+		progressPanel.setLayout( gbl_progressPanel );
+
 		progressBar = new JProgressBar();
-		progressBar.setStringPainted(true);
-		GridBagConstraints gbc_progressBar = new GridBagConstraints();
-		gbc_progressBar.insets = new Insets(0, 0, 0, 5);
+		progressBar.setStringPainted( true );
+		final GridBagConstraints gbc_progressBar = new GridBagConstraints();
+		gbc_progressBar.insets = new Insets( 0, 0, 0, 5 );
 		gbc_progressBar.fill = GridBagConstraints.HORIZONTAL;
 		gbc_progressBar.gridx = 0;
 		gbc_progressBar.gridy = 0;
-		progressPanel.add(progressBar, gbc_progressBar);
-		
-		cancelButton = new JButton("Cancel");
-		cancelButton.setEnabled(false);
-		GridBagConstraints gbc_cancelButton = new GridBagConstraints();
+		progressPanel.add( progressBar, gbc_progressBar );
+
+		cancelButton = new JButton( "Cancel" );
+		cancelButton.setEnabled( false );
+		final GridBagConstraints gbc_cancelButton = new GridBagConstraints();
 		gbc_cancelButton.gridx = 1;
 		gbc_cancelButton.gridy = 0;
-		progressPanel.add(cancelButton, gbc_cancelButton);
-		cancelButton.addActionListener(new ActionListener() {
-			
+		progressPanel.add( cancelButton, gbc_cancelButton );
+		cancelButton.addActionListener( new ActionListener()
+		{
+
 			@Override
-			public void actionPerformed(ActionEvent e) {
+			public void actionPerformed( final ActionEvent e )
+			{
 				isRecordThreadRunning = false;
 			}
-		});
+		} );
 
 		final JPanel buttonsPanel = new JPanel();
 		boxes.add( buttonsPanel );
-		buttonsPanel.setLayout(new FlowLayout(FlowLayout.RIGHT, 5, 5));
+		buttonsPanel.setLayout( new FlowLayout( FlowLayout.RIGHT, 5, 5 ) );
 
 		final JButton recordButton = new JButton( "Record" );
 		buttonsPanel.add( recordButton );
@@ -241,7 +244,7 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 			{
 				final int min = ( Integer ) spinnerMinTimepoint.getValue();
 				final int max = ( Integer ) spinnerMaxTimepoint.getValue();
-				if (min > max)
+				if ( min > max )
 					spinnerMinTimepoint.setValue( max );
 			}
 		} );
@@ -295,10 +298,10 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 							isRecordThreadRunning = true;
 							recordButton.setEnabled( false );
 							cancelButton.setEnabled( true );
-							
+
 							recordMovie( width, height, minTimepointIndex, maxTimepointIndex, stepSize, numSteps, dir );
-							
-							progressBar.setValue(0);
+
+							progressBar.setValue( 0 );
 							recordButton.setEnabled( true );
 							cancelButton.setEnabled( false );
 							isRecordThreadRunning = false;
@@ -333,7 +336,8 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 	}
 
 	/**
-	 * @param stepSize in multiples of width of a source voxel.
+	 * @param stepSize
+	 *            in multiples of width of a source voxel.
 	 */
 	public void recordMovie( final int width, final int height, final int minTimepointIndex, final int maxTimepointIndex, final double stepSize, final int numSteps, final File dir ) throws IOException
 	{
@@ -346,7 +350,7 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 		// get voxel width transformed to current viewer coordinates
 		final AffineTransform3D tSV = new AffineTransform3D();
 		renderState.getSources().get( 0 ).getSpimSource().getSourceTransform( 0, 0, tSV );
-		
+
 		final ScaleBarOverlayRenderer scalebar = Prefs.showScaleBarInMovie() ? new ScaleBarOverlayRenderer() : null;
 
 		class MyTarget implements RenderTarget
@@ -377,7 +381,7 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 							Math.max( ARGBType.red( in ), ARGBType.red( current ) ),
 							Math.max( ARGBType.green( in ), ARGBType.green( current ) ),
 							Math.max( ARGBType.blue( in ), ARGBType.blue( current ) ),
-							Math.max( ARGBType.alpha( in ), ARGBType.alpha( current ) )	) );
+							Math.max( ARGBType.alpha( in ), ARGBType.alpha( current ) ) ) );
 				}
 				return null;
 			}
@@ -398,18 +402,18 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 		final MultiResolutionRenderer renderer = new MultiResolutionRenderer(
 				target, new PainterThread( null ), new double[] { 1 }, 0, false, 1, null, false,
 				viewer.getOptionValues().getAccumulateProjectorFactory(), new CacheControl.Dummy() );
-		setProgress(0);
+		setProgress( 0 );
 		for ( int timepoint = minTimepointIndex; timepoint <= maxTimepointIndex; ++timepoint )
 		{
 			// stop recording if requested
-			if(!isRecordThreadRunning)
+			if ( !isRecordThreadRunning )
 				break;
-			
-			final AffineTransform3D tGV = getTransformation(renderState, canvasW, canvasH, timepoint);
+
+			final AffineTransform3D tGV = getTransformation( renderState, canvasW, canvasH, timepoint );
 			tGV.scale( ( double ) width / canvasW );
 			tGV.set( tGV.get( 0, 3 ) + width / 2, 0, 3 );
 			tGV.set( tGV.get( 1, 3 ) + height / 2, 1, 3 );
-			
+
 			tSV.preConcatenate( tGV );
 			final double[] sO = new double[] { 0, 0, 0 };
 			final double[] sX = new double[] { 1, 0, 0 };
@@ -419,7 +423,7 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 			tSV.apply( sX, vX );
 			LinAlgHelpers.subtract( vO, vX, vO );
 			final double dd = LinAlgHelpers.length( vO );
-			
+
 			target.clear();
 			renderState.setCurrentTimepoint( timepoint );
 
@@ -446,23 +450,27 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 			}
 
 			ImageIO.write( bi, "png", new File( String.format( "%s/img-%03d.png", dir, timepoint ) ) );
-			setProgress(( double ) (timepoint - minTimepointIndex + 1) / (maxTimepointIndex - minTimepointIndex + 1));
+			setProgress( ( double ) ( timepoint - minTimepointIndex + 1 ) / ( maxTimepointIndex - minTimepointIndex + 1 ) );
 		}
-	}
-	
-	private synchronized  void setProgress(double progress){
-		progressWriter.setProgress( progress );
-		progressBar.setValue((int) (progress * 100));
 	}
 
-	private AffineTransform3D getTransformation(final ViewerState renderState, final int canvasW, final int canvasH, final int currentTimepoint){
-		
-		if(renderState.getActiveBookmark() instanceof DynamicBookmark){
-			final DynamicBookmark dynamicBookmark = (DynamicBookmark)renderState.getActiveBookmark();
-			final AffineTransform3D affine = dynamicBookmark.getInterpolatedTransform(currentTimepoint, canvasW / 2, canvasH);
+	private synchronized void setProgress( final double progress )
+	{
+		progressWriter.setProgress( progress );
+		progressBar.setValue( ( int ) ( progress * 100 ) );
+	}
+
+	private AffineTransform3D getTransformation( final ViewerState renderState, final int canvasW, final int canvasH, final int currentTimepoint )
+	{
+
+		if ( renderState.getActiveBookmark() instanceof DynamicBookmark )
+		{
+			final DynamicBookmark dynamicBookmark = ( DynamicBookmark ) renderState.getActiveBookmark();
+			final AffineTransform3D affine = dynamicBookmark.getInterpolatedTransform( currentTimepoint, canvasW / 2, canvasH );
 			return affine;
 		}
-		else{
+		else
+		{
 			final AffineTransform3D affine = new AffineTransform3D();
 			renderState.getViewerTransform( affine );
 			affine.set( affine.get( 0, 3 ) - canvasW / 2, 0, 3 );
@@ -470,7 +478,7 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 			return affine;
 		}
 	}
-	
+
 	@Override
 	public void drawOverlays( final Graphics g )
 	{}

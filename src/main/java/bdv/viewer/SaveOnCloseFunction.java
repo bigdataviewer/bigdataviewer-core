@@ -7,7 +7,6 @@ public interface SaveOnCloseFunction
 	{
 		CANCEL, YES, NO
 	}
-	
+
 	public UserSaveChoice invokeSaveOnClose();
-	
 }
