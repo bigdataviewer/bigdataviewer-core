@@ -50,7 +50,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import bdv.viewer.state.SourceGroup;
 import bdv.viewer.state.SourceState;
 import bdv.viewer.state.ViewerState;
-import bdv.viewer.state.XmlIoViewerState;
 
 /**
  * Manage visibility and currentness of sources and groups, as well as grouping
@@ -80,6 +79,8 @@ public class VisibilityAndGrouping
 
 		public static final int NUM_SOURCES_CHANGED = 8;
 
+		public static final int NUM_GROUPS_CHANGED = 9;
+
 		public final int id;
 
 		public final VisibilityAndGrouping visibilityAndGrouping;
@@ -100,13 +101,10 @@ public class VisibilityAndGrouping
 
 	protected final ViewerState state;
 
-	protected final XmlIoViewerState io;
-
 	public VisibilityAndGrouping( final ViewerState viewerState )
 	{
 		updateListeners = new CopyOnWriteArrayList<>();
 		state = viewerState;
-		io = new XmlIoViewerState();
 	}
 
 	public int numSources()

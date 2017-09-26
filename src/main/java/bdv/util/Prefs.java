@@ -42,6 +42,16 @@ public class Prefs
 		return getInstance().showScaleBar;
 	}
 
+	public static boolean showMultibox()
+	{
+		return getInstance().showMultibox;
+	}
+
+	public static boolean showTextOverlay()
+	{
+		return getInstance().showTextOverlay;
+	}
+
 	public static boolean showScaleBarInMovie()
 	{
 		return getInstance().showScaleBarInMovie;
@@ -57,6 +67,36 @@ public class Prefs
 		return getInstance().scaleBarBgColor;
 	}
 
+	public static void showScaleBar( final boolean show )
+	{
+		getInstance().showScaleBar = show;
+	}
+
+	public static void showMultibox( final boolean show )
+	{
+		getInstance().showMultibox = show;
+	}
+
+	public static void showTextOverlay( final boolean show )
+	{
+		getInstance().showTextOverlay = show;
+	}
+
+	public static void showScaleBarInMovie( final boolean show )
+	{
+		getInstance().showScaleBarInMovie = show;
+	}
+
+	public static void scaleBarColor( final int color )
+	{
+		getInstance().scaleBarColor = color;
+	}
+
+	public static void scaleBarBgColor( final int color )
+	{
+		getInstance().scaleBarBgColor = color;
+	}
+
 	private static Prefs instance;
 
 	public static Prefs getInstance()
@@ -69,18 +109,24 @@ public class Prefs
 	}
 
 	private static final String SHOW_SCALE_BAR = "show-scale-bar";
+	private static final String SHOW_MULTIBOX_OVERLAY = "show-multibox-overlay";
+	private static final String SHOW_TEXT_OVERLAY = "show-text-overlay";
 	private static final String SHOW_SCALE_BAR_IN_MOVIE = "show-scale-bar-in-movie";
 	private static final String SCALE_BAR_COLOR = "scale-bar-color";
 	private static final String SCALE_BAR_BG_COLOR = "scale-bar-bg-color";
 
-	private final boolean showScaleBar;
-	private final boolean showScaleBarInMovie;
-	private final int scaleBarColor;
-	private final int scaleBarBgColor;
+	private boolean showScaleBar;
+	private boolean showMultibox;
+	private boolean showTextOverlay;
+	private boolean showScaleBarInMovie;
+	private int scaleBarColor;
+	private int scaleBarBgColor;
 
 	private Prefs( final Properties p )
 	{
 		showScaleBar = getBoolean( p, SHOW_SCALE_BAR, false );
+		showMultibox = getBoolean( p, SHOW_MULTIBOX_OVERLAY, true );
+		showTextOverlay = getBoolean( p, SHOW_TEXT_OVERLAY, true );
 		showScaleBarInMovie = getBoolean( p, SHOW_SCALE_BAR_IN_MOVIE, false );
 		scaleBarColor = getInt( p, SCALE_BAR_COLOR, 0xffffffff );
 		scaleBarBgColor = getInt( p, SCALE_BAR_BG_COLOR, 0x88000000 );
@@ -133,6 +179,8 @@ public class Prefs
 			{
 				try
 				{
+
+					System.out.println("reading property file");
 					return readPropertyFile( file );
 				}
 				catch ( final IOException e )
@@ -158,6 +206,8 @@ public class Prefs
 		final Properties properties = new Properties();
 		final Prefs prefs = new Prefs( null );
 		properties.put( SHOW_SCALE_BAR, "" + prefs.showScaleBar );
+		properties.put( SHOW_MULTIBOX_OVERLAY, "" + prefs.showMultibox );
+		properties.put( SHOW_TEXT_OVERLAY, "" + prefs.showTextOverlay );
 		properties.put( SHOW_SCALE_BAR_IN_MOVIE, "" + prefs.showScaleBarInMovie );
 		properties.put( SCALE_BAR_COLOR, "" + prefs.scaleBarColor );
 		properties.put( SCALE_BAR_BG_COLOR, "" + prefs.scaleBarBgColor );

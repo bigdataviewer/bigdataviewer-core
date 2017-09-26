@@ -382,8 +382,8 @@ public class BrightnessDialog extends JDialog
 					{
 						if ( box.isSelected() )
 							assignments.moveSetupToGroup( setup, minMaxGroup );
-						else
-							assignments.removeSetupFromGroup( setup, minMaxGroup );
+						else if ( !assignments.removeSetupFromGroup( setup, minMaxGroup ) )
+							box.setSelected( true );
 					}
 				} );
 				boxesPanel.add( box );

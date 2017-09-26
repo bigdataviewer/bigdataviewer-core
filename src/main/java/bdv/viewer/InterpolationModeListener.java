@@ -1,4 +1,4 @@
-/*
+/*-
  * #%L
  * BigDataViewer core classes with minimal dependencies
  * %%
@@ -29,23 +29,7 @@
  */
 package bdv.viewer;
 
-/**
- * Interpolation methods.
- */
-public enum Interpolation
+public interface InterpolationModeListener
 {
-	NEARESTNEIGHBOR( "nearest-neighbor interpolation" ),
-	NLINEAR( "tri-linear interpolation" );
-
-	private final String name;
-
-	private Interpolation( final String name )
-	{
-		this.name = name;
-	}
-
-	public String getName()
-	{
-		return name;
-	}
+	public void interpolationModeChanged( final Interpolation mode );
 }

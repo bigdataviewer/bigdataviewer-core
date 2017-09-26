@@ -564,6 +564,11 @@ public class BigDataViewer
 		return setupAssignments;
 	}
 
+	public ManualTransformationEditor getManualTransformEditor()
+	{
+		return manualTransformationEditor;
+	}
+
 	public boolean tryLoadSettings( final String xmlFilename )
 	{
 		proposedSettingsFile = null;
@@ -642,7 +647,7 @@ public class BigDataViewer
 		}
 	}
 
-	protected void saveSettings( final String xmlFilename ) throws IOException
+	public void saveSettings( final String xmlFilename ) throws IOException
 	{
 		final Element root = new Element( "Settings" );
 		root.addContent( viewer.stateToXml() );
@@ -723,7 +728,7 @@ public class BigDataViewer
 		}
 	}
 
-	protected void loadSettings( final String xmlFilename ) throws IOException, JDOMException
+	public void loadSettings( final String xmlFilename ) throws IOException, JDOMException
 	{
 		final SAXBuilder sax = new SAXBuilder();
 		final Document doc = sax.build( xmlFilename );

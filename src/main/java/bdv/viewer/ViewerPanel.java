@@ -33,6 +33,7 @@ import static bdv.viewer.VisibilityAndGrouping.Event.CURRENT_SOURCE_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.DISPLAY_MODE_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.GROUP_ACTIVITY_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.GROUP_NAME_CHANGED;
+import static bdv.viewer.VisibilityAndGrouping.Event.NUM_GROUPS_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.NUM_SOURCES_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.SOURCE_ACTVITY_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.VISIBILITY_CHANGED;
@@ -224,6 +225,8 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 */
 	protected final CopyOnWriteArrayList< TimePointListener > timePointListeners;
 
+	protected final CopyOnWriteArrayList< InterpolationModeListener > interpolationModeListeners;
+
 	/**
 	 * Current animator for viewer transform, or null. This is for example used
 	 * to make smooth transitions when {@link #align(AlignPlane) aligning to
@@ -282,10 +285,10 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		options = optional.values;
 		this.actionMap = actionMap;
 
-		final int numGroups = 10;
+		final int numGroups = options.getNumSourceGroups();
 		final ArrayList< SourceGroup > groups = new ArrayList<>( numGroups );
 		for ( int i = 0; i < numGroups; ++i )
-			groups.add( new SourceGroup( "group " + Integer.toString( i + 1 ), null ) );
+			groups.add( new SourceGroup( "group " + Integer.toString( i + 1 ) ) );
 		state = new ViewerState( sources, groups, numTimepoints );
 		for ( int i = Math.min( numGroups, sources.size() ) - 1; i >= 0; --i )
 			state.getSourceGroups().get( i ).addSource( i );
@@ -459,6 +462,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		transformListeners = new CopyOnWriteArrayList<>();
 		lastRenderTransformListeners = new CopyOnWriteArrayList<>();
 		timePointListeners = new CopyOnWriteArrayList<>();
+		interpolationModeListeners = new CopyOnWriteArrayList<>();
 
 		msgOverlay = options.getMsgOverlay();
 
@@ -529,6 +533,26 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		{
 			state.removeSource( source );
 			visibilityAndGrouping.update( NUM_SOURCES_CHANGED );
+		}
+		requestRepaint();
+	}
+
+	public void addGroup( final SourceGroup group )
+	{
+		synchronized ( visibilityAndGrouping )
+		{
+			state.addGroup( group );
+			visibilityAndGrouping.update( NUM_GROUPS_CHANGED );
+		}
+		requestRepaint();
+	}
+
+	public void removeGroup( final SourceGroup group )
+	{
+		synchronized ( visibilityAndGrouping )
+		{
+			state.removeGroup( group );
+			visibilityAndGrouping.update( NUM_GROUPS_CHANGED );
 		}
 		requestRepaint();
 	}
@@ -635,28 +659,34 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	@Override
 	public void drawOverlays( final Graphics g )
 	{
-		multiBoxOverlayRenderer.setViewerState( state );
-		multiBoxOverlayRenderer.updateVirtualScreenSize( display.getWidth(), display.getHeight() );
-		multiBoxOverlayRenderer.paint( ( Graphics2D ) g );
+		boolean requiresRepaint = false;
+		if ( Prefs.showMultibox() )
+		{
+			multiBoxOverlayRenderer.setViewerState( state );
+			multiBoxOverlayRenderer.updateVirtualScreenSize( display.getWidth(), display.getHeight() );
+			multiBoxOverlayRenderer.paint( ( Graphics2D ) g );
+			requiresRepaint = multiBoxOverlayRenderer.isHighlightInProgress();
+		}
 
-		sourceInfoOverlayRenderer.setViewerState( state );
-		sourceInfoOverlayRenderer.paint( ( Graphics2D ) g );
+		if( Prefs.showTextOverlay() )
+		{
+			sourceInfoOverlayRenderer.setViewerState( state );
+			sourceInfoOverlayRenderer.paint( ( Graphics2D ) g );
+
+			final RealPoint gPos = new RealPoint( 3 );
+			getGlobalMouseCoordinates( gPos );
+			final String mousePosGlobalString = String.format( "(%6.1f,%6.1f,%6.1f)", gPos.getDoublePosition( 0 ), gPos.getDoublePosition( 1 ), gPos.getDoublePosition( 2 ) );
+
+			g.setFont( new Font( "Monospaced", Font.PLAIN, 12 ) );
+			g.setColor( Color.white );
+			g.drawString( mousePosGlobalString, ( int ) g.getClipBounds().getWidth() - 170, 25 );
+		}
 
 		if ( Prefs.showScaleBar() )
 		{
 			scaleBarOverlayRenderer.setViewerState( state );
 			scaleBarOverlayRenderer.paint( ( Graphics2D ) g );
 		}
-
-		final RealPoint gPos = new RealPoint( 3 );
-		getGlobalMouseCoordinates( gPos );
-		final String mousePosGlobalString = String.format( "(%6.1f,%6.1f,%6.1f)", gPos.getDoublePosition( 0 ), gPos.getDoublePosition( 1 ), gPos.getDoublePosition( 2 ) );
-
-		g.setFont( new Font( "Monospaced", Font.PLAIN, 12 ) );
-		g.setColor( Color.white );
-		g.drawString( mousePosGlobalString, ( int ) g.getClipBounds().getWidth() - 170, 25 );
-
-		boolean requiresRepaint = multiBoxOverlayRenderer.isHighlightInProgress();
 
 		final long currentTimeMillis = System.currentTimeMillis();
 		final ArrayList< OverlayAnimator > overlayAnimatorsToRemove = new ArrayList<>();
@@ -806,22 +836,30 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 	/**
 	 * Switch to next interpolation mode. (Currently, there are two
-	 * interpolation modes: nearest-neighbor and N-linear.
+	 * interpolation modes: nearest-neighbor and N-linear.)
 	 */
 	public synchronized void toggleInterpolation()
 	{
+		final int i = state.getInterpolation().ordinal();
+		final int n = Interpolation.values().length;
+		final Interpolation mode = Interpolation.values()[ ( i + 1 ) % n ];
+		setInterpolation( mode );
+	}
+
+	/**
+	 * Set the {@link Interpolation} mode.
+	 */
+	public synchronized void setInterpolation( final Interpolation mode )
+	{
 		final Interpolation interpolation = state.getInterpolation();
-		if ( interpolation == Interpolation.NEARESTNEIGHBOR )
+		if ( mode != interpolation )
 		{
-			state.setInterpolation( Interpolation.NLINEAR );
-			showMessage( "tri-linear interpolation" );
+			state.setInterpolation( mode );
+			showMessage( mode.getName() );
+			for ( final InterpolationModeListener l : interpolationModeListeners )
+				l.interpolationModeChanged( state.getInterpolation() );
+			requestRepaint();
 		}
-		else
-		{
-			state.setInterpolation( Interpolation.NEARESTNEIGHBOR );
-			showMessage( "nearest-neighbor interpolation" );
-		}
-		requestRepaint();
 	}
 
 	/**
@@ -1004,6 +1042,30 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	{
 		overlayAnimators.add( animator );
 		display.repaint();
+	}
+
+	/**
+	 * Add a {@link InterpolationModeListener} to notify when the interpolation
+	 * mode is changed. Listeners will be notified <em>before</em> calling
+	 * {@link #requestRepaint()} so they have the chance to interfere.
+	 *
+	 * @param listener
+	 *            the interpolation mode listener to add.
+	 */
+	public void addInterpolationModeListener( final InterpolationModeListener listener )
+	{
+		interpolationModeListeners.add( listener );
+	}
+
+	/**
+	 * Remove a {@link InterpolationModeListener}.
+	 *
+	 * @param listener
+	 *            the interpolation mode listener to remove.
+	 */
+	public void removeInterpolationModeListener( final InterpolationModeListener listener )
+	{
+		interpolationModeListeners.remove( listener );
 	}
 
 	/**

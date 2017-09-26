@@ -1,4 +1,4 @@
-/*
+/*-
  * #%L
  * BigDataViewer core classes with minimal dependencies
  * %%
@@ -27,25 +27,9 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package bdv.viewer;
+package bdv.tools.transformation;
 
-/**
- * Interpolation methods.
- */
-public enum Interpolation
+public interface ManualTransformActiveListener
 {
-	NEARESTNEIGHBOR( "nearest-neighbor interpolation" ),
-	NLINEAR( "tri-linear interpolation" );
-
-	private final String name;
-
-	private Interpolation( final String name )
-	{
-		this.name = name;
-	}
-
-	public String getName()
-	{
-		return name;
-	}
+	public void manualTransformActiveChanged( final boolean acitve );
 }

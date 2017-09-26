@@ -8,4 +8,7 @@
 .project
 .settings
 /target
-/bin/
+
+# IntelliJ
+.idea/
+*.iml
