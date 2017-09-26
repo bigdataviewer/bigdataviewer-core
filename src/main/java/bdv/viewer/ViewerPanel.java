@@ -170,7 +170,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 */
 	protected final InteractiveDisplayCanvasComponent< AffineTransform3D > display;
 
-	protected final JSlider timeSlider;
+	protected final JSlider sliderTime;
 
 	/**
 	 * A {@link ThreadGroup} for (only) the threads used by this
@@ -253,22 +253,27 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	protected final JButton addKeyframeButton;
 
 	protected final JButton nextKeyframeButton;
-	
-	protected final List<ActiveBookmarkChangedListener> activeBookmarkChangedListeners = new ArrayList<>();
-	
+
+	protected final JPlaySlider sliderPlay;
+
+	protected final JPanel timeKeyframePanel;
+
+	protected final JKeyFramePanel keyframePanel;
+
+	protected final List< ActiveBookmarkChangedListener > activeBookmarkChangedListeners = new ArrayList<>();
+
 	protected final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-	
-	protected final Timer playTimer = new Timer( 0, this::onPlayTimerTick ); 
-	
+
+	protected final Timer playTimer = new Timer( 0, this::onPlayTimerTick );
+
 	protected final ActionMap actionMap;
-	
+
 	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimePoints, final CacheControl cacheControl, final ActionMap actionMap )
 	{
 		this( sources, numTimePoints, cacheControl, ViewerOptions.options(), actionMap );
 	}
 
 	/**
-	 * @wbp.parser.constructor
 	 * @param sources
 	 *            the {@link SourceAndConverter sources} to display.
 	 * @param numTimepoints
@@ -281,7 +286,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimepoints, final CacheControl cacheControl, final ViewerOptions optional, final ActionMap actionMap )
 	{
 		super( new BorderLayout(), false );
-		setPreferredSize(new Dimension(600, 500));
+		setPreferredSize( new Dimension( 600, 500 ) );
 		options = optional.values;
 		this.actionMap = actionMap;
 
@@ -302,8 +307,13 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		threadGroup = new ThreadGroup( this.toString() );
 		painterThread = new PainterThread( threadGroup, this );
 		viewerTransform = new AffineTransform3D();
+		display = new InteractiveDisplayCanvasComponent<>(
+				options.getWidth(), options.getHeight(), options.getTransformEventHandlerFactory() );
+		display.addTransformListener( this );
 		renderTarget = new TransformAwareBufferedImageOverlayRenderer();
 		renderTarget.setCanvasSize( options.getWidth(), options.getHeight() );
+		display.addOverlayRenderer( renderTarget );
+		display.addOverlayRenderer( this );
 
 		renderingExecutorService = Executors.newFixedThreadPool(
 				options.getNumRenderingThreads(),
@@ -320,16 +330,8 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 				cacheControl );
 
 		mouseCoordinates = new MouseCoordinateListener();
-
-		display = new InteractiveDisplayCanvasComponent<>(
-				options.getWidth(), options.getHeight(), options.getTransformEventHandlerFactory() );
-		add(display, BorderLayout.CENTER);
-		
-		display.addTransformListener( this );
-		display.addOverlayRenderer( renderTarget );
-		display.addOverlayRenderer( this );
 		display.addHandler( mouseCoordinates );
-		
+
 		display.addComponentListener( new ComponentAdapter()
 		{
 			@Override
@@ -339,116 +341,118 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 				display.removeComponentListener( this );
 			}
 		} );
-				
-		JPanel sliderPanel = new JPanel();
-		sliderPanel.setLayout(new BoxLayout(sliderPanel, BoxLayout.X_AXIS));
-		
-		sliderPanel.add(Box.createRigidArea(new Dimension(5, 5)));
-		
-		previousKeyframeButton = new JButton("<<");
-		previousKeyframeButton.setToolTipText("Go to previous keyframe");
+
+		final JPanel sliderPanel = new JPanel();
+		sliderPanel.setLayout( new BoxLayout( sliderPanel, BoxLayout.X_AXIS ) );
+
+		sliderPanel.add( Box.createRigidArea( new Dimension( 5, 5 ) ) );
+
+		previousKeyframeButton = new JButton( "<<" );
+		previousKeyframeButton.setToolTipText( "Go to previous keyframe" );
 		previousKeyframeButton.addActionListener( new ActionListener()
 		{
 			@Override
-			public void actionPerformed( ActionEvent e )
+			public void actionPerformed( final ActionEvent e )
 			{
 				final Action action = actionMap.get( BigDataViewerActions.PREVIOUS_KEYFRAME );
-				if(action != null)
+				if ( action != null )
 					action.actionPerformed( e );
 			}
 		} );
-		sliderPanel.add(previousKeyframeButton);
-		
-		sliderPanel.add(Box.createRigidArea(new Dimension(5, 5)));
-		
-		addKeyframeButton = new JButton("+");
-		addKeyframeButton.setToolTipText("Add a new keyframe");
+		sliderPanel.add( previousKeyframeButton );
+
+		sliderPanel.add( Box.createRigidArea( new Dimension( 5, 5 ) ) );
+
+		addKeyframeButton = new JButton( "+" );
+		addKeyframeButton.setToolTipText( "Add a new keyframe" );
 		addKeyframeButton.addActionListener( new ActionListener()
 		{
 			@Override
-			public void actionPerformed( ActionEvent e )
+			public void actionPerformed( final ActionEvent e )
 			{
 				final Action action = actionMap.get( BigDataViewerActions.ADD_KEYFRAME );
-				if(action != null)
+				if ( action != null )
 					action.actionPerformed( e );
 			}
 		} );
-		sliderPanel.add(addKeyframeButton);
-		
-		sliderPanel.add(Box.createRigidArea(new Dimension(5, 5)));
-		
-		nextKeyframeButton = new JButton(">>");
-		nextKeyframeButton.setToolTipText("Go to next keyframe");
+		sliderPanel.add( addKeyframeButton );
+
+		sliderPanel.add( Box.createRigidArea( new Dimension( 5, 5 ) ) );
+
+		nextKeyframeButton = new JButton( ">>" );
+		nextKeyframeButton.setToolTipText( "Go to next keyframe" );
 		nextKeyframeButton.addActionListener( new ActionListener()
 		{
 			@Override
-			public void actionPerformed( ActionEvent e )
+			public void actionPerformed( final ActionEvent e )
 			{
 				final Action action = actionMap.get( BigDataViewerActions.NEXT_KEYFRAME );
-				if(action != null)
+				if ( action != null )
 					action.actionPerformed( e );
 			}
 		} );
-		sliderPanel.add(nextKeyframeButton);
-		
-		sliderPanel.add(Box.createRigidArea(new Dimension(5, 5)));
-		
+		sliderPanel.add( nextKeyframeButton );
+
+		sliderPanel.add( Box.createRigidArea( new Dimension( 5, 5 ) ) );
+
 		sliderPlay = new JPlaySlider();
-		sliderPlay.setPreferredSize(new Dimension(200, 50));
-		sliderPlay.setMinimumSize(new Dimension(200, 50));
-		sliderPlay.setMaximumSize(new Dimension(200, 50));
-		sliderPlay.setAlignmentX(Component.LEFT_ALIGNMENT);
-		sliderPanel.add(sliderPlay);
+		sliderPlay.setPreferredSize( new Dimension( 200, 50 ) );
+		sliderPlay.setMinimumSize( new Dimension( 200, 50 ) );
+		sliderPlay.setMaximumSize( new Dimension( 200, 50 ) );
+		sliderPlay.setAlignmentX( Component.LEFT_ALIGNMENT );
+		sliderPanel.add( sliderPlay );
 		sliderPlay.addChangeListener( new ChangeListener()
 		{
 			@Override
 			public void stateChanged( final ChangeEvent e )
 			{
-				//if ( !e.getSource().equals( sliderPlay ) )
-				//	return;
-						
-				if(sliderPlay.getValue() == 0) {
+				// if ( !e.getSource().equals( sliderPlay ) )
+				// return;
+
+				if ( sliderPlay.getValue() == 0 )
+				{
 					stopPlayExecuter();
 					return;
 				}
-				
-				final int periode = 1000 / (1 * Math.abs(sliderPlay.getValue()));
+
+				final int periode = 1000 / ( 1 * Math.abs( sliderPlay.getValue() ) );
 				playTimer.setDelay( periode );
 				playTimer.start();
 			}
 		} );
-		sliderPlay.addComponentListener(new ComponentAdapter() {
+		sliderPlay.addComponentListener( new ComponentAdapter()
+		{
 			@Override
-			public void componentHidden(ComponentEvent e) {
+			public void componentHidden( final ComponentEvent e )
+			{
 				stopPlayExecuter();
 			}
-			
-		});
-		
-		rigidArea = Box.createRigidArea(new Dimension(5, 5));
-		sliderPanel.add(rigidArea);
-		
+
+		} );
+
+		sliderPanel.add( Box.createRigidArea( new Dimension( 5, 5 ) ) );
+
 		timeKeyframePanel = new JPanel();
-		timeKeyframePanel.setBorder(new EmptyBorder(5, 0, 5, 0));
-		sliderPanel.add(timeKeyframePanel);
-		timeKeyframePanel.setLayout(new BoxLayout(timeKeyframePanel, BoxLayout.Y_AXIS));
-		
-		timeSlider = new JSlider(0, numTimepoints - 1, 0);
-		timeSlider.setMinimumSize(new Dimension(36, 26));
-		timeSlider.setMaximumSize(new Dimension(32767, 26));
-		
-		timeKeyframePanel.add(timeSlider);
-		
-		keyframePanel = new JKeyFramePanel(timeSlider);
-		timeKeyframePanel.add(keyframePanel);
-		
-		timeSlider.addChangeListener( new ChangeListener()
+		timeKeyframePanel.setBorder( new EmptyBorder( 5, 0, 5, 0 ) );
+		sliderPanel.add( timeKeyframePanel );
+		timeKeyframePanel.setLayout( new BoxLayout( timeKeyframePanel, BoxLayout.Y_AXIS ) );
+
+		sliderTime = new JSlider( 0, numTimepoints - 1, 0 );
+		sliderTime.setMinimumSize( new Dimension( 36, 26 ) );
+		sliderTime.setMaximumSize( new Dimension( 32767, 26 ) );
+
+		timeKeyframePanel.add( sliderTime );
+
+		keyframePanel = new JKeyFramePanel( sliderTime );
+		timeKeyframePanel.add( keyframePanel );
+
+		sliderTime.addChangeListener( new ChangeListener()
 		{
 			@Override
 			public void stateChanged( final ChangeEvent e )
 			{
-				if ( e.getSource().equals( timeSlider ) )
-					setTimepoint( timeSlider.getValue() );
+				if ( e.getSource().equals( sliderTime ) )
+					setTimepoint( sliderTime.getValue() );
 			}
 		} );
 
@@ -482,41 +486,48 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 		painterThread.start();
 	}
-	
-	public void stopPlayExecuter() {
+
+	public void stopPlayExecuter()
+	{
 		playTimer.stop();
 	}
-	
-	private void onPlayTimerTick(ActionEvent event) {
-		final int changeValue = Integer.signum(sliderPlay.getValue());
+
+	private void onPlayTimerTick( final ActionEvent event )
+	{
+		final int changeValue = Integer.signum( sliderPlay.getValue() );
 		final int newTimepoint = state.getCurrentTimepoint() + changeValue;
 		final int numTimepoints = state.getNumTimepoints();
-		
-		if(newTimepoint<0){
-			  setTimepoint(0);
-			  stopPlayExecuter();
-			  sliderPlay.setValue(0);
-		  }
-		  else if(newTimepoint > numTimepoints - 1){
-			  setTimepoint(numTimepoints -1);
-			  stopPlayExecuter();
-			  sliderPlay.setValue(0);
-		  }
-		  else{
-			  setTimepoint(newTimepoint);
-		  }
+
+		if ( newTimepoint < 0 )
+		{
+			setTimepoint( 0 );
+			stopPlayExecuter();
+			sliderPlay.setValue( 0 );
+		}
+		else if ( newTimepoint > numTimepoints - 1 )
+		{
+			setTimepoint( numTimepoints - 1 );
+			stopPlayExecuter();
+			sliderPlay.setValue( 0 );
+		}
+		else
+		{
+			setTimepoint( newTimepoint );
+		}
 	}
 
-	public void setKeyframeButtonEnable(boolean enable){
-		previousKeyframeButton.setEnabled(enable);
-		addKeyframeButton.setEnabled(enable);
-		nextKeyframeButton.setEnabled(enable);
+	public void setKeyframeButtonEnable( final boolean enable )
+	{
+		previousKeyframeButton.setEnabled( enable );
+		addKeyframeButton.setEnabled( enable );
+		nextKeyframeButton.setEnabled( enable );
 	}
-	
-	public KeyFramePopupMenu getKeyFramePopupMenu(){
+
+	public KeyFramePopupMenu getKeyFramePopupMenu()
+	{
 		return this.keyframePanel.getKeyFramePopupMenuPopupMenu();
 	}
-	
+
 	public void addSource( final SourceAndConverter< ? > sourceAndConverter )
 	{
 		synchronized ( visibilityAndGrouping )
@@ -742,11 +753,6 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	}
 
 	private final static double c = Math.cos( Math.PI / 4 );
-	private Component rigidArea;
-	private JPlaySlider sliderPlay;
-	private Component rigidArea_1;
-	private JPanel timeKeyframePanel;
-	private JKeyFramePanel keyframePanel;
 
 	/**
 	 * The planes which can be aligned with the viewer coordinate system: XY,
@@ -890,7 +896,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		if ( state.getCurrentTimepoint() != timepoint )
 		{
 			state.setCurrentTimepoint( timepoint );
-			timeSlider.setValue( timepoint );
+			sliderTime.setValue( timepoint );
 			for ( final TimePointListener l : timePointListeners )
 				l.timePointChanged( timepoint );
 			requestRepaint();
@@ -903,7 +909,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	public synchronized void nextTimePoint()
 	{
 		if ( state.getNumTimepoints() > 1 )
-			timeSlider.setValue( timeSlider.getValue() + 1 );
+			sliderTime.setValue( sliderTime.getValue() + 1 );
 	}
 
 	/**
@@ -912,7 +918,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	public synchronized void previousTimePoint()
 	{
 		if ( state.getNumTimepoints() > 1 )
-			timeSlider.setValue( timeSlider.getValue() - 1 );
+			sliderTime.setValue( sliderTime.getValue() - 1 );
 	}
 
 	/**
@@ -941,9 +947,9 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		if ( numTimepoints < 1 || state.getNumTimepoints() == numTimepoints )
 			return;
 		else if ( numTimepoints == 1 && state.getNumTimepoints() > 1 )
-			remove( timeSlider );
+			remove( sliderTime );
 		else if ( numTimepoints > 1 && state.getNumTimepoints() == 1 )
-			add( timeSlider, BorderLayout.SOUTH );
+			add( sliderTime, BorderLayout.SOUTH );
 
 		state.setNumTimepoints( numTimepoints );
 		if ( state.getCurrentTimepoint() >= numTimepoints )
@@ -953,49 +959,52 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 			for ( final TimePointListener l : timePointListeners )
 				l.timePointChanged( timepoint );
 		}
-		timeSlider.setModel( new DefaultBoundedRangeModel( state.getCurrentTimepoint(), 0, 0, numTimepoints - 1 ) );
+		sliderTime.setModel( new DefaultBoundedRangeModel( state.getCurrentTimepoint(), 0, 0, numTimepoints - 1 ) );
 		revalidate();
 		requestRepaint();
 	}
-	
+
 	/**
 	 * Get the currently active bookmark.
 	 */
-	public synchronized Bookmark getActiveBookmark(){
+	public synchronized Bookmark getActiveBookmark()
+	{
 		return state.getActiveBookmark();
 	}
-	
+
 	/**
 	 * Set the active bookmark
+	 *
 	 * @param bookmark
-	 * 			the active bookmark
+	 *            the active bookmark
 	 */
-	public synchronized void setActiveBookmark(final Bookmark bookmark) {
-		Bookmark previousBookmark = this.state.getActiveBookmark();
-		this.state.setActiveBookmark(bookmark);
-		
+	public synchronized void setActiveBookmark( final Bookmark bookmark )
+	{
+		final Bookmark previousBookmark = this.state.getActiveBookmark();
+		this.state.setActiveBookmark( bookmark );
+
 		final boolean enableKeyframeButtons = bookmark instanceof DynamicBookmark;
-		setKeyframeButtonEnable(enableKeyframeButtons);
-        
-        if (bookmark instanceof DynamicBookmark) {
-            keyframePanel.setDynamicBookmarks((DynamicBookmark) bookmark);
-        } else {
-        	keyframePanel.setDynamicBookmarks(null);
-        }
-        
-        for(ActiveBookmarkChangedListener l: this.activeBookmarkChangedListeners){
-        	l.activeBookmarkChanged(previousBookmark, bookmark);
-        }
-        
+		setKeyframeButtonEnable( enableKeyframeButtons );
+
+		if ( bookmark instanceof DynamicBookmark )
+			keyframePanel.setDynamicBookmarks( ( DynamicBookmark ) bookmark );
+		else
+			keyframePanel.setDynamicBookmarks( null );
+
+		for ( final ActiveBookmarkChangedListener l : this.activeBookmarkChangedListeners )
+			l.activeBookmarkChanged( previousBookmark, bookmark );
+
 		display.repaint();
 	}
-	
-	public void addActiveBookmarkChangedListener(ActiveBookmarkChangedListener listener){
-		activeBookmarkChangedListeners.add(listener);
+
+	public void addActiveBookmarkChangedListener( final ActiveBookmarkChangedListener listener )
+	{
+		activeBookmarkChangedListeners.add( listener );
 	}
-	
-	public void removeActiveBookmarkChangedListener(ActiveBookmarkChangedListener listener){
-		activeBookmarkChangedListeners.remove(listener);
+
+	public void removeActiveBookmarkChangedListener( final ActiveBookmarkChangedListener listener )
+	{
+		activeBookmarkChangedListeners.remove( listener );
 	}
 
 	/**
