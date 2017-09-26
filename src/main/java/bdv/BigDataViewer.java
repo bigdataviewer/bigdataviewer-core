@@ -527,6 +527,11 @@ public class BigDataViewer
 		return setupAssignments;
 	}
 
+	public ManualTransformationEditor getManualTransformEditor()
+	{
+		return manualTransformationEditor;
+	}
+
 	public boolean tryLoadSettings( final String xmlFilename )
 	{
 		proposedSettingsFile = null;
