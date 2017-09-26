@@ -25,7 +25,6 @@ import javax.swing.border.CompoundBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
-import bdv.MaxLengthTextDocument;
 import bdv.tools.bookmarks.bookmark.Bookmark;
 import bdv.tools.bookmarks.bookmark.DynamicBookmark;
 import bdv.tools.bookmarks.bookmark.SimpleBookmark;

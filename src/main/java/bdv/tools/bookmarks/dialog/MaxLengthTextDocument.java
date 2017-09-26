@@ -1,4 +1,4 @@
-package bdv;
+package bdv.tools.bookmarks.dialog;
 
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
