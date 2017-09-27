@@ -33,6 +33,9 @@ import java.awt.BorderLayout;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -53,14 +56,23 @@ import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.JProgressBar;
 import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.WindowConstants;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import bdv.cache.CacheControl;
+import bdv.export.ProgressWriter;
+import bdv.util.Prefs;
+import bdv.viewer.ViewerPanel;
+import bdv.viewer.overlay.ScaleBarOverlayRenderer;
+import bdv.viewer.render.MultiResolutionRenderer;
+import bdv.viewer.state.ViewerState;
 import net.imglib2.Cursor;
 import net.imglib2.display.screenimage.awt.ARGBScreenImage;
 import net.imglib2.img.Img;
@@ -71,13 +83,6 @@ import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
 import net.imglib2.util.LinAlgHelpers;
-import bdv.cache.CacheControl;
-import bdv.export.ProgressWriter;
-import bdv.util.Prefs;
-import bdv.viewer.ViewerPanel;
-import bdv.viewer.overlay.ScaleBarOverlayRenderer;
-import bdv.viewer.render.MultiResolutionRenderer;
-import bdv.viewer.state.ViewerState;
 
 public class RecordMaxProjectionDialog extends JDialog implements OverlayRenderer
 {
@@ -102,6 +107,10 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 	private final JSpinner spinnerStepSize;
 
 	private final JSpinner spinnerNumSteps;
+
+	private final JProgressBar progressBar;
+
+	private volatile boolean isRecordThreadRunning;
 
 	public RecordMaxProjectionDialog( final Frame owner, final ViewerPanel viewer, final ProgressWriter progressWriter )
 	{
@@ -170,9 +179,44 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 		spinnerNumSteps.setModel( new SpinnerNumberModel( 10, 1, 10000, 1 ) );
 		numStepsPanel.add( spinnerNumSteps );
 
+		final JPanel progressPanel = new JPanel();
+		progressPanel.setBorder( new EmptyBorder( 5, 5, 5, 5 ) );
+		boxes.add( progressPanel );
+		final GridBagLayout gbl_progressPanel = new GridBagLayout();
+		gbl_progressPanel.columnWidths = new int[] { 332, 0, 0 };
+		gbl_progressPanel.rowHeights = new int[] { 19, 0 };
+		gbl_progressPanel.columnWeights = new double[] { 1.0, 0.0, Double.MIN_VALUE };
+		gbl_progressPanel.rowWeights = new double[] { 1.0, Double.MIN_VALUE };
+		progressPanel.setLayout( gbl_progressPanel );
+
+		progressBar = new JProgressBar();
+		progressBar.setStringPainted( true );
+		final GridBagConstraints gbc_progressBar = new GridBagConstraints();
+		gbc_progressBar.fill = GridBagConstraints.HORIZONTAL;
+		gbc_progressBar.insets = new Insets( 0, 0, 0, 5 );
+		gbc_progressBar.gridx = 0;
+		gbc_progressBar.gridy = 0;
+		progressPanel.add( progressBar, gbc_progressBar );
+
+		final JButton cancelButton = new JButton( "Cancel" );
+		cancelButton.setEnabled( false );
+		final GridBagConstraints gbc_cancelButton = new GridBagConstraints();
+		gbc_cancelButton.gridx = 1;
+		gbc_cancelButton.gridy = 0;
+		progressPanel.add( cancelButton, gbc_cancelButton );
+		cancelButton.addActionListener( new ActionListener()
+		{
+
+			@Override
+			public void actionPerformed( final ActionEvent e )
+			{
+				isRecordThreadRunning = false;
+			}
+		} );
+
 		final JPanel buttonsPanel = new JPanel();
 		boxes.add( buttonsPanel );
-		buttonsPanel.setLayout(new BorderLayout(0, 0));
+		buttonsPanel.setLayout( new BorderLayout( 0, 0 ) );
 
 		final JButton recordButton = new JButton( "Record" );
 		buttonsPanel.add( recordButton, BorderLayout.EAST );
@@ -196,7 +240,7 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 			{
 				final int min = ( Integer ) spinnerMinTimepoint.getValue();
 				final int max = ( Integer ) spinnerMaxTimepoint.getValue();
-				if (min > max)
+				if ( min > max )
 					spinnerMinTimepoint.setValue( max );
 			}
 		} );
@@ -247,9 +291,16 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 					{
 						try
 						{
+							isRecordThreadRunning = true;
 							recordButton.setEnabled( false );
+							cancelButton.setEnabled( true );
+
 							recordMovie( width, height, minTimepointIndex, maxTimepointIndex, stepSize, numSteps, dir );
+
+							progressBar.setValue( 0 );
 							recordButton.setEnabled( true );
+							cancelButton.setEnabled( false );
+							isRecordThreadRunning = false;
 						}
 						catch ( final Exception ex )
 						{
@@ -281,7 +332,8 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 	}
 
 	/**
-	 * @param stepSize in multiples of width of a source voxel.
+	 * @param stepSize
+	 *            in multiples of width of a source voxel.
 	 */
 	public void recordMovie( final int width, final int height, final int minTimepointIndex, final int maxTimepointIndex, final double stepSize, final int numSteps, final File dir ) throws IOException
 	{
@@ -342,7 +394,7 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 							Math.max( ARGBType.red( in ), ARGBType.red( current ) ),
 							Math.max( ARGBType.green( in ), ARGBType.green( current ) ),
 							Math.max( ARGBType.blue( in ), ARGBType.blue( current ) ),
-							Math.max( ARGBType.alpha( in ), ARGBType.alpha( current ) )	) );
+							Math.max( ARGBType.alpha( in ), ARGBType.alpha( current ) ) ) );
 				}
 				return null;
 			}
@@ -363,9 +415,13 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 		final MultiResolutionRenderer renderer = new MultiResolutionRenderer(
 				target, new PainterThread( null ), new double[] { 1 }, 0, false, 1, null, false,
 				viewer.getOptionValues().getAccumulateProjectorFactory(), new CacheControl.Dummy() );
-		progressWriter.setProgress( 0 );
+		setProgress( 0 );
 		for ( int timepoint = minTimepointIndex; timepoint <= maxTimepointIndex; ++timepoint )
 		{
+			// stop recording if requested
+			if ( !isRecordThreadRunning )
+				break;
+
 			target.clear();
 			renderState.setCurrentTimepoint( timepoint );
 
@@ -392,8 +448,14 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 			}
 
 			ImageIO.write( bi, "png", new File( String.format( "%s/img-%03d.png", dir, timepoint ) ) );
-			progressWriter.setProgress( ( double ) (timepoint - minTimepointIndex + 1) / (maxTimepointIndex - minTimepointIndex + 1) );
+			setProgress( ( double ) ( timepoint - minTimepointIndex + 1 ) / ( maxTimepointIndex - minTimepointIndex + 1 ) );
 		}
+	}
+
+	private synchronized void setProgress( final double progress )
+	{
+		progressWriter.setProgress( progress );
+		progressBar.setValue( ( int ) ( progress * 100 ) );
 	}
 
 	@Override
