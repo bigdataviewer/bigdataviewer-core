@@ -37,7 +37,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -61,8 +60,6 @@ import javax.swing.KeyStroke;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 
 import bdv.cache.CacheControl;
 import bdv.export.ProgressWriter;
@@ -96,7 +93,7 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 
 	private final JSpinner spinnerHeight;
 
-	private JProgressBar progressBar;
+	private final JProgressBar progressBar;
 
 	private volatile boolean stopRecording;
 
@@ -204,101 +201,76 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 
 		// ========================================================
 
-		spinnerMinTimepoint.addChangeListener( new ChangeListener()
-		{
-			@Override
-			public void stateChanged( final ChangeEvent e )
-			{
-				final int min = ( Integer ) spinnerMinTimepoint.getValue();
-				final int max = ( Integer ) spinnerMaxTimepoint.getValue();
-				if ( max < min )
-					spinnerMaxTimepoint.setValue( min );
-			}
+		spinnerMinTimepoint.addChangeListener( e -> {
+			final int min = ( Integer ) spinnerMinTimepoint.getValue();
+			final int max = ( Integer ) spinnerMaxTimepoint.getValue();
+			if ( max < min )
+				spinnerMaxTimepoint.setValue( min );
 		} );
 
-		spinnerMaxTimepoint.addChangeListener( new ChangeListener()
-		{
-			@Override
-			public void stateChanged( final ChangeEvent e )
-			{
-				final int min = ( Integer ) spinnerMinTimepoint.getValue();
-				final int max = ( Integer ) spinnerMaxTimepoint.getValue();
-				if ( min > max )
-					spinnerMinTimepoint.setValue( max );
-			}
+		spinnerMaxTimepoint.addChangeListener( e -> {
+			final int min = ( Integer ) spinnerMinTimepoint.getValue();
+			final int max = ( Integer ) spinnerMaxTimepoint.getValue();
+			if ( min > max )
+				spinnerMinTimepoint.setValue( max );
 		} );
 
 		final JFileChooser fileChooser = new JFileChooser();
 		fileChooser.setMultiSelectionEnabled( false );
 		fileChooser.setFileSelectionMode( JFileChooser.DIRECTORIES_ONLY );
 
-		browseButton.addActionListener( new ActionListener()
-		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
+		browseButton.addActionListener( e -> {
+			fileChooser.setSelectedFile( new File( pathTextField.getText() ) );
+			final int returnVal = fileChooser.showSaveDialog( null );
+			if ( returnVal == JFileChooser.APPROVE_OPTION )
 			{
-				fileChooser.setSelectedFile( new File( pathTextField.getText() ) );
-				final int returnVal = fileChooser.showSaveDialog( null );
-				if ( returnVal == JFileChooser.APPROVE_OPTION )
-				{
-					final File file = fileChooser.getSelectedFile();
-					pathTextField.setText( file.getAbsolutePath() );
-				}
+				final File file = fileChooser.getSelectedFile();
+				pathTextField.setText( file.getAbsolutePath() );
 			}
 		} );
 
-		cancelButton.addActionListener( new ActionListener()
-		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
-			{
-				stopRecording = true;
-			}
+		cancelButton.addActionListener( e -> {
+			stopRecording = true;
 		} );
 
-		recordButton.addActionListener( new ActionListener()
-		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
+		recordButton.addActionListener( e -> {
+			final String dirname = pathTextField.getText();
+			final File dir = new File( dirname );
+			if ( !dir.exists() )
+				dir.mkdirs();
+			if ( !dir.exists() || !dir.isDirectory() )
 			{
-				final String dirname = pathTextField.getText();
-				final File dir = new File( dirname );
-				if ( !dir.exists() )
-					dir.mkdirs();
-				if ( !dir.exists() || !dir.isDirectory() )
+				System.err.println( "Invalid export directory " + dirname );
+				return;
+			}
+			final int minTimepointIndex = ( Integer ) spinnerMinTimepoint.getValue();
+			final int maxTimepointIndex = ( Integer ) spinnerMaxTimepoint.getValue();
+			final int width = ( Integer ) spinnerWidth.getValue();
+			final int height = ( Integer ) spinnerHeight.getValue();
+			new Thread()
+			{
+				@Override
+				public void run()
 				{
-					System.err.println( "Invalid export directory " + dirname );
-					return;
-				}
-				final int minTimepointIndex = ( Integer ) spinnerMinTimepoint.getValue();
-				final int maxTimepointIndex = ( Integer ) spinnerMaxTimepoint.getValue();
-				final int width = ( Integer ) spinnerWidth.getValue();
-				final int height = ( Integer ) spinnerHeight.getValue();
-				new Thread()
-				{
-					@Override
-					public void run()
+					try
 					{
-						try
-						{
-							stopRecording = false;
-							recordButton.setEnabled( false );
-							cancelButton.setEnabled( true );
+						stopRecording = false;
+						recordButton.setEnabled( false );
+						cancelButton.setEnabled( true );
 
-							recordMovie( width, height, minTimepointIndex, maxTimepointIndex, dir );
+						recordMovie( width, height, minTimepointIndex, maxTimepointIndex, dir );
 
-							progressBar.setValue( 0 );
-							recordButton.setEnabled( true );
-							cancelButton.setEnabled( false );
-							stopRecording = true;
-						}
-						catch ( final Exception ex )
-						{
-							ex.printStackTrace();
-						}
+						progressBar.setValue( 0 );
+						recordButton.setEnabled( true );
+						cancelButton.setEnabled( false );
+						stopRecording = true;
 					}
-				}.start();
-			}
+					catch ( final Exception ex )
+					{
+						ex.printStackTrace();
+					}
+				}
+			}.start();
 		} );
 
 		final ActionMap am = getRootPane().getActionMap();
