@@ -42,6 +42,7 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.io.File;
 import java.io.IOException;
+import java.util.function.Function;
 
 import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
@@ -337,12 +338,23 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 		final ViewerState renderState = viewer.getState();
 		final int canvasW = viewer.getDisplay().getWidth();
 		final int canvasH = viewer.getDisplay().getHeight();
+		final double cX = canvasW / 2.0;
+		final double cY = canvasH / 2.0;
 
-		final AffineTransform3D affine = new AffineTransform3D();
-
-		// get voxel width transformed to current viewer coordinates
-		final AffineTransform3D tSV = new AffineTransform3D();
-		renderState.getSources().get( 0 ).getSpimSource().getSourceTransform( 0, 0, tSV );
+		final Function< Integer, AffineTransform3D > getCenteredViewTransform;
+		if ( renderState.getActiveBookmark() instanceof DynamicBookmark )
+		{
+			final DynamicBookmark bookmark = ( DynamicBookmark ) renderState.getActiveBookmark();
+			getCenteredViewTransform = timepoint -> bookmark.getInterpolatedTransform( timepoint, cX, cY );
+		}
+		else
+		{
+			final AffineTransform3D affine = new AffineTransform3D();
+			renderState.getViewerTransform( affine );
+			affine.set( affine.get( 0, 3 ) - cX, 0, 3 );
+			affine.set( affine.get( 1, 3 ) - cY, 1, 3 );
+			getCenteredViewTransform = timepoint -> affine.copy();
+		}
 
 		final ScaleBarOverlayRenderer scalebar = Prefs.showScaleBarInMovie() ? new ScaleBarOverlayRenderer() : null;
 
@@ -402,11 +414,14 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 			if ( stopRecording )
 				break;
 
-			final AffineTransform3D tGV = getTransformation( renderState, canvasW, canvasH, timepoint );
+			final AffineTransform3D tGV = getCenteredViewTransform.apply( timepoint );
 			tGV.scale( ( double ) width / canvasW );
 			tGV.set( tGV.get( 0, 3 ) + width / 2, 0, 3 );
 			tGV.set( tGV.get( 1, 3 ) + height / 2, 1, 3 );
 
+			// get voxel width transformed to current viewer coordinates
+			final AffineTransform3D tSV = new AffineTransform3D();
+			renderState.getSources().get( 0 ).getSpimSource().getSourceTransform( 0, 0, tSV );
 			tSV.preConcatenate( tGV );
 			final double[] sO = new double[] { 0, 0, 0 };
 			final double[] sX = new double[] { 1, 0, 0 };
@@ -422,6 +437,7 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 
 			for ( int step = 0; step < numSteps; ++step )
 			{
+				final AffineTransform3D affine = new AffineTransform3D();
 				affine.set(
 						1, 0, 0, 0,
 						0, 1, 0, 0,
@@ -451,25 +467,6 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 	{
 		progressWriter.setProgress( progress );
 		progressBar.setValue( ( int ) ( progress * 100 ) );
-	}
-
-	private AffineTransform3D getTransformation( final ViewerState renderState, final int canvasW, final int canvasH, final int currentTimepoint )
-	{
-
-		if ( renderState.getActiveBookmark() instanceof DynamicBookmark )
-		{
-			final DynamicBookmark dynamicBookmark = ( DynamicBookmark ) renderState.getActiveBookmark();
-			final AffineTransform3D affine = dynamicBookmark.getInterpolatedTransform( currentTimepoint, canvasW / 2, canvasH );
-			return affine;
-		}
-		else
-		{
-			final AffineTransform3D affine = new AffineTransform3D();
-			renderState.getViewerTransform( affine );
-			affine.set( affine.get( 0, 3 ) - canvasW / 2, 0, 3 );
-			affine.set( affine.get( 1, 3 ) - canvasH / 2, 1, 3 );
-			return affine;
-		}
 	}
 
 	@Override
