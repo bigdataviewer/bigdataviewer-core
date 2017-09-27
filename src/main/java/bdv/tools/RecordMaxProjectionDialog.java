@@ -109,7 +109,7 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 
 	private final JProgressBar progressBar;
 
-	private volatile boolean isRecordThreadRunning;
+	private volatile boolean stopRecording;
 
 	public RecordMaxProjectionDialog( final Frame owner, final ViewerPanel viewer, final ProgressWriter progressWriter )
 	{
@@ -283,7 +283,7 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 			@Override
 			public void actionPerformed( final ActionEvent e )
 			{
-				isRecordThreadRunning = false;
+				stopRecording = true;
 			}
 		} );
 
@@ -314,7 +314,7 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 					{
 						try
 						{
-							isRecordThreadRunning = true;
+							stopRecording = false;
 							recordButton.setEnabled( false );
 							cancelButton.setEnabled( true );
 
@@ -323,7 +323,7 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 							progressBar.setValue( 0 );
 							recordButton.setEnabled( true );
 							cancelButton.setEnabled( false );
-							isRecordThreadRunning = false;
+							stopRecording = true;
 						}
 						catch ( final Exception ex )
 						{
@@ -442,7 +442,7 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 		for ( int timepoint = minTimepointIndex; timepoint <= maxTimepointIndex; ++timepoint )
 		{
 			// stop recording if requested
-			if ( !isRecordThreadRunning )
+			if ( stopRecording )
 				break;
 
 			target.clear();

@@ -98,7 +98,7 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 
 	private JProgressBar progressBar;
 
-	private volatile boolean isRecordThreadRunning;
+	private volatile boolean stopRecording;
 
 	public RecordMovieDialog( final Frame owner, final ViewerPanel viewer, final ProgressWriter progressWriter )
 	{
@@ -249,11 +249,10 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 
 		cancelButton.addActionListener( new ActionListener()
 		{
-
 			@Override
 			public void actionPerformed( final ActionEvent e )
 			{
-				isRecordThreadRunning = false;
+				stopRecording = true;
 			}
 		} );
 
@@ -282,7 +281,7 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 					{
 						try
 						{
-							isRecordThreadRunning = true;
+							stopRecording = false;
 							recordButton.setEnabled( false );
 							cancelButton.setEnabled( true );
 
@@ -291,7 +290,7 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 							progressBar.setValue( 0 );
 							recordButton.setEnabled( true );
 							cancelButton.setEnabled( false );
-							isRecordThreadRunning = false;
+							stopRecording = true;
 						}
 						catch ( final Exception ex )
 						{
@@ -371,7 +370,7 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 		for ( int timepoint = minTimepointIndex; timepoint <= maxTimepointIndex; ++timepoint )
 		{
 			// stop recording if requested
-			if ( !isRecordThreadRunning )
+			if ( stopRecording )
 				break;
 
 			renderState.setCurrentTimepoint( timepoint );
