@@ -29,8 +29,8 @@
  */
 package bdv.tools;
 
+import bdv.tools.bookmarks.bookmark.DynamicBookmark;
 import java.awt.BorderLayout;
-import java.awt.FlowLayout;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
@@ -38,7 +38,6 @@ import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -48,7 +47,6 @@ import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ActionMap;
-import javax.swing.BoxLayout;
 import javax.swing.InputMap;
 import javax.swing.JButton;
 import javax.swing.JComponent;
@@ -63,12 +61,9 @@ import javax.swing.KeyStroke;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.WindowConstants;
 import javax.swing.border.EmptyBorder;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 
 import bdv.cache.CacheControl;
 import bdv.export.ProgressWriter;
-import bdv.tools.bookmarks.bookmark.DynamicBookmark;
 import bdv.util.Prefs;
 import bdv.viewer.ViewerPanel;
 import bdv.viewer.overlay.ScaleBarOverlayRenderer;
@@ -99,11 +94,9 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 
 	private final JSpinner spinnerHeight;
 
-	private JProgressBar progressBar;
+	private final JProgressBar progressBar;
 
-	private boolean isRecordThreadRunning;
-
-	private JButton cancelButton;
+	private volatile boolean stopRecording;
 
 	public RecordMovieDialog( final Frame owner, final ViewerPanel viewer, final ProgressWriter progressWriter )
 	{
@@ -112,180 +105,173 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 		maxTimepoint = viewer.getState().getNumTimepoints() - 1;
 		this.progressWriter = progressWriter;
 
-		final JPanel boxes = new JPanel();
-		getContentPane().add( boxes, BorderLayout.NORTH );
-		boxes.setLayout( new BoxLayout( boxes, BoxLayout.PAGE_AXIS ) );
+		final JPanel content = new JPanel();
+		getContentPane().add( content, BorderLayout.CENTER );
+		content.setBorder( new EmptyBorder( 5, 10, 5, 5 ) );
+		final GridBagLayout layout = new GridBagLayout();
+		layout.columnWeights = new double[] { 1 };
+		content.setLayout( layout );
+
+		final int gap = 5;
+		final GridBagConstraints c = new GridBagConstraints();
+		c.fill = GridBagConstraints.HORIZONTAL;
+		c.insets = new Insets( 0, 0, 0, 0 );
+
+		// --------------------------------------------------------
+		c.gridy = 0;
 
 		final JPanel saveAsPanel = new JPanel();
-		saveAsPanel.setLayout( new BorderLayout( 0, 0 ) );
-		boxes.add( saveAsPanel );
-
+		saveAsPanel.setLayout( new BorderLayout( 5, 0 ) );
 		saveAsPanel.add( new JLabel( "save to" ), BorderLayout.WEST );
 
 		pathTextField = new JTextField( "./record/" );
 		saveAsPanel.add( pathTextField, BorderLayout.CENTER );
 		pathTextField.setColumns( 20 );
 
+		c.gridx = 0;
+		c.gridwidth = 5;
+		c.insets = new Insets( 0, 0, gap, gap );
+		content.add( saveAsPanel, c );
+
+		c.gridx += c.gridwidth;
+		c.gridwidth = 1;
+		c.insets = new Insets( 0, 0, gap, 0 );
 		final JButton browseButton = new JButton( "Browse" );
-		saveAsPanel.add( browseButton, BorderLayout.EAST );
+		content.add( browseButton, c );
 
-		final JPanel timepointsPanel = new JPanel();
-		boxes.add( timepointsPanel );
+		// --------------------------------------------------------
+		c.gridy++;
+		c.gridx = 1;
+		c.insets = new Insets( 0, 0, gap, gap );
+		content.add( new JLabel( "timepoints from" ), c );
 
-		timepointsPanel.add( new JLabel( "timepoints from" ) );
-
+		c.gridx++;
 		spinnerMinTimepoint = new JSpinner();
 		spinnerMinTimepoint.setModel( new SpinnerNumberModel( 0, 0, maxTimepoint, 1 ) );
-		timepointsPanel.add( spinnerMinTimepoint );
+		content.add( spinnerMinTimepoint, c );
 
-		timepointsPanel.add( new JLabel( "to" ) );
+		c.gridx++;
+		content.add( new JLabel( "to" ), c );
 
+		c.gridx++;
 		spinnerMaxTimepoint = new JSpinner();
 		spinnerMaxTimepoint.setModel( new SpinnerNumberModel( maxTimepoint, 0, maxTimepoint, 1 ) );
-		timepointsPanel.add( spinnerMaxTimepoint );
+		content.add( spinnerMaxTimepoint, c );
 
-		final JPanel widthPanel = new JPanel();
-		boxes.add( widthPanel );
-		widthPanel.add( new JLabel( "width" ) );
+		// --------------------------------------------------------
+		c.gridy++;
+		c.gridx = 1;
+		content.add( new JLabel( "width" ), c );
+
+		c.gridx++;
 		spinnerWidth = new JSpinner();
 		spinnerWidth.setModel( new SpinnerNumberModel( 800, 10, 5000, 1 ) );
-		widthPanel.add( spinnerWidth );
+		content.add( spinnerWidth, c );
 
-		final JPanel heightPanel = new JPanel();
-		boxes.add( heightPanel );
-		heightPanel.add( new JLabel( "height" ) );
+		// --------------------------------------------------------
+		c.gridy++;
+		c.gridx = 1;
+		content.add( new JLabel( "height" ), c );
+
+		c.gridx++;
 		spinnerHeight = new JSpinner();
 		spinnerHeight.setModel( new SpinnerNumberModel( 600, 10, 5000, 1 ) );
-		heightPanel.add( spinnerHeight );
+		content.add( spinnerHeight, c );
 
-		final JPanel progressPanel = new JPanel();
-		progressPanel.setBorder( new EmptyBorder( 5, 5, 5, 5 ) );
-		boxes.add( progressPanel );
-		final GridBagLayout gbl_progressPanel = new GridBagLayout();
-		gbl_progressPanel.columnWidths = new int[] { 332, 0, 0 };
-		gbl_progressPanel.rowHeights = new int[] { 19, 0 };
-		gbl_progressPanel.columnWeights = new double[] { 1.0, 0.0, Double.MIN_VALUE };
-		gbl_progressPanel.rowWeights = new double[] { 1.0, Double.MIN_VALUE };
-		progressPanel.setLayout( gbl_progressPanel );
-
+		// --------------------------------------------------------
+		c.gridy++;
+		c.gridx = 0;
+		c.gridwidth = 5;
+		c.gridheight = 2;
 		progressBar = new JProgressBar();
 		progressBar.setStringPainted( true );
-		final GridBagConstraints gbc_progressBar = new GridBagConstraints();
-		gbc_progressBar.fill = GridBagConstraints.HORIZONTAL;
-		gbc_progressBar.insets = new Insets( 0, 0, 0, 5 );
-		gbc_progressBar.gridx = 0;
-		gbc_progressBar.gridy = 0;
-		progressPanel.add( progressBar, gbc_progressBar );
+		content.add( progressBar, c );
+		c.gridheight = 1;
 
-		cancelButton = new JButton( "Cancel" );
+		c.gridx += c.gridwidth;
+		c.gridwidth = 1;
+		c.insets = new Insets( 0, 0, gap, 0 );
+		final JButton cancelButton = new JButton( "Cancel" );
 		cancelButton.setEnabled( false );
-		final GridBagConstraints gbc_cancelButton = new GridBagConstraints();
-		gbc_cancelButton.gridx = 1;
-		gbc_cancelButton.gridy = 0;
-		progressPanel.add( cancelButton, gbc_cancelButton );
-		cancelButton.addActionListener( new ActionListener()
-		{
+		content.add( cancelButton, c );
 
-			@Override
-			public void actionPerformed( final ActionEvent e )
-			{
-				isRecordThreadRunning = false;
-			}
-		} );
-
-		final JPanel buttonsPanel = new JPanel();
-		boxes.add( buttonsPanel );
-		buttonsPanel.setLayout( new FlowLayout( FlowLayout.RIGHT, 5, 5 ) );
-
+		c.gridy++;
+		c.insets = new Insets( 0, 0, 0, 0 );
 		final JButton recordButton = new JButton( "Record" );
-		buttonsPanel.add( recordButton );
+		content.add( recordButton, c );
 
-		spinnerMinTimepoint.addChangeListener( new ChangeListener()
-		{
-			@Override
-			public void stateChanged( final ChangeEvent e )
-			{
-				final int min = ( Integer ) spinnerMinTimepoint.getValue();
-				final int max = ( Integer ) spinnerMaxTimepoint.getValue();
-				if ( max < min )
-					spinnerMaxTimepoint.setValue( min );
-			}
+		// ========================================================
+
+		spinnerMinTimepoint.addChangeListener( e -> {
+			final int min = ( Integer ) spinnerMinTimepoint.getValue();
+			final int max = ( Integer ) spinnerMaxTimepoint.getValue();
+			if ( max < min )
+				spinnerMaxTimepoint.setValue( min );
 		} );
 
-		spinnerMaxTimepoint.addChangeListener( new ChangeListener()
-		{
-			@Override
-			public void stateChanged( final ChangeEvent e )
-			{
-				final int min = ( Integer ) spinnerMinTimepoint.getValue();
-				final int max = ( Integer ) spinnerMaxTimepoint.getValue();
-				if ( min > max )
-					spinnerMinTimepoint.setValue( max );
-			}
+		spinnerMaxTimepoint.addChangeListener( e -> {
+			final int min = ( Integer ) spinnerMinTimepoint.getValue();
+			final int max = ( Integer ) spinnerMaxTimepoint.getValue();
+			if ( min > max )
+				spinnerMinTimepoint.setValue( max );
 		} );
 
 		final JFileChooser fileChooser = new JFileChooser();
 		fileChooser.setMultiSelectionEnabled( false );
 		fileChooser.setFileSelectionMode( JFileChooser.DIRECTORIES_ONLY );
 
-		browseButton.addActionListener( new ActionListener()
-		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
+		browseButton.addActionListener( e -> {
+			fileChooser.setSelectedFile( new File( pathTextField.getText() ) );
+			final int returnVal = fileChooser.showSaveDialog( null );
+			if ( returnVal == JFileChooser.APPROVE_OPTION )
 			{
-				fileChooser.setSelectedFile( new File( pathTextField.getText() ) );
-				final int returnVal = fileChooser.showSaveDialog( null );
-				if ( returnVal == JFileChooser.APPROVE_OPTION )
-				{
-					final File file = fileChooser.getSelectedFile();
-					pathTextField.setText( file.getAbsolutePath() );
-				}
+				final File file = fileChooser.getSelectedFile();
+				pathTextField.setText( file.getAbsolutePath() );
 			}
 		} );
 
-		recordButton.addActionListener( new ActionListener()
-		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
+		cancelButton.addActionListener( e -> {
+			stopRecording = true;
+		} );
+
+		recordButton.addActionListener( e -> {
+			final String dirname = pathTextField.getText();
+			final File dir = new File( dirname );
+			if ( !dir.exists() )
+				dir.mkdirs();
+			if ( !dir.exists() || !dir.isDirectory() )
 			{
-				final String dirname = pathTextField.getText();
-				final File dir = new File( dirname );
-				if ( !dir.exists() )
-					dir.mkdirs();
-				if ( !dir.exists() || !dir.isDirectory() )
-				{
-					System.err.println( "Invalid export directory " + dirname );
-					return;
-				}
-				final int minTimepointIndex = ( Integer ) spinnerMinTimepoint.getValue();
-				final int maxTimepointIndex = ( Integer ) spinnerMaxTimepoint.getValue();
-				final int width = ( Integer ) spinnerWidth.getValue();
-				final int height = ( Integer ) spinnerHeight.getValue();
-				new Thread()
-				{
-					@Override
-					public void run()
-					{
-						try
-						{
-							isRecordThreadRunning = true;
-							recordButton.setEnabled( false );
-							cancelButton.setEnabled( true );
-
-							recordMovie( width, height, minTimepointIndex, maxTimepointIndex, dir );
-
-							progressBar.setValue( 0 );
-							recordButton.setEnabled( true );
-							cancelButton.setEnabled( false );
-							isRecordThreadRunning = false;
-						}
-						catch ( final Exception ex )
-						{
-							ex.printStackTrace();
-						}
-					}
-				}.start();
+				System.err.println( "Invalid export directory " + dirname );
+				return;
 			}
+			final int minTimepointIndex = ( Integer ) spinnerMinTimepoint.getValue();
+			final int maxTimepointIndex = ( Integer ) spinnerMaxTimepoint.getValue();
+			final int width = ( Integer ) spinnerWidth.getValue();
+			final int height = ( Integer ) spinnerHeight.getValue();
+			new Thread()
+			{
+				@Override
+				public void run()
+				{
+					try
+					{
+						stopRecording = false;
+						recordButton.setEnabled( false );
+						cancelButton.setEnabled( true );
+
+						recordMovie( width, height, minTimepointIndex, maxTimepointIndex, dir );
+
+						progressBar.setValue( 0 );
+						recordButton.setEnabled( true );
+						cancelButton.setEnabled( false );
+						stopRecording = true;
+					}
+					catch ( final Exception ex )
+					{
+						ex.printStackTrace();
+					}
+				}
+			}.start();
 		} );
 
 		final ActionMap am = getRootPane().getActionMap();
@@ -305,6 +291,7 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 		am.put( hideKey, hideAction );
 
 		pack();
+		setMinimumSize( getPreferredSize() );
 		setDefaultCloseOperation( WindowConstants.HIDE_ON_CLOSE );
 	}
 
@@ -347,7 +334,7 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 		for ( int timepoint = minTimepointIndex; timepoint <= maxTimepointIndex; ++timepoint )
 		{
 			// stop recording if requested
-			if ( !isRecordThreadRunning )
+			if ( stopRecording )
 				break;
 
 			final AffineTransform3D affine = getTransformation( renderState, canvasW, canvasH, timepoint );
