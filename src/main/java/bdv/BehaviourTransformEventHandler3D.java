@@ -76,7 +76,7 @@ public class BehaviourTransformEventHandler3D implements BehaviourTransformEvent
 	/**
 	 * Current source to screen transform.
 	 */
-	private final AffineTransform3D affine = new AffineTransform3D();
+	protected final AffineTransform3D affine = new AffineTransform3D();
 
 	/**
 	 * Whom to notify when the {@link #affine current transform} is changed.
@@ -86,32 +86,32 @@ public class BehaviourTransformEventHandler3D implements BehaviourTransformEvent
 	/**
 	 * Copy of {@link #affine current transform} when mouse dragging started.
 	 */
-	final private AffineTransform3D affineDragStart = new AffineTransform3D();
+	final protected AffineTransform3D affineDragStart = new AffineTransform3D();
 
 	/**
 	 * Coordinates where mouse dragging started.
 	 */
-	private double oX, oY;
+	protected double oX, oY;
 
 	/**
 	 * Current rotation axis for rotating with keyboard, indexed {@code x->0, y->1,
 	 * z->2}.
 	 */
-	private int axis = 0;
+	protected int axis = 0;
 
 	/**
 	 * The screen size of the canvas (the component displaying the image and
 	 * generating mouse events).
 	 */
-	private int canvasW = 1, canvasH = 1;
+	protected int canvasW = 1, canvasH = 1;
 
 	/**
 	 * Screen coordinates to keep centered while zooming or rotating with the
 	 * keyboard. These are set to <em>(canvasW/2, canvasH/2)</em>
 	 */
-	private int centerX = 0, centerY = 0;
+	protected int centerX = 0, centerY = 0;
 
-	private final Behaviours behaviours;
+	protected final Behaviours behaviours;
 
 	public BehaviourTransformEventHandler3D( final TransformListener< AffineTransform3D > listener, final InputTriggerConfig config )
 	{
@@ -232,11 +232,11 @@ public class BehaviourTransformEventHandler3D implements BehaviourTransformEvent
 	/**
 	 * One step of rotation (radian).
 	 */
-	final private static double step = Math.PI / 180;
+	final protected static double step = Math.PI / 180;
 
-	final private static String NL = System.getProperty( "line.separator" );
+	final protected static String NL = System.getProperty( "line.separator" );
 
-	final private static String helpString =
+	final protected static String helpString =
 			"Mouse control:" + NL + " " + NL +
 					"Pan and tilt the volume by left-click and dragging the image in the canvas, " + NL +
 					"move the volume by middle-or-right-click and dragging the image in the canvas, " + NL +
