@@ -23,17 +23,7 @@ public class JKeyFramePanel extends Panel
 {
 	private static final long serialVersionUID = 1L;
 
-	private class ChangeListener implements DynamicBookmarkChangedListener
-	{
-
-		@Override
-		public void changed()
-		{
-			repaint();
-		}
-	}
-
-	private final DynamicBookmarkChangedListener bookmarkChangedListener = new ChangeListener();
+	private final DynamicBookmarkChangedListener bookmarkChangedListener = () -> repaint();
 
 	final JSlider timeSlider;
 
