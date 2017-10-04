@@ -64,11 +64,7 @@ public class JKeyFramePanel extends Panel
 		this.timeSlider = timeSlider;
 
 		this.numTimepoints = timeSlider.getMaximum(); // TODO: this is not numTimepoints but numTimepoints - 1 !!!
-		initComponent();
-	}
 
-	private void initComponent()
-	{
 		addMouseListener( new MouseHoverEventAdapter() );
 		addMouseMotionListener( new MouseHoverEventAdapter() );
 
