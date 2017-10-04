@@ -25,9 +25,9 @@ public class JKeyFramePanel extends Panel
 
 	private final DynamicBookmarkChangedListener bookmarkChangedListener = () -> repaint();
 
-	final JSlider timeSlider;
+	private final JSlider timeSlider;
 
-	final int numTimepoints;
+	private final int numTimepoints;
 
 	/**
 	 * My Context-Menu.
