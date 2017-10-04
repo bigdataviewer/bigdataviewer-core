@@ -33,6 +33,7 @@ import java.awt.geom.GeneralPath;
 
 import net.imglib2.Interval;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.util.Intervals;
 
 /**
  * Helper for rendering overlay boxes.
@@ -130,6 +131,9 @@ public class RenderBoxHelper
 
 	public void renderBox( final Interval sourceInterval, final AffineTransform3D transform, final GeneralPath front, final GeneralPath back )
 	{
+		if ( Intervals.isEmpty( sourceInterval ) )
+			return;
+
 		final double sX0 = sourceInterval.min( 0 );
 		final double sX1 = sourceInterval.max( 0 );
 		final double sY0 = sourceInterval.min( 1 );
