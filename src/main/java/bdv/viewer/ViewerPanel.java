@@ -679,7 +679,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 			requiresRepaint = multiBoxOverlayRenderer.isHighlightInProgress();
 		}
 
-		if( Prefs.showTextOverlay() )
+		if ( Prefs.showTextOverlay() )
 		{
 			sourceInfoOverlayRenderer.setViewerState( state );
 			sourceInfoOverlayRenderer.paint( ( Graphics2D ) g );
