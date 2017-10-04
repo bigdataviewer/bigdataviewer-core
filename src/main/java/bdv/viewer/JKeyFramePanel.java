@@ -27,7 +27,7 @@ public class JKeyFramePanel extends Panel
 
 	private final JSlider timeSlider;
 
-	private final int numTimepoints;
+	private final int numTimepoints; // TODO: shouldn't be final!?
 
 	/**
 	 * My Context-Menu.
@@ -63,7 +63,7 @@ public class JKeyFramePanel extends Panel
 	{
 		this.timeSlider = timeSlider;
 
-		this.numTimepoints = timeSlider.getMaximum();
+		this.numTimepoints = timeSlider.getMaximum(); // TODO: this is not numTimepoints but numTimepoints - 1 !!!
 		initComponent();
 	}
 
