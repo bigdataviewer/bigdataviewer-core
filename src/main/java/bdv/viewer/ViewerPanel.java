@@ -438,12 +438,15 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		timeKeyframePanel.setLayout( new BoxLayout( timeKeyframePanel, BoxLayout.Y_AXIS ) );
 
 		sliderTime = new JSlider( 0, numTimepoints - 1, 0 );
-		sliderTime.setMinimumSize( new Dimension( 36, 26 ) );
-		sliderTime.setMaximumSize( new Dimension( 32767, 26 ) );
+//		sliderTime.setMinimumSize( new Dimension( 36, 26 ) );
+//		sliderTime.setMaximumSize( new Dimension( 32767, 26 ) );
+		sliderTime.setSnapToTicks( true );
 
 		timeKeyframePanel.add( sliderTime );
 
 		keyframePanel = new JKeyFramePanel( sliderTime );
+		keyframePanel.setMinimumSize( new Dimension( 36, 26 ) );
+		keyframePanel.setPreferredSize( new Dimension( 36, 26 ) );
 		timeKeyframePanel.add( keyframePanel );
 
 		sliderTime.addChangeListener( new ChangeListener()
@@ -987,9 +990,9 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		setKeyframeButtonEnable( enableKeyframeButtons );
 
 		if ( bookmark instanceof DynamicBookmark )
-			keyframePanel.setDynamicBookmarks( ( DynamicBookmark ) bookmark );
+			keyframePanel.setDynamicBookmark( ( DynamicBookmark ) bookmark );
 		else
-			keyframePanel.setDynamicBookmarks( null );
+			keyframePanel.setDynamicBookmark( null );
 
 		for ( final ActiveBookmarkChangedListener l : this.activeBookmarkChangedListeners )
 			l.activeBookmarkChanged( previousBookmark, bookmark );
