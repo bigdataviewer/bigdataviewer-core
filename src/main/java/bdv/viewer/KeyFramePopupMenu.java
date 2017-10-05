@@ -25,10 +25,6 @@
  */
 package bdv.viewer;
 
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.Optional;
-
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
 
@@ -37,91 +33,58 @@ import bdv.tools.bookmarks.editor.BookmarksEditor;
 
 /**
  * Context-Menu for the {@link JKeyFramePanel}-Component.
- * 
+ *
  */
-public final class KeyFramePopupMenu extends JPopupMenu {
+public final class KeyFramePopupMenu extends JPopupMenu
+{
 
 	private static final long serialVersionUID = 1L;
 
 	private BookmarksEditor bookmarksEditor;
 
-	private final JMenuItem itemCopyKF = new JMenuItem();
-	private final JMenuItem itemSetTransformKF = new JMenuItem();
-	private final JMenuItem itemRemoveKF = new JMenuItem();
+	private final JMenuItem itemCopyKF;
+
+	private final JMenuItem itemSetTransformKF;
+
+	private final JMenuItem itemRemoveKF;
 
 	/**
 	 * User-selected {@link KeyFrame} or {@code null} if no frame is selected.
 	 */
 	private volatile KeyFrame selectedKeyFrame = null;
 
-	KeyFramePopupMenu() {
-		initComponents();
+	KeyFramePopupMenu()
+	{
+		itemCopyKF = new JMenuItem( "Clone" );
+		itemCopyKF.addActionListener( e -> {
+			if ( bookmarksEditor != null && selectedKeyFrame != null )
+				bookmarksEditor.copyKeyFrame( selectedKeyFrame );
+		} );
+
+		itemSetTransformKF = new JMenuItem( "Set transformation" );
+		itemSetTransformKF.addActionListener( e -> {
+			if ( bookmarksEditor != null && selectedKeyFrame != null )
+				bookmarksEditor.setTransformationToKeyframe( selectedKeyFrame );
+		} );
+
+		itemRemoveKF = new JMenuItem( "Remove" );
+		itemRemoveKF.addActionListener( e -> {
+			if ( bookmarksEditor != null && selectedKeyFrame != null )
+				bookmarksEditor.removeKeyframe( selectedKeyFrame );
+		} );
+
+		add( itemCopyKF );
+		add( itemSetTransformKF );
+		add( itemRemoveKF );
 	}
 
-	private void initComponents() {
-		add(itemCopyKF);
-		add(itemSetTransformKF);
-		add(itemRemoveKF);
-
-		itemCopyKF.setText("Clone");
-		itemSetTransformKF.setText("Set transformation");
-		itemRemoveKF.setText("Remove");
-
-		this.itemCopyKF.addActionListener(new ActionListener() {
-
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (bookmarksEditor != null && selectedKeyFrame != null) {
-					bookmarksEditor.copyKeyFrame(selectedKeyFrame);
-				}
-			}
-		});
-		
-		this.itemSetTransformKF.addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (bookmarksEditor != null && selectedKeyFrame != null) {
-					bookmarksEditor.setTransformationToKeyframe(selectedKeyFrame);
-				}
-			}
-		});
-		
-		this.itemRemoveKF.addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				if (bookmarksEditor != null && selectedKeyFrame != null) {
-					bookmarksEditor.removeKeyframe(selectedKeyFrame);
-				}
-			}
-		});
-		
-		setKeyFrameFlagSelected(null);
+	void setKeyFrameFlagSelected( final KeyFrame keyFrame )
+	{
+		this.selectedKeyFrame = keyFrame;
 	}
 
-	protected void setKeyFrameFlagSelected(KeyFrame selectedKeyFrameOrNull) {
-		final boolean visibleKeyFrameActions = (null != selectedKeyFrameOrNull);
-
-		this.itemCopyKF.setVisible(visibleKeyFrameActions);
-		this.itemSetTransformKF.setVisible(visibleKeyFrameActions);
-		this.itemRemoveKF.setVisible(visibleKeyFrameActions);
-
-		this.selectedKeyFrame = selectedKeyFrameOrNull;
-	}
-
-	/**
-	 * Returns current user-selected {@link KeyFrame} or nothing if no frame is
-	 * selected.
-	 * 
-	 * @return {@code Optional.empty()} if no frame is selected or
-	 *         {@code Optional.of(..)}.
-	 */
-	protected Optional<KeyFrame> getSelectedKeyFrame() {
-		return Optional.ofNullable(this.selectedKeyFrame);
-	}
-
-	public void setBookmarksEditor(BookmarksEditor bookmarksEditor) {
+	public void setBookmarksEditor( final BookmarksEditor bookmarksEditor )
+	{
 		this.bookmarksEditor = bookmarksEditor;
 	}
 }
