@@ -258,7 +258,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 	protected final JPanel timeKeyframePanel;
 
-	protected final JKeyFramePanel keyframePanel;
+	protected final KeyFramePanel keyframePanel;
 
 	protected final List< ActiveBookmarkChangedListener > activeBookmarkChangedListeners = new ArrayList<>();
 
@@ -444,7 +444,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 		timeKeyframePanel.add( sliderTime );
 
-		keyframePanel = new JKeyFramePanel( sliderTime );
+		keyframePanel = new KeyFramePanel( sliderTime );
 		keyframePanel.setMinimumSize( new Dimension( 36, 26 ) );
 		keyframePanel.setPreferredSize( new Dimension( 36, 26 ) );
 		timeKeyframePanel.add( keyframePanel );

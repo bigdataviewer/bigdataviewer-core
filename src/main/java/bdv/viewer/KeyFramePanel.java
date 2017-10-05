@@ -19,7 +19,7 @@ import bdv.tools.bookmarks.bookmark.DynamicBookmark;
 import bdv.tools.bookmarks.bookmark.DynamicBookmarkChangedListener;
 import bdv.tools.bookmarks.bookmark.KeyFrame;
 
-public class JKeyFramePanel extends JPanel
+public class KeyFramePanel extends JPanel
 {
 	private static final long serialVersionUID = 1L;
 
@@ -59,7 +59,7 @@ public class JKeyFramePanel extends JPanel
 		NORMAL, HOVER
 	}
 
-	public JKeyFramePanel( final JSlider timeSlider )
+	public KeyFramePanel( final JSlider timeSlider )
 	{
 		this.timeSlider = timeSlider;
 		this.timeSliderUI = new BasicSliderUIAccess( timeSlider );
@@ -178,7 +178,7 @@ public class JKeyFramePanel extends JPanel
 		else
 			setCursor( Cursor.getDefaultCursor() );
 
-		SwingUtilities.invokeLater( JKeyFramePanel.this::repaint );
+		SwingUtilities.invokeLater( KeyFramePanel.this::repaint );
 	}
 
 	private class MouseHoverEventAdapter extends MouseAdapter
@@ -242,7 +242,7 @@ public class JKeyFramePanel extends JPanel
 			if ( e.isPopupTrigger() )
 			{
 				popupMenu.setKeyFrameFlagSelected( currentHoverKeyframe );
-				popupMenu.show( JKeyFramePanel.this, e.getX(), e.getY() );
+				popupMenu.show( KeyFramePanel.this, e.getX(), e.getY() );
 			}
 		}
 	}
