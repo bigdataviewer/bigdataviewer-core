@@ -113,6 +113,9 @@
 		<license.licenseName>bsd_2</license.licenseName>
 		<license.copyrightOwners>BigDataViewer developers.</license.copyrightOwners>
 		<enforcer.skip>true</enforcer.skip>
+
+		<!-- NB: Deploy releases to the ImageJ Maven repository. -->
+		<releaseProfiles>deploy-to-imagej</releaseProfiles>
 	</properties>
 
 	<repositories>
