@@ -47,7 +47,6 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.LayoutManager;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseEvent;
@@ -250,25 +249,9 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 	protected final ViewerOptions.Values options;
 
-	protected final JButton previousKeyframeButton;
-
-	protected final JButton addKeyframeButton;
-
-	protected final JButton nextKeyframeButton;
-
-	protected final JPlaySlider sliderPlay;
-
-	protected final JPanel timeKeyframePanel;
-
-	protected final KeyFramePanel keyframePanel;
-
 	protected final List< ActiveBookmarkChangedListener > activeBookmarkChangedListeners = new ArrayList<>();
 
 	protected final ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-
-	protected final Timer playTimer = new Timer( 0, this::onPlayTimerTick );
-
-	protected final ActionMap actionMap;
 
 	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimePoints, final CacheControl cacheControl, final ActionMap actionMap )
 	{
@@ -290,7 +273,6 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		super( new BorderLayout(), false );
 
 		options = optional.values;
-		this.actionMap = actionMap;
 
 		final int numGroups = options.getNumSourceGroups();
 		final ArrayList< SourceGroup > groups = new ArrayList<>( numGroups );
@@ -334,116 +316,14 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		mouseCoordinates = new MouseCoordinateListener();
 		display.addHandler( mouseCoordinates );
 
-		final JPanel sliderPanel = new JPanel();
-		sliderPanel.setLayout( new BoxLayout( sliderPanel, BoxLayout.X_AXIS ) );
-
-		sliderPanel.add( Box.createRigidArea( new Dimension( 5, 5 ) ) );
-
-		previousKeyframeButton = new JButton( "<<" );
-		previousKeyframeButton.setToolTipText( "Go to previous keyframe" );
-		previousKeyframeButton.addActionListener( new ActionListener()
-		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
-			{
-				final Action action = actionMap.get( BigDataViewerActions.PREVIOUS_KEYFRAME );
-				if ( action != null )
-					action.actionPerformed( e );
-			}
-		} );
-		sliderPanel.add( previousKeyframeButton );
-
-		sliderPanel.add( Box.createRigidArea( new Dimension( 5, 5 ) ) );
-
-		addKeyframeButton = new JButton( "+" );
-		addKeyframeButton.setToolTipText( "Add a new keyframe" );
-		addKeyframeButton.addActionListener( new ActionListener()
-		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
-			{
-				final Action action = actionMap.get( BigDataViewerActions.ADD_KEYFRAME );
-				if ( action != null )
-					action.actionPerformed( e );
-			}
-		} );
-		sliderPanel.add( addKeyframeButton );
-
-		sliderPanel.add( Box.createRigidArea( new Dimension( 5, 5 ) ) );
-
-		nextKeyframeButton = new JButton( ">>" );
-		nextKeyframeButton.setToolTipText( "Go to next keyframe" );
-		nextKeyframeButton.addActionListener( new ActionListener()
-		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
-			{
-				final Action action = actionMap.get( BigDataViewerActions.NEXT_KEYFRAME );
-				if ( action != null )
-					action.actionPerformed( e );
-			}
-		} );
-		sliderPanel.add( nextKeyframeButton );
-
-		sliderPanel.add( Box.createRigidArea( new Dimension( 5, 5 ) ) );
-
-		sliderPlay = new JPlaySlider();
-		sliderPlay.setPreferredSize( new Dimension( 200, 50 ) );
-		sliderPlay.setMinimumSize( new Dimension( 200, 50 ) );
-		sliderPlay.setMaximumSize( new Dimension( 200, 50 ) );
-		sliderPlay.setAlignmentX( Component.LEFT_ALIGNMENT );
-		sliderPanel.add( sliderPlay );
-		sliderPlay.addChangeListener( new ChangeListener()
-		{
-			@Override
-			public void stateChanged( final ChangeEvent e )
-			{
-				// if ( !e.getSource().equals( sliderPlay ) )
-				// return;
-
-				if ( sliderPlay.getValue() == 0 )
-				{
-					stopPlayExecuter();
-					return;
-				}
-
-				final int periode = 1000 / ( 1 * Math.abs( sliderPlay.getValue() ) );
-				playTimer.setDelay( periode );
-				playTimer.start();
-			}
-		} );
-		sliderPlay.addComponentListener( new ComponentAdapter()
-		{
-			@Override
-			public void componentHidden( final ComponentEvent e )
-			{
-				stopPlayExecuter();
-			}
-
-		} );
-
-		sliderPanel.add( Box.createRigidArea( new Dimension( 5, 5 ) ) );
-
-		timeKeyframePanel = new JPanel();
-		timeKeyframePanel.setBorder( new EmptyBorder( 5, 0, 5, 0 ) );
-		sliderPanel.add( timeKeyframePanel );
-		timeKeyframePanel.setLayout( new BoxLayout( timeKeyframePanel, BoxLayout.Y_AXIS ) );
-
-
-		sliderTime = new DefaultTimeSlider();
+//		sliderTime = new DefaultTimeSlider();
+		sliderTime = new DynamicBookmarksTimeSlider( actionMap, this );
 		sliderTime.updateNumTimepoints( 0, numTimepoints );
 		sliderTime.addTimePointListener( this::setTimepoint );
 
-		timeKeyframePanel.add( sliderTime );
-
-		keyframePanel = new KeyFramePanel( sliderTime );
-		keyframePanel.setMinimumSize( new Dimension( 36, 26 ) );
-		keyframePanel.setPreferredSize( new Dimension( 36, 26 ) );
-		timeKeyframePanel.add( keyframePanel );
-
 		add( display, BorderLayout.CENTER );
 		if ( numTimepoints > 1 )
-			add( sliderPanel, BorderLayout.SOUTH );
+			add( sliderTime, BorderLayout.SOUTH );
 
 		visibilityAndGrouping = new VisibilityAndGrouping( state );
 		visibilityAndGrouping.addUpdateListener( this );
@@ -472,45 +352,10 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		painterThread.start();
 	}
 
-	public void stopPlayExecuter()
-	{
-		playTimer.stop();
-	}
-
-	private void onPlayTimerTick( final ActionEvent event )
-	{
-		final int changeValue = Integer.signum( sliderPlay.getValue() );
-		final int newTimepoint = state.getCurrentTimepoint() + changeValue;
-		final int numTimepoints = state.getNumTimepoints();
-
-		if ( newTimepoint < 0 )
-		{
-			setTimepoint( 0 );
-			stopPlayExecuter();
-			sliderPlay.setValue( 0 );
-		}
-		else if ( newTimepoint > numTimepoints - 1 )
-		{
-			setTimepoint( numTimepoints - 1 );
-			stopPlayExecuter();
-			sliderPlay.setValue( 0 );
-		}
-		else
-		{
-			setTimepoint( newTimepoint );
-		}
-	}
-
-	public void setKeyframeButtonEnable( final boolean enable )
-	{
-		previousKeyframeButton.setEnabled( enable );
-		addKeyframeButton.setEnabled( enable );
-		nextKeyframeButton.setEnabled( enable );
-	}
-
 	public KeyFramePopupMenu getKeyFramePopupMenu() // TODO: remove!
 	{
-		return this.keyframePanel.getKeyFramePopupMenuPopupMenu();
+		// TODO: FIX
+		return ( ( DynamicBookmarksTimeSlider ) sliderTime ).keyframePanel.getKeyFramePopupMenuPopupMenu();
 	}
 
 	public void addSource( final SourceAndConverter< ? > sourceAndConverter )
@@ -963,16 +808,8 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 */
 	public synchronized void setActiveBookmark( final Bookmark bookmark )
 	{
-		final Bookmark previousBookmark = this.state.getActiveBookmark();
-		this.state.setActiveBookmark( bookmark );
-
-		final boolean enableKeyframeButtons = bookmark instanceof DynamicBookmark;
-		setKeyframeButtonEnable( enableKeyframeButtons );
-
-		if ( bookmark instanceof DynamicBookmark )
-			keyframePanel.setDynamicBookmark( ( DynamicBookmark ) bookmark );
-		else
-			keyframePanel.setDynamicBookmark( null );
+		final Bookmark previousBookmark = state.getActiveBookmark();
+		state.setActiveBookmark( bookmark );
 
 		for ( final ActiveBookmarkChangedListener l : this.activeBookmarkChangedListeners )
 			l.activeBookmarkChanged( previousBookmark, bookmark );
@@ -1410,6 +1247,192 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		public synchronized void addTimePointListener( final TimePointListener listener )
 		{
 			listeners.add( listener );
+		}
+	}
+
+	// TODO: move to separate file
+	public static class DynamicBookmarksTimeSlider extends TimeSlider implements ActiveBookmarkChangedListener
+	{
+		private final CopyOnWriteArrayList< TimePointListener > listeners;
+
+		private final JSlider timeSlider;
+
+		private final JButton previousKeyframeButton;
+
+		private final JButton addKeyframeButton;
+
+		private final JButton nextKeyframeButton;
+
+		private final JPlaySlider sliderPlay;
+
+		private final KeyFramePanel keyframePanel;
+
+		private final Timer playTimer = new Timer( 0, this::onPlayTimerTick );
+
+		private final ViewerPanel viewer;
+
+		public DynamicBookmarksTimeSlider( final ActionMap actionMap, final ViewerPanel viewer )
+		{
+			super();
+			this.viewer = viewer;
+			viewer.addActiveBookmarkChangedListener( this );
+
+			listeners = new CopyOnWriteArrayList<>();
+
+			previousKeyframeButton = new JButton( "<<" );
+			previousKeyframeButton.setToolTipText( "Go to previous keyframe" );
+			previousKeyframeButton.addActionListener( e -> {
+				final Action action = actionMap.get( BigDataViewerActions.PREVIOUS_KEYFRAME );
+				if ( action != null )
+					action.actionPerformed( e );
+			} );
+			previousKeyframeButton.setEnabled( false );
+
+			addKeyframeButton = new JButton( "+" );
+			addKeyframeButton.setToolTipText( "Add a new keyframe" );
+			addKeyframeButton.addActionListener( e -> {
+				final Action action = actionMap.get( BigDataViewerActions.ADD_KEYFRAME );
+				if ( action != null )
+					action.actionPerformed( e );
+			} );
+			addKeyframeButton.setEnabled( false );
+
+			nextKeyframeButton = new JButton( ">>" );
+			nextKeyframeButton.setToolTipText( "Go to next keyframe" );
+			nextKeyframeButton.addActionListener( e -> {
+				final Action action = actionMap.get( BigDataViewerActions.NEXT_KEYFRAME );
+				if ( action != null )
+					action.actionPerformed( e );
+			} );
+			nextKeyframeButton.setEnabled( false );
+
+			sliderPlay = new JPlaySlider();
+			sliderPlay.setPreferredSize( new Dimension( 200, 50 ) );
+			sliderPlay.setMinimumSize( new Dimension( 200, 50 ) );
+			sliderPlay.setMaximumSize( new Dimension( 200, 50 ) );
+			sliderPlay.setAlignmentX( Component.LEFT_ALIGNMENT );
+			sliderPlay.addChangeListener( e -> {
+				// if ( !e.getSource().equals( sliderPlay ) )
+				// return;
+
+				if ( sliderPlay.getValue() == 0 )
+				{
+					stopPlayExecuter();
+					return;
+				}
+
+				final int periode = 1000 / ( 1 * Math.abs( sliderPlay.getValue() ) );
+				playTimer.setDelay( periode );
+				playTimer.start();
+			} );
+			sliderPlay.addComponentListener( new ComponentAdapter()
+			{
+				@Override
+				public void componentHidden( final ComponentEvent e )
+				{
+					stopPlayExecuter();
+				}
+			} );
+
+			timeSlider = new JSlider( SwingConstants.HORIZONTAL );
+			timeSlider.addChangeListener( new ChangeListener()
+			{
+				@Override
+				public void stateChanged( final ChangeEvent e )
+				{
+					for ( final TimePointListener l : listeners )
+						l.timePointChanged( timeSlider.getValue() );
+				}
+			} );
+			timeSlider.setSnapToTicks( true );
+
+			keyframePanel = new KeyFramePanel( timeSlider );
+			keyframePanel.setMinimumSize( new Dimension( 36, 26 ) );
+			keyframePanel.setPreferredSize( new Dimension( 36, 26 ) );
+
+			final JPanel timeKeyframePanel = new JPanel();
+			timeKeyframePanel.setBorder( new EmptyBorder( 5, 0, 5, 0 ) );
+			timeKeyframePanel.setLayout( new BoxLayout( timeKeyframePanel, BoxLayout.Y_AXIS ) );
+			timeKeyframePanel.add( timeSlider );
+			timeKeyframePanel.add( keyframePanel );
+
+			setLayout( new BoxLayout( this, BoxLayout.X_AXIS ) );
+			add( previousKeyframeButton );
+			add( Box.createRigidArea( new Dimension( 5, 5 ) ) );
+			add( addKeyframeButton );
+			add( Box.createRigidArea( new Dimension( 5, 5 ) ) );
+			add( nextKeyframeButton );
+			add( Box.createRigidArea( new Dimension( 5, 5 ) ) );
+			add( sliderPlay );
+			add( Box.createRigidArea( new Dimension( 5, 5 ) ) );
+			add( timeKeyframePanel );
+		}
+
+		@Override
+		public void updateNumTimepoints( final int currentTimepoint, final int numTimepoints )
+		{
+			timeSlider.setModel( new DefaultBoundedRangeModel( currentTimepoint, 0, 0, numTimepoints - 1 ) );
+		}
+
+		@Override
+		public void setTimepoint( final int timepoint )
+		{
+			timeSlider.setValue( timepoint );
+		}
+
+		@Override
+		public synchronized void addTimePointListener( final TimePointListener listener )
+		{
+			listeners.add( listener );
+		}
+
+		private void onPlayTimerTick( final ActionEvent event )
+		{
+			final int changeValue = Integer.signum( sliderPlay.getValue() );
+			final ViewerState state = viewer.getState();
+			final int newTimepoint = state.getCurrentTimepoint() + changeValue;
+			final int numTimepoints = state.getNumTimepoints();
+
+			if ( newTimepoint < 0 )
+			{
+				setTimepoint( 0 );
+				stopPlayExecuter();
+				sliderPlay.setValue( 0 );
+			}
+			else if ( newTimepoint > numTimepoints - 1 )
+			{
+				setTimepoint( numTimepoints - 1 );
+				stopPlayExecuter();
+				sliderPlay.setValue( 0 );
+			}
+			else
+			{
+				setTimepoint( newTimepoint );
+			}
+		}
+
+		public void stopPlayExecuter()
+		{
+			playTimer.stop();
+		}
+
+		public void setKeyframeButtonEnable( final boolean enable )
+		{
+			previousKeyframeButton.setEnabled( enable );
+			addKeyframeButton.setEnabled( enable );
+			nextKeyframeButton.setEnabled( enable );
+		}
+
+		@Override
+		public void activeBookmarkChanged( final Bookmark TODO_REMOVE_previousBookmark, final Bookmark bookmark )
+		{
+			final boolean enableKeyframeButtons = bookmark instanceof DynamicBookmark;
+			setKeyframeButtonEnable( enableKeyframeButtons );
+
+			if ( bookmark instanceof DynamicBookmark )
+				keyframePanel.setDynamicBookmark( ( DynamicBookmark ) bookmark );
+			else
+				keyframePanel.setDynamicBookmark( null );
 		}
 	}
 }

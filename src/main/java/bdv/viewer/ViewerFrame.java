@@ -127,7 +127,6 @@ public class ViewerFrame extends JFrame
 				if ( choice != UserSaveChoice.CANCEL )
 				{
 					viewer.stop();
-					viewer.stopPlayExecuter();
 					dispose();
 				}
 			}

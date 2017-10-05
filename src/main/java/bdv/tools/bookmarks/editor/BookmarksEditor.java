@@ -258,6 +258,7 @@ public class BookmarksEditor
 			}
 		} );
 
+		// TODO: FIX
 		viewer.getKeyFramePopupMenu().setBookmarksEditor( this );
 	}
 
