@@ -43,6 +43,7 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.LayoutManager;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.MouseEvent;
@@ -156,7 +157,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 */
 	protected final InteractiveDisplayCanvasComponent< AffineTransform3D > display;
 
-	protected final JSlider sliderTime;
+	protected final TimeSlider sliderTime;
 
 	/**
 	 * A {@link ThreadGroup} for (only) the threads used by this
@@ -297,16 +298,9 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		mouseCoordinates = new MouseCoordinateListener();
 		display.addHandler( mouseCoordinates );
 
-		sliderTime = new JSlider( SwingConstants.HORIZONTAL, 0, numTimepoints - 1, 0 );
-		sliderTime.addChangeListener( new ChangeListener()
-		{
-			@Override
-			public void stateChanged( final ChangeEvent e )
-			{
-				if ( e.getSource().equals( sliderTime ) )
-					setTimepoint( sliderTime.getValue() );
-			}
-		} );
+		sliderTime = new DefaultTimeSlider();
+		sliderTime.updateNumTimepoints( 0, numTimepoints );
+		sliderTime.addTimePointListener( this::setTimepoint );
 
 		add( display, BorderLayout.CENTER );
 		if ( numTimepoints > 1 )
@@ -704,12 +698,10 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 */
 	public synchronized void setTimepoint( final int timepoint )
 	{
-		if ( state.getCurrentTimepoint() != timepoint )
+		if ( state.getCurrentTimepoint() != timepoint && timepoint >= 0 && timepoint < state.getNumTimepoints() )
 		{
 			state.setCurrentTimepoint( timepoint );
-			sliderTime.setValue( timepoint );
-			for ( final TimePointListener l : timePointListeners )
-				l.timePointChanged( timepoint );
+			sliderTime.setTimepoint( timepoint );
 			requestRepaint();
 		}
 	}
@@ -720,7 +712,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	public synchronized void nextTimePoint()
 	{
 		if ( state.getNumTimepoints() > 1 )
-			sliderTime.setValue( sliderTime.getValue() + 1 );
+			setTimepoint( state.getCurrentTimepoint() + 1 );
 	}
 
 	/**
@@ -729,7 +721,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	public synchronized void previousTimePoint()
 	{
 		if ( state.getNumTimepoints() > 1 )
-			sliderTime.setValue( sliderTime.getValue() - 1 );
+			setTimepoint( state.getCurrentTimepoint() - 1 );
 	}
 
 	/**
@@ -770,7 +762,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 			for ( final TimePointListener l : timePointListeners )
 				l.timePointChanged( timepoint );
 		}
-		sliderTime.setModel( new DefaultBoundedRangeModel( state.getCurrentTimepoint(), 0, 0, numTimepoints - 1 ) );
+		sliderTime.updateNumTimepoints( state.getCurrentTimepoint(), numTimepoints );
 		revalidate();
 		requestRepaint();
 	}
@@ -1121,6 +1113,80 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 			if ( t.getPriority() != Thread.NORM_PRIORITY )
 				t.setPriority( Thread.NORM_PRIORITY );
 			return t;
+		}
+	}
+
+	// TODO: move to separate file, add to ViewerOptions
+	public static abstract class TimeSlider extends JPanel
+	{
+		public TimeSlider( final LayoutManager layout, final boolean isDoubleBuffered )
+		{
+			super( layout, isDoubleBuffered );
+		}
+
+		public TimeSlider( final LayoutManager layout )
+		{
+			super( layout );
+		}
+
+		public TimeSlider( final boolean isDoubleBuffered )
+		{
+			super( isDoubleBuffered );
+		}
+
+		public TimeSlider()
+		{
+			super();
+		}
+
+		public abstract void updateNumTimepoints( int currentTimepoint, int numTimepoints );
+
+		public abstract void setTimepoint( int timepoint );
+
+		public abstract void addTimePointListener( TimePointListener listener );
+	}
+
+	// TODO: move to separate file
+	public static class DefaultTimeSlider extends TimeSlider
+	{
+		private final CopyOnWriteArrayList< TimePointListener > listeners;
+
+		private final JSlider slider;
+
+		public DefaultTimeSlider()
+		{
+			super( new BorderLayout() );
+			listeners = new CopyOnWriteArrayList<>();
+			slider = new JSlider( SwingConstants.HORIZONTAL );
+			slider.addChangeListener( new ChangeListener()
+			{
+				@Override
+				public void stateChanged( final ChangeEvent e )
+				{
+					for ( final TimePointListener l : listeners )
+						l.timePointChanged( slider.getValue() );
+				}
+			} );
+			slider.setSnapToTicks( true );
+			add( slider, BorderLayout.CENTER );
+		}
+
+		@Override
+		public void updateNumTimepoints( final int currentTimepoint, final int numTimepoints )
+		{
+			slider.setModel( new DefaultBoundedRangeModel( currentTimepoint, 0, 0, numTimepoints - 1 ) );
+		}
+
+		@Override
+		public void setTimepoint( final int timepoint )
+		{
+			slider.setValue( timepoint );
+		}
+
+		@Override
+		public synchronized void addTimePointListener( final TimePointListener listener )
+		{
+			listeners.add( listener );
 		}
 	}
 }
