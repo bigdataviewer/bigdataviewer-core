@@ -286,7 +286,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimepoints, final CacheControl cacheControl, final ViewerOptions optional, final ActionMap actionMap )
 	{
 		super( new BorderLayout(), false );
-		setPreferredSize( new Dimension( 600, 500 ) );
+
 		options = optional.values;
 		this.actionMap = actionMap;
 
@@ -331,16 +331,6 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 		mouseCoordinates = new MouseCoordinateListener();
 		display.addHandler( mouseCoordinates );
-
-		display.addComponentListener( new ComponentAdapter()
-		{
-			@Override
-			public void componentResized( final ComponentEvent e )
-			{
-				requestRepaint();
-				display.removeComponentListener( this );
-			}
-		} );
 
 		final JPanel sliderPanel = new JPanel();
 		sliderPanel.setLayout( new BoxLayout( sliderPanel, BoxLayout.X_AXIS ) );
@@ -526,7 +516,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		nextKeyframeButton.setEnabled( enable );
 	}
 
-	public KeyFramePopupMenu getKeyFramePopupMenu()
+	public KeyFramePopupMenu getKeyFramePopupMenu() // TODO: remove!
 	{
 		return this.keyframePanel.getKeyFramePopupMenuPopupMenu();
 	}
