@@ -50,12 +50,14 @@ import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 import javax.swing.DefaultBoundedRangeModel;
 import javax.swing.JPanel;
@@ -349,6 +351,16 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		requestRepaint();
 	}
 
+	public void addSources( final Collection< SourceAndConverter< ? > > sourceAndConverter )
+	{
+		synchronized ( visibilityAndGrouping )
+		{
+			sourceAndConverter.forEach( state::addSource );
+			visibilityAndGrouping.update( NUM_SOURCES_CHANGED );
+		}
+		requestRepaint();
+	}
+
 	public void removeSource( final Source< ? > source )
 	{
 		synchronized ( visibilityAndGrouping )
@@ -357,6 +369,24 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 			visibilityAndGrouping.update( NUM_SOURCES_CHANGED );
 		}
 		requestRepaint();
+	}
+
+	public void removeSources( final Collection< Source< ? > > sources )
+	{
+		synchronized ( visibilityAndGrouping )
+		{
+			sources.forEach( state::removeSource );
+			visibilityAndGrouping.update( NUM_SOURCES_CHANGED );
+		}
+		requestRepaint();
+	}
+
+	public void removeAllSources()
+	{
+		synchronized ( visibilityAndGrouping )
+		{
+			removeSources( getState().getSources().stream().map( SourceAndConverter::getSpimSource ).collect( Collectors.toList() ) );
+		}
 	}
 
 	public void addGroup( final SourceGroup group )
