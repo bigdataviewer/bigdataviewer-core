@@ -1123,4 +1123,10 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 			return t;
 		}
 	}
+
+	public TransformAwareBufferedImageOverlayRenderer renderTarget()
+	{
+		return this.renderTarget;
+	}
+
 }
