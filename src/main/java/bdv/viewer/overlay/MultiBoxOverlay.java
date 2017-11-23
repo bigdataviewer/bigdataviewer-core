@@ -35,10 +35,17 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
+import java.util.ArrayList;
 import java.util.List;
 
+import bdv.util.Affine3DHelpers;
+import bdv.util.IntervalBoundingBox;
 import net.imglib2.Interval;
+import net.imglib2.RealInterval;
+import net.imglib2.RealLocalizable;
+import net.imglib2.RealPoint;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.util.LinAlgHelpers;
 
 /**
  * Paint an overlay showing multiple transformed boxes (interval + transform).
@@ -106,24 +113,34 @@ public class MultiBoxOverlay
 		final double perspective = 3;
 		final double screenBoxRatio = 0.75;
 
-		long maxSourceSize = 0;
+		final ArrayList< RealPoint > transformedCorners = new ArrayList<>();
+
+		final double[] viewerToFirstSourceRotation = getViewerToFirstSourceRotation( sources.get( 0 ).getSourceToViewer() );
+		final double[] p = new double[ 3 ];
+		final double[] q = new double[ 3 ];
 		for ( final IntervalAndTransform source : sources )
-			maxSourceSize = Math.max( maxSourceSize, Math.max( Math.max( source.getSourceInterval().dimension( 0 ), source.getSourceInterval().dimension( 1 ) ), source.getSourceInterval().dimension( 2 ) ) );
-		final long sourceSize = maxSourceSize;
+		{
+			for ( final RealLocalizable corner : IntervalBoundingBox.getCorners( source.getSourceInterval() ) )
+			{
+				corner.localize( p );
+				source.getSourceToViewer().apply( p, q );
+				LinAlgHelpers.quaternionApply( viewerToFirstSourceRotation, q, p );
+				transformedCorners.add( new RealPoint( p ) );
+			}
+		}
+		final RealInterval boundingBox = IntervalBoundingBox.getBoundingBox( transformedCorners );
+		double sourceSize = 0;
+		for ( int d = 0; d < 3; ++d )
+			sourceSize = Math.max( sourceSize, boundingBox.realMax( d ) - boundingBox.realMin( d ) );
 		final long targetSize = Math.max( targetInterval.dimension( 0 ), targetInterval.dimension( 1 ) );
 
-		final AffineTransform3D transform = sources.get( 0 ).getSourceToViewer();
-		final double vx = transform.get( 0, 0 );
-		final double vy = transform.get( 1, 0 );
-		final double vz = transform.get( 2, 0 );
-		final double transformScale = Math.sqrt( vx*vx + vy*vy + vz*vz );
-		renderBoxHelper.setDepth( perspective * sourceSize * transformScale );
+		renderBoxHelper.setDepth( perspective * sourceSize );
 
 		final double bw = screenBoxRatio * boxScreen.dimension( 0 );
 		final double bh = screenBoxRatio * boxScreen.dimension( 1 );
 		double scale = Math.min( bw / targetInterval.dimension( 0 ), bh / targetInterval.dimension( 1 ) );
 
-		final double tsScale = transformScale * sourceSize / targetSize;
+		final double tsScale = sourceSize / targetSize;
 		if ( tsScale > 1.0 )
 			scale /= tsScale;
 		renderBoxHelper.setScale( scale );
@@ -137,6 +154,15 @@ public class MultiBoxOverlay
 		graphics.setTransform( translate );
 		paint( graphics, sources, targetInterval );
 		graphics.setTransform( t );
+	}
+
+	private double[] getViewerToFirstSourceRotation( final AffineTransform3D sourceToViewer )
+	{
+		final double[] q = new double[ 4 ];
+		final double[] qinv = new double[ 4 ];
+		Affine3DHelpers.extractRotationAnisotropic( sourceToViewer, q );
+		LinAlgHelpers.quaternionInvert( q, qinv );
+		return qinv;
 	}
 
 	private volatile boolean highlightInProgress;
@@ -230,7 +256,7 @@ public class MultiBoxOverlay
 			}
 			else
 			{
-				if( source.isVisible() )
+				if ( source.isVisible() )
 					renderBoxHelper.renderBox( source.getSourceInterval(), source.getSourceToViewer(), activeFront, activeBack );
 				else
 					renderBoxHelper.renderBox( source.getSourceInterval(), source.getSourceToViewer(), inactiveFront, inactiveBack );
