@@ -152,6 +152,7 @@
 		<dependency>
 			<groupId>sc.fiji</groupId>
 			<artifactId>spim_data</artifactId>
+			<version>2.2.1</version>
 		</dependency>
 		<dependency>
 			<groupId>cisd</groupId>
