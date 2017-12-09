@@ -50,6 +50,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import bdv.viewer.state.SourceGroup;
 import bdv.viewer.state.SourceState;
 import bdv.viewer.state.ViewerState;
+import net.imglib2.type.numeric.ARGBType;
 
 /**
  * Manage visibility and currentness of sources and groups, as well as grouping
@@ -59,6 +60,7 @@ import bdv.viewer.state.ViewerState;
  */
 public class VisibilityAndGrouping
 {
+
 	public static final class Event
 	{
 		public static final int CURRENT_SOURCE_CHANGED = 0;
@@ -172,6 +174,14 @@ public class VisibilityAndGrouping
 			return false;
 
 		return state.getSources().get( sourceIndex ).isActive();
+	}
+
+	public boolean isSourceActive(Source<?> source)
+	{
+		return state.getSources().stream()
+				.filter(sourceState -> sourceState.getSpimSource() == source)
+				.map(sourceState -> sourceState.isActive())
+				.reduce(false, (a,b) -> a || b);
 	}
 
 	/**
