@@ -38,6 +38,12 @@ import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.HDF5IntStorageFeatures;
 import ch.systemsx.cisd.hdf5.IHDF5Writer;
 
+/**
+ * This class is merely a HDF5 front-end writer to both HDF5AccessHack
+ * and HDF5Access back-end writers. The latter two indeed call the HDF5
+ * library to implement the saving. This class offers basic (high-level)
+ * methods to populate the output HDF5 file by issuing HDF5 writing tasks/jobs.
+ */
 class Hdf5BlockWriterThread extends Thread implements IHDF5Access
 {
 	private final IHDF5Access hdf5Access;

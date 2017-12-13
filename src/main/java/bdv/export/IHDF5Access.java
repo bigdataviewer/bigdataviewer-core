@@ -32,12 +32,22 @@ package bdv.export;
 import ch.systemsx.cisd.hdf5.HDF5IntStorageFeatures;
 import ch.systemsx.cisd.hdf5.IHDF5Writer;
 
+/**
+ * A connection interface between HDF5 library calls and BDV (image) data feeders.
+ * The HDF5-side implements this interface in HDF5Access*java files/classes.
+ * The BDV-side implements this interface in Hdf5BlockWriterThread.java.
+ */
 interface IHDF5Access
 {
 	public void writeMipmapDescription( final int setupIdPartition, final ExportMipmapInfo mipmapInfo );
 
 	public void createAndOpenDataset( final String path, long[] dimensions, int[] cellDimensions, HDF5IntStorageFeatures features );
 
+	/**
+	 * This is the main method that pushes image/voxel data into the HDF5 file.
+	 * There would need to be multiple clones of it, each for specific voxel types,
+	 * as on the HDF5-side this should end up as different HDF5 library calls.
+	 */
 	public void writeBlockWithOffset( final short[] data, final long[] blockDimensions, final long[] offset );
 
 	public void closeDataset();
