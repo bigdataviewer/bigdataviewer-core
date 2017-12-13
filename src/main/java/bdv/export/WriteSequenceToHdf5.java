@@ -39,8 +39,6 @@ import java.util.Map.Entry;
 import java.util.concurrent.CountDownLatch;
 
 import static bdv.export.Hdf5BlockWriterPixelTypes.*;
-import bdv.export.WriteSequenceToHdf5.AfterEachPlane;
-import bdv.export.WriteSequenceToHdf5.LoopbackHeuristic;
 import bdv.img.hdf5.Hdf5ImageLoader;
 import bdv.img.hdf5.Partition;
 import bdv.img.hdf5.Util;
@@ -63,7 +61,7 @@ import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImg;
-import net.imglib2.img.basictypeaccess.array.ShortArray;
+import net.imglib2.img.basictypeaccess.array.ArrayDataAccess;
 import net.imglib2.img.cell.CellImg;
 import net.imglib2.iterator.LocalizingIntervalIterator;
 import net.imglib2.type.NativeType;
@@ -800,9 +798,8 @@ public class WriteSequenceToHdf5
 								else
 									downsampleBlock( cell.cursor(), accumulator, currentCellDim, in, blockMin, factor, scale );
 
-								//TODO VLADO, here's the actual saving into HDF5!!
-								//TODO VLADO: data should be of type Object
-								writerQueue.writeBlockWithOffset( ( ( ShortArray ) cell.update( null ) ).getCurrentStorageArray(), currentCellDim.clone(), currentCellMin.clone() );
+								//here comes the actual saving into HDF5
+								writerQueue.writeBlockWithOffset( ( ( ArrayDataAccess<?> ) cell.update( null ) ).getCurrentStorageArray(), currentCellDim.clone(), currentCellMin.clone() );
 							}
 							doneSignal.countDown();
 						}

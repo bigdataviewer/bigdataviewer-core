@@ -162,7 +162,7 @@ class Hdf5BlockWriterThread extends Thread implements IHDF5Access
 	}
 
 	@Override
-	public void writeBlockWithOffset( final short[] data, final long[] blockDimensions, final long[] offset )
+	public void writeBlockWithOffset( final Object data, final long[] blockDimensions, final long[] offset )
 	{
 		put( new WriteBlockWithOffsetTask( data, blockDimensions, offset ) );
 	}
@@ -233,13 +233,13 @@ class Hdf5BlockWriterThread extends Thread implements IHDF5Access
 
 	private static class WriteBlockWithOffsetTask implements Hdf5BlockWriterThread.Hdf5Task
 	{
-		private final short[] data;
+		private final Object data;
 
 		private final long[] blockDimensions;
 
 		private final long[] offset;
 
-		public WriteBlockWithOffsetTask( final short[] data, final long[] blockDimensions, final long[] offset )
+		public WriteBlockWithOffsetTask( final Object data, final long[] blockDimensions, final long[] offset )
 		{
 			this.data = data;
 			this.blockDimensions = blockDimensions;

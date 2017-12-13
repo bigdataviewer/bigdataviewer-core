@@ -45,10 +45,13 @@ interface IHDF5Access
 
 	/**
 	 * This is the main method that pushes image/voxel data into the HDF5 file.
-	 * There would need to be multiple clones of it, each for specific voxel types,
+	 * There needs to be multiple clones of it, each for specific voxel types,
 	 * as on the HDF5-side this should end up as different HDF5 library calls.
+	 *
+	 * The parameter 'data' is assumed to be an array of Java basic data type, in fact
+	 * any basic type that can be covered/mapped/wrapped with imglibs2.NativeType.
 	 */
-	public void writeBlockWithOffset( final short[] data, final long[] blockDimensions, final long[] offset );
+	public void writeBlockWithOffset( final Object data, final long[] blockDimensions, final long[] offset );
 
 	public void closeDataset();
 

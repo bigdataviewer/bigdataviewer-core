@@ -67,8 +67,7 @@ class HDF5Access implements IHDF5Access
 	}
 
 	@Override
-	//TODO VLADO: data should be of type Object
-	public void writeBlockWithOffset( final short[] data, final long[] blockDimensions, final long[] offset )
+	public void writeBlockWithOffset( final Object data, final long[] blockDimensions, final long[] offset )
 	{
 		reorder( blockDimensions, reorderedDimensions );
 		reorder( offset, reorderedOffset );
