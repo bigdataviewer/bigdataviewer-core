@@ -50,6 +50,7 @@ import ch.systemsx.cisd.hdf5.IHDF5Writer;
 import mpicbg.spim.data.XmlHelpers;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicImgLoader;
+import mpicbg.spim.data.generic.sequence.BasicMultiResolutionSetupImgLoader;
 import mpicbg.spim.data.generic.sequence.BasicSetupImgLoader;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.sequence.TimePoint;
@@ -450,16 +451,12 @@ public class WriteSequenceToHdf5
 				progressWriter.out().printf( "proccessing setup %d / %d\n", ++setupIndex, numSetups );
 
 				@SuppressWarnings( "unchecked" )
-				//TODO VLADO, here's maybe the actual saving of data?
-				//TODO VLADO, getImage returns always UINT16, casting to T should be removed!
-				//TODO PRUSER
 				final RandomAccessibleInterval<T> img = ( ( BasicSetupImgLoader< T > ) imgLoader.getSetupImgLoader( setupIdSequence ) ).getImage( timepointIdSequence );
 				final ExportMipmapInfo mipmapInfo = perSetupMipmapInfo.get( setupIdSequence );
 				final double startCompletionRatio = ( double ) numCompletedTasks++ / numTasks;
 				final double endCompletionRatio = ( double ) numCompletedTasks / numTasks;
 				final ProgressWriter subProgressWriter = new SubTaskProgressWriter( progressWriter, startCompletionRatio, endCompletionRatio );
 
-				//TODO VLADO, here's maybe the actual saving of data?
 				writeViewToHdf5PartitionFile(
 						img, timepointIdPartition, setupIdPartition, mipmapInfo, false,
 						deflate, writerQueue, cellCreatorThreads, loopbackHeuristic, afterEachPlane, subProgressWriter );
@@ -605,6 +602,7 @@ public class WriteSequenceToHdf5
 	 *            completion ratio and status output will be directed here. may
 	 *            be null.
 	 */
+	@SuppressWarnings("unchecked")
 	public static < T extends RealType< T > & NativeType<T> >
 	void writeViewToHdf5PartitionFile(
 			final RandomAccessibleInterval< T > img,
@@ -698,8 +696,9 @@ public class WriteSequenceToHdf5
 				useLoopBack = loopbackHeuristic.decide( img, resolutions[ level ], previousLevel, factorsToPreviousLevel, subdivisions[ level ] );
 				if ( useLoopBack )
 				{
-					//TODO VLADO PRUSER how to make sure the proper type is indeed given by the getImage() ??
-					sourceImg = (RandomAccessibleInterval<T>) loopback.getSetupImgLoader( setupIdPartition ).getImage( timepointIdPartition, previousLevel );
+					//TODO VLADO: both options should work, both result in unchecked cast warning :(
+					//sourceImg = (RandomAccessibleInterval<T>) loopback.getSetupImgLoader( setupIdPartition ).getImage( timepointIdPartition, previousLevel );
+					sourceImg = (( BasicMultiResolutionSetupImgLoader< T > )loopback.getSetupImgLoader( setupIdPartition )).getImage( timepointIdPartition, previousLevel );
 					factor = factorsToPreviousLevel;
 				}
 				else
@@ -791,7 +790,6 @@ public class WriteSequenceToHdf5
 								//
 								//or, we need to pull T into PixelTypeMaintainer's signature so that compiler would
 								//see the type of the returned object... TODO VLADO
-								@SuppressWarnings("unchecked")
 								final ArrayImg< T, ? > cell = (ArrayImg<T, ?>) pxM.createArrayImg( currentCellDim );
 								if ( fullResolution )
 									copyBlock( cell.randomAccess(), currentCellDim, in, blockMin );

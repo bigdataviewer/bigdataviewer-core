@@ -43,6 +43,7 @@ import java.util.concurrent.Executors;
 
 import bdv.AbstractViewerSetupImgLoader;
 import bdv.ViewerImgLoader;
+import bdv.img.cache.CacheArrayLoader;
 import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.util.ConstantRandomAccessible;
 import bdv.util.MipmapTransforms;
@@ -82,8 +83,10 @@ import net.imglib2.img.cell.CellImg;
 import net.imglib2.img.cell.CellImgFactory;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.type.volatiles.AbstractVolatileNativeRealType;
 import net.imglib2.type.volatiles.VolatileUnsignedShortType;
 import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
@@ -108,12 +111,16 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 
 	protected FetcherThreads fetchers;
 
-	protected Hdf5VolatileShortArrayLoader shortLoader;
+	protected CacheArrayLoader<?> shortLoader;
+
+	//TODO VLADO: this class could actually have an explicit memory of what
+	//            pixel type is inside the this.hdf5File
+	NativeType<?> hdf5PixelType = null;
 
 	/**
 	 * Maps setup id to {@link SetupImgLoader}.
 	 */
-	protected final HashMap< Integer, SetupImgLoader > setupImgLoaders;
+	protected final HashMap< Integer, SetupImgLoader<?,?> > setupImgLoaders;
 
 	/**
 	 * List of partitions if the dataset is split across several files
@@ -195,7 +202,13 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 					if ( resolutions.length > maxNumLevels )
 						maxNumLevels = resolutions.length;
 
-					setupImgLoaders.put( setupId, new SetupImgLoader( setupId, new MipmapInfo( resolutions, transforms, subdivisions ) ) );
+					//TODO VLADO here we need to know which type of the image is in our hands and
+					//create appropriate instance of the SetupImgLoader()
+					//TODO VLADO instantiate always in appropriate pairs, e.g., UnsignedShortType and VolatileUnsignedShortType
+					//TODO VLADO PRUSER will not be easy to readout the pixel type from the HDF5 file
+					setupImgLoaders.put( setupId,
+					  new SetupImgLoader<>( setupId, new MipmapInfo( resolutions, transforms, subdivisions ),
+							  new UnsignedShortType(), new VolatileUnsignedShortType()) );
 				}
 
 				cachedDimsAndExistence.clear();
@@ -209,6 +222,10 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 					e.printStackTrace();
 					hdf5Access = new HDF5Access( hdf5Reader );
 				}
+				//the same as above:
+				//TODO VLADO here we need to know which type of the image is in our hands and
+				//create appropriate instance of the CacheArrayLoader<?>
+				//TODO VLADO rename 'shortLoader' afterwards!
 				shortLoader = new Hdf5VolatileShortArrayLoader( hdf5Access );
 
 
@@ -293,7 +310,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 		return cache;
 	}
 
-	public Hdf5VolatileShortArrayLoader getShortArrayLoader()
+	public CacheArrayLoader<?> getShortArrayLoader()
 	{
 		open();
 		return shortLoader;
@@ -383,13 +400,14 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 	}
 
 	@Override
-	public SetupImgLoader getSetupImgLoader( final int setupId )
+	public SetupImgLoader<?,?> getSetupImgLoader( final int setupId )
 	{
 		open();
 		return setupImgLoaders.get( setupId );
 	}
 
-	public class SetupImgLoader extends AbstractViewerSetupImgLoader< UnsignedShortType, VolatileUnsignedShortType > implements MultiResolutionSetupImgLoader< UnsignedShortType >
+	public class SetupImgLoader < T extends RealType< T > & NativeType<T>, VT extends AbstractVolatileNativeRealType<T,VT> >
+	extends AbstractViewerSetupImgLoader< T, VT > implements MultiResolutionSetupImgLoader< T >
 	{
 		private final int setupId;
 
@@ -400,14 +418,15 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 		 */
 		private final MipmapInfo mipmapInfo;
 
-		protected SetupImgLoader( final int setupId, final MipmapInfo mipmapInfo  )
+		protected SetupImgLoader( final int setupId, final MipmapInfo mipmapInfo,
+		                          final T type, final VT volatileType)
 		{
-			super( new UnsignedShortType(), new VolatileUnsignedShortType() );
+			super( type, volatileType );
 			this.setupId = setupId;
 			this.mipmapInfo = mipmapInfo;
 		}
 
-		private RandomAccessibleInterval< UnsignedShortType > loadImageCompletely( final int timepointId, final int level )
+		private RandomAccessibleInterval< T > loadImageCompletely( final int timepointId, final int level )
 		{
 			open();
 
@@ -420,7 +439,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 				return getMissingDataImage( id, type );
 			}
 
-			Img< UnsignedShortType > img = null;
+			Img< T > img = null;
 			final DimsAndExistence dimsAndExistence = getDimsAndExistence( new ViewLevelId( timepointId, setupId, level ) );
 			final long[] dimsLong = dimsAndExistence.exists() ? dimsAndExistence.getDimensions() : null;
 			final int n = dimsLong.length;
@@ -428,6 +447,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 			final long[] min = new long[ n ];
 			if ( Intervals.numElements( new FinalDimensions( dimsLong ) ) <= Integer.MAX_VALUE )
 			{
+				//TODO VLADO everything has to become generics over here!!
 				// use ArrayImg
 				for ( int d = 0; d < dimsInt.length; ++d )
 					dimsInt[ d ] = ( int ) dimsLong[ d ];
@@ -438,16 +458,19 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 				}
 				catch ( final InterruptedException e )
 				{}
-				img = ArrayImgs.unsignedShorts( data, dimsLong );
+				//TODO VLADO everything has to become generics over here!!
+				//TODO VLADO this is bad, just to make it compile
+				img = (Img<T>)ArrayImgs.unsignedShorts( data, dimsLong );
 			}
 			else
 			{
 				final int[] cellDimensions = computeCellDimensions(
 						dimsLong,
 						mipmapInfo.getSubdivisions()[ level ] );
-				final CellImgFactory< UnsignedShortType > factory = new CellImgFactory<>( cellDimensions );
+				final CellImgFactory< T > factory = new CellImgFactory<>( cellDimensions );
 				@SuppressWarnings( "unchecked" )
-				final CellImg< UnsignedShortType, ShortArray > cellImg = ( CellImg< UnsignedShortType, ShortArray > ) factory.create( dimsLong, type );
+				//TODO VLADO everything has to become generics over here!! no ShortArray anymore
+				final CellImg< T, ShortArray > cellImg = ( CellImg< T, ShortArray > ) factory.create( dimsLong, type );
 				final Cursor< Cell< ShortArray > > cursor = cellImg.getCells().cursor();
 				while ( cursor.hasNext() )
 				{
@@ -499,7 +522,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 		}
 
 		@Override
-		public RandomAccessibleInterval< UnsignedShortType > getImage( final int timepointId, final int level, final ImgLoaderHint... hints )
+		public RandomAccessibleInterval< T > getImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 		{
 			if ( Arrays.asList( hints ).contains( ImgLoaderHints.LOAD_COMPLETELY ) )
 				return loadImageCompletely( timepointId, level );
@@ -508,7 +531,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 		}
 
 		@Override
-		public RandomAccessibleInterval< VolatileUnsignedShortType > getVolatileImage( final int timepointId, final int level, final ImgLoaderHint... hints )
+		public RandomAccessibleInterval< VT > getVolatileImage( final int timepointId, final int level, final ImgLoaderHint... hints )
 		{
 			return prepareCachedImage( timepointId, level, LoadingStrategy.BUDGETED, volatileType );
 		}
@@ -518,7 +541,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 		 * The created image needs a {@link NativeImg#setLinkedType(net.imglib2.type.Type) linked type} before it can be used.
 		 * The type should be either {@link UnsignedShortType} and {@link VolatileUnsignedShortType}.
 		 */
-		protected < T extends NativeType< T > > RandomAccessibleInterval< T > prepareCachedImage( final int timepointId, final int level, final LoadingStrategy loadingStrategy, final T type )
+		protected < CT extends NativeType<CT> > RandomAccessibleInterval< CT > prepareCachedImage( final int timepointId, final int level, final LoadingStrategy loadingStrategy, final CT type )
 		{
 			open();
 
@@ -547,7 +570,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 		 * {@link #getDimsAndExistence(ViewLevelId)}) then use that. Otherwise
 		 * create a 1x1x1 image.
 		 */
-		protected < T > RandomAccessibleInterval< T > getMissingDataImage( final ViewLevelId id, final T constant )
+		protected < DT > RandomAccessibleInterval< DT > getMissingDataImage( final ViewLevelId id, final DT constant )
 		{
 			final long[] d = getDimsAndExistence( id ).getDimensions();
 			return Views.interval( new ConstantRandomAccessible<>( constant, 3 ), new FinalInterval( d ) );
@@ -562,27 +585,27 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 		@Override
 		public RandomAccessibleInterval< FloatType > getFloatImage( final int timepointId, final int level, final boolean normalize, final ImgLoaderHint... hints )
 		{
-			final RandomAccessibleInterval< UnsignedShortType > ushortImg = getImage( timepointId, level, hints );
+			final RandomAccessibleInterval< ? extends RealType<?> > someRealImg = getImage( timepointId, level, hints );
 
 			// copy unsigned short img to float img
 
 			// create float img
 			final FloatType f = new FloatType();
 			final ImgFactory< FloatType > imgFactory;
-			if ( Intervals.numElements( ushortImg ) <= Integer.MAX_VALUE )
+			if ( Intervals.numElements( someRealImg ) <= Integer.MAX_VALUE )
 			{
 				imgFactory = new ArrayImgFactory<>();
 			}
 			else
 			{
-				final long[] dimsLong = new long[ ushortImg.numDimensions() ];
-				ushortImg.dimensions( dimsLong );
+				final long[] dimsLong = new long[ someRealImg.numDimensions() ];
+				someRealImg.dimensions( dimsLong );
 				final int[] cellDimensions = computeCellDimensions(
 						dimsLong,
 						mipmapInfo.getSubdivisions()[ level ] );
 				imgFactory = new CellImgFactory<>( cellDimensions );
 			}
-			final Img< FloatType > floatImg = imgFactory.create( ushortImg, f );
+			final Img< FloatType > floatImg = imgFactory.create( someRealImg, f );
 
 			// set up executor service
 			final int numProcessors = Runtime.getRuntime().availableProcessors();
@@ -602,14 +625,14 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 				// the last thread may has to run longer if the number of pixels cannot be divided by the number of threads
 				final long loopSize = ( portionID == numPortions - 1 ) ? threadChunkSize + threadChunkMod : threadChunkSize;
 
-				if ( Views.iterable( ushortImg ).iterationOrder().equals( floatImg.iterationOrder() ) )
+				if ( Views.iterable( someRealImg ).iterationOrder().equals( floatImg.iterationOrder() ) )
 				{
 					tasks.add( new Callable< Void >()
 					{
 						@Override
 						public Void call() throws Exception
 						{
-							final Cursor< UnsignedShortType > in = Views.iterable( ushortImg ).cursor();
+							final Cursor< ? extends RealType<?> > in = Views.iterable( someRealImg ).cursor();
 							final Cursor< FloatType > out = floatImg.cursor();
 
 							in.jumpFwd( startPosition );
@@ -629,14 +652,15 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 						@Override
 						public Void call() throws Exception
 						{
-							final Cursor< UnsignedShortType > in = Views.iterable( ushortImg ).localizingCursor();
+							final Cursor< ? extends RealType<?> > in = Views.iterable( someRealImg ).localizingCursor();
 							final RandomAccess< FloatType > out = floatImg.randomAccess();
 
 							in.jumpFwd( startPosition );
+							RealType<?> vin = null;
 
 							for ( long j = 0; j < loopSize; ++j )
 							{
-								final UnsignedShortType vin = in.next();
+								vin = in.next();
 								out.setPosition( in );
 								out.get().set( vin.getRealFloat() );
 							}
