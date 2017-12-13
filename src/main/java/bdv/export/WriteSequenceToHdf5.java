@@ -38,6 +38,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CountDownLatch;
 
+import static bdv.export.Hdf5BlockWriterPixelTypes.*;
 import bdv.export.WriteSequenceToHdf5.AfterEachPlane;
 import bdv.export.WriteSequenceToHdf5.LoopbackHeuristic;
 import bdv.img.hdf5.Hdf5ImageLoader;
@@ -62,12 +63,11 @@ import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImg;
-import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.ShortArray;
 import net.imglib2.img.cell.CellImg;
 import net.imglib2.iterator.LocalizingIntervalIterator;
+import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.view.Views;
 
 /**
@@ -356,7 +356,8 @@ public class WriteSequenceToHdf5
 	 * @param progressWriter
 	 *            completion ratio and status output will be directed here.
 	 */
-	public static void writeHdf5PartitionFile(
+	public static <T extends RealType< T > & NativeType<T> >
+	void writeHdf5PartitionFile(
 			final AbstractSequenceDescription< ?, ?, ? > seq,
 			final Map< Integer, ExportMipmapInfo > perSetupMipmapInfo,
 			final boolean deflate,
@@ -382,11 +383,21 @@ public class WriteSequenceToHdf5
 		// get the BasicImgLoader that supplies the images
 		final BasicImgLoader imgLoader = seq.getImgLoader();
 
+		//create a proper handler for this particular pixel type
+		PixelTypeMaintainer pxM = null;
+		Object pxType = null;
+
 		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() ) {
 			final Object type = imgLoader.getSetupImgLoader( setup.getId() ).getImageType();
-			if ( !( type instanceof UnsignedShortType ) )
-				throw new IllegalArgumentException( "Expected BasicImgLoader<UnsignedShortTyp> but your dataset has BasicImgLoader<"
-						+ type.getClass().getSimpleName() + ">.\nCurrently writing to HDF5 is only supported for UnsignedShortType." );
+			//determine which PixelTypeMaintainer we will use
+			if (pxM == null) pxM = createPixelMaintainer(type);
+
+			//check that all setups are holding images of the voxel type
+			//NB: this is probably not required due to the way the views are constructed (blame VLADO that he was lazy to understand that)
+			if (pxType == null) pxType = type; //TODO VLADO check that it works like this
+			else if ( !pxType.equals(type) )
+				throw new IllegalArgumentException( "All image data must be of the same type which seems to "+pxType.getClass().getSimpleName()
+				  + " in this case.\nCurrently writing to HDF5 is only supported for single type accross all midmaps, views, time points." );
 		}
 
 
@@ -394,7 +405,7 @@ public class WriteSequenceToHdf5
 		final File hdf5File = new File( partition.getPath() );
 		if ( hdf5File.exists() )
 			hdf5File.delete();
-		final Hdf5BlockWriterThread writerQueue = new Hdf5BlockWriterThread( hdf5File, blockWriterQueueLength );
+		final Hdf5BlockWriterThread writerQueue = new Hdf5BlockWriterThread( hdf5File, blockWriterQueueLength, pxM );
 		writerQueue.start();
 
 		// start CellCreatorThreads
@@ -441,12 +452,16 @@ public class WriteSequenceToHdf5
 				progressWriter.out().printf( "proccessing setup %d / %d\n", ++setupIndex, numSetups );
 
 				@SuppressWarnings( "unchecked" )
-				final RandomAccessibleInterval< UnsignedShortType > img = ( ( BasicSetupImgLoader< UnsignedShortType > ) imgLoader.getSetupImgLoader( setupIdSequence ) ).getImage( timepointIdSequence );
+				//TODO VLADO, here's maybe the actual saving of data?
+				//TODO VLADO, getImage returns always UINT16, casting to T should be removed!
+				//TODO PRUSER
+				final RandomAccessibleInterval<T> img = ( ( BasicSetupImgLoader< T > ) imgLoader.getSetupImgLoader( setupIdSequence ) ).getImage( timepointIdSequence );
 				final ExportMipmapInfo mipmapInfo = perSetupMipmapInfo.get( setupIdSequence );
 				final double startCompletionRatio = ( double ) numCompletedTasks++ / numTasks;
 				final double endCompletionRatio = ( double ) numCompletedTasks / numTasks;
 				final ProgressWriter subProgressWriter = new SubTaskProgressWriter( progressWriter, startCompletionRatio, endCompletionRatio );
 
+				//TODO VLADO, here's maybe the actual saving of data?
 				writeViewToHdf5PartitionFile(
 						img, timepointIdPartition, setupIdPartition, mipmapInfo, false,
 						deflate, writerQueue, cellCreatorThreads, loopbackHeuristic, afterEachPlane, subProgressWriter );
@@ -502,8 +517,9 @@ public class WriteSequenceToHdf5
 	 *            completion ratio and status output will be directed here. may
 	 *            be null.
 	 */
-	public static void writeViewToHdf5PartitionFile(
-			final RandomAccessibleInterval< UnsignedShortType > img,
+	public static < T extends RealType< T > & NativeType<T> >
+	void writeViewToHdf5PartitionFile(
+			final RandomAccessibleInterval< T > img,
 			final Partition partition,
 			final int timepointIdPartition,
 			final int setupIdPartition,
@@ -517,8 +533,12 @@ public class WriteSequenceToHdf5
 	{
 		final int blockWriterQueueLength = 100;
 
+		//create a proper handler for this particular pixel type
+		final PixelTypeMaintainer pxM
+			= createPixelMaintainer( img.randomAccess().get() );
+
 		// create and start Hdf5BlockWriterThread
-		final Hdf5BlockWriterThread writerQueue = new Hdf5BlockWriterThread( partition.getPath(), blockWriterQueueLength );
+		final Hdf5BlockWriterThread writerQueue = new Hdf5BlockWriterThread( partition.getPath(), blockWriterQueueLength, pxM );
 		writerQueue.start();
 		final CellCreatorThread[] cellCreatorThreads = createAndStartCellCreatorThreads( numCellCreatorThreads );
 
@@ -587,8 +607,9 @@ public class WriteSequenceToHdf5
 	 *            completion ratio and status output will be directed here. may
 	 *            be null.
 	 */
-	public static void writeViewToHdf5PartitionFile(
-			final RandomAccessibleInterval< UnsignedShortType > img,
+	public static < T extends RealType< T > & NativeType<T> >
+	void writeViewToHdf5PartitionFile(
+			final RandomAccessibleInterval< T > img,
 			final int timepointIdPartition,
 			final int setupIdPartition,
 			final ExportMipmapInfo mipmapInfo,
@@ -604,6 +625,10 @@ public class WriteSequenceToHdf5
 
 		if ( progressWriter == null )
 			progressWriter = new ProgressWriterConsole();
+
+		//create a proper handler for this particular pixel type
+		final PixelTypeMaintainer pxM
+			= createPixelMaintainer( img.randomAccess().get() );
 
 		// for progressWriter
 		final int numTasks = mipmapInfo.getNumLevels();
@@ -630,7 +655,7 @@ public class WriteSequenceToHdf5
 		{
 			progressWriter.out().println( "writing level " + level );
 
-			final RandomAccessibleInterval< UnsignedShortType > sourceImg;
+			final RandomAccessibleInterval< T > sourceImg;
 			final int[] factor;
 			final boolean useLoopBack;
 			if ( loopbackHeuristic == null )
@@ -675,7 +700,8 @@ public class WriteSequenceToHdf5
 				useLoopBack = loopbackHeuristic.decide( img, resolutions[ level ], previousLevel, factorsToPreviousLevel, subdivisions[ level ] );
 				if ( useLoopBack )
 				{
-					sourceImg = loopback.getSetupImgLoader( setupIdPartition ).getImage( timepointIdPartition, previousLevel );
+					//TODO VLADO PRUSER how to make sure the proper type is indeed given by the getImage() ??
+					sourceImg = (RandomAccessibleInterval<T>) loopback.getSetupImgLoader( setupIdPartition ).getImage( timepointIdPartition, previousLevel );
 					factor = factorsToPreviousLevel;
 				}
 				else
@@ -703,7 +729,7 @@ public class WriteSequenceToHdf5
 			sourceImg.min( minRequiredInput );
 			for ( int d = 0; d < n; ++d )
 				maxRequiredInput[ d ] = minRequiredInput[ d ] + dimensions[ d ] * factor[ d ] - 1;
-			final RandomAccessibleInterval< UnsignedShortType > extendedImg = Views.interval( Views.extendBorder( sourceImg ), new FinalInterval( minRequiredInput, maxRequiredInput ) );
+			final RandomAccessibleInterval< T > extendedImg = Views.interval( Views.extendBorder( sourceImg ), new FinalInterval( minRequiredInput, maxRequiredInput ) );
 
 			final int[] cellDimensions = subdivisions[ level ];
 			final ViewId viewIdPartition = new ViewId( timepointIdPartition, setupIdPartition );
@@ -743,7 +769,7 @@ public class WriteSequenceToHdf5
 							final long[] currentCellDim = new long[ n ];
 							final long[] currentCellPos = new long[ n ];
 							final long[] blockMin = new long[ n ];
-							final RandomAccess< UnsignedShortType > in = extendedImg.randomAccess();
+							final RandomAccess< T > in = extendedImg.randomAccess();
 							while ( true )
 							{
 								synchronized ( i )
@@ -762,12 +788,20 @@ public class WriteSequenceToHdf5
 									currentCellMax[ d ] = currentCellMin[ d ] + currentCellDim[ d ] - 1;
 								}
 
-								final ArrayImg< UnsignedShortType, ? > cell = ArrayImgs.unsignedShorts( currentCellDim );
+								//we need to rely on the assumption that pxM was created appropriately for the
+								//type T so that its createArrayImg() method is indeed creating ArrayImg<T,?>
+								//
+								//or, we need to pull T into PixelTypeMaintainer's signature so that compiler would
+								//see the type of the returned object... TODO VLADO
+								@SuppressWarnings("unchecked")
+								final ArrayImg< T, ? > cell = (ArrayImg<T, ?>) pxM.createArrayImg( currentCellDim );
 								if ( fullResolution )
 									copyBlock( cell.randomAccess(), currentCellDim, in, blockMin );
 								else
 									downsampleBlock( cell.cursor(), accumulator, currentCellDim, in, blockMin, factor, scale );
 
+								//TODO VLADO, here's the actual saving into HDF5!!
+								//TODO VLADO: data should be of type Object
 								writerQueue.writeBlockWithOffset( ( ( ShortArray ) cell.update( null ) ).getCurrentStorageArray(), currentCellDim.clone(), currentCellMin.clone() );
 							}
 							doneSignal.countDown();
@@ -915,7 +949,7 @@ public class WriteSequenceToHdf5
 		}
 	}
 
-	private static < T extends RealType< T > > void downsampleBlock( final Cursor< T > out, final double[] accumulator, final long[] outDim, final RandomAccess< UnsignedShortType > randomAccess, final long[] blockMin, final int[] blockSize, final double scale )
+	private static < T extends RealType< T > > void downsampleBlock( final Cursor< T > out, final double[] accumulator, final long[] outDim, final RandomAccess< T > randomAccess, final long[] blockMin, final int[] blockSize, final double scale )
 	{
 		final int numBlockPixels = ( int ) ( outDim[ 0 ] * outDim[ 1 ] * outDim[ 2 ] );
 		Arrays.fill( accumulator, 0, numBlockPixels, 0 );

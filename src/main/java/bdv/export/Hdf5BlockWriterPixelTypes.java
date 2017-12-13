@@ -53,17 +53,50 @@ import ch.systemsx.cisd.base.mdarray.MDLongArray;
 import ch.systemsx.cisd.base.mdarray.MDFloatArray;
 import ch.systemsx.cisd.base.mdarray.MDDoubleArray;
 
+//for the WriteSequenceToHdf5
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.img.array.ArrayImg;
+import net.imglib2.img.array.ArrayImgs;
+
+//to create the right object
+import net.imglib2.type.numeric.integer.ByteType;
+import net.imglib2.type.numeric.integer.UnsignedByteType;
+import net.imglib2.type.numeric.integer.ShortType;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
 
 class Hdf5BlockWriterPixelTypes
 {
 	interface PixelTypeMaintainer
 	{
-		//for the HDF5AccessHack
+		///for the HDF5AccessHack
 		int h5Dwrite(int dataset_id, int mem_space_id, int file_space_id, Object data);
 
-		//for the HDF5Access
+		///for the HDF5Access
 		void createAndOpenDataset(final IHDF5Writer hdf5Writer, final String path, final long[] dimensions, final int[] cellDimensions, final HDF5IntStorageFeatures features);
 		void hdf5writer(final IHDF5Writer hdf5Writer, Object data, final long[] reorderedDimensions, final String datasetPath, final long[] reorderedOffset);
+
+		///for the WriteSequenceToHdf5
+		ArrayImg<?,?> createArrayImg(final long[] dims);
+	}
+
+	/**
+	 * A factory to provide the right implementation of the PixelTypeMaintainer
+	 * interface given the input pxType parameter. The parameter should extend
+	 * imglib2's RealType to be recognized, otherwise an exception is thrown.
+	 */
+	static
+	PixelTypeMaintainer createPixelMaintainer(final Object pxType)
+	{
+		if (pxType instanceof ByteType) return new ByteTypeMaintainer();
+		else
+		if (pxType instanceof UnsignedByteType) return new UnsignedByteTypeMaintainer();
+		else
+		if (pxType instanceof ShortType) return new ShortTypeMaintainer();
+		else
+		if (pxType instanceof UnsignedShortType) return new UnsignedShortTypeMaintainer();
+		else
+			throw new IllegalArgumentException("Unrecognized pixel type, cannot save HDF5");
 	}
 
 	// ------------------------------------------------------
@@ -90,6 +123,13 @@ class Hdf5BlockWriterPixelTypes
 			final MDByteArray array = new MDByteArray( (byte[])data, reorderedDimensions );
 			hdf5Writer.int8().writeMDArrayBlockWithOffset( datasetPath, array, reorderedOffset );
 		}
+
+		@Override
+		public
+		ArrayImg<?,?> createArrayImg(final long[] dims)
+		{
+			return ArrayImgs.bytes(dims);
+		}
 	}
 
 	static class UnsignedByteTypeMaintainer implements PixelTypeMaintainer
@@ -114,6 +154,13 @@ class Hdf5BlockWriterPixelTypes
 		{
 			final MDByteArray array = new MDByteArray( (byte[])data, reorderedDimensions );
 			hdf5Writer.int8().writeMDArrayBlockWithOffset( datasetPath, array, reorderedOffset );
+		}
+
+		@Override
+		public
+		ArrayImg<?,?> createArrayImg(final long[] dims)
+		{
+			return ArrayImgs.unsignedBytes(dims);
 		}
 	}
 
@@ -141,6 +188,13 @@ class Hdf5BlockWriterPixelTypes
 			final MDShortArray array = new MDShortArray( (short[])data, reorderedDimensions );
 			hdf5Writer.int16().writeMDArrayBlockWithOffset( datasetPath, array, reorderedOffset );
 		}
+
+		@Override
+		public
+		ArrayImg<?,?> createArrayImg(final long[] dims)
+		{
+			return ArrayImgs.shorts(dims);
+		}
 	}
 
 	static class UnsignedShortTypeMaintainer implements PixelTypeMaintainer
@@ -165,6 +219,13 @@ class Hdf5BlockWriterPixelTypes
 		{
 			final MDShortArray array = new MDShortArray( (short[])data, reorderedDimensions );
 			hdf5Writer.int16().writeMDArrayBlockWithOffset( datasetPath, array, reorderedOffset );
+		}
+
+		@Override
+		public
+		ArrayImg<?,?> createArrayImg(final long[] dims)
+		{
+			return ArrayImgs.unsignedShorts(dims);
 		}
 	}
 
