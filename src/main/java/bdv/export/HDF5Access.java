@@ -30,14 +30,15 @@
 package bdv.export;
 
 import static bdv.img.hdf5.Util.reorder;
+import static bdv.export.Hdf5BlockWriterPixelTypes.PixelTypeMaintainer;
 import bdv.img.hdf5.Util;
-import ch.systemsx.cisd.base.mdarray.MDShortArray;
 import ch.systemsx.cisd.hdf5.HDF5IntStorageFeatures;
 import ch.systemsx.cisd.hdf5.IHDF5Writer;
 
 class HDF5Access implements IHDF5Access
 {
 	private final IHDF5Writer hdf5Writer;
+	private final PixelTypeMaintainer px;
 
 	private final long[] reorderedDimensions = new long[ 3 ];
 
@@ -45,9 +46,10 @@ class HDF5Access implements IHDF5Access
 
 	private String datasetPath;
 
-	public HDF5Access( final IHDF5Writer hdf5Writer )
+	public HDF5Access( final IHDF5Writer hdf5Writer, final PixelTypeMaintainer px )
 	{
 		this.hdf5Writer = hdf5Writer;
+		this.px = px;
 	}
 
 	@Override
@@ -60,17 +62,17 @@ class HDF5Access implements IHDF5Access
 	@Override
 	public void createAndOpenDataset( final String path, final long[] dimensions, final int[] cellDimensions, final HDF5IntStorageFeatures features )
 	{
-		hdf5Writer.int16().createMDArray( path, reorder( dimensions ), reorder( cellDimensions ), features );
+		px.createAndOpenDataset( hdf5Writer, path, reorder( dimensions ), reorder( cellDimensions ), features );
 		this.datasetPath = path;
 	}
 
 	@Override
+	//TODO VLADO: data should be of type Object
 	public void writeBlockWithOffset( final short[] data, final long[] blockDimensions, final long[] offset )
 	{
 		reorder( blockDimensions, reorderedDimensions );
 		reorder( offset, reorderedOffset );
-		final MDShortArray array = new MDShortArray( data, reorderedDimensions );
-		hdf5Writer.int16().writeMDArrayBlockWithOffset( datasetPath, array, reorderedOffset );
+		px.hdf5writer( hdf5Writer, data, reorderedDimensions, datasetPath, reorderedOffset );
 	}
 
 	@Override

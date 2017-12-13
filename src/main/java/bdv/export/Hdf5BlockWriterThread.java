@@ -34,6 +34,7 @@ import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.TimeUnit;
 
+import bdv.export.Hdf5BlockWriterPixelTypes.PixelTypeMaintainer;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.HDF5IntStorageFeatures;
 import ch.systemsx.cisd.hdf5.IHDF5Writer;
@@ -65,18 +66,19 @@ class Hdf5BlockWriterThread extends Thread implements IHDF5Access
 		setName( "HDF5BlockWriterQueue" );
 	}
 
-	public Hdf5BlockWriterThread( final File hdf5File, final int queueLength )
+	//this constructor touches the file by setting up an file-feeding interface Hdf5Task
+	public Hdf5BlockWriterThread( final File hdf5File, final int queueLength, final PixelTypeMaintainer pxM )
 	{
 		final IHDF5Writer hdf5Writer = HDF5Factory.open( hdf5File );
 		IHDF5Access hdf5Access;
 		try
 		{
-			hdf5Access = new HDF5AccessHack( hdf5Writer );
+			hdf5Access = new HDF5AccessHack( hdf5Writer, pxM );
 		}
 		catch ( final Exception e )
 		{
 			e.printStackTrace();
-			hdf5Access = new HDF5Access( hdf5Writer );
+			hdf5Access = new HDF5Access( hdf5Writer, pxM );
 		}
 		this.hdf5Access = hdf5Access;
 		queue = new ArrayBlockingQueue<>( queueLength );
@@ -84,9 +86,9 @@ class Hdf5BlockWriterThread extends Thread implements IHDF5Access
 		setName( "HDF5BlockWriterQueue" );
 	}
 
-	public Hdf5BlockWriterThread( final String hdf5FilePath, final int queueLength )
+	public Hdf5BlockWriterThread( final String hdf5FilePath, final int queueLength, final PixelTypeMaintainer pxM )
 	{
-		this( new File( hdf5FilePath), queueLength );
+		this( new File( hdf5FilePath), queueLength, pxM );
 	}
 
 	@Override

@@ -30,16 +30,15 @@
 package bdv.export;
 
 import static bdv.img.hdf5.Util.reorder;
+import static bdv.export.Hdf5BlockWriterPixelTypes.PixelTypeMaintainer;
 import static ch.systemsx.cisd.hdf5.hdf5lib.H5D.H5Dclose;
 import static ch.systemsx.cisd.hdf5.hdf5lib.H5D.H5Dget_space;
 import static ch.systemsx.cisd.hdf5.hdf5lib.H5D.H5Dopen;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5D.H5Dwrite;
 import static ch.systemsx.cisd.hdf5.hdf5lib.H5S.H5Sclose;
 import static ch.systemsx.cisd.hdf5.hdf5lib.H5S.H5Screate_simple;
 import static ch.systemsx.cisd.hdf5.hdf5lib.H5S.H5Sselect_hyperslab;
 import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5P_DEFAULT;
 import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5S_SELECT_SET;
-import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5T_NATIVE_INT16;
 
 import java.lang.reflect.Field;
 
@@ -50,6 +49,7 @@ import ch.systemsx.cisd.hdf5.IHDF5Writer;
 class HDF5AccessHack implements IHDF5Access
 {
 	private final IHDF5Writer hdf5Writer;
+	private final PixelTypeMaintainer px;
 
 	private final long[] reorderedDimensions = new long[ 3 ];
 
@@ -61,9 +61,11 @@ class HDF5AccessHack implements IHDF5Access
 
 	private int fileSpaceId;
 
-	public HDF5AccessHack( final IHDF5Writer hdf5Writer ) throws ClassNotFoundException, SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException
+	public HDF5AccessHack(final IHDF5Writer hdf5Writer, final PixelTypeMaintainer px )
+	throws ClassNotFoundException, SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException
 	{
 		this.hdf5Writer = hdf5Writer;
+		this.px = px;
 
 		final Class< ? > k = Class.forName( "ch.systemsx.cisd.hdf5.HDF5Writer" );
 		final Field f = k.getDeclaredField( "baseWriter" );
@@ -99,13 +101,15 @@ class HDF5AccessHack implements IHDF5Access
 	}
 
 	@Override
+	//TODO VLADO: data should be of type Object
 	public void writeBlockWithOffset( final short[] data, final long[] blockDimensions, final long[] offset )
 	{
 		reorder( blockDimensions, reorderedDimensions );
 		reorder( offset, reorderedOffset );
 		final int memorySpaceId = H5Screate_simple( reorderedDimensions.length, reorderedDimensions, null );
 		H5Sselect_hyperslab( fileSpaceId, H5S_SELECT_SET, reorderedOffset, null, reorderedDimensions, null );
-		H5Dwrite( dataSetId, H5T_NATIVE_INT16, memorySpaceId, fileSpaceId, H5P_DEFAULT, data );
+		//here's really the HDF5 writing!!!
+		px.h5Dwrite( dataSetId, memorySpaceId, fileSpaceId, data );
 		H5Sclose( memorySpaceId );
 	}
 
