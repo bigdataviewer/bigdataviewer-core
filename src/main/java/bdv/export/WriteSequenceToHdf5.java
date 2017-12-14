@@ -38,7 +38,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CountDownLatch;
 
-import static bdv.export.Hdf5BlockWriterPixelTypes.*;
+import bdv.export.Hdf5BlockWriterPixelTypes;
+import bdv.export.Hdf5BlockWriterPixelTypes.PixelTypeMaintainer;
 import bdv.img.hdf5.Hdf5ImageLoader;
 import bdv.img.hdf5.Partition;
 import bdv.img.hdf5.Util;
@@ -389,7 +390,7 @@ public class WriteSequenceToHdf5
 		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() ) {
 			final Object type = imgLoader.getSetupImgLoader( setup.getId() ).getImageType();
 			//determine which PixelTypeMaintainer we will use
-			if (pxM == null) pxM = createPixelMaintainer(type);
+			if (pxM == null) pxM = Hdf5BlockWriterPixelTypes.createPixelMaintainer(type);
 
 			//check that all setups are holding images of the voxel type
 			//NB: this is probably not required due to the way the views are constructed (blame VLADO that he was lazy to understand that)
@@ -530,7 +531,7 @@ public class WriteSequenceToHdf5
 
 		//create a proper handler for this particular pixel type
 		final PixelTypeMaintainer pxM
-			= createPixelMaintainer( img.randomAccess().get() );
+			= Hdf5BlockWriterPixelTypes.createPixelMaintainer( img.randomAccess().get() );
 
 		// create and start Hdf5BlockWriterThread
 		final Hdf5BlockWriterThread writerQueue = new Hdf5BlockWriterThread( partition.getPath(), blockWriterQueueLength, pxM );
@@ -624,7 +625,7 @@ public class WriteSequenceToHdf5
 
 		//create a proper handler for this particular pixel type
 		final PixelTypeMaintainer pxM
-			= createPixelMaintainer( img.randomAccess().get() );
+			= Hdf5BlockWriterPixelTypes.createPixelMaintainer( img.randomAccess().get() );
 
 		// for progressWriter
 		final int numTasks = mipmapInfo.getNumLevels();
