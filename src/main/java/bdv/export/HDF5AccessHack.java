@@ -95,7 +95,7 @@ class HDF5AccessHack implements IHDF5Access
 	@Override
 	public void createAndOpenDataset( final String path, final long[] dimensions, final int[] cellDimensions, final HDF5IntStorageFeatures features )
 	{
-		hdf5Writer.int16().createMDArray( path, reorder( dimensions ), reorder( cellDimensions ), features );
+		px.createAndOpenDataset( hdf5Writer, path, reorder( dimensions ), reorder( cellDimensions ), features );
 		dataSetId = H5Dopen( fileId, path, H5P_DEFAULT );
 		fileSpaceId = H5Dget_space( dataSetId );
 	}
