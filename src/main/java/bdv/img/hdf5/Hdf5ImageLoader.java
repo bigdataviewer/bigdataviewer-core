@@ -115,7 +115,12 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 
 	//TODO VLADO: this class could actually have an explicit memory of what
 	//            pixel type is inside the this.hdf5File
-	NativeType<?> hdf5PixelType = null;
+	//
+	//NB: The default value is UnsignedShortType,
+	//    change it if you know there is something different in the input file.
+	//NB: It is intentionally not final to allow to inject the specific voxel type
+	//    without having the need to change constructors.
+	String hdf5PixelType = new String("UnsignedShortType");
 
 	/**
 	 * Maps setup id to {@link SetupImgLoader}.

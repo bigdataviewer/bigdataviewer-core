@@ -30,6 +30,7 @@
 package bdv.img.hdf5;
 
 import static mpicbg.spim.data.XmlHelpers.loadPath;
+import static mpicbg.spim.data.XmlKeys.IMGLOADER_TAG;
 import static mpicbg.spim.data.XmlKeys.IMGLOADER_FORMAT_ATTRIBUTE_NAME;
 
 import java.io.File;
@@ -53,8 +54,9 @@ public class XmlIoHdf5ImageLoader implements XmlIoBasicImgLoader< Hdf5ImageLoade
 	@Override
 	public Element toXml( final Hdf5ImageLoader imgLoader, final File basePath )
 	{
-		final Element elem = new Element( "ImageLoader" );
+		final Element elem = new Element( IMGLOADER_TAG );
 		elem.setAttribute( IMGLOADER_FORMAT_ATTRIBUTE_NAME, "bdv.hdf5" );
+		elem.setAttribute( "pixelType", imgLoader.hdf5PixelType);
 		elem.addContent( XmlHelpers.pathElement( "hdf5", imgLoader.getHdf5File(), basePath ) );
 		for ( final Partition partition : imgLoader.getPartitions() )
 			elem.addContent( partitionToXml( partition, basePath ) );
@@ -64,11 +66,27 @@ public class XmlIoHdf5ImageLoader implements XmlIoBasicImgLoader< Hdf5ImageLoade
 	@Override
 	public Hdf5ImageLoader fromXml( final Element elem, final File basePath, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
 	{
+		//check that this XML file was created by us
+		if (! elem.getAttributeValue(IMGLOADER_FORMAT_ATTRIBUTE_NAME).startsWith("bdv.hdf5") )
+			throw new RuntimeException("The XML file was not created for BDV.");
+
+		//read out the pixel type used with this file
+		final String pxType = elem.getAttributeValue("pixelType");
+
 		final String path = loadPath( elem, "hdf5", basePath ).toString();
 		final ArrayList< Partition > partitions = new ArrayList<>();
 		for ( final Element p : elem.getChildren( "partition" ) )
 			partitions.add( partitionFromXml( p, basePath ) );
-		return new Hdf5ImageLoader( new File( path ), partitions, sequenceDescription );
+
+		//create the loader the usual way, nothing has changed here
+		final Hdf5ImageLoader HDF5loader = new Hdf5ImageLoader( new File( path ), partitions, sequenceDescription );
+
+		//if we manage to read specific voxel type info, inject it;
+		//otherwise we don't change it, which leaves the HDF5loader
+		//with its default value (which is backward compatible UnsignedShortType)
+		if (pxType != null) HDF5loader.hdf5PixelType = pxType;
+
+		return HDF5loader;
 	}
 
 	private Element partitionToXml( final Partition partition, final File basePath )
