@@ -34,28 +34,27 @@ import static ch.systemsx.cisd.hdf5.hdf5lib.H5D.H5Dwrite;
 import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5P_DEFAULT;
 import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5T_NATIVE_INT8;
 import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5T_NATIVE_INT16;
-import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5T_NATIVE_INT32;
-import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5T_NATIVE_INT64;
+//import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5T_NATIVE_INT32;
+//import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5T_NATIVE_INT64;
 import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5T_NATIVE_UINT8;
 import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5T_NATIVE_UINT16;
-import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5T_NATIVE_UINT32;
-import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5T_NATIVE_UINT64;
+//import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5T_NATIVE_UINT32;
+//import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5T_NATIVE_UINT64;
 import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5T_NATIVE_FLOAT;
-import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5T_NATIVE_DOUBLE;
+//import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5T_NATIVE_DOUBLE;
 
 //for the HDF5Access
 import ch.systemsx.cisd.hdf5.IHDF5Writer;
 import ch.systemsx.cisd.hdf5.HDF5IntStorageFeatures;
+import ch.systemsx.cisd.hdf5.HDF5FloatStorageFeatures;
 import ch.systemsx.cisd.base.mdarray.MDByteArray;
 import ch.systemsx.cisd.base.mdarray.MDShortArray;
-import ch.systemsx.cisd.base.mdarray.MDIntArray;
-import ch.systemsx.cisd.base.mdarray.MDLongArray;
+//import ch.systemsx.cisd.base.mdarray.MDIntArray;
+//import ch.systemsx.cisd.base.mdarray.MDLongArray;
 import ch.systemsx.cisd.base.mdarray.MDFloatArray;
-import ch.systemsx.cisd.base.mdarray.MDDoubleArray;
+//import ch.systemsx.cisd.base.mdarray.MDDoubleArray;
 
 //for the WriteSequenceToHdf5
-import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.RealType;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
 
@@ -64,6 +63,7 @@ import net.imglib2.type.numeric.integer.ByteType;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.integer.ShortType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.type.numeric.real.FloatType;
 
 class Hdf5BlockWriterPixelTypes
 {
@@ -95,6 +95,8 @@ class Hdf5BlockWriterPixelTypes
 		if (pxType instanceof ShortType) return new ShortTypeMaintainer();
 		else
 		if (pxType instanceof UnsignedShortType) return new UnsignedShortTypeMaintainer();
+		else
+		if (pxType instanceof FloatType) return new FloatTypeMaintainer();
 		else
 			throw new IllegalArgumentException("Unrecognized pixel type, cannot save HDF5");
 	}
@@ -230,7 +232,42 @@ class Hdf5BlockWriterPixelTypes
 	}
 
 	// ------------------------------------------------------
+	static class FloatTypeMaintainer implements PixelTypeMaintainer
+	{
+		@Override
+		public
+		int h5Dwrite(int dataset_id, int mem_space_id, int file_space_id, Object data)
+		{
+			return H5Dwrite(dataset_id, H5T_NATIVE_FLOAT, mem_space_id, file_space_id, H5P_DEFAULT, (float[])data);
+		}
 
+		@Override
+		public
+		void createAndOpenDataset(final IHDF5Writer hdf5Writer, final String path, final long[] dimensions, final int[] cellDimensions, final HDF5IntStorageFeatures features)
+		{
+			//final HDF5FloatStorageFeatures fFeatures = HDF5FloatStorageFeatures.FLOAT_NO_COMPRESSION;
+			//should translate the original HDF5IntStorageFeatures to HDF5FloatStorageFeatures, TODO VLADO confirm it preserves e.g. deflation option
+			final HDF5FloatStorageFeatures fFeatures = HDF5FloatStorageFeatures.build(features).features();
+			hdf5Writer.float32().createMDArray( path, dimensions, cellDimensions, fFeatures );
+		}
+
+		@Override
+		public
+		void hdf5writer(final IHDF5Writer hdf5Writer, Object data, final long[] reorderedDimensions, final String datasetPath, final long[] reorderedOffset)
+		{
+			final MDFloatArray array = new MDFloatArray( (float[])data, reorderedDimensions );
+			hdf5Writer.float32().writeMDArrayBlockWithOffset( datasetPath, array, reorderedOffset );
+		}
+
+		@Override
+		public
+		ArrayImg<?,?> createArrayImg(final long[] dims)
+		{
+			return ArrayImgs.floats(dims);
+		}
+	}
+
+	// ------------------------------------------------------
 
 
 
