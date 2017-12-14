@@ -64,11 +64,22 @@ import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.integer.ShortType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.type.volatiles.VolatileByteType;
+import net.imglib2.type.volatiles.VolatileUnsignedByteType;
+import net.imglib2.type.volatiles.VolatileShortType;
+import net.imglib2.type.volatiles.VolatileUnsignedShortType;
+import net.imglib2.type.volatiles.VolatileFloatType;
 
-class Hdf5BlockWriterPixelTypes
+//to create the SetupImgLoader
+import bdv.img.hdf5.Hdf5ImageLoader;
+import bdv.img.hdf5.Hdf5ImageLoader.SetupImgLoader;
+import bdv.img.hdf5.MipmapInfo;
+
+public class Hdf5BlockWriterPixelTypes
 {
-	interface PixelTypeMaintainer
+	public interface PixelTypeMaintainer
 	{
+		// ---------- writing ----------
 		///for the HDF5AccessHack
 		int h5Dwrite(int dataset_id, int mem_space_id, int file_space_id, Object data);
 
@@ -78,6 +89,10 @@ class Hdf5BlockWriterPixelTypes
 
 		///for the WriteSequenceToHdf5
 		ArrayImg<?,?> createArrayImg(final long[] dims);
+
+		// ---------- reading ----------
+		///for the Hdf5ImageLoader; instantiate always in appropriate pairs, e.g., UnsignedShortType and VolatileUnsignedShortType
+		SetupImgLoader<?,?> createSetupImgLoader(final Hdf5ImageLoader loader, final int setupId, final MipmapInfo mipmapInfo);
 	}
 
 	/**
@@ -85,24 +100,38 @@ class Hdf5BlockWriterPixelTypes
 	 * interface given the input pxType parameter. The parameter should extend
 	 * imglib2's RealType to be recognized, otherwise an exception is thrown.
 	 */
-	static
+	public static
 	PixelTypeMaintainer createPixelMaintainer(final Object pxType)
 	{
-		if (pxType instanceof ByteType) return new ByteTypeMaintainer();
+		//short-cut... (hoping that boolean testing is faster than instanceof)
+		final boolean isString = pxType instanceof String;
+
+		if (pxType instanceof ByteType ||
+		   (isString && ((String)pxType).startsWith("ByteType")))
+		       return new ByteTypeMaintainer();
 		else
-		if (pxType instanceof UnsignedByteType) return new UnsignedByteTypeMaintainer();
+		if (pxType instanceof UnsignedByteType ||
+		   (isString && ((String)pxType).startsWith("UnsignedByteType")))
+		       return new UnsignedByteTypeMaintainer();
 		else
-		if (pxType instanceof ShortType) return new ShortTypeMaintainer();
+		if (pxType instanceof ShortType ||
+		   (isString && ((String)pxType).startsWith("ShortType")))
+		       return new ShortTypeMaintainer();
 		else
-		if (pxType instanceof UnsignedShortType) return new UnsignedShortTypeMaintainer();
+		if (pxType instanceof UnsignedShortType ||
+		   (isString && ((String)pxType).startsWith("UnsignedShortType")))
+		       return new UnsignedShortTypeMaintainer();
 		else
-		if (pxType instanceof FloatType) return new FloatTypeMaintainer();
+		if (pxType instanceof FloatType ||
+		   (isString && ((String)pxType).startsWith("FloatType")))
+		       return new FloatTypeMaintainer();
 		else
 			throw new IllegalArgumentException("Unrecognized pixel type, cannot save HDF5");
 	}
 
 	// ------------------------------------------------------
-	static class ByteTypeMaintainer implements PixelTypeMaintainer
+	static
+	class ByteTypeMaintainer implements PixelTypeMaintainer
 	{
 		@Override
 		public
@@ -132,9 +161,17 @@ class Hdf5BlockWriterPixelTypes
 		{
 			return ArrayImgs.bytes(dims);
 		}
+
+		@Override
+		public
+		SetupImgLoader<?,?> createSetupImgLoader(final Hdf5ImageLoader loader, final int setupId, final MipmapInfo mipmapInfo)
+		{
+			return loader.new SetupImgLoader<>(setupId, mipmapInfo, new ByteType(), new VolatileByteType());
+		}
 	}
 
-	static class UnsignedByteTypeMaintainer implements PixelTypeMaintainer
+	static
+	class UnsignedByteTypeMaintainer implements PixelTypeMaintainer
 	{
 		@Override
 		public
@@ -164,10 +201,18 @@ class Hdf5BlockWriterPixelTypes
 		{
 			return ArrayImgs.unsignedBytes(dims);
 		}
+
+		@Override
+		public
+		SetupImgLoader<?,?> createSetupImgLoader(final Hdf5ImageLoader loader, final int setupId, final MipmapInfo mipmapInfo)
+		{
+			return loader.new SetupImgLoader<>(setupId, mipmapInfo, new UnsignedByteType(), new VolatileUnsignedByteType());
+		}
 	}
 
 	// ------------------------------------------------------
-	static class ShortTypeMaintainer implements PixelTypeMaintainer
+	static
+	class ShortTypeMaintainer implements PixelTypeMaintainer
 	{
 		@Override
 		public
@@ -197,9 +242,17 @@ class Hdf5BlockWriterPixelTypes
 		{
 			return ArrayImgs.shorts(dims);
 		}
+
+		@Override
+		public
+		SetupImgLoader<?,?> createSetupImgLoader(final Hdf5ImageLoader loader, final int setupId, final MipmapInfo mipmapInfo)
+		{
+			return loader.new SetupImgLoader<>(setupId, mipmapInfo, new ShortType(), new VolatileShortType());
+		}
 	}
 
-	static class UnsignedShortTypeMaintainer implements PixelTypeMaintainer
+	static
+	class UnsignedShortTypeMaintainer implements PixelTypeMaintainer
 	{
 		@Override
 		public
@@ -229,10 +282,18 @@ class Hdf5BlockWriterPixelTypes
 		{
 			return ArrayImgs.unsignedShorts(dims);
 		}
+
+		@Override
+		public
+		SetupImgLoader<?,?> createSetupImgLoader(final Hdf5ImageLoader loader, final int setupId, final MipmapInfo mipmapInfo)
+		{
+			return loader.new SetupImgLoader<>(setupId, mipmapInfo, new UnsignedShortType(), new VolatileUnsignedShortType());
+		}
 	}
 
 	// ------------------------------------------------------
-	static class FloatTypeMaintainer implements PixelTypeMaintainer
+	static
+	class FloatTypeMaintainer implements PixelTypeMaintainer
 	{
 		@Override
 		public
@@ -264,6 +325,13 @@ class Hdf5BlockWriterPixelTypes
 		ArrayImg<?,?> createArrayImg(final long[] dims)
 		{
 			return ArrayImgs.floats(dims);
+		}
+
+		@Override
+		public
+		SetupImgLoader<?,?> createSetupImgLoader(final Hdf5ImageLoader loader, final int setupId, final MipmapInfo mipmapInfo)
+		{
+			return loader.new SetupImgLoader<>(setupId, mipmapInfo, new FloatType(), new VolatileFloatType());
 		}
 	}
 

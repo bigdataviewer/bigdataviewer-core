@@ -423,8 +423,8 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 		 */
 		private final MipmapInfo mipmapInfo;
 
-		protected SetupImgLoader( final int setupId, final MipmapInfo mipmapInfo,
-		                          final T type, final VT volatileType)
+		public SetupImgLoader( final int setupId, final MipmapInfo mipmapInfo,
+		                       final T type, final VT volatileType)
 		{
 			super( type, volatileType );
 			this.setupId = setupId;
