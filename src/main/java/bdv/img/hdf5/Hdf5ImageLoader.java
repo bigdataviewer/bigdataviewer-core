@@ -43,6 +43,8 @@ import java.util.concurrent.Executors;
 
 import bdv.AbstractViewerSetupImgLoader;
 import bdv.ViewerImgLoader;
+import bdv.export.Hdf5BlockWriterPixelTypes;
+import bdv.export.Hdf5BlockWriterPixelTypes.PixelTypeMaintainer;
 import bdv.img.cache.CacheArrayLoader;
 import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.util.ConstantRandomAccessible;
@@ -87,7 +89,6 @@ import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.type.volatiles.AbstractVolatileNativeRealType;
-import net.imglib2.type.volatiles.VolatileUnsignedShortType;
 import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
 
@@ -111,6 +112,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 
 	protected FetcherThreads fetchers;
 
+	//TODO VLADO: could be renamed, but is protected -> might be used is some code elsewhere
 	protected CacheArrayLoader<?> shortLoader;
 
 	//TODO VLADO: this class could actually have an explicit memory of what
@@ -190,6 +192,10 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 					return;
 				isOpen = true;
 
+				//create a proper handler for this particular pixel type
+				final PixelTypeMaintainer pxM
+					= Hdf5BlockWriterPixelTypes.createPixelMaintainer(this.hdf5PixelType);
+
 				final IHDF5Reader hdf5Reader = ( existingHdf5Reader != null ) ? existingHdf5Reader : HDF5Factory.openForReading( hdf5File );
 
 				maxNumLevels = 0;
@@ -207,13 +213,9 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 					if ( resolutions.length > maxNumLevels )
 						maxNumLevels = resolutions.length;
 
-					//TODO VLADO here we need to know which type of the image is in our hands and
-					//create appropriate instance of the SetupImgLoader()
-					//TODO VLADO instantiate always in appropriate pairs, e.g., UnsignedShortType and VolatileUnsignedShortType
-					//TODO VLADO PRUSER will not be easy to readout the pixel type from the HDF5 file
+					//add pixel-type-agnostic instance of the SetupImgLoader()
 					setupImgLoaders.put( setupId,
-					  new SetupImgLoader<>( setupId, new MipmapInfo( resolutions, transforms, subdivisions ),
-							  new UnsignedShortType(), new VolatileUnsignedShortType()) );
+					  pxM.createSetupImgLoader(this, setupId, new MipmapInfo( resolutions, transforms, subdivisions )));
 				}
 
 				cachedDimsAndExistence.clear();
@@ -227,12 +229,8 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 					e.printStackTrace();
 					hdf5Access = new HDF5Access( hdf5Reader );
 				}
-				//the same as above:
-				//TODO VLADO here we need to know which type of the image is in our hands and
-				//create appropriate instance of the CacheArrayLoader<?>
-				//TODO VLADO rename 'shortLoader' afterwards!
-				shortLoader = new Hdf5VolatileShortArrayLoader( hdf5Access );
-
+				//again, create appropriate type-specific implementation of the CacheArrayLoader<?>
+				shortLoader = pxM.createHdf5VolatileTypeArrayLoader( hdf5Access );
 
 				final BlockingFetchQueues< Callable< ? > > queue = new BlockingFetchQueues<>( maxNumLevels );
 				fetchers = new FetcherThreads( queue, 1 );
