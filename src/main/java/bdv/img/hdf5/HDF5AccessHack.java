@@ -30,6 +30,7 @@
 package bdv.img.hdf5;
 
 import static bdv.img.hdf5.Util.reorder;
+import static bdv.export.Hdf5BlockWriterPixelTypes.PixelTypeMaintainer;
 import static ch.systemsx.cisd.hdf5.hdf5lib.H5D.H5Dclose;
 import static ch.systemsx.cisd.hdf5.hdf5lib.H5D.H5Dget_space;
 import static ch.systemsx.cisd.hdf5.hdf5lib.H5D.H5Dopen;
@@ -63,6 +64,7 @@ import ch.systemsx.cisd.hdf5.IHDF5Reader;
 class HDF5AccessHack implements IHDF5Access
 {
 	private final IHDF5Reader hdf5Reader;
+	private final PixelTypeMaintainer px;
 
 	private final int fileId;
 
@@ -128,9 +130,11 @@ class HDF5AccessHack implements IHDF5Access
 
 	private final OpenDataSetCache openDataSetCache;
 
-	public HDF5AccessHack( final IHDF5Reader hdf5Reader ) throws ClassNotFoundException, SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException
+	public HDF5AccessHack( final IHDF5Reader hdf5Reader, final PixelTypeMaintainer px )
+	throws ClassNotFoundException, SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException
 	{
 		this.hdf5Reader = hdf5Reader;
+		this.px = px;
 
 		final Class< ? > k = Class.forName( "ch.systemsx.cisd.hdf5.HDF5Reader" );
 		final Field f = k.getDeclaredField( "baseReader" );

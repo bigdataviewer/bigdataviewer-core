@@ -222,12 +222,12 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 
 				try
 				{
-					hdf5Access = new HDF5AccessHack( hdf5Reader );
+					hdf5Access = new HDF5AccessHack( hdf5Reader, pxM );
 				}
 				catch ( final Exception e )
 				{
 					e.printStackTrace();
-					hdf5Access = new HDF5Access( hdf5Reader );
+					hdf5Access = new HDF5Access( hdf5Reader, pxM );
 				}
 				//again, create appropriate type-specific implementation of the CacheArrayLoader<?>
 				shortLoader = pxM.createHdf5VolatileTypeArrayLoader( hdf5Access );

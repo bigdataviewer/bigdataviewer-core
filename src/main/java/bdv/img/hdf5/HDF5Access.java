@@ -30,6 +30,7 @@
 package bdv.img.hdf5;
 
 import static bdv.img.hdf5.Util.reorder;
+import static bdv.export.Hdf5BlockWriterPixelTypes.PixelTypeMaintainer;
 import ch.systemsx.cisd.base.mdarray.MDFloatArray;
 import ch.systemsx.cisd.base.mdarray.MDShortArray;
 import ch.systemsx.cisd.hdf5.HDF5DataSetInformation;
@@ -38,14 +39,16 @@ import ch.systemsx.cisd.hdf5.IHDF5Reader;
 class HDF5Access implements IHDF5Access
 {
 	private final IHDF5Reader hdf5Reader;
+	private final PixelTypeMaintainer px;
 
 	private final int[] reorderedDimensions = new int[ 3 ];
 
 	private final long[] reorderedMin = new long[ 3 ];
 
-	public HDF5Access( final IHDF5Reader hdf5Reader )
+	public HDF5Access( final IHDF5Reader hdf5Reader, final PixelTypeMaintainer px )
 	{
 		this.hdf5Reader = hdf5Reader;
+		this.px = px;
 	}
 
 	@Override
