@@ -31,6 +31,8 @@ package bdv.img.hdf5;
 
 import static bdv.img.hdf5.Util.reorder;
 import static bdv.export.Hdf5BlockWriterPixelTypes.PixelTypeMaintainer;
+
+import ch.systemsx.cisd.base.mdarray.MDAbstractArray;
 import ch.systemsx.cisd.base.mdarray.MDFloatArray;
 import ch.systemsx.cisd.base.mdarray.MDShortArray;
 import ch.systemsx.cisd.hdf5.HDF5DataSetInformation;
@@ -70,26 +72,20 @@ class HDF5Access implements IHDF5Access
 			return new DimsAndExistence( new long[] { 1, 1, 1 }, false );
 	}
 
-	@Override
-	public synchronized short[] readShortMDArrayBlockWithOffset( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
+	//local skeleton to be re-used in the front-ends below
+	private synchronized Object readMDArrayBlockWithOffset( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
 	{
 		if ( Thread.interrupted() )
 			throw new InterruptedException();
 		Util.reorder( dimensions, reorderedDimensions );
 		Util.reorder( min, reorderedMin );
-		final MDShortArray array = hdf5Reader.int16().readMDArrayBlockWithOffset( Util.getCellsPath( timepoint, setup, level ), reorderedDimensions, reorderedMin );
+		//TODO
+		final MDAbstractArray<?> array = px.hdf5Reader.int16().readMDArrayBlockWithOffset( Util.getCellsPath( timepoint, setup, level ), reorderedDimensions, reorderedMin );
 		return array.getAsFlatArray();
 	}
 
-	@Override
-	public short[] readShortMDArrayBlockWithOffset( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final short[] dataBlock ) throws InterruptedException
-	{
-		System.arraycopy( readShortMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min ), 0, dataBlock, 0, dataBlock.length );
-		return dataBlock;
-	}
-
-	@Override
-	public float[] readShortMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
+	//local skeleton to be re-used in the front-ends below
+	private float[] readMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
 	{
 		if ( Thread.interrupted() )
 			throw new InterruptedException();
@@ -97,14 +93,77 @@ class HDF5Access implements IHDF5Access
 		Util.reorder( min, reorderedMin );
 		final MDFloatArray array = hdf5Reader.float32().readMDArrayBlockWithOffset( Util.getCellsPath( timepoint, setup, level ), reorderedDimensions, reorderedMin );
 		final float[] pixels = array.getAsFlatArray();
-		unsignedShort( pixels );
+		px.unsignedShort( pixels ); //TODO
 		return pixels;
 	}
 
 	@Override
+	public byte[] readByteMDArrayBlockWithOffset( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
+	{
+		return (byte[])readMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min );
+	}
+	@Override
+	public byte[] readByteMDArrayBlockWithOffset( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final byte[] dataBlock ) throws InterruptedException
+	{
+		System.arraycopy( (byte[])readMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min ), 0, dataBlock, 0, dataBlock.length );
+		return dataBlock;
+	}
+
+	@Override
+	public short[] readShortMDArrayBlockWithOffset( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
+	{
+		return (short[])readMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min );
+	}
+	@Override
+	public short[] readShortMDArrayBlockWithOffset( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final short[] dataBlock ) throws InterruptedException
+	{
+		System.arraycopy( (short[])readMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min ), 0, dataBlock, 0, dataBlock.length );
+		return dataBlock;
+	}
+
+	@Override
+	public float[] readFloatMDArrayBlockWithOffset( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
+	{
+		return (float[])readMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min );
+	}
+	@Override
+	public float[] readFloatMDArrayBlockWithOffset( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final float[] dataBlock ) throws InterruptedException
+	{
+		System.arraycopy( (float[])readMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min ), 0, dataBlock, 0, dataBlock.length );
+		return dataBlock;
+	}
+
+	@Override
+	public float[] readByteMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
+	{
+		return readMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min );
+	}
+	@Override
+	public float[] readByteMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final float[] dataBlock ) throws InterruptedException
+	{
+		System.arraycopy( readMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min ), 0, dataBlock, 0, dataBlock.length );
+		return dataBlock;
+	}
+	@Override
+	public float[] readShortMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
+	{
+		return readMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min );
+	}
+	@Override
 	public float[] readShortMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final float[] dataBlock ) throws InterruptedException
 	{
-		System.arraycopy( readShortMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min ), 0, dataBlock, 0, dataBlock.length );
+		System.arraycopy( readMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min ), 0, dataBlock, 0, dataBlock.length );
+		return dataBlock;
+	}
+	@Override
+	public float[] readFloatMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
+	{
+		return readMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min );
+	}
+	@Override
+	public float[] readFloatMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final float[] dataBlock ) throws InterruptedException
+	{
+		System.arraycopy( readMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min ), 0, dataBlock, 0, dataBlock.length );
 		return dataBlock;
 	}
 

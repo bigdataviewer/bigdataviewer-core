@@ -180,16 +180,8 @@ class HDF5AccessHack implements IHDF5Access
 			return new DimsAndExistence( new long[] { 1, 1, 1 }, false );
 	}
 
-	@Override
-	public synchronized short[] readShortMDArrayBlockWithOffset( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
-	{
-		final short[] dataBlock = new short[ dimensions[ 0 ] * dimensions[ 1 ] * dimensions[ 2 ] ];
-		readShortMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min, dataBlock );
-		return dataBlock;
-	}
-
-	@Override
-	public synchronized short[] readShortMDArrayBlockWithOffset( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final short[] dataBlock ) throws InterruptedException
+	//local skeleton to be re-used in the front-ends below
+	private synchronized Object readMDArrayBlockWithOffset( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final Object dataBlock ) throws InterruptedException
 	{
 		if ( Thread.interrupted() )
 			throw new InterruptedException();
@@ -199,22 +191,21 @@ class HDF5AccessHack implements IHDF5Access
 		final OpenDataSet dataset = openDataSetCache.getDataSet( new ViewLevelId( timepoint, setup, level ) );
 		final int memorySpaceId = H5Screate_simple( reorderedDimensions.length, reorderedDimensions, null );
 		H5Sselect_hyperslab( dataset.fileSpaceId, H5S_SELECT_SET, reorderedMin, null, reorderedDimensions, null );
-		H5Dread( dataset.dataSetId, H5T_NATIVE_INT16, memorySpaceId, dataset.fileSpaceId, numericConversionXferPropertyListID, dataBlock );
+		px.H5Dread( dataset.dataSetId, H5T_NATIVE_INT16, memorySpaceId, dataset.fileSpaceId, numericConversionXferPropertyListID, dataBlock ); //TODO
 		H5Sclose( memorySpaceId );
 
 		return dataBlock;
 	}
 
-	@Override
-	public float[] readShortMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
+	//local skeleton to be re-used in the front-ends below
+	private float[] readMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
 	{
 		final float[] dataBlock = new float[ dimensions[ 0 ] * dimensions[ 1 ] * dimensions[ 2 ] ];
-		readShortMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min, dataBlock );
+		readMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min, dataBlock );
 		return dataBlock;
 	}
 
-	@Override
-	public float[] readShortMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final float[] dataBlock ) throws InterruptedException
+	private float[] readMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final float[] dataBlock ) throws InterruptedException
 	{
 		if ( Thread.interrupted() )
 			throw new InterruptedException();
@@ -226,8 +217,78 @@ class HDF5AccessHack implements IHDF5Access
 		H5Sselect_hyperslab( dataset.fileSpaceId, H5S_SELECT_SET, reorderedMin, null, reorderedDimensions, null );
 		H5Dread( dataset.dataSetId, H5T_NATIVE_FLOAT, memorySpaceId, dataset.fileSpaceId, numericConversionXferPropertyListID, dataBlock );
 		H5Sclose( memorySpaceId );
-		HDF5Access.unsignedShort( dataBlock );
+		px.HDF5Access.unsignedShort( dataBlock ); //TODO rename
 		return dataBlock;
+	}
+
+	@Override
+	public byte[] readByteMDArrayBlockWithOffset( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
+	{
+		final byte[] dataBlock = new byte[ dimensions[ 0 ] * dimensions[ 1 ] * dimensions[ 2 ] ];
+		readMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min, dataBlock );
+		return dataBlock;
+	}
+	@Override
+	public byte[] readByteMDArrayBlockWithOffset( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final byte[] dataBlock ) throws InterruptedException
+	{
+		return (byte[])readMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min, dataBlock );
+	}
+
+	@Override
+	public short[] readShortMDArrayBlockWithOffset( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
+	{
+		final short[] dataBlock = new short[ dimensions[ 0 ] * dimensions[ 1 ] * dimensions[ 2 ] ];
+		readMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min, dataBlock );
+		return dataBlock;
+	}
+	@Override
+	public short[] readShortMDArrayBlockWithOffset( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final short[] dataBlock ) throws InterruptedException
+	{
+		return (short[])readMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min, dataBlock );
+	}
+
+	@Override
+	public float[] readFloatMDArrayBlockWithOffset( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
+	{
+		final float[] dataBlock = new float[ dimensions[ 0 ] * dimensions[ 1 ] * dimensions[ 2 ] ];
+		readMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min, dataBlock );
+		return dataBlock;
+	}
+	@Override
+	public float[] readFloatMDArrayBlockWithOffset( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final float[] dataBlock ) throws InterruptedException
+	{
+		return (float[])readMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min, dataBlock );
+	}
+
+	@Override
+	public float[] readByteMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
+	{
+		return readMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min );
+	}
+	@Override
+	public float[] readByteMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final float[] dataBlock ) throws InterruptedException
+	{
+		return readMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min, dataBlock );
+	}
+	@Override
+	public float[] readShortMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
+	{
+		return readMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min );
+	}
+	@Override
+	public float[] readShortMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final float[] dataBlock ) throws InterruptedException
+	{
+		return readMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min, dataBlock );
+	}
+	@Override
+	public float[] readFloatMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
+	{
+		return readMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min );
+	}
+	@Override
+	public float[] readFloatMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final float[] dataBlock ) throws InterruptedException
+	{
+		return readMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min, dataBlock );
 	}
 
 	@Override
