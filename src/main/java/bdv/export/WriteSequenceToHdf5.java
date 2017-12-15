@@ -394,7 +394,7 @@ public class WriteSequenceToHdf5
 
 			//check that all setups are holding images of the voxel type
 			//NB: this is probably not required due to the way the views are constructed (blame VLADO that he was lazy to understand that)
-			if (pxType == null) pxType = type; //TODO VLADO check that it works like this
+			if (pxType == null) pxType = type;
 			else if ( !pxType.equals(type) )
 				throw new IllegalArgumentException( "All image data must be of the same type which seems to "+pxType.getClass().getSimpleName()
 				  + " in this case.\nCurrently writing to HDF5 is only supported for single type accross all midmaps, views, time points." );
