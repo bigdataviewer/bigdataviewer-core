@@ -43,7 +43,6 @@ import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5P_DEFAULT;
 import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5S_MAX_RANK;
 import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5S_SELECT_SET;
 import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5T_NATIVE_FLOAT;
-import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5T_NATIVE_INT16;
 
 import java.lang.reflect.Field;
 import java.util.LinkedHashMap;
@@ -191,7 +190,7 @@ class HDF5AccessHack implements IHDF5Access
 		final OpenDataSet dataset = openDataSetCache.getDataSet( new ViewLevelId( timepoint, setup, level ) );
 		final int memorySpaceId = H5Screate_simple( reorderedDimensions.length, reorderedDimensions, null );
 		H5Sselect_hyperslab( dataset.fileSpaceId, H5S_SELECT_SET, reorderedMin, null, reorderedDimensions, null );
-		px.H5Dread( dataset.dataSetId, H5T_NATIVE_INT16, memorySpaceId, dataset.fileSpaceId, numericConversionXferPropertyListID, dataBlock ); //TODO
+		px.h5Dread( dataset.dataSetId, memorySpaceId, dataset.fileSpaceId, numericConversionXferPropertyListID, dataBlock );
 		H5Sclose( memorySpaceId );
 
 		return dataBlock;
@@ -217,7 +216,7 @@ class HDF5AccessHack implements IHDF5Access
 		H5Sselect_hyperslab( dataset.fileSpaceId, H5S_SELECT_SET, reorderedMin, null, reorderedDimensions, null );
 		H5Dread( dataset.dataSetId, H5T_NATIVE_FLOAT, memorySpaceId, dataset.fileSpaceId, numericConversionXferPropertyListID, dataBlock );
 		H5Sclose( memorySpaceId );
-		px.HDF5Access.unsignedShort( dataBlock ); //TODO rename
+		//HDF5Access.unsignedShort( dataBlock ); //this one is done outside this function in the type-specific functions
 		return dataBlock;
 	}
 
@@ -263,22 +262,22 @@ class HDF5AccessHack implements IHDF5Access
 	@Override
 	public float[] readByteMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
 	{
-		return readMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min );
+		return HDF5Access.unsignedByte(readMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min ));
 	}
 	@Override
 	public float[] readByteMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final float[] dataBlock ) throws InterruptedException
 	{
-		return readMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min, dataBlock );
+		return HDF5Access.unsignedByte(readMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min, dataBlock ));
 	}
 	@Override
 	public float[] readShortMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
 	{
-		return readMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min );
+		return HDF5Access.unsignedShort(readMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min ));
 	}
 	@Override
 	public float[] readShortMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final float[] dataBlock ) throws InterruptedException
 	{
-		return readMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min, dataBlock );
+		return HDF5Access.unsignedShort(readMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min, dataBlock ));
 	}
 	@Override
 	public float[] readFloatMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException

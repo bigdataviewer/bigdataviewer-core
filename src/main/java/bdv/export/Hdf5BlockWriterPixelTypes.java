@@ -43,7 +43,7 @@ import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5T_NATIVE_UINT16;
 import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5T_NATIVE_FLOAT;
 //import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5T_NATIVE_DOUBLE;
 
-//for the HDF5Access
+//for the export/HDF5Access
 import ch.systemsx.cisd.hdf5.IHDF5Writer;
 import ch.systemsx.cisd.hdf5.HDF5IntStorageFeatures;
 import ch.systemsx.cisd.hdf5.HDF5FloatStorageFeatures;
@@ -86,15 +86,20 @@ import bdv.img.hdf5.Hdf5ImageLoader.SetupImgLoader;
 import bdv.img.hdf5.Hdf5VolatileTypeArrayLoader;
 import bdv.img.hdf5.MipmapInfo;
 
+//for the img/hdf5/HDF5Access
+import ch.systemsx.cisd.base.mdarray.MDAbstractArray;
+import ch.systemsx.cisd.hdf5.IHDF5Reader;
+import static ch.systemsx.cisd.hdf5.hdf5lib.H5D.H5Dread;
+
 public class Hdf5BlockWriterPixelTypes
 {
 	public interface PixelTypeMaintainer
 	{
 		// ---------- writing ----------
-		///for the HDF5AccessHack
+		///for the export/HDF5AccessHack
 		int h5Dwrite(int dataset_id, int mem_space_id, int file_space_id, Object data);
 
-		///for the HDF5Access
+		///for the export/HDF5Access
 		void createAndOpenDataset(final IHDF5Writer hdf5Writer, final String path, final long[] dimensions, final int[] cellDimensions, final HDF5IntStorageFeatures features);
 		void hdf5writer(final IHDF5Writer hdf5Writer, Object data, final long[] reorderedDimensions, final String datasetPath, final long[] reorderedOffset);
 
@@ -111,6 +116,12 @@ public class Hdf5BlockWriterPixelTypes
 		///for methods inside the class Hdf5VolatileTypeArrayLoader
 		VolatileArrayDataAccess<?> loadArray(final IHDF5Access hdf5Access, final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException;
 		int getBytesPerElement();
+
+		///for the img/hdf5/HDF5Access
+		MDAbstractArray<?> readMDArrayBlockWithOffset( final IHDF5Reader hdf5Reader, final String path, final int[] reorderedDimensions, final long[] reorderedMin );
+
+		///for the img/hdf5/HDF5AccessHack
+		int h5Dread( final int dataSetId, final int memorySpaceId, final int fileSpaceId, final int numericConversionXferPropertyListID, final Object dataBlock );
 	}
 
 	/**
@@ -206,6 +217,20 @@ public class Hdf5BlockWriterPixelTypes
 		@Override
 		public
 		int getBytesPerElement() { return 1; }
+
+		@Override
+		public
+		MDAbstractArray<?> readMDArrayBlockWithOffset( final IHDF5Reader hdf5Reader, final String path, final int[] reorderedDimensions, final long[] reorderedMin )
+		{
+			return hdf5Reader.int8().readMDArrayBlockWithOffset( path, reorderedDimensions, reorderedMin );
+		}
+
+		@Override
+		public
+		int h5Dread( final int dataSetId, final int memorySpaceId, final int fileSpaceId, final int numericConversionXferPropertyListID, final Object dataBlock )
+		{
+			return H5Dread( dataSetId, H5T_NATIVE_INT8, memorySpaceId, fileSpaceId, numericConversionXferPropertyListID, (byte[])dataBlock );
+		}
 	}
 
 	static
@@ -268,6 +293,20 @@ public class Hdf5BlockWriterPixelTypes
 		@Override
 		public
 		int getBytesPerElement() { return 1; }
+
+		@Override
+		public
+		MDAbstractArray<?> readMDArrayBlockWithOffset( final IHDF5Reader hdf5Reader, final String path, final int[] reorderedDimensions, final long[] reorderedMin )
+		{
+			return hdf5Reader.int8().readMDArrayBlockWithOffset( path, reorderedDimensions, reorderedMin );
+		}
+
+		@Override
+		public
+		int h5Dread( final int dataSetId, final int memorySpaceId, final int fileSpaceId, final int numericConversionXferPropertyListID, final Object dataBlock )
+		{
+			return H5Dread( dataSetId, H5T_NATIVE_UINT8, memorySpaceId, fileSpaceId, numericConversionXferPropertyListID, (byte[])dataBlock );
+		}
 	}
 
 	// ------------------------------------------------------
@@ -329,6 +368,20 @@ public class Hdf5BlockWriterPixelTypes
 		@Override
 		public
 		int getBytesPerElement() { return 2; }
+
+		@Override
+		public
+		MDAbstractArray<?> readMDArrayBlockWithOffset( final IHDF5Reader hdf5Reader, final String path, final int[] reorderedDimensions, final long[] reorderedMin )
+		{
+			return hdf5Reader.int16().readMDArrayBlockWithOffset( path, reorderedDimensions, reorderedMin );
+		}
+
+		@Override
+		public
+		int h5Dread( final int dataSetId, final int memorySpaceId, final int fileSpaceId, final int numericConversionXferPropertyListID, final Object dataBlock )
+		{
+			return H5Dread( dataSetId, H5T_NATIVE_INT16, memorySpaceId, fileSpaceId, numericConversionXferPropertyListID, (short[])dataBlock );
+		}
 	}
 
 	static
@@ -391,6 +444,20 @@ public class Hdf5BlockWriterPixelTypes
 		@Override
 		public
 		int getBytesPerElement() { return 2; }
+
+		@Override
+		public
+		MDAbstractArray<?> readMDArrayBlockWithOffset( final IHDF5Reader hdf5Reader, final String path, final int[] reorderedDimensions, final long[] reorderedMin )
+		{
+			return hdf5Reader.int16().readMDArrayBlockWithOffset( path, reorderedDimensions, reorderedMin );
+		}
+
+		@Override
+		public
+		int h5Dread( final int dataSetId, final int memorySpaceId, final int fileSpaceId, final int numericConversionXferPropertyListID, final Object dataBlock )
+		{
+			return H5Dread( dataSetId, H5T_NATIVE_UINT16, memorySpaceId, fileSpaceId, numericConversionXferPropertyListID, (short[])dataBlock );
+		}
 	}
 
 	// ------------------------------------------------------
@@ -455,26 +522,19 @@ public class Hdf5BlockWriterPixelTypes
 		@Override
 		public
 		int getBytesPerElement() { return 4; }
+
+		@Override
+		public
+		MDAbstractArray<?> readMDArrayBlockWithOffset( final IHDF5Reader hdf5Reader, final String path, final int[] reorderedDimensions, final long[] reorderedMin )
+		{
+			return hdf5Reader.float32().readMDArrayBlockWithOffset( path, reorderedDimensions, reorderedMin );
+		}
+
+		@Override
+		public
+		int h5Dread( final int dataSetId, final int memorySpaceId, final int fileSpaceId, final int numericConversionXferPropertyListID, final Object dataBlock )
+		{
+			return H5Dread( dataSetId, H5T_NATIVE_FLOAT, memorySpaceId, fileSpaceId, numericConversionXferPropertyListID, (float[])dataBlock );
+		}
 	}
-
-	// ------------------------------------------------------
-
-
-
-
-
-
-	/*
-		//TODO VLADO: : H5Dwrite() exists for: byte[], double[], float[], int[], long[], short[]
-		//Byte
-		H5Dwrite( dataSetId, H5T_NATIVE_INT8, memorySpaceId, fileSpaceId, H5P_DEFAULT, data );
-		//Short
-		H5Dwrite( dataSetId, H5T_NATIVE_INT16, memorySpaceId, fileSpaceId, H5P_DEFAULT, data );
-		//Int
-		H5Dwrite( dataSetId, H5T_NATIVE_INT32, memorySpaceId, fileSpaceId, H5P_DEFAULT, data );
-		//Long
-		H5Dwrite( dataSetId, H5T_NATIVE_INT64, memorySpaceId, fileSpaceId, H5P_DEFAULT, data );
-		H5Dwrite( dataSetId, H5T_NATIVE_FLOAT, memorySpaceId, fileSpaceId, H5P_DEFAULT, data );
-		H5Dwrite( dataSetId, H5T_NATIVE_DOUBLE, memorySpaceId, fileSpaceId, H5P_DEFAULT, data );
-	*/
 }

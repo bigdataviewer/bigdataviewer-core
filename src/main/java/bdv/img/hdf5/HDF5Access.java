@@ -34,7 +34,6 @@ import static bdv.export.Hdf5BlockWriterPixelTypes.PixelTypeMaintainer;
 
 import ch.systemsx.cisd.base.mdarray.MDAbstractArray;
 import ch.systemsx.cisd.base.mdarray.MDFloatArray;
-import ch.systemsx.cisd.base.mdarray.MDShortArray;
 import ch.systemsx.cisd.hdf5.HDF5DataSetInformation;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
 
@@ -79,8 +78,7 @@ class HDF5Access implements IHDF5Access
 			throw new InterruptedException();
 		Util.reorder( dimensions, reorderedDimensions );
 		Util.reorder( min, reorderedMin );
-		//TODO
-		final MDAbstractArray<?> array = px.hdf5Reader.int16().readMDArrayBlockWithOffset( Util.getCellsPath( timepoint, setup, level ), reorderedDimensions, reorderedMin );
+		final MDAbstractArray<?> array = px.readMDArrayBlockWithOffset( hdf5Reader, Util.getCellsPath( timepoint, setup, level ), reorderedDimensions, reorderedMin );
 		return array.getAsFlatArray();
 	}
 
@@ -93,7 +91,7 @@ class HDF5Access implements IHDF5Access
 		Util.reorder( min, reorderedMin );
 		final MDFloatArray array = hdf5Reader.float32().readMDArrayBlockWithOffset( Util.getCellsPath( timepoint, setup, level ), reorderedDimensions, reorderedMin );
 		final float[] pixels = array.getAsFlatArray();
-		px.unsignedShort( pixels ); //TODO
+		//unsignedShort( pixels ); //this one is done outside this function in the type-specific functions
 		return pixels;
 	}
 
@@ -136,23 +134,23 @@ class HDF5Access implements IHDF5Access
 	@Override
 	public float[] readByteMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
 	{
-		return readMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min );
+		return unsignedByte(readMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min ));
 	}
 	@Override
 	public float[] readByteMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final float[] dataBlock ) throws InterruptedException
 	{
-		System.arraycopy( readMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min ), 0, dataBlock, 0, dataBlock.length );
+		System.arraycopy( unsignedByte(readMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min )), 0, dataBlock, 0, dataBlock.length );
 		return dataBlock;
 	}
 	@Override
 	public float[] readShortMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
 	{
-		return readMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min );
+		return unsignedShort(readMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min ));
 	}
 	@Override
 	public float[] readShortMDArrayBlockWithOffsetAsFloat( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final float[] dataBlock ) throws InterruptedException
 	{
-		System.arraycopy( readMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min ), 0, dataBlock, 0, dataBlock.length );
+		System.arraycopy( unsignedShort(readMDArrayBlockWithOffsetAsFloat( timepoint, setup, level, dimensions, min )), 0, dataBlock, 0, dataBlock.length );
 		return dataBlock;
 	}
 	@Override
@@ -178,9 +176,16 @@ class HDF5Access implements IHDF5Access
 		hdf5Reader.close();
 	}
 
-	protected static final void unsignedShort( final float[] pixels )
+	protected static final float[] unsignedShort( final float[] pixels )
 	{
 		for ( int j = 0; j < pixels.length; ++j )
 			pixels[ j ] = ((short)pixels[ j ]) & 0xffff;
+		return pixels;
+	}
+	protected static final float[] unsignedByte( final float[] pixels )
+	{
+		for ( int j = 0; j < pixels.length; ++j )
+			pixels[ j ] = ((byte)pixels[ j ]) & 0xff;
+		return pixels;
 	}
 }
