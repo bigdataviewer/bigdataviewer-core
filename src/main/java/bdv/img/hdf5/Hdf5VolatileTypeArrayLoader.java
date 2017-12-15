@@ -30,28 +30,36 @@
 package bdv.img.hdf5;
 
 import bdv.img.cache.CacheArrayLoader;
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
+import net.imglib2.img.basictypeaccess.volatiles.VolatileArrayDataAccess;
+import static bdv.export.Hdf5BlockWriterPixelTypes.PixelTypeMaintainer;
 
-public class Hdf5VolatileShortArrayLoader implements CacheArrayLoader< VolatileShortArray >
+public class Hdf5VolatileTypeArrayLoader <VT extends VolatileArrayDataAccess<VT>>
+implements CacheArrayLoader< VT >
 {
 	private final IHDF5Access hdf5Access;
+	private final PixelTypeMaintainer px;
 
-	public Hdf5VolatileShortArrayLoader( final IHDF5Access hdf5Access )
+	public Hdf5VolatileTypeArrayLoader( final IHDF5Access hdf5Access, final PixelTypeMaintainer px )
 	{
 		this.hdf5Access = hdf5Access;
+		this.px = px;
+		//NB: we need a reference 'px' on the (type-specific) object that had created this instance,
+		//    so that we can keep using its type-specific methods (in our methods)
 	}
 
+	@SuppressWarnings("unchecked")
 	@Override
-	public VolatileShortArray loadArray( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
+	public VT loadArray( final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
 	{
-		final short[] array = hdf5Access.readShortMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min );
-		return new VolatileShortArray( array, true );
+		//NB: we cast back to the VT interface because we know that loadArray() (PixelTypeMaintainer)
+		//    always instantiates implementation of this interface
+		return (VT) px.loadArray(hdf5Access, timepoint, setup, level, dimensions, min );
 	}
 
 	@Override
 	public int getBytesPerElement()
 	{
-		return 2;
+		return px.getBytesPerElement();
 	}
 
 //	PrintStream log = System.out;
