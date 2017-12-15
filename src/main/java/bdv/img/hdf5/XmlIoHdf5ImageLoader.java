@@ -78,14 +78,10 @@ public class XmlIoHdf5ImageLoader implements XmlIoBasicImgLoader< Hdf5ImageLoade
 		for ( final Element p : elem.getChildren( "partition" ) )
 			partitions.add( partitionFromXml( p, basePath ) );
 
-		//create the loader the usual way, nothing has changed here
-		final Hdf5ImageLoader HDF5loader = new Hdf5ImageLoader( new File( path ), partitions, sequenceDescription );
-
-		//if we manage to read specific voxel type info, inject it;
-		//otherwise we don't change it, which leaves the HDF5loader
-		//with its default value (which is backward compatible UnsignedShortType)
-		if (pxType != null) HDF5loader.hdf5PixelType = pxType;
-
+		//create the loader either the old/usual way, or with explicit voxel type
+		final Hdf5ImageLoader HDF5loader = (pxType == null)
+			? new Hdf5ImageLoader( new File( path ), partitions, sequenceDescription )          //implicit voxel type
+			: new Hdf5ImageLoader( new File( path ), partitions, sequenceDescription, pxType ); //explicit voxel type
 		return HDF5loader;
 	}
 
