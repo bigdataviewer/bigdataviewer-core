@@ -57,7 +57,6 @@ import ch.systemsx.cisd.base.mdarray.MDFloatArray;
 //for the WriteSequenceToHdf5
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
-
 //to create the right object
 import net.imglib2.type.numeric.integer.ByteType;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
@@ -112,6 +111,11 @@ public class Hdf5BlockWriterPixelTypes
 
 		///for the Hdf5ImageLoader.open()
 		CacheArrayLoader<?> createHdf5VolatileTypeArrayLoader(final IHDF5Access hdf5Access);
+
+		///for the Hdf5ImageLoader.loadImageCompletely()
+		Object readSpecificMDArrayBlockWithOffset(final IHDF5Access hdf5Access, final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException;
+		Object readSpecificMDArrayBlockWithOffset(final IHDF5Access hdf5Access, final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final Object dataBlock ) throws InterruptedException;
+		ArrayImg<?,?> createArrayImg(final Object data, final long[] dims);
 
 		///for methods inside the class Hdf5VolatileTypeArrayLoader
 		VolatileArrayDataAccess<?> loadArray(final IHDF5Access hdf5Access, final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException;
@@ -190,12 +194,18 @@ public class Hdf5BlockWriterPixelTypes
 		{
 			return ArrayImgs.bytes(dims);
 		}
+		@Override
+		public
+		ArrayImg<?,?> createArrayImg(final Object data, final long[] dims)
+		{
+			return ArrayImgs.bytes((byte[])data, dims);
+		}
 
 		@Override
 		public
 		SetupImgLoader<?,?> createSetupImgLoader(final Hdf5ImageLoader loader, final int setupId, final MipmapInfo mipmapInfo)
 		{
-			return loader.new SetupImgLoader<>(setupId, mipmapInfo, new ByteType(), new VolatileByteType());
+			return loader.new SetupImgLoader<>(setupId, mipmapInfo, new ByteType(), new VolatileByteType(), this);
 		}
 
 		@Override
@@ -203,6 +213,19 @@ public class Hdf5BlockWriterPixelTypes
 		CacheArrayLoader<?> createHdf5VolatileTypeArrayLoader(final IHDF5Access hdf5Access)
 		{
 			return new Hdf5VolatileTypeArrayLoader<VolatileByteArray>( hdf5Access, this );
+		}
+
+		@Override
+		public
+		Object readSpecificMDArrayBlockWithOffset(final IHDF5Access hdf5Access, final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
+		{
+			return hdf5Access.readByteMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min );
+		}
+		@Override
+		public
+		Object readSpecificMDArrayBlockWithOffset(final IHDF5Access hdf5Access, final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final Object dataBlock ) throws InterruptedException
+		{
+			return hdf5Access.readByteMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min, (byte[])dataBlock );
 		}
 
 		@Override
@@ -264,12 +287,18 @@ public class Hdf5BlockWriterPixelTypes
 		{
 			return ArrayImgs.unsignedBytes(dims);
 		}
+		@Override
+		public
+		ArrayImg<?,?> createArrayImg(final Object data, final long[] dims)
+		{
+			return ArrayImgs.unsignedBytes((byte[])data, dims);
+		}
 
 		@Override
 		public
 		SetupImgLoader<?,?> createSetupImgLoader(final Hdf5ImageLoader loader, final int setupId, final MipmapInfo mipmapInfo)
 		{
-			return loader.new SetupImgLoader<>(setupId, mipmapInfo, new UnsignedByteType(), new VolatileUnsignedByteType());
+			return loader.new SetupImgLoader<>(setupId, mipmapInfo, new UnsignedByteType(), new VolatileUnsignedByteType(), this);
 		}
 
 		@Override
@@ -278,6 +307,19 @@ public class Hdf5BlockWriterPixelTypes
 		{
 			//TODO UNSIGNED
 			return new Hdf5VolatileTypeArrayLoader<VolatileByteArray>( hdf5Access, this );
+		}
+
+		@Override
+		public
+		Object readSpecificMDArrayBlockWithOffset(final IHDF5Access hdf5Access, final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
+		{
+			return hdf5Access.readByteMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min );
+		}
+		@Override
+		public
+		Object readSpecificMDArrayBlockWithOffset(final IHDF5Access hdf5Access, final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final Object dataBlock ) throws InterruptedException
+		{
+			return hdf5Access.readByteMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min, (byte[])dataBlock );
 		}
 
 		@Override
@@ -341,12 +383,18 @@ public class Hdf5BlockWriterPixelTypes
 		{
 			return ArrayImgs.shorts(dims);
 		}
+		@Override
+		public
+		ArrayImg<?,?> createArrayImg(final Object data, final long[] dims)
+		{
+			return ArrayImgs.shorts((short[])data, dims);
+		}
 
 		@Override
 		public
 		SetupImgLoader<?,?> createSetupImgLoader(final Hdf5ImageLoader loader, final int setupId, final MipmapInfo mipmapInfo)
 		{
-			return loader.new SetupImgLoader<>(setupId, mipmapInfo, new ShortType(), new VolatileShortType());
+			return loader.new SetupImgLoader<>(setupId, mipmapInfo, new ShortType(), new VolatileShortType(), this);
 		}
 
 		@Override
@@ -354,6 +402,19 @@ public class Hdf5BlockWriterPixelTypes
 		CacheArrayLoader<?> createHdf5VolatileTypeArrayLoader(final IHDF5Access hdf5Access)
 		{
 			return new Hdf5VolatileTypeArrayLoader<VolatileShortArray>( hdf5Access, this );
+		}
+
+		@Override
+		public
+		Object readSpecificMDArrayBlockWithOffset(final IHDF5Access hdf5Access, final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
+		{
+			return hdf5Access.readShortMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min );
+		}
+		@Override
+		public
+		Object readSpecificMDArrayBlockWithOffset(final IHDF5Access hdf5Access, final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final Object dataBlock ) throws InterruptedException
+		{
+			return hdf5Access.readShortMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min, (short[])dataBlock );
 		}
 
 		@Override
@@ -415,12 +476,18 @@ public class Hdf5BlockWriterPixelTypes
 		{
 			return ArrayImgs.unsignedShorts(dims);
 		}
+		@Override
+		public
+		ArrayImg<?,?> createArrayImg(final Object data, final long[] dims)
+		{
+			return ArrayImgs.unsignedShorts((short[])data, dims);
+		}
 
 		@Override
 		public
 		SetupImgLoader<?,?> createSetupImgLoader(final Hdf5ImageLoader loader, final int setupId, final MipmapInfo mipmapInfo)
 		{
-			return loader.new SetupImgLoader<>(setupId, mipmapInfo, new UnsignedShortType(), new VolatileUnsignedShortType());
+			return loader.new SetupImgLoader<>(setupId, mipmapInfo, new UnsignedShortType(), new VolatileUnsignedShortType(), this);
 		}
 
 		@Override
@@ -429,6 +496,19 @@ public class Hdf5BlockWriterPixelTypes
 		{
 			//TODO UNSIGNED
 			return new Hdf5VolatileTypeArrayLoader<VolatileShortArray>( hdf5Access, this );
+		}
+
+		@Override
+		public
+		Object readSpecificMDArrayBlockWithOffset(final IHDF5Access hdf5Access, final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
+		{
+			return hdf5Access.readShortMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min );
+		}
+		@Override
+		public
+		Object readSpecificMDArrayBlockWithOffset(final IHDF5Access hdf5Access, final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final Object dataBlock ) throws InterruptedException
+		{
+			return hdf5Access.readShortMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min, (short[])dataBlock );
 		}
 
 		@Override
@@ -495,12 +575,18 @@ public class Hdf5BlockWriterPixelTypes
 		{
 			return ArrayImgs.floats(dims);
 		}
+		@Override
+		public
+		ArrayImg<?,?> createArrayImg(final Object data, final long[] dims)
+		{
+			return ArrayImgs.floats((float[])data, dims);
+		}
 
 		@Override
 		public
 		SetupImgLoader<?,?> createSetupImgLoader(final Hdf5ImageLoader loader, final int setupId, final MipmapInfo mipmapInfo)
 		{
-			return loader.new SetupImgLoader<>(setupId, mipmapInfo, new FloatType(), new VolatileFloatType());
+			return loader.new SetupImgLoader<>(setupId, mipmapInfo, new FloatType(), new VolatileFloatType(), this);
 		}
 
 		@Override
@@ -508,6 +594,19 @@ public class Hdf5BlockWriterPixelTypes
 		CacheArrayLoader<?> createHdf5VolatileTypeArrayLoader(final IHDF5Access hdf5Access)
 		{
 			return new Hdf5VolatileTypeArrayLoader<VolatileFloatArray>( hdf5Access, this );
+		}
+
+		@Override
+		public
+		Object readSpecificMDArrayBlockWithOffset(final IHDF5Access hdf5Access, final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException
+		{
+			return hdf5Access.readFloatMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min );
+		}
+		@Override
+		public
+		Object readSpecificMDArrayBlockWithOffset(final IHDF5Access hdf5Access, final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final Object dataBlock ) throws InterruptedException
+		{
+			return hdf5Access.readFloatMDArrayBlockWithOffset( timepoint, setup, level, dimensions, min, (float[])dataBlock );
 		}
 
 		@Override

@@ -77,8 +77,7 @@ import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.NativeImg;
 import net.imglib2.img.array.ArrayImgFactory;
-import net.imglib2.img.array.ArrayImgs;
-import net.imglib2.img.basictypeaccess.array.ShortArray;
+import net.imglib2.img.basictypeaccess.array.ArrayDataAccess;
 import net.imglib2.img.cell.Cell;
 import net.imglib2.img.cell.CellGrid;
 import net.imglib2.img.cell.CellImg;
@@ -420,16 +419,21 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 		 * sizes.
 		 */
 		private final MipmapInfo mipmapInfo;
+		private final PixelTypeMaintainer pxM;
 
 		public SetupImgLoader( final int setupId, final MipmapInfo mipmapInfo,
-		                       final T type, final VT volatileType)
+		                       final T type, final VT volatileType,
+		                       final PixelTypeMaintainer px)
 		{
 			super( type, volatileType );
 			this.setupId = setupId;
 			this.mipmapInfo = mipmapInfo;
+			this.pxM = px;
 		}
 
-		private RandomAccessibleInterval< T > loadImageCompletely( final int timepointId, final int level )
+		@SuppressWarnings("unchecked")
+		private <A extends ArrayDataAccess<A>>
+		RandomAccessibleInterval< T > loadImageCompletely( final int timepointId, final int level )
 		{
 			open();
 
@@ -450,20 +454,21 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 			final long[] min = new long[ n ];
 			if ( Intervals.numElements( new FinalDimensions( dimsLong ) ) <= Integer.MAX_VALUE )
 			{
-				//TODO VLADO everything has to become generics over here!!
-				// use ArrayImg
 				for ( int d = 0; d < dimsInt.length; ++d )
 					dimsInt[ d ] = ( int ) dimsLong[ d ];
-				short[] data = null;
+				Object data = null;
 				try
 				{
-					data = hdf5Access.readShortMDArrayBlockWithOffset( timepointId, setupId, level, dimsInt, min );
+					data = pxM.readSpecificMDArrayBlockWithOffset( hdf5Access, timepointId, setupId, level, dimsInt, min );
 				}
 				catch ( final InterruptedException e )
 				{}
-				//TODO VLADO everything has to become generics over here!!
-				//TODO VLADO this is bad, just to make it compile
-				img = (Img<T>)ArrayImgs.unsignedShorts( data, dimsLong );
+				//we need to rely on the assumption that pxM was created appropriately for the
+				//type T so that its createArrayImg() method is indeed creating ArrayImg<T,?>
+				//
+				//or, we need to pull T into PixelTypeMaintainer's signature so that compiler would
+				//see the type of the returned object... TODO VLADO
+				img = (Img<T>)pxM.createArrayImg( data, dimsLong );
 			}
 			else
 			{
@@ -471,19 +476,17 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 						dimsLong,
 						mipmapInfo.getSubdivisions()[ level ] );
 				final CellImgFactory< T > factory = new CellImgFactory<>( cellDimensions );
-				@SuppressWarnings( "unchecked" )
-				//TODO VLADO everything has to become generics over here!! no ShortArray anymore
-				final CellImg< T, ShortArray > cellImg = ( CellImg< T, ShortArray > ) factory.create( dimsLong, type );
-				final Cursor< Cell< ShortArray > > cursor = cellImg.getCells().cursor();
+				final CellImg< T, A > cellImg = (CellImg<T, A>) factory.create( dimsLong, type );
+				final Cursor< Cell< A > > cursor = cellImg.getCells().cursor();
 				while ( cursor.hasNext() )
 				{
-					final Cell< ShortArray > cell = cursor.next();
-					final short[] dataBlock = cell.getData().getCurrentStorageArray();
+					final Cell< A > cell = cursor.next();
+					final Object dataBlock = cell.getData().getCurrentStorageArray();
 					cell.dimensions( dimsInt );
 					cell.min( min );
 					try
 					{
-						hdf5Access.readShortMDArrayBlockWithOffset( timepointId, setupId, level, dimsInt, min, dataBlock );
+						pxM.readSpecificMDArrayBlockWithOffset( hdf5Access, timepointId, setupId, level, dimsInt, min, dataBlock );
 					}
 					catch ( final InterruptedException e )
 					{}
