@@ -94,6 +94,8 @@ public class Hdf5BlockWriterPixelTypes
 {
 	public interface PixelTypeMaintainer
 	{
+		String reportPixelType();
+
 		// ---------- writing ----------
 		///for the export/HDF5AccessHack
 		int h5Dwrite(int dataset_id, int mem_space_id, int file_space_id, Object data);
@@ -166,6 +168,11 @@ public class Hdf5BlockWriterPixelTypes
 	static
 	class ByteTypeMaintainer implements PixelTypeMaintainer
 	{
+		@Override
+		public
+		String reportPixelType()
+		{ return new String("ByteType"); }
+
 		@Override
 		public
 		int h5Dwrite(int dataset_id, int mem_space_id, int file_space_id, Object data)
@@ -259,6 +266,11 @@ public class Hdf5BlockWriterPixelTypes
 	static
 	class UnsignedByteTypeMaintainer implements PixelTypeMaintainer
 	{
+		@Override
+		public
+		String reportPixelType()
+		{ return new String("UnsignedByteType"); }
+
 		@Override
 		public
 		int h5Dwrite(int dataset_id, int mem_space_id, int file_space_id, Object data)
@@ -357,6 +369,11 @@ public class Hdf5BlockWriterPixelTypes
 	{
 		@Override
 		public
+		String reportPixelType()
+		{ return new String("ShortType"); }
+
+		@Override
+		public
 		int h5Dwrite(int dataset_id, int mem_space_id, int file_space_id, Object data)
 		{
 			return H5Dwrite(dataset_id, H5T_NATIVE_INT16, mem_space_id, file_space_id, H5P_DEFAULT, (short[])data);
@@ -448,6 +465,11 @@ public class Hdf5BlockWriterPixelTypes
 	static
 	class UnsignedShortTypeMaintainer implements PixelTypeMaintainer
 	{
+		@Override
+		public
+		String reportPixelType()
+		{ return new String("UnsignedShortType"); }
+
 		@Override
 		public
 		int h5Dwrite(int dataset_id, int mem_space_id, int file_space_id, Object data)
@@ -544,6 +566,11 @@ public class Hdf5BlockWriterPixelTypes
 	static
 	class FloatTypeMaintainer implements PixelTypeMaintainer
 	{
+		@Override
+		public
+		String reportPixelType()
+		{ return new String("FloatType"); }
+
 		@Override
 		public
 		int h5Dwrite(int dataset_id, int mem_space_id, int file_space_id, Object data)
