@@ -232,6 +232,8 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 
 				cachedDimsAndExistence.clear();
 
+				System.out.println("(r) voxel type: "+this.hdf5PixelType);
+
 				try
 				{
 					hdf5Access = new HDF5AccessHack( hdf5Reader, pxM );

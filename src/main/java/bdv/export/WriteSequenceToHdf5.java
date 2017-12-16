@@ -405,6 +405,7 @@ public class WriteSequenceToHdf5
 		final File hdf5File = new File( partition.getPath() );
 		if ( hdf5File.exists() )
 			hdf5File.delete();
+		System.out.println("(w) voxel type: "+pxM.reportPixelType());
 		final Hdf5BlockWriterThread writerQueue = new Hdf5BlockWriterThread( hdf5File, blockWriterQueueLength, pxM );
 		writerQueue.start();
 
@@ -534,6 +535,7 @@ public class WriteSequenceToHdf5
 			= Hdf5BlockWriterPixelTypes.createPixelMaintainer( img.randomAccess().get() );
 
 		// create and start Hdf5BlockWriterThread
+		System.out.println("(w) voxel type: "+pxM.reportPixelType());
 		final Hdf5BlockWriterThread writerQueue = new Hdf5BlockWriterThread( partition.getPath(), blockWriterQueueLength, pxM );
 		writerQueue.start();
 		final CellCreatorThread[] cellCreatorThreads = createAndStartCellCreatorThreads( numCellCreatorThreads );
