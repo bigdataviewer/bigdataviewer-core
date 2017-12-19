@@ -81,7 +81,7 @@ public class VolatileUnsignedLongType extends AbstractVolatileNativeRealType< Un
 	}
 
 	// this is the constructor if you want it to be a variable
-	public VolatileUnsignedLongType( final int value )
+	public VolatileUnsignedLongType( final long value )
 	{
 		this( new VolatileLongArray( 1, true ) );
 		set( value );
@@ -93,7 +93,7 @@ public class VolatileUnsignedLongType extends AbstractVolatileNativeRealType< Un
 		this( 0 );
 	}
 
-	public void set( final int value )
+	public void set( final long value )
 	{
 		get().set( value );
 	}

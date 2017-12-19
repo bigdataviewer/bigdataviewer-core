@@ -32,69 +32,69 @@ package net.imglib2.type.volatiles;
 import net.imglib2.Volatile;
 import net.imglib2.img.NativeImg;
 import net.imglib2.img.NativeImgFactory;
-import net.imglib2.img.basictypeaccess.FloatAccess;
-import net.imglib2.img.basictypeaccess.volatiles.VolatileFloatAccess;
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileFloatArray;
-import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.img.basictypeaccess.DoubleAccess;
+import net.imglib2.img.basictypeaccess.volatiles.VolatileDoubleAccess;
+import net.imglib2.img.basictypeaccess.volatiles.array.VolatileDoubleArray;
+import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.util.Fraction;
 
 /**
- * A {@link Volatile} variant of {@link FloatType}. It uses an
- * underlying {@link FloatType} that maps into a
- * {@link VolatileFloatAccess}.
+ * A {@link Volatile} variant of {@link DoubleType}. It uses an
+ * underlying {@link DoubleType} that maps into a
+ * {@link VolatileDoubleAccess}.
  *
  * @author Stephan Saalfeld
  */
-public class VolatileFloatType extends AbstractVolatileNativeRealType< FloatType, VolatileFloatType >
+public class VolatileDoubleType extends AbstractVolatileNativeRealType< DoubleType, VolatileDoubleType >
 {
-	final protected NativeImg< ?, ? extends VolatileFloatAccess > img;
+	final protected NativeImg< ?, ? extends VolatileDoubleAccess > img;
 
-	private static class WrappedFloatType extends FloatType
+	private static class WrappedDoubleType extends DoubleType
 	{
-		public WrappedFloatType( final NativeImg<?, ? extends FloatAccess> img )
+		public WrappedDoubleType( final NativeImg<?, ? extends DoubleAccess> img )
 		{
 			super( img );
 		}
 
-		public WrappedFloatType( final FloatAccess access )
+		public WrappedDoubleType( final DoubleAccess access )
 		{
 			super( access );
 		}
 
-		public void setAccess( final FloatAccess access )
+		public void setAccess( final DoubleAccess access )
 		{
 			dataAccess = access;
 		}
 	}
 
 	// this is the constructor if you want it to read from an array
-	public VolatileFloatType( final NativeImg< ?, ? extends VolatileFloatAccess > img )
+	public VolatileDoubleType( final NativeImg< ?, ? extends VolatileDoubleAccess > img )
 	{
-		super( new WrappedFloatType( img ), false );
+		super( new WrappedDoubleType( img ), false );
 		this.img = img;
 	}
 
 	// this is the constructor if you want to specify the dataAccess
-	public VolatileFloatType( final VolatileFloatAccess access )
+	public VolatileDoubleType( final VolatileDoubleAccess access )
 	{
-		super( new WrappedFloatType( access ), access.isValid() );
+		super( new WrappedDoubleType( access ), access.isValid() );
 		this.img = null;
 	}
 
 	// this is the constructor if you want it to be a variable
-	public VolatileFloatType( final float value )
+	public VolatileDoubleType( final double value )
 	{
-		this( new VolatileFloatArray( 1, true ) );
+		this( new VolatileDoubleArray( 1, true ) );
 		set( value );
 	}
 
 	// this is the constructor if you want it to be a variable
-	public VolatileFloatType()
+	public VolatileDoubleType()
 	{
 		this( 0 );
 	}
 
-	public void set( final float value )
+	public void set( final double value )
 	{
 		get().set( value );
 	}
@@ -102,20 +102,20 @@ public class VolatileFloatType extends AbstractVolatileNativeRealType< FloatType
 	@Override
 	public void updateContainer( final Object c )
 	{
-		final VolatileFloatAccess a = img.update( c );
-		( ( WrappedFloatType )t ).setAccess( a );
+		final VolatileDoubleAccess a = img.update( c );
+		( ( WrappedDoubleType )t ).setAccess( a );
 		setValid( a.isValid() );
 	}
 
 	@Override
-	public NativeImg< VolatileFloatType, ? extends VolatileFloatAccess > createSuitableNativeImg( final NativeImgFactory< VolatileFloatType > storageFactory, final long[] dim )
+	public NativeImg< VolatileDoubleType, ? extends VolatileDoubleAccess > createSuitableNativeImg( final NativeImgFactory< VolatileDoubleType > storageFactory, final long[] dim )
 	{
 		// create the container
 		@SuppressWarnings( "unchecked" )
-		final NativeImg< VolatileFloatType, ? extends VolatileFloatAccess > container = ( NativeImg< VolatileFloatType, ? extends VolatileFloatAccess > ) storageFactory.createFloatInstance( dim, new Fraction() );
+		final NativeImg< VolatileDoubleType, ? extends VolatileDoubleAccess > container = ( NativeImg< VolatileDoubleType, ? extends VolatileDoubleAccess > ) storageFactory.createDoubleInstance( dim, new Fraction() );
 
 		// create a Type that is linked to the container
-		final VolatileFloatType linkedType = new VolatileFloatType( container );
+		final VolatileDoubleType linkedType = new VolatileDoubleType( container );
 
 		// pass it to the NativeContainer
 		container.setLinkedType( linkedType );
@@ -124,21 +124,21 @@ public class VolatileFloatType extends AbstractVolatileNativeRealType< FloatType
 	}
 
 	@Override
-	public VolatileFloatType duplicateTypeOnSameNativeImg()
+	public VolatileDoubleType duplicateTypeOnSameNativeImg()
 	{
-		return new VolatileFloatType( img );
+		return new VolatileDoubleType( img );
 	}
 
 	@Override
-	public VolatileFloatType createVariable()
+	public VolatileDoubleType createVariable()
 	{
-		return new VolatileFloatType();
+		return new VolatileDoubleType();
 	}
 
 	@Override
-	public VolatileFloatType copy()
+	public VolatileDoubleType copy()
 	{
-		final VolatileFloatType v = createVariable();
+		final VolatileDoubleType v = createVariable();
 		v.set( this );
 		return v;
 	}
