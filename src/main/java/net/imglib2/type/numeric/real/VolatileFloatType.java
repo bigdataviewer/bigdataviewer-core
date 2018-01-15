@@ -27,76 +27,73 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package net.imglib2.type.volatiles;
+package net.imglib2.type.numeric.real;
 
 import net.imglib2.Volatile;
 import net.imglib2.img.NativeImg;
-import net.imglib2.img.basictypeaccess.IntAccess;
-import net.imglib2.img.basictypeaccess.volatiles.VolatileIntAccess;
-import net.imglib2.img.basictypeaccess.volatiles.VolatileShortAccess;
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
+import net.imglib2.img.basictypeaccess.FloatAccess;
+import net.imglib2.img.basictypeaccess.volatiles.VolatileFloatAccess;
+import net.imglib2.img.basictypeaccess.volatiles.array.VolatileFloatArray;
 import net.imglib2.type.PrimitiveTypeInfo;
-import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.type.volatiles.AbstractVolatileNativeRealType;
 
 /**
- * A {@link Volatile} variant of {@link UnsignedShortType}. It uses an
- * underlying {@link UnsignedShortType} that maps into a
- * {@link VolatileShortAccess}.
+ * A {@link Volatile} variant of {@link FloatType}. It uses an
+ * underlying {@link FloatType} that maps into a
+ * {@link VolatileFloatAccess}.
  *
- * @author Stephan Saalfeld &lt;saalfelds@janelia.hhmi.org&gt;
- * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+ * @author Stephan Saalfeld
  */
-public class VolatileARGBType extends AbstractVolatileNativeNumericType< ARGBType, VolatileARGBType >
+public class VolatileFloatType extends AbstractVolatileNativeRealType< FloatType, VolatileFloatType >
 {
-	final protected NativeImg< ?, ? extends VolatileIntAccess > img;
+	final protected NativeImg< ?, ? extends VolatileFloatAccess > img;
 
-	private static class WrappedARGBType extends ARGBType
+	private static class WrappedFloatType extends FloatType
 	{
-		public WrappedARGBType( final NativeImg< ?, ? extends IntAccess > img )
+		public WrappedFloatType( final NativeImg<?, ? extends FloatAccess> img )
 		{
 			super( img );
 		}
 
-		public WrappedARGBType( final IntAccess access )
+		public WrappedFloatType( final FloatAccess access )
 		{
 			super( access );
 		}
 
-		public void setAccess( final IntAccess access )
+		public void setAccess( final FloatAccess access )
 		{
 			dataAccess = access;
 		}
 	}
 
 	// this is the constructor if you want it to read from an array
-	public VolatileARGBType( final NativeImg< ?, ? extends VolatileIntAccess > img )
+	public VolatileFloatType( final NativeImg< ?, ? extends VolatileFloatAccess > img )
 	{
-		super( new WrappedARGBType( img ), false );
+		super( new WrappedFloatType( img ), false );
 		this.img = img;
 	}
 
 	// this is the constructor if you want to specify the dataAccess
-	public VolatileARGBType( final VolatileIntAccess access )
+	public VolatileFloatType( final VolatileFloatAccess access )
 	{
-		super( new WrappedARGBType( access ), access.isValid() );
+		super( new WrappedFloatType( access ), access.isValid() );
 		this.img = null;
 	}
 
 	// this is the constructor if you want it to be a variable
-	public VolatileARGBType( final int value )
+	public VolatileFloatType( final float value )
 	{
-		this( new VolatileIntArray( 1, true ) );
+		this( new VolatileFloatArray( 1, true ) );
 		set( value );
 	}
 
 	// this is the constructor if you want it to be a variable
-	public VolatileARGBType()
+	public VolatileFloatType()
 	{
 		this( 0 );
 	}
 
-	public void set( final int value )
+	public void set( final float value )
 	{
 		get().set( value );
 	}
@@ -104,35 +101,35 @@ public class VolatileARGBType extends AbstractVolatileNativeNumericType< ARGBTyp
 	@Override
 	public void updateContainer( final Object c )
 	{
-		final VolatileIntAccess a = img.update( c );
-		( ( WrappedARGBType ) t ).setAccess( a );
+		final VolatileFloatAccess a = img.update( c );
+		( ( WrappedFloatType )t ).setAccess( a );
 		setValid( a.isValid() );
 	}
 
 	@Override
-	public VolatileARGBType duplicateTypeOnSameNativeImg()
+	public VolatileFloatType duplicateTypeOnSameNativeImg()
 	{
-		return new VolatileARGBType( img );
+		return new VolatileFloatType( img );
 	}
 
 	@Override
-	public VolatileARGBType createVariable()
+	public VolatileFloatType createVariable()
 	{
-		return new VolatileARGBType();
+		return new VolatileFloatType();
 	}
 
 	@Override
-	public VolatileARGBType copy()
+	public VolatileFloatType copy()
 	{
-		final VolatileARGBType v = createVariable();
+		final VolatileFloatType v = createVariable();
 		v.set( this );
 		return v;
 	}
 
-	private static final PrimitiveTypeInfo< VolatileARGBType, VolatileIntAccess > info = PrimitiveTypeInfo.INT( img -> new VolatileARGBType( img ) );
+	private static final PrimitiveTypeInfo< VolatileFloatType, VolatileFloatAccess > info = PrimitiveTypeInfo.FLOAT( img -> new VolatileFloatType( img ) );
 
 	@Override
-	public PrimitiveTypeInfo< VolatileARGBType, ? > getPrimitiveTypeInfo()
+	public PrimitiveTypeInfo< VolatileFloatType, ? > getPrimitiveTypeInfo()
 	{
 		return info;
 	}

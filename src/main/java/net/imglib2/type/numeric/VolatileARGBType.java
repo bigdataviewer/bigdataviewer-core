@@ -27,34 +27,38 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package net.imglib2.type.volatiles;
+package net.imglib2.type.numeric;
 
 import net.imglib2.Volatile;
 import net.imglib2.img.NativeImg;
 import net.imglib2.img.basictypeaccess.IntAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileIntAccess;
+import net.imglib2.img.basictypeaccess.volatiles.VolatileShortAccess;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
 import net.imglib2.type.PrimitiveTypeInfo;
-import net.imglib2.type.numeric.integer.UnsignedIntType;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.type.volatiles.AbstractVolatileNativeNumericType;
 
 /**
- * A {@link Volatile} variant of {@link UnsignedIntType}. It uses an underlying
- * {@link UnsignedIntType} that maps into a {@link VolatileIntAccess}.
+ * A {@link Volatile} variant of {@link UnsignedShortType}. It uses an
+ * underlying {@link UnsignedShortType} that maps into a
+ * {@link VolatileShortAccess}.
  *
- * @author Stephan Saalfeld
+ * @author Stephan Saalfeld &lt;saalfelds@janelia.hhmi.org&gt;
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
-public class VolatileUnsignedIntType extends AbstractVolatileNativeRealType< UnsignedIntType, VolatileUnsignedIntType >
+public class VolatileARGBType extends AbstractVolatileNativeNumericType< ARGBType, VolatileARGBType >
 {
 	final protected NativeImg< ?, ? extends VolatileIntAccess > img;
 
-	private static class WrappedUnsignedIntType extends UnsignedIntType
+	private static class WrappedARGBType extends ARGBType
 	{
-		public WrappedUnsignedIntType( final NativeImg<?, ? extends IntAccess> img )
+		public WrappedARGBType( final NativeImg< ?, ? extends IntAccess > img )
 		{
 			super( img );
 		}
 
-		public WrappedUnsignedIntType( final IntAccess access )
+		public WrappedARGBType( final IntAccess access )
 		{
 			super( access );
 		}
@@ -66,28 +70,28 @@ public class VolatileUnsignedIntType extends AbstractVolatileNativeRealType< Uns
 	}
 
 	// this is the constructor if you want it to read from an array
-	public VolatileUnsignedIntType( final NativeImg< ?, ? extends VolatileIntAccess > img )
+	public VolatileARGBType( final NativeImg< ?, ? extends VolatileIntAccess > img )
 	{
-		super( new WrappedUnsignedIntType( img ), false );
+		super( new WrappedARGBType( img ), false );
 		this.img = img;
 	}
 
 	// this is the constructor if you want to specify the dataAccess
-	public VolatileUnsignedIntType( final VolatileIntAccess access )
+	public VolatileARGBType( final VolatileIntAccess access )
 	{
-		super( new WrappedUnsignedIntType( access ), access.isValid() );
+		super( new WrappedARGBType( access ), access.isValid() );
 		this.img = null;
 	}
 
 	// this is the constructor if you want it to be a variable
-	public VolatileUnsignedIntType( final int value )
+	public VolatileARGBType( final int value )
 	{
 		this( new VolatileIntArray( 1, true ) );
 		set( value );
 	}
 
 	// this is the constructor if you want it to be a variable
-	public VolatileUnsignedIntType()
+	public VolatileARGBType()
 	{
 		this( 0 );
 	}
@@ -101,34 +105,34 @@ public class VolatileUnsignedIntType extends AbstractVolatileNativeRealType< Uns
 	public void updateContainer( final Object c )
 	{
 		final VolatileIntAccess a = img.update( c );
-		( ( WrappedUnsignedIntType ) t ).setAccess( a );
+		( ( WrappedARGBType ) t ).setAccess( a );
 		setValid( a.isValid() );
 	}
 
 	@Override
-	public VolatileUnsignedIntType duplicateTypeOnSameNativeImg()
+	public VolatileARGBType duplicateTypeOnSameNativeImg()
 	{
-		return new VolatileUnsignedIntType( img );
+		return new VolatileARGBType( img );
 	}
 
 	@Override
-	public VolatileUnsignedIntType createVariable()
+	public VolatileARGBType createVariable()
 	{
-		return new VolatileUnsignedIntType();
+		return new VolatileARGBType();
 	}
 
 	@Override
-	public VolatileUnsignedIntType copy()
+	public VolatileARGBType copy()
 	{
-		final VolatileUnsignedIntType v = createVariable();
+		final VolatileARGBType v = createVariable();
 		v.set( this );
 		return v;
 	}
 
-	private static final PrimitiveTypeInfo< VolatileUnsignedIntType, VolatileIntAccess > info = PrimitiveTypeInfo.INT( img -> new VolatileUnsignedIntType( img ) );
+	private static final PrimitiveTypeInfo< VolatileARGBType, VolatileIntAccess > info = PrimitiveTypeInfo.INT( img -> new VolatileARGBType( img ) );
 
 	@Override
-	public PrimitiveTypeInfo< VolatileUnsignedIntType, ? > getPrimitiveTypeInfo()
+	public PrimitiveTypeInfo< VolatileARGBType, ? > getPrimitiveTypeInfo()
 	{
 		return info;
 	}

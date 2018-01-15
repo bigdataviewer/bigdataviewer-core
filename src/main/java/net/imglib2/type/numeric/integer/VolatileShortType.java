@@ -27,73 +27,73 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package net.imglib2.type.volatiles;
+package net.imglib2.type.numeric.integer;
 
 import net.imglib2.Volatile;
 import net.imglib2.img.NativeImg;
-import net.imglib2.img.basictypeaccess.FloatAccess;
-import net.imglib2.img.basictypeaccess.volatiles.VolatileFloatAccess;
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileFloatArray;
+import net.imglib2.img.basictypeaccess.ShortAccess;
+import net.imglib2.img.basictypeaccess.volatiles.VolatileShortAccess;
+import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
 import net.imglib2.type.PrimitiveTypeInfo;
-import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.type.volatiles.AbstractVolatileNativeRealType;
 
 /**
- * A {@link Volatile} variant of {@link FloatType}. It uses an
- * underlying {@link FloatType} that maps into a
- * {@link VolatileFloatAccess}.
+ * A {@link Volatile} variant of {@link ShortType}. It uses an
+ * underlying {@link ShortType} that maps into a
+ * {@link VolatileShortAccess}.
  *
- * @author Stephan Saalfeld
+ * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
-public class VolatileFloatType extends AbstractVolatileNativeRealType< FloatType, VolatileFloatType >
+public class VolatileShortType extends AbstractVolatileNativeRealType< ShortType, VolatileShortType >
 {
-	final protected NativeImg< ?, ? extends VolatileFloatAccess > img;
+	final protected NativeImg< ?, ? extends VolatileShortAccess > img;
 
-	private static class WrappedFloatType extends FloatType
+	private static class WrappedShortType extends ShortType
 	{
-		public WrappedFloatType( final NativeImg<?, ? extends FloatAccess> img )
+		public WrappedShortType( final NativeImg<?, ? extends ShortAccess> img )
 		{
 			super( img );
 		}
 
-		public WrappedFloatType( final FloatAccess access )
+		public WrappedShortType( final ShortAccess access )
 		{
 			super( access );
 		}
 
-		public void setAccess( final FloatAccess access )
+		public void setAccess( final ShortAccess access )
 		{
 			dataAccess = access;
 		}
 	}
 
 	// this is the constructor if you want it to read from an array
-	public VolatileFloatType( final NativeImg< ?, ? extends VolatileFloatAccess > img )
+	public VolatileShortType( final NativeImg< ?, ? extends VolatileShortAccess > img )
 	{
-		super( new WrappedFloatType( img ), false );
+		super( new WrappedShortType( img ), false );
 		this.img = img;
 	}
 
 	// this is the constructor if you want to specify the dataAccess
-	public VolatileFloatType( final VolatileFloatAccess access )
+	public VolatileShortType( final VolatileShortAccess access )
 	{
-		super( new WrappedFloatType( access ), access.isValid() );
+		super( new WrappedShortType( access ), access.isValid() );
 		this.img = null;
 	}
 
 	// this is the constructor if you want it to be a variable
-	public VolatileFloatType( final float value )
+	public VolatileShortType( final short value )
 	{
-		this( new VolatileFloatArray( 1, true ) );
+		this( new VolatileShortArray( 1, true ) );
 		set( value );
 	}
 
 	// this is the constructor if you want it to be a variable
-	public VolatileFloatType()
+	public VolatileShortType()
 	{
-		this( 0 );
+		this( ( short ) 0 );
 	}
 
-	public void set( final float value )
+	public void set( final short value )
 	{
 		get().set( value );
 	}
@@ -101,35 +101,35 @@ public class VolatileFloatType extends AbstractVolatileNativeRealType< FloatType
 	@Override
 	public void updateContainer( final Object c )
 	{
-		final VolatileFloatAccess a = img.update( c );
-		( ( WrappedFloatType )t ).setAccess( a );
+		final VolatileShortAccess a = img.update( c );
+		( (WrappedShortType) t ).setAccess( a );
 		setValid( a.isValid() );
 	}
 
 	@Override
-	public VolatileFloatType duplicateTypeOnSameNativeImg()
+	public VolatileShortType duplicateTypeOnSameNativeImg()
 	{
-		return new VolatileFloatType( img );
+		return new VolatileShortType( img );
 	}
 
 	@Override
-	public VolatileFloatType createVariable()
+	public VolatileShortType createVariable()
 	{
-		return new VolatileFloatType();
+		return new VolatileShortType();
 	}
 
 	@Override
-	public VolatileFloatType copy()
+	public VolatileShortType copy()
 	{
-		final VolatileFloatType v = createVariable();
+		final VolatileShortType v = createVariable();
 		v.set( this );
 		return v;
 	}
 
-	private static final PrimitiveTypeInfo< VolatileFloatType, VolatileFloatAccess > info = PrimitiveTypeInfo.FLOAT( img -> new VolatileFloatType( img ) );
+	private static final PrimitiveTypeInfo< VolatileShortType, VolatileShortAccess > info = PrimitiveTypeInfo.SHORT( img -> new VolatileShortType( img ) );
 
 	@Override
-	public PrimitiveTypeInfo< VolatileFloatType, ? > getPrimitiveTypeInfo()
+	public PrimitiveTypeInfo< VolatileShortType, ? > getPrimitiveTypeInfo()
 	{
 		return info;
 	}

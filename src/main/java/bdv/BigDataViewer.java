@@ -90,7 +90,7 @@ import net.imglib2.display.RealARGBColorConverter;
 import net.imglib2.display.ScaledARGBConverter;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.volatiles.VolatileARGBType;
+import net.imglib2.type.numeric.VolatileARGBType;
 
 public class BigDataViewer
 {

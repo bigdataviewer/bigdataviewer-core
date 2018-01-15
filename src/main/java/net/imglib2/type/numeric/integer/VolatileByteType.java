@@ -27,73 +27,73 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package net.imglib2.type.volatiles;
+package net.imglib2.type.numeric.integer;
 
 import net.imglib2.Volatile;
 import net.imglib2.img.NativeImg;
-import net.imglib2.img.basictypeaccess.IntAccess;
-import net.imglib2.img.basictypeaccess.volatiles.VolatileIntAccess;
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
+import net.imglib2.img.basictypeaccess.ByteAccess;
+import net.imglib2.img.basictypeaccess.volatiles.VolatileByteAccess;
+import net.imglib2.img.basictypeaccess.volatiles.array.VolatileByteArray;
 import net.imglib2.type.PrimitiveTypeInfo;
-import net.imglib2.type.numeric.integer.IntType;
+import net.imglib2.type.volatiles.AbstractVolatileNativeRealType;
 
 /**
- * A {@link Volatile} variant of {@link IntType}. It uses an
- * underlying {@link IntType} that maps into a
- * {@link VolatileIntAccess}.
+ * A {@link Volatile} variant of {@link ByteType}. It uses an
+ * underlying {@link ByteType} that maps into a
+ * {@link VolatileByteAccess}.
  *
  * @author Stephan Saalfeld
  */
-public class VolatileIntType extends AbstractVolatileNativeRealType< IntType, VolatileIntType >
+public class VolatileByteType extends AbstractVolatileNativeRealType< ByteType, VolatileByteType >
 {
-	final protected NativeImg< ?, ? extends VolatileIntAccess > img;
+	final protected NativeImg< ?, ? extends VolatileByteAccess > img;
 
-	private static class WrappedIntType extends IntType
+	private static class WrappedByteType extends ByteType
 	{
-		public WrappedIntType( final NativeImg<?, ? extends IntAccess> img )
+		public WrappedByteType( final NativeImg<?, ? extends ByteAccess> img )
 		{
 			super( img );
 		}
 
-		public WrappedIntType( final IntAccess access )
+		public WrappedByteType( final ByteAccess access )
 		{
 			super( access );
 		}
 
-		public void setAccess( final IntAccess access )
+		public void setAccess( final ByteAccess access )
 		{
 			dataAccess = access;
 		}
 	}
 
 	// this is the constructor if you want it to read from an array
-	public VolatileIntType( final NativeImg< ?, ? extends VolatileIntAccess > img )
+	public VolatileByteType( final NativeImg< ?, ? extends VolatileByteAccess > img )
 	{
-		super( new WrappedIntType( img ), false );
+		super( new WrappedByteType( img ), false );
 		this.img = img;
 	}
 
 	// this is the constructor if you want to specify the dataAccess
-	public VolatileIntType( final VolatileIntAccess access )
+	public VolatileByteType( final VolatileByteAccess access )
 	{
-		super( new WrappedIntType( access ), access.isValid() );
+		super( new WrappedByteType( access ), access.isValid() );
 		this.img = null;
 	}
 
 	// this is the constructor if you want it to be a variable
-	public VolatileIntType( final int value )
+	public VolatileByteType( final byte value )
 	{
-		this( new VolatileIntArray( 1, true ) );
+		this( new VolatileByteArray( 1, true ) );
 		set( value );
 	}
 
 	// this is the constructor if you want it to be a variable
-	public VolatileIntType()
+	public VolatileByteType()
 	{
-		this( 0 );
+		this( ( byte )0 );
 	}
 
-	public void set( final int value )
+	public void set( final byte value )
 	{
 		get().set( value );
 	}
@@ -101,35 +101,35 @@ public class VolatileIntType extends AbstractVolatileNativeRealType< IntType, Vo
 	@Override
 	public void updateContainer( final Object c )
 	{
-		final VolatileIntAccess a = img.update( c );
-		( (WrappedIntType) t ).setAccess( a );
+		final VolatileByteAccess a = img.update( c );
+		( (WrappedByteType) t ).setAccess( a );
 		setValid( a.isValid() );
 	}
 
 	@Override
-	public VolatileIntType duplicateTypeOnSameNativeImg()
+	public VolatileByteType duplicateTypeOnSameNativeImg()
 	{
-		return new VolatileIntType( img );
+		return new VolatileByteType( img );
 	}
 
 	@Override
-	public VolatileIntType createVariable()
+	public VolatileByteType createVariable()
 	{
-		return new VolatileIntType();
+		return new VolatileByteType();
 	}
 
 	@Override
-	public VolatileIntType copy()
+	public VolatileByteType copy()
 	{
-		final VolatileIntType v = createVariable();
+		final VolatileByteType v = createVariable();
 		v.set( this );
 		return v;
 	}
 
-	private static final PrimitiveTypeInfo< VolatileIntType, VolatileIntAccess > info = PrimitiveTypeInfo.INT( img -> new VolatileIntType( img ) );
+	private static final PrimitiveTypeInfo< VolatileByteType, VolatileByteAccess > info = PrimitiveTypeInfo.BYTE( img -> new VolatileByteType( img ) );
 
 	@Override
-	public PrimitiveTypeInfo< VolatileIntType, ? > getPrimitiveTypeInfo()
+	public PrimitiveTypeInfo< VolatileByteType, ? > getPrimitiveTypeInfo()
 	{
 		return info;
 	}

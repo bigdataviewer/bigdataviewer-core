@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -31,7 +31,7 @@ package net.imglib2.display;
 
 import net.imglib2.converter.Converter;
 import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.type.volatiles.VolatileARGBType;
+import net.imglib2.type.numeric.VolatileARGBType;
 import net.imglib2.util.Util;
 
 public abstract class ARGBARGBColorConverter<R> implements ColorConverter, Converter< R, ARGBType >
@@ -49,9 +49,9 @@ public abstract class ARGBARGBColorConverter<R> implements ColorConverter, Conve
 	protected double scaleG;
 
 	protected double scaleB;
-	
+
 	protected int black = 0;
-	
+
 	public ARGBARGBColorConverter( final double min, final double max )
 	{
 		this.min = min;
@@ -114,30 +114,30 @@ public abstract class ARGBARGBColorConverter<R> implements ColorConverter, Conve
 		scaleB = ARGBType.blue( value ) * scale;
 		black = 0;
 	}
-	
+
 	int convertColor( final int color )
 	{
 		final int a = ARGBType.alpha( color );
 		int r = ARGBType.red( color );
 		int g = ARGBType.green( color );
 		int b = ARGBType.blue( color );
-		
+
 		final int v = Math.min( 255, Math.max( 0, ( r + g + b ) / 3 ) );
-		
+
 		final int newR = (int)Math.min( 255, Util.round( scaleR * v ));
 		final int newG = (int)Math.min( 255, Util.round( scaleG * v ));
 		final int newB = (int)Math.min( 255, Util.round( scaleB * v ));
-		
+
 		return ARGBType.rgba( newR, newG, newB, a );
 	}
 
 	/**
-	 * A converter from a ARGB to ARGB that initially converts the input color to grayscale, 
-	 * then scales the resulting grayscale value with the set color. 
+	 * A converter from a ARGB to ARGB that initially converts the input color to grayscale,
+	 * then scales the resulting grayscale value with the set color.
 	 * <p>
 	 * This can be useful if a grayscale image is imported as ARGB and one wants to change
 	 * the hue for visualization / overlay.
-	 * 
+	 *
 	 * @author John Bogovic
 	 *
 	 */
@@ -154,7 +154,7 @@ public abstract class ARGBARGBColorConverter<R> implements ColorConverter, Conve
 			output.set( convertColor( input.get() ));
 		}
 	}
-	
+
 	public static class VolatileToGray extends ARGBARGBColorConverter<VolatileARGBType>
 	{
 		public VolatileToGray( final double min, final double max )

@@ -27,73 +27,72 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package net.imglib2.type.volatiles;
+package net.imglib2.type.numeric.integer;
 
 import net.imglib2.Volatile;
 import net.imglib2.img.NativeImg;
-import net.imglib2.img.basictypeaccess.DoubleAccess;
-import net.imglib2.img.basictypeaccess.volatiles.VolatileDoubleAccess;
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileDoubleArray;
+import net.imglib2.img.basictypeaccess.IntAccess;
+import net.imglib2.img.basictypeaccess.volatiles.VolatileIntAccess;
+import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
 import net.imglib2.type.PrimitiveTypeInfo;
-import net.imglib2.type.numeric.real.DoubleType;
+import net.imglib2.type.volatiles.AbstractVolatileNativeRealType;
 
 /**
- * A {@link Volatile} variant of {@link DoubleType}. It uses an
- * underlying {@link DoubleType} that maps into a
- * {@link VolatileDoubleAccess}.
+ * A {@link Volatile} variant of {@link UnsignedIntType}. It uses an underlying
+ * {@link UnsignedIntType} that maps into a {@link VolatileIntAccess}.
  *
  * @author Stephan Saalfeld
  */
-public class VolatileDoubleType extends AbstractVolatileNativeRealType< DoubleType, VolatileDoubleType >
+public class VolatileUnsignedIntType extends AbstractVolatileNativeRealType< UnsignedIntType, VolatileUnsignedIntType >
 {
-	final protected NativeImg< ?, ? extends VolatileDoubleAccess > img;
+	final protected NativeImg< ?, ? extends VolatileIntAccess > img;
 
-	private static class WrappedDoubleType extends DoubleType
+	private static class WrappedUnsignedIntType extends UnsignedIntType
 	{
-		public WrappedDoubleType( final NativeImg<?, ? extends DoubleAccess> img )
+		public WrappedUnsignedIntType( final NativeImg<?, ? extends IntAccess> img )
 		{
 			super( img );
 		}
 
-		public WrappedDoubleType( final DoubleAccess access )
+		public WrappedUnsignedIntType( final IntAccess access )
 		{
 			super( access );
 		}
 
-		public void setAccess( final DoubleAccess access )
+		public void setAccess( final IntAccess access )
 		{
 			dataAccess = access;
 		}
 	}
 
 	// this is the constructor if you want it to read from an array
-	public VolatileDoubleType( final NativeImg< ?, ? extends VolatileDoubleAccess > img )
+	public VolatileUnsignedIntType( final NativeImg< ?, ? extends VolatileIntAccess > img )
 	{
-		super( new WrappedDoubleType( img ), false );
+		super( new WrappedUnsignedIntType( img ), false );
 		this.img = img;
 	}
 
 	// this is the constructor if you want to specify the dataAccess
-	public VolatileDoubleType( final VolatileDoubleAccess access )
+	public VolatileUnsignedIntType( final VolatileIntAccess access )
 	{
-		super( new WrappedDoubleType( access ), access.isValid() );
+		super( new WrappedUnsignedIntType( access ), access.isValid() );
 		this.img = null;
 	}
 
 	// this is the constructor if you want it to be a variable
-	public VolatileDoubleType( final double value )
+	public VolatileUnsignedIntType( final int value )
 	{
-		this( new VolatileDoubleArray( 1, true ) );
+		this( new VolatileIntArray( 1, true ) );
 		set( value );
 	}
 
 	// this is the constructor if you want it to be a variable
-	public VolatileDoubleType()
+	public VolatileUnsignedIntType()
 	{
 		this( 0 );
 	}
 
-	public void set( final double value )
+	public void set( final int value )
 	{
 		get().set( value );
 	}
@@ -101,35 +100,35 @@ public class VolatileDoubleType extends AbstractVolatileNativeRealType< DoubleTy
 	@Override
 	public void updateContainer( final Object c )
 	{
-		final VolatileDoubleAccess a = img.update( c );
-		( ( WrappedDoubleType )t ).setAccess( a );
+		final VolatileIntAccess a = img.update( c );
+		( ( WrappedUnsignedIntType ) t ).setAccess( a );
 		setValid( a.isValid() );
 	}
 
 	@Override
-	public VolatileDoubleType duplicateTypeOnSameNativeImg()
+	public VolatileUnsignedIntType duplicateTypeOnSameNativeImg()
 	{
-		return new VolatileDoubleType( img );
+		return new VolatileUnsignedIntType( img );
 	}
 
 	@Override
-	public VolatileDoubleType createVariable()
+	public VolatileUnsignedIntType createVariable()
 	{
-		return new VolatileDoubleType();
+		return new VolatileUnsignedIntType();
 	}
 
 	@Override
-	public VolatileDoubleType copy()
+	public VolatileUnsignedIntType copy()
 	{
-		final VolatileDoubleType v = createVariable();
+		final VolatileUnsignedIntType v = createVariable();
 		v.set( this );
 		return v;
 	}
 
-	private static final PrimitiveTypeInfo< VolatileDoubleType, VolatileDoubleAccess > info = PrimitiveTypeInfo.DOUBLE( img -> new VolatileDoubleType( img ) );
+	private static final PrimitiveTypeInfo< VolatileUnsignedIntType, VolatileIntAccess > info = PrimitiveTypeInfo.INT( img -> new VolatileUnsignedIntType( img ) );
 
 	@Override
-	public PrimitiveTypeInfo< VolatileDoubleType, ? > getPrimitiveTypeInfo()
+	public PrimitiveTypeInfo< VolatileUnsignedIntType, ? > getPrimitiveTypeInfo()
 	{
 		return info;
 	}

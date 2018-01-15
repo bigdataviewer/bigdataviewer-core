@@ -27,73 +27,73 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package net.imglib2.type.volatiles;
+package net.imglib2.type.numeric.integer;
 
 import net.imglib2.Volatile;
 import net.imglib2.img.NativeImg;
-import net.imglib2.img.basictypeaccess.ShortAccess;
-import net.imglib2.img.basictypeaccess.volatiles.VolatileShortAccess;
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
+import net.imglib2.img.basictypeaccess.LongAccess;
+import net.imglib2.img.basictypeaccess.volatiles.VolatileLongAccess;
+import net.imglib2.img.basictypeaccess.volatiles.array.VolatileLongArray;
 import net.imglib2.type.PrimitiveTypeInfo;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.type.volatiles.AbstractVolatileNativeRealType;
 
 /**
- * A {@link Volatile} variant of {@link UnsignedShortType}. It uses an
- * underlying {@link UnsignedShortType} that maps into a
- * {@link VolatileShortAccess}.
+ * A {@link Volatile} variant of {@link LongType}. It uses an
+ * underlying {@link LongType} that maps into a
+ * {@link VolatileLongAccess}.
  *
- * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+ * @author Stephan Saalfeld
  */
-public class VolatileUnsignedShortType extends AbstractVolatileNativeRealType< UnsignedShortType, VolatileUnsignedShortType >
+public class VolatileLongType extends AbstractVolatileNativeRealType< LongType, VolatileLongType >
 {
-	final protected NativeImg< ?, ? extends VolatileShortAccess > img;
+	final protected NativeImg< ?, ? extends VolatileLongAccess > img;
 
-	private static class WrappedUnsignedShortType extends UnsignedShortType
+	private static class WrappedLongType extends LongType
 	{
-		public WrappedUnsignedShortType( final NativeImg<?, ? extends ShortAccess> img )
+		public WrappedLongType( final NativeImg<?, ? extends LongAccess> img )
 		{
 			super( img );
 		}
 
-		public WrappedUnsignedShortType( final ShortAccess access )
+		public WrappedLongType( final LongAccess access )
 		{
 			super( access );
 		}
 
-		public void setAccess( final ShortAccess access )
+		public void setAccess( final LongAccess access )
 		{
 			dataAccess = access;
 		}
 	}
 
 	// this is the constructor if you want it to read from an array
-	public VolatileUnsignedShortType( final NativeImg< ?, ? extends VolatileShortAccess > img )
+	public VolatileLongType( final NativeImg< ?, ? extends VolatileLongAccess > img )
 	{
-		super( new WrappedUnsignedShortType( img ), false );
+		super( new WrappedLongType( img ), false );
 		this.img = img;
 	}
 
 	// this is the constructor if you want to specify the dataAccess
-	public VolatileUnsignedShortType( final VolatileShortAccess access )
+	public VolatileLongType( final VolatileLongAccess access )
 	{
-		super( new WrappedUnsignedShortType( access ), access.isValid() );
+		super( new WrappedLongType( access ), access.isValid() );
 		this.img = null;
 	}
 
 	// this is the constructor if you want it to be a variable
-	public VolatileUnsignedShortType( final int value )
+	public VolatileLongType( final long value )
 	{
-		this( new VolatileShortArray( 1, true ) );
+		this( new VolatileLongArray( 1, true ) );
 		set( value );
 	}
 
 	// this is the constructor if you want it to be a variable
-	public VolatileUnsignedShortType()
+	public VolatileLongType()
 	{
 		this( 0 );
 	}
 
-	public void set( final int value )
+	public void set( final long value )
 	{
 		get().set( value );
 	}
@@ -101,35 +101,35 @@ public class VolatileUnsignedShortType extends AbstractVolatileNativeRealType< U
 	@Override
 	public void updateContainer( final Object c )
 	{
-		final VolatileShortAccess a = img.update( c );
-		( (WrappedUnsignedShortType) t ).setAccess( a );
+		final VolatileLongAccess a = img.update( c );
+		( (WrappedLongType) t ).setAccess( a );
 		setValid( a.isValid() );
 	}
 
 	@Override
-	public VolatileUnsignedShortType duplicateTypeOnSameNativeImg()
+	public VolatileLongType duplicateTypeOnSameNativeImg()
 	{
-		return new VolatileUnsignedShortType( img );
+		return new VolatileLongType( img );
 	}
 
 	@Override
-	public VolatileUnsignedShortType createVariable()
+	public VolatileLongType createVariable()
 	{
-		return new VolatileUnsignedShortType();
+		return new VolatileLongType();
 	}
 
 	@Override
-	public VolatileUnsignedShortType copy()
+	public VolatileLongType copy()
 	{
-		final VolatileUnsignedShortType v = createVariable();
+		final VolatileLongType v = createVariable();
 		v.set( this );
 		return v;
 	}
 
-	private static final PrimitiveTypeInfo< VolatileUnsignedShortType, VolatileShortAccess > info = PrimitiveTypeInfo.SHORT( img -> new VolatileUnsignedShortType( img ) );
+	private static final PrimitiveTypeInfo< VolatileLongType, VolatileLongAccess > info = PrimitiveTypeInfo.LONG( img -> new VolatileLongType( img ) );
 
 	@Override
-	public PrimitiveTypeInfo< VolatileUnsignedShortType, ? > getPrimitiveTypeInfo()
+	public PrimitiveTypeInfo< VolatileLongType, ? > getPrimitiveTypeInfo()
 	{
 		return info;
 	}
