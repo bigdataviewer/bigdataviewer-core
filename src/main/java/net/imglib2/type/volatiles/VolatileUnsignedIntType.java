@@ -31,12 +31,11 @@ package net.imglib2.type.volatiles;
 
 import net.imglib2.Volatile;
 import net.imglib2.img.NativeImg;
-import net.imglib2.img.NativeImgFactory;
 import net.imglib2.img.basictypeaccess.IntAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileIntAccess;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
+import net.imglib2.type.PrimitiveTypeInfo;
 import net.imglib2.type.numeric.integer.UnsignedIntType;
-import net.imglib2.util.Fraction;
 
 /**
  * A {@link Volatile} variant of {@link UnsignedIntType}. It uses an underlying
@@ -107,22 +106,6 @@ public class VolatileUnsignedIntType extends AbstractVolatileNativeRealType< Uns
 	}
 
 	@Override
-	public NativeImg< VolatileUnsignedIntType, ? extends VolatileIntAccess > createSuitableNativeImg( final NativeImgFactory< VolatileUnsignedIntType > storageFactory, final long[] dim )
-	{
-		// create the container
-		@SuppressWarnings( "unchecked" )
-		final NativeImg< VolatileUnsignedIntType, ? extends VolatileIntAccess > container = ( NativeImg< VolatileUnsignedIntType, ? extends VolatileIntAccess > ) storageFactory.createIntInstance( dim, new Fraction() );
-
-		// create a Type that is linked to the container
-		final VolatileUnsignedIntType linkedType = new VolatileUnsignedIntType( container );
-
-		// pass it to the NativeContainer
-		container.setLinkedType( linkedType );
-
-		return container;
-	}
-
-	@Override
 	public VolatileUnsignedIntType duplicateTypeOnSameNativeImg()
 	{
 		return new VolatileUnsignedIntType( img );
@@ -140,5 +123,13 @@ public class VolatileUnsignedIntType extends AbstractVolatileNativeRealType< Uns
 		final VolatileUnsignedIntType v = createVariable();
 		v.set( this );
 		return v;
+	}
+
+	private static final PrimitiveTypeInfo< VolatileUnsignedIntType, VolatileIntAccess > info = PrimitiveTypeInfo.INT( img -> new VolatileUnsignedIntType( img ) );
+
+	@Override
+	public PrimitiveTypeInfo< VolatileUnsignedIntType, ? > getPrimitiveTypeInfo()
+	{
+		return info;
 	}
 }

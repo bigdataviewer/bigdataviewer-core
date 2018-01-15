@@ -31,14 +31,13 @@ package net.imglib2.type.volatiles;
 
 import net.imglib2.Volatile;
 import net.imglib2.img.NativeImg;
-import net.imglib2.img.NativeImgFactory;
 import net.imglib2.img.basictypeaccess.IntAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileIntAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileShortAccess;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
+import net.imglib2.type.PrimitiveTypeInfo;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.util.Fraction;
 
 /**
  * A {@link Volatile} variant of {@link UnsignedShortType}. It uses an
@@ -111,22 +110,6 @@ public class VolatileARGBType extends AbstractVolatileNativeNumericType< ARGBTyp
 	}
 
 	@Override
-	public NativeImg< VolatileARGBType, ? extends VolatileIntAccess > createSuitableNativeImg( final NativeImgFactory< VolatileARGBType > storageFactory, final long[] dim )
-	{
-		// create the container
-		@SuppressWarnings( "unchecked" )
-		final NativeImg< VolatileARGBType, ? extends VolatileIntAccess > container = ( NativeImg< VolatileARGBType, ? extends VolatileIntAccess > ) storageFactory.createIntInstance( dim, new Fraction() );
-
-		// create a Type that is linked to the container
-		final VolatileARGBType linkedType = new VolatileARGBType( container );
-
-		// pass it to the NativeContainer
-		container.setLinkedType( linkedType );
-
-		return container;
-	}
-
-	@Override
 	public VolatileARGBType duplicateTypeOnSameNativeImg()
 	{
 		return new VolatileARGBType( img );
@@ -144,5 +127,13 @@ public class VolatileARGBType extends AbstractVolatileNativeNumericType< ARGBTyp
 		final VolatileARGBType v = createVariable();
 		v.set( this );
 		return v;
+	}
+
+	private static final PrimitiveTypeInfo< VolatileARGBType, VolatileIntAccess > info = PrimitiveTypeInfo.INT( img -> new VolatileARGBType( img ) );
+
+	@Override
+	public PrimitiveTypeInfo< VolatileARGBType, ? > getPrimitiveTypeInfo()
+	{
+		return info;
 	}
 }

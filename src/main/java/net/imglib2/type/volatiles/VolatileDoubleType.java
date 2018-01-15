@@ -31,12 +31,11 @@ package net.imglib2.type.volatiles;
 
 import net.imglib2.Volatile;
 import net.imglib2.img.NativeImg;
-import net.imglib2.img.NativeImgFactory;
 import net.imglib2.img.basictypeaccess.DoubleAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileDoubleAccess;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileDoubleArray;
+import net.imglib2.type.PrimitiveTypeInfo;
 import net.imglib2.type.numeric.real.DoubleType;
-import net.imglib2.util.Fraction;
 
 /**
  * A {@link Volatile} variant of {@link DoubleType}. It uses an
@@ -108,22 +107,6 @@ public class VolatileDoubleType extends AbstractVolatileNativeRealType< DoubleTy
 	}
 
 	@Override
-	public NativeImg< VolatileDoubleType, ? extends VolatileDoubleAccess > createSuitableNativeImg( final NativeImgFactory< VolatileDoubleType > storageFactory, final long[] dim )
-	{
-		// create the container
-		@SuppressWarnings( "unchecked" )
-		final NativeImg< VolatileDoubleType, ? extends VolatileDoubleAccess > container = ( NativeImg< VolatileDoubleType, ? extends VolatileDoubleAccess > ) storageFactory.createDoubleInstance( dim, new Fraction() );
-
-		// create a Type that is linked to the container
-		final VolatileDoubleType linkedType = new VolatileDoubleType( container );
-
-		// pass it to the NativeContainer
-		container.setLinkedType( linkedType );
-
-		return container;
-	}
-
-	@Override
 	public VolatileDoubleType duplicateTypeOnSameNativeImg()
 	{
 		return new VolatileDoubleType( img );
@@ -141,5 +124,13 @@ public class VolatileDoubleType extends AbstractVolatileNativeRealType< DoubleTy
 		final VolatileDoubleType v = createVariable();
 		v.set( this );
 		return v;
+	}
+
+	private static final PrimitiveTypeInfo< VolatileDoubleType, VolatileDoubleAccess > info = PrimitiveTypeInfo.DOUBLE( img -> new VolatileDoubleType( img ) );
+
+	@Override
+	public PrimitiveTypeInfo< VolatileDoubleType, ? > getPrimitiveTypeInfo()
+	{
+		return info;
 	}
 }

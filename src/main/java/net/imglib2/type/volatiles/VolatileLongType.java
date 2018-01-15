@@ -31,12 +31,11 @@ package net.imglib2.type.volatiles;
 
 import net.imglib2.Volatile;
 import net.imglib2.img.NativeImg;
-import net.imglib2.img.NativeImgFactory;
 import net.imglib2.img.basictypeaccess.LongAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileLongAccess;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileLongArray;
+import net.imglib2.type.PrimitiveTypeInfo;
 import net.imglib2.type.numeric.integer.LongType;
-import net.imglib2.util.Fraction;
 
 /**
  * A {@link Volatile} variant of {@link LongType}. It uses an
@@ -108,22 +107,6 @@ public class VolatileLongType extends AbstractVolatileNativeRealType< LongType, 
 	}
 
 	@Override
-	public NativeImg< VolatileLongType, ? extends VolatileLongAccess > createSuitableNativeImg( final NativeImgFactory< VolatileLongType > storageFactory, final long[] dim )
-	{
-		// create the container
-		@SuppressWarnings( "unchecked" )
-		final NativeImg< VolatileLongType, ? extends VolatileLongAccess > container = ( NativeImg< VolatileLongType, ? extends VolatileLongAccess > ) storageFactory.createLongInstance( dim, new Fraction() );
-
-		// create a Type that is linked to the container
-		final VolatileLongType linkedType = new VolatileLongType( container );
-
-		// pass it to the NativeContainer
-		container.setLinkedType( linkedType );
-
-		return container;
-	}
-
-	@Override
 	public VolatileLongType duplicateTypeOnSameNativeImg()
 	{
 		return new VolatileLongType( img );
@@ -141,5 +124,13 @@ public class VolatileLongType extends AbstractVolatileNativeRealType< LongType, 
 		final VolatileLongType v = createVariable();
 		v.set( this );
 		return v;
+	}
+
+	private static final PrimitiveTypeInfo< VolatileLongType, VolatileLongAccess > info = PrimitiveTypeInfo.LONG( img -> new VolatileLongType( img ) );
+
+	@Override
+	public PrimitiveTypeInfo< VolatileLongType, ? > getPrimitiveTypeInfo()
+	{
+		return info;
 	}
 }

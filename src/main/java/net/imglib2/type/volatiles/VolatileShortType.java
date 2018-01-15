@@ -31,12 +31,11 @@ package net.imglib2.type.volatiles;
 
 import net.imglib2.Volatile;
 import net.imglib2.img.NativeImg;
-import net.imglib2.img.NativeImgFactory;
 import net.imglib2.img.basictypeaccess.ShortAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileShortAccess;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
+import net.imglib2.type.PrimitiveTypeInfo;
 import net.imglib2.type.numeric.integer.ShortType;
-import net.imglib2.util.Fraction;
 
 /**
  * A {@link Volatile} variant of {@link ShortType}. It uses an
@@ -108,22 +107,6 @@ public class VolatileShortType extends AbstractVolatileNativeRealType< ShortType
 	}
 
 	@Override
-	public NativeImg< VolatileShortType, ? extends VolatileShortAccess > createSuitableNativeImg( final NativeImgFactory< VolatileShortType > storageFactory, final long[] dim )
-	{
-		// create the container
-		@SuppressWarnings( "unchecked" )
-		final NativeImg< VolatileShortType, ? extends VolatileShortAccess > container = ( NativeImg< VolatileShortType, ? extends VolatileShortAccess > ) storageFactory.createShortInstance( dim, new Fraction() );
-
-		// create a Type that is linked to the container
-		final VolatileShortType linkedType = new VolatileShortType( container );
-
-		// pass it to the NativeContainer
-		container.setLinkedType( linkedType );
-
-		return container;
-	}
-
-	@Override
 	public VolatileShortType duplicateTypeOnSameNativeImg()
 	{
 		return new VolatileShortType( img );
@@ -141,5 +124,13 @@ public class VolatileShortType extends AbstractVolatileNativeRealType< ShortType
 		final VolatileShortType v = createVariable();
 		v.set( this );
 		return v;
+	}
+
+	private static final PrimitiveTypeInfo< VolatileShortType, VolatileShortAccess > info = PrimitiveTypeInfo.SHORT( img -> new VolatileShortType( img ) );
+
+	@Override
+	public PrimitiveTypeInfo< VolatileShortType, ? > getPrimitiveTypeInfo()
+	{
+		return info;
 	}
 }

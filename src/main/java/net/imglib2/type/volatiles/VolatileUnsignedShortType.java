@@ -31,12 +31,11 @@ package net.imglib2.type.volatiles;
 
 import net.imglib2.Volatile;
 import net.imglib2.img.NativeImg;
-import net.imglib2.img.NativeImgFactory;
 import net.imglib2.img.basictypeaccess.ShortAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileShortAccess;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
+import net.imglib2.type.PrimitiveTypeInfo;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.util.Fraction;
 
 /**
  * A {@link Volatile} variant of {@link UnsignedShortType}. It uses an
@@ -108,22 +107,6 @@ public class VolatileUnsignedShortType extends AbstractVolatileNativeRealType< U
 	}
 
 	@Override
-	public NativeImg< VolatileUnsignedShortType, ? extends VolatileShortAccess > createSuitableNativeImg( final NativeImgFactory< VolatileUnsignedShortType > storageFactory, final long[] dim )
-	{
-		// create the container
-		@SuppressWarnings( "unchecked" )
-		final NativeImg< VolatileUnsignedShortType, ? extends VolatileShortAccess > container = ( NativeImg< VolatileUnsignedShortType, ? extends VolatileShortAccess > ) storageFactory.createShortInstance( dim, new Fraction() );
-
-		// create a Type that is linked to the container
-		final VolatileUnsignedShortType linkedType = new VolatileUnsignedShortType( container );
-
-		// pass it to the NativeContainer
-		container.setLinkedType( linkedType );
-
-		return container;
-	}
-
-	@Override
 	public VolatileUnsignedShortType duplicateTypeOnSameNativeImg()
 	{
 		return new VolatileUnsignedShortType( img );
@@ -141,5 +124,13 @@ public class VolatileUnsignedShortType extends AbstractVolatileNativeRealType< U
 		final VolatileUnsignedShortType v = createVariable();
 		v.set( this );
 		return v;
+	}
+
+	private static final PrimitiveTypeInfo< VolatileUnsignedShortType, VolatileShortAccess > info = PrimitiveTypeInfo.SHORT( img -> new VolatileUnsignedShortType( img ) );
+
+	@Override
+	public PrimitiveTypeInfo< VolatileUnsignedShortType, ? > getPrimitiveTypeInfo()
+	{
+		return info;
 	}
 }
