@@ -31,11 +31,10 @@ package net.imglib2.type.numeric.integer;
 
 import net.imglib2.Volatile;
 import net.imglib2.img.NativeImg;
-import net.imglib2.img.basictypeaccess.ByteAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileByteAccess;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileByteArray;
 import net.imglib2.type.PrimitiveTypeInfo;
-import net.imglib2.type.volatiles.AbstractVolatileNativeRealType;
+import net.imglib2.type.numeric.AbstractVolatileNativeRealType;
 
 /**
  * A {@link Volatile} variant of {@link UnsignedByteType}. It uses an

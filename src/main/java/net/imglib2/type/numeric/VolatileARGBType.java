@@ -31,13 +31,11 @@ package net.imglib2.type.numeric;
 
 import net.imglib2.Volatile;
 import net.imglib2.img.NativeImg;
-import net.imglib2.img.basictypeaccess.IntAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileIntAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileShortAccess;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
 import net.imglib2.type.PrimitiveTypeInfo;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.type.volatiles.AbstractVolatileNativeNumericType;
 
 /**
  * A {@link Volatile} variant of {@link UnsignedShortType}. It uses an

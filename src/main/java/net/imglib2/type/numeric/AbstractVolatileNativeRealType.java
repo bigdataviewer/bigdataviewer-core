@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -28,29 +28,29 @@
  * #L%
  */
 
-package net.imglib2.type.volatiles;
+package net.imglib2.type.numeric;
 
 import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.NumericType;
+import net.imglib2.type.volatiles.AbstractVolatileRealType;
+import net.imglib2.type.volatiles.VolatileRealType;
 import net.imglib2.util.Fraction;
 
 /**
- * Abstract base class for {@link VolatileNumericType}s that wrap
- * {@link NativeType native} {@link NumericType}s.
+ * Abstract base class for {@link VolatileRealType}s that wrap
+ * {@link NativeType native} {@link RealType}s.
  *
- * @param <N>
- *            wrapped {@link NativeType native} {@link NumericType}.
+ * @param <R>
+ *            wrapped native {@link RealType}.
  * @param <T>
  *            type of derived concrete class.
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
- * @author Stephan Saalfeld &lt;saalfelds@janelia.hhmi.org&gt;
  */
-public abstract class AbstractVolatileNativeNumericType< N extends NumericType< N > & NativeType< N >, T extends AbstractVolatileNativeNumericType< N, T > >
-	extends AbstractVolatileNumericType< N, T >
+public abstract class AbstractVolatileNativeRealType< R extends RealType< R > & NativeType< R >, T extends AbstractVolatileNativeRealType< R, T > >
+	extends AbstractVolatileRealType< R, T >
 	implements NativeType< T >
 {
-	public AbstractVolatileNativeNumericType( final N t, final boolean valid )
+	public AbstractVolatileNativeRealType( final R t, final boolean valid )
 	{
 		super( t, valid );
 	}

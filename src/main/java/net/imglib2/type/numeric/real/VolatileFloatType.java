@@ -31,11 +31,10 @@ package net.imglib2.type.numeric.real;
 
 import net.imglib2.Volatile;
 import net.imglib2.img.NativeImg;
-import net.imglib2.img.basictypeaccess.FloatAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileFloatAccess;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileFloatArray;
 import net.imglib2.type.PrimitiveTypeInfo;
-import net.imglib2.type.volatiles.AbstractVolatileNativeRealType;
+import net.imglib2.type.numeric.AbstractVolatileNativeRealType;
 
 /**
  * A {@link Volatile} variant of {@link FloatType}. It uses an
