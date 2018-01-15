@@ -445,9 +445,9 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 				final int[] cellDimensions = computeCellDimensions(
 						dimsLong,
 						mipmapInfo.getSubdivisions()[ level ] );
-				final CellImgFactory< UnsignedShortType > factory = new CellImgFactory<>( cellDimensions );
+				final CellImgFactory< UnsignedShortType > factory = new CellImgFactory<>( type, cellDimensions );
 				@SuppressWarnings( "unchecked" )
-				final CellImg< UnsignedShortType, ShortArray > cellImg = ( CellImg< UnsignedShortType, ShortArray > ) factory.create( dimsLong, type );
+				final CellImg< UnsignedShortType, ShortArray > cellImg = ( CellImg< UnsignedShortType, ShortArray > ) factory.create( dimsLong );
 				final Cursor< Cell< ShortArray > > cursor = cellImg.getCells().cursor();
 				while ( cursor.hasNext() )
 				{
@@ -571,7 +571,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 			final ImgFactory< FloatType > imgFactory;
 			if ( Intervals.numElements( ushortImg ) <= Integer.MAX_VALUE )
 			{
-				imgFactory = new ArrayImgFactory<>();
+				imgFactory = new ArrayImgFactory<>( f );
 			}
 			else
 			{
@@ -580,9 +580,9 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 				final int[] cellDimensions = computeCellDimensions(
 						dimsLong,
 						mipmapInfo.getSubdivisions()[ level ] );
-				imgFactory = new CellImgFactory<>( cellDimensions );
+				imgFactory = new CellImgFactory<>( f, cellDimensions );
 			}
-			final Img< FloatType > floatImg = imgFactory.create( ushortImg, f );
+			final Img< FloatType > floatImg = imgFactory.create( ushortImg );
 
 			// set up executor service
 			final int numProcessors = Runtime.getRuntime().availableProcessors();

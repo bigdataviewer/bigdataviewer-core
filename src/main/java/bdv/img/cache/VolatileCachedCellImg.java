@@ -1,7 +1,5 @@
 package bdv.img.cache;
 
-import java.lang.reflect.InvocationTargetException;
-
 import bdv.cache.CacheControl;
 import bdv.img.cache.VolatileCachedCellImg.VolatileCachedCells;
 import net.imglib2.Volatile;
@@ -17,6 +15,7 @@ import net.imglib2.img.cell.CellGrid;
 import net.imglib2.img.cell.LazyCellImg;
 import net.imglib2.img.list.AbstractLongListImg;
 import net.imglib2.type.NativeType;
+import net.imglib2.type.NativeTypeFactory;
 
 /**
  * A {@link LazyCellImg} for {@link Volatile} accesses. The only difference to
@@ -42,14 +41,10 @@ public class VolatileCachedCellImg< T extends NativeType< T >, A >
 	public VolatileCachedCellImg( final CellGrid grid, final T type, final CacheHints cacheHints, final Get< Cell< A > > get )
 	{
 		super( grid, new VolatileCachedCells<>( grid.getGridDimensions(), get, cacheHints ), type.getEntitiesPerPixel() );
-		try
-		{
-			LazyCellImg.linkType( type, this );
-		}
-		catch ( NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e )
-		{
-			throw new RuntimeException( e );
-		}
+
+		@SuppressWarnings( "unchecked" )
+		final NativeTypeFactory< T, ? super A > typeFactory = ( NativeTypeFactory< T, ? super A > ) type.getNativeTypeFactory();
+		setLinkedType( typeFactory.createLinkedType( this ) );
 	}
 
 	/**

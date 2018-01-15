@@ -31,7 +31,7 @@ package bdv.img.cache;
 
 import bdv.ViewerImgLoader;
 import bdv.img.catmaid.CatmaidImageLoader;
-import net.imglib2.cache.img.AccessFlags;
+import net.imglib2.img.basictypeaccess.AccessFlags;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileArrayDataAccess;
 import net.imglib2.img.basictypeaccess.volatiles.array.DirtyVolatileByteArray;
