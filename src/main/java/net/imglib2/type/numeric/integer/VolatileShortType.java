@@ -48,35 +48,17 @@ public class VolatileShortType extends AbstractVolatileNativeRealType< ShortType
 {
 	final protected NativeImg< ?, ? extends VolatileShortAccess > img;
 
-	private static class WrappedShortType extends ShortType
-	{
-		public WrappedShortType( final NativeImg<?, ? extends ShortAccess> img )
-		{
-			super( img );
-		}
-
-		public WrappedShortType( final ShortAccess access )
-		{
-			super( access );
-		}
-
-		public void setAccess( final ShortAccess access )
-		{
-			dataAccess = access;
-		}
-	}
-
 	// this is the constructor if you want it to read from an array
 	public VolatileShortType( final NativeImg< ?, ? extends VolatileShortAccess > img )
 	{
-		super( new WrappedShortType( img ), false );
+		super( new ShortType( img ), false );
 		this.img = img;
 	}
 
 	// this is the constructor if you want to specify the dataAccess
 	public VolatileShortType( final VolatileShortAccess access )
 	{
-		super( new WrappedShortType( access ), access.isValid() );
+		super( new ShortType( access ), access.isValid() );
 		this.img = null;
 	}
 
@@ -102,7 +84,7 @@ public class VolatileShortType extends AbstractVolatileNativeRealType< ShortType
 	public void updateContainer( final Object c )
 	{
 		final VolatileShortAccess a = img.update( c );
-		( (WrappedShortType) t ).setAccess( a );
+		t.dataAccess = a;
 		setValid( a.isValid() );
 	}
 

@@ -48,35 +48,17 @@ public class VolatileLongType extends AbstractVolatileNativeRealType< LongType, 
 {
 	final protected NativeImg< ?, ? extends VolatileLongAccess > img;
 
-	private static class WrappedLongType extends LongType
-	{
-		public WrappedLongType( final NativeImg<?, ? extends LongAccess> img )
-		{
-			super( img );
-		}
-
-		public WrappedLongType( final LongAccess access )
-		{
-			super( access );
-		}
-
-		public void setAccess( final LongAccess access )
-		{
-			dataAccess = access;
-		}
-	}
-
 	// this is the constructor if you want it to read from an array
 	public VolatileLongType( final NativeImg< ?, ? extends VolatileLongAccess > img )
 	{
-		super( new WrappedLongType( img ), false );
+		super( new LongType( img ), false );
 		this.img = img;
 	}
 
 	// this is the constructor if you want to specify the dataAccess
 	public VolatileLongType( final VolatileLongAccess access )
 	{
-		super( new WrappedLongType( access ), access.isValid() );
+		super( new LongType( access ), access.isValid() );
 		this.img = null;
 	}
 
@@ -102,7 +84,7 @@ public class VolatileLongType extends AbstractVolatileNativeRealType< LongType, 
 	public void updateContainer( final Object c )
 	{
 		final VolatileLongAccess a = img.update( c );
-		( (WrappedLongType) t ).setAccess( a );
+		t.dataAccess = a;
 		setValid( a.isValid() );
 	}
 

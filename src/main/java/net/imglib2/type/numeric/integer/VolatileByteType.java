@@ -48,35 +48,17 @@ public class VolatileByteType extends AbstractVolatileNativeRealType< ByteType, 
 {
 	final protected NativeImg< ?, ? extends VolatileByteAccess > img;
 
-	private static class WrappedByteType extends ByteType
-	{
-		public WrappedByteType( final NativeImg<?, ? extends ByteAccess> img )
-		{
-			super( img );
-		}
-
-		public WrappedByteType( final ByteAccess access )
-		{
-			super( access );
-		}
-
-		public void setAccess( final ByteAccess access )
-		{
-			dataAccess = access;
-		}
-	}
-
 	// this is the constructor if you want it to read from an array
 	public VolatileByteType( final NativeImg< ?, ? extends VolatileByteAccess > img )
 	{
-		super( new WrappedByteType( img ), false );
+		super( new ByteType( img ), false );
 		this.img = img;
 	}
 
 	// this is the constructor if you want to specify the dataAccess
 	public VolatileByteType( final VolatileByteAccess access )
 	{
-		super( new WrappedByteType( access ), access.isValid() );
+		super( new ByteType( access ), access.isValid() );
 		this.img = null;
 	}
 
@@ -102,7 +84,7 @@ public class VolatileByteType extends AbstractVolatileNativeRealType< ByteType, 
 	public void updateContainer( final Object c )
 	{
 		final VolatileByteAccess a = img.update( c );
-		( (WrappedByteType) t ).setAccess( a );
+		t.dataAccess = a;
 		setValid( a.isValid() );
 	}
 

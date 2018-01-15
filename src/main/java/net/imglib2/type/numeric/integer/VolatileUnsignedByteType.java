@@ -49,35 +49,17 @@ public class VolatileUnsignedByteType extends AbstractVolatileNativeRealType< Un
 {
 	final protected NativeImg< ?, ? extends VolatileByteAccess > img;
 
-	private static class WrappedUnsignedByteType extends UnsignedByteType
-	{
-		public WrappedUnsignedByteType( final NativeImg<?, ? extends ByteAccess> img )
-		{
-			super( img );
-		}
-
-		public WrappedUnsignedByteType( final ByteAccess access )
-		{
-			super( access );
-		}
-
-		public void setAccess( final ByteAccess access )
-		{
-			dataAccess = access;
-		}
-	}
-
 	// this is the constructor if you want it to read from an array
 	public VolatileUnsignedByteType( final NativeImg< ?, ? extends VolatileByteAccess > img )
 	{
-		super( new WrappedUnsignedByteType( img ), false );
+		super( new UnsignedByteType( img ), false );
 		this.img = img;
 	}
 
 	// this is the constructor if you want to specify the dataAccess
 	public VolatileUnsignedByteType( final VolatileByteAccess access )
 	{
-		super( new WrappedUnsignedByteType( access ), access.isValid() );
+		super( new UnsignedByteType( access ), access.isValid() );
 		this.img = null;
 	}
 
@@ -103,7 +85,7 @@ public class VolatileUnsignedByteType extends AbstractVolatileNativeRealType< Un
 	public void updateContainer( final Object c )
 	{
 		final VolatileByteAccess a = img.update( c );
-		( ( WrappedUnsignedByteType )t ).setAccess( a );
+		t.dataAccess = a;
 		setValid( a.isValid() );
 	}
 

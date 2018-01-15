@@ -48,35 +48,17 @@ public class VolatileFloatType extends AbstractVolatileNativeRealType< FloatType
 {
 	final protected NativeImg< ?, ? extends VolatileFloatAccess > img;
 
-	private static class WrappedFloatType extends FloatType
-	{
-		public WrappedFloatType( final NativeImg<?, ? extends FloatAccess> img )
-		{
-			super( img );
-		}
-
-		public WrappedFloatType( final FloatAccess access )
-		{
-			super( access );
-		}
-
-		public void setAccess( final FloatAccess access )
-		{
-			dataAccess = access;
-		}
-	}
-
 	// this is the constructor if you want it to read from an array
 	public VolatileFloatType( final NativeImg< ?, ? extends VolatileFloatAccess > img )
 	{
-		super( new WrappedFloatType( img ), false );
+		super( new FloatType( img ), false );
 		this.img = img;
 	}
 
 	// this is the constructor if you want to specify the dataAccess
 	public VolatileFloatType( final VolatileFloatAccess access )
 	{
-		super( new WrappedFloatType( access ), access.isValid() );
+		super( new FloatType( access ), access.isValid() );
 		this.img = null;
 	}
 
@@ -102,7 +84,7 @@ public class VolatileFloatType extends AbstractVolatileNativeRealType< FloatType
 	public void updateContainer( final Object c )
 	{
 		final VolatileFloatAccess a = img.update( c );
-		( ( WrappedFloatType )t ).setAccess( a );
+		t.dataAccess = a;
 		setValid( a.isValid() );
 	}
 

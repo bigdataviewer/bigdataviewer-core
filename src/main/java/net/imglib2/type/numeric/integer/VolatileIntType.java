@@ -48,35 +48,17 @@ public class VolatileIntType extends AbstractVolatileNativeRealType< IntType, Vo
 {
 	final protected NativeImg< ?, ? extends VolatileIntAccess > img;
 
-	private static class WrappedIntType extends IntType
-	{
-		public WrappedIntType( final NativeImg<?, ? extends IntAccess> img )
-		{
-			super( img );
-		}
-
-		public WrappedIntType( final IntAccess access )
-		{
-			super( access );
-		}
-
-		public void setAccess( final IntAccess access )
-		{
-			dataAccess = access;
-		}
-	}
-
 	// this is the constructor if you want it to read from an array
 	public VolatileIntType( final NativeImg< ?, ? extends VolatileIntAccess > img )
 	{
-		super( new WrappedIntType( img ), false );
+		super( new IntType( img ), false );
 		this.img = img;
 	}
 
 	// this is the constructor if you want to specify the dataAccess
 	public VolatileIntType( final VolatileIntAccess access )
 	{
-		super( new WrappedIntType( access ), access.isValid() );
+		super( new IntType( access ), access.isValid() );
 		this.img = null;
 	}
 
@@ -102,7 +84,7 @@ public class VolatileIntType extends AbstractVolatileNativeRealType< IntType, Vo
 	public void updateContainer( final Object c )
 	{
 		final VolatileIntAccess a = img.update( c );
-		( (WrappedIntType) t ).setAccess( a );
+		t.dataAccess = a;
 		setValid( a.isValid() );
 	}
 

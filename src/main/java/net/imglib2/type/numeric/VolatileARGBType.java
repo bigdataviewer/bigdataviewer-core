@@ -51,35 +51,17 @@ public class VolatileARGBType extends AbstractVolatileNativeNumericType< ARGBTyp
 {
 	final protected NativeImg< ?, ? extends VolatileIntAccess > img;
 
-	private static class WrappedARGBType extends ARGBType
-	{
-		public WrappedARGBType( final NativeImg< ?, ? extends IntAccess > img )
-		{
-			super( img );
-		}
-
-		public WrappedARGBType( final IntAccess access )
-		{
-			super( access );
-		}
-
-		public void setAccess( final IntAccess access )
-		{
-			dataAccess = access;
-		}
-	}
-
 	// this is the constructor if you want it to read from an array
 	public VolatileARGBType( final NativeImg< ?, ? extends VolatileIntAccess > img )
 	{
-		super( new WrappedARGBType( img ), false );
+		super( new ARGBType( img ), false );
 		this.img = img;
 	}
 
 	// this is the constructor if you want to specify the dataAccess
 	public VolatileARGBType( final VolatileIntAccess access )
 	{
-		super( new WrappedARGBType( access ), access.isValid() );
+		super( new ARGBType( access ), access.isValid() );
 		this.img = null;
 	}
 
@@ -105,7 +87,7 @@ public class VolatileARGBType extends AbstractVolatileNativeNumericType< ARGBTyp
 	public void updateContainer( final Object c )
 	{
 		final VolatileIntAccess a = img.update( c );
-		( ( WrappedARGBType ) t ).setAccess( a );
+		t.dataAccess = a;
 		setValid( a.isValid() );
 	}
 
