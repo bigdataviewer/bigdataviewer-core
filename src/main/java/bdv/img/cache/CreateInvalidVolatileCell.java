@@ -1,12 +1,12 @@
 package bdv.img.cache;
 
-import net.imglib2.cache.img.AccessFlags;
-import net.imglib2.cache.img.PrimitiveType;
 import net.imglib2.cache.volatiles.CreateInvalid;
+import net.imglib2.img.basictypeaccess.AccessFlags;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileArrayDataAccess;
 import net.imglib2.img.cell.Cell;
 import net.imglib2.img.cell.CellGrid;
 import net.imglib2.type.NativeType;
+import net.imglib2.type.PrimitiveType;
 import net.imglib2.util.Fraction;
 import net.imglib2.util.Intervals;
 
@@ -66,7 +66,7 @@ public class CreateInvalidVolatileCell< A > implements CreateInvalid< Long, Cell
 			final T type,
 			final AccessFlags ... flags ) throws IllegalArgumentException
 	{
-		return get( grid, type.getEntitiesPerPixel(), PrimitiveType.forNativeType( type ), flags );
+		return get( grid, type.getEntitiesPerPixel(), type.getPrimitiveTypeInfo().getPrimitiveType(), flags );
 	}
 
 	public static < A extends VolatileArrayDataAccess< A > > CreateInvalidVolatileCell< A > get(
