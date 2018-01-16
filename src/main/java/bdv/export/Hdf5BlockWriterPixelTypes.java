@@ -582,8 +582,7 @@ public class Hdf5BlockWriterPixelTypes
 		public
 		void createAndOpenDataset(final IHDF5Writer hdf5Writer, final String path, final long[] dimensions, final int[] cellDimensions, final HDF5IntStorageFeatures features)
 		{
-			//final HDF5FloatStorageFeatures fFeatures = HDF5FloatStorageFeatures.FLOAT_NO_COMPRESSION;
-			//should translate the original HDF5IntStorageFeatures to HDF5FloatStorageFeatures, TODO VLADO confirm it preserves e.g. deflation option
+			//should translate the original HDF5IntStorageFeatures to HDF5FloatStorageFeatures
 			final HDF5FloatStorageFeatures fFeatures = HDF5FloatStorageFeatures.build(features).features();
 			hdf5Writer.float32().createMDArray( path, dimensions, cellDimensions, fFeatures );
 		}
