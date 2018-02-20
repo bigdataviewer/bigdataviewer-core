@@ -111,8 +111,14 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 
 	protected FetcherThreads fetchers;
 
-	//TODO VLADO: could be renamed, but is protected -> might be used is some code elsewhere
-	protected CacheArrayLoader<?> shortLoader;
+	//was: protected Hdf5VolatileShortArrayLoader shortLoader;
+	//
+	//despite it is protected, i.e. might be used in some class derived from this one,
+	//Vlado has decided to rename this attribute to intentionally make any down-stream
+	//class code non-compilable, pointing a developer to resolve the fact that the attribute
+	//is now of a type that is up-stream to the original Hdf5VolatileShortArrayLoader, i.e.
+	//that the new type is less specific
+	protected CacheArrayLoader<?> volatileArrayLoader;
 
 	//the memory of what pixel type is inside the this.hdf5File
 	//NB: The default value is UnsignedShortType,
@@ -244,7 +250,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 					hdf5Access = new HDF5Access( hdf5Reader, pxM );
 				}
 				//again, create appropriate type-specific implementation of the CacheArrayLoader<?>
-				shortLoader = pxM.createHdf5VolatileTypeArrayLoader( hdf5Access );
+				volatileArrayLoader = pxM.createHdf5VolatileTypeArrayLoader( hdf5Access );
 
 				final BlockingFetchQueues< Callable< ? > > queue = new BlockingFetchQueues<>( maxNumLevels );
 				fetchers = new FetcherThreads( queue, 1 );
@@ -330,7 +336,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 	public CacheArrayLoader<?> getShortArrayLoader()
 	{
 		open();
-		return shortLoader;
+		return volatileArrayLoader;
 	}
 
 	/**
@@ -582,7 +588,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 			final int priority = mipmapInfo.getMaxLevel() - level;
 			final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
 
-			return cache.createImg( grid, timepointId, setupId, level, cacheHints, shortLoader, type );
+			return cache.createImg( grid, timepointId, setupId, level, cacheHints, volatileArrayLoader, type );
 		}
 
 		/**
