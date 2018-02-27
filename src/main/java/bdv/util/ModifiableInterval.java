@@ -36,7 +36,7 @@ public class ModifiableInterval extends AbstractInterval
 {
 	public ModifiableInterval( final int numDimensions )
 	{
-		super( new long[ numDimensions ], new long[ numDimensions ] );
+		super( numDimensions );
 	}
 
 	public ModifiableInterval( final Interval interval )

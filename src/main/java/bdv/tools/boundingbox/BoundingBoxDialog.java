@@ -49,6 +49,7 @@ import bdv.tools.boundingbox.BoundingBoxOverlay.BoundingBoxOverlaySource;
 import bdv.tools.brightness.RealARGBColorConverterSetup;
 import bdv.tools.brightness.SetupAssignments;
 import bdv.tools.transformation.TransformedSource;
+import bdv.util.ModifiableInterval;
 import bdv.util.RealRandomAccessibleSource;
 import bdv.viewer.DisplayMode;
 import bdv.viewer.SourceAndConverter;
@@ -65,6 +66,8 @@ import net.imglib2.type.numeric.integer.UnsignedShortType;
 public class BoundingBoxDialog extends JDialog
 {
 	private static final long serialVersionUID = 1L;
+
+	protected final ModifiableInterval interval;
 
 	protected final BoxRealRandomAccessible< UnsignedShortType > boxRealRandomAccessible;
 
@@ -106,7 +109,8 @@ public class BoundingBoxDialog extends JDialog
 		// create a procedural RealRandomAccessible that will render the bounding box
 		final UnsignedShortType insideValue = new UnsignedShortType( 1000 ); // inside the box pixel value is 1000
 		final UnsignedShortType outsideValue = new UnsignedShortType( 0 ); // outside is 0
-		boxRealRandomAccessible = new BoxRealRandomAccessible<>( initialInterval, insideValue, outsideValue );
+		interval = new ModifiableInterval( initialInterval );
+		boxRealRandomAccessible = new BoxRealRandomAccessible<>( interval, insideValue, outsideValue );
 
 		// create a bdv.viewer.Source providing data from the bbox RealRandomAccessible
 		final RealRandomAccessibleSource< UnsignedShortType > boxSource = new RealRandomAccessibleSource< UnsignedShortType >( boxRealRandomAccessible, new UnsignedShortType(), "selection" )
@@ -114,7 +118,7 @@ public class BoundingBoxDialog extends JDialog
 			@Override
 			public Interval getInterval( final int t, final int level )
 			{
-				return boxRealRandomAccessible.getInterval();
+				return interval;
 			}
 		};
 
@@ -142,12 +146,12 @@ public class BoundingBoxDialog extends JDialog
 			@Override
 			public Interval getInterval()
 			{
-				return boxRealRandomAccessible.getInterval();
+				return interval;
 			}
 		} );
 
 		// create a JPanel with sliders to modify the bounding box interval (boxRealRandomAccessible.getInterval())
-		boxSelectionPanel = new BoxSelectionPanel( boxRealRandomAccessible.getInterval(), rangeInterval );
+		boxSelectionPanel = new BoxSelectionPanel( interval, rangeInterval );
 		boxSelectionPanel.addSelectionUpdateListener( new BoxSelectionPanel.SelectionUpdateListener() // listen for updates on the bbox to trigger repainting
 		{
 			@Override
