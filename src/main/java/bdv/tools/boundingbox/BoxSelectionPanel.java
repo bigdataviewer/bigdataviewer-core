@@ -29,24 +29,23 @@
  */
 package bdv.tools.boundingbox;
 
-import java.util.ArrayList;
-
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JPanel;
 
 import bdv.tools.brightness.SliderPanel;
 import bdv.util.BoundedInterval;
-import bdv.util.ModifiableInterval;
 import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
 
 // a JPanel containing X,Y,Z min/max sliders for adjusting an interval
 public class BoxSelectionPanel extends JPanel
 {
-	public static interface SelectionUpdateListener
+	public interface Box
 	{
-		public void selectionUpdated();
+		Interval getInterval();
+
+		void setInterval( Interval interval );
 	}
 
 	private static final long serialVersionUID = 1L;
@@ -57,20 +56,19 @@ public class BoxSelectionPanel extends JPanel
 
 	private final SliderPanel[] maxSliderPanels;
 
-	private final ModifiableInterval selection;
-
-	private final ArrayList< SelectionUpdateListener > listeners;
+	private final Box selection;
 
 	private int cols;
 
-	public BoxSelectionPanel( final ModifiableInterval selection, final Interval rangeInterval )
+	private final int n;
+
+	public BoxSelectionPanel( final Box selection, final Interval rangeInterval )
 	{
-		final int n = selection.numDimensions();
+		n = selection.getInterval().numDimensions();
 		this.selection = selection;
 		ranges = new BoundedInterval[ n ];
 		minSliderPanels = new SliderPanel[ n ];
 		maxSliderPanels = new SliderPanel[ n ];
-		listeners = new ArrayList<>();
 
 		cols = 2;
 		for ( int d = 0; d < n; ++d )
@@ -84,8 +82,9 @@ public class BoxSelectionPanel extends JPanel
 		{
 			final int rangeMin = ( int ) rangeInterval.min( d );
 			final int rangeMax = ( int ) rangeInterval.max( d );
-			final int initialMin = Math.max( ( int ) selection.min( d ), rangeMin );
-			final int initialMax = Math.min( ( int ) selection.max( d ), rangeMax );
+			final Interval interval = selection.getInterval();
+			final int initialMin = Math.max( ( int ) interval.min( d ), rangeMin );
+			final int initialMax = Math.min( ( int ) interval.max( d ), rangeMax );
 			final BoundedInterval range = new BoundedInterval( rangeMin, rangeMax, initialMin, initialMax, 0 )
 			{
 				@Override
@@ -114,8 +113,6 @@ public class BoxSelectionPanel extends JPanel
 
 	public void setBoundsInterval( final Interval interval )
 	{
-		final int n = selection.numDimensions();
-
 		final int oldCols = cols;
 		for ( int d = 0; d < n; ++d )
 		{
@@ -139,14 +136,8 @@ public class BoxSelectionPanel extends JPanel
 		}
 	}
 
-	public void addSelectionUpdateListener( final SelectionUpdateListener l )
-	{
-		listeners.add( l );
-	}
-
 	public void updateSelection()
 	{
-		final int n = selection.numDimensions();
 		final long[] min = new long[ n ];
 		final long[] max = new long[ n ];
 		for ( int d = 0; d < n; ++d )
@@ -154,14 +145,11 @@ public class BoxSelectionPanel extends JPanel
 			min[ d ] = ranges[ d ].getMinBoundedValue().getCurrentValue();
 			max[ d ] = ranges[ d ].getMaxBoundedValue().getCurrentValue();
 		}
-		selection.set( new FinalInterval( min, max ) );
-		for ( final SelectionUpdateListener l : listeners )
-			l.selectionUpdated();
+		selection.setInterval( new FinalInterval( min, max ) );
 	}
 
 	public void updateSliders( final Interval interval )
 	{
-		final int n = selection.numDimensions();
 		if ( interval.numDimensions() != n )
 			throw new IllegalArgumentException();
 		final long[] min = new long[ n ];

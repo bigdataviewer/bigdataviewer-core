@@ -46,6 +46,7 @@ import javax.swing.KeyStroke;
 import javax.swing.WindowConstants;
 
 import bdv.tools.boundingbox.BoundingBoxOverlay.BoundingBoxOverlaySource;
+import bdv.tools.boundingbox.BoxSelectionPanel.Box;
 import bdv.tools.brightness.RealARGBColorConverterSetup;
 import bdv.tools.brightness.SetupAssignments;
 import bdv.tools.transformation.TransformedSource;
@@ -151,15 +152,23 @@ public class BoundingBoxDialog extends JDialog
 		} );
 
 		// create a JPanel with sliders to modify the bounding box interval (boxRealRandomAccessible.getInterval())
-		boxSelectionPanel = new BoxSelectionPanel( interval, rangeInterval );
-		boxSelectionPanel.addSelectionUpdateListener( new BoxSelectionPanel.SelectionUpdateListener() // listen for updates on the bbox to trigger repainting
-		{
-			@Override
-			public void selectionUpdated()
-			{
-				viewer.requestRepaint();
-			}
-		} );
+		boxSelectionPanel = new BoxSelectionPanel(
+				new Box()
+				{
+					@Override
+					public void setInterval( final Interval i )
+					{
+						interval.set( i );
+						viewer.requestRepaint();
+					}
+
+					@Override
+					public Interval getInterval()
+					{
+						return interval;
+					}
+				},
+				rangeInterval );
 
 		// when dialog is made visible, add bbox source
 		// when dialog is hidden, remove bbox source
