@@ -37,9 +37,9 @@ public class Hdf5VolatileTypeArrayLoader <VT extends VolatileArrayDataAccess<VT>
 implements CacheArrayLoader< VT >
 {
 	private final IHDF5Access hdf5Access;
-	private final PixelTypeMaintainer px;
+	private final PixelTypeMaintainer<?> px;
 
-	public Hdf5VolatileTypeArrayLoader( final IHDF5Access hdf5Access, final PixelTypeMaintainer px )
+	public Hdf5VolatileTypeArrayLoader( final IHDF5Access hdf5Access, final PixelTypeMaintainer<?> px )
 	{
 		this.hdf5Access = hdf5Access;
 		this.px = px;
@@ -53,7 +53,7 @@ implements CacheArrayLoader< VT >
 	{
 		//NB: we cast back to the VT interface because we know that loadArray() (PixelTypeMaintainer)
 		//    always instantiates implementation of this interface
-		return (VT) px.loadArray(hdf5Access, timepoint, setup, level, dimensions, min );
+		return (VT) px.loadArray( hdf5Access, timepoint, setup, level, dimensions, min );
 	}
 
 	@Override

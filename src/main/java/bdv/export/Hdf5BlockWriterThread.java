@@ -67,7 +67,7 @@ class Hdf5BlockWriterThread extends Thread implements IHDF5Access
 	}
 
 	//this constructor touches the file by setting up an file-feeding interface Hdf5Task
-	public Hdf5BlockWriterThread( final File hdf5File, final int queueLength, final PixelTypeMaintainer pxM )
+	public Hdf5BlockWriterThread( final File hdf5File, final int queueLength, final PixelTypeMaintainer<?> pxM )
 	{
 		final IHDF5Writer hdf5Writer = HDF5Factory.open( hdf5File );
 		IHDF5Access hdf5Access;
@@ -86,7 +86,7 @@ class Hdf5BlockWriterThread extends Thread implements IHDF5Access
 		setName( "HDF5BlockWriterQueue" );
 	}
 
-	public Hdf5BlockWriterThread( final String hdf5FilePath, final int queueLength, final PixelTypeMaintainer pxM )
+	public Hdf5BlockWriterThread( final String hdf5FilePath, final int queueLength, final PixelTypeMaintainer<?> pxM )
 	{
 		this( new File( hdf5FilePath), queueLength, pxM );
 	}

@@ -40,13 +40,13 @@ import ch.systemsx.cisd.hdf5.IHDF5Reader;
 class HDF5Access implements IHDF5Access
 {
 	private final IHDF5Reader hdf5Reader;
-	private final PixelTypeMaintainer px;
+	private final PixelTypeMaintainer<?> px;
 
 	private final int[] reorderedDimensions = new int[ 3 ];
 
 	private final long[] reorderedMin = new long[ 3 ];
 
-	public HDF5Access( final IHDF5Reader hdf5Reader, final PixelTypeMaintainer px )
+	public HDF5Access( final IHDF5Reader hdf5Reader, final PixelTypeMaintainer<?> px )
 	{
 		this.hdf5Reader = hdf5Reader;
 		this.px = px;

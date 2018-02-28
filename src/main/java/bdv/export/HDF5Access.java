@@ -38,7 +38,7 @@ import ch.systemsx.cisd.hdf5.IHDF5Writer;
 class HDF5Access implements IHDF5Access
 {
 	private final IHDF5Writer hdf5Writer;
-	private final PixelTypeMaintainer px;
+	private final PixelTypeMaintainer<?> px;
 
 	private final long[] reorderedDimensions = new long[ 3 ];
 
@@ -46,7 +46,7 @@ class HDF5Access implements IHDF5Access
 
 	private String datasetPath;
 
-	public HDF5Access( final IHDF5Writer hdf5Writer, final PixelTypeMaintainer px )
+	public HDF5Access( final IHDF5Writer hdf5Writer, final PixelTypeMaintainer<?> px )
 	{
 		this.hdf5Writer = hdf5Writer;
 		this.px = px;

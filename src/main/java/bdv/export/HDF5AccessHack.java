@@ -49,7 +49,7 @@ import ch.systemsx.cisd.hdf5.IHDF5Writer;
 class HDF5AccessHack implements IHDF5Access
 {
 	private final IHDF5Writer hdf5Writer;
-	private final PixelTypeMaintainer px;
+	private final PixelTypeMaintainer<?> px;
 
 	private final long[] reorderedDimensions = new long[ 3 ];
 
@@ -61,7 +61,7 @@ class HDF5AccessHack implements IHDF5Access
 
 	private int fileSpaceId;
 
-	public HDF5AccessHack(final IHDF5Writer hdf5Writer, final PixelTypeMaintainer px )
+	public HDF5AccessHack(final IHDF5Writer hdf5Writer, final PixelTypeMaintainer<?> px )
 	throws ClassNotFoundException, SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException
 	{
 		this.hdf5Writer = hdf5Writer;
