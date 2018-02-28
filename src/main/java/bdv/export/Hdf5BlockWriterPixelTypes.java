@@ -57,6 +57,8 @@ import ch.systemsx.cisd.base.mdarray.MDFloatArray;
 //for the WriteSequenceToHdf5
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
 //to create the right object
 import net.imglib2.type.numeric.integer.ByteType;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
@@ -92,9 +94,10 @@ import static ch.systemsx.cisd.hdf5.hdf5lib.H5D.H5Dread;
 
 public class Hdf5BlockWriterPixelTypes
 {
-	public interface PixelTypeMaintainer
+	public interface PixelTypeMaintainer<T extends RealType<T> & NativeType<T>>
 	{
 		String reportPixelType();
+		//TODO: createPixelType(); //TODO VLADO
 
 		// ---------- writing ----------
 		///for the export/HDF5AccessHack
@@ -105,7 +108,7 @@ public class Hdf5BlockWriterPixelTypes
 		void hdf5writer(final IHDF5Writer hdf5Writer, Object data, final long[] reorderedDimensions, final String datasetPath, final long[] reorderedOffset);
 
 		///for the WriteSequenceToHdf5
-		ArrayImg<?,?> createArrayImg(final long[] dims);
+		ArrayImg<T,?> createArrayImg(final long[] dims);
 
 		// ---------- reading ----------
 		///for the Hdf5ImageLoader.open(); instantiate always in appropriate pairs, e.g., UnsignedShortType and VolatileUnsignedShortType
@@ -117,7 +120,7 @@ public class Hdf5BlockWriterPixelTypes
 		///for the Hdf5ImageLoader.loadImageCompletely()
 		Object readSpecificMDArrayBlockWithOffset(final IHDF5Access hdf5Access, final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException;
 		Object readSpecificMDArrayBlockWithOffset(final IHDF5Access hdf5Access, final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min, final Object dataBlock ) throws InterruptedException;
-		ArrayImg<?,?> createArrayImg(final Object data, final long[] dims);
+		ArrayImg<T,?> createArrayImg(final Object data, final long[] dims);
 
 		///for methods inside the class Hdf5VolatileTypeArrayLoader
 		VolatileArrayDataAccess<?> loadArray(final IHDF5Access hdf5Access, final int timepoint, final int setup, final int level, final int[] dimensions, final long[] min ) throws InterruptedException;
@@ -135,38 +138,39 @@ public class Hdf5BlockWriterPixelTypes
 	 * interface given the input pxType parameter. The parameter should extend
 	 * imglib2's RealType to be recognized, otherwise an exception is thrown.
 	 */
-	public static
-	PixelTypeMaintainer createPixelMaintainer(final Object pxType)
+	@SuppressWarnings("unchecked")
+	public static <T extends RealType<T> & NativeType<T>>
+	PixelTypeMaintainer<T> createPixelMaintainer(final Object pxType)
 	{
 		//short-cut... (hoping that boolean testing is faster than instanceof)
 		final boolean isString = pxType instanceof String;
 
 		if (pxType instanceof ByteType ||
 		   (isString && ((String)pxType).startsWith("ByteType")))
-		       return new ByteTypeMaintainer();
+		       return (PixelTypeMaintainer<T>)new ByteTypeMaintainer();
 		else
 		if (pxType instanceof UnsignedByteType ||
 		   (isString && ((String)pxType).startsWith("UnsignedByteType")))
-		       return new UnsignedByteTypeMaintainer();
+		       return (PixelTypeMaintainer<T>)new UnsignedByteTypeMaintainer();
 		else
 		if (pxType instanceof ShortType ||
 		   (isString && ((String)pxType).startsWith("ShortType")))
-		       return new ShortTypeMaintainer();
+		       return (PixelTypeMaintainer<T>)new ShortTypeMaintainer();
 		else
 		if (pxType instanceof UnsignedShortType ||
 		   (isString && ((String)pxType).startsWith("UnsignedShortType")))
-		       return new UnsignedShortTypeMaintainer();
+		       return (PixelTypeMaintainer<T>)new UnsignedShortTypeMaintainer();
 		else
 		if (pxType instanceof FloatType ||
 		   (isString && ((String)pxType).startsWith("FloatType")))
-		       return new FloatTypeMaintainer();
+		       return (PixelTypeMaintainer<T>)new FloatTypeMaintainer();
 		else
 			throw new IllegalArgumentException("Unrecognized pixel type, cannot save HDF5");
 	}
 
 	// ------------------------------------------------------
 	static
-	class ByteTypeMaintainer implements PixelTypeMaintainer
+	class ByteTypeMaintainer implements PixelTypeMaintainer<ByteType>
 	{
 		@Override
 		public
@@ -197,13 +201,13 @@ public class Hdf5BlockWriterPixelTypes
 
 		@Override
 		public
-		ArrayImg<?,?> createArrayImg(final long[] dims)
+		ArrayImg<ByteType,?> createArrayImg(final long[] dims)
 		{
 			return ArrayImgs.bytes(dims);
 		}
 		@Override
 		public
-		ArrayImg<?,?> createArrayImg(final Object data, final long[] dims)
+		ArrayImg<ByteType,?> createArrayImg(final Object data, final long[] dims)
 		{
 			return ArrayImgs.bytes((byte[])data, dims);
 		}
@@ -264,7 +268,7 @@ public class Hdf5BlockWriterPixelTypes
 	}
 
 	static
-	class UnsignedByteTypeMaintainer implements PixelTypeMaintainer
+	class UnsignedByteTypeMaintainer implements PixelTypeMaintainer<UnsignedByteType>
 	{
 		@Override
 		public
@@ -295,13 +299,13 @@ public class Hdf5BlockWriterPixelTypes
 
 		@Override
 		public
-		ArrayImg<?,?> createArrayImg(final long[] dims)
+		ArrayImg<UnsignedByteType,?> createArrayImg(final long[] dims)
 		{
 			return ArrayImgs.unsignedBytes(dims);
 		}
 		@Override
 		public
-		ArrayImg<?,?> createArrayImg(final Object data, final long[] dims)
+		ArrayImg<UnsignedByteType,?> createArrayImg(final Object data, final long[] dims)
 		{
 			return ArrayImgs.unsignedBytes((byte[])data, dims);
 		}
@@ -365,7 +369,7 @@ public class Hdf5BlockWriterPixelTypes
 
 	// ------------------------------------------------------
 	static
-	class ShortTypeMaintainer implements PixelTypeMaintainer
+	class ShortTypeMaintainer implements PixelTypeMaintainer<ShortType>
 	{
 		@Override
 		public
@@ -396,13 +400,13 @@ public class Hdf5BlockWriterPixelTypes
 
 		@Override
 		public
-		ArrayImg<?,?> createArrayImg(final long[] dims)
+		ArrayImg<ShortType,?> createArrayImg(final long[] dims)
 		{
 			return ArrayImgs.shorts(dims);
 		}
 		@Override
 		public
-		ArrayImg<?,?> createArrayImg(final Object data, final long[] dims)
+		ArrayImg<ShortType,?> createArrayImg(final Object data, final long[] dims)
 		{
 			return ArrayImgs.shorts((short[])data, dims);
 		}
@@ -463,7 +467,7 @@ public class Hdf5BlockWriterPixelTypes
 	}
 
 	static
-	class UnsignedShortTypeMaintainer implements PixelTypeMaintainer
+	class UnsignedShortTypeMaintainer implements PixelTypeMaintainer<UnsignedShortType>
 	{
 		@Override
 		public
@@ -494,13 +498,13 @@ public class Hdf5BlockWriterPixelTypes
 
 		@Override
 		public
-		ArrayImg<?,?> createArrayImg(final long[] dims)
+		ArrayImg<UnsignedShortType,?> createArrayImg(final long[] dims)
 		{
 			return ArrayImgs.unsignedShorts(dims);
 		}
 		@Override
 		public
-		ArrayImg<?,?> createArrayImg(final Object data, final long[] dims)
+		ArrayImg<UnsignedShortType,?> createArrayImg(final Object data, final long[] dims)
 		{
 			return ArrayImgs.unsignedShorts((short[])data, dims);
 		}
@@ -564,7 +568,7 @@ public class Hdf5BlockWriterPixelTypes
 
 	// ------------------------------------------------------
 	static
-	class FloatTypeMaintainer implements PixelTypeMaintainer
+	class FloatTypeMaintainer implements PixelTypeMaintainer<FloatType>
 	{
 		@Override
 		public
@@ -597,13 +601,13 @@ public class Hdf5BlockWriterPixelTypes
 
 		@Override
 		public
-		ArrayImg<?,?> createArrayImg(final long[] dims)
+		ArrayImg<FloatType,?> createArrayImg(final long[] dims)
 		{
 			return ArrayImgs.floats(dims);
 		}
 		@Override
 		public
-		ArrayImg<?,?> createArrayImg(final Object data, final long[] dims)
+		ArrayImg<FloatType,?> createArrayImg(final Object data, final long[] dims)
 		{
 			return ArrayImgs.floats((float[])data, dims);
 		}
