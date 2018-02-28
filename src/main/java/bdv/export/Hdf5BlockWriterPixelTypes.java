@@ -97,7 +97,7 @@ public class Hdf5BlockWriterPixelTypes
 	public interface PixelTypeMaintainer<T extends RealType<T> & NativeType<T>>
 	{
 		String reportPixelType();
-		//TODO: createPixelType(); //TODO VLADO
+		//NB: one can create createPixelType(); if necessary
 
 		// ---------- writing ----------
 		///for the export/HDF5AccessHack
