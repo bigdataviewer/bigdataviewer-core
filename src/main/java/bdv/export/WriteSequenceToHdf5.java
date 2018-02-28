@@ -392,8 +392,8 @@ public class WriteSequenceToHdf5
 			//determine which PixelTypeMaintainer we will use
 			if (pxM == null) pxM = Hdf5BlockWriterPixelTypes.createPixelMaintainer(type);
 
-			//check that all setups are holding images of the voxel type
-			//NB: this is probably not required due to the way the views are constructed (blame VLADO that he was lazy to understand that)
+			//check that all setups are holding images of the same voxel type
+			//first iteration just remembers the pxType, all consequent iterations check against it
 			if (pxType == null) pxType = type;
 			else if ( !pxType.equals(type) )
 				throw new IllegalArgumentException( "All image data must be of the same type which seems to "+pxType.getClass().getSimpleName()
