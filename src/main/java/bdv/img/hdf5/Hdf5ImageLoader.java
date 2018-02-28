@@ -180,7 +180,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 	///this is the former main constructor which was assuming that BDV HDF5 files are UINT16 only
 	protected Hdf5ImageLoader( final File hdf5File, final IHDF5Reader existingHdf5Reader, final ArrayList< Partition > hdf5Partitions, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription, final boolean doOpen )
 	{
-		this( hdf5File, null, hdf5Partitions, sequenceDescription, "UnsignedShortType", doOpen );
+		this( hdf5File, existingHdf5Reader, hdf5Partitions, sequenceDescription, "UnsignedShortType", doOpen );
 	}
 	///this is the new main constructor which requires to know the voxel type of a BDV HDF5, the type is extracted from the associated XML
 	protected Hdf5ImageLoader( final File hdf5File, final IHDF5Reader existingHdf5Reader, final ArrayList< Partition > hdf5Partitions, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription, final String pxType, final boolean doOpen )
