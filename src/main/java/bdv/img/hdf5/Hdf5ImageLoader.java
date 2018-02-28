@@ -200,7 +200,8 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 
 	private boolean isOpen = false;
 
-	private void open()
+	private <T extends RealType<T> & NativeType<T>>
+	void open()
 	{
 		if ( ! isOpen )
 		{
@@ -211,7 +212,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 				isOpen = true;
 
 				//create a proper handler for this particular pixel type
-				final PixelTypeMaintainer pxM
+				final PixelTypeMaintainer<T> pxM
 					= Hdf5BlockWriterPixelTypes.createPixelMaintainer(this.hdf5PixelType);
 
 				final IHDF5Reader hdf5Reader = ( existingHdf5Reader != null ) ? existingHdf5Reader : HDF5Factory.openForReading( hdf5File );
@@ -440,11 +441,11 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 		 * sizes.
 		 */
 		private final MipmapInfo mipmapInfo;
-		private final PixelTypeMaintainer pxM;
+		private final PixelTypeMaintainer<T> pxM;
 
 		public SetupImgLoader( final int setupId, final MipmapInfo mipmapInfo,
 		                       final T type, final VT volatileType,
-		                       final PixelTypeMaintainer px)
+		                       final PixelTypeMaintainer<T> px)
 		{
 			super( type, volatileType );
 			this.setupId = setupId;
@@ -452,7 +453,6 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 			this.pxM = px;
 		}
 
-		@SuppressWarnings("unchecked")
 		private <A extends ArrayDataAccess<A>>
 		RandomAccessibleInterval< T > loadImageCompletely( final int timepointId, final int level )
 		{
@@ -484,12 +484,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 				}
 				catch ( final InterruptedException e )
 				{}
-				//we need to rely on the assumption that pxM was created appropriately for the
-				//type T so that its createArrayImg() method is indeed creating ArrayImg<T,?>
-				//
-				//or, we need to pull T into PixelTypeMaintainer's signature so that compiler would
-				//see the type of the returned object... TODO VLADO
-				img = (Img<T>)pxM.createArrayImg( data, dimsLong );
+				img = pxM.createArrayImg( data, dimsLong );
 			}
 			else
 			{
@@ -497,6 +492,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 						dimsLong,
 						mipmapInfo.getSubdivisions()[ level ] );
 				final CellImgFactory< T > factory = new CellImgFactory<>( cellDimensions );
+				@SuppressWarnings("unchecked")
 				final CellImg< T, A > cellImg = (CellImg<T, A>) factory.create( dimsLong, type );
 				final Cursor< Cell< A > > cursor = cellImg.getCells().cursor();
 				while ( cursor.hasNext() )

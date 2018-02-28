@@ -384,7 +384,7 @@ public class WriteSequenceToHdf5
 		final BasicImgLoader imgLoader = seq.getImgLoader();
 
 		//create a proper handler for this particular pixel type
-		PixelTypeMaintainer pxM = null;
+		PixelTypeMaintainer<T> pxM = null;
 		Object pxType = null;
 
 		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() ) {
@@ -531,7 +531,7 @@ public class WriteSequenceToHdf5
 		final int blockWriterQueueLength = 100;
 
 		//create a proper handler for this particular pixel type
-		final PixelTypeMaintainer pxM
+		final PixelTypeMaintainer<T> pxM
 			= Hdf5BlockWriterPixelTypes.createPixelMaintainer( img.randomAccess().get() );
 
 		// create and start Hdf5BlockWriterThread
@@ -626,7 +626,7 @@ public class WriteSequenceToHdf5
 			progressWriter = new ProgressWriterConsole();
 
 		//create a proper handler for this particular pixel type
-		final PixelTypeMaintainer pxM
+		final PixelTypeMaintainer<T> pxM
 			= Hdf5BlockWriterPixelTypes.createPixelMaintainer( img.randomAccess().get() );
 
 		// for progressWriter
@@ -788,12 +788,7 @@ public class WriteSequenceToHdf5
 									currentCellMax[ d ] = currentCellMin[ d ] + currentCellDim[ d ] - 1;
 								}
 
-								//we need to rely on the assumption that pxM was created appropriately for the
-								//type T so that its createArrayImg() method is indeed creating ArrayImg<T,?>
-								//
-								//or, we need to pull T into PixelTypeMaintainer's signature so that compiler would
-								//see the type of the returned object... TODO VLADO
-								final ArrayImg< T, ? > cell = (ArrayImg<T, ?>) pxM.createArrayImg( currentCellDim );
+								final ArrayImg< T, ? > cell = pxM.createArrayImg( currentCellDim );
 								if ( fullResolution )
 									copyBlock( cell.randomAccess(), currentCellDim, in, blockMin );
 								else
