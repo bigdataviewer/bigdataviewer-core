@@ -273,6 +273,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 		threadGroup = new ThreadGroup( this.toString() );
 		painterThread = new PainterThread( threadGroup, this );
+		painterThread.setDaemon( true );
 		viewerTransform = new AffineTransform3D();
 		display = new InteractiveDisplayCanvasComponent<>(
 				options.getWidth(), options.getHeight(), options.getTransformEventHandlerFactory() );
@@ -1146,8 +1147,8 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 			final Thread t = new Thread( threadGroup, r,
 					String.format( threadNameFormat, threadNumber.getAndIncrement() ),
 					0 );
-			if ( t.isDaemon() )
-				t.setDaemon( false );
+			if ( !t.isDaemon() )
+				t.setDaemon( true );
 			if ( t.getPriority() != Thread.NORM_PRIORITY )
 				t.setPriority( Thread.NORM_PRIORITY );
 			return t;
