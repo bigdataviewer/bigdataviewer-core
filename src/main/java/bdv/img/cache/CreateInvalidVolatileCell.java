@@ -1,7 +1,6 @@
 package bdv.img.cache;
 
 import net.imglib2.cache.volatiles.CreateInvalid;
-import net.imglib2.img.basictypeaccess.AccessFlags;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileArrayDataAccess;
 import net.imglib2.img.cell.Cell;
 import net.imglib2.img.cell.CellGrid;
@@ -21,8 +20,8 @@ import net.imglib2.util.Intervals;
  * <p>
  * Usually, {@link CreateInvalidVolatileCell} should be created through static
  * helper methods
- * {@link #get(CellGrid, Fraction, PrimitiveType, AccessFlags...)} or
- * {@link #get(CellGrid, NativeType, AccessFlags...)} to get the desired
+ * {@link #get(CellGrid, Fraction, PrimitiveType, boolean)} or
+ * {@link #get(CellGrid, NativeType, boolean)} to get the desired
  * primitive type and dirty variant.
  * </p>
  *
@@ -64,20 +63,20 @@ public class CreateInvalidVolatileCell< A > implements CreateInvalid< Long, Cell
 	public static < T extends NativeType< T >, A extends VolatileArrayDataAccess< A > > CreateInvalidVolatileCell< A > get(
 			final CellGrid grid,
 			final T type,
-			final AccessFlags ... flags ) throws IllegalArgumentException
+			final boolean dirty ) throws IllegalArgumentException
 	{
-		return get( grid, type.getEntitiesPerPixel(), type.getNativeTypeFactory().getPrimitiveType(), flags );
+		return get( grid, type.getEntitiesPerPixel(), type.getNativeTypeFactory().getPrimitiveType(), dirty );
 	}
 
 	public static < A extends VolatileArrayDataAccess< A > > CreateInvalidVolatileCell< A > get(
 			final CellGrid grid,
 			final Fraction entitiesPerPixel,
 			final PrimitiveType primitiveType,
-			final AccessFlags ... flags ) throws IllegalArgumentException
+			final boolean dirty ) throws IllegalArgumentException
 	{
 		if ( primitiveType == PrimitiveType.UNDEFINED )
 			throw new IllegalArgumentException( "Cannot instantiate " + CreateInvalidVolatileCell.class.getSimpleName() + " for unrecognized primitive type" );
-		return new CreateInvalidVolatileCell< A >( grid, entitiesPerPixel, EmptyArrayCreator.get( primitiveType, flags ) );
+		return new CreateInvalidVolatileCell< A >( grid, entitiesPerPixel, EmptyArrayCreator.get( primitiveType, dirty ) );
 	}
 }
 
