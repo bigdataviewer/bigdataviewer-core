@@ -15,7 +15,7 @@ import net.imglib2.img.cell.CellGrid;
 import net.imglib2.img.cell.LazyCellImg;
 import net.imglib2.img.list.AbstractLongListImg;
 import net.imglib2.type.NativeType;
-import net.imglib2.type.PrimitiveTypeInfo;
+import net.imglib2.type.NativeTypeFactory;
 
 /**
  * A {@link LazyCellImg} for {@link Volatile} accesses. The only difference to
@@ -43,8 +43,8 @@ public class VolatileCachedCellImg< T extends NativeType< T >, A >
 		super( grid, new VolatileCachedCells<>( grid.getGridDimensions(), get, cacheHints ), type.getEntitiesPerPixel() );
 
 		@SuppressWarnings( "unchecked" )
-		final PrimitiveTypeInfo< T, ? super A > info = ( PrimitiveTypeInfo< T, ? super A > ) type.getPrimitiveTypeInfo();
-		setLinkedType( info.createLinkedType( this ) );
+		final NativeTypeFactory< T, ? super A > typeFactory = ( NativeTypeFactory< T, ? super A > ) type.getNativeTypeFactory();
+		setLinkedType( typeFactory.createLinkedType( this ) );
 	}
 
 	/**

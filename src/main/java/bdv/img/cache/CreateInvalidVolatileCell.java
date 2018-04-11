@@ -65,7 +65,7 @@ public class CreateInvalidVolatileCell< A > implements CreateInvalid< Long, Cell
 			final T type,
 			final boolean dirty ) throws IllegalArgumentException
 	{
-		return get( grid, type.getEntitiesPerPixel(), type.getPrimitiveTypeInfo().getPrimitiveType(), dirty );
+		return get( grid, type.getEntitiesPerPixel(), type.getNativeTypeFactory().getPrimitiveType(), dirty );
 	}
 
 	public static < A extends VolatileArrayDataAccess< A > > CreateInvalidVolatileCell< A > get(

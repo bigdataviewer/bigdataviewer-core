@@ -34,7 +34,7 @@ import net.imglib2.img.NativeImg;
 import net.imglib2.img.basictypeaccess.IntAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileIntAccess;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
-import net.imglib2.type.PrimitiveTypeInfo;
+import net.imglib2.type.NativeTypeFactory;
 import net.imglib2.type.numeric.integer.IntType;
 
 /**
@@ -126,11 +126,11 @@ public class VolatileIntType extends AbstractVolatileNativeRealType< IntType, Vo
 		return v;
 	}
 
-	private static final PrimitiveTypeInfo< VolatileIntType, VolatileIntAccess > info = PrimitiveTypeInfo.INT( img -> new VolatileIntType( img ) );
+	private static final NativeTypeFactory< VolatileIntType, VolatileIntAccess > typeFactory = NativeTypeFactory.INT( img -> new VolatileIntType( img ) );
 
 	@Override
-	public PrimitiveTypeInfo< VolatileIntType, ? > getPrimitiveTypeInfo()
+	public NativeTypeFactory< VolatileIntType, ? > getNativeTypeFactory()
 	{
-		return info;
+		return typeFactory;
 	}
 }

@@ -35,7 +35,7 @@ import net.imglib2.img.basictypeaccess.IntAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileIntAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileShortAccess;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
-import net.imglib2.type.PrimitiveTypeInfo;
+import net.imglib2.type.NativeTypeFactory;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 
@@ -129,11 +129,11 @@ public class VolatileARGBType extends AbstractVolatileNativeNumericType< ARGBTyp
 		return v;
 	}
 
-	private static final PrimitiveTypeInfo< VolatileARGBType, VolatileIntAccess > info = PrimitiveTypeInfo.INT( img -> new VolatileARGBType( img ) );
+	private static final NativeTypeFactory< VolatileARGBType, VolatileIntAccess > typeFactory = NativeTypeFactory.INT( img -> new VolatileARGBType( img ) );
 
 	@Override
-	public PrimitiveTypeInfo< VolatileARGBType, ? > getPrimitiveTypeInfo()
+	public NativeTypeFactory< VolatileARGBType, ? > getNativeTypeFactory()
 	{
-		return info;
+		return typeFactory;
 	}
 }

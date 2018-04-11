@@ -34,7 +34,7 @@ import net.imglib2.img.NativeImg;
 import net.imglib2.img.basictypeaccess.ShortAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileShortAccess;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
-import net.imglib2.type.PrimitiveTypeInfo;
+import net.imglib2.type.NativeTypeFactory;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 
 /**
@@ -126,11 +126,11 @@ public class VolatileUnsignedShortType extends AbstractVolatileNativeRealType< U
 		return v;
 	}
 
-	private static final PrimitiveTypeInfo< VolatileUnsignedShortType, VolatileShortAccess > info = PrimitiveTypeInfo.SHORT( img -> new VolatileUnsignedShortType( img ) );
+	private static final NativeTypeFactory< VolatileUnsignedShortType, VolatileShortAccess > typeFactory = NativeTypeFactory.SHORT( img -> new VolatileUnsignedShortType( img ) );
 
 	@Override
-	public PrimitiveTypeInfo< VolatileUnsignedShortType, ? > getPrimitiveTypeInfo()
+	public NativeTypeFactory< VolatileUnsignedShortType, ? > getNativeTypeFactory()
 	{
-		return info;
+		return typeFactory;
 	}
 }

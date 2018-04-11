@@ -34,7 +34,7 @@ import net.imglib2.img.NativeImg;
 import net.imglib2.img.basictypeaccess.DoubleAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileDoubleAccess;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileDoubleArray;
-import net.imglib2.type.PrimitiveTypeInfo;
+import net.imglib2.type.NativeTypeFactory;
 import net.imglib2.type.numeric.real.DoubleType;
 
 /**
@@ -126,11 +126,11 @@ public class VolatileDoubleType extends AbstractVolatileNativeRealType< DoubleTy
 		return v;
 	}
 
-	private static final PrimitiveTypeInfo< VolatileDoubleType, VolatileDoubleAccess > info = PrimitiveTypeInfo.DOUBLE( img -> new VolatileDoubleType( img ) );
+	private static final NativeTypeFactory< VolatileDoubleType, VolatileDoubleAccess > typeFactory = NativeTypeFactory.DOUBLE( img -> new VolatileDoubleType( img ) );
 
 	@Override
-	public PrimitiveTypeInfo< VolatileDoubleType, ? > getPrimitiveTypeInfo()
+	public NativeTypeFactory< VolatileDoubleType, ? > getNativeTypeFactory()
 	{
-		return info;
+		return typeFactory;
 	}
 }
