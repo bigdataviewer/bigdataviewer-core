@@ -273,7 +273,7 @@ public class MultiResolutionRenderer
 
 	/**
 	 * The timepoint for which last a projector was
-	 * {@link #createProjector(ViewerState, int, ARGBScreenImage) created}.
+	 * {@link #createProjector(ViewerState, ARGBScreenImage) created}.
 	 */
 	protected int previousTimepoint;
 
@@ -493,7 +493,7 @@ public class MultiResolutionRenderer
 					final int numVisibleSources = state.getVisibleSourceIndices().size();
 					checkRenewRenderImages( numVisibleSources );
 					checkRenewMaskArrays( numVisibleSources );
-					p = createProjector( state, currentScreenScaleIndex, screenImage );
+					p = createProjector( state, screenImage );
 				}
 				projector = p;
 			}
@@ -616,7 +616,6 @@ public class MultiResolutionRenderer
 
 	private VolatileProjector createProjector(
 			final ViewerState viewerState,
-			final int screenScaleIndex,
 			final ARGBScreenImage screenImage )
 	{
 		/*
