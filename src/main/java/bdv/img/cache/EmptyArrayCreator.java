@@ -1,9 +1,11 @@
 package bdv.img.cache;
 
-import net.imglib2.cache.img.AccessFlags;
-import net.imglib2.cache.img.PrimitiveType;
+import java.util.Set;
+
+import net.imglib2.img.basictypeaccess.AccessFlags;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileArrayDataAccess;
+import net.imglib2.type.PrimitiveType;
 
 /**
  * Produce empty, invalid {@link VolatileAccess} to be used as placeholder
@@ -25,7 +27,7 @@ public interface EmptyArrayCreator< A >
 
 	public static < A extends VolatileArrayDataAccess< A > > EmptyArrayCreator< A > get(
 			final PrimitiveType primitiveType,
-			final AccessFlags ... flags )
+			final Set< AccessFlags > flags )
 	{
 		return DefaultEmptyArrayCreator.get( primitiveType, flags );
 	}
