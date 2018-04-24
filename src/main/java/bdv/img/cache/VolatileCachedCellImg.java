@@ -1,6 +1,6 @@
 package bdv.img.cache;
 
-import java.lang.reflect.InvocationTargetException;
+import java.util.function.Function;
 
 import bdv.cache.CacheControl;
 import bdv.img.cache.VolatileCachedCellImg.VolatileCachedCells;
@@ -11,12 +11,15 @@ import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.cache.volatiles.LoadingStrategy;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
+import net.imglib2.img.NativeImg;
 import net.imglib2.img.cell.AbstractCellImg;
 import net.imglib2.img.cell.Cell;
 import net.imglib2.img.cell.CellGrid;
 import net.imglib2.img.cell.LazyCellImg;
 import net.imglib2.img.list.AbstractLongListImg;
 import net.imglib2.type.NativeType;
+import net.imglib2.type.NativeTypeFactory;
+import net.imglib2.util.Fraction;
 
 /**
  * A {@link LazyCellImg} for {@link Volatile} accesses. The only difference to
@@ -42,14 +45,20 @@ public class VolatileCachedCellImg< T extends NativeType< T >, A >
 	public VolatileCachedCellImg( final CellGrid grid, final T type, final CacheHints cacheHints, final Get< Cell< A > > get )
 	{
 		super( grid, new VolatileCachedCells<>( grid.getGridDimensions(), get, cacheHints ), type.getEntitiesPerPixel() );
-		try
-		{
-			LazyCellImg.linkType( type, this );
-		}
-		catch ( NoSuchMethodException | SecurityException | InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException e )
-		{
-			throw new RuntimeException( e );
-		}
+		@SuppressWarnings( "unchecked" )
+		final NativeTypeFactory< T, ? super A > typeFactory = ( NativeTypeFactory< T, ? super A > ) type.getNativeTypeFactory();
+		setLinkedType( typeFactory.createLinkedType( this ) );
+	}
+
+	public VolatileCachedCellImg(
+			final CellGrid grid,
+			final Fraction entitiesPerPixel,
+			final Function< NativeImg< T, A >, T > linkedTypeFactory,
+			final CacheHints cacheHints,
+			final Get< Cell< A > > get )
+	{
+		super( grid, new VolatileCachedCells<>( grid.getGridDimensions(), get, cacheHints ), entitiesPerPixel );
+		setLinkedType( linkedTypeFactory.apply( this ) );
 	}
 
 	/**
