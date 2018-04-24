@@ -1,12 +1,14 @@
 package bdv.img.cache;
 
-import net.imglib2.cache.img.AccessFlags;
-import net.imglib2.cache.img.PrimitiveType;
+import java.util.Set;
+
 import net.imglib2.cache.volatiles.CreateInvalid;
+import net.imglib2.img.basictypeaccess.AccessFlags;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileArrayDataAccess;
 import net.imglib2.img.cell.Cell;
 import net.imglib2.img.cell.CellGrid;
 import net.imglib2.type.NativeType;
+import net.imglib2.type.PrimitiveType;
 import net.imglib2.util.Fraction;
 import net.imglib2.util.Intervals;
 
@@ -64,20 +66,20 @@ public class CreateInvalidVolatileCell< A > implements CreateInvalid< Long, Cell
 	public static < T extends NativeType< T >, A extends VolatileArrayDataAccess< A > > CreateInvalidVolatileCell< A > get(
 			final CellGrid grid,
 			final T type,
-			final AccessFlags ... flags ) throws IllegalArgumentException
+			final Set< AccessFlags > flags ) throws IllegalArgumentException
 	{
-		return get( grid, type.getEntitiesPerPixel(), PrimitiveType.forNativeType( type ), flags );
+		return get( grid, type.getEntitiesPerPixel(), type.getNativeTypeFactory().getPrimitiveType(), flags );
 	}
 
 	public static < A extends VolatileArrayDataAccess< A > > CreateInvalidVolatileCell< A > get(
 			final CellGrid grid,
 			final Fraction entitiesPerPixel,
 			final PrimitiveType primitiveType,
-			final AccessFlags ... flags ) throws IllegalArgumentException
+			final Set< AccessFlags > flags ) throws IllegalArgumentException
 	{
 		if ( primitiveType == PrimitiveType.UNDEFINED )
 			throw new IllegalArgumentException( "Cannot instantiate " + CreateInvalidVolatileCell.class.getSimpleName() + " for unrecognized primitive type" );
 		return new CreateInvalidVolatileCell< A >( grid, entitiesPerPixel, EmptyArrayCreator.get( primitiveType, flags ) );
 	}
-}
 
+}

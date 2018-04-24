@@ -1,9 +1,9 @@
 package bdv.img.cache;
 
 import java.util.Arrays;
+import java.util.Set;
 
-import net.imglib2.cache.img.AccessFlags;
-import net.imglib2.cache.img.PrimitiveType;
+import net.imglib2.img.basictypeaccess.AccessFlags;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileArrayDataAccess;
 import net.imglib2.img.basictypeaccess.volatiles.array.DirtyVolatileByteArray;
 import net.imglib2.img.basictypeaccess.volatiles.array.DirtyVolatileCharArray;
@@ -19,6 +19,7 @@ import net.imglib2.img.basictypeaccess.volatiles.array.VolatileFloatArray;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileLongArray;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
+import net.imglib2.type.PrimitiveType;
 
 /**
  * {@link EmptyArrayCreator} implementation for standard access types. Maintains
@@ -121,7 +122,7 @@ public class DefaultEmptyArrayCreator< A extends VolatileArrayDataAccess< A > > 
 	@SuppressWarnings( "unchecked" )
 	public static < A extends VolatileArrayDataAccess< A > > DefaultEmptyArrayCreator< A > get(
 			final PrimitiveType primitiveType,
-			final AccessFlags ... flags )
+			final Set< AccessFlags > flags )
 	{
 		final boolean dirty = Arrays.asList( flags ).contains( AccessFlags.DIRTY );
 		switch ( primitiveType )

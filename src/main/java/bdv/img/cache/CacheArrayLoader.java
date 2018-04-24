@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -29,9 +29,10 @@
  */
 package bdv.img.cache;
 
+import java.util.Set;
+
 import bdv.ViewerImgLoader;
 import bdv.img.catmaid.CatmaidImageLoader;
-import net.imglib2.cache.img.AccessFlags;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileArrayDataAccess;
 import net.imglib2.img.basictypeaccess.volatiles.array.DirtyVolatileByteArray;
@@ -79,7 +80,7 @@ public interface CacheArrayLoader< A >
 	 * Implementing classes must override this if {@code A} is not a standard
 	 * {@link VolatileArrayDataAccess} type. The default implementation returns
 	 * {@code null}, which will let
-	 * {@link CreateInvalidVolatileCell#get(CellGrid, NativeType, AccessFlags...)
+	 * {@link CreateInvalidVolatileCell#get(CellGrid, NativeType, Set)
 	 * CreateInvalidVolatileCell.get(...)} try to figure out the appropriate
 	 * {@link DefaultEmptyArrayCreator}.
 	 * <p>

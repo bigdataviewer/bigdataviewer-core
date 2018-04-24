@@ -42,6 +42,7 @@ import net.imglib2.cache.ref.WeakRefVolatileCache;
 import net.imglib2.cache.util.KeyBimap;
 import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.cache.volatiles.UncheckedVolatileCache;
+import net.imglib2.img.basictypeaccess.AccessFlags;
 import net.imglib2.img.cell.Cell;
 import net.imglib2.img.cell.CellGrid;
 import net.imglib2.type.NativeType;
@@ -227,8 +228,8 @@ public class VolatileGlobalCellCache implements CacheControl
 				.withLoader( loader );
 
 		final EmptyArrayCreator< A > emptyArrayCreator = cacheArrayLoader.getEmptyArrayCreator();
-		final CreateInvalidVolatileCell< ? > createInvalid = ( emptyArrayCreator == null )
-				? CreateInvalidVolatileCell.get( grid, type )
+		final CreateInvalidVolatileCell< ? > createInvalid = emptyArrayCreator == null
+				? CreateInvalidVolatileCell.get( grid, type, AccessFlags.setOf() )
 				: new CreateInvalidVolatileCell<>( grid, type.getEntitiesPerPixel(), emptyArrayCreator );
 
 		final UncheckedVolatileCache< Long, Cell< ? > > vcache = new WeakRefVolatileCache<>(
