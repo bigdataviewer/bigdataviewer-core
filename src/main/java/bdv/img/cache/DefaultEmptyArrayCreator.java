@@ -1,9 +1,5 @@
 package bdv.img.cache;
 
-import java.util.Arrays;
-
-import net.imglib2.cache.img.AccessFlags;
-import net.imglib2.cache.img.PrimitiveType;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileArrayDataAccess;
 import net.imglib2.img.basictypeaccess.volatiles.array.DirtyVolatileByteArray;
 import net.imglib2.img.basictypeaccess.volatiles.array.DirtyVolatileCharArray;
@@ -19,6 +15,7 @@ import net.imglib2.img.basictypeaccess.volatiles.array.VolatileFloatArray;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileLongArray;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
+import net.imglib2.type.PrimitiveType;
 
 /**
  * {@link EmptyArrayCreator} implementation for standard access types. Maintains
@@ -27,7 +24,7 @@ import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
  * {@link EmptyArrayCreator#getEmptyArray(long) requests}.
  *
  * <p>
- * Access types provided through {@link #get(PrimitiveType, AccessFlags...)} are
+ * Access types provided through {@link #get(PrimitiveType, boolean)} are
  * </p>
  * <ul>
  * <li>{@link DirtyVolatileByteArray}</li>
@@ -121,9 +118,8 @@ public class DefaultEmptyArrayCreator< A extends VolatileArrayDataAccess< A > > 
 	@SuppressWarnings( "unchecked" )
 	public static < A extends VolatileArrayDataAccess< A > > DefaultEmptyArrayCreator< A > get(
 			final PrimitiveType primitiveType,
-			final AccessFlags ... flags )
+			final boolean dirty )
 	{
-		final boolean dirty = Arrays.asList( flags ).contains( AccessFlags.DIRTY );
 		switch ( primitiveType )
 		{
 		case BYTE:

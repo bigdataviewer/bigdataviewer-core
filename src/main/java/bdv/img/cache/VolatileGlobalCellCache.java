@@ -228,7 +228,7 @@ public class VolatileGlobalCellCache implements CacheControl
 
 		final EmptyArrayCreator< A > emptyArrayCreator = cacheArrayLoader.getEmptyArrayCreator();
 		final CreateInvalidVolatileCell< ? > createInvalid = ( emptyArrayCreator == null )
-				? CreateInvalidVolatileCell.get( grid, type )
+				? CreateInvalidVolatileCell.get( grid, type, false )
 				: new CreateInvalidVolatileCell<>( grid, type.getEntitiesPerPixel(), emptyArrayCreator );
 
 		final UncheckedVolatileCache< Long, Cell< ? > > vcache = new WeakRefVolatileCache<>(

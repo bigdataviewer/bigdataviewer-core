@@ -31,7 +31,6 @@ package bdv.img.cache;
 
 import bdv.ViewerImgLoader;
 import bdv.img.catmaid.CatmaidImageLoader;
-import net.imglib2.cache.img.AccessFlags;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileArrayDataAccess;
 import net.imglib2.img.basictypeaccess.volatiles.array.DirtyVolatileByteArray;
@@ -79,7 +78,7 @@ public interface CacheArrayLoader< A >
 	 * Implementing classes must override this if {@code A} is not a standard
 	 * {@link VolatileArrayDataAccess} type. The default implementation returns
 	 * {@code null}, which will let
-	 * {@link CreateInvalidVolatileCell#get(CellGrid, NativeType, AccessFlags...)
+	 * {@link CreateInvalidVolatileCell#get(CellGrid, NativeType, boolean)
 	 * CreateInvalidVolatileCell.get(...)} try to figure out the appropriate
 	 * {@link DefaultEmptyArrayCreator}.
 	 * <p>
