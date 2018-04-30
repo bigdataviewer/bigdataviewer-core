@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.scijava</groupId>
 		<artifactId>pom-scijava</artifactId>
-		<version>19.0.0</version>
+		<version>20.4.0</version>
 		<relativePath />
 	</parent>
 
@@ -116,6 +116,9 @@
 
 		<!-- NB: Deploy releases to the ImageJ Maven repository. -->
 		<releaseProfiles>deploy-to-imagej</releaseProfiles>
+
+		<imglib2.version>5.1.1-SNAPSHOT</imglib2.version>
+		<imglib2-cache.version>1.0.0-beta-9-SNAPSHOT</imglib2-cache.version>
 	</properties>
 
 	<repositories>
@@ -129,7 +132,6 @@
 		<dependency>
 			<groupId>net.imglib2</groupId>
 			<artifactId>imglib2</artifactId>
-			<version>4.6.1-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>net.imglib2</groupId>
@@ -138,7 +140,6 @@
 		<dependency>
 			<groupId>net.imglib2</groupId>
 			<artifactId>imglib2-cache</artifactId>
-			<version>1.0.0-beta-8-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>net.imglib2</groupId>
@@ -167,7 +168,6 @@
 		<dependency>
 			<groupId>org.scijava</groupId>
 			<artifactId>ui-behaviour</artifactId>
-			<version>1.3.0</version>
 		</dependency>
 	</dependencies>
 </project>
