@@ -1,5 +1,7 @@
 package bdv.img.cache;
 
+import java.util.function.Function;
+
 import bdv.cache.CacheControl;
 import bdv.img.cache.VolatileCachedCellImg.VolatileCachedCells;
 import net.imglib2.Volatile;
@@ -9,6 +11,7 @@ import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.cache.volatiles.LoadingStrategy;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
+import net.imglib2.img.NativeImg;
 import net.imglib2.img.cell.AbstractCellImg;
 import net.imglib2.img.cell.Cell;
 import net.imglib2.img.cell.CellGrid;
@@ -16,6 +19,7 @@ import net.imglib2.img.cell.LazyCellImg;
 import net.imglib2.img.list.AbstractLongListImg;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.NativeTypeFactory;
+import net.imglib2.util.Fraction;
 
 /**
  * A {@link LazyCellImg} for {@link Volatile} accesses. The only difference to
@@ -28,6 +32,7 @@ import net.imglib2.type.NativeTypeFactory;
  *
  * @author Tobias Pietzsch
  * @author Stephan Saalfeld
+ * @author Philipp Hanslovsky
  */
 public class VolatileCachedCellImg< T extends NativeType< T >, A >
 		extends AbstractCellImg< T, A, Cell< A >, VolatileCachedCells< Cell< A > > >
@@ -36,6 +41,17 @@ public class VolatileCachedCellImg< T extends NativeType< T >, A >
 	public interface Get< T >
 	{
 		T get( long index, CacheHints cacheHints );
+	}
+
+	public VolatileCachedCellImg(
+			final CellGrid grid,
+			final Fraction entitiesPerPixel,
+			Function< NativeImg< T, ? super A >, T > typeFactory,
+			final CacheHints cacheHints,
+			final Get< Cell< A > > get )
+	{
+		super( grid, new VolatileCachedCells<>( grid.getGridDimensions(), get, cacheHints ), entitiesPerPixel );
+		setLinkedType( typeFactory.apply( this ) );
 	}
 
 	public VolatileCachedCellImg( final CellGrid grid, final T type, final CacheHints cacheHints, final Get< Cell< A > > get )
