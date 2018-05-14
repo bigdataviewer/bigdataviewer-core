@@ -212,8 +212,9 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 				shortLoader = new Hdf5VolatileShortArrayLoader( hdf5Access );
 
 
-				final BlockingFetchQueues< Callable< ? > > queue = new BlockingFetchQueues<>( maxNumLevels );
-				fetchers = new FetcherThreads( queue, 1 );
+				final int numFetcherThreads = 1;
+				final BlockingFetchQueues< Callable< ? > > queue = new BlockingFetchQueues<>( maxNumLevels, numFetcherThreads );
+				fetchers = new FetcherThreads( queue, numFetcherThreads );
 				cache = new VolatileGlobalCellCache( queue );
 			}
 		}

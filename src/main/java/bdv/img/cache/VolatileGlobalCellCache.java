@@ -125,7 +125,7 @@ public class VolatileGlobalCellCache implements CacheControl
 	 */
 	public VolatileGlobalCellCache( final int maxNumLevels, final int numFetcherThreads )
 	{
-		queue = new BlockingFetchQueues<>( maxNumLevels );
+		queue = new BlockingFetchQueues<>( maxNumLevels, numFetcherThreads );
 		new FetcherThreads( queue, numFetcherThreads );
 		backingCache = new SoftRefLoaderCache<>();
 	}
