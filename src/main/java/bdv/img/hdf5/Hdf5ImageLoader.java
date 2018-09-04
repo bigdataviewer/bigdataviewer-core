@@ -235,6 +235,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 					return;
 				isOpen = false;
 
+				fetchers.shutdown();
 				cache.clearCache();
 				hdf5Access.closeAllDataSets();
 
