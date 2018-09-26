@@ -41,6 +41,7 @@ import org.scijava.ui.behaviour.util.InputActionBindings;
 import bdv.tools.HelpDialog;
 import bdv.tools.RecordMaxProjectionDialog;
 import bdv.tools.RecordMovieDialog;
+import bdv.tools.RecordPathMovieDialog;
 import bdv.tools.ToggleDialogAction;
 import bdv.tools.VisibilityAndGroupingDialog;
 import bdv.tools.bookmarks.BookmarksEditor;
@@ -58,6 +59,7 @@ public class BigDataViewerActions extends Actions
 	public static final String SAVE_SETTINGS = "save settings";
 	public static final String LOAD_SETTINGS = "load settings";
 	public static final String RECORD_MOVIE = "record movie";
+	public static final String RECORD_PATH_MOVIE = "record path movie";
 	public static final String RECORD_MAX_PROJECTION_MOVIE = "record max projection movie";
 	public static final String SET_BOOKMARK = "set bookmark";
 	public static final String GO_TO_BOOKMARK = "go to bookmark";
@@ -70,6 +72,7 @@ public class BigDataViewerActions extends Actions
 	static final String[] RECORD_MAX_PROJECTION_MOVIE_KEYS = new String[] { "F8" };
 	static final String[] CROP_KEYS                        = new String[] { "F9" };
 	static final String[] RECORD_MOVIE_KEYS                = new String[] { "F10" };
+	static final String[] RECORD_PATH_MOVIE_KEYS           = new String[] { "shift F10" };
 	static final String[] SAVE_SETTINGS_KEYS               = new String[] { "F11" };
 	static final String[] LOAD_SETTINGS_KEYS               = new String[] { "F12" };
 	static final String[] GO_TO_BOOKMARK_KEYS              = new String[] { "B" };
@@ -99,6 +102,7 @@ public class BigDataViewerActions extends Actions
 		actions.dialog( bdv.helpDialog );
 		actions.dialog( bdv.cropDialog );
 		actions.dialog( bdv.movieDialog );
+		actions.dialog( bdv.pathMovieDialog );
 		actions.dialog( bdv.movieMaxProjectDialog );
 		actions.bookmarks( bdv.bookmarkEditor );
 		actions.manualTransform( bdv.manualTransformationEditor );
@@ -142,6 +146,11 @@ public class BigDataViewerActions extends Actions
 	public void dialog( final RecordMovieDialog recordMovieDialog )
 	{
 		toggleDialogAction( recordMovieDialog, RECORD_MOVIE, RECORD_MOVIE_KEYS );
+	}
+
+	public void dialog( final RecordPathMovieDialog recordMovieDialog )
+	{
+		toggleDialogAction( recordMovieDialog, RECORD_PATH_MOVIE, RECORD_PATH_MOVIE_KEYS );
 	}
 
 	public void dialog( final RecordMaxProjectionDialog recordMaxProjectionDialog )

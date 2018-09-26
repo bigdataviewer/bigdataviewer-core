@@ -62,6 +62,7 @@ import bdv.tools.HelpDialog;
 import bdv.tools.InitializeViewerState;
 import bdv.tools.RecordMaxProjectionDialog;
 import bdv.tools.RecordMovieDialog;
+import bdv.tools.RecordPathMovieDialog;
 import bdv.tools.VisibilityAndGroupingDialog;
 import bdv.tools.bookmarks.Bookmarks;
 import bdv.tools.bookmarks.BookmarksEditor;
@@ -109,6 +110,8 @@ public class BigDataViewer
 	protected final CropDialog cropDialog;
 
 	protected final RecordMovieDialog movieDialog;
+
+	protected final RecordPathMovieDialog pathMovieDialog;
 
 	protected final RecordMaxProjectionDialog movieMaxProjectDialog;
 
@@ -369,6 +372,10 @@ public class BigDataViewer
 		// this is just to get updates of window size:
 		viewer.getDisplay().addOverlayRenderer( movieDialog );
 
+		pathMovieDialog = new RecordPathMovieDialog( viewerFrame, viewer, bookmarks, progressWriter );
+		// this is just to get updates of window size:
+		viewer.getDisplay().addOverlayRenderer( pathMovieDialog );
+
 		movieMaxProjectDialog = new RecordMaxProjectionDialog( viewerFrame, viewer, progressWriter );
 		// this is just to get updates of window size:
 		viewer.getDisplay().addOverlayRenderer( movieMaxProjectDialog );
@@ -445,6 +452,10 @@ public class BigDataViewer
 		final JMenuItem miMovie = new JMenuItem( actionMap.get( BigDataViewerActions.RECORD_MOVIE ) );
 		miMovie.setText( "Record Movie" );
 		menu.add( miMovie );
+
+		final JMenuItem miPathMovie = new JMenuItem( actionMap.get( BigDataViewerActions.RECORD_PATH_MOVIE ) );
+		miPathMovie.setText( "Record Path Movie" );
+		menu.add( miPathMovie );
 
 		final JMenuItem miMaxProjectMovie = new JMenuItem( actionMap.get( BigDataViewerActions.RECORD_MAX_PROJECTION_MOVIE ) );
 		miMaxProjectMovie.setText( "Record Max-Projection Movie" );
@@ -530,6 +541,11 @@ public class BigDataViewer
 	public ManualTransformationEditor getManualTransformEditor()
 	{
 		return manualTransformationEditor;
+	}
+
+	public Bookmarks getBookmarks()
+	{
+		return bookmarks;
 	}
 
 	public boolean tryLoadSettings( final String xmlFilename )
