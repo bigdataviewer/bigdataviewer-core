@@ -92,9 +92,9 @@ public class RecordPathMovieDialog extends JDialog implements OverlayRenderer
 
 	private final JSpinner spinnerMaxTimepoint;
 
-//	private final JSpinner spinnerWidth;
-//
-//	private final JSpinner spinnerHeight;
+	private final JSpinner spinnerWidth;
+
+	private final JSpinner spinnerHeight;
 
 	private final JComboBox< String > startMark;
 
@@ -148,19 +148,19 @@ public class RecordPathMovieDialog extends JDialog implements OverlayRenderer
 		spinnerMaxTimepoint.setModel( new SpinnerNumberModel( 100, 0, Integer.MAX_VALUE, 1 ) );
 		timepointsPanel.add( spinnerMaxTimepoint );
 
-//		final JPanel widthPanel = new JPanel();
-//		boxes.add( widthPanel );
-//		widthPanel.add( new JLabel( "width" ) );
-//		spinnerWidth = new JSpinner();
-//		spinnerWidth.setModel( new SpinnerNumberModel( 800, 10, 5000, 1 ) );
-//		widthPanel.add( spinnerWidth );
-//
-//		final JPanel heightPanel = new JPanel();
-//		boxes.add( heightPanel );
-//		heightPanel.add( new JLabel( "height" ) );
-//		spinnerHeight = new JSpinner();
-//		spinnerHeight.setModel( new SpinnerNumberModel( 600, 10, 5000, 1 ) );
-//		heightPanel.add( spinnerHeight );
+		final JPanel widthPanel = new JPanel();
+		boxes.add( widthPanel );
+		widthPanel.add( new JLabel( "width" ) );
+		spinnerWidth = new JSpinner();
+		spinnerWidth.setModel( new SpinnerNumberModel( 800, 10, 5000, 1 ) );
+		widthPanel.add( spinnerWidth );
+
+		final JPanel heightPanel = new JPanel();
+		boxes.add( heightPanel );
+		heightPanel.add( new JLabel( "height" ) );
+		spinnerHeight = new JSpinner();
+		spinnerHeight.setModel( new SpinnerNumberModel( 600, 10, 5000, 1 ) );
+		heightPanel.add( spinnerHeight );
 
 		final JPanel buttonsPanel = new JPanel();
 		boxes.add( buttonsPanel );
@@ -203,8 +203,8 @@ public class RecordPathMovieDialog extends JDialog implements OverlayRenderer
 					return;
 				}
 				final int maxTimepointIndex = ( Integer ) spinnerMaxTimepoint.getValue();
-//				final int width = ( Integer ) spinnerWidth.getValue();
-//				final int height = ( Integer ) spinnerHeight.getValue();
+				final int width = ( Integer ) spinnerWidth.getValue();
+				final int height = ( Integer ) spinnerHeight.getValue();
 				new Thread()
 				{
 					@Override
@@ -213,7 +213,7 @@ public class RecordPathMovieDialog extends JDialog implements OverlayRenderer
 						try
 						{
 							recordButton.setEnabled( false );
-							recordMovie( maxTimepointIndex,
+							recordMovie( width, height, maxTimepointIndex,
 									getTransform( startMark, viewer ),
 									getTransform( endMark, viewer ),
 									dir );
@@ -287,18 +287,31 @@ public class RecordPathMovieDialog extends JDialog implements OverlayRenderer
 		}
 	}
 
-	public void recordMovie( final int maxTimepointIndex, final AffineTransform3D start, final AffineTransform3D end, final File dir ) throws IOException
+	public void recenter( final AffineTransform3D affine,
+			double ccW, double ccH, double cW, double cH )
+	{
+		affine.set( affine.get( 0, 3 ) - ccW, 0, 3 );
+		affine.set( affine.get( 1, 3 ) - ccH / 2, 1, 3 );
+		affine.scale( ( double ) cW / ccW );
+		affine.set( affine.get( 0, 3 ) + cW , 0, 3 );
+		affine.set( affine.get( 1, 3 ) + cH, 1, 3 );
+	}
+
+	public void recordMovie( final int width, final int height, final int maxTimepointIndex, final AffineTransform3D start, final AffineTransform3D end, final File dir ) throws IOException
 	{
 		final ViewerState renderState = viewer.getState();
 
-//		final int canvasW = viewer.getDisplay().getWidth();
-//		final int canvasH = viewer.getDisplay().getHeight();
+		final int canvasW = viewer.getDisplay().getWidth();
+		final int canvasH = viewer.getDisplay().getHeight();
 
-		final int width = viewer.getDisplay().getWidth();
-		final int height = viewer.getDisplay().getHeight();
+		final double ccX = canvasW / 2.0;
+		final double ccY = canvasH / 2.0;
 
 		final double cX = width / 2.0;
 		final double cY = height / 2.0;
+
+		recenter( start, ccX, ccY, cX, cY );
+		recenter( end, ccX, ccY, cX, cY );
 
 		renderState.setViewerTransform( start );
 
@@ -327,15 +340,13 @@ public class RecordPathMovieDialog extends JDialog implements OverlayRenderer
 				return height;
 			}
 		}
-		final SimilarityTransformAnimator animator = new SimilarityTransformAnimator( start, end, cX, cY, maxTimepointIndex ); 
+		final SimilarityTransformAnimator animator = new SimilarityTransformAnimator( start, end, cX, cY, maxTimepointIndex );
 		final MyTarget target = new MyTarget();
-		final MultiResolutionRenderer renderer = new MultiResolutionRenderer(
-				target, new PainterThread( null ), new double[] { 1 }, 0, false, 1, null, false,
-				viewer.getOptionValues().getAccumulateProjectorFactory(), new CacheControl.Dummy() );
+		final MultiResolutionRenderer renderer = new MultiResolutionRenderer( target, new PainterThread( null ), new double[] { 1 }, 0, false, 1, null, false, viewer.getOptionValues().getAccumulateProjectorFactory(), new CacheControl.Dummy() );
 		progressWriter.setProgress( 0 );
 		for ( int timepoint = 0; timepoint <= maxTimepointIndex; ++timepoint )
 		{
-			double t = ((double) timepoint ) / maxTimepointIndex;
+			double t = ( ( double ) timepoint ) / maxTimepointIndex;
 			renderState.setViewerTransform( animator.get( t ) );
 
 			renderer.requestRepaint();
@@ -360,5 +371,8 @@ public class RecordPathMovieDialog extends JDialog implements OverlayRenderer
 
 	@Override
 	public void setCanvasSize( final int width, final int height )
-	{}
+	{
+		spinnerWidth.setValue( width );
+		spinnerHeight.setValue( height );
+	}
 }
