@@ -325,6 +325,9 @@ public class RecordPathMovieDialog extends JDialog implements OverlayRenderer
 				startMark.addItem( mark );
 				endMark.addItem( mark );
 			}
+
+			spinnerWidth.setValue( viewer.getSize().getWidth() );
+			spinnerHeight.setValue( viewer.getSize().getHeight() );
 		}
 	}
 
