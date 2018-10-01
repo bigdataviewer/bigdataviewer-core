@@ -63,9 +63,12 @@ import javax.swing.WindowConstants;
 import bdv.cache.CacheControl;
 import bdv.export.ProgressWriter;
 import bdv.tools.bookmarks.Bookmarks;
+import bdv.util.Affine3DHelpers;
 import bdv.util.Prefs;
 import bdv.viewer.ViewerPanel;
+import bdv.viewer.animate.AbstractTransformAnimator;
 import bdv.viewer.animate.SimilarityTransformAnimator;
+import bdv.viewer.animate.TranslationAnimator;
 import bdv.viewer.overlay.ScaleBarOverlayRenderer;
 import bdv.viewer.render.MultiResolutionRenderer;
 import bdv.viewer.state.ViewerState;
@@ -76,6 +79,13 @@ import net.imglib2.ui.RenderTarget;
 
 public class RecordPathMovieDialog extends JDialog implements OverlayRenderer
 {
+
+	private static final String TRANSLATION = "Translation";
+
+	private static final String ROTATION = "Translation + Rotation";
+
+	private static final String SIMILARITY = "Translation + Rotation + Zoom";
+
 	private static final String CURRENT = "current";
 
 	private static final long serialVersionUID = 1L;
@@ -99,6 +109,8 @@ public class RecordPathMovieDialog extends JDialog implements OverlayRenderer
 	private final JComboBox< String > startMark;
 
 	private final JComboBox< String > endMark;
+
+	private final JComboBox< String > transformType;
 
 	public RecordPathMovieDialog( final Frame owner, final ViewerPanel viewer, final Bookmarks bookmarks, final ProgressWriter progressWriter )
 	{
@@ -126,18 +138,26 @@ public class RecordPathMovieDialog extends JDialog implements OverlayRenderer
 		saveAsPanel.add( browseButton, BorderLayout.EAST );
 
 		final JPanel bookmarksPanel = new JPanel();
-		bookmarksPanel.setLayout( new GridLayout( 2, 2 ) );
+		bookmarksPanel.setLayout( new GridLayout( 3, 1 ) );
 		boxes.add( bookmarksPanel );
 
-		bookmarksPanel.add( new JLabel( "start position (bookmark): " ) );
+		bookmarksPanel.add( new JLabel( "start position (bookmark):" ) );
 		startMark = new JComboBox<>();
 		startMark.setVisible( true );
 		bookmarksPanel.add( startMark );
 
-		bookmarksPanel.add( new JLabel( "end position (bookmark): " ) );
+		bookmarksPanel.add( new JLabel( "end position (bookmark):" ) );
 		endMark = new JComboBox<>();
 		endMark.setVisible( true );
 		bookmarksPanel.add( endMark );
+
+		bookmarksPanel.add( new JLabel( "Transform type:" ) );
+		transformType = new JComboBox<>();
+		transformType.setVisible( true );
+		transformType.addItem( SIMILARITY );
+		transformType.addItem( ROTATION );
+		transformType.addItem( TRANSLATION );
+		bookmarksPanel.add( transformType );
 
 		final JPanel timepointsPanel = new JPanel();
 		boxes.add( timepointsPanel );
@@ -266,6 +286,28 @@ public class RecordPathMovieDialog extends JDialog implements OverlayRenderer
 			return bookmarks.get( key );
 	}
 
+	private TranslationAnimator setupTranslationAnimator( final AffineTransform3D start, final AffineTransform3D end, final double cX, final double cY, final int maxTime )
+	{
+		double[] startPt = new double[ 3 ];
+		start.applyInverse( startPt, new double[] { cX, cY, 0 } );
+
+		// store the end point in translation temporarily
+		double[] endPt = new double[ 3 ];
+		end.applyInverse( endPt, new double[] { cX, cY, 0 } );
+
+		double[] t = new double[ 3 ];
+		for ( int i = 0; i < 3; i++ )
+			t[ i ] = ( endPt[ i ] / 2 ) - ( startPt[ i ] / 2 );
+
+		AffineTransform3D si = start.copy().inverse();
+		si.translate( t );
+
+		double[] translation = new double[] { si.inverse().get( 0, 3 ), si.inverse().get( 1, 3 ), si.inverse().get( 2, 3 )
+		};
+
+		return new TranslationAnimator( start, translation, maxTime );
+	}
+
 	@Override
 	public void setVisible( boolean visible )
 	{
@@ -280,7 +322,6 @@ public class RecordPathMovieDialog extends JDialog implements OverlayRenderer
 			endMark.addItem( "current" );
 			for( String mark : bookmarks.keySet() )
 			{
-				System.out.println( "bookmark: " + mark );
 				startMark.addItem( mark );
 				endMark.addItem( mark );
 			}
@@ -299,7 +340,10 @@ public class RecordPathMovieDialog extends JDialog implements OverlayRenderer
 
 	public void recordMovie( final int width, final int height, final int maxTimepointIndex, final AffineTransform3D start, final AffineTransform3D end, final File dir ) throws IOException
 	{
+		System.out.println("Record movie");
+
 		final ViewerState renderState = viewer.getState();
+		String xfmType = transformType.getItemAt( transformType.getSelectedIndex());
 
 		final int canvasW = viewer.getDisplay().getWidth();
 		final int canvasH = viewer.getDisplay().getHeight();
@@ -312,6 +356,27 @@ public class RecordPathMovieDialog extends JDialog implements OverlayRenderer
 
 		recenter( start, ccX, ccY, cX, cY );
 		recenter( end, ccX, ccY, cX, cY );
+
+		final AffineTransform3D endCopy;
+		if ( xfmType.equals( ROTATION ) )
+		{
+			endCopy = end.copy();
+			double endscale = 0;
+			endscale += Affine3DHelpers.extractScale( end, 0 );
+			endscale += Affine3DHelpers.extractScale( end, 1 );
+			endscale += Affine3DHelpers.extractScale( end, 2 );
+
+			double startscale = 0;
+			startscale += Affine3DHelpers.extractScale( start, 0 );
+			startscale += Affine3DHelpers.extractScale( start, 1 );
+			startscale += Affine3DHelpers.extractScale( start, 2 );
+
+			// can skip division by three since we end with a ratio of start and
+			// end scales
+			endCopy.scale( startscale / endscale );
+		}
+		else
+			endCopy = end;
 
 		renderState.setViewerTransform( start );
 
@@ -340,7 +405,18 @@ public class RecordPathMovieDialog extends JDialog implements OverlayRenderer
 				return height;
 			}
 		}
-		final SimilarityTransformAnimator animator = new SimilarityTransformAnimator( start, end, cX, cY, maxTimepointIndex );
+
+		final AbstractTransformAnimator animator;
+		switch( xfmType )
+		{
+		case TRANSLATION:
+			animator = setupTranslationAnimator( start, endCopy, cX, cY, maxTimepointIndex );
+			break;
+		default:
+			animator = new SimilarityTransformAnimator( start, endCopy, cX, cY, maxTimepointIndex );
+			break;
+		}
+
 		final MyTarget target = new MyTarget();
 		final MultiResolutionRenderer renderer = new MultiResolutionRenderer( target, new PainterThread( null ), new double[] { 1 }, 0, false, 1, null, false, viewer.getOptionValues().getAccumulateProjectorFactory(), new CacheControl.Dummy() );
 		progressWriter.setProgress( 0 );
