@@ -86,9 +86,9 @@ public class SetupAssignments
 
 	private UpdateListener updateListener;
 
-	public SetupAssignments( final ArrayList< ConverterSetup > converterSetups, final double fullRangeMin, final double fullRangeMax )
+	public SetupAssignments( final ArrayList< ConverterSetup > converterSetups, final double defaultRangeMin, final double defaultRangeMax )
 	{
-		this( converterSetups, fullRangeMin, fullRangeMax, fullRangeMin, fullRangeMax );
+		this( converterSetups, Integer.MIN_VALUE, Integer.MAX_VALUE, defaultRangeMin, defaultRangeMax );
 	}
 
 	/**
@@ -211,7 +211,7 @@ public class SetupAssignments
 	 */
 	public void addSetup( final ConverterSetup setup )
 	{
-		final MinMaxGroup group = new MinMaxGroup( fullRangeMin, fullRangeMax, fullRangeMin, fullRangeMax, setup.getDisplayRangeMin(), setup.getDisplayRangeMax(), minIntervalSize );
+		final MinMaxGroup group = new MinMaxGroup( fullRangeMin, fullRangeMax, defaultRangeMin, defaultRangeMax, setup.getDisplayRangeMin(), setup.getDisplayRangeMax(), minIntervalSize );
 		minMaxGroups.add( group );
 		setupToGroup.put( setup, group );
 		group.addSetup( setup );
