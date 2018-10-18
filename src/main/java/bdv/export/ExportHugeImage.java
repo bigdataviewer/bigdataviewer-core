@@ -24,15 +24,16 @@ import net.imglib2.view.Views;
 
 public class ExportHugeImage
 {
-	private final File hdf5File = new File( "/Users/pietzsch/Desktop/huge.h5" );
+	private final File hdf5File;
 
 	private final RandomAccessibleInterval< UnsignedShortType > input;
 
-	public ExportHugeImage()
+	public ExportHugeImage( final File hdf5File )
 	{
 		input = Views.interval(
 				Views.extendZero( ArrayImgs.unsignedShorts( 1, 1, 1 ) ),
 				Intervals.createMinSize( 0, 0, 0, 10000, 10000, 10000 ) );
+		this.hdf5File = hdf5File;
 	}
 
 	public static class RAIImgLoader< T > implements TypedBasicImgLoader< T >
@@ -100,6 +101,11 @@ public class ExportHugeImage
 
 	public static void main( String[] args )
 	{
-		new ExportHugeImage().run();
+		File file = null;
+		if ( args.length > 0 )
+			file = new File( args[ 0 ] );
+		else
+			file = new File( "/Users/pietzsch/Desktop/huge.h5" );
+		new ExportHugeImage( file ).run();
 	}
 }
