@@ -799,6 +799,11 @@ public class WriteSequenceToHdf5
 	 */
 	public interface LoopbackHeuristic
 	{
+		/**
+		 * @return {@code true} if source pixels should be read back from hdf5
+		 *         file. {@code false} if source pixels should be taken from
+		 *         original image.
+		 */
 		public boolean decide(
 				final RandomAccessibleInterval< ? > originalImg,
 				final int[] factorsToOriginalImg,
