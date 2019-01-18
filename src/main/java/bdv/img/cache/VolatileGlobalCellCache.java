@@ -218,9 +218,11 @@ public class VolatileGlobalCellCache implements CacheControl
 			}
 		};
 
-		final KeyBimap< Long, Key > bimap = KeyBimap.< Long, Key >build(
+		final KeyBimap< Long, Key > bimap = KeyBimap.build(
 				index -> new Key( timepoint, setup, level, index ),
-				key -> key.index );
+				key -> ( key.timepoint == timepoint && key.setup == setup && key.level == level )
+						? key.index
+						: null );
 
 		final Cache< Long, Cell< ? > > cache = backingCache
 				.mapKeys( bimap )
