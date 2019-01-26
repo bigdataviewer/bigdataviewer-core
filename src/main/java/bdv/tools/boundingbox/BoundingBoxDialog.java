@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -45,6 +45,12 @@ import javax.swing.JDialog;
 import javax.swing.KeyStroke;
 import javax.swing.WindowConstants;
 
+import net.imglib2.Interval;
+import net.imglib2.display.RealARGBColorConverter;
+import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.numeric.ARGBType;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
+
 import bdv.tools.boundingbox.BoundingBoxOverlay.BoundingBoxOverlaySource;
 import bdv.tools.boundingbox.BoxSelectionPanel.Box;
 import bdv.tools.brightness.RealARGBColorConverterSetup;
@@ -56,11 +62,6 @@ import bdv.viewer.DisplayMode;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerPanel;
 import bdv.viewer.VisibilityAndGrouping;
-import net.imglib2.Interval;
-import net.imglib2.display.RealARGBColorConverter;
-import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
 
 // dialog to change bounding box
 // while dialog is visible, bounding box is added as a source to the viewer
@@ -139,15 +140,15 @@ public class BoundingBoxDialog extends JDialog
 		boxOverlay = new BoundingBoxOverlay( new BoundingBoxOverlaySource()
 		{
 			@Override
-			public void getIntervalTransform( final AffineTransform3D transform )
-			{
-				ts.getSourceTransform( 0, 0, transform );
-			}
-
-			@Override
 			public Interval getInterval()
 			{
 				return interval;
+			}
+
+			@Override
+			public void getTransform( final AffineTransform3D transform )
+			{
+				ts.getSourceTransform( 0, 0, transform );
 			}
 		} );
 
