@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -33,14 +33,23 @@ import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
 import javax.swing.JPanel;
 
-import bdv.tools.brightness.SliderPanel;
-import bdv.util.BoundedInterval;
 import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
 
-// a JPanel containing X,Y,Z min/max sliders for adjusting an interval
+import bdv.tools.brightness.SliderPanel;
+import bdv.util.BoundedInterval;
+
+/**
+ * A {@code JPanel} containing X,Y,Z,... min/max sliders for adjusting a
+ * {@code Interval}
+ *
+ * @author Tobias Pietzsch
+ */
 public class BoxSelectionPanel extends JPanel
 {
+	/**
+	 * Provides current interval and receives interval changes.
+	 */
 	public interface Box
 	{
 		Interval getInterval();
