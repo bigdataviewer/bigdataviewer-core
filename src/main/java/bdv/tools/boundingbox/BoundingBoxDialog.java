@@ -51,7 +51,7 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 
-import bdv.tools.boundingbox.BoundingBoxOverlay.BoundingBoxOverlaySource;
+import bdv.tools.boundingbox.BoundingBoxOverlay.TransformedBox;
 import bdv.tools.boundingbox.BoxSelectionPanel.Box;
 import bdv.tools.brightness.RealARGBColorConverterSetup;
 import bdv.tools.brightness.SetupAssignments;
@@ -137,7 +137,7 @@ public class BoundingBoxDialog extends JDialog
 		boxSourceAndConverter = new SourceAndConverter<>( ts, converter );
 
 		// create an Overlay to show 3D wireframe box
-		boxOverlay = new BoundingBoxOverlay( new BoundingBoxOverlaySource()
+		boxOverlay = new BoundingBoxOverlay( new TransformedBox()
 		{
 			@Override
 			public Interval getInterval()

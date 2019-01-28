@@ -77,13 +77,11 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 	}
 
 	/**
-	 * A box (to display in a {@code BoundingBoxOverlay}.
+	 * A transformed box (to display in a {@code BoundingBoxOverlay}.
 	 * Represented as a {@code RealInterval} that is placed into
 	 * global coordinate system by an {@code AffineTransform3D}.
-	 *
-	 * TODO: RENAME Box (do not use "source", because of confusion with bdv source)
 	 */
-	public interface BoundingBoxOverlaySource
+	public interface TransformedBox
 	{
 		RealInterval getInterval();
 
@@ -95,7 +93,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 		public void highlightedCornerChanged();
 	}
 
-	private final BoundingBoxOverlaySource bbSource;
+	private final TransformedBox bbSource;
 
 	private final Color backColor = new Color( 0x00994499 );
 
@@ -137,7 +135,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 	public BoundingBoxOverlay( final Interval interval )
 	{
-		this( new BoundingBoxOverlaySource()
+		this( new TransformedBox()
 		{
 			@Override
 			public Interval getInterval()
@@ -153,7 +151,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 		} );
 	}
 
-	public BoundingBoxOverlay( final BoundingBoxOverlaySource bbSource )
+	public BoundingBoxOverlay( final TransformedBox bbSource )
 	{
 		this.bbSource = bbSource;
 
@@ -325,7 +323,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 	/**
 	 * Get the transformation from the local coordinate frame of the
-	 * {@link BoundingBoxOverlaySource} to viewer coordinates.
+	 * {@link TransformedBox} to viewer coordinates.
 	 *
 	 * @param t is set to the box-to-viewer transform.
 	 */
