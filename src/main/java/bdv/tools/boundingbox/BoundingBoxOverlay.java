@@ -58,7 +58,7 @@ import org.scijava.listeners.ListenableVar;
  *
  * Overlay displaying a transformed box.
  */
-// TODO: RENAME BoxOverlay
+// TODO: RENAME TransformedBoxOverlay
 public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< AffineTransform3D >
 {
 	private static final double DISTANCE_TOLERANCE = 20.;
