@@ -50,6 +50,14 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.TransformListener;
 
+import org.scijava.listeners.ChangeListener;
+import org.scijava.listeners.ListenableVar;
+
+/**
+ * TODO javadoc
+ *
+ * Overlay displaying a transformed box.
+ */
 // TODO: RENAME BoxOverlay
 public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< AffineTransform3D >
 {
@@ -57,6 +65,12 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 	private static final double HANDLE_RADIUS = DISTANCE_TOLERANCE / 2.;
 
+	/**
+	 * TODO javadoc
+	 *
+	 * whether to show 3D wireframe box (FULL),
+	 * or only intersection with viewer plane (SECTION)
+	 */
 	public enum BoxDisplayMode
 	{
 		FULL, SECTION;
@@ -111,7 +125,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 	private int canvasHeight;
 
-	private BoxDisplayMode displayMode = FULL;
+	private final ListenableVar< BoxDisplayMode, ChangeListener > displayMode = ListenableVar.create( FULL );
 
 	private boolean showCornerHandles = true;
 
@@ -217,7 +231,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 		graphics.setRenderingHint( RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON );
 
-		if ( displayMode == FULL )
+		if ( displayMode.get() == FULL )
 		{
 			graphics.setStroke( normalStroke );
 			graphics.setPaint( backColor );
@@ -234,7 +248,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 		graphics.setStroke( intersectionStroke );
 		graphics.draw( intersection );
 
-		if ( displayMode == FULL )
+		if ( displayMode.get() == FULL )
 		{
 			graphics.setStroke( normalStroke );
 			graphics.setPaint( frontColor );
@@ -300,15 +314,13 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 		}
 	}
 
-	public BoxDisplayMode getDisplayMode()
+	/**
+	 * TODO javadoc
+	 * @return
+	 */
+	public ListenableVar< BoxDisplayMode, ChangeListener > boxDisplayMode()
 	{
 		return displayMode;
-	}
-
-	public void setDisplayMode( final BoxDisplayMode mode )
-	{
-		displayMode = mode;
-
 	}
 
 	/**
@@ -355,7 +367,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 	{
 		final int oldId = cornerId;
 		cornerId = ( id >= 0 && id < RenderBoxHelper.numCorners ) ? id : -1;
-		if ( cornerId != oldId && highlightedCornerListener != null && displayMode == FULL )
+		if ( cornerId != oldId && highlightedCornerListener != null && displayMode.get() == FULL )
 			highlightedCornerListener.highlightedCornerChanged();
 	}
 
