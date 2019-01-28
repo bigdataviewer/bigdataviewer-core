@@ -34,11 +34,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.WeakHashMap;
+
+import net.imglib2.type.numeric.ARGBType;
 
 import org.jdom2.Element;
 
 import mpicbg.spim.data.XmlHelpers;
-import net.imglib2.type.numeric.ARGBType;
 
 /**
  * Manage a (fixed) set of {@link ConverterSetup}s and (changing) set of
@@ -150,7 +152,7 @@ public class SetupAssignments
 	 * being removed, a new group is created containing only the specified
 	 * setup, and this new group is added to the list of group. The settings of
 	 * the new group are initialized with the settings of the old group.
-	 * 
+	 *
 	 * @return Whether or not removal was successful (so the corresponding
 	 *         checkbox can be re-checked)
 	 */
@@ -331,4 +333,33 @@ public class SetupAssignments
 				return setup;
 		return null;
 	}
+
+	private static final WeakHashMap< SetupAssignments, Integer > maxIds = new WeakHashMap<>(  );
+
+	private static final SetupAssignments nullSetupAssignmentsKey = new SetupAssignments( new ArrayList<>(), 0, 1 );
+
+	/**
+	 * Get a {@link ConverterSetup#getSetupId() setup id} that is not used in
+	 * the specified {@code setupAssignments}.
+	 *
+	 * @param setupAssignments
+	 *            the {@link SetupAssignments} for which to find an unused id.
+	 *            May be {@code null}, in which case a new id is returned that
+	 *            was not used in any previous call to
+	 *            {@code getUnusedSetupId(null)}.
+	 *
+	 * @return a unused setup id
+	 */
+	public static synchronized int getUnusedSetupId( SetupAssignments setupAssignments )
+	{
+		if ( setupAssignments == null )
+			setupAssignments = nullSetupAssignmentsKey;
+		int maxId = maxIds.getOrDefault( setupAssignments, 0 );
+		for ( final ConverterSetup setup : setupAssignments.getConverterSetups() )
+			maxId = Math.max( setup.getSetupId(), maxId );
+		++maxId;
+		maxIds.put( setupAssignments, maxId );
+		return maxId;
+	}
+
 }
