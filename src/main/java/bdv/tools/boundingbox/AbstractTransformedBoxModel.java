@@ -1,6 +1,5 @@
 package bdv.tools.boundingbox;
 
-import bdv.tools.boundingbox.BoundingBoxOverlay.TransformedBox;
 import net.imglib2.RealInterval;
 import net.imglib2.realtransform.AffineTransform3D;
 import org.scijava.listeners.Listeners;

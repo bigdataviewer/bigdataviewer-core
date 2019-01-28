@@ -76,18 +76,6 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 		FULL, SECTION;
 	}
 
-	/**
-	 * A transformed box (to display in a {@code BoundingBoxOverlay}.
-	 * Represented as a {@code RealInterval} that is placed into
-	 * global coordinate system by an {@code AffineTransform3D}.
-	 */
-	public interface TransformedBox
-	{
-		RealInterval getInterval();
-
-		void getTransform( final AffineTransform3D transform );
-	}
-
 	public interface HighlightedCornerListener
 	{
 		public void highlightedCornerChanged();
