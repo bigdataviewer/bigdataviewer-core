@@ -55,13 +55,13 @@ import bdv.viewer.ViewerPanel;
  * where the user can edit the box directly by interacting with the overlay. The
  * mouse button is used to drag the corners of the box.
  * <p>
- * {@code BoundingBoxEditor} does not include any dialog or panel for
+ * {@code TransformedBoxEditor} does not include any dialog or panel for
  * numerically adjusting the box parameters.
  *
  * @author Tobias Pietzsch
  * @author Jean-Yves Tinevez
  */
-public class BoundingBoxEditor
+public class TransformedBoxEditor
 {
 	private static final String BOUNDING_BOX_TOGGLE_EDITOR = "edit bounding-box";
 
@@ -91,7 +91,7 @@ public class BoundingBoxEditor
 		PLACEHOLDER
 	}
 
-	public BoundingBoxEditor(
+	public TransformedBoxEditor(
 			final InputTriggerConfig keyconf,
 			final ViewerPanel viewer,
 			final SetupAssignments setupAssignments,
@@ -101,7 +101,7 @@ public class BoundingBoxEditor
 		this( keyconf, viewer, setupAssignments, triggerbindings, model, "selection", BoxSourceType.PLACEHOLDER );
 	}
 
-	public BoundingBoxEditor(
+	public TransformedBoxEditor(
 			final InputTriggerConfig keyconf,
 			final ViewerPanel viewer,
 			final SetupAssignments setupAssignments,
