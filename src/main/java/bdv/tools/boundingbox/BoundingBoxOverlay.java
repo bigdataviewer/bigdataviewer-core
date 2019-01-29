@@ -78,7 +78,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 	public interface HighlightedCornerListener
 	{
-		public void highlightedCornerChanged();
+		void highlightedCornerChanged();
 	}
 
 	private final TransformedBox bbSource;
@@ -333,6 +333,16 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 		return cornerId;
 	}
 
+	/**
+	 * Returns a {@code MouseMotionListener} that can be installed into a bdv
+	 * (see {@code ViewerPanel.getDisplay().addHandler(...)}). If installed, it
+	 * will notify a {@code HighlightedCornerListener} (see
+	 * {@link #setHighlightedCornerListener(HighlightedCornerListener)}) when
+	 * the mouse is over a corner of the box (with some tolerance)/
+	 *
+	 * @return a {@code MouseMotionListener} implementing mouse-over for box
+	 *         corners
+	 */
 	public MouseMotionListener getCornerHighlighter()
 	{
 		return cornerHighlighter;
