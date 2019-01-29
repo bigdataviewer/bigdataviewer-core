@@ -49,7 +49,7 @@ import static bdv.viewer.VisibilityAndGrouping.Event.VISIBILITY_CHANGED;
 /**
  * A BDV source (and converter etc) representing a {@code TransformedBox}.
  * The intersection of the box with the viewer plane is drawn by
- * {@link BoundingBoxOverlay}, so we just install a
+ * {@link TransformedBoxOverlay}, so we just install a
  * placeholder source to set the visibility, color, and opacity of that
  * intersection via the standard bdv dialog.
  *
@@ -57,7 +57,7 @@ import static bdv.viewer.VisibilityAndGrouping.Event.VISIBILITY_CHANGED;
  */
 public class TransformedBoxOverlaySource
 {
-	private final BoundingBoxOverlay boxOverlay;
+	private final TransformedBoxOverlay boxOverlay;
 
 	private final PlaceHolderConverterSetup boxConverterSetup;
 
@@ -73,7 +73,7 @@ public class TransformedBoxOverlaySource
 
 	public TransformedBoxOverlaySource(
 			final String name,
-			final BoundingBoxOverlay boxOverlay,
+			final TransformedBoxOverlay boxOverlay,
 			final TransformedBox bbSource,
 			final ViewerPanel viewer,
 			final SetupAssignments setupAssignments )

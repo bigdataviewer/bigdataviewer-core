@@ -29,7 +29,7 @@
  */
 package bdv.tools.boundingbox;
 
-import static bdv.tools.boundingbox.BoundingBoxOverlay.BoxDisplayMode.FULL;
+import static bdv.tools.boundingbox.TransformedBoxOverlay.BoxDisplayMode.FULL;
 
 import java.util.HashSet;
 import java.util.Map;
@@ -44,7 +44,7 @@ import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.util.Behaviours;
 import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
 
-import bdv.tools.boundingbox.BoundingBoxOverlay.BoxDisplayMode;
+import bdv.tools.boundingbox.TransformedBoxOverlay.BoxDisplayMode;
 import bdv.tools.brightness.SetupAssignments;
 import bdv.viewer.ViewerPanel;
 
@@ -71,7 +71,7 @@ public class BoundingBoxEditor
 
 	private static final String BLOCKING_MAP = "bounding-box-blocking";
 
-	private final BoundingBoxOverlay boxOverlay;
+	private final TransformedBoxOverlay boxOverlay;
 
 	private final TransformedBoxOverlaySource boxSource;
 
@@ -116,7 +116,7 @@ public class BoundingBoxEditor
 		/*
 		 * Create an Overlay to show 3D wireframe box
 		 */
-		boxOverlay = new BoundingBoxOverlay( model );
+		boxOverlay = new TransformedBoxOverlay( model );
 		boxOverlay.setPerspective( 0 );
 		boxOverlay.boxDisplayMode().listeners().add( () -> {
 			viewer.requestRepaint();

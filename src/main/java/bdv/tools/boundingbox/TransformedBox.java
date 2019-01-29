@@ -4,7 +4,7 @@ import net.imglib2.RealInterval;
 import net.imglib2.realtransform.AffineTransform3D;
 
 /**
- * A transformed box (to display in a {@code BoundingBoxOverlay}).
+ * A transformed box (to display in a {@code TransformedBoxOverlay}).
  * Represented as a {@code RealInterval} that is placed into
  * global coordinate system by an {@code AffineTransform3D}.
  */

@@ -78,7 +78,7 @@ public class BoundingBoxDialog extends JDialog
 
 	protected final RealARGBColorConverterSetup boxConverterSetup;
 
-	protected final BoundingBoxOverlay boxOverlay;
+	protected final TransformedBoxOverlay boxOverlay;
 
 	private boolean contentCreated = false;
 
@@ -136,7 +136,7 @@ public class BoundingBoxDialog extends JDialog
 		boxSourceAndConverter = new SourceAndConverter<>( ts, converter );
 
 		// create an Overlay to show 3D wireframe box
-		boxOverlay = new BoundingBoxOverlay( new TransformedBox()
+		boxOverlay = new TransformedBoxOverlay( new TransformedBox()
 		{
 			@Override
 			public Interval getInterval()

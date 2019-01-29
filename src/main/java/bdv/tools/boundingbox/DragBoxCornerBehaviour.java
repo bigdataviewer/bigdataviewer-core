@@ -36,13 +36,13 @@ import org.scijava.ui.behaviour.DragBehaviour;
 
 /**
  * Modify a {@link AbstractTransformedBoxModel} by dragging its corners.
- * Tied to a {@link BoundingBoxOverlay} for determining box corner projections.
+ * Tied to a {@link TransformedBoxOverlay} for determining box corner projections.
  *
  * @author Tobias Pietzsch
  */
 final class DragBoxCornerBehaviour implements DragBehaviour
 {
-	private final BoundingBoxOverlay boxOverlay;
+	private final TransformedBoxOverlay boxOverlay;
 
 	private boolean moving = false;
 
@@ -56,7 +56,7 @@ final class DragBoxCornerBehaviour implements DragBehaviour
 
 	private int cornerId;
 
-	public DragBoxCornerBehaviour( final BoundingBoxOverlay boxOverlay, final AbstractTransformedBoxModel model )
+	public DragBoxCornerBehaviour( final TransformedBoxOverlay boxOverlay, final AbstractTransformedBoxModel model )
 	{
 		this.boxOverlay = boxOverlay;
 		this.model = model;

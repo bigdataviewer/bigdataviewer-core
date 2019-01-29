@@ -29,8 +29,8 @@
  */
 package bdv.tools.boundingbox;
 
-import static bdv.tools.boundingbox.BoundingBoxOverlay.BoxDisplayMode.FULL;
-import static bdv.tools.boundingbox.BoundingBoxOverlay.BoxDisplayMode.SECTION;
+import static bdv.tools.boundingbox.TransformedBoxOverlay.BoxDisplayMode.FULL;
+import static bdv.tools.boundingbox.TransformedBoxOverlay.BoxDisplayMode.SECTION;
 
 import java.awt.Component;
 import java.awt.Font;
@@ -46,7 +46,7 @@ import javax.swing.JRadioButton;
 import org.scijava.listeners.ChangeListener;
 import org.scijava.listeners.ListenableVar;
 
-import bdv.tools.boundingbox.BoundingBoxOverlay.BoxDisplayMode;
+import bdv.tools.boundingbox.TransformedBoxOverlay.BoxDisplayMode;
 
 /**
  * Panel with radio-buttons to switch between {@link BoxDisplayMode}s.

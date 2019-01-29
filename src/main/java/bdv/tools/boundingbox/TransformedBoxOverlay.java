@@ -29,7 +29,7 @@
  */
 package bdv.tools.boundingbox;
 
-import static bdv.tools.boundingbox.BoundingBoxOverlay.BoxDisplayMode.FULL;
+import static bdv.tools.boundingbox.TransformedBoxOverlay.BoxDisplayMode.FULL;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
@@ -43,7 +43,6 @@ import java.awt.event.MouseMotionListener;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.GeneralPath;
 
-import net.imglib2.FinalRealInterval;
 import net.imglib2.Interval;
 import net.imglib2.RealInterval;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -54,22 +53,19 @@ import org.scijava.listeners.ChangeListener;
 import org.scijava.listeners.ListenableVar;
 
 /**
- * TODO javadoc
- *
- * Overlay displaying a transformed box.
+ * A BDV {@link OverlayRenderer} showing a {@link TransformedBox}. Displays a
+ * wireframe box and/or intersection with current viewer slice, with various
+ * adjustable parameters.
  */
-// TODO: RENAME TransformedBoxOverlay
-public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< AffineTransform3D >
+public class TransformedBoxOverlay implements OverlayRenderer, TransformListener< AffineTransform3D >
 {
 	private static final double DISTANCE_TOLERANCE = 20.;
 
 	private static final double HANDLE_RADIUS = DISTANCE_TOLERANCE / 2.;
 
 	/**
-	 * TODO javadoc
-	 *
-	 * whether to show 3D wireframe box (FULL),
-	 * or only intersection with viewer plane (SECTION)
+	 * Specifies whether to show 3D wireframe box ({@code FULL}), or only
+	 * intersection with viewer plane ({@code SECTION}).
 	 */
 	public enum BoxDisplayMode
 	{
@@ -121,7 +117,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 
 	private HighlightedCornerListener highlightedCornerListener;
 
-	public BoundingBoxOverlay( final Interval interval )
+	public TransformedBoxOverlay( final Interval interval )
 	{
 		this( new TransformedBox()
 		{
@@ -139,7 +135,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 		} );
 	}
 
-	public BoundingBoxOverlay( final TransformedBox bbSource )
+	public TransformedBoxOverlay( final TransformedBox bbSource )
 	{
 		this.bbSource = bbSource;
 
@@ -268,8 +264,9 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 	}
 
 	/**
-	 * TODO javadoc
-	 * @return
+	 * Get/set {@code BoxDisplayMode}, which specifies whether to show 3D
+	 * wireframe box ({@code FULL}), or only intersection with viewer plane
+	 * ({@code SECTION}).
 	 */
 	public ListenableVar< BoxDisplayMode, ChangeListener > boxDisplayMode()
 	{
