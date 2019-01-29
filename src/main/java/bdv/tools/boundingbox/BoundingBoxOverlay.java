@@ -190,18 +190,7 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 		final GeneralPath back = new GeneralPath();
 		final GeneralPath intersection = new GeneralPath();
 
-		final RealInterval bbInterval = bbSource.getInterval();
-		// TODO
-		// TODO
-		// TODO
-		// TODO
-		// TODO
-		final RealInterval interval = bbInterval; // enlarge( bbInterval );
-		// TODO
-		// TODO
-		// TODO
-		// TODO
-		// TODO
+		final RealInterval interval = bbSource.getInterval();
 		final double ox = canvasWidth / 2;
 		final double oy = canvasHeight / 2;
 		synchronized ( viewerTransform )
@@ -260,28 +249,6 @@ public class BoundingBoxOverlay implements OverlayRenderer, TransformListener< A
 				}
 			}
 		}
-	}
-
-	/**
-	 * Enlarges the specified interval by +/- 0.5 to have bounds that fully
-	 * encompasses pixels inside the bounding-box.
-	 *
-	 * @param interval
-	 *            the interval to enlarge.
-	 * @return a new, enlarged interval.
-	 */
-	private static final RealInterval enlarge( final RealInterval interval )
-	{
-		final double[] min = new double[ interval.numDimensions() ];
-		interval.realMin( min );
-		for ( int d = 0; d < min.length; d++ )
-			min[ d ] -= 0.5;
-		final double[] max = new double[ interval.numDimensions() ];
-		interval.realMax( max );
-		for ( int d = 0; d < max.length; d++ )
-			max[ d ] += 0.5;
-
-		return new FinalRealInterval( min, max );
 	}
 
 	@Override
