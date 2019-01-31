@@ -36,7 +36,8 @@ import static bdv.tools.boundingbox.BoxSelectionOptions.TimepointSelection.SINGL
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 
 /**
- * Optional parameters for TODO.
+ * Optional parameters for {@link TransformedBoxSelectionDialog} and
+ * {@link TransformedRealBoxSelectionDialog}.
  *
  * @author Tobias Pietzsch
  */
