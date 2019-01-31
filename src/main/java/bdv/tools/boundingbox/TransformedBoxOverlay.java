@@ -331,6 +331,13 @@ public class TransformedBoxOverlay implements OverlayRenderer, TransformListener
 			highlightedCornerListener.highlightedCornerChanged();
 	}
 
+	/**
+	 * Sets the source size (estimated maximum dimension) in global coordinates.
+	 * Used for setting up perspective projection.
+	 *
+	 * @param sourceSize
+	 *            estimated source size in global coordinates
+	 */
 	public void setSourceSize( final double sourceSize )
 	{
 		this.sourceSize = sourceSize;
