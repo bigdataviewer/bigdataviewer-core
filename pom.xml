@@ -84,6 +84,28 @@
 			<url>https://imagej.net/User:JeanYvesTinevez</url>
 			<properties><id>tinevez</id></properties>
 		</contributor>
+		<contributor>
+			<name>Igor Pisarev</name>
+			<properties><id>igorpisarev</id></properties>
+		</contributor>
+		<contributor>
+			<name>Neil Thistlethwaite</name>
+			<properties><id>nthistle</id></properties>
+		</contributor>
+		<contributor>
+			<name>Philipp Hanslovsky</name>
+			<url>http://imagej.net/User:Hanslovsky</url>
+			<properties><id>hanslovsky</id></properties>
+		</contributor>
+		<contributor>
+			<name>Tim-Oliver Buchholz</name>
+			<url>https://imagej.net/User:Tibuch</url>
+			<properties><id>tibuch</id></properties>
+		</contributor>
+		<contributor>
+			<name>Christian Tischer</name>
+			<properties><id>tischi</id></properties>
+		</contributor>
 	</contributors>
 
 	<mailingLists>
