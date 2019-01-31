@@ -9,6 +9,13 @@ public class TransformedRealBoxModel extends AbstractTransformedBoxModel impleme
 	private final ModifiableRealInterval interval;
 
 	public TransformedRealBoxModel(
+			final RealInterval interval,
+			final AffineTransform3D transform )
+	{
+		this( new ModifiableRealInterval( interval ), transform );
+	}
+
+	public TransformedRealBoxModel(
 			final ModifiableRealInterval interval,
 			final AffineTransform3D transform )
 	{

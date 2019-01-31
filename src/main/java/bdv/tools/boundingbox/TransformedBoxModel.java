@@ -13,6 +13,13 @@ public class TransformedBoxModel extends AbstractTransformedBoxModel
 	private final ModifiableInterval interval;
 
 	public TransformedBoxModel(
+			final Interval interval,
+			final AffineTransform3D transform )
+	{
+		this( new ModifiableInterval( interval ), transform );
+	}
+
+	public TransformedBoxModel(
 			final ModifiableInterval interval,
 			final AffineTransform3D transform )
 	{

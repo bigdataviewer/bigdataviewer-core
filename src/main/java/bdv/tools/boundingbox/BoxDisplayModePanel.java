@@ -62,13 +62,13 @@ public class BoxDisplayModePanel extends JPanel
 	{
 		final GridBagLayout layout = new GridBagLayout();
 		layout.columnWidths = new int[] { 80, 80 };
-		layout.columnWeights = new double[] { 0.5, 0.5 };
+//		layout.columnWeights = new double[] { 0.5, 0.5 };
 		setLayout( layout );
 		final GridBagConstraints gbc = new GridBagConstraints();
 
 		gbc.gridy = 0;
 		gbc.gridx = 0;
-		gbc.gridwidth = 2;
+		gbc.gridwidth = GridBagConstraints.REMAINDER;
 		gbc.anchor = GridBagConstraints.BASELINE_LEADING;
 		gbc.insets = new Insets( 5, 5, 5, 5 );
 

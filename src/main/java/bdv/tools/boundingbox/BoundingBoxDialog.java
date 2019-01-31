@@ -64,6 +64,11 @@ import bdv.viewer.VisibilityAndGrouping;
 
 // dialog to change bounding box
 // while dialog is visible, bounding box is added as a source to the viewer
+
+/**
+ * @deprecated Use {@link TransformedBoxSelectionDialog} instead.
+ */
+@Deprecated
 public class BoundingBoxDialog extends JDialog
 {
 	private static final long serialVersionUID = 1L;
