@@ -568,7 +568,9 @@ public class VisibilityAndGroupingDialog extends JDialog
 				if ( visibility.numSources() != numSources || visibility.numGroups() != numGroups )
 					recreateContent();
 
-				currentButtons.get( visibility.getCurrentGroup() ).setSelected( true );
+				if ( numGroups > 0  )
+					currentButtons.get( visibility.getCurrentGroup() ).setSelected( true );
+
 				for ( int g = 0; g < numGroups; ++g )
 					fusedBoxes.get( g ).setSelected( visibility.isGroupActive( g ) );
 
