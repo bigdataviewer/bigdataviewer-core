@@ -405,7 +405,7 @@ public class WriteSequenceToHdf5
 			try
 			{
 				// calculate number of tasks for progressWriter
-				int numTasks = 1; // first task is for writing mipmap descriptions etc...
+				int numTasks = 0; // first task is for writing mipmap descriptions etc...
 				for ( final int timepointIdSequence : timepointIdsSequence )
 					for ( final int setupIdSequence : setupIdsSequence )
 						if ( seq.getViewDescriptions().get( new ViewId( timepointIdSequence, setupIdSequence ) ).isPresent() )
@@ -420,7 +420,10 @@ public class WriteSequenceToHdf5
 					final ExportMipmapInfo mipmapInfo = perSetupMipmapInfo.get( setupIdSequence );
 					writerQueue.writeMipmapDescription( setupIdPartition, mipmapInfo );
 				}
-				progressWriter.setProgress( ( double ) ++numCompletedTasks / numTasks );
+
+				// Progress of 1% for writing meta data
+				progressWriter.setProgress(0.01);
+				progressWriter = new SubTaskProgressWriter(progressWriter, 0.01, 1.0);
 
 				// write image data for all views to the HDF5 file
 				int timepointIndex = 0;
@@ -627,7 +630,7 @@ public class WriteSequenceToHdf5
 		// for progressWriter
 		final int numTasks = mipmapInfo.getNumLevels();
 		int numCompletedTasks = 0;
-		progressWriter.setProgress( ( double ) numCompletedTasks++ / numTasks );
+		progressWriter.setProgress( 0.0 );
 
 		// write Mipmap descriptions
 		if ( writeMipmapInfo )
@@ -740,6 +743,9 @@ public class WriteSequenceToHdf5
 				borderSize[ d ] = ( int ) ( dimensions[ d ] - ( numCells[ d ] - 1 ) * cellDimensions[ d ] );
 			}
 
+			ProgressWriter subProgressWriter = new SubTaskProgressWriter(
+					progressWriter, (double) numCompletedTasks / numTasks,
+					(double) (numCompletedTasks + 1) / numTasks);
 			// generate one "plane" of cells after the other to avoid cache thrashing when exporting from virtual stacks
 			for ( int lastDimCell = 0; lastDimCell < numCells[ n - 1 ]; ++lastDimCell )
 			{
@@ -803,9 +809,11 @@ public class WriteSequenceToHdf5
 				}
 				if ( afterEachPlane != null )
 					afterEachPlane.afterEachPlane( useLoopBack );
+
+				subProgressWriter.setProgress((double) lastDimCell / numCells[n - 1]);
 			}
 			writerQueue.closeDataset();
-			progressWriter.setProgress( ( double ) numCompletedTasks++ / numTasks );
+			progressWriter.setProgress( ( double ) ++numCompletedTasks / numTasks );
 		}
 		if ( loopback != null )
 			loopback.close();
