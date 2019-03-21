@@ -29,6 +29,8 @@
  */
 package bdv.util;
 
+import java.util.Arrays;
+
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.LinAlgHelpers;
 import bdv.viewer.Source;
@@ -65,8 +67,7 @@ public class MipmapTransforms
 	 * Compute the projected voxel size at the given screen transform and mipmap
 	 * level of a {@link Source}. Take a source voxel (0,0,0)-(1,1,1) at the
 	 * given mipmap level and transform it to the screen image at the given
-	 * screen scale. Take the maximum of the screen extends of the transformed
-	 * projected voxel edges.
+	 * screen scale.
 	 *
 	 * @param screenTransform
 	 *            transforms screen coordinates to global coordinates.
@@ -78,9 +79,9 @@ public class MipmapTransforms
 	 *            mipmap level
 	 * @return pixel size
 	 */
-	public static double getVoxelScreenSize( final AffineTransform3D screenTransform, final Source< ? > source, final int timepoint, final int mipmapIndex )
+	public static double[] getVoxelScreenSize( final AffineTransform3D screenTransform, final Source< ? > source, final int timepoint, final int mipmapIndex )
 	{
-		double pixelSize = 0;
+		final double[] pixelSize = new double[ 3 ];
 		final AffineTransform3D sourceToScreen = new AffineTransform3D();
 		sourceToScreen.set( screenTransform );
 		final AffineTransform3D sourceTransform = new AffineTransform3D();
@@ -90,19 +91,15 @@ public class MipmapTransforms
 		final double[] tzero = new double[ 3 ];
 		final double[] one = new double[ 3 ];
 		final double[] tone = new double[ 3 ];
-		final double[] diff = new double[ 2 ];
+		final double[] diff = new double[ 3 ];
 		sourceToScreen.apply( zero, tzero );
 		for ( int i = 0; i < 3; ++i )
 		{
 			for ( int d = 0; d < 3; ++d )
 				one[ d ] = d == i ? 1 : 0;
 			sourceToScreen.apply( one, tone );
-			LinAlgHelpers.subtract( tone, tzero, tone );
-			diff[0] = tone[0];
-			diff[1] = tone[1];
-			final double l = LinAlgHelpers.length( diff );
-			if ( l > pixelSize )
-				pixelSize = l;
+			LinAlgHelpers.subtract( tone, tzero, diff );
+			pixelSize[ i ] = LinAlgHelpers.length( diff );
 		}
 		return pixelSize;
 	}
@@ -122,19 +119,25 @@ public class MipmapTransforms
 	 */
 	public static int getBestMipMapLevel( final AffineTransform3D screenTransform, final Source< ? > source, final int timepoint )
 	{
-		int targetLevel = source.getNumMipmapLevels() - 1;
-		for ( int level = targetLevel - 1; level >= 0; level-- )
+		final int[] targetLevels = new int[] { -1, -1, -1 };
+		final int numLevels = source.getNumMipmapLevels();
+		for ( int level = numLevels - 1; level >= 0; --level )
 		{
-			if ( getVoxelScreenSize( screenTransform, source, timepoint, level ) >= 0.99 /* 1.0 */)
-				targetLevel = level;
-			else
-				break;
+			final double[] voxelScreenSize = getVoxelScreenSize( screenTransform, source, timepoint, level );
+			for ( int d = 0; d < 3; ++d )
+			{
+				if ( voxelScreenSize[ d ] < 0.99 /* 1.0 */ && targetLevels[ d ] == -1 )
+				{
+					targetLevels[ d ] = Math.min( level + 1, numLevels - 1 );
+				}
+			}
 		}
+		int targetLevel = Math.max( Arrays.stream( targetLevels ).max().getAsInt(), 0 );
 		if ( targetLevel > 0 )
 		{
-			final double size1 = getVoxelScreenSize( screenTransform, source, timepoint, targetLevel );
-			final double size0 = getVoxelScreenSize( screenTransform, source, timepoint, targetLevel - 1 );
-			if ( Math.abs( size1 - 1.0 ) / 2 > Math.abs( size0 - 1.0 ) )
+			final double[] size1 = getVoxelScreenSize( screenTransform, source, timepoint, targetLevel );
+			final double[] size0 = getVoxelScreenSize( screenTransform, source, timepoint, targetLevel - 1 );
+			if ( Math.abs( Arrays.stream( size1 ).max().getAsDouble() - 1.0 ) / 2 > Math.abs( Arrays.stream( size0 ).max().getAsDouble() - 1.0 ) )
 				targetLevel--;
 		}
 		return targetLevel;
