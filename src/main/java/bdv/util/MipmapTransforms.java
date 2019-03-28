@@ -67,6 +67,29 @@ public class MipmapTransforms
 	 * Compute the projected voxel size at the given screen transform and mipmap
 	 * level of a {@link Source}. Take a source voxel (0,0,0)-(1,1,1) at the
 	 * given mipmap level and transform it to the screen image at the given
+	 * screen scale. Take the maximum of the screen extends of the transformed
+	 * projected voxel edges.
+	 *
+	 * @param screenTransform
+	 *            transforms screen coordinates to global coordinates.
+	 * @param source
+	 *            the source
+	 * @param timepoint
+	 *            for which timepoint to query the source
+	 * @param mipmapIndex
+	 *            mipmap level
+	 * @return pixel size
+	 */
+	public static double getVoxelScreenSize( final AffineTransform3D screenTransform, final Source< ? > source, final int timepoint, final int mipmapIndex )
+	{
+		final double[] voxelScreenSizes = getVoxelScreenSizes( screenTransform, source, timepoint, mipmapIndex );
+		return Arrays.stream( voxelScreenSizes ).max().getAsDouble();
+	}
+
+	/**
+	 * Compute the projected voxel size at the given screen transform and mipmap
+	 * level of a {@link Source}. Take a source voxel (0,0,0)-(1,1,1) at the
+	 * given mipmap level and transform it to the screen image at the given
 	 * screen scale.
 	 *
 	 * @param screenTransform
@@ -79,7 +102,7 @@ public class MipmapTransforms
 	 *            mipmap level
 	 * @return pixel size
 	 */
-	public static double[] getVoxelScreenSize( final AffineTransform3D screenTransform, final Source< ? > source, final int timepoint, final int mipmapIndex )
+	public static double[] getVoxelScreenSizes( final AffineTransform3D screenTransform, final Source< ? > source, final int timepoint, final int mipmapIndex )
 	{
 		final double[] pixelSize = new double[ 3 ];
 		final AffineTransform3D sourceToScreen = new AffineTransform3D();
@@ -123,22 +146,26 @@ public class MipmapTransforms
 		final int numLevels = source.getNumMipmapLevels();
 		for ( int level = numLevels - 1; level >= 0; --level )
 		{
-			final double[] voxelScreenSize = getVoxelScreenSize( screenTransform, source, timepoint, level );
+			final double[] voxelScreenSizes = getVoxelScreenSizes( screenTransform, source, timepoint, level );
 			for ( int d = 0; d < 3; ++d )
 			{
-				if ( voxelScreenSize[ d ] < 0.99 /* 1.0 */ && targetLevels[ d ] == -1 )
+				if ( targetLevels[ d ] == -1 && voxelScreenSizes[ d ] < 0.99 /* 1.0 */ )
 				{
-					targetLevels[ d ] = Math.min( level + 1, numLevels - 1 );
+					targetLevels[ d ] = level;
 				}
 			}
 		}
-		int targetLevel = Math.max( Arrays.stream( targetLevels ).max().getAsInt(), 0 );
-		if ( targetLevel > 0 )
+		int targetLevel = Arrays.stream( targetLevels ).max().getAsInt();
+		if ( targetLevel == -1 )
 		{
-			final double[] size1 = getVoxelScreenSize( screenTransform, source, timepoint, targetLevel );
-			final double[] size0 = getVoxelScreenSize( screenTransform, source, timepoint, targetLevel - 1 );
-			if ( Math.abs( Arrays.stream( size1 ).max().getAsDouble() - 1.0 ) / 2 > Math.abs( Arrays.stream( size0 ).max().getAsDouble() - 1.0 ) )
-				targetLevel--;
+			targetLevel = 0;
+		}
+		else if ( targetLevel < numLevels - 1 )
+		{
+			final double size1 = getVoxelScreenSize( screenTransform, source, timepoint, targetLevel + 1 );
+			final double size0 = getVoxelScreenSize( screenTransform, source, timepoint, targetLevel );
+			if ( Math.abs( size1 - 1.0 ) / 2 < Math.abs( size0 - 1.0 ) )
+				++targetLevel;
 		}
 		return targetLevel;
 	}
