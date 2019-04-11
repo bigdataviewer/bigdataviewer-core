@@ -162,7 +162,7 @@ public class ProposeMipmaps
 	}
 
 	/**
-	 * Adjust voxelSize such that the largest dimension is 1.0
+	 * Adjust voxelSize such that the smallest dimension is 1.0
 	 *
 	 * @param size
 	 */
