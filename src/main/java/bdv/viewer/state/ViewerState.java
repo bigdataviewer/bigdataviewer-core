@@ -556,11 +556,21 @@ public class ViewerState
 	 */
 	public synchronized int getBestMipMapLevel( final AffineTransform3D screenScaleTransform, final int sourceIndex )
 	{
+		return getBestMipMapLevel( screenScaleTransform, sources.get( sourceIndex ).getSpimSource() );
+	}
+
+	/**
+	 * Get the mipmap level that best matches the given screen scale for the given source.
+	 *
+	 * @param screenScaleTransform
+	 *            screen scale, transforms screen coordinates to viewer coordinates.
+	 * @return mipmap level
+	 */
+	public synchronized int getBestMipMapLevel( final AffineTransform3D screenScaleTransform, final Source< ? > source )
+	{
 		final AffineTransform3D screenTransform = new AffineTransform3D();
 		getViewerTransform( screenTransform );
 		screenTransform.preConcatenate( screenScaleTransform );
-
-		final Source< ? > source = sources.get( sourceIndex ).getSpimSource();
 
 		return MipmapTransforms.getBestMipMapLevel( screenTransform, source, currentTimepoint );
 	}
