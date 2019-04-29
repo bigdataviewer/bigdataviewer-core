@@ -208,8 +208,8 @@ public class BigDataViewer
 			final List< ConverterSetup > converterSetups,
 			final List< SourceAndConverter< ? > > sources )
 	{
-		final double typeMin = type.getMinValue();
-		final double typeMax = type.getMaxValue();
+		final double typeMin = Math.max( 0, Math.min( type.getMinValue(), 65535 ) );
+		final double typeMax = Math.max( 0, Math.min( type.getMaxValue(), 65535 ) );
 		final RealARGBColorConverter< T > converter = RealARGBColorConverter.create( type, typeMin, typeMax );
 		converter.setColor( new ARGBType( 0xffffffff ) );
 
