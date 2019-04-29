@@ -129,7 +129,7 @@ public class BoundingBoxDialog extends JDialog
 		};
 
 		// set up a converter from the source type (UnsignedShortType in this case) to ARGBType
-		final RealARGBColorConverter< UnsignedShortType > converter = new RealARGBColorConverter.Imp1<>( 0, 3000 );
+		final RealARGBColorConverter< UnsignedShortType > converter = RealARGBColorConverter.create( new UnsignedShortType(), 0, 3000 );
 		converter.setColor( new ARGBType( 0x00994499 ) ); // set bounding box color to magenta
 
 		// create a ConverterSetup (can be used by the brightness dialog to adjust the converter settings)

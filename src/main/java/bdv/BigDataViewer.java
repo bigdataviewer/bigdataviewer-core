@@ -174,14 +174,17 @@ public class BigDataViewer
 			initSetupRealTypeNonVolatile( spimData, setup, type, converterSetups, sources );
 			return;
 		}
-		final double typeMin = Math.max( 0, Math.min( type.getMinValue(), 65535 ) );
-		final double typeMax = Math.max( 0, Math.min( type.getMaxValue(), 65535 ) );
-		final RealARGBColorConverter< V > vconverter = new RealARGBColorConverter.Imp0<>( typeMin, typeMax );
-		vconverter.setColor( new ARGBType( 0xffffffff ) );
-		final RealARGBColorConverter< T > converter = new RealARGBColorConverter.Imp1<>( typeMin, typeMax );
-		converter.setColor( new ARGBType( 0xffffffff ) );
 
 		final int setupId = setup.getId();
+		final V volatileType = ( ( ViewerSetupImgLoader< T, V > ) spimData.getSequenceDescription().getImgLoader().getSetupImgLoader( setupId ) ).getVolatileImageType();
+
+		final double typeMin = Math.max( 0, Math.min( type.getMinValue(), 65535 ) );
+		final double typeMax = Math.max( 0, Math.min( type.getMaxValue(), 65535 ) );
+		final RealARGBColorConverter< V > vconverter = RealARGBColorConverter.create( volatileType, typeMin, typeMax );
+		vconverter.setColor( new ARGBType( 0xffffffff ) );
+		final RealARGBColorConverter< T > converter = RealARGBColorConverter.create( type, typeMin, typeMax );
+		converter.setColor( new ARGBType( 0xffffffff ) );
+
 		final String setupName = createSetupName( setup );
 		final VolatileSpimSource< T, V > vs = new VolatileSpimSource<>( spimData, setupId, setupName );
 		final SpimSource< T > s = vs.nonVolatile();
@@ -207,7 +210,7 @@ public class BigDataViewer
 	{
 		final double typeMin = type.getMinValue();
 		final double typeMax = type.getMaxValue();
-		final RealARGBColorConverter< T > converter = new RealARGBColorConverter.Imp1<>( typeMin, typeMax );
+		final RealARGBColorConverter< T > converter = RealARGBColorConverter.create( type, typeMin, typeMax );
 		converter.setColor( new ARGBType( 0xffffffff ) );
 
 		final int setupId = setup.getId();
