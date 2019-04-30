@@ -166,8 +166,19 @@ public class BigDataViewer
 		return name;
 	}
 
+	/**
+	 * Create standard converter from the given {@code type} to ARGB:
+	 * <ul>
+	 * <li>For {@code RealType}s a {@link RealARGBColorConverter} is
+	 * returned.</li>
+	 * <li>For {@code ARGBType}s a {@link ScaledARGBConverter.ARGB} is
+	 * returned.</li>
+	 * <li>For {@code VolatileARGBType}s a
+	 * {@link ScaledARGBConverter.VolatileARGB} is returned.</li>
+	 * </ul>
+	 */
 	@SuppressWarnings( "unchecked" )
-	private static < T > Converter< T, ARGBType > createConverter( final T type )
+	public static < T extends NumericType< T > > Converter< T, ARGBType > createConverterToARGB( final T type )
 	{
 		if ( type instanceof RealType )
 		{
@@ -184,7 +195,21 @@ public class BigDataViewer
 			throw new IllegalArgumentException( "ImgLoader of type " + type.getClass() + " not supported." );
 	}
 
-	private static ConverterSetup createConverterSetup( final SourceAndConverter< ? > soc, final int setupId )
+	/**
+	 * Create a {@code ConverterSetup} for the given {@code SourceAndConverter}.
+	 * {@link SourceAndConverter#asVolatile() Nested volatile}
+	 * {@code SourceAndConverter} are added to the {@code ConverterSetup} if
+	 * present. If {@code SourceAndConverter} does not comprise a
+	 * {@code ColorConverter}, returns {@code null}.
+	 *
+	 * @param soc
+	 *            {@code SourceAndConverter} for which to create a
+	 *            {@code ConverterSetup}
+	 * @param setupId
+	 *            setupId of the created {@code ConverterSetup}
+	 * @return a new {@code ConverterSetup} or {@code null}
+	 */
+	public static ConverterSetup createConverterSetup( final SourceAndConverter< ? > soc, final int setupId )
 	{
 		final List< ColorConverter > converters = new ArrayList<>();
 
@@ -208,9 +233,10 @@ public class BigDataViewer
 
 	/**
 	 * Decorate source with an extra transformation, that can be edited manually
-	 * in this viewer.
+	 * in this viewer. {@link SourceAndConverter#asVolatile() Nested volatile}
+	 * {@code SourceAndConverter} are wrapped as well, if present.
 	 */
-	private static < T, V extends Volatile< T > > SourceAndConverter< T > wrapWithTransformedSource( final SourceAndConverter< T > soc )
+	public static < T, V extends Volatile< T > > SourceAndConverter< T > wrapWithTransformedSource( final SourceAndConverter< T > soc )
 	{
 		if ( soc.asVolatile() == null )
 			return new SourceAndConverter<>( new TransformedSource<>( soc.getSpimSource() ), soc.getConverter() );
@@ -244,11 +270,11 @@ public class BigDataViewer
 		if ( volatileType != null )
 		{
 			final VolatileSpimSource< V > vs = new VolatileSpimSource<>( spimData, setupId, setupName );
-			vsoc = new SourceAndConverter<>( vs, createConverter( volatileType ) );
+			vsoc = new SourceAndConverter<>( vs, createConverterToARGB( volatileType ) );
 		}
 
 		final SpimSource< T > s = new SpimSource<>( spimData, setupId, setupName );
-		final SourceAndConverter< T > soc = new SourceAndConverter<>( s, createConverter( type ), vsoc );
+		final SourceAndConverter< T > soc = new SourceAndConverter<>( s, createConverterToARGB( type ), vsoc );
 		final SourceAndConverter< T > tsoc = wrapWithTransformedSource( soc );
 		sources.add( tsoc );
 
@@ -663,7 +689,7 @@ public class BigDataViewer
 //		final String fn = "/Users/Pietzsch/Desktop/bdv example/drosophila 2.xml";
 //		final String fn = "/Users/pietzsch/Desktop/data/clusterValia/140219-1/valia-140219-1.xml";
 //		final String fn = "/Users/Pietzsch/Desktop/data/catmaid.xml";
-		final String fn = "src/main/resources/openconnectome-bock11-neariso.xml";
+//		final String fn = "src/main/resources/openconnectome-bock11-neariso.xml";
 //		final String fn = "/home/saalfeld/catmaid.xml";
 //		final String fn = "/home/saalfeld/catmaid-fafb00-v9.xml";
 //		final String fn = "/home/saalfeld/catmaid-fafb00-sample_A_cutout_3k.xml";
@@ -679,7 +705,7 @@ public class BigDataViewer
 //		final String fn = "/Users/pietzsch/Desktop/data/fibsem-remote.xml";
 //		final String fn = "/Users/pietzsch/Desktop/url-valia.xml";
 //		final String fn = "/Users/pietzsch/Desktop/data/clusterValia/140219-1/valia-140219-1.xml";
-//		final String fn = "/Users/pietzsch/workspace/data/111010_weber_full.xml";
+		final String fn = "/Users/pietzsch/workspace/data/111010_weber_full.xml";
 //		final String fn = "/Volumes/projects/tomancak_lightsheet/Mette/ZeissZ1SPIM/Maritigrella/021013_McH2BsGFP_CAAX-mCherry/11-use/hdf5/021013_McH2BsGFP_CAAX-mCherry-11-use.xml";
 		try
 		{
