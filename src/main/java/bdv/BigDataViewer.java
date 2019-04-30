@@ -43,6 +43,16 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.filechooser.FileFilter;
 
+import net.imglib2.Volatile;
+import net.imglib2.converter.Converter;
+import net.imglib2.display.ColorConverter;
+import net.imglib2.display.RealARGBColorConverter;
+import net.imglib2.display.ScaledARGBConverter;
+import net.imglib2.type.numeric.ARGBType;
+import net.imglib2.type.numeric.NumericType;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.volatiles.VolatileARGBType;
+
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.JDOMException;
@@ -85,12 +95,6 @@ import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.sequence.Angle;
 import mpicbg.spim.data.sequence.Channel;
-import net.imglib2.Volatile;
-import net.imglib2.display.RealARGBColorConverter;
-import net.imglib2.display.ScaledARGBConverter;
-import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.volatiles.VolatileARGBType;
 
 public class BigDataViewer
 {
@@ -162,143 +166,104 @@ public class BigDataViewer
 		return name;
 	}
 
-	private static < T extends RealType< T >, V extends Volatile< T > & RealType< V > > void initSetupRealType(
-			final AbstractSpimData< ? > spimData,
-			final BasicViewSetup setup,
-			final T type,
-			final List< ConverterSetup > converterSetups,
-			final List< SourceAndConverter< ? > > sources )
+	@SuppressWarnings( "unchecked" )
+	private static < T > Converter< T, ARGBType > createConverter( final T type )
 	{
-		if ( spimData.getSequenceDescription().getImgLoader() instanceof WrapBasicImgLoader )
+		if ( type instanceof RealType )
 		{
-			initSetupRealTypeNonVolatile( spimData, setup, type, converterSetups, sources );
-			return;
+			final RealType< ? > t = ( RealType< ? > ) type;
+			final double typeMin = Math.max( 0, Math.min( t.getMinValue(), 65535 ) );
+			final double typeMax = Math.max( 0, Math.min( t.getMaxValue(), 65535 ) );
+			return ( Converter< T, ARGBType > ) RealARGBColorConverter.create( t, typeMin, typeMax );
 		}
-
-		final int setupId = setup.getId();
-		final V volatileType = ( ( ViewerSetupImgLoader< T, V > ) spimData.getSequenceDescription().getImgLoader().getSetupImgLoader( setupId ) ).getVolatileImageType();
-
-		final double typeMin = Math.max( 0, Math.min( type.getMinValue(), 65535 ) );
-		final double typeMax = Math.max( 0, Math.min( type.getMaxValue(), 65535 ) );
-		final RealARGBColorConverter< V > vconverter = RealARGBColorConverter.create( volatileType, typeMin, typeMax );
-		vconverter.setColor( new ARGBType( 0xffffffff ) );
-		final RealARGBColorConverter< T > converter = RealARGBColorConverter.create( type, typeMin, typeMax );
-		converter.setColor( new ARGBType( 0xffffffff ) );
-
-		final String setupName = createSetupName( setup );
-		final VolatileSpimSource< T, V > vs = new VolatileSpimSource<>( spimData, setupId, setupName );
-		final SpimSource< T > s = vs.nonVolatile();
-
-		// Decorate each source with an extra transformation, that can be
-		// edited manually in this viewer.
-		final TransformedSource< V > tvs = new TransformedSource<>( vs );
-		final TransformedSource< T > ts = new TransformedSource<>( s, tvs );
-
-		final SourceAndConverter< V > vsoc = new SourceAndConverter<>( tvs, vconverter );
-		final SourceAndConverter< T > soc = new SourceAndConverter<>( ts, converter, vsoc );
-
-		sources.add( soc );
-		converterSetups.add( new RealARGBColorConverterSetup( setupId, converter, vconverter ) );
+		else if ( type instanceof ARGBType )
+			return ( Converter< T, ARGBType > ) new ScaledARGBConverter.ARGB( 0, 255 );
+		else if ( type instanceof VolatileARGBType )
+			return ( Converter< T, ARGBType > ) new ScaledARGBConverter.VolatileARGB( 0, 255 );
+		else
+			throw new IllegalArgumentException( "ImgLoader of type " + type.getClass() + " not supported." );
 	}
 
-	private static < T extends RealType< T > > void initSetupRealTypeNonVolatile(
+	private static ConverterSetup createConverterSetup( final SourceAndConverter< ? > soc, final int setupId )
+	{
+		final List< ColorConverter > converters = new ArrayList<>();
+
+		final Converter< ?, ARGBType > c = soc.getConverter();
+		if ( c instanceof ColorConverter )
+			converters.add( ( ColorConverter ) c );
+
+		final SourceAndConverter< ? extends Volatile< ? > > vsoc = soc.asVolatile();
+		if ( vsoc != null )
+		{
+			final Converter< ?, ARGBType > vc = vsoc.getConverter();
+			if ( vc instanceof ColorConverter )
+				converters.add( ( ColorConverter ) vc );
+		}
+
+		if ( converters.isEmpty() )
+			return null;
+		else
+			return new RealARGBColorConverterSetup( setupId, converters );
+	}
+
+	/**
+	 * Decorate source with an extra transformation, that can be edited manually
+	 * in this viewer.
+	 */
+	private static < T, V extends Volatile< T > > SourceAndConverter< T > wrapWithTransformedSource( final SourceAndConverter< T > soc )
+	{
+		if ( soc.asVolatile() == null )
+			return new SourceAndConverter<>( new TransformedSource<>( soc.getSpimSource() ), soc.getConverter() );
+
+		@SuppressWarnings( "unchecked" )
+		final SourceAndConverter< V > vsoc = ( SourceAndConverter< V > ) soc.asVolatile();
+		final TransformedSource< T > ts = new TransformedSource<>( soc.getSpimSource() );
+		final TransformedSource< V > vts = new TransformedSource<>( vsoc.getSpimSource(), ts );
+		return new SourceAndConverter<>( ts, soc.getConverter(), new SourceAndConverter<>( vts, vsoc.getConverter() ) );
+	}
+
+	private static < T extends NumericType< T >, V extends Volatile< T > & NumericType< V > > void initSetupNumericType(
 			final AbstractSpimData< ? > spimData,
 			final BasicViewSetup setup,
-			final T type,
 			final List< ConverterSetup > converterSetups,
 			final List< SourceAndConverter< ? > > sources )
 	{
-		final double typeMin = Math.max( 0, Math.min( type.getMinValue(), 65535 ) );
-		final double typeMax = Math.max( 0, Math.min( type.getMaxValue(), 65535 ) );
-		final RealARGBColorConverter< T > converter = RealARGBColorConverter.create( type, typeMin, typeMax );
-		converter.setColor( new ARGBType( 0xffffffff ) );
-
 		final int setupId = setup.getId();
+		final ViewerImgLoader imgLoader = ( ViewerImgLoader ) spimData.getSequenceDescription().getImgLoader();
+		@SuppressWarnings( "unchecked" )
+		final ViewerSetupImgLoader< T, V > setupImgLoader = ( ViewerSetupImgLoader< T, V > ) imgLoader.getSetupImgLoader( setupId );
+		final T type = setupImgLoader.getImageType();
+		final V volatileType = setupImgLoader.getVolatileImageType();
+
+		if ( ! ( type instanceof NumericType ) )
+			throw new IllegalArgumentException( "ImgLoader of type " + type.getClass() + " not supported." );
+
 		final String setupName = createSetupName( setup );
+
+		SourceAndConverter< V > vsoc = null;
+		if ( volatileType != null )
+		{
+			final VolatileSpimSource< V > vs = new VolatileSpimSource<>( spimData, setupId, setupName );
+			vsoc = new SourceAndConverter<>( vs, createConverter( volatileType ) );
+		}
+
 		final SpimSource< T > s = new SpimSource<>( spimData, setupId, setupName );
+		final SourceAndConverter< T > soc = new SourceAndConverter<>( s, createConverter( type ), vsoc );
+		final SourceAndConverter< T > tsoc = wrapWithTransformedSource( soc );
+		sources.add( tsoc );
 
-		// Decorate each source with an extra transformation, that can be
-		// edited manually in this viewer.
-		final TransformedSource< T > ts = new TransformedSource<>( s );
-		final SourceAndConverter< T > soc = new SourceAndConverter<>( ts, converter );
-
-		sources.add( soc );
-		converterSetups.add( new RealARGBColorConverterSetup( setupId, converter ) );
+		final ConverterSetup converterSetup = createConverterSetup( tsoc, setupId );
+		if ( converterSetup != null )
+			converterSetups.add( converterSetup );
 	}
 
-	private static void initSetupARGBType(
-			final AbstractSpimData< ? > spimData,
-			final BasicViewSetup setup,
-			final ARGBType type,
-			final List< ConverterSetup > converterSetups,
-			final List< SourceAndConverter< ? > > sources )
-	{
-		if ( spimData.getSequenceDescription().getImgLoader() instanceof WrapBasicImgLoader )
-		{
-			initSetupARGBTypeNonVolatile( spimData, setup, type, converterSetups, sources );
-			return;
-		}
-		final ScaledARGBConverter.VolatileARGB vconverter = new ScaledARGBConverter.VolatileARGB( 0, 255 );
-		final ScaledARGBConverter.ARGB converter = new ScaledARGBConverter.ARGB( 0, 255 );
-
-		final int setupId = setup.getId();
-		final String setupName = createSetupName( setup );
-		final VolatileSpimSource< ARGBType, VolatileARGBType > vs = new VolatileSpimSource<>( spimData, setupId, setupName );
-		final SpimSource< ARGBType > s = vs.nonVolatile();
-
-		// Decorate each source with an extra transformation, that can be
-		// edited manually in this viewer.
-		final TransformedSource< VolatileARGBType > tvs = new TransformedSource<>( vs );
-		final TransformedSource< ARGBType > ts = new TransformedSource<>( s, tvs );
-
-		final SourceAndConverter< VolatileARGBType > vsoc = new SourceAndConverter<>( tvs, vconverter );
-		final SourceAndConverter< ARGBType > soc = new SourceAndConverter<>( ts, converter, vsoc );
-
-		sources.add( soc );
-		converterSetups.add( new RealARGBColorConverterSetup( setupId, converter, vconverter ) );
-	}
-
-	private static void initSetupARGBTypeNonVolatile(
-			final AbstractSpimData< ? > spimData,
-			final BasicViewSetup setup,
-			final ARGBType type,
-			final List< ConverterSetup > converterSetups,
-			final List< SourceAndConverter< ? > > sources )
-	{
-		final ScaledARGBConverter.ARGB converter = new ScaledARGBConverter.ARGB( 0, 255 );
-
-		final int setupId = setup.getId();
-		final String setupName = createSetupName( setup );
-		final SpimSource< ARGBType > s = new SpimSource<>( spimData, setupId, setupName );
-
-		// Decorate each source with an extra transformation, that can be
-		// edited manually in this viewer.
-		final TransformedSource< ARGBType > ts = new TransformedSource<>( s );
-		final SourceAndConverter< ARGBType > soc = new SourceAndConverter<>( ts, converter );
-
-		sources.add( soc );
-		converterSetups.add( new RealARGBColorConverterSetup( setupId, converter ) );
-	}
-
-	@SuppressWarnings( { "unchecked", "rawtypes" } )
 	public static void initSetups(
 			final AbstractSpimData< ? > spimData,
 			final List< ConverterSetup > converterSetups,
 			final List< SourceAndConverter< ? > > sources )
 	{
-		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
-		final ViewerImgLoader imgLoader = ( ViewerImgLoader ) seq.getImgLoader();
-		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
-		{
-			final int setupId = setup.getId();
-			final Object type = imgLoader.getSetupImgLoader( setupId ).getImageType();
-			if ( RealType.class.isInstance( type ) )
-				initSetupRealType( spimData, setup, ( RealType ) type, converterSetups, sources );
-			else if ( ARGBType.class.isInstance( type ) )
-				initSetupARGBType( spimData, setup, ( ARGBType ) type, converterSetups, sources );
-			else
-				throw new IllegalArgumentException( "ImgLoader of type " + type.getClass() + " not supported." );
-		}
+		for ( final BasicViewSetup setup : spimData.getSequenceDescription().getViewSetupsOrdered() )
+			initSetupNumericType( spimData, setup, converterSetups, sources );
 	}
 
 	/**

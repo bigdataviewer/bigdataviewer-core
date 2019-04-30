@@ -159,7 +159,7 @@ public class WrapBasicImgLoader implements ViewerImgLoader
 		@Override
 		public V getVolatileImageType()
 		{
-			throw new UnsupportedOperationException();
+			return null;
 		}
 
 		@Override

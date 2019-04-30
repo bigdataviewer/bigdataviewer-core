@@ -29,21 +29,20 @@
  */
 package bdv;
 
-import bdv.viewer.render.DefaultMipmapOrdering;
-import bdv.viewer.render.MipmapOrdering;
-import mpicbg.spim.data.generic.AbstractSpimData;
-import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.NumericType;
 
-public class VolatileSpimSource< T extends NumericType< T >, V extends Volatile< T > & NumericType< V > >
+import bdv.viewer.render.DefaultMipmapOrdering;
+import bdv.viewer.render.MipmapOrdering;
+import mpicbg.spim.data.generic.AbstractSpimData;
+import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
+
+public class VolatileSpimSource< V extends Volatile< ? > & NumericType< V > >
 		extends AbstractSpimSource< V >
 		implements MipmapOrdering
 {
-	protected final SpimSource< T > nonVolatileSource;
-
 	protected final ViewerSetupImgLoader< ?, V > imgLoader;
 
 	protected final MipmapOrdering mipmapOrdering;
@@ -52,7 +51,6 @@ public class VolatileSpimSource< T extends NumericType< T >, V extends Volatile<
 	public VolatileSpimSource( final AbstractSpimData< ? > spimData, final int setup, final String name )
 	{
 		super( spimData, setup, name );
-		nonVolatileSource = new SpimSource<>( spimData, setup, name );
 		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
 		imgLoader = ( ViewerSetupImgLoader< ?, V > ) ( ( ViewerImgLoader ) seq.getImgLoader() ).getSetupImgLoader( setup );
 		if ( MipmapOrdering.class.isInstance( imgLoader ) )
@@ -66,11 +64,6 @@ public class VolatileSpimSource< T extends NumericType< T >, V extends Volatile<
 	public V getType()
 	{
 		return imgLoader.getVolatileImageType();
-	}
-
-	public SpimSource< T > nonVolatile()
-	{
-		return nonVolatileSource;
 	}
 
 	@Override
