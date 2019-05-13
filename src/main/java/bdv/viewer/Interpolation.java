@@ -37,14 +37,7 @@ public enum Interpolation
 	NEARESTNEIGHBOR( "nearest-neighbor interpolation" ),
 	NLINEAR( "tri-linear interpolation" );
 
-	static {
-		NEARESTNEIGHBOR.next = NLINEAR;
-		NLINEAR.next = NEARESTNEIGHBOR;
-	}
-
 	private final String name;
-
-	private Interpolation next = null;
 
 	private Interpolation( final String name )
 	{
@@ -57,6 +50,6 @@ public enum Interpolation
 	}
 
 	public Interpolation next() {
-		return next;
+		return Interpolation.values()[ ( this.ordinal() + 1 ) % Interpolation.values().length ];
 	}
 }
