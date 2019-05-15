@@ -48,4 +48,15 @@ public enum Interpolation
 	{
 		return name;
 	}
+
+	/**
+	 *
+	 * @return The next {@link Interpolation} value in the order defined by
+	 * {@link Interpolation#values()} with cyclic continuation: The last element
+	 * returns the first element. Can be used to toggle/cycle through interpolations
+	 * in graphical user interface.
+	 */
+	public Interpolation next() {
+		return Interpolation.values()[ ( this.ordinal() + 1 ) % Interpolation.values().length ];
+	}
 }
