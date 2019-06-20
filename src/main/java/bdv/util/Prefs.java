@@ -179,8 +179,6 @@ public class Prefs
 			{
 				try
 				{
-
-					System.out.println("reading property file");
 					return readPropertyFile( file );
 				}
 				catch ( final IOException e )
