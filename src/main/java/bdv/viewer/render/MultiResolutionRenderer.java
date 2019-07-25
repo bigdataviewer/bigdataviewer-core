@@ -128,66 +128,66 @@ public class MultiResolutionRenderer
 	/**
 	 * Receiver for the {@link BufferedImage BufferedImages} that we render.
 	 */
-	protected final RenderTarget display;
+	private final RenderTarget display;
 
 	/**
 	 * Thread that triggers repainting of the display.
 	 * Requests for repainting are send there.
 	 */
-	protected final PainterThread painterThread;
+	private final PainterThread painterThread;
 
 	/**
 	 * Currently active projector, used to re-paint the display. It maps the
 	 * source data to {@link #screenImages}.
 	 */
-	protected VolatileProjector projector;
+	private VolatileProjector projector;
 
 	/**
 	 * The index of the screen scale of the {@link #projector current projector}.
 	 */
-	protected int currentScreenScaleIndex;
+	private int currentScreenScaleIndex;
 
 	/**
 	 * Whether double buffering is used.
 	 */
-	protected final boolean doubleBuffered;
+	private final boolean doubleBuffered;
 
 	/**
 	 * Double-buffer index of next {@link #screenImages image} to render.
 	 */
-	protected final ArrayDeque< Integer > renderIdQueue;
+	private final ArrayDeque< Integer > renderIdQueue;
 
 	/**
 	 * Maps from {@link BufferedImage} to double-buffer index.
 	 * Needed for double-buffering.
 	 */
-	protected final HashMap< BufferedImage, Integer > bufferedImageToRenderId;
+	private final HashMap< BufferedImage, Integer > bufferedImageToRenderId;
 
 	/**
 	 * Used to render an individual source. One image per screen resolution and
 	 * visible source. First index is screen scale, second index is index in
 	 * list of visible sources.
 	 */
-	protected ARGBScreenImage[][] renderImages;
+	private ARGBScreenImage[][] renderImages;
 
 	/**
 	 * Storage for mask images of {@link VolatileHierarchyProjector}.
 	 * One array per visible source. (First) index is index in list of visible sources.
 	 */
-	protected byte[][] renderMaskArrays;
+	private byte[][] renderMaskArrays;
 
 	/**
 	 * Used to render the image for display. Three images per screen resolution
 	 * if double buffering is enabled. First index is screen scale, second index
 	 * is double-buffer.
 	 */
-	protected ARGBScreenImage[][] screenImages;
+	private ARGBScreenImage[][] screenImages;
 
 	/**
 	 * {@link BufferedImage}s wrapping the data in the {@link #screenImages}.
 	 * First index is screen scale, second index is double-buffer.
 	 */
-	protected BufferedImage[][] bufferedImages;
+	private BufferedImage[][] bufferedImages;
 
 	/**
 	 * Scale factors from the {@link #display viewer canvas} to the
@@ -197,14 +197,14 @@ public class MultiResolutionRenderer
 	 * pixel on the canvas, a scale factor of 0.5 means 1 pixel in the screen
 	 * image is displayed as 2 pixel on the canvas, etc.
 	 */
-	protected final double[] screenScales;
+	private final double[] screenScales;
 
 	/**
 	 * The scale transformation from viewer to {@link #screenImages screen
 	 * image}. Each transformations corresponds to a {@link #screenScales screen
 	 * scale}.
 	 */
-	protected AffineTransform3D[] screenScaleTransforms;
+	private AffineTransform3D[] screenScaleTransforms;
 
 	/**
 	 * If the rendering time (in nanoseconds) for the (currently) highest scaled
@@ -214,7 +214,7 @@ public class MultiResolutionRenderer
 	 * scaled screen image is below this threshold, decrease the
 	 * {@link #maxScreenScaleIndex index} of the highest screen scale to use.
 	 */
-	protected final long targetRenderNanos;
+	private final long targetRenderNanos;
 
 	/**
 	 * The index of the (coarsest) screen scale with which to start rendering.
@@ -224,62 +224,62 @@ public class MultiResolutionRenderer
 	 * which rendering in {@link #targetRenderNanos} nanoseconds is still
 	 * possible.
 	 */
-	protected int maxScreenScaleIndex;
+	private int maxScreenScaleIndex;
 
 	/**
 	 * The index of the screen scale which should be rendered next.
 	 */
-	protected int requestedScreenScaleIndex;
+	private int requestedScreenScaleIndex;
 
 	/**
 	 * Whether the current rendering operation may be cancelled (to start a
 	 * new one). Rendering may be cancelled unless we are rendering at
 	 * coarsest screen scale and coarsest mipmap level.
 	 */
-	protected volatile boolean renderingMayBeCancelled;
+	private volatile boolean renderingMayBeCancelled;
 
 	/**
 	 * How many threads to use for rendering.
 	 */
-	protected final int numRenderingThreads;
+	private final int numRenderingThreads;
 
 	/**
 	 * {@link ExecutorService} used for rendering.
 	 */
-	protected final ExecutorService renderingExecutorService;
+	private final ExecutorService renderingExecutorService;
 
 	/**
 	 * TODO
 	 */
-	protected final AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory;
+	private final AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory;
 
 	/**
 	 * Controls IO budgeting and fetcher queue.
 	 */
-	protected final CacheControl cacheControl;
+	private final CacheControl cacheControl;
 
 	/**
 	 * Whether volatile versions of sources should be used if available.
 	 */
-	protected final boolean useVolatileIfAvailable;
+	private final boolean useVolatileIfAvailable;
 
 	/**
 	 * Whether a repaint was {@link #requestRepaint() requested}. This will
 	 * cause {@link CacheControl#prepareNextFrame()}.
 	 */
-	protected boolean newFrameRequest;
+	private boolean newFrameRequest;
 
 	/**
 	 * The timepoint for which last a projector was
 	 * {@link #createProjector(ViewerState, ARGBScreenImage) created}.
 	 */
-	protected int previousTimepoint;
+	private int previousTimepoint;
 
 	// TODO: should be settable
-	protected long[] iobudget = new long[] { 100l * 1000000l,  10l * 1000000l };
+	private long[] iobudget = new long[] { 100l * 1000000l,  10l * 1000000l };
 
 	// TODO: should be settable
-	protected boolean prefetchCells = true;
+	private boolean prefetchCells = true;
 
 	/**
 	 * @param display
@@ -359,7 +359,7 @@ public class MultiResolutionRenderer
 	 *
 	 * @return whether the size was changed.
 	 */
-	protected synchronized boolean checkResize()
+	private synchronized boolean checkResize()
 	{
 		final int componentW = display.getWidth();
 		final int componentH = display.getHeight();
@@ -406,7 +406,7 @@ public class MultiResolutionRenderer
 		return false;
 	}
 
-	protected boolean checkRenewRenderImages( final int numVisibleSources )
+	private boolean checkRenewRenderImages( final int numVisibleSources )
 	{
 		final int n = numVisibleSources > 1 ? numVisibleSources : 0;
 		if ( n != renderImages[ 0 ].length ||
@@ -431,7 +431,7 @@ public class MultiResolutionRenderer
 		return false;
 	}
 
-	protected boolean checkRenewMaskArrays( final int numVisibleSources )
+	private boolean checkRenewMaskArrays( final int numVisibleSources )
 	{
 		if ( numVisibleSources != renderMaskArrays.length ||
 				( numVisibleSources != 0 &&	( renderMaskArrays[ 0 ].length < screenImages[ 0 ][ 0 ].size() ) ) )
@@ -445,7 +445,7 @@ public class MultiResolutionRenderer
 		return false;
 	}
 
-	protected final AffineTransform3D currentProjectorTransform = new AffineTransform3D();
+	private final AffineTransform3D currentProjectorTransform = new AffineTransform3D();
 
 	/**
 	 * Render image at the {@link #requestedScreenScaleIndex requested screen
