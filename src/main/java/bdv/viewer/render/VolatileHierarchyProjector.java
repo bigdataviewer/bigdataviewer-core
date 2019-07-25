@@ -232,33 +232,37 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 
 		final boolean createExecutor = ( executorService == null );
 		final ExecutorService ex = createExecutor ? Executors.newFixedThreadPool( numThreads ) : executorService;
-		for ( i = 0; i < numInvalidLevels && !valid; ++i )
+		try
 		{
-			final byte iFinal = ( byte ) i;
+			for ( i = 0; i < numInvalidLevels && !valid; ++i )
+			{
+				final byte iFinal = ( byte ) i;
 
-			valid = true;
-			numInvalidPixels.set( 0 );
+				valid = true;
+				numInvalidPixels.set( 0 );
 
-			final ArrayList<Callable<Void>> tasks = createTasks(iFinal);
-			try
-			{
-				ex.invokeAll( tasks );
-			}
-			catch ( final InterruptedException e )
-			{
-				Thread.currentThread().interrupt();
-			}
-			if ( interrupted.get() )
-			{
+				final ArrayList<Callable<Void>> tasks = createTasks(iFinal);
+				try
+				{
+					ex.invokeAll( tasks );
+				}
+				catch ( final InterruptedException e )
+				{
+					Thread.currentThread().interrupt();
+				}
+				if ( interrupted.get() )
+				{
 //				System.out.println( "interrupted" );
-				if ( createExecutor )
-					ex.shutdown();
-				return false;
-			}
+					return false;
+				}
 //			System.out.println( "numInvalidPixels(" + i + ") = " + numInvalidPixels );
+			}
 		}
-		if ( createExecutor )
-			ex.shutdown();
+		finally
+		{
+			if ( createExecutor )
+				ex.shutdown();
+		}
 
 		if ( clearUntouchedTargetPixels && !interrupted.get() )
 			clearUntouchedTargetPixels();
