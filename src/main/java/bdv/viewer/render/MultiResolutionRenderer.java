@@ -57,15 +57,19 @@ import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.cache.volatiles.LoadingStrategy;
 import net.imglib2.converter.Converter;
 import net.imglib2.display.screenimage.awt.ARGBScreenImage;
+import net.imglib2.img.Img;
+import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.numeric.ARGBType;
+import net.imglib2.type.numeric.integer.ByteType;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
 import net.imglib2.ui.Renderer;
 import net.imglib2.ui.SimpleInterruptibleProjector;
 import net.imglib2.ui.TransformListener;
 import net.imglib2.ui.util.GuiUtil;
+import net.imglib2.util.Intervals;
 
 /**
  * A {@link Renderer} that uses a coarse-to-fine rendering scheme. First, a
@@ -755,7 +759,8 @@ public class MultiResolutionRenderer
 		if ( hints.renewHintsAfterPaintingOnce() )
 			newFrameRequest = true;
 
-		return new VolatileHierarchyProjector<>( renderList, source.getConverter(), screenImage, maskArray, numRenderingThreads, renderingExecutorService );
+		Img<ByteType> mask = ArrayImgs.bytes( maskArray, Intervals.dimensionsAsLongArray(screenImage) );
+		return new VolatileHierarchyProjector<>( renderList, source.getConverter(), screenImage, mask, numRenderingThreads, renderingExecutorService );
 	}
 
 	private static < T > RandomAccessible< T > getTransformedSource(

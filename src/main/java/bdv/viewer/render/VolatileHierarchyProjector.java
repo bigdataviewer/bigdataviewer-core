@@ -40,7 +40,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import net.imglib2.Cursor;
 import net.imglib2.FinalInterval;
-import net.imglib2.IterableInterval;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
@@ -48,12 +47,15 @@ import net.imglib2.Volatile;
 import net.imglib2.cache.iotiming.CacheIoTiming;
 import net.imglib2.cache.iotiming.IoStatistics;
 import net.imglib2.converter.Converter;
-import net.imglib2.img.Img;
+import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.basictypeaccess.array.ByteArray;
+import net.imglib2.loops.LoopBuilder;
 import net.imglib2.type.numeric.NumericType;
 import net.imglib2.type.numeric.integer.ByteType;
 import net.imglib2.ui.AbstractInterruptibleProjector;
 import net.imglib2.ui.util.StopWatch;
+import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
 
 /**
@@ -68,9 +70,7 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 {
 	protected final ArrayList< RandomAccessible< A > > sources = new ArrayList<>();
 
-	private final byte[] maskArray;
-
-	protected final Img< ByteType > mask;
+	protected final RandomAccessibleInterval< ByteType > mask;
 
 	protected volatile boolean valid = false;
 
@@ -95,12 +95,6 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 	 * Steps for carriage return. Typically -{@link #width}
 	 */
 	protected final int cr;
-
-	/**
-	 * A reference to the target image as an iterable. Used for source-less
-	 * operations such as clearing its content.
-	 */
-	protected final IterableInterval< B > iterableTarget;
 
 	/**
 	 * Number of threads to use for rendering
@@ -138,14 +132,14 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 			final int numThreads,
 			final ExecutorService executorService )
 	{
-		this( sources, converter, target, new byte[ ( int ) ( target.dimension( 0 ) * target.dimension( 1 ) ) ], numThreads, executorService );
+		this( sources, converter, target, ArrayImgs.bytes( Intervals.dimensionsAsLongArray( target ) ), numThreads, executorService );
 	}
 
 	public VolatileHierarchyProjector(
 			final List< ? extends RandomAccessible< A > > sources,
 			final Converter< ? super A, B > converter,
 			final RandomAccessibleInterval< B > target,
-			final byte[] maskArray,
+			final RandomAccessibleInterval< ByteType > mask,
 			final int numThreads,
 			final ExecutorService executorService )
 	{
@@ -154,16 +148,10 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 		this.sources.addAll( sources );
 		numInvalidLevels = sources.size();
 
-		this.maskArray = maskArray;
-		mask = ArrayImgs.bytes( maskArray, target.dimension( 0 ), target.dimension( 1 ) );
+		this.mask = mask;
 
-		iterableTarget = Views.iterable( target );
-
-		for ( int d = 2; d < min.length; ++d )
-			min[ d ] = max[ d ] = 0;
-
-		max[ 0 ] = target.max( 0 );
-		max[ 1 ] = target.max( 1 );
+		target.min(min);
+		target.max(max);
 		sourceInterval = new FinalInterval( min, max );
 
 		width = ( int )target.dimension( 0 );
@@ -206,7 +194,7 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 	 */
 	public void clearMask()
 	{
-		Arrays.fill( maskArray, 0, ( int ) mask.size(), Byte.MAX_VALUE );
+		setAllPixels(mask, Byte.MAX_VALUE);
 		numInvalidLevels = sources.size();
 	}
 
@@ -215,10 +203,9 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 	 */
 	protected void clearUntouchedTargetPixels()
 	{
-		final Cursor< ByteType > maskCursor = mask.cursor();
-		for ( final B t : iterableTarget )
-			if ( maskCursor.next().get() == Byte.MAX_VALUE )
-				t.setZero();
+		LoopBuilder.setImages(mask, target).forEachPixel(
+				(m, t) -> { if ( m.get() == Byte.MAX_VALUE ) t.setZero(); }
+		);
 	}
 
 	@Override
@@ -277,7 +264,7 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 							return null;
 
 						final RandomAccess< B > targetRandomAccess = target.randomAccess( target );
-						final Cursor< ByteType > maskCursor = mask.cursor();
+						final Cursor< ByteType > maskCursor = Views.flatIterable( mask ).cursor();
 						final RandomAccess< A > sourceRandomAccess = sources.get( iFinal ).randomAccess( sourceInterval );
 						int myNumInvalidPixels = 0;
 
@@ -366,4 +353,23 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 
 		return !interrupted.get();
 	}
+
+	/**
+	 * Sets all pixels of the {@link RandomAccessibleInterval<ByteType>} to the given value.
+	 * Note: Has an optimized implementation for ArrayImg<ByteType>.
+	 */
+	private static void setAllPixels(RandomAccessibleInterval<ByteType> mask, byte value) {
+		if( mask.getClass().equals(ArrayImg.class) ) {
+			ArrayImg< ByteType, ? > arrayImg = (ArrayImg<ByteType, ?>) mask;
+			Object access = arrayImg.update(null);
+			if(access.getClass().equals(ByteArray.class)) {
+				byte[] bytes = ((ByteArray) access).getCurrentStorageArray();
+				Arrays.fill( bytes, 0, ( int ) Intervals.numElements(mask), value );
+				return;
+			}
+		}
+		for ( final ByteType val : Views.iterable( mask ) )
+			val.set( value );
+	}
+
 }
