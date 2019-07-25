@@ -226,15 +226,6 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 		final long startTimeIoCumulative = iostat.getCumulativeIoNanoTime();
 //		final long startIoBytes = iostat.getIoBytes();
 
-		final int numTasks;
-		if ( numThreads > 1 )
-		{
-			numTasks = Math.min( numThreads * 10, height );
-		}
-		else
-			numTasks = 1;
-		final double taskHeight = ( double )height / numTasks;
-
 		int i;
 
 		valid = false;
@@ -248,72 +239,7 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 			valid = true;
 			numInvalidPixels.set( 0 );
 
-			final ArrayList< Callable< Void > > tasks = new ArrayList<>( numTasks );
-			for ( int taskNum = 0; taskNum < numTasks; ++taskNum )
-			{
-				final int myOffset = width * ( int ) ( taskNum * taskHeight );
-				final long myMinY = min[ 1 ] + ( int ) ( taskNum * taskHeight );
-				final int myHeight = ( int ) ( ( (taskNum == numTasks - 1 ) ? height : ( int ) ( ( taskNum + 1 ) * taskHeight ) ) - myMinY - min[ 1 ] );
-
-				final Callable< Void > r = new Callable< Void >()
-				{
-					@Override
-					public Void call()
-					{
-						if ( interrupted.get() )
-							return null;
-
-						final RandomAccess< B > targetRandomAccess = target.randomAccess( target );
-						final Cursor< ByteType > maskCursor = Views.flatIterable( mask ).cursor();
-						final RandomAccess< A > sourceRandomAccess = sources.get( iFinal ).randomAccess( sourceInterval );
-						int myNumInvalidPixels = 0;
-
-						final long[] smin = new long[ n ];
-						System.arraycopy( min, 0, smin, 0, n );
-						smin[ 1 ] = myMinY;
-						sourceRandomAccess.setPosition( smin );
-
-						targetRandomAccess.setPosition( min[ 0 ], 0 );
-						targetRandomAccess.setPosition( myMinY, 1 );
-
-						maskCursor.jumpFwd( myOffset );
-
-						for ( int y = 0; y < myHeight; ++y )
-						{
-							if ( interrupted.get() )
-								return null;
-
-							for ( int x = 0; x < width; ++x )
-							{
-								final ByteType m = maskCursor.next();
-								if ( m.get() > iFinal )
-								{
-									final A a = sourceRandomAccess.get();
-									final boolean v = a.isValid();
-									if ( v )
-									{
-										converter.convert( a, targetRandomAccess.get() );
-										m.set( iFinal );
-									}
-									else
-										++myNumInvalidPixels;
-								}
-								sourceRandomAccess.fwd( 0 );
-								targetRandomAccess.fwd( 0 );
-							}
-							++smin[ 1 ];
-							sourceRandomAccess.setPosition( smin );
-							targetRandomAccess.move( cr, 0 );
-							targetRandomAccess.fwd( 1 );
-						}
-						numInvalidPixels.addAndGet( myNumInvalidPixels );
-						if ( myNumInvalidPixels != 0 )
-							valid = false;
-						return null;
-					}
-				};
-				tasks.add( r );
-			}
+			final ArrayList<Callable<Void>> tasks = createTasks(iFinal);
 			try
 			{
 				ex.invokeAll( tasks );
@@ -352,6 +278,86 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 //		System.out.println( "Mapping complete after " + ( s + 1 ) + " levels." );
 
 		return !interrupted.get();
+	}
+
+	private ArrayList<Callable<Void>> createTasks(byte iFinal) {
+
+		final int numTasks;
+		if ( numThreads > 1 )
+		{
+			numTasks = Math.min( numThreads * 10, height );
+		}
+		else
+			numTasks = 1;
+		final double taskHeight = ( double )height / numTasks;
+
+		final ArrayList< Callable< Void > > tasks = new ArrayList<>( numTasks );
+		for ( int taskNum = 0; taskNum < numTasks; ++taskNum )
+		{
+			final int myOffset = width * ( int ) ( taskNum * taskHeight );
+			final long myMinY = min[ 1 ] + ( int ) ( taskNum * taskHeight );
+			final int myHeight = ( int ) ( ( (taskNum == numTasks - 1 ) ? height : ( int ) ( ( taskNum + 1 ) * taskHeight ) ) - myMinY - min[ 1 ] );
+
+			final Callable< Void > r = new Callable< Void >()
+			{
+				@Override
+				public Void call()
+				{
+					if ( interrupted.get() )
+						return null;
+
+					final RandomAccess< B > targetRandomAccess = target.randomAccess( target );
+					final Cursor< ByteType > maskCursor = Views.flatIterable( mask ).cursor();
+					final RandomAccess< A > sourceRandomAccess = sources.get( iFinal ).randomAccess( sourceInterval );
+					int myNumInvalidPixels = 0;
+
+					final long[] smin = new long[ n ];
+					System.arraycopy( min, 0, smin, 0, n );
+					smin[ 1 ] = myMinY;
+					sourceRandomAccess.setPosition( smin );
+
+					targetRandomAccess.setPosition( min[ 0 ], 0 );
+					targetRandomAccess.setPosition( myMinY, 1 );
+
+					maskCursor.jumpFwd( myOffset );
+
+					for ( int y = 0; y < myHeight; ++y )
+					{
+						if ( interrupted.get() )
+							return null;
+
+						for ( int x = 0; x < width; ++x )
+						{
+							final ByteType m = maskCursor.next();
+							if ( m.get() > iFinal )
+							{
+								final A a = sourceRandomAccess.get();
+								final boolean v = a.isValid();
+								if ( v )
+								{
+									converter.convert( a, targetRandomAccess.get() );
+									m.set( iFinal );
+								}
+								else
+									++myNumInvalidPixels;
+							}
+							sourceRandomAccess.fwd( 0 );
+							targetRandomAccess.fwd( 0 );
+						}
+						++smin[ 1 ];
+						sourceRandomAccess.setPosition( smin );
+						targetRandomAccess.move( cr, 0 );
+						targetRandomAccess.fwd( 1 );
+					}
+					numInvalidPixels.addAndGet( myNumInvalidPixels );
+					if ( myNumInvalidPixels != 0 )
+						valid = false;
+					return null;
+				}
+			};
+			tasks.add( r );
+		}
+		return tasks;
 	}
 
 	/**
