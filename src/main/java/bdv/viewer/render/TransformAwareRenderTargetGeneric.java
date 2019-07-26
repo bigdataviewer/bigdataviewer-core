@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -29,12 +29,23 @@
  */
 package bdv.viewer.render;
 
-import java.awt.image.BufferedImage;
-
 import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.ui.RenderTarget;
 import net.imglib2.ui.TransformListener;
 
-public interface TransformAwareRenderTarget extends RenderTarget, TransformAwareRenderTargetGeneric< BufferedImage>
+public interface TransformAwareRenderTargetGeneric<T> extends RenderTargetGeneric<T>
 {
+	/**
+	 * Set the data store that is to be drawn on the canvas, and the transform with which this image was created.
+	 *
+	 * @param img
+	 * 		image to draw (may be null).
+	 */
+	public T setBufferedImageAndTransform(final T img, final AffineTransform3D transform);
+
+	public void addTransformListener(final TransformListener<AffineTransform3D> listener);
+
+	public void addTransformListener(final TransformListener<AffineTransform3D> listener, final int index);
+
+	public void removeTransformListener(final TransformListener<AffineTransform3D> listener);
+
 }

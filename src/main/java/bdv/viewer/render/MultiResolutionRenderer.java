@@ -29,48 +29,21 @@
  */
 package bdv.viewer.render;
 
-import java.awt.image.BufferedImage;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.stream.DoubleStream;
-
 import bdv.cache.CacheControl;
-import bdv.img.cache.VolatileCachedCellImg;
-import bdv.viewer.Interpolation;
-import bdv.viewer.Source;
-import bdv.viewer.render.MipmapOrdering.Level;
-import bdv.viewer.render.MipmapOrdering.MipmapHints;
-import bdv.viewer.state.SourceState;
-import bdv.viewer.state.ViewerState;
-import net.imglib2.Dimensions;
-import net.imglib2.RandomAccess;
-import net.imglib2.RandomAccessible;
-import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.RealRandomAccessible;
 import net.imglib2.Volatile;
-import net.imglib2.cache.iotiming.CacheIoTiming;
-import net.imglib2.cache.volatiles.CacheHints;
-import net.imglib2.cache.volatiles.LoadingStrategy;
-import net.imglib2.converter.Converter;
 import net.imglib2.display.screenimage.awt.ARGBScreenImage;
-import net.imglib2.img.Img;
-import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.array.ArrayImg;
+import net.imglib2.img.basictypeaccess.IntAccess;
+import net.imglib2.img.basictypeaccess.array.IntArray;
 import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.type.numeric.integer.ByteType;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
 import net.imglib2.ui.Renderer;
-import net.imglib2.ui.SimpleInterruptibleProjector;
 import net.imglib2.ui.TransformListener;
-import net.imglib2.ui.util.GuiUtil;
-import net.imglib2.util.Intervals;
+
+import java.awt.image.BufferedImage;
+import java.util.concurrent.ExecutorService;
 
 /**
  * A {@link Renderer} that uses a coarse-to-fine rendering scheme. First, a
@@ -130,180 +103,8 @@ import net.imglib2.util.Intervals;
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
-public class MultiResolutionRenderer
+public class MultiResolutionRenderer extends MultiResolutionRendererGeneric< BufferedImage >
 {
-	/**
-	 * Receiver for the {@link BufferedImage BufferedImages} that we render.
-	 */
-	private final TransformAwareRenderTarget display;
-
-	/**
-	 * Thread that triggers repainting of the display.
-	 * Requests for repainting are send there.
-	 */
-	private final PainterThread painterThread;
-
-	/**
-	 * Currently active projector, used to re-paint the display. It maps the
-	 * source data to {@link ScreenScale#screenImages}.
-	 */
-	private VolatileProjector projector;
-
-	/**
-	 * The index of the screen scale of the {@link #projector current projector}.
-	 */
-	private int currentScreenScaleIndex;
-
-	/**
-	 * Whether double buffering is used.
-	 */
-	private final boolean doubleBuffered;
-
-	/**
-	 * Double-buffer index of next {@link ScreenScale#screenImages image} to render.
-	 */
-	private final ArrayDeque< Integer > renderIdQueue;
-
-	/**
-	 * Maps from {@link BufferedImage} to double-buffer index.
-	 * Needed for double-buffering.
-	 */
-	private final HashMap< BufferedImage, Integer > bufferedImageToRenderId;
-
-	/**
-	 * Storage for mask images of {@link VolatileHierarchyProjector}.
-	 * One array per visible source. (First) index is index in list of visible sources.
-	 */
-	private byte[][] renderMaskArrays;
-
-
-	/**
-	 * List of scale factors and associate image buffers
-	 */
-	private final ScreenScale[] screenScales;
-
-	/**
-	 * Scale factor and associated image buffers and transformation.
-	 */
-	private static class ScreenScale {
-
-		/**
-		 * Scale factors from the {@link #display viewer canvas} to the
-		 * {@link #screenImages}.
-		 *
-		 * A scale factor of 1 means 1 pixel in the screen image is displayed as 1
-		 * pixel on the canvas, a scale factor of 0.5 means 1 pixel in the screen
-		 * image is displayed as 2 pixel on the canvas, etc.
-		 */
-		private double scaleFactor;
-
-		/**
-		 * Used to render an individual source. One image per visible source
-		 * Index is index in list of visible sources.
-		 */
-		// this
-		private List< ARGBScreenImage > renderImages = new ArrayList<>();
-
-		/**
-		 * Used to render the image for display. Three images if double buffering is
-		 * enabled.
-		 */
-		// this
-		private List< ARGBScreenImage > screenImages = new ArrayList<>( Collections.nCopies( 3, null ) );
-
-		/**
-		 * {@link BufferedImage}s wrapping the data in the {@link #screenImages}.
-		 * Three images if double buffering is enabled.
-		 */
-		// this
-		private List< BufferedImage > bufferedImages = new ArrayList<>( Collections.nCopies( 3, null ) );
-
-		/**
-		 * The scale transformation from viewer to {@link #screenImages screen
-		 * image}.
-		 */
-		// this
-		private AffineTransform3D screenScaleTransforms = new AffineTransform3D();
-
-		private ScreenScale(double scaleFactor) {
-			this.scaleFactor = scaleFactor;
-		}
-	}
-
-	/**
-	 * If the rendering time (in nanoseconds) for the (currently) highest scaled
-	 * screen image is above this threshold, increase the
-	 * {@link #maxScreenScaleIndex index} of the highest screen scale to use.
-	 * Similarly, if the rendering time for the (currently) second-highest
-	 * scaled screen image is below this threshold, decrease the
-	 * {@link #maxScreenScaleIndex index} of the highest screen scale to use.
-	 */
-	private final long targetRenderNanos;
-
-	/**
-	 * The index of the (coarsest) screen scale with which to start rendering.
-	 * Once this level is painted, rendering proceeds to lower screen scales
-	 * until index 0 (full resolution) has been reached. While rendering, the
-	 * maxScreenScaleIndex is adapted such that it is the highest index for
-	 * which rendering in {@link #targetRenderNanos} nanoseconds is still
-	 * possible.
-	 */
-	private int maxScreenScaleIndex;
-
-	/**
-	 * The index of the screen scale which should be rendered next.
-	 */
-	private int requestedScreenScaleIndex;
-
-	/**
-	 * Whether the current rendering operation may be cancelled (to start a
-	 * new one). Rendering may be cancelled unless we are rendering at
-	 * coarsest screen scale and coarsest mipmap level.
-	 */
-	private volatile boolean renderingMayBeCancelled;
-
-	/**
-	 * How many threads to use for rendering.
-	 */
-	private final int numRenderingThreads;
-
-	/**
-	 * {@link ExecutorService} used for rendering.
-	 */
-	private final ExecutorService renderingExecutorService;
-
-	/**
-	 * TODO
-	 */
-	private final AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory;
-
-	/**
-	 * Controls IO budgeting and fetcher queue.
-	 */
-	private final CacheControl cacheControl;
-
-	/**
-	 * Whether volatile versions of sources should be used if available.
-	 */
-	private final boolean useVolatileIfAvailable;
-
-	/**
-	 * Whether a repaint was {@link #requestRepaint() requested}. This will
-	 * cause {@link CacheControl#prepareNextFrame()}.
-	 */
-	private boolean newFrameRequest;
-
-	/**
-	 * The timepoint for which last a projector was
-	 * {@link #createProjector(ViewerState, ARGBScreenImage) created}.
-	 */
-	private int previousTimepoint;
-
-	// TODO: should be settable
-	private long[] iobudget = new long[] { 100l * 1000000l,  10l * 1000000l };
-
-	// TODO: should be settable
-	private boolean prefetchCells = true;
 
 	/**
 	 * @param display
@@ -349,543 +150,94 @@ public class MultiResolutionRenderer
 			final AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory,
 			final CacheControl cacheControl )
 	{
-		this.display = wrapTransformAwareRenderTarget( display );
-		this.painterThread = painterThread;
-		projector = null;
-		currentScreenScaleIndex = -1;
-		this.screenScales = DoubleStream.of(screenScales).mapToObj(ScreenScale::new).toArray(ScreenScale[]::new);
-		this.doubleBuffered = doubleBuffered;
-		renderIdQueue = new ArrayDeque<>();
-		bufferedImageToRenderId = new HashMap<>();
-		renderMaskArrays = new byte[ 0 ][];
-
-		this.targetRenderNanos = targetRenderNanos;
-
-		maxScreenScaleIndex = screenScales.length - 1;
-		requestedScreenScaleIndex = maxScreenScaleIndex;
-		renderingMayBeCancelled = true;
-		this.numRenderingThreads = numRenderingThreads;
-		this.renderingExecutorService = renderingExecutorService;
-		this.useVolatileIfAvailable = useVolatileIfAvailable;
-		this.accumulateProjectorFactory = accumulateProjectorFactory;
-		this.cacheControl = cacheControl;
-		newFrameRequest = false;
-		previousTimepoint = -1;
+		super(getWrap(display), painterThread, screenScales, targetRenderNanos, doubleBuffered, numRenderingThreads,
+				renderingExecutorService, useVolatileIfAvailable, accumulateProjectorFactory, cacheControl, new ImageFactory());
 	}
 
-	/**
-	 * Check whether the size of the display component was changed and
-	 * recreate {@link ScreenScale#screenImages} and {@link ScreenScale#screenScaleTransforms} accordingly.
-	 *
-	 * @return whether the size was changed.
-	 */
-	private synchronized boolean checkResize()
-	{
-		final int componentW = display.getWidth();
-		final int componentH = display.getHeight();
-		if ( screenScales[ 0 ].screenImages.get( 0 ) == null || screenScales[ 0 ].screenImages.get( 0 ).dimension( 0 ) != ( int ) ( componentW * screenScales[ 0 ].scaleFactor ) || screenScales[ 0 ].screenImages.get( 0 ).dimension( 1 ) != ( int ) ( componentH  * screenScales[ 0 ].scaleFactor ) )
-		{
-			renderIdQueue.clear();
-			renderIdQueue.addAll( Arrays.asList( 0, 1, 2 ) );
-			bufferedImageToRenderId.clear();
-			for ( int i = 0; i < screenScales.length; ++i )
-			{
-				final double screenToViewerScale = screenScales[ i ].scaleFactor;
-				final int w = ( int ) ( screenToViewerScale * componentW );
-				final int h = ( int ) ( screenToViewerScale * componentH );
-				if ( doubleBuffered )
-				{
-					for ( int b = 0; b < 3; ++b )
-					{
-						// reuse storage arrays of level 0 (highest resolution)
-						final ARGBScreenImage screenImage = ( i == 0 ) ?
-								new ARGBScreenImage( w, h ) :
-								new ARGBScreenImage( w, h, screenScales[0].screenImages.get( b ).getData() );
-						screenScales[ i ].screenImages.set( b, screenImage );
-						final BufferedImage bi = GuiUtil.getBufferedImage( screenScales[ i ].screenImages.get( b ) );
-						screenScales[ i ].bufferedImages.set( b, bi);
-						bufferedImageToRenderId.put( bi, b );
-					}
-				}
-				else
-				{
-					screenScales[ i ].screenImages.set( 0, new ARGBScreenImage( w, h ) );
-					screenScales[ i ].bufferedImages.set( 0, GuiUtil.getBufferedImage( screenScales[ i ].screenImages.get( 0 ) ) );
-				}
-				final AffineTransform3D scale = new AffineTransform3D();
-				final double xScale = ( double ) w / componentW;
-				final double yScale = ( double ) h / componentH;
-				scale.set( xScale, 0, 0 );
-				scale.set( yScale, 1, 1 );
-				scale.set( 0.5 * xScale - 0.5, 0, 3 );
-				scale.set( 0.5 * yScale - 0.5, 1, 3 );
-				screenScales[ i ].screenScaleTransforms = scale;
+	private static TransformAwareRenderTargetGeneric<BufferedImage> getWrap(RenderTarget display) {
+		if( display instanceof TransformAwareRenderTargetGeneric )
+			return (TransformAwareRenderTargetGeneric<BufferedImage>) display;
+		return new TransformAwareRenderTargetGeneric<BufferedImage>() {
+			@Override
+			public BufferedImage setBufferedImage(BufferedImage bufferedImage) {
+				return display.setBufferedImage(bufferedImage);
 			}
 
-			return true;
-		}
-		return false;
-	}
-
-	private boolean checkRenewRenderImages( final int numVisibleSources )
-	{
-		final int n = numVisibleSources > 1 ? numVisibleSources : 0;
-		if ( n != screenScales[ 0 ].renderImages.size() ||
-				( n != 0 &&
-					( screenScales[ 0 ].renderImages.get( 0 ).dimension( 0 ) != screenScales[ 0 ].screenImages.get( 0 ).dimension( 0 ) ||
-					  screenScales[ 0 ].renderImages.get( 0 ).dimension( 1 ) != screenScales[ 0 ].screenImages.get( 0 ).dimension( 1 ) ) ) )
-		{
-			for ( int i = 0; i < screenScales.length; ++i )
-			{
-				screenScales[ i ].renderImages = new ArrayList<>( Collections.nCopies( n, null) );
-				final int w = ( int ) screenScales[ i ].screenImages.get( 0 ).dimension( 0 );
-				final int h = ( int ) screenScales[ i ].screenImages.get( 0 ).dimension( 1 );
-				for ( int j = 0; j < n; ++j )
-				{
-					final ARGBScreenImage renderImage = ( i == 0 ) ?
-							new ARGBScreenImage( w, h ) :
-							new ARGBScreenImage( w, h, screenScales[0].renderImages.get( j ).getData() );
-					screenScales[ i ].renderImages.set( j, renderImage );
-				}
-			}
-			return true;
-		}
-		return false;
-	}
-
-	private boolean checkRenewMaskArrays( final int numVisibleSources )
-	{
-		if ( numVisibleSources != renderMaskArrays.length ||
-				( numVisibleSources != 0 &&	( renderMaskArrays[ 0 ].length < screenScales[ 0 ].screenImages.get( 0 ).size() ) ) )
-		{
-			final int size = ( int ) screenScales[ 0 ].screenImages.get( 0 ).size();
-			renderMaskArrays = new byte[ numVisibleSources ][];
-			for ( int j = 0; j < numVisibleSources; ++j )
-				renderMaskArrays[ j ] = new byte[ size ];
-			return true;
-		}
-		return false;
-	}
-
-	private final AffineTransform3D currentProjectorTransform = new AffineTransform3D();
-
-	/**
-	 * Render image at the {@link #requestedScreenScaleIndex requested screen
-	 * scale}.
-	 */
-	public boolean paint( final ViewerState state )
-	{
-		if ( display.getWidth() <= 0 || display.getHeight() <= 0 )
-			return false;
-
-		final boolean resized = checkResize();
-
-		// the BufferedImage that is rendered to (to paint to the canvas)
-		final BufferedImage bufferedImage;
-
-		// the projector that paints to the screenImage.
-		final VolatileProjector p;
-
-		final boolean clearQueue;
-
-		final boolean createProjector;
-
-		synchronized ( this )
-		{
-			// Rendering may be cancelled unless we are rendering at coarsest
-			// screen scale and coarsest mipmap level.
-			renderingMayBeCancelled = ( requestedScreenScaleIndex < maxScreenScaleIndex );
-
-			clearQueue = newFrameRequest;
-			if ( clearQueue )
-				cacheControl.prepareNextFrame();
-			createProjector = newFrameRequest || resized || ( requestedScreenScaleIndex != currentScreenScaleIndex );
-			newFrameRequest = false;
-
-			if ( createProjector )
-			{
-				final int renderId = renderIdQueue.peek();
-				currentScreenScaleIndex = requestedScreenScaleIndex;
-				bufferedImage = screenScales[ currentScreenScaleIndex ].bufferedImages.get( renderId );
-				final ARGBScreenImage screenImage = screenScales[ currentScreenScaleIndex ].screenImages.get( renderId );
-				synchronized ( state )
-				{
-					final int numVisibleSources = state.getVisibleSourceIndices().size();
-					checkRenewRenderImages( numVisibleSources );
-					checkRenewMaskArrays( numVisibleSources );
-					p = createProjector( state, screenImage );
-				}
-				projector = p;
-			}
-			else
-			{
-				bufferedImage = null;
-				p = projector;
+			@Override
+			public int getWidth() {
+				return display.getWidth();
 			}
 
-			requestedScreenScaleIndex = 0;
-		}
-
-		// try rendering
-		final boolean success = p.map( createProjector );
-		final long rendertime = p.getLastFrameRenderNanoTime();
-
-		synchronized ( this )
-		{
-			// if rendering was not cancelled...
-			if ( success )
-			{
-				if ( createProjector )
-				{
-					final BufferedImage bi = display.setBufferedImageAndTransform( bufferedImage, currentProjectorTransform );
-					if ( doubleBuffered )
-					{
-						renderIdQueue.pop();
-						final Integer id = bufferedImageToRenderId.get( bi );
-						if ( id != null )
-							renderIdQueue.add( id );
-					}
-
-					if ( currentScreenScaleIndex == maxScreenScaleIndex )
-					{
-						if ( rendertime > targetRenderNanos && maxScreenScaleIndex < screenScales.length - 1 )
-							maxScreenScaleIndex++;
-						else if ( rendertime < targetRenderNanos / 3 && maxScreenScaleIndex > 0 )
-							maxScreenScaleIndex--;
-					}
-					else if ( currentScreenScaleIndex == maxScreenScaleIndex - 1 )
-					{
-						if ( rendertime < targetRenderNanos && maxScreenScaleIndex > 0 )
-							maxScreenScaleIndex--;
-					}
-//					System.out.println( String.format( "rendering:%4d ms", rendertime / 1000000 ) );
-//					System.out.println( "scale = " + currentScreenScaleIndex );
-//					System.out.println( "maxScreenScaleIndex = " + maxScreenScaleIndex + "  (" + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 0 ) + " x " + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 1 ) + ")" );
-				}
-
-				if ( currentScreenScaleIndex > 0 )
-					requestRepaint( currentScreenScaleIndex - 1 );
-				else if ( !p.isValid() )
-				{
-					try
-					{
-						Thread.sleep( 1 );
-					}
-					catch ( final InterruptedException e )
-					{
-						// restore interrupted state
-						Thread.currentThread().interrupt();
-					}
-					requestRepaint( currentScreenScaleIndex );
-				}
+			@Override
+			public int getHeight() {
+				return display.getHeight();
 			}
-		}
 
-		return success;
-	}
-
-	/**
-	 * Request a repaint of the display from the painter thread, with maximum
-	 * screen scale index and mipmap level.
-	 */
-	public synchronized void requestRepaint()
-	{
-		newFrameRequest = true;
-		requestRepaint( maxScreenScaleIndex );
-	}
-
-	/**
-	 * Request a repaint of the display from the painter thread. The painter
-	 * thread will trigger a {@link #paint(ViewerState)} as soon as possible (that is,
-	 * immediately or after the currently running {@link #paint(ViewerState)} has
-	 * completed).
-	 */
-	public synchronized void requestRepaint( final int screenScaleIndex )
-	{
-		if ( renderingMayBeCancelled && projector != null )
-			projector.cancel();
-		if ( screenScaleIndex > requestedScreenScaleIndex )
-			requestedScreenScaleIndex = screenScaleIndex;
-		painterThread.requestRepaint();
-	}
-
-	/**
-	 * DON'T USE THIS.
-	 * <p>
-	 * This is a work around for JDK bug
-	 * https://bugs.openjdk.java.net/browse/JDK-8029147 which leads to
-	 * ViewerPanel not being garbage-collected when ViewerFrame is closed. So
-	 * instead we need to manually let go of resources...
-	 */
-	public void kill()
-	{
-		if ( display instanceof TransformAwareBufferedImageOverlayRenderer )
-			( ( TransformAwareBufferedImageOverlayRenderer ) display ).kill();
-		projector = null;
-		renderIdQueue.clear();
-		bufferedImageToRenderId.clear();
-		for ( int i = 0; i < renderMaskArrays.length; ++i )
-			renderMaskArrays[ i ] = null;
-		for ( ScreenScale screenScale : screenScales ) {
-			screenScale.renderImages = null;
-			screenScale.screenImages = null;
-			screenScale.bufferedImages = null;
-		}
-	}
-
-	private VolatileProjector createProjector(
-			final ViewerState viewerState,
-			final ARGBScreenImage screenImage )
-	{
-		/*
-		 * This shouldn't be necessary, with
-		 * CacheHints.LoadingStrategy==VOLATILE
-		 */
-//		CacheIoTiming.getIoTimeBudget().clear(); // clear time budget such that prefetching doesn't wait for loading blocks.
-		final List< SourceState< ? > > sourceStates = viewerState.getSources();
-		final List< Integer > visibleSourceIndices = viewerState.getVisibleSourceIndices();
-		VolatileProjector projector;
-		if ( visibleSourceIndices.isEmpty() )
-			projector = new EmptyProjector<>( screenImage );
-		else if ( visibleSourceIndices.size() == 1 )
-		{
-			final int i = visibleSourceIndices.get( 0 );
-			projector = createSingleSourceProjector( viewerState, sourceStates.get( i ), i, currentScreenScaleIndex, screenImage, renderMaskArrays[ 0 ] );
-		}
-		else
-		{
-			final ArrayList< VolatileProjector > sourceProjectors = new ArrayList<>();
-			final ArrayList< ARGBScreenImage > sourceImages = new ArrayList<>();
-			final ArrayList< Source< ? > > sources = new ArrayList<>();
-			int j = 0;
-			for ( final int i : visibleSourceIndices )
-			{
-				final ARGBScreenImage renderImage = screenScales[ currentScreenScaleIndex ].renderImages.get( j );
-				final byte[] maskArray = renderMaskArrays[ j ];
-				++j;
-				final VolatileProjector p = createSingleSourceProjector(
-						viewerState, sourceStates.get( i ), i, currentScreenScaleIndex,
-						renderImage, maskArray );
-				sourceProjectors.add( p );
-				sources.add( sourceStates.get( i ).getSpimSource() );
-				sourceImages.add( renderImage );
+			@Override
+			public BufferedImage setBufferedImageAndTransform(BufferedImage img, AffineTransform3D transform) {
+				return display.setBufferedImage(img);
 			}
-			projector = accumulateProjectorFactory.createAccumulateProjector( sourceProjectors, sources, sourceImages, screenImage, numRenderingThreads, renderingExecutorService );
-		}
-		previousTimepoint = viewerState.getCurrentTimepoint();
-		viewerState.getViewerTransform( currentProjectorTransform );
-		CacheIoTiming.getIoTimeBudget().reset( iobudget );
-		return projector;
+
+			@Override
+			public void addTransformListener(TransformListener<AffineTransform3D> listener) {
+
+			}
+
+			@Override
+			public void addTransformListener(TransformListener<AffineTransform3D> listener, int index) {
+
+			}
+
+			@Override
+			public void removeTransformListener(TransformListener<AffineTransform3D> listener) {
+
+			}
+		};
 	}
 
-	private static class SimpleVolatileProjector< A, B > extends SimpleInterruptibleProjector< A, B > implements VolatileProjector
-	{
-		private boolean valid = false;
+	private static class ImageFactory implements RenderOutputImage.Factory< BufferedImage > {
 
-		public SimpleVolatileProjector(
-				final RandomAccessible< A > source,
-				final Converter< ? super A, B > converter,
-				final RandomAccessibleInterval< B > target,
-				final int numThreads,
-				final ExecutorService executorService )
-		{
-			super( source, converter, target, numThreads, executorService );
+		@Override
+		public RenderOutputImage< BufferedImage > create(int width, int height) {
+			return new MyRenderOutputImage(width, height);
 		}
 
 		@Override
-		public boolean map( final boolean clearUntouchedTargetPixels )
-		{
-			final boolean success = super.map();
-			valid |= success;
-			return success;
+		public RenderOutputImage< BufferedImage > create(int width, int heihgt, RenderOutputImage< BufferedImage > other) {
+			return new MyRenderOutputImage(width, heihgt, (IntArray) other.asArrayImg().update(null));
+		}
+	}
+
+	private static class MyRenderOutputImage implements RenderOutputImage<BufferedImage> {
+
+		private final ARGBScreenImage screenImage;
+
+		public MyRenderOutputImage(int width, int height) {
+			screenImage = new ARGBScreenImage(width, height);
+		}
+
+		public MyRenderOutputImage(int width, int heihgt, IntArray update) {
+			screenImage = new ARGBScreenImage(width, heihgt, update);
 		}
 
 		@Override
-		public boolean isValid()
-		{
-			return valid;
-		}
-	}
-
-	private < T > VolatileProjector createSingleSourceProjector(
-			final ViewerState viewerState,
-			final SourceState< T > source,
-			final int sourceIndex,
-			final int screenScaleIndex,
-			final ARGBScreenImage screenImage,
-			final byte[] maskArray )
-	{
-		if ( useVolatileIfAvailable )
-		{
-			if ( source.asVolatile() != null )
-				return createSingleSourceVolatileProjector( viewerState, source.asVolatile(), sourceIndex, screenScaleIndex, screenImage, maskArray );
-			else if ( source.getSpimSource().getType() instanceof Volatile )
-			{
-				@SuppressWarnings( "unchecked" )
-				final SourceState< ? extends Volatile< ? > > vsource = ( SourceState< ? extends Volatile< ? > > ) source;
-				return createSingleSourceVolatileProjector( viewerState, vsource, sourceIndex, screenScaleIndex, screenImage, maskArray );
-			}
+		public int width() {
+			return (int) screenImage.dimension(0);
 		}
 
-		final AffineTransform3D screenScaleTransform = screenScales[ currentScreenScaleIndex ].screenScaleTransforms;
-		final int bestLevel = viewerState.getBestMipMapLevel( screenScaleTransform, sourceIndex );
-		return new SimpleVolatileProjector<>(
-				getTransformedSource( viewerState, source.getSpimSource(), screenScaleTransform, bestLevel, null ),
-				source.getConverter(), screenImage, numRenderingThreads, renderingExecutorService );
-	}
-
-	private < T extends Volatile< ? > > VolatileProjector createSingleSourceVolatileProjector(
-			final ViewerState viewerState,
-			final SourceState< T > source,
-			final int sourceIndex,
-			final int screenScaleIndex,
-			final ARGBScreenImage screenImage,
-			final byte[] maskArray )
-	{
-		final AffineTransform3D screenScaleTransform = screenScales[currentScreenScaleIndex].screenScaleTransforms;
-		final ArrayList< RandomAccessible< T > > renderList = new ArrayList<>();
-		final Source< T > spimSource = source.getSpimSource();
-		final int t = viewerState.getCurrentTimepoint();
-
-		final MipmapOrdering ordering = MipmapOrdering.class.isInstance( spimSource ) ?
-			( MipmapOrdering ) spimSource : new DefaultMipmapOrdering( spimSource );
-
-		final AffineTransform3D screenTransform = new AffineTransform3D();
-		viewerState.getViewerTransform( screenTransform );
-		screenTransform.preConcatenate( screenScaleTransform );
-		final MipmapHints hints = ordering.getMipmapHints( screenTransform, t, previousTimepoint );
-		final List< Level > levels = hints.getLevels();
-
-		if ( prefetchCells )
-		{
-			Collections.sort( levels, MipmapOrdering.prefetchOrderComparator );
-			for ( final Level l : levels )
-			{
-				final CacheHints cacheHints = l.getPrefetchCacheHints();
-				if ( cacheHints == null || cacheHints.getLoadingStrategy() != LoadingStrategy.DONTLOAD )
-					prefetch( viewerState, spimSource, screenScaleTransform, l.getMipmapLevel(), cacheHints, screenImage );
-			}
+		@Override
+		public int height() {
+			return (int) screenImage.dimension( 1 );
 		}
 
-		Collections.sort( levels, MipmapOrdering.renderOrderComparator );
-		for ( final Level l : levels )
-			renderList.add( getTransformedSource( viewerState, spimSource, screenScaleTransform, l.getMipmapLevel(), l.getRenderCacheHints() ) );
-
-		if ( hints.renewHintsAfterPaintingOnce() )
-			newFrameRequest = true;
-
-		Img<ByteType> mask = ArrayImgs.bytes( maskArray, Intervals.dimensionsAsLongArray(screenImage) );
-		return new VolatileHierarchyProjector<>( renderList, source.getConverter(), screenImage, mask, numRenderingThreads, renderingExecutorService );
-	}
-
-	private static < T > RandomAccessible< T > getTransformedSource(
-			final ViewerState viewerState,
-			final Source< T > source,
-			final AffineTransform3D screenScaleTransform,
-			final int mipmapIndex,
-			final CacheHints cacheHints )
-	{
-		final int timepoint = viewerState.getCurrentTimepoint();
-
-		final RandomAccessibleInterval< T > img = source.getSource( timepoint, mipmapIndex );
-		if ( VolatileCachedCellImg.class.isInstance( img ) )
-			( ( VolatileCachedCellImg< ?, ? > ) img ).setCacheHints( cacheHints );
-
-		final Interpolation interpolation = viewerState.getInterpolation();
-		final RealRandomAccessible< T > ipimg = source.getInterpolatedSource( timepoint, mipmapIndex, interpolation );
-
-		final AffineTransform3D sourceToScreen = new AffineTransform3D();
-		viewerState.getViewerTransform( sourceToScreen );
-		final AffineTransform3D sourceTransform = new AffineTransform3D();
-		source.getSourceTransform( timepoint, mipmapIndex, sourceTransform );
-		sourceToScreen.concatenate( sourceTransform );
-		sourceToScreen.preConcatenate( screenScaleTransform );
-
-		return RealViews.affine( ipimg, sourceToScreen );
-	}
-
-	private static < T > void prefetch(
-			final ViewerState viewerState,
-			final Source< T > source,
-			final AffineTransform3D screenScaleTransform,
-			final int mipmapIndex,
-			final CacheHints prefetchCacheHints,
-			final Dimensions screenInterval )
-	{
-		final int timepoint = viewerState.getCurrentTimepoint();
-		final RandomAccessibleInterval< T > img = source.getSource( timepoint, mipmapIndex );
-		if ( VolatileCachedCellImg.class.isInstance( img ) )
-		{
-			final VolatileCachedCellImg< ?, ? > cellImg = ( VolatileCachedCellImg< ?, ? > ) img;
-
-			CacheHints hints = prefetchCacheHints;
-			if ( hints == null )
-			{
-				final CacheHints d = cellImg.getDefaultCacheHints();
-				hints = new CacheHints( LoadingStrategy.VOLATILE, d.getQueuePriority(), false );
-			}
-			cellImg.setCacheHints( hints );
-			final int[] cellDimensions = new int[ 3 ];
-			cellImg.getCellGrid().cellDimensions( cellDimensions );
-			final long[] dimensions = new long[ 3 ];
-			cellImg.dimensions( dimensions );
-			final RandomAccess< ? > cellsRandomAccess = cellImg.getCells().randomAccess();
-
-			final Interpolation interpolation = viewerState.getInterpolation();
-
-			final AffineTransform3D sourceToScreen = new AffineTransform3D();
-			viewerState.getViewerTransform( sourceToScreen );
-			final AffineTransform3D sourceTransform = new AffineTransform3D();
-			source.getSourceTransform( timepoint, mipmapIndex, sourceTransform );
-			sourceToScreen.concatenate( sourceTransform );
-			sourceToScreen.preConcatenate( screenScaleTransform );
-
-			Prefetcher.fetchCells( sourceToScreen, cellDimensions, dimensions, screenInterval, interpolation, cellsRandomAccess );
+		@Override
+		public ArrayImg<ARGBType, IntAccess> asArrayImg() {
+			return (ArrayImg) screenImage;
 		}
-	}
 
-	private static TransformAwareRenderTarget wrapTransformAwareRenderTarget( final RenderTarget t )
-	{
-		if ( t instanceof TransformAwareRenderTarget )
-			return ( TransformAwareRenderTarget ) t;
-		else
-			return new TransformAwareRenderTarget()
-			{
-				@Override
-				public BufferedImage setBufferedImage( final BufferedImage img )
-				{
-					return t.setBufferedImage( img );
-				}
-
-				@Override
-				public int getWidth()
-				{
-					return t.getWidth();
-				}
-
-				@Override
-				public int getHeight()
-				{
-					return t.getHeight();
-				}
-
-				@Override
-				public BufferedImage setBufferedImageAndTransform( final BufferedImage img, final AffineTransform3D transform )
-				{
-					return t.setBufferedImage( img );
-				}
-
-				@Override
-				public void removeTransformListener( final TransformListener< AffineTransform3D > listener )
-				{}
-
-				@Override
-				public void addTransformListener( final TransformListener< AffineTransform3D > listener, final int index )
-				{}
-
-				@Override
-				public void addTransformListener( final TransformListener< AffineTransform3D > listener )
-				{}
-			};
+		@Override
+		public BufferedImage unwrap() {
+			return screenImage.image();
+		}
 	}
 }
