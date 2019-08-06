@@ -29,6 +29,7 @@
  */
 package bdv.viewer.state;
 
+import bdv.viewer.render.RendererSourceState;
 import net.imglib2.Volatile;
 import bdv.viewer.DisplayMode;
 import bdv.viewer.SourceAndConverter;
@@ -36,7 +37,7 @@ import bdv.viewer.SourceAndConverter;
 /**
  * Source with some attached state needed for rendering.
  */
-public class SourceState< T > extends SourceAndConverter< T >
+public class SourceState< T > extends SourceAndConverter< T > implements RendererSourceState< T >
 {
 	protected static class Data
 	{

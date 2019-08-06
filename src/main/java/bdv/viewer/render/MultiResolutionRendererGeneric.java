@@ -46,8 +46,6 @@ import bdv.viewer.Interpolation;
 import bdv.viewer.Source;
 import bdv.viewer.render.MipmapOrdering.Level;
 import bdv.viewer.render.MipmapOrdering.MipmapHints;
-import bdv.viewer.state.SourceState;
-import bdv.viewer.state.ViewerState;
 import net.imglib2.Dimensions;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
@@ -294,7 +292,7 @@ public class MultiResolutionRendererGeneric<T>
 
 	/**
 	 * The timepoint for which last a projector was
-	 * {@link #createProjector(ViewerState, Img)}  created}.
+	 * {@link #createProjector  created}.
 	 */
 	private int previousTimepoint;
 
@@ -483,7 +481,7 @@ public class MultiResolutionRendererGeneric<T>
 	 * Render image at the {@link #requestedScreenScaleIndex requested screen
 	 * scale}.
 	 */
-	public boolean paint( final ViewerState state )
+	public boolean paint( final RendererState state )
 	{
 		if ( display.getWidth() <= 0 || display.getHeight() <= 0 )
 			return false;
@@ -606,8 +604,8 @@ public class MultiResolutionRendererGeneric<T>
 
 	/**
 	 * Request a repaint of the display from the painter thread. The painter
-	 * thread will trigger a {@link #paint(ViewerState)} as soon as possible (that is,
-	 * immediately or after the currently running {@link #paint(ViewerState)} has
+	 * thread will trigger a {@link #paint(RendererState)} as soon as possible (that is,
+	 * immediately or after the currently running {@link #paint(RendererState)} has
 	 * completed).
 	 */
 	public synchronized void requestRepaint( final int screenScaleIndex )
@@ -644,15 +642,15 @@ public class MultiResolutionRendererGeneric<T>
 	}
 
 	private VolatileProjector createProjector(
-			final ViewerState viewerState,
-			final Img<ARGBType> screenImage )
+			final RendererState viewerState,
+			final RandomAccessibleInterval<ARGBType> screenImage )
 	{
 		/*
 		 * This shouldn't be necessary, with
 		 * CacheHints.LoadingStrategy==VOLATILE
 		 */
 //		CacheIoTiming.getIoTimeBudget().clear(); // clear time budget such that prefetching doesn't wait for loading blocks.
-		final List< SourceState< ? > > sourceStates = viewerState.getSources();
+		final List<? extends RendererSourceState<?>> sourceStates = viewerState.getSources();
 		final List< Integer > visibleSourceIndices = viewerState.getVisibleSourceIndices();
 		VolatileProjector projector;
 		if ( visibleSourceIndices.isEmpty() )
@@ -720,11 +718,11 @@ public class MultiResolutionRendererGeneric<T>
 	}
 
 	private < T > VolatileProjector createSingleSourceProjector(
-			final ViewerState viewerState,
-			final SourceState< T > source,
+			final RendererState viewerState,
+			final RendererSourceState< T > source,
 			final int sourceIndex,
 			final int screenScaleIndex,
-			final Img<ARGBType> screenImage,
+			final RandomAccessibleInterval<ARGBType> screenImage,
 			final byte[] maskArray )
 	{
 		if ( useVolatileIfAvailable )
@@ -734,7 +732,7 @@ public class MultiResolutionRendererGeneric<T>
 			else if ( source.getSpimSource().getType() instanceof Volatile )
 			{
 				@SuppressWarnings( "unchecked" )
-				final SourceState< ? extends Volatile< ? > > vsource = ( SourceState< ? extends Volatile< ? > > ) source;
+				final RendererSourceState< ? extends Volatile< ? > > vsource = ( RendererSourceState< ? extends Volatile< ? > > ) source;
 				return createSingleSourceVolatileProjector( viewerState, vsource, sourceIndex, screenScaleIndex, screenImage, maskArray );
 			}
 		}
@@ -747,11 +745,11 @@ public class MultiResolutionRendererGeneric<T>
 	}
 
 	private < T extends Volatile< ? > > VolatileProjector createSingleSourceVolatileProjector(
-			final ViewerState viewerState,
-			final SourceState< T > source,
+			final RendererState viewerState,
+			final RendererSourceState< T > source,
 			final int sourceIndex,
 			final int screenScaleIndex,
-			final Img<ARGBType> screenImage,
+			final RandomAccessibleInterval<ARGBType> screenImage,
 			final byte[] maskArray )
 	{
 		final AffineTransform3D screenScaleTransform = screenScales.get( currentScreenScaleIndex ).screenScaleTransforms;
@@ -791,7 +789,7 @@ public class MultiResolutionRendererGeneric<T>
 	}
 
 	private static < T > RandomAccessible< T > getTransformedSource(
-			final ViewerState viewerState,
+			final RendererState viewerState,
 			final Source< T > source,
 			final AffineTransform3D screenScaleTransform,
 			final int mipmapIndex,
@@ -817,7 +815,7 @@ public class MultiResolutionRendererGeneric<T>
 	}
 
 	private static < T > void prefetch(
-			final ViewerState viewerState,
+			final RendererState viewerState,
 			final Source< T > source,
 			final AffineTransform3D screenScaleTransform,
 			final int mipmapIndex,

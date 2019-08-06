@@ -44,6 +44,7 @@ import bdv.viewer.DisplayMode;
 import bdv.viewer.Interpolation;
 import bdv.viewer.Source;
 import bdv.viewer.SourceAndConverter;
+import bdv.viewer.render.RendererState;
 import net.imglib2.realtransform.AffineTransform3D;
 
 /**
@@ -53,7 +54,7 @@ import net.imglib2.realtransform.AffineTransform3D;
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
-public class ViewerState
+public class ViewerState implements RendererState
 {
 	private final ArrayList< SourceState< ? > > sources;
 
@@ -182,7 +183,8 @@ public class ViewerState
 	 *
 	 * @param t is set to the viewer transform.
 	 */
-	public synchronized void getViewerTransform( final AffineTransform3D t )
+	@Override
+	public synchronized void getViewerTransform(final AffineTransform3D t)
 	{
 		t.set( viewerTransform );
 	}
@@ -265,6 +267,7 @@ public class ViewerState
 	 *
 	 * @return interpolation method.
 	 */
+	@Override
 	public synchronized Interpolation getInterpolation()
 	{
 		return interpolation;
@@ -355,6 +358,7 @@ public class ViewerState
 	 *
 	 * @return current timepoint index
 	 */
+	@Override
 	public synchronized int getCurrentTimepoint()
 	{
 		return currentTimepoint;
@@ -376,6 +380,7 @@ public class ViewerState
 	 *
 	 * @return list of all sources.
 	 */
+	@Override
 	public List< SourceState< ? > > getSources()
 	{
 		return unmodifiableSources;
@@ -511,6 +516,7 @@ public class ViewerState
 	 *
 	 * @return indices of all currently visible sources.
 	 */
+	@Override
 	public synchronized List< Integer > getVisibleSourceIndices()
 	{
 		final ArrayList< Integer > visible = new ArrayList<>();
@@ -554,7 +560,8 @@ public class ViewerState
 	 *            screen scale, transforms screen coordinates to viewer coordinates.
 	 * @return mipmap level
 	 */
-	public synchronized int getBestMipMapLevel( final AffineTransform3D screenScaleTransform, final int sourceIndex )
+	@Override
+	public synchronized int getBestMipMapLevel(final AffineTransform3D screenScaleTransform, final int sourceIndex)
 	{
 		return getBestMipMapLevel( screenScaleTransform, sources.get( sourceIndex ).getSpimSource() );
 	}
