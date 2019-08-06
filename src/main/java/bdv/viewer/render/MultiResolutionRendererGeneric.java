@@ -209,13 +209,6 @@ public class MultiResolutionRendererGeneric<T>
 		private List< RenderOutputImage< T > > screenImages = new ArrayList<>( Collections.nCopies( 3, null ) );
 
 		/**
-		 * {@link RenderOutputImage< T >}s wrapping the data in the {@link #screenImages}.
-		 * Three images if double buffering is enabled.
-		 */
-		// this
-		private List< RenderOutputImage< T > > bufferedImages = new ArrayList<>( Collections.nCopies( 3, null ) );
-
-		/**
 		 * The scale transformation from viewer to {@link #screenImages screen
 		 * image}.
 		 */
@@ -405,15 +398,12 @@ public class MultiResolutionRendererGeneric<T>
 								makeImage.create( w, h ) :
 								makeImage.create( w, h, screenScales.get( 0 ).screenImages.get( b ) );
 						screenScales.get( i ).screenImages.set( b, screenImage );
-						final RenderOutputImage< T > bi = screenScales.get( i ).screenImages.get( b );
-						screenScales.get( i ).bufferedImages.set( b, bi);
-						bufferedImageToRenderId.put( bi.unwrap(), b );
+						bufferedImageToRenderId.put( screenImage.unwrap(), b );
 					}
 				}
 				else
 				{
 					screenScales.get( i ).screenImages.set( 0, makeImage.create( w, h ) );
-					screenScales.get( i ).bufferedImages.set( 0, screenScales.get( i ).screenImages.get( 0 ) );
 				}
 				final AffineTransform3D scale = new AffineTransform3D();
 				final double xScale = ( double ) w / componentW;
@@ -514,7 +504,7 @@ public class MultiResolutionRendererGeneric<T>
 			{
 				final int renderId = renderIdQueue.peek();
 				currentScreenScaleIndex = requestedScreenScaleIndex;
-				bufferedImage = screenScales.get( currentScreenScaleIndex ).bufferedImages.get( renderId );
+				bufferedImage = screenScales.get( currentScreenScaleIndex ).screenImages.get( renderId );
 				final RenderOutputImage< T > screenImage = screenScales.get( currentScreenScaleIndex ).screenImages.get( renderId );
 				synchronized ( state )
 				{
@@ -637,7 +627,6 @@ public class MultiResolutionRendererGeneric<T>
 		for ( ScreenScale screenScale : screenScales ) {
 			screenScale.renderImages = null;
 			screenScale.screenImages = null;
-			screenScale.bufferedImages = null;
 		}
 	}
 
