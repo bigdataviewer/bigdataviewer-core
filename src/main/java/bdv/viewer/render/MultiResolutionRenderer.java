@@ -30,6 +30,7 @@
 package bdv.viewer.render;
 
 import bdv.cache.CacheControl;
+import bdv.viewer.state.ViewerState;
 import net.imglib2.Volatile;
 import net.imglib2.display.screenimage.awt.ARGBScreenImage;
 import net.imglib2.img.array.ArrayImg;
@@ -193,6 +194,10 @@ public class MultiResolutionRenderer extends MultiResolutionRendererGeneric< Buf
 
 			}
 		};
+	}
+
+	public boolean paint(ViewerState viewerState) {
+		return paint( RendererState.valueOf(viewerState) );
 	}
 
 	private static class ImageFactory implements RenderOutputImage.Factory< BufferedImage > {

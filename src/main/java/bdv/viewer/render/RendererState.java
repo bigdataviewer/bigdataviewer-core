@@ -1,21 +1,46 @@
 package bdv.viewer.render;
 
-import bdv.viewer.Interpolation;
+import bdv.viewer.state.SourceState;
+import bdv.viewer.state.ViewerState;
 import net.imglib2.realtransform.AffineTransform3D;
 
+import java.util.ArrayList;
 import java.util.List;
 
-public interface RendererState {
+public class RendererState {
 
-	void getViewerTransform(AffineTransform3D t);
+	private final AffineTransform3D viewerTransfrom;
 
-	Interpolation getInterpolation();
+	private final int currentTimepoint;
 
-	int getCurrentTimepoint();
+	private final List< RendererSourceState< ? > > sources;
 
-	List< ? extends RendererSourceState< ? > > getSources();
+	public RendererState(AffineTransform3D viewerTransfrom, int currentTimepoint, List< RendererSourceState<?> > sources) {
+		this.viewerTransfrom = viewerTransfrom;
+		this.currentTimepoint = currentTimepoint;
+		this.sources = sources;
+	}
 
-	List< Integer > getVisibleSourceIndices();
+	public static RendererState valueOf(ViewerState viewerState) {
+		AffineTransform3D viewerTransfrom = new AffineTransform3D();
+		viewerState.getViewerTransform(viewerTransfrom);
+		int currentTimepoint = viewerState.getCurrentTimepoint();
+		List<RendererSourceState<?>> sources = new ArrayList<>();
+		List<SourceState<?>> allSources = viewerState.getSources();
+		for( int i : viewerState.getVisibleSourceIndices())
+			sources.add(new RendererSourceState<>(allSources.get(i), viewerState.getInterpolation(), viewerTransfrom, currentTimepoint));
+		return new RendererState(viewerTransfrom, currentTimepoint, sources);
+	}
 
-	int getBestMipMapLevel(AffineTransform3D screenScaleTransform, int sourceIndex);
+	public AffineTransform3D getViewerTransform() {
+		return viewerTransfrom;
+	}
+
+	public int getCurrentTimepoint() {
+		return currentTimepoint;
+	}
+
+	public List< RendererSourceState< ? > > getSources() {
+		return sources;
+	}
 }

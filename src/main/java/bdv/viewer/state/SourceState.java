@@ -37,7 +37,7 @@ import bdv.viewer.SourceAndConverter;
 /**
  * Source with some attached state needed for rendering.
  */
-public class SourceState< T > extends SourceAndConverter< T > implements RendererSourceState< T >
+public class SourceState< T > extends SourceAndConverter< T >
 {
 	protected static class Data
 	{

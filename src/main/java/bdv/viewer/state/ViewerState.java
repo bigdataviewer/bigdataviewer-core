@@ -54,7 +54,7 @@ import net.imglib2.realtransform.AffineTransform3D;
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
-public class ViewerState implements RendererState
+public class ViewerState
 {
 	private final ArrayList< SourceState< ? > > sources;
 
@@ -183,7 +183,6 @@ public class ViewerState implements RendererState
 	 *
 	 * @param t is set to the viewer transform.
 	 */
-	@Override
 	public synchronized void getViewerTransform(final AffineTransform3D t)
 	{
 		t.set( viewerTransform );
@@ -267,7 +266,6 @@ public class ViewerState implements RendererState
 	 *
 	 * @return interpolation method.
 	 */
-	@Override
 	public synchronized Interpolation getInterpolation()
 	{
 		return interpolation;
@@ -358,7 +356,6 @@ public class ViewerState implements RendererState
 	 *
 	 * @return current timepoint index
 	 */
-	@Override
 	public synchronized int getCurrentTimepoint()
 	{
 		return currentTimepoint;
@@ -380,7 +377,6 @@ public class ViewerState implements RendererState
 	 *
 	 * @return list of all sources.
 	 */
-	@Override
 	public List< SourceState< ? > > getSources()
 	{
 		return unmodifiableSources;
@@ -516,7 +512,6 @@ public class ViewerState implements RendererState
 	 *
 	 * @return indices of all currently visible sources.
 	 */
-	@Override
 	public synchronized List< Integer > getVisibleSourceIndices()
 	{
 		final ArrayList< Integer > visible = new ArrayList<>();
@@ -560,7 +555,6 @@ public class ViewerState implements RendererState
 	 *            screen scale, transforms screen coordinates to viewer coordinates.
 	 * @return mipmap level
 	 */
-	@Override
 	public synchronized int getBestMipMapLevel(final AffineTransform3D screenScaleTransform, final int sourceIndex)
 	{
 		return getBestMipMapLevel( screenScaleTransform, sources.get( sourceIndex ).getSpimSource() );

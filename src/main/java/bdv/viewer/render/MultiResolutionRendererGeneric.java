@@ -410,10 +410,10 @@ public class MultiResolutionRendererGeneric<T>
 				final RenderOutputImage< T > screenImage = screenScale.screenImages.get( renderId );
 				synchronized ( state )
 				{
-					final int numVisibleSources = state.getVisibleSourceIndices().size();
-					checkRenewRenderImages( numVisibleSources );
-					checkRenewMaskArrays( numVisibleSources );
-					state.getViewerTransform( currentProjectorTransform );
+					final int numSources = state.getSources().size();
+					checkRenewRenderImages(numSources);
+					checkRenewMaskArrays(numSources);
+					currentProjectorTransform.set( state.getViewerTransform() );
 					p = renderer.createProjector( state, screenImage.asArrayImg(), screenScale.screenScaleTransforms, screenScale.renderImages, renderMaskArrays);
 					newFrameRequest |= renderer.isNewFrameRequest();
 				}
