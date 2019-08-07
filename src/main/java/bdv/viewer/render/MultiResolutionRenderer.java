@@ -94,7 +94,7 @@ import java.util.concurrent.ExecutorService;
  * <p>
  * The renderer supports rendering of {@link Volatile} sources. In each
  * rendering pass, all currently valid data for the best fitting mipmap level
- * and all coarser levels is rendered to a {@link GenericSingleResolutionRenderer.ScreenScale#renderImages temporary image}
+ * and all coarser levels is rendered to a {@link ScreenScale#renderImages temporary image}
  * for each visible source. Then the temporary images are combined to the final
  * image for display. The number of passes required until all data is valid
  * might differ between visible sources.

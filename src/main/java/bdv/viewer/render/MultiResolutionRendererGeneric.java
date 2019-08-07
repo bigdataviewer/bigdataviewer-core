@@ -100,7 +100,7 @@ import net.imglib2.ui.Renderer;
  * <p>
  * The renderer supports rendering of {@link Volatile} sources. In each
  * rendering pass, all currently valid data for the best fitting mipmap level
- * and all coarser levels is rendered to a {@link GenericSingleResolutionRenderer.ScreenScale#renderImages temporary image}
+ * and all coarser levels is rendered to a {@link ScreenScale#renderImages temporary image}
  * for each visible source. Then the temporary images are combined to the final
  * image for display. The number of passes required until all data is valid
  * might differ between visible sources.
@@ -122,11 +122,11 @@ public class MultiResolutionRendererGeneric<T>
 	 */
 	private final PainterThread painterThread;
 
-	private final GenericSingleResolutionRenderer<T> renderer;
+	private final SingleResolutionRenderer renderer;
 
 	/**
 	 * Currently active projector, used to re-paint the display. It maps the
-	 * source data to {@link GenericSingleResolutionRenderer.ScreenScale#screenImages}.
+	 * source data to {@link ScreenScale#screenImages}.
 	 */
 	private VolatileProjector projector;
 
@@ -141,7 +141,7 @@ public class MultiResolutionRendererGeneric<T>
 	private final boolean doubleBuffered;
 
 	/**
-	 * Double-buffer index of next {@link GenericSingleResolutionRenderer.ScreenScale#screenImages image} to render.
+	 * Double-buffer index of next {@link ScreenScale#screenImages image} to render.
 	 */
 	private final ArrayDeque< Integer > renderIdQueue;
 
@@ -160,7 +160,7 @@ public class MultiResolutionRendererGeneric<T>
 	/**
 	 * List of scale factors and associate image buffers
 	 */
-	private final List<GenericSingleResolutionRenderer.ScreenScale< T >> screenScales;
+	private final List<ScreenScale< T >> screenScales;
 
 	/**
 	 * If the rendering time (in nanoseconds) for the (currently) highest scaled
@@ -258,7 +258,7 @@ public class MultiResolutionRendererGeneric<T>
 		this.painterThread = painterThread;
 		projector = null;
 		currentScreenScaleIndex = -1;
-		this.screenScales = DoubleStream.of(screenScales).mapToObj(GenericSingleResolutionRenderer.ScreenScale<T>::new).collect( Collectors.toList() );
+		this.screenScales = DoubleStream.of(screenScales).mapToObj(ScreenScale<T>::new).collect( Collectors.toList() );
 		this.doubleBuffered = doubleBuffered;
 		renderIdQueue = new ArrayDeque<>();
 		bufferedImageToRenderId = new HashMap<>();
@@ -272,12 +272,12 @@ public class MultiResolutionRendererGeneric<T>
 		renderingMayBeCancelled = true;
 		this.cacheControl = cacheControl;
 		newFrameRequest = false;
-		this.renderer = new GenericSingleResolutionRenderer<>(this.screenScales, numRenderingThreads, renderingExecutorService, accumulateProjectorFactory, useVolatileIfAvailable);
+		this.renderer = new SingleResolutionRenderer(numRenderingThreads, renderingExecutorService, accumulateProjectorFactory, useVolatileIfAvailable);
 	}
 
 	/**
 	 * Check whether the size of the display component was changed and
-	 * recreate {@link GenericSingleResolutionRenderer.ScreenScale#screenImages} and {@link GenericSingleResolutionRenderer.ScreenScale#screenScaleTransforms} accordingly.
+	 * recreate {@link ScreenScale#screenImages} and {@link ScreenScale#screenScaleTransforms} accordingly.
 	 *
 	 * @return whether the size was changed.
 	 */
@@ -405,15 +405,16 @@ public class MultiResolutionRendererGeneric<T>
 			{
 				final int renderId = renderIdQueue.peek();
 				currentScreenScaleIndex = requestedScreenScaleIndex;
-				bufferedImage = screenScales.get( currentScreenScaleIndex ).screenImages.get( renderId );
-				final RenderOutputImage< T > screenImage = screenScales.get( currentScreenScaleIndex ).screenImages.get( renderId );
+				ScreenScale<T> screenScale = screenScales.get(currentScreenScaleIndex);
+				bufferedImage = screenScale.screenImages.get( renderId );
+				final RenderOutputImage< T > screenImage = screenScale.screenImages.get( renderId );
 				synchronized ( state )
 				{
 					final int numVisibleSources = state.getVisibleSourceIndices().size();
 					checkRenewRenderImages( numVisibleSources );
 					checkRenewMaskArrays( numVisibleSources );
 					state.getViewerTransform( currentProjectorTransform );
-					p = renderer.createProjector( state, screenImage.asArrayImg(), currentScreenScaleIndex, renderMaskArrays);
+					p = renderer.createProjector( state, screenImage.asArrayImg(), screenScale.screenScaleTransforms, screenScale.renderImages, renderMaskArrays);
 					newFrameRequest |= renderer.isNewFrameRequest();
 				}
 				projector = p;
@@ -527,9 +528,47 @@ public class MultiResolutionRendererGeneric<T>
 		bufferedImageToRenderId.clear();
 		for ( int i = 0; i < renderMaskArrays.length; ++i )
 			renderMaskArrays[ i ] = null;
-		for ( GenericSingleResolutionRenderer.ScreenScale screenScale : screenScales ) {
+		for ( ScreenScale screenScale : screenScales ) {
 			screenScale.renderImages = null;
 			screenScale.screenImages = null;
+		}
+	}
+
+	/**
+	 * Scale factor and associated image buffers and transformation.
+	 */
+	private static class ScreenScale< T > {
+
+		/**
+		 * Scale factors from the viewer canvas to the
+		 * {@link #screenImages}.
+		 *
+		 * A scale factor of 1 means 1 pixel in the screen image is displayed as 1
+		 * pixel on the canvas, a scale factor of 0.5 means 1 pixel in the screen
+		 * image is displayed as 2 pixel on the canvas, etc.
+		 */
+		private double scaleFactor;
+
+		/**
+		 * Used to render an individual source. One image per visible source
+		 * Index is index in list of visible sources.
+		 */
+		private List< ArrayImg< ARGBType, IntArray > > renderImages = new ArrayList<>();
+
+		/**
+		 * Used to render the image for display. Three images if double buffering is
+		 * enabled.
+		 */
+		private List< RenderOutputImage< T > > screenImages = new ArrayList<>( Collections.nCopies( 3, null ) );
+
+		/**
+		 * The scale transformation from viewer to {@link #screenImages screen
+		 * image}.
+		 */
+		private AffineTransform3D screenScaleTransforms = new AffineTransform3D();
+
+		private ScreenScale(double scaleFactor) {
+			this.scaleFactor = scaleFactor;
 		}
 	}
 }

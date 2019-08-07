@@ -60,21 +60,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
-public class GenericSingleResolutionRenderer<T>
-{
-	private int currentScreenScaleIndex;
-
-	/**
-	 * Storage for mask images of {@link VolatileHierarchyProjector}.
-	 * One array per visible source. (First) index is index in list of visible sources.
-	 */
-	private byte[][] renderMaskArrays;
-
-
-	/**
-	 * List of scale factors and associate image buffers
-	 */
-	private final List<ScreenScale< T >> screenScales;
+public class SingleResolutionRenderer {
 
 	/**
 	 * How many threads to use for rendering.
@@ -108,14 +94,15 @@ public class GenericSingleResolutionRenderer<T>
 	private int previousTimepoint;
 
 	// TODO: should be settable
-	private long[] iobudget = new long[] { 100l * 1000000l,  10l * 1000000l };
+	private final long[] iobudget = new long[] { 100l * 1000000l,  10l * 1000000l };
 
 	// TODO: should be settable
-	private boolean prefetchCells = true;
+	private final boolean prefetchCells = true;
 
-	public GenericSingleResolutionRenderer(List<ScreenScale<T>> screenScales, int numRenderingThreads, ExecutorService renderingExecutorService, AccumulateProjectorFactory<ARGBType> accumulateProjectorFactory, boolean useVolatileIfAvailable)
+	private AffineTransform3D screenScaleTransform;
+
+	public SingleResolutionRenderer(int numRenderingThreads, ExecutorService renderingExecutorService, AccumulateProjectorFactory<ARGBType> accumulateProjectorFactory, boolean useVolatileIfAvailable)
 	{
-		this.screenScales = screenScales;
 		this.numRenderingThreads = numRenderingThreads;
 		this.renderingExecutorService = renderingExecutorService;
 		this.accumulateProjectorFactory = accumulateProjectorFactory;
@@ -127,12 +114,16 @@ public class GenericSingleResolutionRenderer<T>
 	public VolatileProjector createProjector(
 			final RendererState viewerState,
 			final RandomAccessibleInterval<ARGBType> screenImage,
-			int currentScreenScaleIndex,
-			byte[][] renerMaskArrays)
+			final AffineTransform3D screenScaleTransform,
+			final List< ArrayImg< ARGBType, IntArray > > renderImages,
+			final byte[][] renderMaskArrays)
 	{
-		newFrameRequest = false;
-		this.currentScreenScaleIndex = currentScreenScaleIndex;
-		this.renderMaskArrays = renerMaskArrays;
+		this.newFrameRequest = false;
+		this.screenScaleTransform = screenScaleTransform;
+		/*
+	  Storage for mask images of {@link VolatileHierarchyProjector}.
+	  One array per visible source. (First) index is index in list of visible sources.
+	 */
 		/*
 		 * This shouldn't be necessary, with
 		 * CacheHints.LoadingStrategy==VOLATILE
@@ -147,7 +138,7 @@ public class GenericSingleResolutionRenderer<T>
 		{
 			final int i = visibleSourceIndices.get( 0 );
 			projector = createSingleSourceProjector(
-					viewerState, sourceStates.get( i ), i, this.currentScreenScaleIndex,
+					viewerState, sourceStates.get( i ), i,
 					screenImage, renderMaskArrays[ 0 ] );
 		}
 		else
@@ -158,11 +149,11 @@ public class GenericSingleResolutionRenderer<T>
 			int j = 0;
 			for ( final int i : visibleSourceIndices )
 			{
-				final ArrayImg<ARGBType, IntArray> renderImage = screenScales.get(this.currentScreenScaleIndex).renderImages.get( j );
+				final ArrayImg<ARGBType, IntArray> renderImage = renderImages.get( j );
 				final byte[] maskArray = renderMaskArrays[ j ];
 				++j;
 				final VolatileProjector p = createSingleSourceProjector(
-						viewerState, sourceStates.get( i ), i, this.currentScreenScaleIndex,
+						viewerState, sourceStates.get( i ), i,
 						renderImage, maskArray );
 				sourceProjectors.add( p );
 				sources.add( sourceStates.get( i ).getSpimSource() );
@@ -210,25 +201,23 @@ public class GenericSingleResolutionRenderer<T>
 
 	private < T > VolatileProjector createSingleSourceProjector(
 			final RendererState viewerState,
-			final RendererSourceState< T > source,
+			final RendererSourceState<T> source,
 			final int sourceIndex,
-			final int screenScaleIndex,
 			final RandomAccessibleInterval<ARGBType> screenImage,
-			final byte[] maskArray )
+			final byte[] maskArray)
 	{
 		if ( useVolatileIfAvailable )
 		{
 			if ( source.asVolatile() != null )
-				return createSingleSourceVolatileProjector( viewerState, source.asVolatile(), sourceIndex, screenScaleIndex, screenImage, maskArray );
+				return createSingleSourceVolatileProjector( viewerState, source.asVolatile(), screenImage, maskArray );
 			else if ( source.getSpimSource().getType() instanceof Volatile )
 			{
 				@SuppressWarnings( "unchecked" )
 				final RendererSourceState< ? extends Volatile< ? > > vsource = ( RendererSourceState< ? extends Volatile< ? > > ) source;
-				return createSingleSourceVolatileProjector( viewerState, vsource, sourceIndex, screenScaleIndex, screenImage, maskArray );
+				return createSingleSourceVolatileProjector( viewerState, vsource, screenImage, maskArray );
 			}
 		}
 
-		final AffineTransform3D screenScaleTransform = screenScales.get( currentScreenScaleIndex ).screenScaleTransforms;
 		final int bestLevel = viewerState.getBestMipMapLevel( screenScaleTransform, sourceIndex );
 		return new SimpleVolatileProjector<>(
 				getTransformedSource( viewerState, source.getSpimSource(), screenScaleTransform, bestLevel, null ),
@@ -237,13 +226,10 @@ public class GenericSingleResolutionRenderer<T>
 
 	private < T extends Volatile< ? > > VolatileProjector createSingleSourceVolatileProjector(
 			final RendererState viewerState,
-			final RendererSourceState< T > source,
-			final int sourceIndex,
-			final int screenScaleIndex,
+			final RendererSourceState<T> source,
 			final RandomAccessibleInterval<ARGBType> screenImage,
-			final byte[] maskArray )
+			final byte[] maskArray)
 	{
-		final AffineTransform3D screenScaleTransform = screenScales.get( currentScreenScaleIndex ).screenScaleTransforms;
 		final ArrayList< RandomAccessible< T > > renderList = new ArrayList<>();
 		final Source< T > spimSource = source.getSpimSource();
 		final int t = viewerState.getCurrentTimepoint();
@@ -342,47 +328,6 @@ public class GenericSingleResolutionRenderer<T>
 			sourceToScreen.preConcatenate( screenScaleTransform );
 
 			Prefetcher.fetchCells( sourceToScreen, cellDimensions, dimensions, screenInterval, interpolation, cellsRandomAccess );
-		}
-	}
-
-	/**
-	 * Scale factor and associated image buffers and transformation.
-	 */
-	public static class ScreenScale< T > {
-
-		/**
-		 * Scale factors from the {@link #display viewer canvas} to the
-		 * {@link #screenImages}.
-		 *
-		 * A scale factor of 1 means 1 pixel in the screen image is displayed as 1
-		 * pixel on the canvas, a scale factor of 0.5 means 1 pixel in the screen
-		 * image is displayed as 2 pixel on the canvas, etc.
-		 */
-		public double scaleFactor;
-
-		/**
-		 * Used to render an individual source. One image per visible source
-		 * Index is index in list of visible sources.
-		 */
-		// this
-		public List< ArrayImg< ARGBType, IntArray > > renderImages = new ArrayList<>();
-
-		/**
-		 * Used to render the image for display. Three images if double buffering is
-		 * enabled.
-		 */
-		// this
-		public List< RenderOutputImage< T > > screenImages = new ArrayList<>( Collections.nCopies( 3, null ) );
-
-		/**
-		 * The scale transformation from viewer to {@link #screenImages screen
-		 * image}.
-		 */
-		// this
-		public AffineTransform3D screenScaleTransforms = new AffineTransform3D();
-
-		public ScreenScale(double scaleFactor) {
-			this.scaleFactor = scaleFactor;
 		}
 	}
 }
