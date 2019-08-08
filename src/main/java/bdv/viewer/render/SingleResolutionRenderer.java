@@ -115,7 +115,7 @@ public class SingleResolutionRenderer {
 			final RendererState viewerState,
 			final RandomAccessibleInterval<ARGBType> screenImage,
 			final AffineTransform3D screenScaleTransform,
-			final List< RandomAccessibleInterval< ARGBType > > renderImages,
+			final List< ? extends RandomAccessibleInterval< ARGBType > > renderImages,
 			final byte[][] renderMaskArrays)
 	{
 		this.newFrameRequest = false;
@@ -144,14 +144,11 @@ public class SingleResolutionRenderer {
 			final ArrayList< VolatileProjector > sourceProjectors = new ArrayList<>();
 			final ArrayList< RandomAccessibleInterval< ARGBType >> sourceImages = new ArrayList<>();
 			final ArrayList< Source< ? > > sources = new ArrayList<>();
-			int j = 0;
 			for (int i = 0; i < sourceStates.size(); i++) {
-				final RandomAccessibleInterval< ARGBType > renderImage = renderImages.get( j );
-				final byte[] maskArray = renderMaskArrays[ j ];
-				++j;
+				final RandomAccessibleInterval< ARGBType > renderImage = renderImages.get( i );
 				final VolatileProjector p = createSingleSourceProjector(
 						viewerState, sourceStates.get( i ),
-						renderImage, maskArray );
+						renderImage, renderMaskArrays[ i ]);
 				sourceProjectors.add( p );
 				sources.add( sourceStates.get( i ).getSpimSource() );
 				sourceImages.add( renderImage );
