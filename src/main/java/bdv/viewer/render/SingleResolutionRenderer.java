@@ -227,14 +227,12 @@ public class SingleResolutionRenderer {
 	{
 		final ArrayList< RandomAccessible< T > > renderList = new ArrayList<>();
 		final Source< T > spimSource = source.getSpimSource();
-		final int t = rendererState.getCurrentTimepoint();
 
-		final MipmapOrdering ordering = MipmapOrdering.class.isInstance( spimSource ) ?
+		final MipmapOrdering ordering = spimSource instanceof MipmapOrdering ?
 			( MipmapOrdering ) spimSource : new DefaultMipmapOrdering( spimSource );
 
-		final AffineTransform3D screenTransform = new AffineTransform3D();
-		screenTransform.set(rendererState.getViewerTransform());
-		final MipmapHints hints = ordering.getMipmapHints( screenTransform, t, previousTimepoint );
+		final MipmapHints hints = ordering.getMipmapHints( rendererState.getViewerTransform(),
+				rendererState.getCurrentTimepoint(), previousTimepoint );
 		final List< Level > levels = hints.getLevels();
 
 		if ( prefetchCells )
@@ -266,7 +264,6 @@ public class SingleResolutionRenderer {
 			final CacheHints cacheHints)
 	{
 		final int timepoint = rendererState.getCurrentTimepoint();
-
 		Source<T> spimSource = source.getSpimSource();
 		final RandomAccessibleInterval< T > img = spimSource.getSource( timepoint, mipmapIndex );
 		if ( VolatileCachedCellImg.class.isInstance( img ) )
@@ -275,8 +272,7 @@ public class SingleResolutionRenderer {
 		final Interpolation interpolation = source.getInterpolation();
 		final RealRandomAccessible< T > ipimg = spimSource.getInterpolatedSource( timepoint, mipmapIndex, interpolation );
 
-		final AffineTransform3D sourceToScreen = new AffineTransform3D();
-		sourceToScreen.set(rendererState.getViewerTransform());
+		final AffineTransform3D sourceToScreen  = rendererState.getViewerTransform().copy();
 		final AffineTransform3D sourceTransform = new AffineTransform3D();
 		spimSource.getSourceTransform( timepoint, mipmapIndex, sourceTransform );
 		sourceToScreen.concatenate( sourceTransform );
@@ -311,9 +307,7 @@ public class SingleResolutionRenderer {
 			final RandomAccess< ? > cellsRandomAccess = cellImg.getCells().randomAccess();
 
 			final Interpolation interpolation = source.getInterpolation();
-
-			final AffineTransform3D sourceToScreen = new AffineTransform3D();
-			sourceToScreen.set(rendererState.getViewerTransform());
+			final AffineTransform3D sourceToScreen  = rendererState.getViewerTransform().copy();
 			final AffineTransform3D sourceTransform = new AffineTransform3D();
 			source.getSpimSource().getSourceTransform( timepoint, mipmapIndex, sourceTransform );
 			sourceToScreen.concatenate( sourceTransform );
