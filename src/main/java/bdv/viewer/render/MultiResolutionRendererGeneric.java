@@ -413,7 +413,10 @@ public class MultiResolutionRendererGeneric<T>
 					checkRenewRenderImages(numSources);
 					checkRenewMaskArrays(numSources);
 					currentProjectorTransform.set( state.getViewerTransform() );
-					p = renderer.createProjector( state, bufferedImage.asArrayImg(), screenScale.screenScaleTransforms, screenScale.renderImages, renderMaskArrays);
+					AffineTransform3D screenTransform = state.getViewerTransform().copy();
+					screenTransform.preConcatenate(screenScale.screenScaleTransforms);
+					RendererState scaledRenderState = new RendererState(screenTransform, state.getCurrentTimepoint(), state.getSources());
+					p = renderer.createProjector( scaledRenderState, bufferedImage.asArrayImg(), screenScale.renderImages, renderMaskArrays);
 					newFrameRequest |= renderer.isNewFrameRequest();
 				}
 				projector = p;

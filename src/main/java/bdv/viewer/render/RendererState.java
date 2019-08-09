@@ -28,7 +28,7 @@ public class RendererState {
 		List<RendererSourceState<?>> sources = new ArrayList<>();
 		List<SourceState<?>> allSources = viewerState.getSources();
 		for( int i : viewerState.getVisibleSourceIndices())
-			sources.add(new RendererSourceState<>(allSources.get(i), viewerState.getInterpolation(), viewerTransform, currentTimepoint));
+			sources.add(new RendererSourceState<>(allSources.get(i), viewerState.getInterpolation()));
 		return new RendererState(viewerTransform, currentTimepoint, sources);
 	}
 
