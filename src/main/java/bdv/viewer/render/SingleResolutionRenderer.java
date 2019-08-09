@@ -109,7 +109,7 @@ public class SingleResolutionRenderer {
 
 
 	public VolatileProjector createProjector(
-			final RendererState viewerState,
+			final RendererState rendererState,
 			final RandomAccessibleInterval<ARGBType> screenImage,
 			final List<? extends RandomAccessibleInterval<ARGBType>> renderImages,
 			final byte[][] renderMaskArrays)
@@ -124,14 +124,14 @@ public class SingleResolutionRenderer {
 		 * CacheHints.LoadingStrategy==VOLATILE
 		 */
 //		CacheIoTiming.getIoTimeBudget().clear(); // clear time budget such that prefetching doesn't wait for loading blocks.
-		final List<RendererSourceState<?>> sourceStates = viewerState.getSources();
+		final List<RendererSourceState<?>> sourceStates = rendererState.getSources();
 		VolatileProjector projector;
 		if ( sourceStates.isEmpty() )
 			projector = new EmptyProjector<>( screenImage );
 		else if ( sourceStates.size() == 1 )
 		{
 			projector = createSingleSourceProjector(
-					viewerState, sourceStates.get( 0 ),
+					rendererState, sourceStates.get( 0 ),
 					screenImage, renderMaskArrays[ 0 ] );
 		}
 		else
@@ -142,7 +142,7 @@ public class SingleResolutionRenderer {
 			for (int i = 0; i < sourceStates.size(); i++) {
 				final RandomAccessibleInterval< ARGBType > renderImage = renderImages.get( i );
 				final VolatileProjector p = createSingleSourceProjector(
-						viewerState, sourceStates.get( i ),
+						rendererState, sourceStates.get( i ),
 						renderImage, renderMaskArrays[ i ]);
 				sourceProjectors.add( p );
 				sources.add( sourceStates.get( i ).getSpimSource() );
@@ -150,7 +150,7 @@ public class SingleResolutionRenderer {
 			}
 			projector = accumulateProjectorFactory.createAccumulateProjector( sourceProjectors, sources, sourceImages, screenImage, numRenderingThreads, renderingExecutorService );
 		}
-		previousTimepoint = viewerState.getCurrentTimepoint();
+		previousTimepoint = rendererState.getCurrentTimepoint();
 		CacheIoTiming.getIoTimeBudget().reset( iobudget );
 		return projector;
 	}
@@ -189,7 +189,7 @@ public class SingleResolutionRenderer {
 	}
 
 	private < T > VolatileProjector createSingleSourceProjector(
-			final RendererState viewerState,
+			final RendererState rendererState,
 			final RendererSourceState<T> source,
 			final RandomAccessibleInterval<ARGBType> screenImage,
 			final byte[] maskArray)
@@ -197,43 +197,43 @@ public class SingleResolutionRenderer {
 		if ( useVolatileIfAvailable )
 		{
 			if ( source.asVolatile() != null )
-				return createSingleSourceVolatileProjector( viewerState, source.asVolatile(), screenImage, maskArray );
+				return createSingleSourceVolatileProjector(rendererState, source.asVolatile(), screenImage, maskArray );
 			else if ( source.getSpimSource().getType() instanceof Volatile )
 			{
 				@SuppressWarnings( "unchecked" )
 				final RendererSourceState< ? extends Volatile< ? > > vsource = ( RendererSourceState< ? extends Volatile< ? > > ) source;
-				return createSingleSourceVolatileProjector( viewerState, vsource, screenImage, maskArray );
+				return createSingleSourceVolatileProjector(rendererState, vsource, screenImage, maskArray );
 			}
 		}
 
-		int bestLevel = bestMipMapLevel(viewerState, source);
+		int bestLevel = bestMipMapLevel(rendererState, source);
 		return new SimpleVolatileProjector<>(
-				getTransformedSource( viewerState, source, bestLevel, null ),
+				getTransformedSource(rendererState, source, bestLevel, null ),
 				source.getConverter(), screenImage, numRenderingThreads, renderingExecutorService );
 	}
 
-	private <T> int bestMipMapLevel(RendererState viewerState, RendererSourceState<T> source) {
+	private <T> int bestMipMapLevel(RendererState rendererState, RendererSourceState<T> source) {
 		return MipmapTransforms.getBestMipMapLevel(
-					viewerState.getViewerTransform(),
+					rendererState.getViewerTransform(),
 					source.getSpimSource(),
-					viewerState.getCurrentTimepoint());
+					rendererState.getCurrentTimepoint());
 	}
 
 	private < T extends Volatile< ? > > VolatileProjector createSingleSourceVolatileProjector(
-			final RendererState viewerState,
+			final RendererState rendererState,
 			final RendererSourceState<T> source,
 			final RandomAccessibleInterval<ARGBType> screenImage,
 			final byte[] maskArray)
 	{
 		final ArrayList< RandomAccessible< T > > renderList = new ArrayList<>();
 		final Source< T > spimSource = source.getSpimSource();
-		final int t = viewerState.getCurrentTimepoint();
+		final int t = rendererState.getCurrentTimepoint();
 
 		final MipmapOrdering ordering = MipmapOrdering.class.isInstance( spimSource ) ?
 			( MipmapOrdering ) spimSource : new DefaultMipmapOrdering( spimSource );
 
 		final AffineTransform3D screenTransform = new AffineTransform3D();
-		screenTransform.set(viewerState.getViewerTransform());
+		screenTransform.set(rendererState.getViewerTransform());
 		final MipmapHints hints = ordering.getMipmapHints( screenTransform, t, previousTimepoint );
 		final List< Level > levels = hints.getLevels();
 
@@ -244,13 +244,13 @@ public class SingleResolutionRenderer {
 			{
 				final CacheHints cacheHints = l.getPrefetchCacheHints();
 				if ( cacheHints == null || cacheHints.getLoadingStrategy() != LoadingStrategy.DONTLOAD )
-					prefetch( viewerState, source, l.getMipmapLevel(), cacheHints, screenImage );
+					prefetch( rendererState, source, l.getMipmapLevel(), cacheHints, screenImage );
 			}
 		}
 
 		Collections.sort( levels, MipmapOrdering.renderOrderComparator );
 		for ( final Level l : levels )
-			renderList.add( getTransformedSource( viewerState, source, l.getMipmapLevel(), l.getRenderCacheHints() ) );
+			renderList.add( getTransformedSource( rendererState, source, l.getMipmapLevel(), l.getRenderCacheHints() ) );
 
 		if ( hints.renewHintsAfterPaintingOnce() )
 			newFrameRequest = true;
@@ -260,12 +260,12 @@ public class SingleResolutionRenderer {
 	}
 
 	private static < T > RandomAccessible< T > getTransformedSource(
-			final RendererState viewerState,
+			final RendererState rendererState,
 			final RendererSourceState<T> source,
 			final int mipmapIndex,
 			final CacheHints cacheHints)
 	{
-		final int timepoint = viewerState.getCurrentTimepoint();
+		final int timepoint = rendererState.getCurrentTimepoint();
 
 		Source<T> spimSource = source.getSpimSource();
 		final RandomAccessibleInterval< T > img = spimSource.getSource( timepoint, mipmapIndex );
@@ -276,7 +276,7 @@ public class SingleResolutionRenderer {
 		final RealRandomAccessible< T > ipimg = spimSource.getInterpolatedSource( timepoint, mipmapIndex, interpolation );
 
 		final AffineTransform3D sourceToScreen = new AffineTransform3D();
-		sourceToScreen.set(viewerState.getViewerTransform());
+		sourceToScreen.set(rendererState.getViewerTransform());
 		final AffineTransform3D sourceTransform = new AffineTransform3D();
 		spimSource.getSourceTransform( timepoint, mipmapIndex, sourceTransform );
 		sourceToScreen.concatenate( sourceTransform );
@@ -285,13 +285,13 @@ public class SingleResolutionRenderer {
 	}
 
 	private static < T > void prefetch(
-			final RendererState viewerState,
+			final RendererState rendererState,
 			final RendererSourceState<T> source,
 			final int mipmapIndex,
 			final CacheHints prefetchCacheHints,
 			final Dimensions screenInterval)
 	{
-		final int timepoint = viewerState.getCurrentTimepoint();
+		final int timepoint = rendererState.getCurrentTimepoint();
 		final RandomAccessibleInterval< T > img = source.getSpimSource().getSource( timepoint, mipmapIndex );
 		if ( VolatileCachedCellImg.class.isInstance( img ) )
 		{
@@ -313,7 +313,7 @@ public class SingleResolutionRenderer {
 			final Interpolation interpolation = source.getInterpolation();
 
 			final AffineTransform3D sourceToScreen = new AffineTransform3D();
-			sourceToScreen.set(viewerState.getViewerTransform());
+			sourceToScreen.set(rendererState.getViewerTransform());
 			final AffineTransform3D sourceTransform = new AffineTransform3D();
 			source.getSpimSource().getSourceTransform( timepoint, mipmapIndex, sourceTransform );
 			sourceToScreen.concatenate( sourceTransform );
