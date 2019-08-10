@@ -32,9 +32,6 @@ package bdv.viewer.render;
 import bdv.cache.CacheControl;
 import bdv.viewer.state.ViewerState;
 import net.imglib2.Volatile;
-import net.imglib2.display.screenimage.awt.ARGBScreenImage;
-import net.imglib2.img.array.ArrayImg;
-import net.imglib2.img.basictypeaccess.IntAccess;
 import net.imglib2.img.basictypeaccess.array.IntArray;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
@@ -140,6 +137,22 @@ public class MultiResolutionRenderer extends MultiResolutionRendererGeneric< Buf
 	 *            the cache controls IO budgeting and fetcher queue.
 	 */
 	public MultiResolutionRenderer(
+			final TransformAwareRenderTarget display,
+			final PainterThread painterThread,
+			final double[] screenScales,
+			final long targetRenderNanos,
+			final boolean doubleBuffered,
+			final int numRenderingThreads,
+			final ExecutorService renderingExecutorService,
+			final boolean useVolatileIfAvailable,
+			final AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory,
+			final CacheControl cacheControl )
+	{
+		super(display, painterThread, screenScales, targetRenderNanos, doubleBuffered, numRenderingThreads,
+				renderingExecutorService, useVolatileIfAvailable, accumulateProjectorFactory, cacheControl);
+	}
+
+	public MultiResolutionRenderer(
 			final RenderTarget display,
 			final PainterThread painterThread,
 			final double[] screenScales,
@@ -151,32 +164,21 @@ public class MultiResolutionRenderer extends MultiResolutionRendererGeneric< Buf
 			final AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory,
 			final CacheControl cacheControl )
 	{
-		super(getWrap(display), painterThread, screenScales, targetRenderNanos, doubleBuffered, numRenderingThreads,
-				renderingExecutorService, useVolatileIfAvailable, accumulateProjectorFactory, cacheControl, new ImageFactory());
+		super(wrap( display ), painterThread, screenScales, targetRenderNanos, doubleBuffered, numRenderingThreads,
+				renderingExecutorService, useVolatileIfAvailable, accumulateProjectorFactory, cacheControl);
 	}
 
-	private static TransformAwareRenderTargetGeneric<BufferedImage> getWrap(RenderTarget display) {
-		if( display instanceof TransformAwareRenderTargetGeneric )
-			return (TransformAwareRenderTargetGeneric<BufferedImage>) display;
-		return new TransformAwareRenderTargetGeneric<BufferedImage>() {
+	private static TransformAwareRenderTarget wrap(RenderTarget display) {
+		return new TransformAwareRenderTarget() {
+
 			@Override
-			public BufferedImage setBufferedImage(BufferedImage bufferedImage) {
-				return display.setBufferedImage(bufferedImage);
+			public RenderOutputImage getRenderOutputImage(int width, int height) {
+				return new MyRenderOutputImage(width, height);
 			}
 
 			@Override
-			public int getWidth() {
-				return display.getWidth();
-			}
-
-			@Override
-			public int getHeight() {
-				return display.getHeight();
-			}
-
-			@Override
-			public BufferedImage setBufferedImageAndTransform(BufferedImage img, AffineTransform3D transform) {
-				return display.setBufferedImage(img);
+			public void setBufferedImageAndTransform(RenderOutputImage img, AffineTransform3D transform) {
+				display.setBufferedImage((BufferedImage) img.unwrap());
 			}
 
 			@Override
@@ -193,6 +195,16 @@ public class MultiResolutionRenderer extends MultiResolutionRendererGeneric< Buf
 			public void removeTransformListener(TransformListener<AffineTransform3D> listener) {
 
 			}
+
+			@Override
+			public int getWidth() {
+				return display.getWidth();
+			}
+
+			@Override
+			public int getHeight() {
+				return display.getHeight();
+			}
 		};
 	}
 
@@ -200,49 +212,4 @@ public class MultiResolutionRenderer extends MultiResolutionRendererGeneric< Buf
 		return paint( RendererState.valueOf(viewerState) );
 	}
 
-	private static class ImageFactory implements RenderOutputImage.Factory< BufferedImage > {
-
-		@Override
-		public RenderOutputImage< BufferedImage > create(int width, int height) {
-			return new MyRenderOutputImage(width, height);
-		}
-
-		@Override
-		public RenderOutputImage< BufferedImage > create(int width, int heihgt, RenderOutputImage< BufferedImage > other) {
-			return new MyRenderOutputImage(width, heihgt, (IntArray) other.asArrayImg().update(null));
-		}
-	}
-
-	private static class MyRenderOutputImage implements RenderOutputImage<BufferedImage> {
-
-		private final ARGBScreenImage screenImage;
-
-		public MyRenderOutputImage(int width, int height) {
-			screenImage = new ARGBScreenImage(width, height);
-		}
-
-		public MyRenderOutputImage(int width, int heihgt, IntArray update) {
-			screenImage = new ARGBScreenImage(width, heihgt, update);
-		}
-
-		@Override
-		public int width() {
-			return (int) screenImage.dimension(0);
-		}
-
-		@Override
-		public int height() {
-			return (int) screenImage.dimension( 1 );
-		}
-
-		@Override
-		public ArrayImg<ARGBType, IntAccess> asArrayImg() {
-			return (ArrayImg) screenImage;
-		}
-
-		@Override
-		public BufferedImage unwrap() {
-			return screenImage.image();
-		}
-	}
 }

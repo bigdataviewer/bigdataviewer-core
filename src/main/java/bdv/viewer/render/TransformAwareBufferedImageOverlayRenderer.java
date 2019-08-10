@@ -35,13 +35,13 @@ import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import bdv.util.DoubleBuffer;
+import net.imglib2.img.basictypeaccess.array.IntArray;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.TransformListener;
-import net.imglib2.ui.overlay.BufferedImageOverlayRenderer;
 
-public class TransformAwareBufferedImageOverlayRenderer extends BufferedImageOverlayRenderer implements TransformAwareRenderTarget
-{
+public class TransformAwareBufferedImageOverlayRenderer implements OverlayRenderer, TransformAwareRenderTarget {
 	protected AffineTransform3D pendingTransform;
 
 	protected AffineTransform3D paintedTransform;
@@ -54,6 +54,12 @@ public class TransformAwareBufferedImageOverlayRenderer extends BufferedImageOve
 	 */
 	protected final CopyOnWriteArrayList< TransformListener< AffineTransform3D > > paintedTransformListeners;
 
+	private volatile int width;
+
+	private volatile int height;
+
+	private final DoubleBuffer<MyRenderOutputImage> doubleBuffer = new DoubleBuffer<>(() -> null);
+
 	public TransformAwareBufferedImageOverlayRenderer()
 	{
 		super();
@@ -62,11 +68,23 @@ public class TransformAwareBufferedImageOverlayRenderer extends BufferedImageOve
 		paintedTransformListeners = new CopyOnWriteArrayList<>();
 	}
 
+
 	@Override
-	public synchronized BufferedImage setBufferedImageAndTransform( final BufferedImage img, final AffineTransform3D transform )
-	{
+	public RenderOutputImage getRenderOutputImage(int width, int height) {
+		int requiredSize = Math.max(width * height, getWidth() * getHeight());
+		MyRenderOutputImage writableBuffer = doubleBuffer.getWritableBuffer();
+		if(writableBuffer != null) {
+			IntArray buffer = (IntArray) writableBuffer.asArrayImg().update(null);
+			if (buffer.getArrayLength() == requiredSize)
+				return new MyRenderOutputImage(width, height, buffer);
+		}
+		return new MyRenderOutputImage(width, height);
+	}
+
+	@Override
+	public synchronized void setBufferedImageAndTransform(RenderOutputImage img, AffineTransform3D transform) {
 		pendingTransform.set( transform );
-		return super.setBufferedImage( img );
+		doubleBuffer.doneWriting((MyRenderOutputImage) img);
 	}
 
 	@Override
@@ -75,17 +93,11 @@ public class TransformAwareBufferedImageOverlayRenderer extends BufferedImageOve
 		boolean notifyTransformListeners = false;
 		synchronized ( this )
 		{
-			if ( pending )
-			{
-				final BufferedImage tmp = bufferedImage;
-				bufferedImage = pendingImage;
+			if(doubleBuffer.hasUpdate())
 				paintedTransform.set( pendingTransform );
-				pendingImage = tmp;
-				pending = false;
-				notifyTransformListeners = true;
-			}
 		}
-		if ( bufferedImage != null )
+		MyRenderOutputImage readableBuffer = doubleBuffer.getReadableBuffer();
+		if ( readableBuffer != null )
 		{
 //			final StopWatch watch = new StopWatch();
 //			watch.start();
@@ -95,12 +107,18 @@ public class TransformAwareBufferedImageOverlayRenderer extends BufferedImageOve
 			( ( Graphics2D ) g ).setRenderingHint( RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF );
 			( ( Graphics2D ) g ).setRenderingHint( RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_SPEED );
 			( ( Graphics2D ) g ).setRenderingHint( RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED );
-			g.drawImage( bufferedImage, 0, 0, getWidth(), getHeight(), null );
+			g.drawImage( readableBuffer.unwrap(), 0, 0, getWidth(), getHeight(), null );
 			if ( notifyTransformListeners )
 				for ( final TransformListener< AffineTransform3D > listener : paintedTransformListeners )
 					listener.transformChanged( paintedTransform );
 //			System.out.println( String.format( "g.drawImage() :%4d ms", watch.nanoTime() / 1000000 ) );
 		}
+	}
+
+	@Override
+	public void setCanvasSize(int width, int height) {
+		this.width = width;
+		this.height = height;
 	}
 
 	/**
@@ -165,7 +183,16 @@ public class TransformAwareBufferedImageOverlayRenderer extends BufferedImageOve
 	 */
 	void kill()
 	{
-		bufferedImage = null;
-		pendingImage = null;
+		doubleBuffer.clear();
+	}
+
+	@Override
+	public int getWidth() {
+		return width;
+	}
+
+	@Override
+	public int getHeight() {
+		return height;
 	}
 }
