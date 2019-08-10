@@ -32,12 +32,14 @@ package bdv.viewer.render;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import java.awt.image.BufferedImage;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import bdv.util.DoubleBuffer;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.display.screenimage.awt.ARGBScreenImage;
 import net.imglib2.img.basictypeaccess.array.IntArray;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.TransformListener;
 
@@ -58,7 +60,7 @@ public class TransformAwareBufferedImageOverlayRenderer implements OverlayRender
 
 	private volatile int height;
 
-	private final DoubleBuffer<MyRenderOutputImage> doubleBuffer = new DoubleBuffer<>(() -> null);
+	private final DoubleBuffer<ARGBScreenImage> doubleBuffer = new DoubleBuffer<>(() -> null);
 
 	public TransformAwareBufferedImageOverlayRenderer()
 	{
@@ -70,21 +72,21 @@ public class TransformAwareBufferedImageOverlayRenderer implements OverlayRender
 
 
 	@Override
-	public RenderOutputImage getRenderOutputImage(int width, int height) {
+	public RandomAccessibleInterval<ARGBType> getRenderOutputImage(int width, int height) {
 		int requiredSize = Math.max(width * height, getWidth() * getHeight());
-		MyRenderOutputImage writableBuffer = doubleBuffer.getWritableBuffer();
+		ARGBScreenImage writableBuffer = doubleBuffer.getWritableBuffer();
 		if(writableBuffer != null) {
-			IntArray buffer = (IntArray) writableBuffer.asArrayImg().update(null);
+			IntArray buffer = writableBuffer.update(null);
 			if (buffer.getArrayLength() == requiredSize)
-				return new MyRenderOutputImage(width, height, buffer);
+				return new ARGBScreenImage(width, height, buffer);
 		}
-		return new MyRenderOutputImage(width, height);
+		return new ARGBScreenImage(width, height);
 	}
 
 	@Override
-	public synchronized void setBufferedImageAndTransform(RenderOutputImage img, AffineTransform3D transform) {
+	public synchronized void setBufferedImageAndTransform(RandomAccessibleInterval<ARGBType> img, AffineTransform3D transform) {
 		pendingTransform.set( transform );
-		doubleBuffer.doneWriting((MyRenderOutputImage) img);
+		doubleBuffer.doneWriting((ARGBScreenImage) img);
 	}
 
 	@Override
@@ -96,7 +98,7 @@ public class TransformAwareBufferedImageOverlayRenderer implements OverlayRender
 			if(doubleBuffer.hasUpdate())
 				paintedTransform.set( pendingTransform );
 		}
-		MyRenderOutputImage readableBuffer = doubleBuffer.getReadableBuffer();
+		ARGBScreenImage readableBuffer = doubleBuffer.getReadableBuffer();
 		if ( readableBuffer != null )
 		{
 //			final StopWatch watch = new StopWatch();
@@ -107,7 +109,7 @@ public class TransformAwareBufferedImageOverlayRenderer implements OverlayRender
 			( ( Graphics2D ) g ).setRenderingHint( RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF );
 			( ( Graphics2D ) g ).setRenderingHint( RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_SPEED );
 			( ( Graphics2D ) g ).setRenderingHint( RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED );
-			g.drawImage( readableBuffer.unwrap(), 0, 0, getWidth(), getHeight(), null );
+			g.drawImage( readableBuffer.image(), 0, 0, getWidth(), getHeight(), null );
 			if ( notifyTransformListeners )
 				for ( final TransformListener< AffineTransform3D > listener : paintedTransformListeners )
 					listener.transformChanged( paintedTransform );

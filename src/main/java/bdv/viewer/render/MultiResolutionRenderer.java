@@ -31,8 +31,9 @@ package bdv.viewer.render;
 
 import bdv.cache.CacheControl;
 import bdv.viewer.state.ViewerState;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
-import net.imglib2.img.basictypeaccess.array.IntArray;
+import net.imglib2.display.screenimage.awt.ARGBScreenImage;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.ui.PainterThread;
@@ -172,13 +173,13 @@ public class MultiResolutionRenderer extends MultiResolutionRendererGeneric< Buf
 		return new TransformAwareRenderTarget() {
 
 			@Override
-			public RenderOutputImage getRenderOutputImage(int width, int height) {
-				return new MyRenderOutputImage(width, height);
+			public RandomAccessibleInterval<ARGBType> getRenderOutputImage(int width, int height) {
+				return new ARGBScreenImage(width, height);
 			}
 
 			@Override
-			public void setBufferedImageAndTransform(RenderOutputImage img, AffineTransform3D transform) {
-				display.setBufferedImage((BufferedImage) img.unwrap());
+			public void setBufferedImageAndTransform(RandomAccessibleInterval<ARGBType> img, AffineTransform3D transform) {
+				display.setBufferedImage(((ARGBScreenImage) img).image());
 			}
 
 			@Override

@@ -29,7 +29,9 @@
  */
 package bdv.viewer.render;
 
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.ui.TransformListener;
 
 public interface TransformAwareRenderTarget {
@@ -40,9 +42,9 @@ public interface TransformAwareRenderTarget {
 	 * 		image to draw (may be null).
 	 */
 
-	public RenderOutputImage getRenderOutputImage(int width, int height);
+	public RandomAccessibleInterval<ARGBType> getRenderOutputImage(int width, int height);
 
-	public void setBufferedImageAndTransform(final RenderOutputImage img, final AffineTransform3D transform);
+	public void setBufferedImageAndTransform(final RandomAccessibleInterval<ARGBType> img, final AffineTransform3D transform);
 
 	public void addTransformListener(final TransformListener<AffineTransform3D> listener);
 

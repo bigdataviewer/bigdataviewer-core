@@ -38,6 +38,7 @@ import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 
 import bdv.cache.CacheControl;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
@@ -337,7 +338,7 @@ public class MultiResolutionRendererGeneric<T>
 		final boolean resized = checkResize();
 
 		// the BufferedImage that is rendered to (to paint to the canvas)
-		final RenderOutputImage< T > bufferedImage;
+		final RandomAccessibleInterval< ARGBType > bufferedImage;
 
 		// the projector that paints to the screenImage.
 		final VolatileProjector p;
@@ -372,7 +373,7 @@ public class MultiResolutionRendererGeneric<T>
 					AffineTransform3D screenTransform = state.getViewerTransform().copy();
 					screenTransform.preConcatenate(screenScale.screenScaleTransforms);
 					RendererState scaledRenderState = new RendererState(screenTransform, state.getCurrentTimepoint(), state.getSources());
-					p = renderer.createProjector( scaledRenderState, bufferedImage.asArrayImg(), screenScale.renderImages, renderMaskArrays);
+					p = renderer.createProjector( scaledRenderState, bufferedImage, screenScale.renderImages, renderMaskArrays);
 					newFrameRequest |= renderer.isNewFrameRequest();
 				}
 				projector = p;
