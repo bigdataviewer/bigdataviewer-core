@@ -32,6 +32,7 @@ package bdv.viewer.render;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.image.BufferedImage;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import bdv.util.DoubleBuffer;
@@ -45,9 +46,7 @@ import net.imglib2.ui.TransformListener;
 
 public class TransformAwareBufferedImageOverlayRenderer implements OverlayRenderer, TransformAwareRenderTarget {
 
-	protected AffineTransform3D pendingTransform;
-
-	protected AffineTransform3D paintedTransform;
+	private final AffineTransform3D paintedTransform = new AffineTransform3D();
 
 	/**
 	 * These listeners will be notified about the transform that is associated
@@ -55,28 +54,22 @@ public class TransformAwareBufferedImageOverlayRenderer implements OverlayRender
 	 * {@link OverlayRenderer}s that need to exactly match the transform of
 	 * their overlaid content to the transform of the image.
 	 */
-	protected final CopyOnWriteArrayList< TransformListener< AffineTransform3D > > paintedTransformListeners;
+	private final CopyOnWriteArrayList< TransformListener< AffineTransform3D > > paintedTransformListeners
+			= new CopyOnWriteArrayList<>();
 
 	private volatile int width;
 
 	private volatile int height;
 
-	private final DoubleBuffer<ARGBScreenImage> doubleBuffer = new DoubleBuffer<>(() -> null);
-
-	public TransformAwareBufferedImageOverlayRenderer()
-	{
-		super();
-		pendingTransform = new AffineTransform3D();
-		paintedTransform = new AffineTransform3D();
-		paintedTransformListeners = new CopyOnWriteArrayList<>();
-	}
+	private final DoubleBuffer<RenderResult> doubleBuffer = new DoubleBuffer<>(() -> null);
 
 	@Override
 	public RandomAccessibleInterval<ARGBType> getRenderOutputImage(int width, int height) {
 		int requiredSize = Math.max(width * height, getWidth() * getHeight());
-		ARGBScreenImage writableBuffer = doubleBuffer.getWritableBuffer();
-		if(writableBuffer != null) {
-			IntArray buffer = writableBuffer.update(null);
+		RenderResult renderResult = doubleBuffer.getWritableBuffer();
+		if(renderResult != null) {
+			ARGBScreenImage image = (ARGBScreenImage) renderResult.getImage();
+			IntArray buffer = image.update(null);
 			if (buffer.getArrayLength() == requiredSize)
 				return new ARGBScreenImage(width, height, buffer);
 		}
@@ -85,22 +78,17 @@ public class TransformAwareBufferedImageOverlayRenderer implements OverlayRender
 
 	@Override
 	public synchronized void setBufferedImageAndTransform(RenderResult result) {
-		pendingTransform.set( result.getViewerTransform() );
-		doubleBuffer.doneWriting( (ARGBScreenImage) result.getImage() );
+		doubleBuffer.doneWriting( result );
 	}
 
 	@Override
 	public void drawOverlays( final Graphics g )
 	{
-		boolean notifyTransformListeners = false;
-		synchronized ( this )
+		boolean update = doubleBuffer.hasUpdate();
+		RenderResult result = doubleBuffer.getReadableBuffer();
+		if ( result != null )
 		{
-			if(doubleBuffer.hasUpdate())
-				paintedTransform.set( pendingTransform );
-		}
-		ARGBScreenImage readableBuffer = doubleBuffer.getReadableBuffer();
-		if ( readableBuffer != null )
-		{
+			ARGBScreenImage readableBuffer = (ARGBScreenImage) result.getImage();
 //			final StopWatch watch = new StopWatch();
 //			watch.start();
 //			( ( Graphics2D ) g ).setRenderingHint( RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR );
@@ -110,11 +98,16 @@ public class TransformAwareBufferedImageOverlayRenderer implements OverlayRender
 			( ( Graphics2D ) g ).setRenderingHint( RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_SPEED );
 			( ( Graphics2D ) g ).setRenderingHint( RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED );
 			g.drawImage( readableBuffer.image(), 0, 0, getWidth(), getHeight(), null );
-			if ( notifyTransformListeners )
-				for ( final TransformListener< AffineTransform3D > listener : paintedTransformListeners )
-					listener.transformChanged( paintedTransform );
+			if (update)
+				notifyTransformListeners(result.getViewerTransform());
 //			System.out.println( String.format( "g.drawImage() :%4d ms", watch.nanoTime() / 1000000 ) );
 		}
+	}
+
+	private void notifyTransformListeners(AffineTransform3D viewerTransform) {
+		paintedTransform.set(viewerTransform);
+		for (final TransformListener<AffineTransform3D> listener : paintedTransformListeners)
+			listener.transformChanged(paintedTransform);
 	}
 
 	@Override
