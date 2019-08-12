@@ -183,21 +183,6 @@ public class MultiResolutionRenderer extends MultiResolutionRendererGeneric< Buf
 			}
 
 			@Override
-			public void addTransformListener(TransformListener<AffineTransform3D> listener) {
-
-			}
-
-			@Override
-			public void addTransformListener(TransformListener<AffineTransform3D> listener, int index) {
-
-			}
-
-			@Override
-			public void removeTransformListener(TransformListener<AffineTransform3D> listener) {
-
-			}
-
-			@Override
 			public int getWidth() {
 				return display.getWidth();
 			}

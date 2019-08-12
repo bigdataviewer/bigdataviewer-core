@@ -42,17 +42,11 @@ public interface TransformAwareRenderTarget {
 	 * 		image to draw (may be null).
 	 */
 
-	public RandomAccessibleInterval<ARGBType> getRenderOutputImage(int width, int height);
-
 	public void setBufferedImageAndTransform(final RenderResult result);
 
-	public void addTransformListener(final TransformListener<AffineTransform3D> listener);
+	public RandomAccessibleInterval<ARGBType> getRenderOutputImage(int width, int height);
 
-	public void addTransformListener(final TransformListener<AffineTransform3D> listener, final int index);
+	public int getWidth();
 
-	public void removeTransformListener(final TransformListener<AffineTransform3D> listener);
-
-	int getWidth();
-
-	int getHeight();
+	public int getHeight();
 }
