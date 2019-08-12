@@ -2,7 +2,7 @@
  * #%L
  * BigDataViewer core classes with minimal dependencies
  * %%
- * Copyright (C) 2012 - 2016 Tobias Pietzsch, Stephan Saalfeld, Stephan Preibisch,
+ * Copyright (C) 2012 - 2019 Tobias Pietzsch, Stephan Saalfeld, Stephan Preibisch,
  * Jean-Yves Tinevez, HongKee Moon, Johannes Schindelin, Curtis Rueden, John Bogovic
  * %%
  * Redistribution and use in source and binary forms, with or without
@@ -32,27 +32,23 @@ package bdv.viewer.render;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.ui.TransformListener;
 
-public interface TransformAwareRenderTarget {
-	/**
-	 * Set the data store that is to be drawn on the canvas, and the transform with which this image was created.
-	 *
-	 * @param img
-	 * 		image to draw (may be null).
-	 */
+public class RenderResult {
 
-	public RandomAccessibleInterval<ARGBType> getRenderOutputImage(int width, int height);
+	private final RandomAccessibleInterval<ARGBType> image;
 
-	public void setBufferedImageAndTransform(final RenderResult result);
+	private final AffineTransform3D viewerTransform;
 
-	public void addTransformListener(final TransformListener<AffineTransform3D> listener);
+	public RenderResult(RandomAccessibleInterval<ARGBType> image, AffineTransform3D viewerTransform) {
+		this.image = image;
+		this.viewerTransform = viewerTransform;
+	}
 
-	public void addTransformListener(final TransformListener<AffineTransform3D> listener, final int index);
+	public RandomAccessibleInterval<ARGBType> getImage() {
+		return image;
+	}
 
-	public void removeTransformListener(final TransformListener<AffineTransform3D> listener);
-
-	int getWidth();
-
-	int getHeight();
+	public AffineTransform3D getViewerTransform() {
+		return viewerTransform;
+	}
 }

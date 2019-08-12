@@ -44,6 +44,7 @@ import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.TransformListener;
 
 public class TransformAwareBufferedImageOverlayRenderer implements OverlayRenderer, TransformAwareRenderTarget {
+
 	protected AffineTransform3D pendingTransform;
 
 	protected AffineTransform3D paintedTransform;
@@ -70,7 +71,6 @@ public class TransformAwareBufferedImageOverlayRenderer implements OverlayRender
 		paintedTransformListeners = new CopyOnWriteArrayList<>();
 	}
 
-
 	@Override
 	public RandomAccessibleInterval<ARGBType> getRenderOutputImage(int width, int height) {
 		int requiredSize = Math.max(width * height, getWidth() * getHeight());
@@ -84,9 +84,9 @@ public class TransformAwareBufferedImageOverlayRenderer implements OverlayRender
 	}
 
 	@Override
-	public synchronized void setBufferedImageAndTransform(RandomAccessibleInterval<ARGBType> img, AffineTransform3D transform) {
-		pendingTransform.set( transform );
-		doubleBuffer.doneWriting((ARGBScreenImage) img);
+	public synchronized void setBufferedImageAndTransform(RenderResult result) {
+		pendingTransform.set( result.getViewerTransform() );
+		doubleBuffer.doneWriting( (ARGBScreenImage) result.getImage() );
 	}
 
 	@Override

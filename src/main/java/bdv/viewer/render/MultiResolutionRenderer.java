@@ -178,8 +178,8 @@ public class MultiResolutionRenderer extends MultiResolutionRendererGeneric< Buf
 			}
 
 			@Override
-			public void setBufferedImageAndTransform(RandomAccessibleInterval<ARGBType> img, AffineTransform3D transform) {
-				display.setBufferedImage(((ARGBScreenImage) img).image());
+			public void setBufferedImageAndTransform(RenderResult result) {
+				display.setBufferedImage(((ARGBScreenImage) result.getImage()).image());
 			}
 
 			@Override

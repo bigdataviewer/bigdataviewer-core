@@ -368,7 +368,7 @@ public class MultiResolutionRendererGeneric<T>
 					final int numSources = state.getSources().size();
 					checkRenewRenderImages(numSources);
 					checkRenewMaskArrays(numSources);
-					bufferedImage = display.getRenderOutputImage((int) screenScale.renderImages.get(0).dimension(0), (int) screenScale.renderImages.get(0).dimension(1));
+					bufferedImage = display.getRenderOutputImage(screenScale.width(), screenScale.height());
 					currentProjectorTransform.set( state.getViewerTransform() );
 					AffineTransform3D screenTransform = state.getViewerTransform().copy();
 					screenTransform.preConcatenate(screenScale.screenScaleTransforms);
@@ -398,7 +398,8 @@ public class MultiResolutionRendererGeneric<T>
 			{
 				if ( createProjector )
 				{
-					display.setBufferedImageAndTransform(bufferedImage, currentProjectorTransform);
+					final RenderResult result = new RenderResult(bufferedImage, currentProjectorTransform);
+					display.setBufferedImageAndTransform(result);
 
 					if ( currentScreenScaleIndex == maxScreenScaleIndex )
 					{
