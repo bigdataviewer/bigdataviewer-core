@@ -188,8 +188,6 @@ public class MultiResolutionRendererGeneric<T>
 	 */
 	private boolean newFrameRequest;
 
-	private final AffineTransform3D currentProjectorTransform = new AffineTransform3D();
-
 	/**
 	 * @param display
 	 *            The canvas that will display the images we render.
@@ -261,23 +259,21 @@ public class MultiResolutionRendererGeneric<T>
 	{
 		final int componentW = display.getWidth();
 		final int componentH = display.getHeight();
-		if ( screenScales.get( 0 ).width() != ( int ) ( componentW * screenScales.get( 0 ).scaleFactor )
-				|| screenScales.get( 0 ).height() != ( int ) ( componentH  * screenScales.get( 0 ).scaleFactor ) )
+		if ( screenScales.get( 0 ).width() != ( int ) Math.ceil( componentW * screenScales.get(0).scaleFactor )
+				|| screenScales.get( 0 ).height() != ( int ) Math.ceil( componentH * screenScales.get(0).scaleFactor ) )
 		{
 			for ( int i = 0; i < screenScales.size(); ++i )
 			{
 				ScreenScale<T> screenScale = screenScales.get(i);
-				final double screenToViewerScale = screenScale.scaleFactor;
-				final int w = ( int ) ( screenToViewerScale * componentW );
-				final int h = ( int ) ( screenToViewerScale * componentH );
+				final double scaleFactor = screenScale.scaleFactor;
+				final int w = ( int ) Math.ceil( scaleFactor * componentW );
+				final int h = ( int ) Math.ceil( scaleFactor * componentH );
 				screenScale.setSize(w, h);
 				final AffineTransform3D scale = new AffineTransform3D();
-				final double xScale = ( double ) w / componentW;
-				final double yScale = ( double ) h / componentH;
-				scale.set( xScale, 0, 0 );
-				scale.set( yScale, 1, 1 );
-				scale.set( 0.5 * xScale - 0.5, 0, 3 );
-				scale.set( 0.5 * yScale - 0.5, 1, 3 );
+				scale.set( scaleFactor, 0, 0 );
+				scale.set( scaleFactor, 1, 1 );
+				scale.set( 0.5 * scaleFactor - 0.5, 0, 3 );
+				scale.set( 0.5 * scaleFactor - 0.5, 1, 3 );
 				screenScale.screenScaleTransforms = scale;
 			}
 
@@ -347,6 +343,8 @@ public class MultiResolutionRendererGeneric<T>
 
 		final boolean createProjector;
 
+		final AffineTransform3D currentProjectorTransform = new AffineTransform3D();
+
 		synchronized ( this )
 		{
 			// Rendering may be cancelled unless we are rendering at coarsest
@@ -398,7 +396,7 @@ public class MultiResolutionRendererGeneric<T>
 			{
 				if ( createProjector )
 				{
-					final RenderResult result = new RenderResult(bufferedImage, currentProjectorTransform);
+					final RenderResult result = new RenderResult(bufferedImage, currentProjectorTransform, screenScales.get(currentScreenScaleIndex).scaleFactor);
 					display.setBufferedImageAndTransform(result);
 
 					if ( currentScreenScaleIndex == maxScreenScaleIndex )

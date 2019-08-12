@@ -39,9 +39,12 @@ public class RenderResult {
 
 	private final AffineTransform3D viewerTransform;
 
-	public RenderResult(RandomAccessibleInterval<ARGBType> image, AffineTransform3D viewerTransform) {
+	private final double scaleFactor;
+
+	public RenderResult(RandomAccessibleInterval<ARGBType> image, AffineTransform3D viewerTransform, double scaleFactor) {
 		this.image = image;
 		this.viewerTransform = viewerTransform;
+		this.scaleFactor = scaleFactor;
 	}
 
 	public RandomAccessibleInterval<ARGBType> getImage() {
@@ -50,5 +53,9 @@ public class RenderResult {
 
 	public AffineTransform3D getViewerTransform() {
 		return viewerTransform;
+	}
+
+	public double getScaleFactor() {
+		return scaleFactor;
 	}
 }

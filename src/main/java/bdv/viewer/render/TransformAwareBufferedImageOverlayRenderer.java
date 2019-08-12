@@ -97,7 +97,10 @@ public class TransformAwareBufferedImageOverlayRenderer implements OverlayRender
 			( ( Graphics2D ) g ).setRenderingHint( RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF );
 			( ( Graphics2D ) g ).setRenderingHint( RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_SPEED );
 			( ( Graphics2D ) g ).setRenderingHint( RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED );
-			g.drawImage( readableBuffer.image(), 0, 0, getWidth(), getHeight(), null );
+			BufferedImage image = readableBuffer.image();
+			int width = Math.max(getWidth(), (int) (image.getWidth() / result.getScaleFactor() + 0.5));
+			int height = Math.max(getHeight(), (int) (image.getHeight() / result.getScaleFactor() + 0.5));
+			g.drawImage(image, 0, 0, width, height, null );
 			if (update)
 				notifyTransformListeners(result.getViewerTransform());
 //			System.out.println( String.format( "g.drawImage() :%4d ms", watch.nanoTime() / 1000000 ) );
