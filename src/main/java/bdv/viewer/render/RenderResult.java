@@ -29,7 +29,9 @@
  */
 package bdv.viewer.render;
 
+import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.RealInterval;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
 
@@ -41,10 +43,25 @@ public class RenderResult {
 
 	private final double scaleFactor;
 
-	public RenderResult(RandomAccessibleInterval<ARGBType> image, AffineTransform3D viewerTransform, double scaleFactor) {
+	private final Interval screenInterval;
+
+	private final RealInterval scaledInterval;
+
+	private final int scaleIndex;
+
+	private final Interval paddedScaledInterval;
+
+	private final boolean complete;
+
+	public RenderResult(RandomAccessibleInterval<ARGBType> image, AffineTransform3D viewerTransform, int scaleIndex, double scaleFactor, boolean complete, Interval screenInterval, RealInterval scaledInterval, Interval paddedScaledInterval) {
 		this.image = image;
 		this.viewerTransform = viewerTransform;
 		this.scaleFactor = scaleFactor;
+		this.screenInterval = screenInterval;
+		this.scaledInterval = scaledInterval;
+		this.scaleIndex = scaleIndex;
+		this.paddedScaledInterval = paddedScaledInterval;
+		this.complete = complete;
 	}
 
 	public RandomAccessibleInterval<ARGBType> getImage() {
@@ -57,5 +74,23 @@ public class RenderResult {
 
 	public double getScaleFactor() {
 		return scaleFactor;
+	}
+
+	public Interval getScreenInterval() {
+		return screenInterval;
+	}
+
+	public Interval getPaddedScaledInterval() { return paddedScaledInterval; }
+
+	public RealInterval getScaledInterval() {
+		return scaledInterval;
+	}
+
+	public int getScaleIndex() {
+		return scaleIndex;
+	}
+
+	public boolean isComplete() {
+		return complete;
 	}
 }

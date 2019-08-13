@@ -66,6 +66,7 @@ import javax.swing.SwingConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import net.imglib2.Interval;
 import org.jdom2.Element;
 
 import bdv.cache.CacheControl;
@@ -507,6 +508,11 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	public void requestRepaint()
 	{
 		imageRenderer.requestRepaint();
+	}
+
+	public void requestRepaint(Interval screenInterval)
+	{
+		imageRenderer.requestRepaint(screenInterval);
 	}
 
 	@Override

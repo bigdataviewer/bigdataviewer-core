@@ -32,17 +32,29 @@ package bdv.viewer.render;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.geom.AffineTransform;
+import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
+import java.util.Arrays;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import bdv.util.DoubleBuffer;
+import ij.ImagePlus;
+import ij.process.ColorProcessor;
+import net.imglib2.FinalInterval;
+import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.display.screenimage.awt.ARGBScreenImage;
+import net.imglib2.img.Img;
 import net.imglib2.img.basictypeaccess.array.IntArray;
+import net.imglib2.img.display.imagej.ImageJFunctions;
+import net.imglib2.loops.LoopBuilder;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.TransformListener;
+import net.imglib2.util.Intervals;
+import net.imglib2.view.Views;
 
 public class TransformAwareBufferedImageOverlayRenderer implements OverlayRenderer, TransformAwareRenderTarget {
 
@@ -63,6 +75,8 @@ public class TransformAwareBufferedImageOverlayRenderer implements OverlayRender
 
 	private final DoubleBuffer<RenderResult> doubleBuffer = new DoubleBuffer<>(() -> null);
 
+	private RenderResult lastCompleteResult = null;
+
 	@Override
 	public RandomAccessibleInterval<ARGBType> getRenderOutputImage(int width, int height) {
 		int requiredSize = Math.max(width * height, getWidth() * getHeight());
@@ -78,7 +92,28 @@ public class TransformAwareBufferedImageOverlayRenderer implements OverlayRender
 
 	@Override
 	public synchronized void setBufferedImageAndTransform(RenderResult result) {
-		doubleBuffer.doneWriting( result );
+		if ( result.isComplete() ) {
+			doubleBuffer.doneWriting(result);
+			lastCompleteResult = result;
+		} else {
+			if( lastCompleteResult == null )
+				return;
+			ARGBScreenImage fullImage = (ARGBScreenImage) lastCompleteResult.getImage();
+			ARGBScreenImage partialImage = (ARGBScreenImage) result.getImage();
+			partialImage.forEach(pixel -> pixel.set(pixel.get() | 0xff000000));
+			double scale = lastCompleteResult.getScaleFactor() / result.getScaleFactor();
+			AffineTransform transform = new AffineTransform();
+			transform.scale(scale, scale);
+			AffineTransformOp op = new AffineTransformOp(transform, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
+			op.filter(getSubimage(partialImage, result.getPaddedScaledInterval()),
+					getSubimage(fullImage, result.getScreenInterval()));
+		}
+	}
+
+
+	private BufferedImage getSubimage(ARGBScreenImage partialImage, Interval interval) {
+		interval = Intervals.intersect(interval, partialImage);
+		return partialImage.image().getSubimage((int) interval.min(0), (int) interval.min(1), (int) interval.dimension(0), (int) interval.dimension(1));
 	}
 
 	@Override
@@ -105,6 +140,11 @@ public class TransformAwareBufferedImageOverlayRenderer implements OverlayRender
 				notifyTransformListeners(result.getViewerTransform());
 //			System.out.println( String.format( "g.drawImage() :%4d ms", watch.nanoTime() / 1000000 ) );
 		}
+	}
+
+	private String toString(Interval value) {
+		return "min:" + Arrays.toString(Intervals.minAsLongArray(value)) +
+				",max:" + Arrays.toString(Intervals.maxAsLongArray(value));
 	}
 
 	private void notifyTransformListeners(AffineTransform3D viewerTransform) {

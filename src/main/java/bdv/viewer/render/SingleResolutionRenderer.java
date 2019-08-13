@@ -53,6 +53,7 @@ import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.integer.ByteType;
 import net.imglib2.ui.SimpleInterruptibleProjector;
 import net.imglib2.util.Intervals;
+import net.imglib2.view.Views;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -126,13 +127,13 @@ public class SingleResolutionRenderer {
 //		CacheIoTiming.getIoTimeBudget().clear(); // clear time budget such that prefetching doesn't wait for loading blocks.
 		final List<RendererSourceState<?>> sourceStates = rendererState.getSources();
 		VolatileProjector projector;
-		if ( sourceStates.isEmpty() )
+		if (sourceStates.isEmpty() || Intervals.isEmpty(screenImage))
 			projector = new EmptyProjector<>( screenImage );
 		else if ( sourceStates.size() == 1 )
 		{
 			projector = createSingleSourceProjector(
 					rendererState, sourceStates.get( 0 ),
-					screenImage, renderMaskArrays[ 0 ] );
+					Views.zeroMin(screenImage), renderMaskArrays[ 0 ] );
 		}
 		else
 		{
@@ -140,10 +141,10 @@ public class SingleResolutionRenderer {
 			final ArrayList< RandomAccessibleInterval< ARGBType >> sourceImages = new ArrayList<>();
 			final ArrayList< Source< ? > > sources = new ArrayList<>();
 			for (int i = 0; i < sourceStates.size(); i++) {
-				final RandomAccessibleInterval< ARGBType > renderImage = renderImages.get( i );
+				final RandomAccessibleInterval< ARGBType > renderImage = Views.interval(renderImages.get( i ), screenImage);
 				final VolatileProjector p = createSingleSourceProjector(
 						rendererState, sourceStates.get( i ),
-						renderImage, renderMaskArrays[ i ]);
+						Views.zeroMin(renderImage), renderMaskArrays[ i ]);
 				sourceProjectors.add( p );
 				sources.add( sourceStates.get( i ).getSpimSource() );
 				sourceImages.add( renderImage );
