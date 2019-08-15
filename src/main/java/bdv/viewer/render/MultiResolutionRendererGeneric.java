@@ -29,7 +29,6 @@
  */
 package bdv.viewer.render;
 
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -58,18 +57,18 @@ import net.imglib2.view.Views;
 
 /**
  * A {@link Renderer} that uses a coarse-to-fine rendering scheme. First, a
- * small {@link BufferedImage} at a fraction of the canvas resolution is
+ * small image at a fraction of the canvas resolution is
  * rendered. Then, increasingly larger images are rendered, until the full
  * canvas resolution is reached.
  * <p>
- * When drawing the low-resolution {@link BufferedImage} to the screen, they
+ * When drawing the low-resolution image to the screen, they
  * will be scaled up by Java2D to the full canvas size, which is relatively
  * fast. Rendering the small, low-resolution images is usually very fast, such
  * that the display is very interactive while the user changes the viewing
  * transformation for example. When the transformation remains fixed for a
  * longer period, higher-resolution details are filled in successively.
  * <p>
- * The renderer allocates a {@link BufferedImage} for each of a predefined set
+ * The renderer allocates a image for each of a predefined set
  * of <em>screen scales</em> (a screen scale of 1 means that 1 pixel in the
  * screen image is displayed as 1 pixel on the canvas, a screen scale of 0.5
  * means 1 pixel in the screen image is displayed as 2 pixel on the canvas,
@@ -93,7 +92,7 @@ import net.imglib2.view.Views;
  * The renderer uses multiple threads (if desired) and double-buffering (if
  * desired).
  * <p>
- * Double buffering means that three {@link BufferedImage BufferedImages} are
+ * Double buffering means that three images are
  * created for every screen scale. After rendering the first one of them and
  * setting it to the {@link RenderTarget}, next time, rendering goes to the
  * second one, then to the third. The {@link RenderTarget} will always have a
@@ -101,7 +100,7 @@ import net.imglib2.view.Views;
  * screen. When setting an image to the {@link RenderTarget}, the
  * {@link RenderTarget} will release one of the previously set images to be
  * rendered again. Thus, rendering will not interfere with painting the
- * {@link BufferedImage} to the canvas.
+ * image to the canvas.
  * <p>
  * The renderer supports rendering of {@link Volatile} sources. In each
  * rendering pass, all currently valid data for the best fitting mipmap level
@@ -117,7 +116,7 @@ import net.imglib2.view.Views;
 public class MultiResolutionRendererGeneric<T>
 {
 	/**
-	 * Receiver for the {@link BufferedImage BufferedImages} that we render.
+	 * Receiver for the images that we render.
 	 */
 	private final TransformAwareRenderTarget display;
 
@@ -195,7 +194,8 @@ public class MultiResolutionRendererGeneric<T>
 	private final CacheControl cacheControl;
 
 	/**
-	 * Whether a repaint was {@link #requestRepaint() requested}. This will
+	 * Whether a repaint was {@link #requestRepaint(Interval) requested}. This will
+	 * // TODO discuss this with Tobias Pietzsch
 	 * cause {@link CacheControl#prepareNextFrame()}.
 	 */
 	private boolean newFrameRequest;
@@ -267,7 +267,7 @@ public class MultiResolutionRendererGeneric<T>
 
 	/**
 	 * Check whether the size of the display component was changed and
-	 * recreate {@link ScreenScale#screenScaleTransforms} accordingly.
+	 * set screen scale size accordingly.
 	 *
 	 * @return whether the size was changed.
 	 */
@@ -285,11 +285,6 @@ public class MultiResolutionRendererGeneric<T>
 				final int w = ( int ) Math.ceil( scaleFactor * componentW );
 				final int h = ( int ) Math.ceil( scaleFactor * componentH );
 				screenScale.setSize(w, h);
-				final AffineTransform3D scale = new AffineTransform3D();
-				scale.scale(scaleFactor);
-				scale.set( 0.5 * (scaleFactor - 1), 0, 3 );
-				scale.set( 0.5 * (scaleFactor - 1), 1, 3 );
-				screenScale.screenScaleTransforms = scale;
 			}
 
 			return true;
@@ -530,14 +525,6 @@ public class MultiResolutionRendererGeneric<T>
 		return new FinalRealInterval(min, max);
 	}
 
-	private double[] getRenderTargetToScreenPixelRatio() {
-		// find the scaling ratio between render target pixels and screen pixels
-		final double[] renderTargetToScreenPixelRatio = new double[2];
-		Arrays.setAll(renderTargetToScreenPixelRatio, d -> screenScales.get(currentScreenScaleIndex).screenScaleTransforms.get(d, d));
-		return renderTargetToScreenPixelRatio;
-	}
-
-
 	public void requestRepaint() {
 		requestRepaint(ALL);
 	}
@@ -558,7 +545,7 @@ public class MultiResolutionRendererGeneric<T>
 	 * immediately or after the currently running {@link #paint(RendererState)} has
 	 * completed).
 	 */
-	public synchronized void requestRepaint(Interval interval, int screenScaleIndex)
+	public synchronized void requestRepaint(Interval interval, final int screenScaleIndex)
 	{
 		if (interval == null)
 			interval = ALL;
@@ -596,20 +583,28 @@ public class MultiResolutionRendererGeneric<T>
 		}
 	}
 
+	private static AffineTransform3D screenScaleTransform(double scaleFactor) {
+		final AffineTransform3D scale = new AffineTransform3D();
+		scale.scale(scaleFactor);
+		scale.set( 0.5 * (scaleFactor - 1), 0, 3 );
+		scale.set( 0.5 * (scaleFactor - 1), 1, 3 );
+		return scale;
+	}
+
 	/**
 	 * Scale factor and associated image buffers and transformation.
 	 */
 	private static class ScreenScale< T > {
 
 		/**
-		 * Scale factors from the viewer canvas to the
+		 * Scale factors from the {@link #display viewer canvas} to the
 		 * screen image.
 		 *
 		 * A scale factor of 1 means 1 pixel in the screen image is displayed as 1
 		 * pixel on the canvas, a scale factor of 0.5 means 1 pixel in the screen
 		 * image is displayed as 2 pixel on the canvas, etc.
 		 */
-		private double scaleFactor;
+		private final double scaleFactor;
 
 		/**
 		 * Used to render an individual source. One image per visible source
@@ -617,12 +612,12 @@ public class MultiResolutionRendererGeneric<T>
 		 */
 		private List< ArrayImg< ARGBType, IntArray > > renderImages = new ArrayList<>();
 
-		private AffineTransform3D screenScaleTransforms = new AffineTransform3D();
+		private final AffineTransform3D screenScaleTransforms;
 
 		/**
 		 * Pending repaint requests.
 		 */
-		private Interval pendingRepaintRequests = null;
+		private Interval pendingRepaintRequests;
 
 		private int width;
 
@@ -630,6 +625,7 @@ public class MultiResolutionRendererGeneric<T>
 
 		private ScreenScale(double scaleFactor) {
 			this.scaleFactor = scaleFactor;
+			screenScaleTransforms = screenScaleTransform(scaleFactor);
 		}
 
 		private void setSize(int width, int height) {
