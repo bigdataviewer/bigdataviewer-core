@@ -415,8 +415,7 @@ public class MultiResolutionRendererGeneric {
 				{
 					display.setBufferedImageAndTransform(result);
 
-					if ( Intervals.equals(lastRenderedScreenInterval, ALL) )
-						adjustMaxScreenScaleIndex(rendertime);
+					adjustMaxScreenScaleIndex(rendertime);
 				}
 
 				if ( currentScreenScaleIndex > 0 )
@@ -467,19 +466,19 @@ public class MultiResolutionRendererGeneric {
 	private void adjustMaxScreenScaleIndex(long rendertime) {
 		if ( currentScreenScaleIndex == maxScreenScaleIndex )
 		{
-			if ( rendertime > targetRenderNanos && maxScreenScaleIndex < screenScales.size() - 1 )
+			boolean renderingWasSlow = rendertime > targetRenderNanos;
+			boolean canIncreaseMaxScreenScaleIndex = maxScreenScaleIndex < screenScales.size() - 1;
+			if ( renderingWasSlow && canIncreaseMaxScreenScaleIndex)
 				maxScreenScaleIndex++;
-			else if ( rendertime < targetRenderNanos / 3 && maxScreenScaleIndex > 0 )
-				maxScreenScaleIndex--;
 		}
 		else if ( currentScreenScaleIndex == maxScreenScaleIndex - 1 )
 		{
-			if ( rendertime < targetRenderNanos && maxScreenScaleIndex > 0 )
+			boolean renderedCompleteScreen = Intervals.equals(lastRenderedScreenInterval, ALL);
+			boolean renderingWasFast = rendertime < targetRenderNanos;
+			boolean canDecreaseMaxScreenScaleIndex = maxScreenScaleIndex > 0;
+			if ( renderedCompleteScreen && renderingWasFast && canDecreaseMaxScreenScaleIndex)
 				maxScreenScaleIndex--;
 		}
-//		System.out.println( String.format( "rendering:%4d ms", rendertime / 1000000 ) );
-//		System.out.println( "scale = " + currentScreenScaleIndex );
-//		System.out.println( "maxScreenScaleIndex = " + maxScreenScaleIndex + "  (" + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 0 ) + " x " + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 1 ) + ")" );
 	}
 
 	private VolatileProjector createProjectorForInterval(RendererState viewerState, ScreenScale screenScale, RenderResult result) {
