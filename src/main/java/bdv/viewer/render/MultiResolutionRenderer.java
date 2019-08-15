@@ -34,12 +34,10 @@ import bdv.viewer.state.ViewerState;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
 import net.imglib2.display.screenimage.awt.ARGBScreenImage;
-import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
 import net.imglib2.ui.Renderer;
-import net.imglib2.ui.TransformListener;
 
 import java.awt.image.BufferedImage;
 import java.util.concurrent.ExecutorService;
@@ -102,8 +100,7 @@ import java.util.concurrent.ExecutorService;
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
-public class MultiResolutionRenderer extends MultiResolutionRendererGeneric< BufferedImage >
-{
+public class MultiResolutionRenderer extends MultiResolutionRendererGeneric {
 
 	/**
 	 * @param display

@@ -41,7 +41,7 @@ public class RenderTest {
 	@Test
 	public void test() {
 		SimpleRenderTraget display = new SimpleRenderTraget(100, 100);
-		MultiResolutionRendererGeneric<Object> renderer = createRenderer(display, new double[]{1.0});
+		MultiResolutionRendererGeneric renderer = createRenderer(display, new double[]{1.0});
 		Img<ARGBType> image = RandomImgs.seed(42).nextImage(new ARGBType(), 100, 100);
 		RendererSourceState<?> rendererStateSource = asRendererStateSource(image);
 		renderer.requestRepaint();
@@ -53,7 +53,7 @@ public class RenderTest {
 	public void testPaintSubInterval() {
 		// setup
 		SimpleRenderTraget display = new SimpleRenderTraget(10, 10);
-		MultiResolutionRendererGeneric<Object> renderer = createRenderer(display, new double[]{1.0});
+		MultiResolutionRendererGeneric renderer = createRenderer(display, new double[]{1.0});
 		RandomAccessibleInterval<ARGBType> image = RandomImgs.seed(42).nextImage(new ARGBType(), 10, 10);
 		RendererSourceState<?> rendererStateSource = asRendererStateSource(image);
 		FinalInterval interval = Intervals.createMinSize(5, 6, 4, 2);
@@ -74,7 +74,7 @@ public class RenderTest {
 	@Test
 	public void testScaled() {
 		SimpleRenderTraget display = new SimpleRenderTraget(10, 10);
-		MultiResolutionRendererGeneric<Object> renderer = createRenderer(display, new double[]{0.5});
+		MultiResolutionRendererGeneric renderer = createRenderer(display, new double[]{0.5});
 		RandomAccessibleInterval<ARGBType> image = Converters.convert(
 				(RandomAccessibleInterval<Localizable>) Views.interval(Localizables.randomAccessible(2), new FinalInterval(10, 10)),
 				(location, pixel) -> pixel.set(location.getIntPosition(0)*10), new ARGBType());
@@ -99,7 +99,7 @@ public class RenderTest {
 	public void testScaledSubInterval() {
 		// setup
 		SimpleRenderTraget display = new SimpleRenderTraget(10, 10);
-		MultiResolutionRendererGeneric<Object> renderer = createRenderer(display, new double[]{0.5});
+		MultiResolutionRendererGeneric renderer = createRenderer(display, new double[]{0.5});
 		RandomAccessibleInterval<ARGBType> image = Converters.convert(
 				(RandomAccessibleInterval<Localizable>) Views.interval(Localizables.randomAccessible(2), new FinalInterval(10, 10)),
 				(location, pixel) -> pixel.set(location.getIntPosition(0)*10), new ARGBType());
@@ -185,12 +185,12 @@ public class RenderTest {
 		);
 	}
 
-	private MultiResolutionRendererGeneric<Object> createRenderer(SimpleRenderTraget display, double[] screenScales) {
+	private MultiResolutionRendererGeneric createRenderer(SimpleRenderTraget display, double[] screenScales) {
 		ViewerOptions.Values options = new ViewerOptions().values;
 		PainterThread painterTread = new PainterThread(null);
 		ExecutorService executorService = Executors.newSingleThreadExecutor();
 		CacheControl cacheControl = new CacheControl.CacheControls();
-		return new MultiResolutionRendererGeneric<>(
+		return new MultiResolutionRendererGeneric(
 				display, painterTread, screenScales, options.getTargetRenderNanos(),
 				options.isDoubleBuffered(), options.getNumRenderingThreads(),
 				executorService, options.isUseVolatileIfAvailable(), options.getAccumulateProjectorFactory(),

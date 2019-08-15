@@ -113,8 +113,7 @@ import net.imglib2.view.Views;
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
-public class MultiResolutionRendererGeneric<T>
-{
+public class MultiResolutionRendererGeneric {
 	/**
 	 * Receiver for the images that we render.
 	 */
@@ -149,7 +148,7 @@ public class MultiResolutionRendererGeneric<T>
 	/**
 	 * List of scale factors and associate image buffers
 	 */
-	private final List<ScreenScale< T >> screenScales;
+	private final List<ScreenScale> screenScales;
 
 	/**
 	 * The last rendered interval in screen space.
@@ -252,7 +251,7 @@ public class MultiResolutionRendererGeneric<T>
 		this.painterThread = painterThread;
 		projector = null;
 		currentScreenScaleIndex = -1;
-		this.screenScales = DoubleStream.of(screenScales).mapToObj(ScreenScale<T>::new).collect( Collectors.toList() );
+		this.screenScales = DoubleStream.of(screenScales).mapToObj(ScreenScale::new).collect( Collectors.toList() );
 		renderMaskArrays = new byte[ 0 ][];
 
 		this.targetRenderNanos = targetRenderNanos;
@@ -280,7 +279,7 @@ public class MultiResolutionRendererGeneric<T>
 		{
 			for ( int i = 0; i < screenScales.size(); ++i )
 			{
-				ScreenScale<T> screenScale = screenScales.get(i);
+				ScreenScale screenScale = screenScales.get(i);
 				final double scaleFactor = screenScale.scaleFactor;
 				final int w = ( int ) Math.ceil( scaleFactor * componentW );
 				final int h = ( int ) Math.ceil( scaleFactor * componentH );
@@ -380,7 +379,7 @@ public class MultiResolutionRendererGeneric<T>
 			if ( createProjector )
 			{
 				currentScreenScaleIndex = requestedScreenScaleIndex;
-				ScreenScale<T> screenScale = screenScales.get(currentScreenScaleIndex);
+				ScreenScale screenScale = screenScales.get(currentScreenScaleIndex);
 				synchronized ( state )
 				{
 					lastRenderedScreenInterval = repaintScreenInterval;
@@ -454,7 +453,7 @@ public class MultiResolutionRendererGeneric<T>
 	private RenderResult createRenderResult(RandomAccessibleInterval<ARGBType> bufferedImage,
 			AffineTransform3D viewerTransform,
 			Interval repaintScreenInterval,
-			ScreenScale<T> screenScale) {
+			ScreenScale screenScale) {
 		boolean complete = Intervals.equals(repaintScreenInterval, ALL);
 		if(complete)
 			repaintScreenInterval = new FinalInterval( display.getWidth(), display.getHeight());
@@ -483,7 +482,7 @@ public class MultiResolutionRendererGeneric<T>
 //		System.out.println( "maxScreenScaleIndex = " + maxScreenScaleIndex + "  (" + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 0 ) + " x " + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 1 ) + ")" );
 	}
 
-	private VolatileProjector createProjectorForInterval(RendererState viewerState, ScreenScale<T> screenScale, RenderResult result) {
+	private VolatileProjector createProjectorForInterval(RendererState viewerState, ScreenScale screenScale, RenderResult result) {
 
 		AffineTransform3D viewerTransform = viewerState.getViewerTransform().copy();
 		Interval scaledInterval = result.getPaddedScaledInterval();
@@ -594,7 +593,7 @@ public class MultiResolutionRendererGeneric<T>
 	/**
 	 * Scale factor and associated image buffers and transformation.
 	 */
-	private static class ScreenScale< T > {
+	private static class ScreenScale {
 
 		/**
 		 * Scale factors from the {@link #display viewer canvas} to the
