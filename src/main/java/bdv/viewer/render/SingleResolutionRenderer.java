@@ -254,8 +254,7 @@ public class SingleResolutionRenderer {
 		if ( hints.renewHintsAfterPaintingOnce() )
 			newFrameRequest = true;
 
-		Img<ByteType> mask = ArrayImgs.bytes( maskArray, Intervals.dimensionsAsLongArray(screenImage) );
-		return new VolatileHierarchyProjector<>( renderList, source.getConverter(), screenImage, mask, numRenderingThreads, renderingExecutorService );
+		return new VolatileHierarchyProjector<>( renderList, source.getConverter(), screenImage, maskArray, numRenderingThreads, renderingExecutorService );
 	}
 
 	private static < T > RandomAccessible< T > getTransformedSource(
