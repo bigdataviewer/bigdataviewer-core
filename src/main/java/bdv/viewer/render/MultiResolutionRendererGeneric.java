@@ -468,7 +468,7 @@ public class MultiResolutionRendererGeneric {
 		final RealInterval scaledInterval = scaleInterval(repaintScreenInterval, screenScale.scaleFactor);
 		final Interval paddedScaledInterval = getPaddedRenderTargetInterval(bufferedImage, scaledInterval);
 		return new RenderResult(bufferedImage, viewerTransform, currentScreenScaleIndex, screenScale.scaleFactor,
-				complete, Intervals.largestContainedInterval(scaleInterval(paddedScaledInterval, 1 / screenScale.scaleFactor)), scaledInterval, paddedScaledInterval
+				complete, repaintScreenInterval, scaledInterval, paddedScaledInterval
 		);
 	}
 
@@ -518,11 +518,12 @@ public class MultiResolutionRendererGeneric {
 	private Interval getPaddedRenderTargetInterval(RandomAccessibleInterval<ARGBType> renderTarget, RealInterval renderTargetRealInterval) {
 		// apply 1px padding on each side of the render target repaint interval to avoid interpolation artifacts
 		// TODO: Is the padding useful? Or is the smallest containing interval already big enough.
-		Interval padded = Intervals.smallestContainingInterval(renderTargetRealInterval);
+		Interval padded = Intervals.expand(Intervals.smallestContainingInterval(renderTargetRealInterval), 1);
 		return Intervals.intersect(padded, renderTarget);
 	}
 
 	private RealInterval scaleInterval(Interval interval, double scale) {
+		// TODO: move to intervals class
 		// scale the screen repaint request interval into render target coordinates
 		int n = interval.numDimensions();
 		final double[] min = new double[n];

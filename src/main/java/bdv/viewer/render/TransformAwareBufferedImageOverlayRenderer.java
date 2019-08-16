@@ -39,22 +39,17 @@ import java.util.Arrays;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import bdv.util.DoubleBuffer;
-import ij.ImagePlus;
-import ij.process.ColorProcessor;
-import net.imglib2.FinalInterval;
+import net.imglib2.FinalRealInterval;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.RealInterval;
 import net.imglib2.display.screenimage.awt.ARGBScreenImage;
-import net.imglib2.img.Img;
 import net.imglib2.img.basictypeaccess.array.IntArray;
-import net.imglib2.img.display.imagej.ImageJFunctions;
-import net.imglib2.loops.LoopBuilder;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.TransformListener;
 import net.imglib2.util.Intervals;
-import net.imglib2.view.Views;
 
 public class TransformAwareBufferedImageOverlayRenderer implements OverlayRenderer, TransformAwareRenderTarget {
 
@@ -98,18 +93,30 @@ public class TransformAwareBufferedImageOverlayRenderer implements OverlayRender
 		} else {
 			if( lastCompleteResult == null )
 				return;
-			ARGBScreenImage fullImage = (ARGBScreenImage) lastCompleteResult.getImage();
-			ARGBScreenImage partialImage = (ARGBScreenImage) result.getImage();
-			partialImage.forEach(pixel -> pixel.set(pixel.get() | 0xff000000));
+			ARGBScreenImage source = (ARGBScreenImage) result.getImage();
+			ARGBScreenImage target = (ARGBScreenImage) lastCompleteResult.getImage();
+			source.forEach(pixel -> pixel.set(pixel.get() | 0xff000000));
 			double scale = lastCompleteResult.getScaleFactor() / result.getScaleFactor();
 			AffineTransform transform = new AffineTransform();
 			transform.scale(scale, scale);
 			AffineTransformOp op = new AffineTransformOp(transform, AffineTransformOp.TYPE_NEAREST_NEIGHBOR);
-			op.filter(getSubimage(partialImage, result.getPaddedScaledInterval()),
-					getSubimage(fullImage, result.getScreenInterval()));
+			Interval sourceInterval = result.getPaddedScaledInterval();
+			Interval targetInterval = Intervals.largestContainedInterval(scaleInterval(sourceInterval, 1 / result.getScaleFactor()));
+			op.filter(getSubimage(source, sourceInterval),
+					getSubimage(target, targetInterval));
 		}
 	}
 
+	private RealInterval scaleInterval(Interval interval, double scale) {
+		// TODO: move to intervals class
+		// scale the screen repaint request interval into render target coordinates
+		int n = interval.numDimensions();
+		final double[] min = new double[n];
+		final double[] max = new double[n];
+		Arrays.setAll(min, d -> interval.min(d) * scale);
+		Arrays.setAll(max, d -> interval.max(d) * scale);
+		return new FinalRealInterval(min, max);
+	}
 
 	private BufferedImage getSubimage(ARGBScreenImage partialImage, Interval interval) {
 		interval = Intervals.intersect(interval, partialImage);
