@@ -191,7 +191,7 @@ public class RenderTest {
 		ExecutorService executorService = Executors.newSingleThreadExecutor();
 		CacheControl cacheControl = new CacheControl.CacheControls();
 		return new MultiResolutionRendererGeneric(
-				display, painterTread, screenScales, options.getTargetRenderNanos(),
+				display, painterTread::requestRepaint, screenScales, options.getTargetRenderNanos(),
 				options.isDoubleBuffered(), options.getNumRenderingThreads(),
 				executorService, options.isUseVolatileIfAvailable(), options.getAccumulateProjectorFactory(),
 				cacheControl

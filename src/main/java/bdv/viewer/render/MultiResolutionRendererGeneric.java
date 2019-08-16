@@ -34,10 +34,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 
 import bdv.cache.CacheControl;
+import bdv.viewer.RequestRepaint;
 import net.imglib2.FinalInterval;
 import net.imglib2.FinalRealInterval;
 import net.imglib2.Interval;
@@ -123,7 +125,7 @@ public class MultiResolutionRendererGeneric {
 	 * Thread that triggers repainting of the display.
 	 * Requests for repainting are send there.
 	 */
-	private final PainterThread painterThread;
+	private final RequestRepaint painterThread;
 
 	private final SingleResolutionRenderer renderer;
 
@@ -237,7 +239,7 @@ public class MultiResolutionRendererGeneric {
 	 */
 	public MultiResolutionRendererGeneric(
 			final TransformAwareRenderTarget display,
-			final PainterThread painterThread,
+			final RequestRepaint painterThread,
 			final double[] screenScales,
 			final long targetRenderNanos,
 			final boolean doubleBuffered,
@@ -405,6 +407,7 @@ public class MultiResolutionRendererGeneric {
 		// try rendering
 		final boolean success = p.map( createProjector );
 		final long rendertime = p.getLastFrameRenderNanoTime();
+		showRendertime(rendertime);
 
 		synchronized ( this )
 		{
@@ -444,6 +447,12 @@ public class MultiResolutionRendererGeneric {
 	}
 	}
 
+	private static final AtomicLong r = new AtomicLong();
+
+	private void showRendertime(long rendertime) {
+		System.out.println(r.addAndGet(rendertime));
+	}
+
 	private boolean intersectsScreen(Interval repaintScreenInterval) {
 		FinalInterval area = Intervals.intersect(repaintScreenInterval, new FinalInterval(display.getWidth(), display.getHeight()));
 		return ! Intervals.isEmpty(area);
@@ -459,7 +468,7 @@ public class MultiResolutionRendererGeneric {
 		final RealInterval scaledInterval = scaleInterval(repaintScreenInterval, screenScale.scaleFactor);
 		final Interval paddedScaledInterval = getPaddedRenderTargetInterval(bufferedImage, scaledInterval);
 		return new RenderResult(bufferedImage, viewerTransform, currentScreenScaleIndex, screenScale.scaleFactor,
-				complete, repaintScreenInterval, scaledInterval, paddedScaledInterval
+				complete, Intervals.largestContainedInterval(scaleInterval(paddedScaledInterval, 1 / screenScale.scaleFactor)), scaledInterval, paddedScaledInterval
 		);
 	}
 

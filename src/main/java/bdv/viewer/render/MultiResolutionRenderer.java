@@ -146,7 +146,7 @@ public class MultiResolutionRenderer extends MultiResolutionRendererGeneric {
 			final AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory,
 			final CacheControl cacheControl )
 	{
-		super(display, painterThread, screenScales, targetRenderNanos, doubleBuffered, numRenderingThreads,
+		super(display, painterThread::requestRepaint, screenScales, targetRenderNanos, doubleBuffered, numRenderingThreads,
 				renderingExecutorService, useVolatileIfAvailable, accumulateProjectorFactory, cacheControl);
 	}
 
@@ -162,7 +162,7 @@ public class MultiResolutionRenderer extends MultiResolutionRendererGeneric {
 			final AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory,
 			final CacheControl cacheControl )
 	{
-		super(wrap( display ), painterThread, screenScales, targetRenderNanos, doubleBuffered, numRenderingThreads,
+		super(wrap( display ), painterThread::requestRepaint, screenScales, targetRenderNanos, doubleBuffered, numRenderingThreads,
 				renderingExecutorService, useVolatileIfAvailable, accumulateProjectorFactory, cacheControl);
 	}
 
