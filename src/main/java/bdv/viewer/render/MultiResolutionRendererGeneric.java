@@ -51,7 +51,6 @@ import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.IntArray;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
 import net.imglib2.ui.Renderer;
 import net.imglib2.util.Intervals;
@@ -344,16 +343,10 @@ public class MultiResolutionRendererGeneric {
 
 		final boolean resized = checkResize();
 
-		// the BufferedImage that is rendered to (to paint to the canvas)
-		final RandomAccessibleInterval< ARGBType > bufferedImage;
-
 		// the projector that paints to the screenImage.
 		final VolatileProjector p;
 
-		final boolean clearQueue;
-
 		final boolean createProjector;
-
 
 		final Interval repaintScreenInterval;
 
@@ -372,7 +365,7 @@ public class MultiResolutionRendererGeneric {
 			// screen scale and coarsest mipmap level.
 			renderingMayBeCancelled = requestedScreenScaleIndex < maxScreenScaleIndex;
 
-			clearQueue = newFrameRequest;
+			final boolean clearQueue = newFrameRequest;
 			if ( clearQueue )
 				cacheControl.prepareNextFrame();
 			createProjector = newFrameRequest || resized || ( requestedScreenScaleIndex != currentScreenScaleIndex ) || !sameAsLastRenderedInterval;
@@ -388,16 +381,13 @@ public class MultiResolutionRendererGeneric {
 					final int numSources = state.getSources().size();
 					checkRenewRenderImages(numSources);
 					checkRenewMaskArrays(numSources);
-					bufferedImage = display.getRenderOutputImage(screenScale.width(), screenScale.height());
-					// find the scaling ratio between render target pixels and screen pixels
-					result = createRenderResult(bufferedImage, state.getViewerTransform().copy(), repaintScreenInterval, screenScale);
+					result = createRenderResult(state.getViewerTransform().copy(), repaintScreenInterval, screenScale);
 					p = createProjectorForInterval(state, screenScale, result);
 				}
 				projector = p;
 			}
 			else
 			{
-				bufferedImage = null;
 				p = projector;
 			}
 
@@ -443,8 +433,8 @@ public class MultiResolutionRendererGeneric {
 				screenScales.get(currentScreenScaleIndex).requestInterval(repaintScreenInterval);
 			}
 
-		return success;
-	}
+			return success;
+		}
 	}
 
 	private static final AtomicLong r = new AtomicLong();
@@ -458,13 +448,13 @@ public class MultiResolutionRendererGeneric {
 		return ! Intervals.isEmpty(area);
 	}
 
-	private RenderResult createRenderResult(RandomAccessibleInterval<ARGBType> bufferedImage,
-			AffineTransform3D viewerTransform,
+	private RenderResult createRenderResult(AffineTransform3D viewerTransform,
 			Interval repaintScreenInterval,
 			ScreenScale screenScale) {
 		boolean complete = Intervals.equals(repaintScreenInterval, ALL);
 		if(complete)
 			repaintScreenInterval = new FinalInterval( display.getWidth(), display.getHeight());
+		final RandomAccessibleInterval<ARGBType> bufferedImage = display.getRenderOutputImage(screenScale.width(), screenScale.height());
 		final RealInterval scaledInterval = scaleInterval(repaintScreenInterval, screenScale.scaleFactor);
 		final Interval paddedScaledInterval = getPaddedRenderTargetInterval(bufferedImage, scaledInterval);
 		return new RenderResult(bufferedImage, viewerTransform, currentScreenScaleIndex, screenScale.scaleFactor,
