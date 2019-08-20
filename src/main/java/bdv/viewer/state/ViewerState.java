@@ -44,7 +44,6 @@ import bdv.viewer.DisplayMode;
 import bdv.viewer.Interpolation;
 import bdv.viewer.Source;
 import bdv.viewer.SourceAndConverter;
-import bdv.viewer.render.RendererState;
 import net.imglib2.realtransform.AffineTransform3D;
 
 /**

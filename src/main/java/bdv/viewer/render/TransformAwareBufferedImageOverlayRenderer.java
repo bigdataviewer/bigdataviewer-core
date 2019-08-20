@@ -51,7 +51,7 @@ import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.TransformListener;
 import net.imglib2.util.Intervals;
 
-public class TransformAwareBufferedImageOverlayRenderer implements OverlayRenderer, TransformAwareRenderTarget {
+public class TransformAwareBufferedImageOverlayRenderer implements OverlayRenderer, RenderTarget {
 
 	private final AffineTransform3D paintedTransform = new AffineTransform3D();
 
@@ -73,7 +73,7 @@ public class TransformAwareBufferedImageOverlayRenderer implements OverlayRender
 	private RenderResult lastCompleteResult = null;
 
 	@Override
-	public RandomAccessibleInterval<ARGBType> getRenderOutputImage(int width, int height) {
+	public RandomAccessibleInterval<ARGBType> createOutputImage(int width, int height) {
 		int requiredSize = Math.max(width * height, getWidth() * getHeight());
 		RenderResult renderResult = doubleBuffer.getWritableBuffer();
 		if(renderResult != null) {
@@ -86,7 +86,7 @@ public class TransformAwareBufferedImageOverlayRenderer implements OverlayRender
 	}
 
 	@Override
-	public synchronized void setBufferedImageAndTransform(RenderResult result) {
+	public synchronized void setRenderResult(RenderResult result) {
 		if ( result.isComplete() ) {
 			doubleBuffer.doneWriting(result);
 			lastCompleteResult = result;

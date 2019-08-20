@@ -24,7 +24,7 @@ public class TransformAwareBufferedImageOverlayRendererTest {
 		RenderResult result = new RenderResult(image, new AffineTransform3D(),
 				0, 1.0, true, new FinalInterval(10, 10), new FinalInterval(10, 10),
 				new FinalInterval(10, 10));
-		renderer.setBufferedImageAndTransform(result);
+		renderer.setRenderResult(result);
 		ARGBScreenImage screen = new ARGBScreenImage(10, 10);
 		renderer.drawOverlays(screen.image().getGraphics());
 		assertImageEquals(image, screen);
@@ -40,7 +40,7 @@ public class TransformAwareBufferedImageOverlayRendererTest {
 		RenderResult result = new RenderResult(image, new AffineTransform3D(),
 				0, 1.0, true, new FinalInterval(10, 10), new FinalInterval(10, 10),
 				new FinalInterval(10, 10));
-		renderer.setBufferedImageAndTransform(result);
+		renderer.setRenderResult(result);
 		ARGBScreenImage image2 = new ARGBScreenImage(10, 10);
 		RandomImgs.seed(42).randomize(image2);
 		image2.forEach(pixel -> pixel.set(pixel.get() | 0xff000000));
@@ -48,7 +48,7 @@ public class TransformAwareBufferedImageOverlayRendererTest {
 		RenderResult result2 = new RenderResult(image2, new AffineTransform3D(),
 				0, 1.0, false, screenInterval, screenInterval,
 				screenInterval);
-		renderer.setBufferedImageAndTransform(result2);
+		renderer.setRenderResult(result2);
 		ARGBScreenImage screen = new ARGBScreenImage(10, 10);
 		renderer.drawOverlays(screen.image().getGraphics());
 		assertImageEquals(Views.interval(image2,screenInterval), Views.interval(screen, screenInterval));

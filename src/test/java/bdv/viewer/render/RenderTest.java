@@ -41,11 +41,11 @@ public class RenderTest {
 	@Test
 	public void test() {
 		SimpleRenderTraget display = new SimpleRenderTraget(100, 100);
-		MultiResolutionRendererGeneric renderer = createRenderer(display, new double[]{1.0});
+		GeneralMultiResolutionRenderer renderer = createRenderer(display, new double[]{1.0});
 		Img<ARGBType> image = RandomImgs.seed(42).nextImage(new ARGBType(), 100, 100);
-		RendererSourceState<?> rendererStateSource = asRendererStateSource(image);
+		RenderSource<?> rendererStateSource = asRendererStateSource(image);
 		renderer.requestRepaint();
-		renderer.paint(new RendererState(new AffineTransform3D(), 0, Collections.singletonList(rendererStateSource)));
+		renderer.paint(new RenderState(new AffineTransform3D(), 0, Collections.singletonList(rendererStateSource)));
 		assertImageEquals(image, display.getResult().getImage());
 	}
 
@@ -53,13 +53,13 @@ public class RenderTest {
 	public void testPaintSubInterval() {
 		// setup
 		SimpleRenderTraget display = new SimpleRenderTraget(10, 10);
-		MultiResolutionRendererGeneric renderer = createRenderer(display, new double[]{1.0});
+		GeneralMultiResolutionRenderer renderer = createRenderer(display, new double[]{1.0});
 		RandomAccessibleInterval<ARGBType> image = RandomImgs.seed(42).nextImage(new ARGBType(), 10, 10);
-		RendererSourceState<?> rendererStateSource = asRendererStateSource(image);
+		RenderSource<?> rendererStateSource = asRendererStateSource(image);
 		FinalInterval interval = Intervals.createMinSize(5, 6, 4, 2);
 		// process
 		renderer.requestRepaint(interval);
-		renderer.paint(new RendererState(new AffineTransform3D(), 0, Collections.singletonList(rendererStateSource)));
+		renderer.paint(new RenderState(new AffineTransform3D(), 0, Collections.singletonList(rendererStateSource)));
 		// test
 		assertIntervalEquals(interval, display.getResult().getScreenInterval());
 		assertRealIntervalEquals(interval, display.getResult().getScaledInterval());
@@ -74,13 +74,13 @@ public class RenderTest {
 	@Test
 	public void testScaled() {
 		SimpleRenderTraget display = new SimpleRenderTraget(10, 10);
-		MultiResolutionRendererGeneric renderer = createRenderer(display, new double[]{0.5});
+		GeneralMultiResolutionRenderer renderer = createRenderer(display, new double[]{0.5});
 		RandomAccessibleInterval<ARGBType> image = Converters.convert(
 				(RandomAccessibleInterval<Localizable>) Views.interval(Localizables.randomAccessible(2), new FinalInterval(10, 10)),
 				(location, pixel) -> pixel.set(location.getIntPosition(0)*10), new ARGBType());
-		RendererSourceState<?> rendererStateSource = asRendererStateSource(image);
+		RenderSource<?> rendererStateSource = asRendererStateSource(image);
 		renderer.requestRepaint();
-		renderer.paint(new RendererState(new AffineTransform3D(), 0, Collections.singletonList(rendererStateSource)));
+		renderer.paint(new RenderState(new AffineTransform3D(), 0, Collections.singletonList(rendererStateSource)));
 		RandomAccessibleInterval<ARGBType> expected = Converters.convert(
 				(RandomAccessibleInterval<Localizable>) Views.interval(Localizables.randomAccessible(2), new FinalInterval(5, 5)),
 				(location, pixel) -> pixel.set(location.getIntPosition(0) * 20 + 5), new ARGBType());
@@ -99,15 +99,15 @@ public class RenderTest {
 	public void testScaledSubInterval() {
 		// setup
 		SimpleRenderTraget display = new SimpleRenderTraget(10, 10);
-		MultiResolutionRendererGeneric renderer = createRenderer(display, new double[]{0.5});
+		GeneralMultiResolutionRenderer renderer = createRenderer(display, new double[]{0.5});
 		RandomAccessibleInterval<ARGBType> image = Converters.convert(
 				(RandomAccessibleInterval<Localizable>) Views.interval(Localizables.randomAccessible(2), new FinalInterval(10, 10)),
 				(location, pixel) -> pixel.set(location.getIntPosition(0)*10), new ARGBType());
-		RendererSourceState<?> rendererStateSource = asRendererStateSource(image);
+		RenderSource<?> rendererStateSource = asRendererStateSource(image);
 		FinalInterval interval = Intervals.createMinSize(5, 6, 4, 2);
 		// process
 		renderer.requestRepaint(interval);
-		renderer.paint(new RendererState(new AffineTransform3D(), 0, Collections.singletonList(rendererStateSource)));
+		renderer.paint(new RenderState(new AffineTransform3D(), 0, Collections.singletonList(rendererStateSource)));
 		// test
 		RandomAccessibleInterval<ARGBType> expected = Converters.convert(
 				(RandomAccessibleInterval<Localizable>) Views.interval(Localizables.randomAccessible(2), new FinalInterval(5, 5)),
@@ -136,7 +136,7 @@ public class RenderTest {
 		return String.valueOf(pixel.get());
 	}
 
-	private RendererSourceState<?> asRendererStateSource(RandomAccessibleInterval<ARGBType> image) {
+	private RenderSource<?> asRendererStateSource(RandomAccessibleInterval<ARGBType> image) {
 		RandomAccessibleInterval<ARGBType> image3d = Views.addDimension(image, 0, 0);
 		Source<ARGBType> source = new Source<ARGBType>() {
 			@Override
@@ -179,26 +179,26 @@ public class RenderTest {
 				return 1;
 			}
 		};
-		return new RendererSourceState<>(
+		return new RenderSource<>(
 				new SourceAndConverter<>(source, new TypeIdentity<>()),
 				Interpolation.NLINEAR
 		);
 	}
 
-	private MultiResolutionRendererGeneric createRenderer(SimpleRenderTraget display, double[] screenScales) {
+	private GeneralMultiResolutionRenderer createRenderer(SimpleRenderTraget display, double[] screenScales) {
 		ViewerOptions.Values options = new ViewerOptions().values;
 		PainterThread painterTread = new PainterThread(null);
 		ExecutorService executorService = Executors.newSingleThreadExecutor();
 		CacheControl cacheControl = new CacheControl.CacheControls();
-		return new MultiResolutionRendererGeneric(
+		return new GeneralMultiResolutionRenderer(
 				display, painterTread::requestRepaint, screenScales, options.getTargetRenderNanos(),
-				options.isDoubleBuffered(), options.getNumRenderingThreads(),
+				options.getNumRenderingThreads(),
 				executorService, options.isUseVolatileIfAvailable(), options.getAccumulateProjectorFactory(),
 				cacheControl
 		);
 	}
 
-	private static class SimpleRenderTraget implements TransformAwareRenderTarget {
+	private static class SimpleRenderTraget implements RenderTarget {
 
 		private final int width, height;
 
@@ -210,12 +210,12 @@ public class RenderTest {
 		}
 
 		@Override
-		public void setBufferedImageAndTransform(RenderResult result) {
+		public void setRenderResult(RenderResult result) {
 			this.result = result;
 		}
 
 		@Override
-		public RandomAccessibleInterval<ARGBType> getRenderOutputImage(int width, int height) {
+		public RandomAccessibleInterval<ARGBType> createOutputImage(int width, int height) {
 			return ArrayImgs.argbs(width, height);
 		}
 

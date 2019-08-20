@@ -34,7 +34,7 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.ui.TransformListener;
 
-public interface TransformAwareRenderTarget {
+public interface RenderTarget {
 	/**
 	 * Set the data store that is to be drawn on the canvas, and the transform with which this image was created.
 	 *
@@ -42,9 +42,9 @@ public interface TransformAwareRenderTarget {
 	 * 		image to draw (may be null).
 	 */
 
-	public void setBufferedImageAndTransform(final RenderResult result);
+	public void setRenderResult(final RenderResult result);
 
-	public RandomAccessibleInterval<ARGBType> getRenderOutputImage(int width, int height);
+	public RandomAccessibleInterval<ARGBType> createOutputImage(int width, int height);
 
 	public int getWidth();
 

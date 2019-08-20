@@ -29,7 +29,6 @@
  */
 package bdv.viewer.state;
 
-import bdv.viewer.render.RendererSourceState;
 import net.imglib2.Volatile;
 import bdv.viewer.DisplayMode;
 import bdv.viewer.SourceAndConverter;

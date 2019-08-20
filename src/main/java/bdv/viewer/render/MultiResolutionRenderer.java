@@ -36,7 +36,6 @@ import net.imglib2.Volatile;
 import net.imglib2.display.screenimage.awt.ARGBScreenImage;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.ui.PainterThread;
-import net.imglib2.ui.RenderTarget;
 import net.imglib2.ui.Renderer;
 
 import java.awt.image.BufferedImage;
@@ -81,11 +80,11 @@ import java.util.concurrent.ExecutorService;
  * <p>
  * Double buffering means that three {@link BufferedImage BufferedImages} are
  * created for every screen scale. After rendering the first one of them and
- * setting it to the {@link RenderTarget}, next time, rendering goes to the
- * second one, then to the third. The {@link RenderTarget} will always have a
+ * setting it to the {@link net.imglib2.ui.RenderTarget}, next time, rendering goes to the
+ * second one, then to the third. The {@link net.imglib2.ui.RenderTarget} will always have a
  * complete image, which is not rendered to while it is potentially drawn to the
- * screen. When setting an image to the {@link RenderTarget}, the
- * {@link RenderTarget} will release one of the previously set images to be
+ * screen. When setting an image to the {@link net.imglib2.ui.RenderTarget}, the
+ * {@link net.imglib2.ui.RenderTarget} will release one of the previously set images to be
  * rendered again. Thus, rendering will not interfere with painting the
  * {@link BufferedImage} to the canvas.
  * <p>
@@ -100,7 +99,7 @@ import java.util.concurrent.ExecutorService;
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
-public class MultiResolutionRenderer extends MultiResolutionRendererGeneric {
+public class MultiResolutionRenderer extends GeneralMultiResolutionRenderer {
 
 	/**
 	 * @param display
@@ -135,22 +134,6 @@ public class MultiResolutionRenderer extends MultiResolutionRendererGeneric {
 	 *            the cache controls IO budgeting and fetcher queue.
 	 */
 	public MultiResolutionRenderer(
-			final TransformAwareRenderTarget display,
-			final PainterThread painterThread,
-			final double[] screenScales,
-			final long targetRenderNanos,
-			final boolean doubleBuffered,
-			final int numRenderingThreads,
-			final ExecutorService renderingExecutorService,
-			final boolean useVolatileIfAvailable,
-			final AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory,
-			final CacheControl cacheControl )
-	{
-		super(display, painterThread::requestRepaint, screenScales, targetRenderNanos, doubleBuffered, numRenderingThreads,
-				renderingExecutorService, useVolatileIfAvailable, accumulateProjectorFactory, cacheControl);
-	}
-
-	public MultiResolutionRenderer(
 			final RenderTarget display,
 			final PainterThread painterThread,
 			final double[] screenScales,
@@ -162,20 +145,36 @@ public class MultiResolutionRenderer extends MultiResolutionRendererGeneric {
 			final AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory,
 			final CacheControl cacheControl )
 	{
-		super(wrap( display ), painterThread::requestRepaint, screenScales, targetRenderNanos, doubleBuffered, numRenderingThreads,
+		super(display, painterThread::requestRepaint, screenScales, targetRenderNanos, numRenderingThreads,
 				renderingExecutorService, useVolatileIfAvailable, accumulateProjectorFactory, cacheControl);
 	}
 
-	private static TransformAwareRenderTarget wrap(RenderTarget display) {
-		return new TransformAwareRenderTarget() {
+	public MultiResolutionRenderer(
+			final net.imglib2.ui.RenderTarget display,
+			final PainterThread painterThread,
+			final double[] screenScales,
+			final long targetRenderNanos,
+			final boolean doubleBuffered,
+			final int numRenderingThreads,
+			final ExecutorService renderingExecutorService,
+			final boolean useVolatileIfAvailable,
+			final AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory,
+			final CacheControl cacheControl )
+	{
+		super(wrap( display ), painterThread::requestRepaint, screenScales, targetRenderNanos, numRenderingThreads,
+				renderingExecutorService, useVolatileIfAvailable, accumulateProjectorFactory, cacheControl);
+	}
+
+	private static RenderTarget wrap(net.imglib2.ui.RenderTarget display) {
+		return new RenderTarget() {
 
 			@Override
-			public RandomAccessibleInterval<ARGBType> getRenderOutputImage(int width, int height) {
+			public RandomAccessibleInterval<ARGBType> createOutputImage(int width, int height) {
 				return new ARGBScreenImage(width, height);
 			}
 
 			@Override
-			public void setBufferedImageAndTransform(RenderResult result) {
+			public void setRenderResult(RenderResult result) {
 				display.setBufferedImage(((ARGBScreenImage) result.getImage()).image());
 			}
 
@@ -192,7 +191,7 @@ public class MultiResolutionRenderer extends MultiResolutionRendererGeneric {
 	}
 
 	public boolean paint(ViewerState viewerState) {
-		return paint( RendererState.valueOf(viewerState) );
+		return paint( RenderState.valueOf(viewerState) );
 	}
 
 }

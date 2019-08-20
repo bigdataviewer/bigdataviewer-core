@@ -7,29 +7,29 @@ import net.imglib2.realtransform.AffineTransform3D;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RendererState {
+public class RenderState {
 
 	private final AffineTransform3D viewerTransform;
 
 	private final int currentTimepoint;
 
-	private final List< RendererSourceState< ? > > sources;
+	private final List<RenderSource< ? >> sources;
 
-	public RendererState(AffineTransform3D viewerTransform, int currentTimepoint, List< RendererSourceState<?> > sources) {
+	public RenderState(AffineTransform3D viewerTransform, int currentTimepoint, List<RenderSource<?>> sources) {
 		this.viewerTransform = viewerTransform;
 		this.currentTimepoint = currentTimepoint;
 		this.sources = sources;
 	}
 
-	public static RendererState valueOf(ViewerState viewerState) {
+	public static RenderState valueOf(ViewerState viewerState) {
 		AffineTransform3D viewerTransform = new AffineTransform3D();
 		viewerState.getViewerTransform(viewerTransform);
 		int currentTimepoint = viewerState.getCurrentTimepoint();
-		List<RendererSourceState<?>> sources = new ArrayList<>();
+		List<RenderSource<?>> sources = new ArrayList<>();
 		List<SourceState<?>> allSources = viewerState.getSources();
 		for( int i : viewerState.getVisibleSourceIndices())
-			sources.add(new RendererSourceState<>(allSources.get(i), viewerState.getInterpolation()));
-		return new RendererState(viewerTransform, currentTimepoint, sources);
+			sources.add(new RenderSource<>(allSources.get(i), viewerState.getInterpolation()));
+		return new RenderState(viewerTransform, currentTimepoint, sources);
 	}
 
 	public AffineTransform3D getViewerTransform() {
@@ -40,7 +40,7 @@ public class RendererState {
 		return currentTimepoint;
 	}
 
-	public List< RendererSourceState< ? > > getSources() {
+	public List<RenderSource< ? >> getSources() {
 		return sources;
 	}
 }

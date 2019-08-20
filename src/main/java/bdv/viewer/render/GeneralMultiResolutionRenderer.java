@@ -51,7 +51,6 @@ import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.IntArray;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.ui.RenderTarget;
 import net.imglib2.ui.Renderer;
 import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
@@ -95,11 +94,11 @@ import net.imglib2.view.Views;
  * <p>
  * Double buffering means that three images are
  * created for every screen scale. After rendering the first one of them and
- * setting it to the {@link RenderTarget}, next time, rendering goes to the
- * second one, then to the third. The {@link RenderTarget} will always have a
+ * setting it to the {@link net.imglib2.ui.RenderTarget}, next time, rendering goes to the
+ * second one, then to the third. The {@link net.imglib2.ui.RenderTarget} will always have a
  * complete image, which is not rendered to while it is potentially drawn to the
- * screen. When setting an image to the {@link RenderTarget}, the
- * {@link RenderTarget} will release one of the previously set images to be
+ * screen. When setting an image to the {@link net.imglib2.ui.RenderTarget}, the
+ * {@link net.imglib2.ui.RenderTarget} will release one of the previously set images to be
  * rendered again. Thus, rendering will not interfere with painting the
  * image to the canvas.
  * <p>
@@ -114,11 +113,11 @@ import net.imglib2.view.Views;
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
-public class MultiResolutionRendererGeneric {
+public class GeneralMultiResolutionRenderer {
 	/**
 	 * Receiver for the images that we render.
 	 */
-	private final TransformAwareRenderTarget display;
+	private final RenderTarget display;
 
 	/**
 	 * Thread that triggers repainting of the display.
@@ -206,8 +205,6 @@ public class MultiResolutionRendererGeneric {
 	 * @param targetRenderNanos
 	 *            Target rendering time in nanoseconds. The rendering time for
 	 *            the coarsest rendered scale should be below this threshold.
-	 * @param doubleBuffered
-	 *            Whether to use double buffered rendering.
 	 * @param numRenderingThreads
 	 *            How many threads to use for rendering.
 	 * @param renderingExecutorService
@@ -223,16 +220,15 @@ public class MultiResolutionRendererGeneric {
 	 * @param cacheControl
 	 *            the cache controls IO budgeting and fetcher queue.
 	 */
-	public MultiResolutionRendererGeneric(
-			final TransformAwareRenderTarget display,
+	public GeneralMultiResolutionRenderer(
+			final RenderTarget display,
 			final RequestRepaint painterThread,
 			final double[] screenScales,
 			final long targetRenderNanos,
-			final boolean doubleBuffered,
 			final int numRenderingThreads,
 			final ExecutorService renderingExecutorService,
 			final boolean useVolatileIfAvailable,
-			final AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory,
+			final AccumulateProjectorFactory<ARGBType> accumulateProjectorFactory,
 			final CacheControl cacheControl)
 	{
 		this.display = display;
@@ -321,7 +317,7 @@ public class MultiResolutionRendererGeneric {
 	 * Render image at the {@link #requestedScreenScaleIndex requested screen
 	 * scale}.
 	 */
-	public boolean paint( final RendererState state )
+	public boolean paint( final RenderState state )
 	{
 		if ( display.getWidth() <= 0 || display.getHeight() <= 0 )
 			return false;
@@ -391,7 +387,7 @@ public class MultiResolutionRendererGeneric {
 			{
 				if ( createProjector )
 				{
-					display.setBufferedImageAndTransform(result);
+					display.setRenderResult(result);
 					reportRenderingTime( result, rendertime );
 				}
 
@@ -438,7 +434,7 @@ public class MultiResolutionRendererGeneric {
 		boolean complete = Intervals.equals(repaintScreenInterval, ALL);
 		if(complete)
 			repaintScreenInterval = new FinalInterval( display.getWidth(), display.getHeight());
-		final RandomAccessibleInterval<ARGBType> bufferedImage = display.getRenderOutputImage(screenScale.width(), screenScale.height());
+		final RandomAccessibleInterval<ARGBType> bufferedImage = display.createOutputImage(screenScale.width(), screenScale.height());
 		final RealInterval scaledInterval = scaleInterval(repaintScreenInterval, screenScale.scaleFactor);
 		final Interval paddedScaledInterval = getPaddedRenderTargetInterval(bufferedImage, scaledInterval);
 		return new RenderResult(bufferedImage, viewerTransform, currentScreenScaleIndex, screenScale.scaleFactor,
@@ -453,7 +449,7 @@ public class MultiResolutionRendererGeneric {
 					(double) timeInNanos / Intervals.numElements( result.getScreenInterval() );
 	}
 
-	private VolatileProjector createProjectorForInterval(RendererState viewerState, ScreenScale screenScale, RenderResult result) {
+	private VolatileProjector createProjectorForInterval(RenderState viewerState, ScreenScale screenScale, RenderResult result) {
 
 		Interval interval = result.getPaddedScaledInterval();
 
@@ -461,7 +457,7 @@ public class MultiResolutionRendererGeneric {
 		viewerTransform.preConcatenate(screenScale.screenScaleTransforms);
 		viewerTransform.translate( - interval.min(0), - interval.min(1), 0 );
 
-		RendererState renderState = new RendererState(viewerTransform, viewerState.getCurrentTimepoint(), viewerState.getSources());
+		RenderState renderState = new RenderState(viewerTransform, viewerState.getCurrentTimepoint(), viewerState.getSources());
 
 		final RandomAccessibleInterval<ARGBType> renderTargetRoi = Views.interval(result.getImage(), interval);
 
@@ -477,7 +473,6 @@ public class MultiResolutionRendererGeneric {
 
 	private Interval getPaddedRenderTargetInterval(RandomAccessibleInterval<ARGBType> renderTarget, RealInterval renderTargetRealInterval) {
 		// apply 1px padding on each side of the render target repaint interval to avoid interpolation artifacts
-		// TODO: Is the padding useful? Or is the smallest containing interval already big enough.
 		Interval padded = Intervals.expand(Intervals.smallestContainingInterval(renderTargetRealInterval), 1);
 		return Intervals.intersect(padded, renderTarget);
 	}
@@ -522,8 +517,8 @@ public class MultiResolutionRendererGeneric {
 
 	/**
 	 * Request a repaint of the display from the painter thread. The painter
-	 * thread will trigger a {@link #paint(RendererState)} as soon as possible (that is,
-	 * immediately or after the currently running {@link #paint(RendererState)} has
+	 * thread will trigger a {@link #paint(RenderState)} as soon as possible (that is,
+	 * immediately or after the currently running {@link #paint(RenderState)} has
 	 * completed).
 	 */
 	public synchronized void requestRepaint(Interval interval, final int screenScaleIndex)
