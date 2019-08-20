@@ -157,24 +157,11 @@ public class MultiResolutionRendererGeneric {
 	private Interval lastRenderedScreenInterval;
 
 	/**
-	 * If the rendering time (in nanoseconds) for the (currently) highest scaled
-	 * screen image is above this threshold, increase the
-	 * {@link #maxScreenScaleIndex index} of the highest screen scale to use.
-	 * Similarly, if the rendering time for the (currently) second-highest
-	 * scaled screen image is below this threshold, decrease the
-	 * {@link #maxScreenScaleIndex index} of the highest screen scale to use.
+	 * Rendering first starts with a high screen scale. Because that's
+	 * fast. This high screen scale is selected such that the
+	 * rendering time is below this threshold.
 	 */
 	private final long targetRenderNanos;
-
-	/**
-	 * The index of the (coarsest) screen scale with which to start rendering.
-	 * Once this level is painted, rendering proceeds to lower screen scales
-	 * until index 0 (full resolution) has been reached. While rendering, the
-	 * maxScreenScaleIndex is adapted such that it is the highest index for
-	 * which rendering in {@link #targetRenderNanos} nanoseconds is still
-	 * possible.
-	 */
-	private int maxScreenScaleIndex;
 
 	/**
 	 * The index of the screen scale which should be rendered next.
@@ -254,11 +241,9 @@ public class MultiResolutionRendererGeneric {
 		currentScreenScaleIndex = -1;
 		this.screenScales = DoubleStream.of(screenScales).mapToObj(ScreenScale::new).collect( Collectors.toList() );
 		renderMaskArrays = new byte[ 0 ][];
-
 		this.targetRenderNanos = targetRenderNanos;
 
-		maxScreenScaleIndex = screenScales.length - 1;
-		requestedScreenScaleIndex = maxScreenScaleIndex;
+		requestedScreenScaleIndex = screenScales.length - 1;
 		renderingMayBeCancelled = true;
 		this.cacheControl = cacheControl;
 		newFrameRequest = false;
@@ -363,7 +348,7 @@ public class MultiResolutionRendererGeneric {
 
 			// Rendering may be cancelled unless we are rendering at coarsest
 			// screen scale and coarsest mipmap level.
-			renderingMayBeCancelled = requestedScreenScaleIndex < maxScreenScaleIndex;
+			renderingMayBeCancelled = requestedScreenScaleIndex < suggestScreenScale(repaintScreenInterval);
 
 			final boolean clearQueue = newFrameRequest;
 			if ( clearQueue )
@@ -407,8 +392,7 @@ public class MultiResolutionRendererGeneric {
 				if ( createProjector )
 				{
 					display.setBufferedImageAndTransform(result);
-
-					adjustMaxScreenScaleIndex(rendertime);
+					reportRenderingTime( result, rendertime );
 				}
 
 				if ( currentScreenScaleIndex > 0 )
@@ -462,22 +446,11 @@ public class MultiResolutionRendererGeneric {
 		);
 	}
 
-	private void adjustMaxScreenScaleIndex(long rendertime) {
-		if ( currentScreenScaleIndex == maxScreenScaleIndex )
-		{
-			boolean renderingWasSlow = rendertime > targetRenderNanos;
-			boolean canIncreaseMaxScreenScaleIndex = maxScreenScaleIndex < screenScales.size() - 1;
-			if ( renderingWasSlow && canIncreaseMaxScreenScaleIndex)
-				maxScreenScaleIndex++;
-		}
-		else if ( currentScreenScaleIndex == maxScreenScaleIndex - 1 )
-		{
-			boolean renderedCompleteScreen = Intervals.equals(lastRenderedScreenInterval, ALL);
-			boolean renderingWasFast = rendertime < targetRenderNanos;
-			boolean canDecreaseMaxScreenScaleIndex = maxScreenScaleIndex > 0;
-			if ( renderedCompleteScreen && renderingWasFast && canDecreaseMaxScreenScaleIndex)
-				maxScreenScaleIndex--;
-		}
+	public void reportRenderingTime(RenderResult result, long timeInNanos) {
+		int scaleIndex = result.getScaleIndex();
+		if(result.isComplete())
+			screenScales.get(scaleIndex).renderTimePerScreenPixel =
+					(double) timeInNanos / Intervals.numElements( result.getScreenInterval() );
 	}
 
 	private VolatileProjector createProjectorForInterval(RendererState viewerState, ScreenScale screenScale, RenderResult result) {
@@ -534,7 +507,20 @@ public class MultiResolutionRendererGeneric {
 	public synchronized void requestRepaint(final Interval interval)
 	{
 		newFrameRequest = true;
-		requestRepaint(interval, maxScreenScaleIndex);
+		requestRepaint(interval, suggestScreenScale(interval));
+	}
+
+	private int suggestScreenScale(Interval interval) {
+		Interval screen = new FinalInterval(display.getWidth(), display.getHeight());
+		Interval actualInterval = interval == null ?
+				screen : Intervals.intersect(interval, screen);
+		double numPixels = Intervals.numElements(actualInterval);
+		for(int i = 0; i < screenScales.size() - 1; i++) {
+			double renderTime = numPixels * screenScales.get(i).renderTimePerScreenPixel;
+			if (renderTime <= targetRenderNanos)
+				return i;
+		}
+		return screenScales.size() - 1;
 	}
 
 	/**
@@ -616,6 +602,11 @@ public class MultiResolutionRendererGeneric {
 		 * Pending repaint requests.
 		 */
 		private Interval pendingRepaintRequests;
+
+		/**
+		 * Estimate of the time it takes to render one screen pixel, in nanoseconds.
+		 */
+		private double renderTimePerScreenPixel = Double.POSITIVE_INFINITY;
 
 		private int width;
 
