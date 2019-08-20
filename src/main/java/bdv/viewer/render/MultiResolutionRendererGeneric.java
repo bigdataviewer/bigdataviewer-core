@@ -455,19 +455,16 @@ public class MultiResolutionRendererGeneric {
 
 	private VolatileProjector createProjectorForInterval(RendererState viewerState, ScreenScale screenScale, RenderResult result) {
 
+		Interval interval = result.getPaddedScaledInterval();
+
 		AffineTransform3D viewerTransform = viewerState.getViewerTransform().copy();
-		Interval scaledInterval = result.getPaddedScaledInterval();
+		viewerTransform.preConcatenate(screenScale.screenScaleTransforms);
+		viewerTransform.translate( - interval.min(0), - interval.min(1), 0 );
 
-		viewerTransform.translate(
-			- scaledInterval.min(0) / result.getScaleFactor(),
-			- scaledInterval.min(1) / result.getScaleFactor(),
-			0
-		);
-		final RandomAccessibleInterval<ARGBType> renderTargetRoi = Views.interval(result.getImage(), result.getPaddedScaledInterval());
-
-		AffineTransform3D screenScaleTransforms = screenScale.screenScaleTransforms;
-		viewerTransform.preConcatenate(screenScaleTransforms);
 		RendererState renderState = new RendererState(viewerTransform, viewerState.getCurrentTimepoint(), viewerState.getSources());
+
+		final RandomAccessibleInterval<ARGBType> renderTargetRoi = Views.interval(result.getImage(), interval);
+
 		VolatileProjector projector = renderer.createProjector(
 				renderState,
 				renderTargetRoi,
