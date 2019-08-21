@@ -551,12 +551,6 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 		}
 
 		@Override
-		public Dimensions getImageSize( final int timepointId )
-		{
-			return getImageSize( timepointId, 0 );
-		}
-
-		@Override
 		public Dimensions getImageSize( final int timepointId, final int level )
 		{
 			final ViewLevelId id = new ViewLevelId( timepointId, setupId, level );
