@@ -45,6 +45,7 @@ import net.imglib2.cache.iotiming.CacheIoTiming;
 import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.cache.volatiles.LoadingStrategy;
 import net.imglib2.converter.Converter;
+import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.numeric.ARGBType;
@@ -96,6 +97,10 @@ public class SingleResolutionRenderer {
 	// TODO: should be settable
 	private final boolean prefetchCells = true;
 
+	private byte[][] maskArrays;
+
+	private List<RandomAccessibleInterval<ARGBType>> renderImages;
+
 	public SingleResolutionRenderer(int numRenderingThreads, ExecutorService renderingExecutorService, AccumulateProjectorFactory<ARGBType> accumulateProjectorFactory, boolean useVolatileIfAvailable)
 	{
 		this.numRenderingThreads = numRenderingThreads;
@@ -105,13 +110,10 @@ public class SingleResolutionRenderer {
 		this.previousTimepoint = -1;
 	}
 
-
 	public VolatileProjector createProjector(
 			final RenderState renderState,
 			final RandomAccessibleInterval<ARGBType> screenImage,
-			final List<? extends RandomAccessibleInterval<ARGBType>> renderImages,
-			final byte[][] renderMaskArrays)
-	{
+			final int maxWidth, final int maxHeight) {
 		this.newFrameRequest = false;
 		/*
 	  Storage for mask images of {@link VolatileHierarchyProjector}.
@@ -124,29 +126,31 @@ public class SingleResolutionRenderer {
 //		CacheIoTiming.getIoTimeBudget().clear(); // clear time budget such that prefetching doesn't wait for loading blocks.
 		final List<RenderSource<?>> sourceStates = renderState.getSources();
 		VolatileProjector projector;
+		final byte[][] renderMaskArrays = allocateMaskArrays( sourceStates.size(), maxWidth * maxHeight);
 		if (sourceStates.isEmpty() || Intervals.isEmpty(screenImage))
 			projector = new EmptyProjector<>( screenImage );
 		else if ( sourceStates.size() == 1 )
 		{
 			projector = createSingleSourceProjector(
 					renderState, sourceStates.get( 0 ),
-					Views.zeroMin(screenImage), renderMaskArrays[ 0 ] );
+					screenImage, renderMaskArrays[ 0 ] );
 		}
 		else
 		{
+			final List< RandomAccessibleInterval< ARGBType > > renderImages = allocateRenderImages(
+					sourceStates.size(), maxWidth, maxHeight);
 			final ArrayList< VolatileProjector > sourceProjectors = new ArrayList<>();
-			final ArrayList< RandomAccessibleInterval< ARGBType >> sourceImages = new ArrayList<>();
 			final ArrayList< Source< ? > > sources = new ArrayList<>();
 			for (int i = 0; i < sourceStates.size(); i++) {
 				final RandomAccessibleInterval< ARGBType > renderImage = Views.interval(renderImages.get( i ), screenImage);
 				final VolatileProjector p = createSingleSourceProjector(
 						renderState, sourceStates.get( i ),
-						Views.zeroMin(renderImage), renderMaskArrays[ i ]);
+						renderImage, renderMaskArrays[ i ]);
 				sourceProjectors.add( p );
 				sources.add( sourceStates.get( i ).getSpimSource() );
-				sourceImages.add( renderImage );
 			}
-			projector = accumulateProjectorFactory.createAccumulateProjector( sourceProjectors, sources, sourceImages, screenImage, numRenderingThreads, renderingExecutorService );
+			projector = accumulateProjectorFactory.createAccumulateProjector( sourceProjectors, sources,
+					new ArrayList<>( renderImages ), screenImage, numRenderingThreads, renderingExecutorService );
 		}
 		previousTimepoint = renderState.getCurrentTimepoint();
 		CacheIoTiming.getIoTimeBudget().reset( iobudget );
@@ -311,5 +315,24 @@ public class SingleResolutionRenderer {
 
 			Prefetcher.fetchCells( sourceToScreen, cellDimensions, dimensions, screenInterval, interpolation, cellsRandomAccess );
 		}
+	}
+
+	private byte[][] allocateMaskArrays( final int numSources, final long numPixels ) {
+		boolean sizesChanges = maskArrays == null || numSources != maskArrays.length ||
+				maskArrays.length > 0 && numPixels > maskArrays[0].length;
+		if ( sizesChanges )
+			maskArrays = new byte[numSources][(int) numPixels];
+		return maskArrays;
+	}
+
+	private List<RandomAccessibleInterval<ARGBType>> allocateRenderImages(int numSources, int width, int height) {
+		boolean sizesChanged = renderImages == null || numSources != renderImages.size() ||
+				renderImages.size() > 0 && (width != renderImages.get(0).dimension(0) || height != renderImages.get(0).dimension(1));
+		if ( sizesChanged ) {
+			renderImages = new ArrayList<>();
+			for (int i = 0; i < numSources; i++)
+				renderImages.add(ArrayImgs.argbs(width, height));
+		}
+		return renderImages;
 	}
 }

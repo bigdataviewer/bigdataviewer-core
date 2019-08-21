@@ -139,13 +139,6 @@ public class GeneralMultiResolutionRenderer {
 	private int currentScreenScaleIndex;
 
 	/**
-	 * Storage for mask images of {@link VolatileHierarchyProjector}.
-	 * One array per visible source. (First) index is index in list of visible sources.
-	 */
-	private byte[][] renderMaskArrays;
-
-
-	/**
 	 * List of scale factors and associate image buffers
 	 */
 	private final List<ScreenScale> screenScales;
@@ -236,7 +229,6 @@ public class GeneralMultiResolutionRenderer {
 		projector = null;
 		currentScreenScaleIndex = -1;
 		this.screenScales = DoubleStream.of(screenScales).mapToObj(ScreenScale::new).collect( Collectors.toList() );
-		renderMaskArrays = new byte[ 0 ][];
 		this.targetRenderNanos = targetRenderNanos;
 
 		requestedScreenScaleIndex = screenScales.length - 1;
@@ -268,46 +260,6 @@ public class GeneralMultiResolutionRenderer {
 				screenScale.setSize(w, h);
 			}
 
-			return true;
-		}
-		return false;
-	}
-
-	private boolean checkRenewRenderImages( final int numVisibleSources )
-	{
-		final int n = numVisibleSources > 1 ? numVisibleSources : 0;
-		if ( n != screenScales.get( 0 ).renderImages.size() ||
-				( n != 0 &&
-					( screenScales.get( 0 ).renderImages.get( 0 ).dimension( 0 ) != screenScales.get( 0 ).width() ||
-					  screenScales.get( 0 ).renderImages.get( 0 ).dimension( 1 ) != screenScales.get( 0 ).height() ) ) )
-		{
-			for ( int i = 0; i < screenScales.size(); ++i )
-			{
-				screenScales.get( i ).renderImages = new ArrayList<>( Collections.nCopies( n, null) );
-				final int w = ( int ) screenScales.get( i ).width();
-				final int h = ( int ) screenScales.get( i ).height();
-				for ( int j = 0; j < n; ++j )
-				{
-					final ArrayImg<ARGBType, IntArray> renderImage = (i == 0) ?
-							ArrayImgs.argbs( w, h ) :
-							ArrayImgs.argbs( screenScales.get( 0 ).renderImages.get(j).update(null), w, h );
-					screenScales.get( i ).renderImages.set( j, renderImage );
-				}
-			}
-			return true;
-		}
-		return false;
-	}
-
-	private boolean checkRenewMaskArrays( final int numVisibleSources )
-	{
-		final int size = screenScales.get( 0 ).width() * screenScales.get(0).height();
-		if ( numVisibleSources != renderMaskArrays.length ||
-				( numVisibleSources != 0 &&	( renderMaskArrays[ 0 ].length < size ) ) )
-		{
-			renderMaskArrays = new byte[ numVisibleSources ][];
-			for ( int j = 0; j < numVisibleSources; ++j )
-				renderMaskArrays[ j ] = new byte[ size ];
 			return true;
 		}
 		return false;
@@ -359,9 +311,6 @@ public class GeneralMultiResolutionRenderer {
 				synchronized ( state )
 				{
 					lastRenderedScreenInterval = repaintScreenInterval;
-					final int numSources = state.getSources().size();
-					checkRenewRenderImages(numSources);
-					checkRenewMaskArrays(numSources);
 					result = createRenderResult(state.getViewerTransform().copy(), repaintScreenInterval, screenScale);
 					p = createProjectorForInterval(state, screenScale, result);
 				}
@@ -378,7 +327,6 @@ public class GeneralMultiResolutionRenderer {
 		// try rendering
 		final boolean success = p.map( createProjector );
 		final long rendertime = p.getLastFrameRenderNanoTime();
-		showRendertime(rendertime);
 
 		synchronized ( this )
 		{
@@ -417,12 +365,6 @@ public class GeneralMultiResolutionRenderer {
 		}
 	}
 
-	private static final AtomicLong r = new AtomicLong();
-
-	private void showRendertime(long rendertime) {
-		System.out.println(r.addAndGet(rendertime));
-	}
-
 	private boolean intersectsScreen(Interval repaintScreenInterval) {
 		FinalInterval area = Intervals.intersect(repaintScreenInterval, new FinalInterval(display.getWidth(), display.getHeight()));
 		return ! Intervals.isEmpty(area);
@@ -459,13 +401,14 @@ public class GeneralMultiResolutionRenderer {
 
 		RenderState renderState = new RenderState(viewerTransform, viewerState.getCurrentTimepoint(), viewerState.getSources());
 
-		final RandomAccessibleInterval<ARGBType> renderTargetRoi = Views.interval(result.getImage(), interval);
+		final RandomAccessibleInterval<ARGBType> renderTargetRoi = Views.zeroMin(
+				Views.interval(result.getImage(), interval) );
 
 		VolatileProjector projector = renderer.createProjector(
 				renderState,
 				renderTargetRoi,
-				screenScale.renderImages,
-				renderMaskArrays
+				display.getWidth(),
+				display.getHeight()
 		);
 		newFrameRequest |= renderer.isNewFrameRequest();
 		return projector;
@@ -552,11 +495,6 @@ public class GeneralMultiResolutionRenderer {
 		if ( display instanceof TransformAwareBufferedImageOverlayRenderer )
 			( ( TransformAwareBufferedImageOverlayRenderer ) display ).kill();
 		projector = null;
-		for ( int i = 0; i < renderMaskArrays.length; ++i )
-			renderMaskArrays[ i ] = null;
-		for ( ScreenScale screenScale : screenScales ) {
-			screenScale.renderImages = null;
-		}
 	}
 
 	private static AffineTransform3D screenScaleTransform(double scaleFactor) {
@@ -581,12 +519,6 @@ public class GeneralMultiResolutionRenderer {
 		 * image is displayed as 2 pixel on the canvas, etc.
 		 */
 		private final double scaleFactor;
-
-		/**
-		 * Used to render an individual source. One image per visible source
-		 * Index is index in list of visible sources.
-		 */
-		private List< ArrayImg< ARGBType, IntArray > > renderImages = new ArrayList<>();
 
 		private final AffineTransform3D screenScaleTransforms;
 
