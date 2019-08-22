@@ -29,12 +29,9 @@
  */
 package bdv.viewer.render;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 
@@ -46,9 +43,6 @@ import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealInterval;
 import net.imglib2.Volatile;
-import net.imglib2.img.array.ArrayImg;
-import net.imglib2.img.array.ArrayImgs;
-import net.imglib2.img.basictypeaccess.array.IntArray;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.ui.Renderer;
@@ -104,7 +98,7 @@ import net.imglib2.view.Views;
  * <p>
  * The renderer supports rendering of {@link Volatile} sources. In each
  * rendering pass, all currently valid data for the best fitting mipmap level
- * and all coarser levels is rendered to a {@link ScreenScale#renderImages temporary image}
+ * and all coarser levels is rendered to a temporary image}
  * for each visible source. Then the temporary images are combined to the final
  * image for display. The number of passes required until all data is valid
  * might differ between visible sources.
@@ -179,6 +173,11 @@ public class GeneralMultiResolutionRenderer {
 	 */
 	private boolean newFrameRequest;
 
+	/**
+	 * Size of the display.
+	 */
+	private Interval screenSize;
+
 	private static final Interval ALL = new FinalInterval(
 			new long[] { Long.MIN_VALUE, Long.MIN_VALUE },
 			new long[] { Long.MAX_VALUE, Long.MAX_VALUE } );
@@ -230,6 +229,7 @@ public class GeneralMultiResolutionRenderer {
 		currentScreenScaleIndex = -1;
 		this.screenScales = DoubleStream.of(screenScales).mapToObj(ScreenScale::new).collect( Collectors.toList() );
 		this.targetRenderNanos = targetRenderNanos;
+		this.screenSize = new FinalInterval(display.getWidth(), display.getHeight());
 
 		requestedScreenScaleIndex = screenScales.length - 1;
 		renderingMayBeCancelled = true;
@@ -246,20 +246,9 @@ public class GeneralMultiResolutionRenderer {
 	 */
 	private synchronized boolean checkResize()
 	{
-		final int componentW = display.getWidth();
-		final int componentH = display.getHeight();
-		if ( screenScales.get( 0 ).width() != ( int ) Math.ceil( componentW * screenScales.get(0).scaleFactor )
-				|| screenScales.get( 0 ).height() != ( int ) Math.ceil( componentH * screenScales.get(0).scaleFactor ) )
-		{
-			for ( int i = 0; i < screenScales.size(); ++i )
-			{
-				ScreenScale screenScale = screenScales.get(i);
-				final double scaleFactor = screenScale.scaleFactor;
-				final int w = ( int ) Math.ceil( scaleFactor * componentW );
-				final int h = ( int ) Math.ceil( scaleFactor * componentH );
-				screenScale.setSize(w, h);
-			}
-
+		final Interval newScreen = new FinalInterval( display.getWidth(), display.getHeight() );
+		if ( ! Intervals.equals(screenSize, newScreen) ) {
+			screenSize = newScreen;
 			return true;
 		}
 		return false;
@@ -271,9 +260,6 @@ public class GeneralMultiResolutionRenderer {
 	 */
 	public boolean paint( final RenderState state )
 	{
-		if ( display.getWidth() <= 0 || display.getHeight() <= 0 )
-			return false;
-
 		final boolean resized = checkResize();
 
 		// the projector that paints to the screenImage.
@@ -366,8 +352,7 @@ public class GeneralMultiResolutionRenderer {
 	}
 
 	private boolean intersectsScreen(Interval repaintScreenInterval) {
-		FinalInterval area = Intervals.intersect(repaintScreenInterval, new FinalInterval(display.getWidth(), display.getHeight()));
-		return ! Intervals.isEmpty(area);
+		return ! Intervals.isEmpty( Intervals.intersect(repaintScreenInterval, screenSize) );
 	}
 
 	private RenderResult createRenderResult(AffineTransform3D viewerTransform,
@@ -376,7 +361,9 @@ public class GeneralMultiResolutionRenderer {
 		boolean complete = Intervals.equals(repaintScreenInterval, ALL);
 		if(complete)
 			repaintScreenInterval = new FinalInterval( display.getWidth(), display.getHeight());
-		final RandomAccessibleInterval<ARGBType> bufferedImage = display.createOutputImage(screenScale.width(), screenScale.height());
+		Interval scaledScreen = Intervals.largestContainedInterval(scaleInterval(screenSize, screenScale.scaleFactor));
+		final RandomAccessibleInterval<ARGBType> bufferedImage = display.createOutputImage(
+				(int) scaledScreen.dimension(0), (int) scaledScreen.dimension(1) );
 		final RealInterval scaledInterval = scaleInterval(repaintScreenInterval, screenScale.scaleFactor);
 		final Interval paddedScaledInterval = getPaddedRenderTargetInterval(bufferedImage, scaledInterval);
 		return new RenderResult(bufferedImage, viewerTransform, currentScreenScaleIndex, screenScale.scaleFactor,
@@ -407,8 +394,7 @@ public class GeneralMultiResolutionRenderer {
 		VolatileProjector projector = renderer.createProjector(
 				renderState,
 				renderTargetRoi,
-				display.getWidth(),
-				display.getHeight()
+				screenSize
 		);
 		newFrameRequest |= renderer.isNewFrameRequest();
 		return projector;
@@ -446,9 +432,7 @@ public class GeneralMultiResolutionRenderer {
 	}
 
 	private int suggestScreenScale(Interval interval) {
-		Interval screen = new FinalInterval(display.getWidth(), display.getHeight());
-		Interval actualInterval = interval == null ?
-				screen : Intervals.intersect(interval, screen);
+		Interval actualInterval = interval == null ? screenSize : Intervals.intersect(interval, screenSize);
 		double numPixels = Intervals.numElements(actualInterval);
 		for(int i = 0; i < screenScales.size() - 1; i++) {
 			double renderTime = numPixels * screenScales.get(i).renderTimePerScreenPixel;
@@ -532,26 +516,9 @@ public class GeneralMultiResolutionRenderer {
 		 */
 		private double renderTimePerScreenPixel = Double.POSITIVE_INFINITY;
 
-		private int width;
-
-		private int height;
-
 		private ScreenScale(double scaleFactor) {
 			this.scaleFactor = scaleFactor;
 			screenScaleTransforms = screenScaleTransform(scaleFactor);
-		}
-
-		private void setSize(int width, int height) {
-			this.width = width;
-			this.height = height;
-		}
-
-		public int width() {
-			return width;
-		}
-
-		public int height() {
-			return height;
 		}
 
 		public synchronized void requestInterval(Interval repaintScreenInterval) {

@@ -113,7 +113,7 @@ public class SingleResolutionRenderer {
 	public VolatileProjector createProjector(
 			final RenderState renderState,
 			final RandomAccessibleInterval<ARGBType> screenImage,
-			final int maxWidth, final int maxHeight) {
+			final Dimensions maxSize ) {
 		this.newFrameRequest = false;
 		/*
 	  Storage for mask images of {@link VolatileHierarchyProjector}.
@@ -126,7 +126,7 @@ public class SingleResolutionRenderer {
 //		CacheIoTiming.getIoTimeBudget().clear(); // clear time budget such that prefetching doesn't wait for loading blocks.
 		final List<RenderSource<?>> sourceStates = renderState.getSources();
 		VolatileProjector projector;
-		final byte[][] renderMaskArrays = allocateMaskArrays( sourceStates.size(), maxWidth * maxHeight);
+		final byte[][] renderMaskArrays = allocateMaskArrays( sourceStates.size(), Intervals.numElements(maxSize));
 		if (sourceStates.isEmpty() || Intervals.isEmpty(screenImage))
 			projector = new EmptyProjector<>( screenImage );
 		else if ( sourceStates.size() == 1 )
@@ -138,7 +138,7 @@ public class SingleResolutionRenderer {
 		else
 		{
 			final List< RandomAccessibleInterval< ARGBType > > renderImages = allocateRenderImages(
-					sourceStates.size(), maxWidth, maxHeight);
+					sourceStates.size(), maxSize);
 			final ArrayList< VolatileProjector > sourceProjectors = new ArrayList<>();
 			final ArrayList< Source< ? > > sources = new ArrayList<>();
 			for (int i = 0; i < sourceStates.size(); i++) {
@@ -325,13 +325,13 @@ public class SingleResolutionRenderer {
 		return maskArrays;
 	}
 
-	private List<RandomAccessibleInterval<ARGBType>> allocateRenderImages(int numSources, int width, int height) {
+	private List<RandomAccessibleInterval<ARGBType>> allocateRenderImages( int numSources, Dimensions maxSize ) {
 		boolean sizesChanged = renderImages == null || numSources != renderImages.size() ||
-				renderImages.size() > 0 && (width != renderImages.get(0).dimension(0) || height != renderImages.get(0).dimension(1));
+				renderImages.size() > 0 && (maxSize.dimension( 0 ) != renderImages.get(0).dimension(0) || maxSize.dimension( 1 ) != renderImages.get(0).dimension(1));
 		if ( sizesChanged ) {
 			renderImages = new ArrayList<>();
 			for (int i = 0; i < numSources; i++)
-				renderImages.add(ArrayImgs.argbs(width, height));
+				renderImages.add(ArrayImgs.argbs(Intervals.dimensionsAsLongArray(maxSize)));
 		}
 		return renderImages;
 	}
