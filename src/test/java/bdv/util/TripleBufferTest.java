@@ -1,15 +1,14 @@
 package bdv.util;
 
-import bdv.util.DoubleBuffer;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
 
-public class DoubleBufferTest {
+public class TripleBufferTest {
 
 	@Test
 	public void testSimple() {
-		DoubleBuffer<ModifiableString> db = new DoubleBuffer<>(ModifiableString::new);
+		TripleBuffer<ModifiableString> db = new TripleBuffer<>(ModifiableString::new);
 		db.getWritableBuffer().set("Hello");
 		db.doneWriting();
 		assertEquals("Hello", db.getReadableBuffer().get());
@@ -17,7 +16,7 @@ public class DoubleBufferTest {
 
 	@Test
 	public void testWriteTwice() {
-		DoubleBuffer<ModifiableString> db = new DoubleBuffer<>(ModifiableString::new);
+		TripleBuffer<ModifiableString> db = new TripleBuffer<>(ModifiableString::new);
 		db.getWritableBuffer().set("Hello");
 		db.doneWriting();
 		db.getWritableBuffer().set("World");
@@ -27,7 +26,7 @@ public class DoubleBufferTest {
 
 	@Test
 	public void testReadTwice() {
-		DoubleBuffer<ModifiableString> db = new DoubleBuffer<>(ModifiableString::new);
+		TripleBuffer<ModifiableString> db = new TripleBuffer<>(ModifiableString::new);
 		db.getWritableBuffer().set("Hello");
 		db.doneWriting();
 		assertEquals("Hello", db.getReadableBuffer().get());
@@ -36,7 +35,7 @@ public class DoubleBufferTest {
 
 	@Test
 	public void testThreeBuffers() {
-		DoubleBuffer<ModifiableString> db = new DoubleBuffer<>(ModifiableString::new);
+		TripleBuffer<ModifiableString> db = new TripleBuffer<>(ModifiableString::new);
 		db.getWritableBuffer().set("1");
 		db.doneWriting();
 		db.getReadableBuffer();

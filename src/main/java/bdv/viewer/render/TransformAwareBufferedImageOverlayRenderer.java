@@ -38,7 +38,7 @@ import java.awt.image.BufferedImage;
 import java.util.Arrays;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-import bdv.util.DoubleBuffer;
+import bdv.util.TripleBuffer;
 import net.imglib2.FinalRealInterval;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
@@ -68,14 +68,14 @@ public class TransformAwareBufferedImageOverlayRenderer implements OverlayRender
 
 	private volatile int height;
 
-	private final DoubleBuffer<RenderResult> doubleBuffer = new DoubleBuffer<>(() -> null);
+	private final TripleBuffer<RenderResult> tripleBuffer = new TripleBuffer<>(() -> null);
 
 	private RenderResult lastCompleteResult = null;
 
 	@Override
 	public RandomAccessibleInterval<ARGBType> createOutputImage(int width, int height) {
 		int requiredSize = Math.max(width * height, getWidth() * getHeight());
-		RenderResult renderResult = doubleBuffer.getWritableBuffer();
+		RenderResult renderResult = tripleBuffer.getWritableBuffer();
 		if(renderResult != null) {
 			ARGBScreenImage image = (ARGBScreenImage) renderResult.getImage();
 			IntArray buffer = image.update(null);
@@ -88,7 +88,7 @@ public class TransformAwareBufferedImageOverlayRenderer implements OverlayRender
 	@Override
 	public synchronized void setRenderResult(RenderResult result) {
 		if ( result.isComplete() ) {
-			doubleBuffer.doneWriting(result);
+			tripleBuffer.doneWriting(result);
 			lastCompleteResult = result;
 		} else {
 			if( lastCompleteResult == null )
@@ -126,8 +126,8 @@ public class TransformAwareBufferedImageOverlayRenderer implements OverlayRender
 	@Override
 	public void drawOverlays( final Graphics g )
 	{
-		boolean update = doubleBuffer.hasUpdate();
-		RenderResult result = doubleBuffer.getReadableBuffer();
+		boolean update = tripleBuffer.hasUpdate();
+		RenderResult result = tripleBuffer.getReadableBuffer();
 		if ( result != null )
 		{
 			ARGBScreenImage readableBuffer = (ARGBScreenImage) result.getImage();
@@ -225,7 +225,7 @@ public class TransformAwareBufferedImageOverlayRenderer implements OverlayRender
 	 */
 	void kill()
 	{
-		doubleBuffer.clear();
+		tripleBuffer.clear();
 	}
 
 	@Override
