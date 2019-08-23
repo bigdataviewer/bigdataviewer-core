@@ -44,6 +44,9 @@ import net.imglib2.view.Views;
 
 public class Downsample
 {
+	/**
+	 * TODO: Revise. This is probably not very efficient
+	 */
 	public static < T extends RealType< T > > void downsample( final RandomAccessible< T > input, final RandomAccessibleInterval< T > output, final int[] factor )
 	{
 		assert input.numDimensions() == output.numDimensions();
