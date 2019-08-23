@@ -488,9 +488,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 		}
 
 		/**
-		 * (Almost) create a {@link CellImg} backed by the cache.
-		 * The created image needs a {@link NativeImg#setLinkedType(net.imglib2.type.Type) linked type} before it can be used.
-		 * The type should be either {@link UnsignedShortType} and {@link VolatileUnsignedShortType}.
+		 * Create a {@link CellImg} backed by the cache.
 		 */
 		protected < T extends NativeType< T > > RandomAccessibleInterval< T > prepareCachedImage( final int timepointId, final int level, final LoadingStrategy loadingStrategy, final T type )
 		{
