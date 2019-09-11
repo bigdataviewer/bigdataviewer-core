@@ -152,7 +152,7 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 						maxNumLevels = Math.max( maxNumLevels, setupImgLoader.numMipmapLevels() );
 					}
 
-					final int numFetcherThreads = 1;
+					final int numFetcherThreads = Math.max( 1, Runtime.getRuntime().availableProcessors() );
 					final BlockingFetchQueues< Callable< ? > > queue = new BlockingFetchQueues<>( maxNumLevels, numFetcherThreads );
 					fetchers = new FetcherThreads( queue, numFetcherThreads );
 					cache = new VolatileGlobalCellCache( queue );
