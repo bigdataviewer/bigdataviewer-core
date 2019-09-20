@@ -30,6 +30,7 @@
 package bdv.export;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -43,11 +44,13 @@ import mpicbg.spim.data.sequence.VoxelDimensions;
  *
  * <p>
  * Choice of proposed chunksize is not based on any hard benchmark data
- * currently. Chunksize is set as either 16x16x16 or 32x32x4 depending on which
- * one is closer to isotropic. It is very likely that more efficient choices can
- * be found by manual tuning, depending on hardware and use case.
+ * currently. Chunk sizes are proposed such that chunks have power-of-two side
+ * lengths, are roughly square in world space, and contain close to (but not
+ * more than) a specified number of elements (4096 by default). It is very
+ * likely that more efficient choices can be found by manual tuning, depending
+ * on hardware and use case.
  *
- * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+ * @author Tobias Pietzsch
  */
 public class ProposeMipmaps
 {
@@ -69,12 +72,28 @@ public class ProposeMipmaps
 	/**
 	 * Propose number of mipmap levels as well subsampling factors and chunk
 	 * size for each level, based on the image and voxel size of the given
-	 * setup.
+	 * setup. Chunks contain close to (but not more than) 4096 elements.
 	 *
 	 * @param setup
 	 * @return proposed mipmap settings
 	 */
 	public static ExportMipmapInfo proposeMipmaps( final BasicViewSetup setup )
+	{
+		return proposeMipmaps( setup, 4096 );
+	}
+
+	/**
+	 * Propose number of mipmap levels as well subsampling factors and chunk
+	 * size for each level, based on the image and voxel size of the given
+	 * setup. Chunk sizes are proposed such that chunks have power-of-two side
+	 * lengths, are roughly square in world space, and contain close to (but not
+	 * more than) {@code maxNumElements}.
+	 *
+	 * @param setup
+	 * @param maxNumElements
+	 * @return proposed mipmap settings
+	 */
+	public static ExportMipmapInfo proposeMipmaps( final BasicViewSetup setup, final int maxNumElements )
 	{
 		final VoxelDimensions voxelSize = setup.getVoxelSize();
 		final double[] voxelScale = new double[ 3 ];
@@ -88,7 +107,7 @@ public class ProposeMipmaps
 		final ArrayList< int[] > subdivisions = new ArrayList<>();
 
 //		for ( int level = 0;; ++level )
-		while( true )
+		while ( true )
 		{
 			resolutions.add( res.clone() );
 
@@ -102,10 +121,7 @@ public class ProposeMipmaps
 					dmax = d;
 				}
 			}
-			if ( ( 4 * vmax / 32 ) > ( 1 / vmax ) )
-				subdivisions.add( subdiv_32_32_4[ dmax ] );
-			else
-				subdivisions.add( subdiv_16_16_16 );
+			subdivisions.add( suggestPoTBlockSize( voxelScale, maxNumElements ) );
 
 			setup.getSize().dimensions( size );
 			long maxSize = 0;
@@ -175,7 +191,75 @@ public class ProposeMipmaps
 			size[ d ] /= minVoxelDim;
 	}
 
-	private static int[] subdiv_16_16_16 = new int[] { 16, 16, 16 };
+	/**
+	 * Propose block size such that
+	 * <ol>
+	 * <li>each dimension is power-of-two,</li>
+	 * <li>number of elements is as big as possible, but not larger than
+	 * {@code maxNumElements}</li>
+	 * <li>and the block (scaled by the {@code voxelSize}) is as close to square
+	 * as possible given constraints 1 and 2.</li>
+	 * </ol>
+	 */
+	public static int[] suggestPoTBlockSize( final double[] voxelSize, final int maxNumElements )
+	{
+		final int n = voxelSize.length;
+		final double[] bias = new double[ n ];
+		Arrays.setAll( bias, d -> 0.01 * ( n - d ) );
+		return suggestPoTBlockSize( voxelSize, maxNumElements, bias );
+	}
 
-	private static int[][] subdiv_32_32_4 = new int[][] { { 4, 32, 32 }, { 32, 4, 32 }, { 32, 32, 4 } };
+	/**
+	 * Propose block size such that
+	 * <ol>
+	 * <li>each dimension is power-of-two,</li>
+	 * <li>number of elements is as big as possible, but not larger than
+	 * {@code maxNumElements}</li>
+	 * <li>and the block (scaled by the {@code voxelSize}) is as close to square
+	 * as possible given constraints 1 and 2.</li>
+	 * </ol>
+	 *
+	 * Determination works by finding real PoT for each dimension, then rounding
+	 * down, and increasing one by one the PoT for dimensions until going over
+	 * maxNumElements. Dimensions are ordered by decreasing fractional remainder
+	 * of real PoT plus some per-dimension bias (usually set such that X is
+	 * enlarged before Y before Z...)
+	 */
+	private static int[] suggestPoTBlockSize( final double[] voxelSize, final int maxNumElements, final double[] bias )
+	{
+		final int n = voxelSize.length;
+		final double[] shape = new double[ n ];
+		double shapeVol = 1;
+		for ( int d = 0; d < n; ++d )
+		{
+			shape[ d ] = 1 / voxelSize[ d ];
+			shapeVol *= shape[ d ];
+		}
+		final double m = Math.pow( maxNumElements / shapeVol, 1. /  n  );
+		final double sumNumBits = Math.log( maxNumElements ) / Math.log( 2 );
+		final double[] numBits = new double[ n ];
+		Arrays.setAll( numBits, d -> Math.log( m * shape[ d ] ) / Math.log( 2 ) );
+		final int[] intNumBits = new int[ n ];
+		Arrays.setAll( intNumBits, d -> ( int ) numBits[ d ] );
+		for ( int sumIntNumBits = Arrays.stream( intNumBits ).sum(); sumIntNumBits + 1 <= sumNumBits; ++sumIntNumBits )
+		{
+			double maxDiff = 0;
+			int maxDiffDim = 0;
+			for ( int d = 0; d < n; ++d )
+			{
+				final double diff = numBits[ d ] - intNumBits[ d ] + bias[ d ];
+				if ( diff > maxDiff )
+				{
+					maxDiff = diff;
+					maxDiffDim = d;
+				}
+			}
+			++intNumBits[ maxDiffDim ];
+		}
+
+		final int[] blockSize = new int[ n ];
+		for ( int d = 0; d < n; ++d )
+			blockSize[ d ] = 1 << intNumBits[ d ];
+		return blockSize;
+	}
 }
