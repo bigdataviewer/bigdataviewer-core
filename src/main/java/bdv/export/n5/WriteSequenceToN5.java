@@ -24,6 +24,7 @@ import mpicbg.spim.data.generic.sequence.BasicSetupImgLoader;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.sequence.TimePoint;
 import mpicbg.spim.data.sequence.ViewId;
+import mpicbg.spim.data.sequence.VoxelDimensions;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.cache.img.ReadOnlyCachedCellImgFactory;
 import net.imglib2.img.cell.Cell;
@@ -56,6 +57,8 @@ import static net.imglib2.cache.img.ReadOnlyCachedCellImgOptions.options;
  */
 public class WriteSequenceToN5
 {
+	private static final String MULTI_SCALE_KEY = "multiScale";
+	private static final String RESOLUTION_KEY = "resolution";
 
 	/**
 	 * Create a n5 group containing image data from all views and all
@@ -177,6 +180,22 @@ public class WriteSequenceToN5
 							imgLoader, setupId, timepointId, mipmapInfo,
 							executorService, numCellCreatorThreads,
 							loopbackHeuristic, afterEachPlane, subProgressWriter );
+
+
+					// additional attributes for paintera compatibility
+					final String pathName = getPathName( setupId, timepointId );
+					n5.createGroup( pathName );
+					n5.setAttribute( pathName, MULTI_SCALE_KEY, true );
+					final VoxelDimensions voxelSize = seq.getViewSetups().get( setupId ).getVoxelSize();
+					if ( voxelSize != null )
+					{
+						final double[] resolution = new double[ voxelSize.numDimensions() ];
+						voxelSize.dimensions( resolution );
+						n5.setAttribute( pathName, RESOLUTION_KEY, resolution );
+					}
+					final int[][] downsamplingFactors = perSetupMipmapInfo.get( setupId ).getExportResolutions();
+					for( int l = 0; l < downsamplingFactors.length; ++l )
+						n5.setAttribute( getPathName( setupId, timepointId, l ), DOWNSAMPLING_FACTORS_KEY, downsamplingFactors[ l ] );
 				}
 			}
 		}
