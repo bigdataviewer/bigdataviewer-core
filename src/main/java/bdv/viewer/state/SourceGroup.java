@@ -137,4 +137,33 @@ public class SourceGroup
 	{
 		this.isCurrent = isCurrent;
 	}
+
+	@Override
+	public boolean equals( final Object o )
+	{
+		if ( this == o )
+			return true;
+		if ( !( o instanceof SourceGroup ) )
+			return false;
+
+		final SourceGroup that = ( SourceGroup ) o;
+
+		if ( !name.equals( that.name ) )
+			return false;
+		if ( isActive != that.isActive )
+			return false;
+		if ( isCurrent != that.isCurrent )
+			return false;
+		return sourceIds.equals( that.sourceIds );
+	}
+
+	@Override
+	public int hashCode()
+	{
+		int result = sourceIds.hashCode();
+		result = 31 * result + name.hashCode();
+		result = 31 * result + ( isActive ? 1 : 0 );
+		result = 31 * result + ( isCurrent ? 1 : 0 );
+		return result;
+	}
 }
