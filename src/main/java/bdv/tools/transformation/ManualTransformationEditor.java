@@ -29,18 +29,16 @@
  */
 package bdv.tools.transformation;
 
-import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
-import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
 import javax.swing.KeyStroke;
 
+import org.scijava.listeners.Listeners;
 import org.scijava.ui.behaviour.util.InputActionBindings;
 
 import bdv.viewer.Source;
@@ -49,7 +47,7 @@ import bdv.viewer.state.SourceGroup;
 import bdv.viewer.state.ViewerState;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.ui.TransformListener;
-
+import org.scijava.ui.behaviour.util.RunnableAction;
 
 // TODO: what happens when the current source, display mode, etc is changed while the editor is active? deactivate?
 public class ManualTransformationEditor implements TransformListener< AffineTransform3D >
@@ -72,7 +70,7 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 
 	private final InputMap inputMap;
 
-	protected final CopyOnWriteArrayList< ManualTransformActiveListener > manualTransformActiveListeners;
+	private final Listeners.List< ManualTransformActiveListener > manualTransformActiveListeners;
 
 	public ManualTransformationEditor( final ViewerPanel viewer, final InputActionBindings inputActionBindings )
 	{
@@ -82,30 +80,12 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 		liveTransform = new AffineTransform3D();
 		sourcesToModify = new ArrayList<>();
 		sourcesToFix = new ArrayList<>();
-		manualTransformActiveListeners = new CopyOnWriteArrayList<>();
+		manualTransformActiveListeners = new Listeners.SynchronizedList<>();
 
 		final KeyStroke abortKey = KeyStroke.getKeyStroke( KeyEvent.VK_ESCAPE, 0 );
-		final Action abortAction = new AbstractAction( "abort manual transformation" )
-		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
-			{
-				abort();
-			}
-
-			private static final long serialVersionUID = 1L;
-		};
+		final Action abortAction = new RunnableAction( "abort manual transformation", this::abort );
 		final KeyStroke resetKey = KeyStroke.getKeyStroke( KeyEvent.VK_R, 0 );
-		final Action resetAction = new AbstractAction( "reset manual transformation" )
-		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
-			{
-				reset();
-			}
-
-			private static final long serialVersionUID = 1L;
-		};
+		final Action resetAction = new RunnableAction( "reset manual transformation", this::reset );
 		actionMap = new ActionMap();
 		inputMap = new InputMap();
 		actionMap.put( "abort manual transformation", abortAction );
@@ -125,6 +105,7 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 			viewer.setCurrentViewerTransform( frozenTransform );
 			viewer.showMessage( "aborted manual transform" );
 			active = false;
+			manualTransformActiveListeners.list.forEach( l -> l.manualTransformActiveChanged( active ) );
 		}
 	}
 
@@ -209,10 +190,7 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 			viewer.setCurrentViewerTransform( frozenTransform );
 			viewer.showMessage( "fixed manual transform" );
 		}
-		for ( final ManualTransformActiveListener l : manualTransformActiveListeners )
-		{
-			l.manualTransformActiveChanged( active );
-		}
+		manualTransformActiveListeners.list.forEach( l -> l.manualTransformActiveChanged( active ) );
 	}
 
 	public synchronized void toggle()
@@ -232,13 +210,8 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 			source.setIncrementalTransform( liveTransform.inverse() );
 	}
 
-	public void addManualTransformActiveListener( final ManualTransformActiveListener l )
+	public Listeners< ManualTransformActiveListener > manualTransformActiveListeners()
 	{
-		manualTransformActiveListeners.add( l );
-	}
-
-	public void removeManualTransformActiveListener( final ManualTransformActiveListener l )
-	{
-		manualTransformActiveListeners.remove( l );
+		return manualTransformActiveListeners;
 	}
 }

@@ -31,5 +31,5 @@ package bdv.tools.transformation;
 
 public interface ManualTransformActiveListener
 {
-	public void manualTransformActiveChanged( final boolean acitve );
+	void manualTransformActiveChanged( final boolean active );
 }
