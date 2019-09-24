@@ -25,8 +25,8 @@ multi-resolution 3D stacks are organized in the following N5 hierarchy:
 ```
 
 Each 3D stack is stored as a dataset with path formatted as `/setup%d/timepoint%d/s%d`.
-Here, `setup` number is flattened index of channel, angle, tile, illumination, etc.,
-`timepoint` is the index of the time point, and `s` is the scale level of the multi-resolution pyramid.
+Here, `setup` number is flattened integer ID of channel, angle, tile, illumination, etc.,
+`timepoint` is the integer ID of the time point, and `s` is the scale level of the multi-resolution pyramid.
 
 ## setup attributes
 Each `setup` group has attributes
