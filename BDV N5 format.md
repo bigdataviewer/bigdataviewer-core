@@ -51,3 +51,7 @@ For compatibility with Paintera, when exporting to N5 we put the `"multiScale" :
 `s0`, `s1`, etc. have the mandatory N5 dataset attributes.
 
 For compatibility with Paintera, when exporting to N5 we put the `"downsamplingFactors": [x,y,z]` attribute.
+
+> TODO: Additional metadata (for example scaled resolution and affine transform) could be replicated from the XML.
+The idea would be that an individual stack can be used independent of BDV, without the XML.
+We should agree on standard attributes for this.
