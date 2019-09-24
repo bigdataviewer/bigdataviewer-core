@@ -7,16 +7,16 @@ public class BdvN5Format
 
 	public static String getPathName( final int setupId )
 	{
-		return String.format( "setup%02d", setupId );
+		return String.format( "setup%d", setupId );
 	}
 
 	public static String getPathName( final int setupId, final int timepointId )
 	{
-		return String.format( "setup%02d/timepoint%05d", setupId, timepointId );
+		return String.format( "setup%d/timepoint%d", setupId, timepointId );
 	}
 
 	public static String getPathName( final int setupId, final int timepointId, final int level )
 	{
-		return String.format( "setup%02d/timepoint%05d/s%d", setupId, timepointId, level );
+		return String.format( "setup%d/timepoint%d/s%d", setupId, timepointId, level );
 	}
 }
