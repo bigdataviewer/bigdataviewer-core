@@ -841,7 +841,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	/**
 	 * Add a new {@link OverlayAnimator} to the list of animators. The animation
 	 * is immediately started. The new {@link OverlayAnimator} will remain in
-	 * the list of animators until it {@link OverlayAnimator#isComplete()}.å
+	 * the list of animators until it {@link OverlayAnimator#isComplete()}.
 	 *
 	 * @param animator
 	 *            animator to add.
