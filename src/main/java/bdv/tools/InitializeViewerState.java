@@ -93,8 +93,8 @@ public class InitializeViewerState
 	 */
 	public static AffineTransform3D initTransform( final int viewerWidth, final int viewerHeight, final boolean zoomedIn, final ViewerState state )
 	{
-		final int cX = viewerWidth / 2;
-		final int cY = viewerHeight / 2;
+		final double cX = viewerWidth / 2.0;
+		final double cY = viewerHeight / 2.0;
 
 		final Source< ? > source = state.getSources().get( state.getCurrentSource() ).getSpimSource();
 		final int timepoint = state.getCurrentTimepoint();
@@ -111,9 +111,9 @@ public class InitializeViewerState
 		final double sY1 = sourceInterval.max( 1 );
 		final double sZ0 = sourceInterval.min( 2 );
 		final double sZ1 = sourceInterval.max( 2 );
-		final double sX = ( sX0 + sX1 + 1 ) / 2;
-		final double sY = ( sY0 + sY1 + 1 ) / 2;
-		final double sZ = ( sZ0 + sZ1 + 1 ) / 2;
+		final double sX = ( sX0 + sX1 ) / 2;
+		final double sY = ( sY0 + sY1 ) / 2;
+		final double sZ = Math.round( ( sZ0 + sZ1 ) / 2 ); // z-slice in the middle of a pixel
 
 		final double[][] m = new double[ 3 ][ 4 ];
 
@@ -152,8 +152,8 @@ public class InitializeViewerState
 		viewerTransform.scale( scale );
 
 		// window center offset
-		viewerTransform.set( viewerTransform.get( 0, 3 ) + cX, 0, 3 );
-		viewerTransform.set( viewerTransform.get( 1, 3 ) + cY, 1, 3 );
+		viewerTransform.set( viewerTransform.get( 0, 3 ) + cX - 0.5, 0, 3 );
+		viewerTransform.set( viewerTransform.get( 1, 3 ) + cY - 0.5, 1, 3 );
 		return viewerTransform;
 	}
 
