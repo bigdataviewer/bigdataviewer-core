@@ -37,8 +37,9 @@ import net.imglib2.realtransform.AffineTransform3D;
  * Contains for each mipmap level, the subsampling factors and subdivision
  * block sizes.
  *
- * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+ * @author Tobias Pietzsch
  */
+// TODO Move to bdv.img package
 public class MipmapInfo
 {
 	/**
