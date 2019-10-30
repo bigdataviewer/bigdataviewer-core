@@ -29,6 +29,7 @@
  */
 package bdv.viewer.state;
 
+import java.util.Collections;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
@@ -41,7 +42,7 @@ import bdv.viewer.DisplayMode;
  */
 public class SourceGroup
 {
-	protected final TreeSet< Integer > sourceIds;
+	protected final SortedSet< Integer > sourceIds;
 
 	protected String name;
 
@@ -58,7 +59,7 @@ public class SourceGroup
 
 	public SourceGroup( final String name )
 	{
-		sourceIds = new TreeSet<>();
+		sourceIds = Collections.synchronizedSortedSet( new TreeSet<>() );
 		this.name = name;
 		isActive = true;
 		isCurrent = false;
@@ -66,7 +67,10 @@ public class SourceGroup
 
 	protected SourceGroup( final SourceGroup g )
 	{
-		sourceIds = new TreeSet<>( g.sourceIds );
+		synchronized ( g.sourceIds )
+		{
+			sourceIds = Collections.synchronizedSortedSet( new TreeSet<>( g.sourceIds ) );
+		}
 		name = g.name;
 		isActive = g.isActive;
 		isCurrent = g.isCurrent;
