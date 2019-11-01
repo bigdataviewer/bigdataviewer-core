@@ -22,7 +22,6 @@ public class PlaygroundReadOnlyClean
 	/**
 	 * Snapshot of the state of a source group.
 	 * Read-Only.
-	 * Has a SourceGroupHandle that allows to identify the group across snapshots.
 	 */
 	public interface SourceGroup
 	{
@@ -57,17 +56,20 @@ public class PlaygroundReadOnlyClean
 		 */
 		SourceGroup getCurrent();
 
-		List< SourceGroup > getMatching( Predicate< SourceGroup > condition );
+		/**
+		 * @return active SourceGroups in this list
+		 */
+		Set< SourceGroup > getActive();
 
-//		/**
-//		 * @return active SourceGroups in this list
-//		 */
-//		SourceGroups getActive();
-//
-//		/**
-//		 * @return SourceGroups in this list containing source
-//		 */
-//		SourceGroups getContaining( SourceAndConverter< ? > source );
+		/**
+		 * @return SourceGroups in this list containing source
+		 */
+		default Set< SourceGroup > getContaining( SourceAndConverter< ? > source )
+		{
+			return getMatching( g -> g.getSources().contains( source ) );
+		}
+
+		Set< SourceGroup > getMatching( Predicate< SourceGroup > condition );
 
 //		boolean isActive( SourceGroupHandle handle );
 //		boolean isCurrent( SourceGroupHandle handle );
@@ -83,12 +85,12 @@ public class PlaygroundReadOnlyClean
 		/**
 		 * @return active sources
 		 */
-		Sources getActive();
+		Set< SourceAndConverter< ? > > getActive();
 
 		/**
 		 * @return visible sources
 		 */
-		Sources getVisible();
+		Set< SourceAndConverter< ? > > getVisible();
 
 		boolean isActive( SourceAndConverter< ? > source );
 
@@ -326,9 +328,15 @@ public class PlaygroundReadOnlyClean
 		}
 
 		@Override
-		public List< SourceGroup > getMatching( Predicate< SourceGroup > condition )
+		public Set< SourceGroup > getActive()
 		{
-			List< SourceGroup > result = new ArrayList<>();
+			return null; //state.activeGroups;
+		}
+
+		@Override
+		public Set< SourceGroup > getMatching( Predicate< SourceGroup > condition )
+		{
+			Set< SourceGroup > result = new HashSet<>();
 			for ( SourceGroup group : state.groups )
 				if ( condition.test( group ) )
 					result.add( group );
