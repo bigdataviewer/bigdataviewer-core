@@ -2,7 +2,6 @@ package bdv.viewer.state.revised;
 
 import bdv.viewer.DisplayMode;
 import bdv.viewer.SourceAndConverter;
-import bdv.viewer.state.SourceGroup;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -12,7 +11,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -211,9 +209,16 @@ public class PlaygroundReadOnlyClean2
 	{
 		private final ArrayList< SourceGroup > groups;
 
-		private final Map< SourceGroup, String > names;
+		static class GroupData
+		{
+			String name = null;
 
-		private final Map< SourceGroup, Set< SourceAndConverter< ? > > > contents;
+			final Set< SourceAndConverter< ? > > sources = new HashSet<>();
+
+			final Set< SourceAndConverter< ? > > unmodifiableSources = Collections.unmodifiableSet( sources );
+		}
+
+		private final Map< SourceGroup, GroupData > data;
 
 		private final Set< SourceGroup > active;
 
@@ -231,8 +236,7 @@ public class PlaygroundReadOnlyClean2
 			super( Collections.unmodifiableList( groups ) );
 			this.groups = groups;
 
-			names = new HashMap<>();
-			contents = new HashMap<>();
+			data = new HashMap<>();
 			active = new HashSet<>();
 			unmodifiableActive = Collections.unmodifiableSet( active );
 		}
@@ -255,10 +259,7 @@ public class PlaygroundReadOnlyClean2
 			if ( group == null )
 				return Collections.emptySet();
 
-			// TODO: should this return unmodifiable set?
-			//       and should the unmodifiable versions be maintained?
-			//       --> one HashMap to class containing name, sources, unmodifiableSources
-			return contents.get( group );
+			return data.get( group ).unmodifiableSources;
 		}
 
 		@Override
@@ -274,7 +275,7 @@ public class PlaygroundReadOnlyClean2
 		@Override
 		public String getName( final SourceGroup group )
 		{
-			return names.get( group );
+			return data.get( group ).name;
 		}
 
 		@Override
@@ -304,20 +305,19 @@ public class PlaygroundReadOnlyClean2
 				return false;
 
 			boolean removed = false;
-			for ( Set< SourceAndConverter< ? > > sources : contents.values() )
-				removed |= sources.remove( source );
+			for ( GroupData groupData : data.values() )
+				removed |= groupData.sources.remove( source );
 
 			return removed;
 		}
 
 		public void addGroup( final SourceGroup group )
 		{
-			if ( group == null || groups.contains( group ) )
+			if ( group == null || data.containsKey( group ) )
 				throw new IllegalArgumentException();
 
 			groups.add( group );
-			names.put( group, "" );
-			contents.put( group, new HashSet<>() );
+			data.put( group, new GroupData() );
 			if ( current == null )
 				current = group;
 		}
@@ -330,9 +330,8 @@ public class PlaygroundReadOnlyClean2
 			final boolean removed = groups.remove( group );
 			if ( removed )
 			{
+				data.remove( group );
 				active.remove( group );
-				names.remove( group );
-				contents.remove( group );
 				if ( current.equals( group ) )
 					current = groups.isEmpty() ? null : groups.get( 0 );
 			}
@@ -341,7 +340,7 @@ public class PlaygroundReadOnlyClean2
 
 		public void makeCurrent( SourceGroup group )
 		{
-			if ( group != null && !groups.contains( group ) )
+			if ( group != null && !data.containsKey( group ) )
 				throw new IllegalArgumentException();
 
 			current = group;
@@ -349,7 +348,7 @@ public class PlaygroundReadOnlyClean2
 
 		public void setActive( SourceGroup group, boolean active )
 		{
-			if ( group != null && !groups.contains( group ) )
+			if ( group != null && !data.containsKey( group ) )
 				throw new IllegalArgumentException();
 
 			if ( active )
@@ -363,11 +362,11 @@ public class PlaygroundReadOnlyClean2
 			if ( source == null || group == null )
 				throw new IllegalArgumentException();
 
-			final Set< SourceAndConverter< ? > > sources = contents.get( group );
-			if ( sources == null )
+			final GroupData groupData = data.get( group );
+			if ( groupData == null )
 				throw new IllegalArgumentException();
 
-			sources.add( source );
+			groupData.sources.add( source );
 		}
 
 		public boolean removeSourceFromGroup( SourceAndConverter< ? > source, SourceGroup group )
@@ -375,11 +374,11 @@ public class PlaygroundReadOnlyClean2
 			if ( source == null || group == null )
 				throw new IllegalArgumentException();
 
-			final Set< SourceAndConverter< ? > > sources = contents.get( group );
-			if ( sources == null )
+			final GroupData groupData = data.get( group );
+			if ( groupData == null )
 				throw new IllegalArgumentException();
 
-			return sources.remove( source );
+			return groupData.sources.remove( source );
 		}
 	}
 
