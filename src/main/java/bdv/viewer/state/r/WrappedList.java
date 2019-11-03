@@ -1,15 +1,16 @@
-package bdv.viewer.state.revised;
+package bdv.viewer.state.r;
 
 import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
-class WrappedList< E > implements List< E >
+// TODO: move to Util
+public class WrappedList< E > implements List< E >
 {
 	private final List< E > list;
 
-	WrappedList( List< E > list )
+	public WrappedList( List< E > list )
 	{
 		this.list = list;
 	}
@@ -150,5 +151,23 @@ class WrappedList< E > implements List< E >
 	public List< E > subList( final int fromIndex, final int toIndex )
 	{
 		return list.subList( fromIndex, toIndex );
+	}
+
+	@Override
+	public String toString()
+	{
+		return list.toString();
+	}
+
+	@Override
+	public int hashCode()
+	{
+		return list.hashCode();
+	}
+
+	@Override
+	public boolean equals( final Object obj )
+	{
+		return list.equals( obj );
 	}
 }
