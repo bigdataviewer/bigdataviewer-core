@@ -38,7 +38,7 @@ public class DefaultViewerState implements ViewerState_Interface
 		void viewerStateChanged( ViewerStateChange change );
 	}
 
-	private final Listeners.List< ViewerStateChangeListener > listeners = new Listeners.List<>();
+	private final Listeners.List< ViewerStateChangeListener > listeners;
 
 	/**
 	 * The current number of available timepoints.
@@ -99,6 +99,8 @@ public class DefaultViewerState implements ViewerState_Interface
 
 	public DefaultViewerState()
 	{
+		listeners = new Listeners.List<>();
+
 		numTimepoints = 0;
 		currentTimepoint = 0;
 		viewerTransform = new AffineTransform3D();
@@ -111,6 +113,11 @@ public class DefaultViewerState implements ViewerState_Interface
 		groupDatas = new HashMap<>();
 		activeGroups = new HashSet<>();
 		wrappedGroupsList = new DefaultSourceGroups();
+	}
+
+	public Listeners< ViewerStateChangeListener > changeListeners()
+	{
+		return listeners;
 	}
 
 	@Override
