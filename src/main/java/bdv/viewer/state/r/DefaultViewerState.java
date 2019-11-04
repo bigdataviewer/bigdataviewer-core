@@ -5,6 +5,7 @@ import bdv.viewer.DisplayMode;
 import bdv.viewer.Interpolation;
 import bdv.viewer.SourceAndConverter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -109,7 +110,7 @@ public class DefaultViewerState implements IViewerState
 		wrappedGroupsList = new DefaultSourceGroups();
 	}
 
-	private DefaultViewerState( DefaultViewerState other )
+	public DefaultViewerState( DefaultViewerState other )
 	{
 		listeners = new Listeners.List<>();
 		numTimepoints = other.numTimepoints;
@@ -140,6 +141,11 @@ public class DefaultViewerState implements IViewerState
 	public DefaultViewerState snapshot()
 	{
 		return new DefaultViewerState( this );
+	}
+
+	public void kill()
+	{
+		// TODO clear all collections
 	}
 
 	@Override
@@ -343,6 +349,12 @@ public class DefaultViewerState implements IViewerState
 		public boolean add( final SourceAndConverter< ? > sourceAndConverter )
 		{
 			return DefaultViewerState.this.addSource( sourceAndConverter );
+		}
+
+		@Override
+		public boolean addAll( final Collection< ? extends SourceAndConverter< ? > > c )
+		{
+			return DefaultViewerState.this.addSources( c );
 		}
 
 		@Override
@@ -643,6 +655,38 @@ public class DefaultViewerState implements IViewerState
 		checkVisibilityChanged();
 
 		return true;
+	}
+
+	private boolean addSources( final Collection< ? extends SourceAndConverter< ? > > collection )
+	{
+		if ( collection == null )
+			throw new IllegalArgumentException();
+
+		boolean modified = false;
+		boolean currentSourceChanged = false;
+		for ( SourceAndConverter< ? > source : collection )
+		{
+			if ( sources.contains( source ) )
+				continue;
+
+			modified = true;
+			sources.add( source );
+			if ( currentSource == null )
+			{
+				currentSourceChanged = true;
+				currentSource = source;
+			}
+		}
+
+		if ( modified )
+		{
+			notifyListeners( NUM_SOURCES_CHANGED );
+			if ( currentSourceChanged )
+				notifyListeners( CURRENT_SOURCE_CHANGED );
+			checkVisibilityChanged();
+		}
+
+		return modified;
 	}
 
 	private boolean removeSource( final SourceAndConverter< ? > source )
