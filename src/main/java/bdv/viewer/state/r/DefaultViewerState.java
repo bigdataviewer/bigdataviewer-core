@@ -13,9 +13,27 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import net.imglib2.realtransform.AffineTransform3D;
+import org.scijava.listeners.Listeners;
+
+import static bdv.viewer.state.r.ViewerStateChange.CURRENT_GROUP_CHANGED;
+import static bdv.viewer.state.r.ViewerStateChange.CURRENT_SOURCE_CHANGED;
+import static bdv.viewer.state.r.ViewerStateChange.GROUP_ACTIVITY_CHANGED;
+import static bdv.viewer.state.r.ViewerStateChange.GROUP_NAME_CHANGED;
+import static bdv.viewer.state.r.ViewerStateChange.NUM_GROUPS_CHANGED;
+import static bdv.viewer.state.r.ViewerStateChange.NUM_SOURCES_CHANGED;
+import static bdv.viewer.state.r.ViewerStateChange.SOURCE_ACTVITY_CHANGED;
+import static bdv.viewer.state.r.ViewerStateChange.SOURCE_TO_GROUP_ASSIGNMENT_CHANGED;
+import static bdv.viewer.state.r.ViewerStateChange.VISIBILITY_CHANGED;
 
 public class DefaultViewerState implements ViewerState_ReadOnly
 {
+	public interface ViewerStateChangeListener
+	{
+		void viewerStateChanged( ViewerStateChange change );
+	}
+
+	private final Listeners.List< ViewerStateChangeListener > listeners = new Listeners.List<>();
+
 	/**
 	 * The current number of available timepoints.
 	 */
@@ -382,6 +400,12 @@ public class DefaultViewerState implements ViewerState_ReadOnly
 		//
 
 		@Override
+		public void setName( final SourceGroup group, final String name )
+		{
+			DefaultViewerState.this.setName( group, name );
+		}
+
+		@Override
 		public boolean setActive( final SourceGroup group, final boolean active )
 		{
 			return DefaultViewerState.this.setActive( group, active );
@@ -512,8 +536,14 @@ public class DefaultViewerState implements ViewerState_ReadOnly
 			return false;
 
 		sources.add( source );
-		if ( currentSource == null )
+		final boolean currentSourceChanged = ( currentSource == null );
+		if ( currentSourceChanged )
 			currentSource = source;
+
+		notifyListeners( NUM_SOURCES_CHANGED );
+		if ( currentSourceChanged )
+			notifyListeners( CURRENT_SOURCE_CHANGED );
+		checkVisibilityChanged();
 
 		return true;
 	}
@@ -527,11 +557,20 @@ public class DefaultViewerState implements ViewerState_ReadOnly
 		if ( removed )
 		{
 			activeSources.remove( source );
-			if ( currentSource.equals( source ) )
+			final boolean currentSourceChanged = currentSource.equals( source );
+			if ( currentSourceChanged )
 				currentSource = sources.isEmpty() ? null : sources.get( 0 );
 
+			boolean sourceToGroupAssignmentChanged = false;
 			for ( GroupData groupData : groupDatas.values() )
-				groupData.sources.remove( source );
+				sourceToGroupAssignmentChanged |= groupData.sources.remove( source );
+
+			notifyListeners( NUM_SOURCES_CHANGED );
+			if ( currentSourceChanged )
+				notifyListeners( CURRENT_SOURCE_CHANGED );
+			if ( sourceToGroupAssignmentChanged )
+				notifyListeners( SOURCE_TO_GROUP_ASSIGNMENT_CHANGED );
+			checkVisibilityChanged();
 		}
 		return removed;
 	}
@@ -542,6 +581,11 @@ public class DefaultViewerState implements ViewerState_ReadOnly
 
 		final boolean modified = !currentSource.equals( source );
 		currentSource = source;
+		if ( modified )
+		{
+			notifyListeners( CURRENT_SOURCE_CHANGED );
+			checkVisibilityChanged();
+		}
 		return modified;
 	}
 
@@ -549,10 +593,13 @@ public class DefaultViewerState implements ViewerState_ReadOnly
 	{
 		checkIsExistingSource( source );
 
-		if ( active )
-			return this.activeSources.add( source );
-		else
-			return this.activeSources.remove( source );
+		final boolean modified = active ? activeSources.add( source ) : activeSources.remove( source );
+		if ( modified )
+		{
+			notifyListeners( SOURCE_ACTVITY_CHANGED );
+			checkVisibilityChanged();
+		}
+		return modified;
 	}
 
 	//
@@ -592,8 +639,15 @@ public class DefaultViewerState implements ViewerState_ReadOnly
 
 		groups.add( group );
 		groupDatas.put( group, new GroupData( group ) );
-		if ( currentGroup == null )
+		final boolean currentGroupChanged = ( currentGroup == null );
+		if ( currentGroupChanged )
 			currentGroup = group;
+
+		notifyListeners( NUM_GROUPS_CHANGED );
+		if ( currentGroupChanged )
+			notifyListeners( CURRENT_GROUP_CHANGED );
+		// new group is empty, so visibility will not change
+		// checkVisibilityChanged();
 
 		return true;
 	}
@@ -608,10 +662,28 @@ public class DefaultViewerState implements ViewerState_ReadOnly
 		{
 			groupDatas.remove( group );
 			activeGroups.remove( group );
-			if ( currentGroup.equals( group ) )
+			final boolean currentGroupChanged = currentGroup.equals( group );
+			if ( currentGroupChanged )
 				currentGroup = groups.isEmpty() ? null : groups.get( 0 );
+
+			notifyListeners( NUM_GROUPS_CHANGED );
+			if ( currentGroupChanged )
+				notifyListeners( CURRENT_GROUP_CHANGED );
+			checkVisibilityChanged();
 		}
 		return removed;
+	}
+
+	private void setName( final SourceGroup group, final String name )
+	{
+		checkIsExistingGroup( group );
+
+		final GroupData data = groupDatas.get( group );
+		if ( !Objects.equals( data.name, name ) )
+		{
+			data.name = name;
+			notifyListeners( GROUP_NAME_CHANGED );
+		}
 	}
 
 	private boolean makeCurrent( SourceGroup group )
@@ -620,6 +692,11 @@ public class DefaultViewerState implements ViewerState_ReadOnly
 
 		final boolean modified = !currentGroup.equals( group );
 		currentGroup = group;
+		if ( modified )
+		{
+			notifyListeners( CURRENT_GROUP_CHANGED );
+			checkVisibilityChanged();
+		}
 		return modified;
 	}
 
@@ -627,10 +704,13 @@ public class DefaultViewerState implements ViewerState_ReadOnly
 	{
 		checkIsExistingGroup( group );
 
-		if ( active )
-			return this.activeGroups.add( group );
-		else
-			return this.activeGroups.remove( group );
+		final boolean modified = active ? activeGroups.add( group ) : activeGroups.remove( group );
+		if ( modified )
+		{
+			notifyListeners( GROUP_ACTIVITY_CHANGED );
+			checkVisibilityChanged();
+		}
+		return modified;
 	}
 
 	private boolean addSourceToGroup( SourceAndConverter< ? > source, SourceGroup group )
@@ -638,7 +718,14 @@ public class DefaultViewerState implements ViewerState_ReadOnly
 		checkIsExistingSource( source );
 		checkIsExistingGroup( group );
 
-		return groupDatas.get( group ).sources.add( source );
+		final boolean modified = groupDatas.get( group ).sources.add( source );
+		if ( modified )
+		{
+			notifyListeners( SOURCE_TO_GROUP_ASSIGNMENT_CHANGED );
+			checkVisibilityChanged();
+		}
+
+		return modified;
 	}
 
 	private boolean removeSourceFromGroup( SourceAndConverter< ? > source, SourceGroup group )
@@ -646,6 +733,33 @@ public class DefaultViewerState implements ViewerState_ReadOnly
 		checkIsExistingSource( source );
 		checkIsExistingGroup( group );
 
-		return groupDatas.get( group ).sources.remove( source );
+		final boolean modified = groupDatas.get( group ).sources.remove( source );
+		if ( modified )
+		{
+			notifyListeners( SOURCE_TO_GROUP_ASSIGNMENT_CHANGED );
+			checkVisibilityChanged();
+		}
+
+		return modified;
+	}
+
+	// -- Change Listeners --
+
+	private void notifyListeners( ViewerStateChange change )
+	{
+		listeners.list.forEach( l -> l.viewerStateChanged( change ) );
+	}
+
+	private final Set< SourceAndConverter< ? > > previousVisibleSources = new HashSet<>();
+
+	private void checkVisibilityChanged()
+	{
+		final Set< SourceAndConverter< ? > > visible = getVisibleSources();
+		if ( !visible.equals( previousVisibleSources ) )
+		{
+			previousVisibleSources.clear();
+			previousVisibleSources.addAll( visible );
+			notifyListeners( VISIBILITY_CHANGED );
+		}
 	}
 }

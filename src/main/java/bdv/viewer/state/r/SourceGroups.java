@@ -46,6 +46,14 @@ public interface SourceGroups extends List< SourceGroup >
 	// -- modification operations --
 
 	/**
+	 * Set the {@code name} of the specified {@code group} (optional operation)
+	 *
+	 * @throws UnsupportedOperationException
+	 * 		if this SourceGroups list is unmodifiable
+	 */
+	void setName( SourceGroup group, String name );
+
+	/**
 	 * Set group active or inactive (optional operation).
 	 * <p>
 	 * This is equivalent to {@code getActive().add(group)} and {@code getActive().remove(group)} respectively.
