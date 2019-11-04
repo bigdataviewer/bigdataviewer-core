@@ -3,8 +3,9 @@ package bdv.viewer.state.r;
 import bdv.viewer.DisplayMode;
 import bdv.viewer.Interpolation;
 import net.imglib2.realtransform.AffineTransform3D;
+import org.scijava.listeners.Listeners;
 
-public interface ViewerState_Interface
+public interface IViewerState
 {
 	Interpolation getInterpolation();
 
@@ -53,4 +54,11 @@ public interface ViewerState_Interface
 	 * TODO (optional operation).
 	 */
 	void setViewerTransform( AffineTransform3D transform );
+
+	// unclear, most likely
+	// optional operation?
+	Listeners< ViewerStateChangeListener > changeListeners();
+
+	// unclear...
+	IViewerState snapshot();
 }

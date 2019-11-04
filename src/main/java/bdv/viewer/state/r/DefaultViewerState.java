@@ -31,13 +31,8 @@ import static bdv.viewer.state.r.ViewerStateChange.SOURCE_TO_GROUP_ASSIGNMENT_CH
 import static bdv.viewer.state.r.ViewerStateChange.VIEWER_TRANSFORM_CHANGED;
 import static bdv.viewer.state.r.ViewerStateChange.VISIBILITY_CHANGED;
 
-public class DefaultViewerState implements ViewerState_Interface
+public class DefaultViewerState implements IViewerState
 {
-	public interface ViewerStateChangeListener
-	{
-		void viewerStateChanged( ViewerStateChange change );
-	}
-
 	private final Listeners.List< ViewerStateChangeListener > listeners;
 
 	/**
@@ -100,7 +95,6 @@ public class DefaultViewerState implements ViewerState_Interface
 	public DefaultViewerState()
 	{
 		listeners = new Listeners.List<>();
-
 		numTimepoints = 0;
 		currentTimepoint = 0;
 		viewerTransform = new AffineTransform3D();
@@ -115,9 +109,37 @@ public class DefaultViewerState implements ViewerState_Interface
 		wrappedGroupsList = new DefaultSourceGroups();
 	}
 
+	private DefaultViewerState( DefaultViewerState other )
+	{
+		listeners = new Listeners.List<>();
+		numTimepoints = other.numTimepoints;
+		currentTimepoint = other.currentTimepoint;
+		viewerTransform = new AffineTransform3D();
+		viewerTransform.set( other.viewerTransform );
+		interpolation = other.interpolation;
+		displayMode = other.displayMode;
+		sources = new ArrayList<>( other.sources );
+		activeSources = new HashSet<>( other.activeSources );
+		currentSource = other.currentSource;
+		wrappedSourcesList = new DefaultSources();
+		groups = new ArrayList<>( other.groups );
+		groupDatas = new HashMap<>();
+		other.groupDatas.forEach( ( group, data ) -> groupDatas.put( group, new GroupData( data ) ) );
+		activeGroups = new HashSet<>( other.activeGroups );
+		currentGroup = other.currentGroup;
+		wrappedGroupsList = new DefaultSourceGroups();
+	}
+
+	@Override
 	public Listeners< ViewerStateChangeListener > changeListeners()
 	{
 		return listeners;
+	}
+
+	@Override
+	public DefaultViewerState snapshot()
+	{
+		return new DefaultViewerState( this );
 	}
 
 	@Override
@@ -339,7 +361,7 @@ public class DefaultViewerState implements ViewerState_Interface
 
 		String name = null;
 
-		final Set< SourceAndConverter< ? > > sources = new HashSet<>();
+		final Set< SourceAndConverter< ? > > sources;
 
 		final GroupData.WrappedContainedSources wrappedSources;
 
@@ -369,7 +391,17 @@ public class DefaultViewerState implements ViewerState_Interface
 		GroupData( SourceGroup group )
 		{
 			this.group = group;
-			this.wrappedSources = new GroupData.WrappedContainedSources( sources );
+			sources= new HashSet<>();
+			wrappedSources = new WrappedContainedSources( sources );
+		}
+
+		// copy constructor
+		GroupData( GroupData other )
+		{
+			group = other.group;
+			name = other.name;
+			sources = new HashSet<>( other.sources );
+			wrappedSources = new WrappedContainedSources( sources );
 		}
 	}
 
