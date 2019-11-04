@@ -268,6 +268,12 @@ public class DefaultViewerState implements IViewerState
 		}
 
 		@Override
+		public boolean addAll( final Collection< ? extends SourceAndConverter< ? > > c )
+		{
+			return DefaultViewerState.this.setActive( c, true );
+		}
+
+		@Override
 		public boolean remove( final Object o )
 		{
 			if ( o instanceof SourceAndConverter )
@@ -735,6 +741,20 @@ public class DefaultViewerState implements IViewerState
 		checkIsExistingSource( source );
 
 		final boolean modified = active ? activeSources.add( source ) : activeSources.remove( source );
+		if ( modified )
+		{
+			notifyListeners( SOURCE_ACTVITY_CHANGED );
+			checkVisibilityChanged();
+		}
+		return modified;
+	}
+
+	private boolean setActive( final Collection< ? extends SourceAndConverter< ? > > c, final boolean active )
+	{
+		for ( SourceAndConverter< ? > source : c )
+			checkIsExistingSource( source );
+
+		final boolean modified = active ? activeSources.addAll( c ) : activeSources.removeAll( c );
 		if ( modified )
 		{
 			notifyListeners( SOURCE_ACTVITY_CHANGED );
