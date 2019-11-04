@@ -92,4 +92,22 @@ public class WrappedSet< E > implements Set< E >
 	{
 		set.clear();
 	}
+
+	@Override
+	public String toString()
+	{
+		return set.toString();
+	}
+
+	@Override
+	public int hashCode()
+	{
+		return set.hashCode();
+	}
+
+	@Override
+	public boolean equals( final Object obj )
+	{
+		return set.equals( obj );
+	}
 }
