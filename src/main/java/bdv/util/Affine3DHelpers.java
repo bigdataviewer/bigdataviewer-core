@@ -200,8 +200,21 @@ public class Affine3DHelpers
 		}
 		return Math.sqrt( sqSum );
 	}
-	
-	
+
+	/**
+	 * Compare two transforms for equality.
+	 *
+	 * @return {@code true} iff {@code t1} and {@code t2} are exactly the same
+	 */
+	public static boolean equals( AffineTransform3D t1, AffineTransform3D t2 )
+	{
+		for ( int r = 0; r < 3; ++r )
+			for ( int c = 0; c < 4; ++c )
+				if ( t1.get( r, c ) != t2.get( r, c ) )
+					return false;
+		return true;
+	}
+
 	/**
 	 * Pretty-print the matrix content of an affine transform.
 	 * 
