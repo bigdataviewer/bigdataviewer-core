@@ -1,5 +1,6 @@
 package bdv.viewer.state.r;
 
+import bdv.util.Affine3DHelpers;
 import bdv.viewer.DisplayMode;
 import bdv.viewer.Interpolation;
 import bdv.viewer.SourceAndConverter;
@@ -17,15 +18,20 @@ import org.scijava.listeners.Listeners;
 
 import static bdv.viewer.state.r.ViewerStateChange.CURRENT_GROUP_CHANGED;
 import static bdv.viewer.state.r.ViewerStateChange.CURRENT_SOURCE_CHANGED;
+import static bdv.viewer.state.r.ViewerStateChange.CURRENT_TIMEPOINT_CHANGED;
+import static bdv.viewer.state.r.ViewerStateChange.DISPLAY_MODE_CHANGED;
 import static bdv.viewer.state.r.ViewerStateChange.GROUP_ACTIVITY_CHANGED;
 import static bdv.viewer.state.r.ViewerStateChange.GROUP_NAME_CHANGED;
+import static bdv.viewer.state.r.ViewerStateChange.INTERPOLATION_CHANGED;
 import static bdv.viewer.state.r.ViewerStateChange.NUM_GROUPS_CHANGED;
 import static bdv.viewer.state.r.ViewerStateChange.NUM_SOURCES_CHANGED;
+import static bdv.viewer.state.r.ViewerStateChange.NUM_TIMEPOINTS_CHANGED;
 import static bdv.viewer.state.r.ViewerStateChange.SOURCE_ACTVITY_CHANGED;
 import static bdv.viewer.state.r.ViewerStateChange.SOURCE_TO_GROUP_ASSIGNMENT_CHANGED;
+import static bdv.viewer.state.r.ViewerStateChange.VIEWER_TRANSFORM_CHANGED;
 import static bdv.viewer.state.r.ViewerStateChange.VISIBILITY_CHANGED;
 
-public class DefaultViewerState implements ViewerState_ReadOnly
+public class DefaultViewerState implements ViewerState_Interface
 {
 	public interface ViewerStateChangeListener
 	{
@@ -65,7 +71,7 @@ public class DefaultViewerState implements ViewerState_ReadOnly
 	 *
 	 * The currently visible sources can also be obtained through TODO.
 	 *
-	 * TODO move javadoc to getter
+	 * TODO move javadoc to getter/setter in interface
 	 */
 	private DisplayMode displayMode;
 
@@ -108,12 +114,6 @@ public class DefaultViewerState implements ViewerState_ReadOnly
 	}
 
 	@Override
-	public void getViewerTransform( final AffineTransform3D t )
-	{
-		t.set( viewerTransform );
-	}
-
-	@Override
 	public Interpolation getInterpolation()
 	{
 		return interpolation;
@@ -137,6 +137,68 @@ public class DefaultViewerState implements ViewerState_ReadOnly
 		return currentTimepoint;
 	}
 
+	@Override
+	public void getViewerTransform( final AffineTransform3D t )
+	{
+		t.set( viewerTransform );
+	}
+
+	// -- modification --
+
+	@Override
+	public void setInterpolation( final Interpolation i )
+	{
+		if ( interpolation != i )
+		{
+			interpolation = i;
+			notifyListeners( INTERPOLATION_CHANGED );
+		}
+	}
+
+	@Override
+	public void setDisplayMode( final DisplayMode mode )
+	{
+		if ( displayMode != mode )
+		{
+			displayMode = mode;
+			notifyListeners( DISPLAY_MODE_CHANGED );
+		}
+	}
+
+	@Override
+	public void setNumTimepoints( final int n )
+	{
+		if ( numTimepoints != n )
+		{
+			numTimepoints = n;
+			notifyListeners( NUM_TIMEPOINTS_CHANGED );
+		}
+	}
+
+	@Override
+	public void setCurrentTimepoint( final int t )
+	{
+		if ( currentTimepoint != t )
+		{
+			currentTimepoint = t;
+			notifyListeners( CURRENT_TIMEPOINT_CHANGED );
+		}
+	}
+
+	@Override
+	public void setViewerTransform( final AffineTransform3D t )
+	{
+		if ( !Affine3DHelpers.equals( viewerTransform, t ) )
+		{
+			viewerTransform.set( t );
+			notifyListeners( VIEWER_TRANSFORM_CHANGED );
+		}
+	}
+
+	//
+	// -- wrappers --
+	//
+
 	/**
 	 * Returned value is a valid (at least) as long as state is not modified.
 	 * If state is modified, it might become invalid or reflect an older snapshot.
@@ -156,10 +218,6 @@ public class DefaultViewerState implements ViewerState_ReadOnly
 	{
 		return wrappedSourcesList;
 	}
-
-	//
-	// -- wrappers --
-	//
 
 	private class WrappedActiveSources extends WrappedSet< SourceAndConverter< ? > >
 	{
