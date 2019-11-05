@@ -13,7 +13,7 @@ import net.imglib2.realtransform.AffineTransform3D;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class ViewerStateTest
+public class DefaultViewerStateTest
 {
 	@Test
 	public void addRemoveSource()
