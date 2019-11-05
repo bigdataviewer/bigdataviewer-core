@@ -271,7 +271,7 @@ public class BasicViewerState
 	 * @param source the source. Passing {@code null} checks whether no source is current.
 	 * @return {@code true} if {@code source} is the current source
 	 */
-	public boolean isCurrent( SourceAndConverter< ? > source )
+	public boolean isCurrentSource( SourceAndConverter< ? > source )
 	{
 		return Objects.equals( source, currentSource );
 	}
@@ -325,7 +325,7 @@ public class BasicViewerState
 	 * @throws IllegalArgumentException
 	 * 		if {@code source} is not contained in the state (and not {@code null}).
 	 */
-	public boolean isActive( final SourceAndConverter< ? > source )
+	public boolean isSourceActive( final SourceAndConverter< ? > source )
 	{
 		checkSourcePresent( source );
 
@@ -345,7 +345,7 @@ public class BasicViewerState
 	 * @throws IllegalArgumentException
 	 * 		if {@code source} is not contained in the state (and not {@code null}).
 	 */
-	public boolean setActive( final SourceAndConverter< ? > source, final boolean active )
+	public boolean setSourceActive( final SourceAndConverter< ? > source, final boolean active )
 	{
 		checkSourcePresent( source );
 
@@ -402,7 +402,7 @@ public class BasicViewerState
 	 * @throws IllegalArgumentException
 	 * 		if {@code source} is not contained in the state (and not {@code null}).
 	 */
-	public boolean isVisible( final SourceAndConverter< ? > source )
+	public boolean isSourceVisible( final SourceAndConverter< ? > source )
 	{
 		checkSourcePresent( source );
 
@@ -414,13 +414,37 @@ public class BasicViewerState
 		case GROUP:
 			return currentGroup != null && groupData.get( currentGroup ).sources.contains( source );
 		case FUSED:
-			return isActive( source );
+			return isSourceActive( source );
 		case FUSEDGROUP:
 			for ( SourceGroup group : activeGroups )
 				if ( groupData.get( group ).sources.contains( source ) )
 					return true;
 			return false;
 		}
+	}
+
+	/**
+	 * Check whether the given {@code source} is both visible and provides image data for the current timepoint.
+	 * <p>
+	 * Whether a source is visible depends on the {@link #getDisplayMode() display mode}:
+	 * <ul>
+	 * <li>In {@code DisplayMode.SINGLE} only the current source is visible.</li>
+	 * <li>In {@code DisplayMode.GROUP} the sources in the current group are visible.</li>
+	 * <li>In {@code DisplayMode.FUSED} all active sources are visible.</li>
+	 * <li>In {@code DisplayMode.FUSEDROUP} the sources in all active groups are visible.</li>
+	 * </ul>
+	 * Additionally, the source must be {@link bdv.viewer.Source#isPresent(int) present}, i.e., provide image data for the {@link #getCurrentTimepoint() current timepoint}.
+	 *
+	 * @return {@code true}, if {@code source} is both visible and present
+	 *
+	 * @throws NullPointerException
+	 * 		if {@code source == null}
+	 * @throws IllegalArgumentException
+	 * 		if {@code source} is not contained in the state (and not {@code null}).
+	 */
+	public boolean isSourceVisibleAndPresent( final SourceAndConverter< ? > source )
+	{
+		return isSourceVisible( source ) && source.getSpimSource().isPresent( currentTimepoint );
 	}
 
 	/**
@@ -746,7 +770,7 @@ public class BasicViewerState
 	 *
 	 * @return {@code true} if {@code group} is the current group
 	 */
-	public boolean isCurrent( SourceGroup group )
+	public boolean isCurrentGroup( SourceGroup group )
 	{
 		return Objects.equals( group, currentGroup );
 	}
@@ -799,7 +823,7 @@ public class BasicViewerState
 	 * @throws IllegalArgumentException
 	 * 		if {@code group} is not contained in the state (and not {@code null}).
 	 */
-	public boolean isActive( final SourceGroup group )
+	public boolean isGroupActive( final SourceGroup group )
 	{
 		checkGroupPresent( group );
 
@@ -819,7 +843,7 @@ public class BasicViewerState
 	 * @throws IllegalArgumentException
 	 * 		if {@code group} is not contained in the state (and not {@code null}).
 	 */
-	public boolean setActive( final SourceGroup group, final boolean active )
+	public boolean setGroupActive( final SourceGroup group, final boolean active )
 	{
 		checkGroupPresent( group );
 
@@ -868,7 +892,7 @@ public class BasicViewerState
 	 * @throws IllegalArgumentException
 	 * 		if {@code group} is not contained in the state (and not {@code null}).
 	 */
-	public String getName( final SourceGroup group )
+	public String getGroupName( final SourceGroup group )
 	{
 		checkGroupPresent( group );
 
@@ -883,7 +907,7 @@ public class BasicViewerState
 	 * @throws IllegalArgumentException
 	 * 		if {@code group} is not contained in the state (and not {@code null}).
 	 */
-	public void setName( final SourceGroup group, final String name )
+	public void setGroupName( final SourceGroup group, final String name )
 	{
 		checkGroupPresent( group );
 
