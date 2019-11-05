@@ -27,7 +27,7 @@ import static bdv.viewer.state.r.ViewerStateChange.INTERPOLATION_CHANGED;
 import static bdv.viewer.state.r.ViewerStateChange.NUM_GROUPS_CHANGED;
 import static bdv.viewer.state.r.ViewerStateChange.NUM_SOURCES_CHANGED;
 import static bdv.viewer.state.r.ViewerStateChange.NUM_TIMEPOINTS_CHANGED;
-import static bdv.viewer.state.r.ViewerStateChange.SOURCE_ACTVITY_CHANGED;
+import static bdv.viewer.state.r.ViewerStateChange.SOURCE_ACTIVITY_CHANGED;
 import static bdv.viewer.state.r.ViewerStateChange.SOURCE_TO_GROUP_ASSIGNMENT_CHANGED;
 import static bdv.viewer.state.r.ViewerStateChange.VIEWER_TRANSFORM_CHANGED;
 import static bdv.viewer.state.r.ViewerStateChange.VISIBILITY_CHANGED;
@@ -743,7 +743,7 @@ public class DefaultViewerState implements IViewerState
 		final boolean modified = active ? activeSources.add( source ) : activeSources.remove( source );
 		if ( modified )
 		{
-			notifyListeners( SOURCE_ACTVITY_CHANGED );
+			notifyListeners( SOURCE_ACTIVITY_CHANGED );
 			checkVisibilityChanged();
 		}
 		return modified;
@@ -757,7 +757,7 @@ public class DefaultViewerState implements IViewerState
 		final boolean modified = active ? activeSources.addAll( c ) : activeSources.removeAll( c );
 		if ( modified )
 		{
-			notifyListeners( SOURCE_ACTVITY_CHANGED );
+			notifyListeners( SOURCE_ACTIVITY_CHANGED );
 			checkVisibilityChanged();
 		}
 		return modified;
