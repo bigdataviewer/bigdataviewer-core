@@ -44,7 +44,7 @@ import static gnu.trove.impl.Constants.DEFAULT_LOAD_FACTOR;
  *
  * @author Tobias Pietzsch
  */
-public class BasicViewerState
+public class BasicViewerState implements ViewerState
 {
 	private final Listeners.List< ViewerStateChangeListener > listeners;
 
@@ -129,7 +129,7 @@ public class BasicViewerState
 		groupIndices = new TObjectIntHashMap<>( DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR, NO_ENTRY_VALUE );
 	}
 
-	BasicViewerState( BasicViewerState other )
+	BasicViewerState( final BasicViewerState other )
 	{
 		listeners = new Listeners.List<>();
 		numTimepoints = other.numTimepoints;
@@ -271,7 +271,7 @@ public class BasicViewerState
 	 * @param source the source. Passing {@code null} checks whether no source is current.
 	 * @return {@code true} if {@code source} is the current source
 	 */
-	public boolean isCurrentSource( SourceAndConverter< ? > source )
+	public boolean isCurrentSource( final SourceAndConverter< ? > source )
 	{
 		return Objects.equals( source, currentSource );
 	}
@@ -770,7 +770,7 @@ public class BasicViewerState
 	 *
 	 * @return {@code true} if {@code group} is the current group
 	 */
-	public boolean isCurrentGroup( SourceGroup group )
+	public boolean isCurrentGroup( final SourceGroup group )
 	{
 		return Objects.equals( group, currentGroup );
 	}
@@ -1226,7 +1226,7 @@ public class BasicViewerState
 	}
 
 	/**
-	 * Remove all sources from the state.
+	 * Remove all groups from the state.
 	 */
 	public void clearGroups()
 	{
