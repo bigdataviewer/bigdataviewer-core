@@ -39,36 +39,6 @@ import bdv.viewer.SourceAndConverter;
 @Deprecated
 public class SourceState< T > extends SourceAndConverter< T >
 {
-	protected static class Data
-	{
-		/**
-		 * Whether the source is active (visible in  {@link DisplayMode#FUSED} mode).
-		 */
-		protected boolean isActive;
-
-		/**
-		 * Whether the source is current.
-		 */
-		protected boolean isCurrent;
-
-		public Data()
-		{
-			isActive = true;
-			isCurrent = false;
-		}
-
-		protected Data( final Data d )
-		{
-			isActive = d.isActive;
-			isCurrent = d.isCurrent;
-		}
-
-		public Data copy()
-		{
-			return new Data( this );
-		}
-	}
-
 	static class VolatileSourceState< T, V extends Volatile< T > > extends SourceState< V >
 	{
 		public VolatileSourceState( final SourceAndConverter< V > soc, final ViewerState owner, final SourceAndConverter< ? > handle )
@@ -131,7 +101,7 @@ public class SourceState< T > extends SourceAndConverter< T >
 	 */
 	public boolean isActive()
 	{
-		return owner.state.getSources().isActive( handle );
+		return owner.state.isSourceActive( handle );
 	}
 
 	/**
@@ -141,7 +111,7 @@ public class SourceState< T > extends SourceAndConverter< T >
 	{
 		synchronized ( owner )
 		{
-			owner.state.getSources().setActive( handle, isActive );
+			owner.state.setSourceActive( handle, isActive );
 		}
 	}
 
@@ -152,7 +122,7 @@ public class SourceState< T > extends SourceAndConverter< T >
 	 */
 	public boolean isCurrent()
 	{
-		return owner.state.getSources().isCurrent( handle );
+		return owner.state.isCurrentSource( handle );
 	}
 
 	/**
@@ -162,7 +132,7 @@ public class SourceState< T > extends SourceAndConverter< T >
 	{
 		synchronized ( owner )
 		{
-			owner.state.getSources().makeCurrent( handle );
+			owner.state.setCurrentSource( handle );
 		}
 	}
 

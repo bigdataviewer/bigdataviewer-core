@@ -34,14 +34,9 @@ import bdv.viewer.DisplayMode;
 import bdv.viewer.Interpolation;
 import bdv.viewer.Source;
 import bdv.viewer.SourceAndConverter;
-import bdv.viewer.state.SourceGroup;
-import bdv.viewer.state.r.DefaultViewerState;
-import bdv.viewer.state.r.IViewerState;
+import bdv.viewer.state.r.BasicViewerState;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 import java.util.stream.Collectors;
 import net.imglib2.realtransform.AffineTransform3D;
 
@@ -59,7 +54,7 @@ import static bdv.viewer.Interpolation.NEARESTNEIGHBOR;
 @Deprecated
 public class ViewerState
 {
-	final IViewerState state;
+	final BasicViewerState state;
 
 	public ViewerState( final List< SourceAndConverter< ? > > sources, final int numTimePoints )
 	{
@@ -74,21 +69,21 @@ public class ViewerState
 	 */
 	public ViewerState( final List< SourceAndConverter< ? > > sources, final List< SourceGroup > sourceGroups, final int numTimePoints )
 	{
-		state = new DefaultViewerState();
-		state.getSources().addAll( sources );
-		state.getSources().getActive().addAll( sources );
+		state = new BasicViewerState();
+		state.addSources( sources );
+		state.setSourcesActive( sources, true );
 		sourceGroups.forEach( sourceGroup -> {
 			final bdv.viewer.state.r.SourceGroup handle = new bdv.viewer.state.r.SourceGroup();
-			state.getGroups().add( handle );
-			state.getGroups().setName( handle, sourceGroup.getName() );
-			sourceGroup.getSourceIds().forEach( i -> state.getGroups().addSourceToGroup( sources.get( i ), handle ) );
+			state.addGroup( handle );
+			state.setGroupName( handle, sourceGroup.getName() );
+			sourceGroup.getSourceIds().forEach( i -> state.addSourceToGroup( sources.get( i ), handle ) );
 		} );
 		state.setNumTimepoints( numTimePoints );
 		state.setViewerTransform( new AffineTransform3D() );
 		state.setInterpolation( NEARESTNEIGHBOR );
 		state.setDisplayMode( SINGLE );
-		state.getSources().makeCurrent( sources.isEmpty() ? null : sources.get( 0 ) );
-		state.getGroups().makeCurrent( state.getGroups().isEmpty() ? null : state.getGroups().get( 0 ) );
+		state.setCurrentSource( sources.isEmpty() ? null : sources.get( 0 ) );
+		state.setCurrentGroup( state.getGroups().isEmpty() ? null : state.getGroups().get( 0 ) );
 		state.setCurrentTimepoint( 0 );
 	}
 
@@ -99,7 +94,7 @@ public class ViewerState
 	 */
 	protected ViewerState( final ViewerState s )
 	{
-		state = new DefaultViewerState( ( DefaultViewerState ) s.state );
+		state = s.state.copy();
 	}
 
 	public synchronized ViewerState copy()
@@ -140,7 +135,7 @@ public class ViewerState
 	 */
 	public synchronized int getCurrentSource()
 	{
-		return state.getSources().indexOf( state.getSources().getCurrent() );
+		return state.getSources().indexOf( state.getCurrentSource() );
 	}
 
 	/**
@@ -148,7 +143,7 @@ public class ViewerState
 	 */
 	public synchronized void setCurrentSource( final int index )
 	{
-		state.getSources().makeCurrent( state.getSources().get( index ) );
+		state.setCurrentSource( state.getSources().get( index ) );
 	}
 
 	/**
@@ -156,7 +151,7 @@ public class ViewerState
 	 */
 	public synchronized void setCurrentSource( final Source< ? > source )
 	{
-		state.getSources().makeCurrent( soc( source ) );
+		state.setCurrentSource( soc( source ) );
 	}
 
 	private SourceAndConverter< ? > soc( Source< ? > source )
@@ -172,7 +167,7 @@ public class ViewerState
 	 */
 	public synchronized int getCurrentGroup()
 	{
-		return state.getGroups().indexOf( state.getGroups().getCurrent() );
+		return state.getGroups().indexOf( state.getCurrentGroup() );
 	}
 
 	/**
@@ -180,7 +175,7 @@ public class ViewerState
 	 */
 	public synchronized void setCurrentGroup( final int index )
 	{
-		state.getGroups().makeCurrent( state.getGroups().get( index ) );
+		state.setCurrentGroup( state.getGroups().get( index ) );
 	}
 
 	/**
@@ -188,15 +183,15 @@ public class ViewerState
 	 */
 	public synchronized void setCurrentGroup( final SourceGroup group )
 	{
-		state.getGroups().makeCurrent( getHandle( group ) );
+		state.setCurrentGroup( getHandle( group ) );
 	}
 
 	private bdv.viewer.state.r.SourceGroup getHandle( final SourceGroup group )
 	{
 		for ( bdv.viewer.state.r.SourceGroup handle : state.getGroups() )
 		{
-			SourceGroup g = new SourceGroup( state.getGroups().getName( handle ) );
-			state.getGroups().getSourcesIn( handle ).forEach( s -> g.addSource( state.getSources().indexOf( s ) ) );
+			SourceGroup g = new SourceGroup( state.getGroupName( handle ) );
+			state.getSourcesInGroup( handle ).forEach( s -> g.addSource( state.getSources().indexOf( s ) ) );
 			if ( g.equals( group ) )
 				return handle;
 		}
@@ -351,8 +346,8 @@ public class ViewerState
 		List< SourceGroup > sourceGroups = new ArrayList<>();
 		for ( bdv.viewer.state.r.SourceGroup handle : state.getGroups() )
 		{
-			SourceGroup g = new SourceGroup( state.getGroups().getName( handle ) );
-			state.getGroups().getSourcesIn( handle ).forEach( s -> g.addSource( state.getSources().indexOf( s ) ) );
+			SourceGroup g = new SourceGroup( state.getGroupName( handle ) );
+			state.getSourcesInGroup( handle ).forEach( s -> g.addSource( state.getSources().indexOf( s ) ) );
 			sourceGroups.add( g );
 		}
 		return sourceGroups;
@@ -370,41 +365,42 @@ public class ViewerState
 
 	public synchronized void addSource( final SourceAndConverter< ? > source )
 	{
-		state.getSources().add( source );
-		state.getSources().setActive( source, true );
+		state.addSource( source );
+		state.setSourceActive( source, true );
 	}
 
 	public synchronized void removeSource( final Source< ? > source )
 	{
-		state.getSources().remove( source );
+		state.removeSource( soc ( source ) );
 	}
 
 	protected void removeSource( final int index )
 	{
-		state.getSources().remove( state.getSources().get( index ) );
+		state.removeSource( state.getSources().get( index ) );
 	}
 
 	public synchronized void addGroup( final SourceGroup group )
 	{
 		final bdv.viewer.state.r.SourceGroup handle = new bdv.viewer.state.r.SourceGroup();
-		state.getGroups().add( handle );
-		state.getGroups().setName( handle, group.getName() );
-		group.getSourceIds().forEach( i -> state.getGroups().addSourceToGroup( state.getSources().get( i ), handle ) );
+		state.addGroup( handle );
+		state.setGroupName( handle, group.getName() );
+		state.setGroupActive( handle, group.isActive() );
+		group.getSourceIds().forEach( i -> state.addSourceToGroup( state.getSources().get( i ), handle ) );
 	}
 
 	public synchronized void removeGroup( final SourceGroup group )
 	{
-		state.getGroups().remove( getHandle( group ) );
+		state.removeGroup( getHandle( group ) );
 	}
 
 	protected void removeGroup( final int index )
 	{
-		state.getGroups().remove( state.getGroups().get( index ) );
+		state.removeGroup( state.getGroups().get( index ) );
 	}
 
 	public synchronized boolean isSourceVisible( final int index )
 	{
-		return state.getSources().isVisible( state.getSources().get( index ) );
+		return state.isSourceVisibleAndPresent( state.getSources().get( index ) );
 	}
 
 	/**
@@ -414,8 +410,8 @@ public class ViewerState
 	 */
 	public synchronized List< Integer > getVisibleSourceIndices()
 	{
-		final List< SourceAndConverter< ? > > sources = new ArrayList<>( state.getSources().getVisible() );
-		sources.sort( state.getSources().order() );
+		final List< SourceAndConverter< ? > > sources = new ArrayList<>( state.getVisibleSources() );
+		sources.sort( state.sourceOrder() );
 		return sources.stream().map( state.getSources()::indexOf ).collect( Collectors.toList() );
 	}
 
@@ -484,6 +480,7 @@ public class ViewerState
 	 */
 	public void kill()
 	{
-		( ( DefaultViewerState ) state ).kill();
+		state.clearSources();
+		state.clearGroups();
 	}
 }
