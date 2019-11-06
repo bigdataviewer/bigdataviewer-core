@@ -233,6 +233,7 @@ public class BasicViewerState implements ViewerState
 		{
 			displayMode = mode;
 			notifyListeners( DISPLAY_MODE_CHANGED );
+			checkVisibilityChanged();
 		}
 	}
 
