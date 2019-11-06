@@ -940,4 +940,13 @@ public class SynchronizedViewerState implements ViewerState
 	{
 		return state.groupOrder();
 	}
+
+	/**
+	 * BE CAREFUL!
+	 * TODO
+	 */
+	public BasicViewerState getWrappedState()
+	{
+		return state;
+	}
 }
