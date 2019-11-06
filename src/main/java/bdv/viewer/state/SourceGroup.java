@@ -45,6 +45,10 @@ public class SourceGroup
 {
 	protected final SortedSet< Integer > sourceIds;
 
+	private final bdv.viewer.state.r.ViewerState state;
+
+	private final bdv.viewer.state.r.SourceGroup handle;
+
 	protected String name;
 
 	/**
@@ -58,8 +62,17 @@ public class SourceGroup
 	 */
 	protected boolean isCurrent;
 
+	public SourceGroup( final bdv.viewer.state.r.ViewerState state, final bdv.viewer.state.r.SourceGroup handle )
+	{
+		this.state = state;
+		this.handle = handle;
+		sourceIds = Collections.synchronizedSortedSet( new TreeSet<>() );
+	}
+
 	public SourceGroup( final String name )
 	{
+		this.state = null;
+		this.handle = null;
 		sourceIds = Collections.synchronizedSortedSet( new TreeSet<>() );
 		this.name = name;
 		isActive = true;
@@ -68,13 +81,15 @@ public class SourceGroup
 
 	protected SourceGroup( final SourceGroup g )
 	{
-		synchronized ( g.sourceIds )
+		this.state = null;
+		this.handle = null;
+		synchronized ( g.getSourceIds() )
 		{
-			sourceIds = Collections.synchronizedSortedSet( new TreeSet<>( g.sourceIds ) );
+			sourceIds = Collections.synchronizedSortedSet( new TreeSet<>( g.getSourceIds() ) );
 		}
-		name = g.name;
-		isActive = g.isActive;
-		isCurrent = g.isCurrent;
+		name = g.getName();
+		isActive = g.isActive();
+		isCurrent = g.isCurrent();
 	}
 
 	public SourceGroup copy()
@@ -84,26 +99,49 @@ public class SourceGroup
 
 	public void addSource( final int sourceId )
 	{
-		sourceIds.add( sourceId );
+		if ( handle == null )
+			sourceIds.add( sourceId );
+		else
+		{
+			state.addSourceToGroup( state.getSources().get( sourceId ), handle );
+			sourceIds.clear();
+			state.getSourcesInGroup( handle ).forEach( source -> sourceIds.add( state.getSources().indexOf( source ) ) );
+		}
 	}
 
 	public void removeSource( final int sourceId )
 	{
-		sourceIds.remove( sourceId );
+		if ( handle == null )
+			sourceIds.remove( sourceId );
+		else
+		{
+			state.removeSourceFromGroup( state.getSources().get( sourceId ), handle );
+			sourceIds.clear();
+			state.getSourcesInGroup( handle ).forEach( source -> sourceIds.add( state.getSources().indexOf( source ) ) );
+		}
 	}
 
 	public SortedSet< Integer > getSourceIds()
 	{
+		if ( handle != null )
+		{
+			sourceIds.clear();
+			state.getSourcesInGroup( handle ).forEach( source -> sourceIds.add( state.getSources().indexOf( source ) ) );
+		}
 		return sourceIds;
 	}
 
 	public String getName()
 	{
+		if ( handle != null )
+			name = state.getGroupName( handle );
 		return name;
 	}
 
 	public void setName( final String name )
 	{
+		if ( handle != null )
+			state.setGroupName( handle, name );
 		this.name = name;
 	}
 
@@ -114,6 +152,8 @@ public class SourceGroup
 	 */
 	public boolean isActive()
 	{
+		if ( handle != null )
+			isActive = state.isGroupActive( handle );
 		return isActive;
 	}
 
@@ -122,6 +162,8 @@ public class SourceGroup
 	 */
 	public void setActive( final boolean isActive )
 	{
+		if ( handle != null )
+			state.setGroupActive( handle, isActive );
 		this.isActive = isActive;
 	}
 
@@ -132,6 +174,8 @@ public class SourceGroup
 	 */
 	public boolean isCurrent()
 	{
+		if ( handle != null )
+			isCurrent = state.isCurrentGroup( handle );
 		return isCurrent;
 	}
 
@@ -140,6 +184,8 @@ public class SourceGroup
 	 */
 	public void setCurrent( final boolean isCurrent )
 	{
+		if ( handle != null && isCurrent )
+			state.setCurrentGroup( handle );
 		this.isCurrent = isCurrent;
 	}
 

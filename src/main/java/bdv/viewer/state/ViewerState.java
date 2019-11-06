@@ -37,7 +37,9 @@ import bdv.viewer.SourceAndConverter;
 import bdv.viewer.state.r.BasicViewerState;
 import bdv.viewer.state.r.SynchronizedViewerState;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import net.imglib2.realtransform.AffineTransform3D;
 
@@ -82,6 +84,7 @@ public class ViewerState
 			final bdv.viewer.state.r.SourceGroup handle = new bdv.viewer.state.r.SourceGroup();
 			state.addGroup( handle );
 			state.setGroupName( handle, sourceGroup.getName() );
+			state.setGroupActive( handle, sourceGroup.isActive() );
 			sourceGroup.getSourceIds().forEach( i -> state.addSourceToGroup( sources.get( i ), handle ) );
 		} );
 		state.setNumTimepoints( numTimePoints );
@@ -342,6 +345,7 @@ public class ViewerState
 		return state.getSources().size();
 	}
 
+	final Map< bdv.viewer.state.r.SourceGroup, SourceGroup > handleToSourceGroup = new HashMap<>();
 	/**
 	 * Returns a list of all source groups.
 	 *
@@ -352,9 +356,10 @@ public class ViewerState
 		List< SourceGroup > sourceGroups = new ArrayList<>();
 		for ( bdv.viewer.state.r.SourceGroup handle : state.getGroups() )
 		{
-			SourceGroup g = new SourceGroup( state.getGroupName( handle ) );
-			state.getSourcesInGroup( handle ).forEach( s -> g.addSource( state.getSources().indexOf( s ) ) );
-			sourceGroups.add( g );
+			sourceGroups.add( handleToSourceGroup.computeIfAbsent( handle, h -> {
+				SourceGroup g = new SourceGroup( state, handle );
+				return g;
+			} ) );
 		}
 		return sourceGroups;
 	}
