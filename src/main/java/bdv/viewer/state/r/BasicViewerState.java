@@ -129,15 +129,18 @@ public class BasicViewerState implements ViewerState
 		groupIndices = new TObjectIntHashMap<>( DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR, NO_ENTRY_VALUE );
 	}
 
+	/*
 	BasicViewerState( final BasicViewerState other )
 	{
 		listeners = new Listeners.List<>();
+
 		numTimepoints = other.numTimepoints;
 		currentTimepoint = other.currentTimepoint;
 		viewerTransform = new AffineTransform3D();
 		viewerTransform.set( other.viewerTransform );
 		interpolation = other.interpolation;
 		displayMode = other.displayMode;
+
 		sources = new ArrayList<>( other.sources );
 		unmodifiableSources = new UnmodifiableSources();
 		activeSources = new HashSet<>( other.activeSources );
@@ -145,6 +148,7 @@ public class BasicViewerState implements ViewerState
 		currentSource = other.currentSource;
 		sourceIndices = new TObjectIntHashMap<>( other.sourceIndices );
 		previousVisibleSources = new HashSet<>( other.previousVisibleSources );
+
 		groups = new ArrayList<>( other.groups );
 		unmodifiableGroups = new UnmodifiableGroups();
 		groupData = new HashMap<>();
@@ -153,6 +157,45 @@ public class BasicViewerState implements ViewerState
 		unmodifiableActiveGroups = Collections.unmodifiableSet( activeGroups );
 		currentGroup = other.currentGroup;
 		groupIndices = new TObjectIntHashMap<>( other.groupIndices );
+	}
+	*/
+
+	public BasicViewerState( final ViewerState other )
+	{
+		listeners = new Listeners.List<>();
+
+		numTimepoints = other.getNumTimepoints();
+		currentTimepoint = other.getCurrentTimepoint();
+		viewerTransform = other.getViewerTransform();
+		interpolation = other.getInterpolation();
+		displayMode = other.getDisplayMode();
+
+		sources = new ArrayList<>( other.getSources() );
+		unmodifiableSources = new UnmodifiableSources();
+		activeSources = new HashSet<>( other.getActiveSources() );
+		unmodifiableActiveSources = Collections.unmodifiableSet( activeSources );
+		currentSource = other.getCurrentSource();
+		sourceIndices = new TObjectIntHashMap<>( DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR, NO_ENTRY_VALUE );
+		for ( int i = 0; i < sources.size(); ++i )
+			sourceIndices.put( sources.get( i ), i );
+		previousVisibleSources = new HashSet<>( other.getVisibleSources() );
+
+		groups = new ArrayList<>( other.getGroups() );
+		unmodifiableGroups = new UnmodifiableGroups();
+		groupData = new HashMap<>();
+		other.getGroups().forEach( group ->
+		{
+			GroupData data = new GroupData();
+			data.name = other.getGroupName( group );
+			data.sources.addAll( other.getSourcesInGroup( group ) );
+			groupData.put( group, data );
+		});
+		activeGroups = new HashSet<>( other.getActiveGroups() );
+		unmodifiableActiveGroups = Collections.unmodifiableSet( activeGroups );
+		currentGroup = other.getCurrentGroup();
+		groupIndices = new TObjectIntHashMap<>( DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR, NO_ENTRY_VALUE );
+		for ( int i = 0; i < groups.size(); ++i )
+			groupIndices.put( groups.get( i ), i );
 	}
 
 	public Listeners< ViewerStateChangeListener > changeListeners()
