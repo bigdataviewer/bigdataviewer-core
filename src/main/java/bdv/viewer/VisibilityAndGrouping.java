@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -29,6 +29,14 @@
  */
 package bdv.viewer;
 
+import bdv.viewer.state.SourceGroup;
+import bdv.viewer.state.SourceState;
+import bdv.viewer.state.r.ViewerState;
+import bdv.viewer.state.r.ViewerStateChange;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 import static bdv.viewer.DisplayMode.FUSED;
 import static bdv.viewer.DisplayMode.FUSEDGROUP;
 import static bdv.viewer.DisplayMode.GROUP;
@@ -41,15 +49,6 @@ import static bdv.viewer.VisibilityAndGrouping.Event.GROUP_NAME_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.SOURCE_ACTVITY_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.SOURCE_TO_GROUP_ASSIGNMENT_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.VISIBILITY_CHANGED;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.SortedSet;
-import java.util.concurrent.CopyOnWriteArrayList;
-
-import bdv.viewer.state.SourceGroup;
-import bdv.viewer.state.SourceState;
-import bdv.viewer.state.ViewerState;
 
 /**
  * Manage visibility and currentness of sources and groups, as well as grouping
@@ -99,32 +98,43 @@ public class VisibilityAndGrouping
 
 	protected final CopyOnWriteArrayList< UpdateListener > updateListeners;
 
-	protected final ViewerState state;
+	private final bdv.viewer.state.ViewerState deprecatedViewerState;
+	private final ViewerState state;
 
-	public VisibilityAndGrouping( final ViewerState viewerState )
+	public VisibilityAndGrouping( final bdv.viewer.state.ViewerState viewerState )
 	{
 		updateListeners = new CopyOnWriteArrayList<>();
-		state = viewerState;
+		deprecatedViewerState = viewerState;
+		state = viewerState.getState();
+		viewerState.getState().changeListeners().add( e ->
+		{
+			if ( e == ViewerStateChange.VISIBILITY_CHANGED )
+				update( VISIBILITY_CHANGED );
+		} );
+		viewerState.getState().changeListeners().add( e ->
+		{
+			// log
+		} );
 	}
 
 	public int numSources()
 	{
-		return state.numSources();
+		return state.getSources().size();
 	}
 
 	public List< SourceState< ? > > getSources()
 	{
-		return state.getSources();
+		return deprecatedViewerState.getSources();
 	}
 
 	public int numGroups()
 	{
-		return state.numSourceGroups();
+		return state.getGroups().size();
 	}
 
 	public List< SourceGroup > getSourceGroups()
 	{
-		return state.getSourceGroups();
+		return deprecatedViewerState.getSourceGroups();
 	}
 
 	public synchronized DisplayMode getDisplayMode()
@@ -135,13 +145,12 @@ public class VisibilityAndGrouping
 	public synchronized void setDisplayMode( final DisplayMode displayMode )
 	{
 		state.setDisplayMode( displayMode );
-		checkVisibilityChange();
 		update( DISPLAY_MODE_CHANGED );
 	}
 
 	public synchronized int getCurrentSource()
 	{
-		return state.getCurrentSource();
+		return state.getSources().indexOf( state.getCurrentSource() );
 	}
 
 	/**
@@ -154,15 +163,13 @@ public class VisibilityAndGrouping
 		if ( sourceIndex < 0 || sourceIndex >= numSources() )
 			return;
 
-		state.setCurrentSource( sourceIndex );
-		checkVisibilityChange();
+		state.setCurrentSource( state.getSources().get( sourceIndex ) );
 		update( CURRENT_SOURCE_CHANGED );
 	};
 
 	public synchronized void setCurrentSource( final Source< ? > source )
 	{
-		state.setCurrentSource( source );
-		checkVisibilityChange();
+		state.setCurrentSource( soc( source ) );
 		update( CURRENT_SOURCE_CHANGED );
 	};
 
@@ -171,7 +178,7 @@ public class VisibilityAndGrouping
 		if ( sourceIndex < 0 || sourceIndex >= numSources() )
 			return false;
 
-		return state.getSources().get( sourceIndex ).isActive();
+		return state.isSourceActive( state.getSources().get( sourceIndex ) );
 	}
 
 	/**
@@ -185,9 +192,8 @@ public class VisibilityAndGrouping
 		if ( sourceIndex < 0 || sourceIndex >= numSources() )
 			return;
 
-		state.getSources().get( sourceIndex ).setActive( isActive );
+		state.setSourceActive( state.getSources().get( sourceIndex ), isActive );
 		update( SOURCE_ACTVITY_CHANGED );
-		checkVisibilityChange();
 	}
 
 	/**
@@ -198,18 +204,13 @@ public class VisibilityAndGrouping
 	 */
 	public synchronized void setSourceActive( final Source< ? > source, final boolean isActive )
 	{
-		for ( final SourceState< ? > s : state.getSources() )
-		{
-			if ( s.getSpimSource().equals( source ) )
-				s.setActive( isActive );
-		}
+		state.setSourceActive( soc( source ), isActive );
 		update( SOURCE_ACTVITY_CHANGED );
-		checkVisibilityChange();
 	}
 
 	public synchronized int getCurrentGroup()
 	{
-		return state.getCurrentGroup();
+		return state.getGroups().indexOf( state.getCurrentGroup() );
 	}
 
 	/**
@@ -222,14 +223,14 @@ public class VisibilityAndGrouping
 		if ( groupIndex < 0 || groupIndex >= numGroups() )
 			return;
 
-		state.setCurrentGroup( groupIndex );
-		checkVisibilityChange();
+		final bdv.viewer.state.r.SourceGroup group = state.getGroups().get( groupIndex );
+		state.setCurrentGroup( group );
 		update( CURRENT_GROUP_CHANGED );
-		final SortedSet< Integer > ids = state.getSourceGroups().get( groupIndex ).getSourceIds();
-		if ( !ids.isEmpty() )
+		final List< SourceAndConverter< ? > > sources = new ArrayList<>( state.getSourcesInGroup( group ) );
+		if ( ! sources.isEmpty() )
 		{
-			state.setCurrentSource( ids.first() );
-			update( CURRENT_SOURCE_CHANGED );
+			sources.sort( state.sourceOrder() );
+			state.setCurrentSource( sources.get( 0 ) );
 		}
 	}
 
@@ -238,7 +239,7 @@ public class VisibilityAndGrouping
 		if ( groupIndex < 0 || groupIndex >= numGroups() )
 			return false;
 
-		return state.getSourceGroups().get( groupIndex ).isActive();
+		return state.isGroupActive( state.getGroups().get( groupIndex ) );
 	}
 
 	/**
@@ -252,9 +253,8 @@ public class VisibilityAndGrouping
 		if ( groupIndex < 0 || groupIndex >= numGroups() )
 			return;
 
-		state.getSourceGroups().get( groupIndex ).setActive( isActive );
+		state.setGroupActive( state.getGroups().get( groupIndex ), isActive );
 		update( GROUP_ACTIVITY_CHANGED );
-		checkVisibilityChange();
 	}
 
 	public synchronized void setGroupName( final int groupIndex, final String name )
@@ -262,7 +262,7 @@ public class VisibilityAndGrouping
 		if ( groupIndex < 0 || groupIndex >= numGroups() )
 			return;
 
-		state.getSourceGroups().get( groupIndex ).setName( name );
+		state.setGroupName( state.getGroups().get( groupIndex ), name );
 		update( GROUP_NAME_CHANGED );
 	}
 
@@ -271,9 +271,8 @@ public class VisibilityAndGrouping
 		if ( groupIndex < 0 || groupIndex >= numGroups() )
 			return;
 
-		state.getSourceGroups().get( groupIndex ).addSource( sourceIndex );
+		state.addSourceToGroup( state.getSources().get( sourceIndex ), state.getGroups().get( groupIndex ) );
 		update( SOURCE_TO_GROUP_ASSIGNMENT_CHANGED );
-		checkVisibilityChange();
 	}
 
 	public synchronized void removeSourceFromGroup( final int sourceIndex, final int groupIndex )
@@ -281,9 +280,8 @@ public class VisibilityAndGrouping
 		if ( groupIndex < 0 || groupIndex >= numGroups() )
 			return;
 
-		state.getSourceGroups().get( groupIndex ).removeSource( sourceIndex );
+		state.removeSourceFromGroup( state.getSources().get( sourceIndex ), state.getGroups().get( groupIndex ) );
 		update( SOURCE_TO_GROUP_ASSIGNMENT_CHANGED );
-		checkVisibilityChange();
 	}
 
 	/**
@@ -334,38 +332,7 @@ public class VisibilityAndGrouping
 
 	public synchronized boolean isSourceVisible( final int sourceIndex )
 	{
-		return state.isSourceVisible( sourceIndex );
-	}
-
-	protected boolean[] previousVisibleSources = null;
-
-	protected boolean[] currentVisibleSources = null;
-
-	protected void checkVisibilityChange()
-	{
-		final boolean[] tmp = previousVisibleSources;
-		previousVisibleSources = currentVisibleSources;
-		currentVisibleSources = tmp;
-
-		final int n = numSources();
-		if ( currentVisibleSources == null || currentVisibleSources.length != n )
-			currentVisibleSources = new boolean[ n ];
-		Arrays.fill( currentVisibleSources, false );
-		for ( final int i : state.getVisibleSourceIndices() )
-			currentVisibleSources[ i ] = true;
-
-		if ( previousVisibleSources == null || previousVisibleSources.length != n )
-		{
-			update( VISIBILITY_CHANGED );
-			return;
-		}
-
-		for ( int i = 0; i < currentVisibleSources.length; ++i )
-			if ( currentVisibleSources[ i ] != previousVisibleSources[ i ] )
-			{
-				update( VISIBILITY_CHANGED );
-				return;
-			}
+		return state.isSourceVisibleAndPresent( state.getSources().get( sourceIndex ) );
 	}
 
 	protected void update( final int id )
@@ -383,5 +350,13 @@ public class VisibilityAndGrouping
 	public void removeUpdateListener( final UpdateListener l )
 	{
 		updateListeners.remove( l );
+	}
+
+	private SourceAndConverter< ? > soc( Source< ? > source )
+	{
+		for ( SourceAndConverter< ? > soc : state.getSources() )
+			if ( soc.getSpimSource() == source )
+				return soc;
+		return null;
 	}
 }

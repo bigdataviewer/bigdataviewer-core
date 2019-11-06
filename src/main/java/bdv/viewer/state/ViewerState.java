@@ -35,6 +35,7 @@ import bdv.viewer.Interpolation;
 import bdv.viewer.Source;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.state.r.BasicViewerState;
+import bdv.viewer.state.r.SynchronizedViewerState;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -54,7 +55,12 @@ import static bdv.viewer.Interpolation.NEARESTNEIGHBOR;
 @Deprecated
 public class ViewerState
 {
-	final BasicViewerState state;
+	public SynchronizedViewerState getState()
+	{
+		return state;
+	}
+
+	final SynchronizedViewerState state;
 
 	public ViewerState( final List< SourceAndConverter< ? > > sources, final int numTimePoints )
 	{
@@ -69,7 +75,7 @@ public class ViewerState
 	 */
 	public ViewerState( final List< SourceAndConverter< ? > > sources, final List< SourceGroup > sourceGroups, final int numTimePoints )
 	{
-		state = new BasicViewerState();
+		state = new SynchronizedViewerState( new BasicViewerState() );
 		state.addSources( sources );
 		state.setSourcesActive( sources, true );
 		sourceGroups.forEach( sourceGroup -> {
