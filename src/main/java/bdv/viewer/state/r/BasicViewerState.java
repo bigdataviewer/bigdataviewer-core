@@ -246,7 +246,7 @@ public class BasicViewerState implements ViewerState
 	 * The returned {@code List} reflects changes to the viewer state.
 	 * It is unmodifiable and not thread-safe.
 	 *
-	 * @return the set of active sources
+	 * @return the list of sources
 	 */
 	public List< SourceAndConverter< ? > > getSources()
 	{
@@ -279,7 +279,7 @@ public class BasicViewerState implements ViewerState
 	/**
 	 * Make {@code source} the current source.
 	 * Returns {@code true}, if current source changes as a result of the call.
-	 * Returns {@code false}, if {@code source} is already the current source or is not valid (not in the BDV sources list).
+	 * Returns {@code false}, if {@code source} is already the current source.
 	 *
 	 * @param source
 	 * 		the source to make current. Passing {@code null} clears the current source.
@@ -746,7 +746,7 @@ public class BasicViewerState implements ViewerState
 	 * The returned {@code List} reflects changes to the viewer state.
 	 * It is unmodifiable and not thread-safe.
 	 *
-	 * @return the set of active sources
+	 * @return the list of groups
 	 */
 	public List< SourceGroup > getGroups()
 	{

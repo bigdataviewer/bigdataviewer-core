@@ -1,40 +1,13 @@
 package bdv.viewer.state.r;
 
-import bdv.util.Affine3DHelpers;
 import bdv.viewer.DisplayMode;
 import bdv.viewer.Interpolation;
 import bdv.viewer.SourceAndConverter;
-import gnu.trove.map.TObjectIntMap;
-import gnu.trove.map.hash.TObjectIntHashMap;
-import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import net.imglib2.realtransform.AffineTransform3D;
-import org.scijava.listeners.Listeners;
-
-import static bdv.viewer.state.r.ViewerStateChange.CURRENT_GROUP_CHANGED;
-import static bdv.viewer.state.r.ViewerStateChange.CURRENT_SOURCE_CHANGED;
-import static bdv.viewer.state.r.ViewerStateChange.CURRENT_TIMEPOINT_CHANGED;
-import static bdv.viewer.state.r.ViewerStateChange.DISPLAY_MODE_CHANGED;
-import static bdv.viewer.state.r.ViewerStateChange.GROUP_ACTIVITY_CHANGED;
-import static bdv.viewer.state.r.ViewerStateChange.GROUP_NAME_CHANGED;
-import static bdv.viewer.state.r.ViewerStateChange.INTERPOLATION_CHANGED;
-import static bdv.viewer.state.r.ViewerStateChange.NUM_GROUPS_CHANGED;
-import static bdv.viewer.state.r.ViewerStateChange.NUM_SOURCES_CHANGED;
-import static bdv.viewer.state.r.ViewerStateChange.NUM_TIMEPOINTS_CHANGED;
-import static bdv.viewer.state.r.ViewerStateChange.SOURCE_ACTIVITY_CHANGED;
-import static bdv.viewer.state.r.ViewerStateChange.SOURCE_TO_GROUP_ASSIGNMENT_CHANGED;
-import static bdv.viewer.state.r.ViewerStateChange.VIEWER_TRANSFORM_CHANGED;
-import static bdv.viewer.state.r.ViewerStateChange.VISIBILITY_CHANGED;
-import static gnu.trove.impl.Constants.DEFAULT_CAPACITY;
-import static gnu.trove.impl.Constants.DEFAULT_LOAD_FACTOR;
 
 /**
  * Holds viewer state and exposes query and modification methods.
@@ -109,7 +82,7 @@ public interface ViewerState
 	 * The returned {@code List} reflects changes to the viewer state.
 	 * It is unmodifiable and not thread-safe.
 	 *
-	 * @return the set of active sources
+	 * @return the list of sources
 	 */
 	List< SourceAndConverter< ? > > getSources();
 
@@ -133,7 +106,7 @@ public interface ViewerState
 	/**
 	 * Make {@code source} the current source (optional operation).
 	 * Returns {@code true}, if current source changes as a result of the call.
-	 * Returns {@code false}, if {@code source} is already the current source or is not valid (not in the BDV sources list).
+	 * Returns {@code false}, if {@code source} is already the current source.
 	 *
 	 * @param source
 	 * 		the source to make current. Passing {@code null} clears the current source.
@@ -382,7 +355,7 @@ public interface ViewerState
 	 * The returned {@code List} reflects changes to the viewer state.
 	 * It is unmodifiable and not thread-safe.
 	 *
-	 * @return the set of active sources
+	 * @return the list of groups
 	 */
 	List< SourceGroup > getGroups();
 
