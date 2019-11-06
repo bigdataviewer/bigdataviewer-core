@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -39,6 +39,10 @@ import static bdv.viewer.VisibilityAndGrouping.Event.SOURCE_ACTVITY_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.SOURCE_TO_GROUP_ASSIGNMENT_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.VISIBILITY_CHANGED;
 
+import bdv.viewer.SourceAndConverter;
+import bdv.viewer.state.r.SynchronizedViewerState;
+import bdv.viewer.state.r.ViewerStateChange;
+import bdv.viewer.state.r.ViewerStateChangeListener;
 import java.awt.BorderLayout;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;
@@ -49,8 +53,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Consumer;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ActionMap;
@@ -89,8 +98,7 @@ public class VisibilityAndGroupingDialog extends JDialog
 	{
 		super( owner, "visibility and grouping", false );
 
-		visibilityPanel = new VisibilityPanel( visibilityAndGrouping );
-		visibilityAndGrouping.addUpdateListener( visibilityPanel );
+		visibilityPanel = new VisibilityPanel( visibilityAndGrouping.getState() );
 		visibilityPanel.setBorder( BorderFactory.createCompoundBorder(
 				BorderFactory.createEmptyBorder( 4, 2, 4, 2 ),
 				BorderFactory.createCompoundBorder(
@@ -146,37 +154,39 @@ public class VisibilityAndGroupingDialog extends JDialog
 		modePanel.update();
 	}
 
-	public static class VisibilityPanel extends JPanel implements VisibilityAndGrouping.UpdateListener
+	public static class VisibilityPanel extends JPanel implements ViewerStateChangeListener
 	{
 		private static final long serialVersionUID = 1L;
 
-		private final VisibilityAndGrouping visibility;
+		private final SynchronizedViewerState state;
 
-		private final ArrayList< JRadioButton > currentButtons;
+		private final Map< SourceAndConverter< ? >, JRadioButton > currentButtonsMap = new HashMap<>();
 
-		private final ArrayList< JCheckBox > fusedBoxes;
+		private final ArrayList< Consumer< Set< SourceAndConverter< ? > > > > updateFusedBoxes = new ArrayList<>();
 
-		private final ArrayList< JCheckBox > visibleBoxes;
+		private final ArrayList< Consumer< Set< SourceAndConverter< ? > > > > updateVisibleBoxes = new ArrayList<>();
 
-		public VisibilityPanel( final VisibilityAndGrouping visibilityAndGrouping )
+		public VisibilityPanel( final SynchronizedViewerState state )
 		{
 			super( new GridBagLayout() );
-			this.visibility = visibilityAndGrouping;
-			currentButtons = new ArrayList<>();
-			fusedBoxes = new ArrayList<>();
-			visibleBoxes = new ArrayList<>();
-			recreateContent();
-			update();
+			this.state = state;
+			state.changeListeners().add( this );
+			synchronized ( state )
+			{
+				recreateContent();
+				update();
+			}
 		}
 
 		protected void recreateContent()
 		{
 			removeAll();
-			currentButtons.clear();
-			fusedBoxes.clear();
-			visibleBoxes.clear();
+			currentButtonsMap.clear();
+			updateFusedBoxes.clear();
+			updateVisibleBoxes.clear();
 
-			final int numSources = visibility.numSources();
+			final List< SourceAndConverter < ? > > sources = state.getSources();
+
 			final GridBagConstraints c = new GridBagConstraints();
 			c.insets = new Insets( 0, 5, 0, 5 );
 
@@ -186,8 +196,8 @@ public class VisibilityAndGroupingDialog extends JDialog
 			add( new JLabel( "source" ), c );
 			c.anchor = GridBagConstraints.LINE_END;
 			c.gridy = GridBagConstraints.RELATIVE;
-			for ( int i = 0; i < numSources; ++i )
-				add( new JLabel( visibility.getSources().get( i ).getSpimSource().getName() ), c );
+			for ( final SourceAndConverter< ? > source : sources )
+				add( new JLabel( source.getSpimSource().getName() ), c );
 
 			// "current" radio-buttons
 			c.anchor = GridBagConstraints.CENTER;
@@ -196,20 +206,14 @@ public class VisibilityAndGroupingDialog extends JDialog
 			add( new JLabel( "current" ), c );
 			c.gridy = GridBagConstraints.RELATIVE;
 			final ButtonGroup currentButtonGroup = new ButtonGroup();
-			for ( int i = 0; i < numSources; ++i )
+			for ( final SourceAndConverter< ? > source : sources )
 			{
 				final JRadioButton b = new JRadioButton();
-				final int sourceIndex = i;
-				b.addActionListener( new ActionListener()
-				{
-					@Override
-					public void actionPerformed( final ActionEvent e )
-					{
-						if ( b.isSelected() )
-							visibility.setCurrentSource( sourceIndex );
-					}
+				b.addActionListener( e -> {
+					if ( b.isSelected() )
+						state.setCurrentSource( source );
 				} );
-				currentButtons.add( b );
+				currentButtonsMap.put( source, b );
 				currentButtonGroup.add( b );
 				add( b, c );
 			}
@@ -219,19 +223,11 @@ public class VisibilityAndGroupingDialog extends JDialog
 			c.gridy = 0;
 			add( new JLabel( "active in fused" ), c );
 			c.gridy = GridBagConstraints.RELATIVE;
-			for ( int i = 0; i < numSources; ++i )
+			for ( final SourceAndConverter< ? > source : sources )
 			{
 				final JCheckBox b = new JCheckBox();
-				final int sourceIndex = i;
-				b.addActionListener( new ActionListener()
-				{
-					@Override
-					public void actionPerformed( final ActionEvent e )
-					{
-						visibility.setSourceActive( sourceIndex, b.isSelected() );
-					}
-				} );
-				fusedBoxes.add( b );
+				b.addActionListener( e -> state.setSourceActive( source, b.isSelected() ) );
+				updateFusedBoxes.add( active -> b.setSelected( active.contains( source ) ) );
 				add( b, c );
 			}
 
@@ -240,10 +236,10 @@ public class VisibilityAndGroupingDialog extends JDialog
 			c.gridy = 0;
 			add( new JLabel( "visible" ), c );
 			c.gridy = GridBagConstraints.RELATIVE;
-			for ( int i = 0; i < numSources; ++i )
+			for ( final SourceAndConverter< ? > source : sources )
 			{
 				final JCheckBox b = new JCheckBox();
-				visibleBoxes.add( b );
+				updateVisibleBoxes.add( visible -> b.setSelected( visible.contains( source ) ) );
 				b.setEnabled( false );
 				add( b, c );
 			}
@@ -256,41 +252,33 @@ public class VisibilityAndGroupingDialog extends JDialog
 
 		protected void update()
 		{
-			synchronized ( visibility )
-			{
-				final int numSources = visibility.numSources();
-				if ( currentButtons.size() != numSources )
-					recreateContent();
+			final SourceAndConverter< ? > currentSource = state.getCurrentSource();
+			if ( currentSource == null )
+				currentButtonsMap.values().forEach( b -> b.setSelected( false ) );
+			else
+				currentButtonsMap.get( currentSource ).setSelected( true );
 
-				if ( numSources > 0 )
-				{
-					currentButtons.get( visibility.getCurrentSource() ).setSelected( true );
-					for ( int i = 0; i < numSources; ++i )
-					{
-						fusedBoxes.get( i ).setSelected( visibility.isSourceActive( i ) );
-						visibleBoxes.get( i ).setSelected( visibility.isSourceVisible( i ) );
-					}
-				}
-			}
+			final Set< SourceAndConverter< ? > > activeSources = new HashSet<>( state.getActiveSources() );
+			updateFusedBoxes.forEach( c -> c.accept( activeSources ) );
+
+			final Set< SourceAndConverter< ? > > visibleSources = state.getVisibleSources();
+			updateVisibleBoxes.forEach( c -> c.accept( visibleSources ) );
 		}
 
 		@Override
-		public void visibilityChanged( final Event e )
+		public void viewerStateChanged( final ViewerStateChange change )
 		{
-			synchronized ( visibility )
+			switch ( change )
 			{
-				if ( currentButtons.size() != visibility.numSources() )
-					recreateContent();
-
-				switch ( e.id )
-				{
-				case CURRENT_SOURCE_CHANGED:
-				case SOURCE_ACTVITY_CHANGED:
-				case VISIBILITY_CHANGED:
-				case NUM_SOURCES_CHANGED:
-					update();
-					break;
-				}
+			case CURRENT_SOURCE_CHANGED:
+			case SOURCE_ACTIVITY_CHANGED:
+			case VISIBILITY_CHANGED:
+				update();
+				break;
+			case NUM_SOURCES_CHANGED:
+				recreateContent();
+				update();
+				break;
 			}
 		}
 	}

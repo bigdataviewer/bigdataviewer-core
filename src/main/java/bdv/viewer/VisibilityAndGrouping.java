@@ -31,6 +31,7 @@ package bdv.viewer;
 
 import bdv.viewer.state.SourceGroup;
 import bdv.viewer.state.SourceState;
+import bdv.viewer.state.r.SynchronizedViewerState;
 import bdv.viewer.state.r.ViewerState;
 import bdv.viewer.state.r.ViewerStateChange;
 import java.util.ArrayList;
@@ -99,7 +100,13 @@ public class VisibilityAndGrouping
 	protected final CopyOnWriteArrayList< UpdateListener > updateListeners;
 
 	private final bdv.viewer.state.ViewerState deprecatedViewerState;
-	private final ViewerState state;
+
+	private final SynchronizedViewerState state;
+
+	public SynchronizedViewerState getState()
+	{
+		return state;
+	}
 
 	public VisibilityAndGrouping( final bdv.viewer.state.ViewerState viewerState )
 	{
