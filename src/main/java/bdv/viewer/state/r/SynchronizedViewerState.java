@@ -54,9 +54,14 @@ public class SynchronizedViewerState implements ViewerState
 		return state.changeListeners();
 	}
 
-	public SynchronizedViewerState copy()
+	/**
+	 * Get a snapshot of this ViewerState.
+	 *
+	 * @return unmodifiable copy of the current state
+	 */
+	public synchronized ViewerState snapshot()
 	{
-		return new SynchronizedViewerState( this.state.copy() );
+		return state.snapshot();
 	}
 
 	public synchronized Interpolation getInterpolation()
@@ -942,9 +947,12 @@ public class SynchronizedViewerState implements ViewerState
 	}
 
 	/**
-	 * BE CAREFUL!
-	 * TODO
+	 * Returns the wrapped {@code BasicViewerState}.
+	 * <p>
+	 * <em>When using this, explicit synchronization on this {@code SynchronizedViewerState} is required.
+	 * BE CAREFUL!</em>
 	 */
+	// TODO: REMOVE?
 	public BasicViewerState getWrappedState()
 	{
 		return state;

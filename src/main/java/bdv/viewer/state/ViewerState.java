@@ -103,7 +103,10 @@ public class ViewerState
 	 */
 	protected ViewerState( final ViewerState s )
 	{
-		state = s.state.copy();
+		synchronized ( s.state )
+		{
+			state = new SynchronizedViewerState( new BasicViewerState( s.state ) );
+		}
 	}
 
 	public synchronized ViewerState copy()

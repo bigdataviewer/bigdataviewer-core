@@ -129,37 +129,6 @@ public class BasicViewerState implements ViewerState
 		groupIndices = new TObjectIntHashMap<>( DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR, NO_ENTRY_VALUE );
 	}
 
-	/*
-	BasicViewerState( final BasicViewerState other )
-	{
-		listeners = new Listeners.List<>();
-
-		numTimepoints = other.numTimepoints;
-		currentTimepoint = other.currentTimepoint;
-		viewerTransform = new AffineTransform3D();
-		viewerTransform.set( other.viewerTransform );
-		interpolation = other.interpolation;
-		displayMode = other.displayMode;
-
-		sources = new ArrayList<>( other.sources );
-		unmodifiableSources = new UnmodifiableSources();
-		activeSources = new HashSet<>( other.activeSources );
-		unmodifiableActiveSources = Collections.unmodifiableSet( activeSources );
-		currentSource = other.currentSource;
-		sourceIndices = new TObjectIntHashMap<>( other.sourceIndices );
-		previousVisibleSources = new HashSet<>( other.previousVisibleSources );
-
-		groups = new ArrayList<>( other.groups );
-		unmodifiableGroups = new UnmodifiableGroups();
-		groupData = new HashMap<>();
-		other.groupData.forEach( ( group, data ) -> groupData.put( group, new GroupData( data ) ) );
-		activeGroups = new HashSet<>( other.activeGroups );
-		unmodifiableActiveGroups = Collections.unmodifiableSet( activeGroups );
-		currentGroup = other.currentGroup;
-		groupIndices = new TObjectIntHashMap<>( other.groupIndices );
-	}
-	*/
-
 	public BasicViewerState( final ViewerState other )
 	{
 		listeners = new Listeners.List<>();
@@ -203,9 +172,14 @@ public class BasicViewerState implements ViewerState
 		return listeners;
 	}
 
-	public BasicViewerState copy()
+	/**
+	 * Get a snapshot of this ViewerState.
+	 *
+	 * @return unmodifiable copy of the current state
+	 */
+	public ViewerState snapshot()
 	{
-		return new BasicViewerState( this );
+		return new UnmodifiableViewerState( new BasicViewerState( this ) );
 	}
 
 	public Interpolation getInterpolation()

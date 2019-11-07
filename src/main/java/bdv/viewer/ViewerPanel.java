@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -38,6 +38,7 @@ import static bdv.viewer.VisibilityAndGrouping.Event.NUM_SOURCES_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.SOURCE_ACTVITY_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.VISIBILITY_CHANGED;
 
+import bdv.viewer.state.r.SynchronizedViewerState;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
@@ -811,9 +812,15 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 *
 	 * @return a copy of the current {@link ViewerState}.
 	 */
+	@Deprecated
 	public ViewerState getState()
 	{
 		return state.copy();
+	}
+
+	public SynchronizedViewerState getViewerState()
+	{
+		return state.getState();
 	}
 
 	/**
@@ -1097,6 +1104,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 * visibility and currentness of sources and groups, as well as grouping of
 	 * sources, and display mode.
 	 */
+	@Deprecated
 	public VisibilityAndGrouping getVisibilityAndGrouping()
 	{
 		return visibilityAndGrouping;
