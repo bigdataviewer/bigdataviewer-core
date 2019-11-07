@@ -15,7 +15,7 @@ public class WrappedList< E > implements List< E >
 {
 	private final List< E > list;
 
-	public WrappedList( List< E > list )
+	public WrappedList( final List< E > list )
 	{
 		this.list = list;
 	}

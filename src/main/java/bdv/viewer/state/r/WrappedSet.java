@@ -14,7 +14,7 @@ public class WrappedSet< E > implements Set< E >
 {
 	private final Set< E > set;
 
-	public WrappedSet( Set< E > list )
+	public WrappedSet( final Set< E > list )
 	{
 		this.set = list;
 	}

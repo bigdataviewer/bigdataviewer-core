@@ -155,7 +155,7 @@ public class BasicViewerState implements ViewerState
 		groupData = new HashMap<>();
 		other.getGroups().forEach( group ->
 		{
-			GroupData data = new GroupData();
+			final GroupData data = new GroupData();
 			data.name = other.getGroupName( group );
 			data.sources.addAll( other.getSourcesInGroup( group ) );
 			groupData.put( group, data );
@@ -186,11 +186,13 @@ public class BasicViewerState implements ViewerState
 		return new UnmodifiableViewerState( new BasicViewerState( this ) );
 	}
 
+	@Override
 	public Interpolation getInterpolation()
 	{
 		return interpolation;
 	}
 
+	@Override
 	public void setInterpolation( final Interpolation i )
 	{
 		if ( interpolation != i )
@@ -200,11 +202,13 @@ public class BasicViewerState implements ViewerState
 		}
 	}
 
+	@Override
 	public DisplayMode getDisplayMode()
 	{
 		return displayMode;
 	}
 
+	@Override
 	public void setDisplayMode( final DisplayMode mode )
 	{
 		if ( displayMode != mode )
@@ -215,11 +219,13 @@ public class BasicViewerState implements ViewerState
 		}
 	}
 
+	@Override
 	public int getNumTimepoints()
 	{
 		return numTimepoints;
 	}
 
+	@Override
 	public void setNumTimepoints( final int n )
 	{
 		if ( numTimepoints != n )
@@ -231,11 +237,13 @@ public class BasicViewerState implements ViewerState
 		}
 	}
 
+	@Override
 	public int getCurrentTimepoint()
 	{
 		return currentTimepoint;
 	}
 
+	@Override
 	public void setCurrentTimepoint( final int t )
 	{
 		if ( currentTimepoint != t )
@@ -245,11 +253,13 @@ public class BasicViewerState implements ViewerState
 		}
 	}
 
+	@Override
 	public void getViewerTransform( final AffineTransform3D t )
 	{
 		t.set( viewerTransform );
 	}
 
+	@Override
 	public void setViewerTransform( final AffineTransform3D t )
 	{
 		if ( !Affine3DHelpers.equals( viewerTransform, t ) )
@@ -270,6 +280,7 @@ public class BasicViewerState implements ViewerState
 	 *
 	 * @return the list of sources
 	 */
+	@Override
 	public List< SourceAndConverter< ? > > getSources()
 	{
 		return unmodifiableSources;
@@ -281,6 +292,7 @@ public class BasicViewerState implements ViewerState
 	 *
 	 * @return the current source
 	 */
+	@Override
 	public SourceAndConverter< ? > getCurrentSource()
 	{
 		return currentSource;
@@ -293,6 +305,7 @@ public class BasicViewerState implements ViewerState
 	 * @param source the source. Passing {@code null} checks whether no source is current.
 	 * @return {@code true} if {@code source} is the current source
 	 */
+	@Override
 	public boolean isCurrentSource( final SourceAndConverter< ? > source )
 	{
 		return Objects.equals( source, currentSource );
@@ -311,6 +324,7 @@ public class BasicViewerState implements ViewerState
 	 * @throws IllegalArgumentException
 	 * 		if {@code source} is not contained in the state (and not {@code null}).
 	 */
+	@Override
 	public boolean setCurrentSource( final SourceAndConverter< ? > source )
 	{
 		checkSourcePresentAllowNull( source );
@@ -332,6 +346,7 @@ public class BasicViewerState implements ViewerState
 	 *
 	 * @return the set of active sources
 	 */
+	@Override
 	public Set< SourceAndConverter< ? > > getActiveSources()
 	{
 		return unmodifiableActiveSources;
@@ -347,6 +362,7 @@ public class BasicViewerState implements ViewerState
 	 * @throws IllegalArgumentException
 	 * 		if {@code source} is not contained in the state (and not {@code null}).
 	 */
+	@Override
 	public boolean isSourceActive( final SourceAndConverter< ? > source )
 	{
 		checkSourcePresent( source );
@@ -367,6 +383,7 @@ public class BasicViewerState implements ViewerState
 	 * @throws IllegalArgumentException
 	 * 		if {@code source} is not contained in the state (and not {@code null}).
 	 */
+	@Override
 	public boolean setSourceActive( final SourceAndConverter< ? > source, final boolean active )
 	{
 		checkSourcePresent( source );
@@ -393,6 +410,7 @@ public class BasicViewerState implements ViewerState
 	 * @throws IllegalArgumentException
 	 * 		if any element of {@code collection} is not contained in the state.
 	 */
+	@Override
 	public boolean setSourcesActive( final Collection< ? extends SourceAndConverter< ? > > collection, final boolean active )
 	{
 		checkSourcesPresent( collection );
@@ -424,6 +442,7 @@ public class BasicViewerState implements ViewerState
 	 * @throws IllegalArgumentException
 	 * 		if {@code source} is not contained in the state (and not {@code null}).
 	 */
+	@Override
 	public boolean isSourceVisible( final SourceAndConverter< ? > source )
 	{
 		checkSourcePresent( source );
@@ -438,7 +457,7 @@ public class BasicViewerState implements ViewerState
 		case FUSED:
 			return isSourceActive( source );
 		case FUSEDGROUP:
-			for ( SourceGroup group : activeGroups )
+			for ( final SourceGroup group : activeGroups )
 				if ( groupData.get( group ).sources.contains( source ) )
 					return true;
 			return false;
@@ -464,6 +483,7 @@ public class BasicViewerState implements ViewerState
 	 * @throws IllegalArgumentException
 	 * 		if {@code source} is not contained in the state (and not {@code null}).
 	 */
+	@Override
 	public boolean isSourceVisibleAndPresent( final SourceAndConverter< ? > source )
 	{
 		return isSourceVisible( source ) && source.getSpimSource().isPresent( currentTimepoint );
@@ -484,6 +504,7 @@ public class BasicViewerState implements ViewerState
 	 *
 	 * @return the set of visible sources
 	 */
+	@Override
 	public Set< SourceAndConverter< ? > > getVisibleSources()
 	{
 		final Set< SourceAndConverter< ? > > visible = new HashSet<>();
@@ -501,7 +522,7 @@ public class BasicViewerState implements ViewerState
 			visible.addAll( activeSources );
 			break;
 		case FUSEDGROUP:
-			for ( SourceGroup group : activeGroups )
+			for ( final SourceGroup group : activeGroups )
 				visible.addAll( groupData.get( group ).sources );
 			break;
 		}
@@ -524,6 +545,7 @@ public class BasicViewerState implements ViewerState
 	 *
 	 * @return the set of sources that are both visible and present
 	 */
+	@Override
 	public Set< SourceAndConverter< ? > > getVisibleAndPresentSources()
 	{
 		final Set< SourceAndConverter< ? > > visible = getVisibleSources();
@@ -539,6 +561,7 @@ public class BasicViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code source == null}
 	 */
+	@Override
 	public boolean containsSource( final SourceAndConverter< ? > source )
 	{
 		if ( source == null )
@@ -559,6 +582,7 @@ public class BasicViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code source == null}
 	 */
+	@Override
 	public boolean addSource( final SourceAndConverter< ? > source )
 	{
 		if ( source == null )
@@ -594,13 +618,14 @@ public class BasicViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code collection == null} or any element of {@code collection} is {@code null}.
 	 */
+	@Override
 	public boolean addSources( final Collection< ? extends SourceAndConverter< ? > > collection )
 	{
 		checkAllNonNull( collection );
 
 		boolean modified = false;
 		boolean currentSourceChanged = false;
-		for ( SourceAndConverter< ? > source : collection )
+		for ( final SourceAndConverter< ? > source : collection )
 		{
 			if ( sourceIndices.containsKey( source ) )
 				continue;
@@ -639,6 +664,7 @@ public class BasicViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code source == null}
 	 */
+	@Override
 	public boolean removeSource( final SourceAndConverter< ? > source )
 	{
 		if ( source == null )
@@ -658,7 +684,7 @@ public class BasicViewerState implements ViewerState
 				currentSource = sources.isEmpty() ? null : sources.get( 0 );
 
 			boolean sourceToGroupAssignmentChanged = false;
-			for ( GroupData groupData : groupData.values() )
+			for ( final GroupData groupData : groupData.values() )
 				sourceToGroupAssignmentChanged |= groupData.sources.remove( source );
 
 			notifyListeners( NUM_SOURCES_CHANGED );
@@ -684,6 +710,7 @@ public class BasicViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code collection == null} or any element of {@code collection} is {@code null}.
 	 */
+	@Override
 	public boolean removeSources( final Collection< ? extends SourceAndConverter< ? > > collection )
 	{
 		checkAllNonNull( collection );
@@ -699,7 +726,7 @@ public class BasicViewerState implements ViewerState
 			activeSources.removeAll( collection );
 
 			boolean sourceToGroupAssignmentChanged = false;
-			for ( GroupData groupData : groupData.values() )
+			for ( final GroupData groupData : groupData.values() )
 				sourceToGroupAssignmentChanged |= groupData.sources.removeAll( sources );
 
 			if ( currentSourceChanged )
@@ -722,6 +749,7 @@ public class BasicViewerState implements ViewerState
 	/**
 	 * Remove all sources from the state.
 	 */
+	@Override
 	public void clearSources()
 	{
 		if ( sources.isEmpty() )
@@ -732,7 +760,7 @@ public class BasicViewerState implements ViewerState
 		activeSources.clear();
 
 		boolean sourceToGroupAssignmentChanged = false;
-		for ( GroupData groupData : groupData.values() )
+		for ( final GroupData groupData : groupData.values() )
 		{
 			sourceToGroupAssignmentChanged |= !groupData.sources.isEmpty();
 			groupData.sources.clear();
@@ -754,6 +782,7 @@ public class BasicViewerState implements ViewerState
 	 * according to the order in which they occur in the sources list.
 	 * (Sources that do not occur in the list are ordered before any source in the list).
 	 */
+	@Override
 	public Comparator< SourceAndConverter< ? > > sourceOrder()
 	{
 		return Comparator.comparingInt( sourceIndices::get );
@@ -770,6 +799,7 @@ public class BasicViewerState implements ViewerState
 	 *
 	 * @return the list of groups
 	 */
+	@Override
 	public List< SourceGroup > getGroups()
 	{
 		return unmodifiableGroups;
@@ -781,6 +811,7 @@ public class BasicViewerState implements ViewerState
 	 *
 	 * @return the current group
 	 */
+	@Override
 	public SourceGroup getCurrentGroup()
 	{
 		return currentGroup;
@@ -792,6 +823,7 @@ public class BasicViewerState implements ViewerState
 	 *
 	 * @return {@code true} if {@code group} is the current group
 	 */
+	@Override
 	public boolean isCurrentGroup( final SourceGroup group )
 	{
 		return Objects.equals( group, currentGroup );
@@ -809,6 +841,7 @@ public class BasicViewerState implements ViewerState
 	 * @throws IllegalArgumentException
 	 * 		if {@code group} is not contained in the state (and not {@code null}).
 	 */
+	@Override
 	public boolean setCurrentGroup( final SourceGroup group )
 	{
 		checkGroupPresentAllowNull( group );
@@ -830,6 +863,7 @@ public class BasicViewerState implements ViewerState
 	 *
 	 * @return the set of active groups
 	 */
+	@Override
 	public Set< SourceGroup > getActiveGroups()
 	{
 		return unmodifiableActiveGroups;
@@ -845,6 +879,7 @@ public class BasicViewerState implements ViewerState
 	 * @throws IllegalArgumentException
 	 * 		if {@code group} is not contained in the state (and not {@code null}).
 	 */
+	@Override
 	public boolean isGroupActive( final SourceGroup group )
 	{
 		checkGroupPresent( group );
@@ -865,6 +900,7 @@ public class BasicViewerState implements ViewerState
 	 * @throws IllegalArgumentException
 	 * 		if {@code group} is not contained in the state (and not {@code null}).
 	 */
+	@Override
 	public boolean setGroupActive( final SourceGroup group, final boolean active )
 	{
 		checkGroupPresent( group );
@@ -891,6 +927,7 @@ public class BasicViewerState implements ViewerState
 	 * @throws IllegalArgumentException
 	 * 		if any element of {@code collection} is not contained in the state.
 	 */
+	@Override
 	public boolean setGroupsActive( final Collection< ? extends SourceGroup > collection, final boolean active )
 	{
 		checkGroupsPresent( collection );
@@ -914,6 +951,7 @@ public class BasicViewerState implements ViewerState
 	 * @throws IllegalArgumentException
 	 * 		if {@code group} is not contained in the state (and not {@code null}).
 	 */
+	@Override
 	public String getGroupName( final SourceGroup group )
 	{
 		checkGroupPresent( group );
@@ -929,6 +967,7 @@ public class BasicViewerState implements ViewerState
 	 * @throws IllegalArgumentException
 	 * 		if {@code group} is not contained in the state (and not {@code null}).
 	 */
+	@Override
 	public void setGroupName( final SourceGroup group, final String name )
 	{
 		checkGroupPresent( group );
@@ -949,6 +988,7 @@ public class BasicViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code group == null}
 	 */
+	@Override
 	public boolean containsGroup( final SourceGroup group )
 	{
 		if ( group == null )
@@ -969,6 +1009,7 @@ public class BasicViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code group == null}
 	 */
+	@Override
 	public boolean addGroup( final SourceGroup group )
 	{
 		if ( group == null )
@@ -1006,13 +1047,14 @@ public class BasicViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code collection == null} or any element of {@code collection} is {@code null}.
 	 */
+	@Override
 	public boolean addGroups( final Collection< ? extends SourceGroup > collection )
 	{
 		checkAllNonNull( collection );
 
 		boolean modified = false;
 		boolean currentGroupChanged = false;
-		for ( SourceGroup group : collection )
+		for ( final SourceGroup group : collection )
 		{
 			if ( groupIndices.containsKey( group ) )
 				continue;
@@ -1052,6 +1094,7 @@ public class BasicViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code group == null}
 	 */
+	@Override
 	public boolean removeGroup( final SourceGroup group )
 	{
 		if ( group == null )
@@ -1091,6 +1134,7 @@ public class BasicViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code collection == null} or any element of {@code collection} is {@code null}.
 	 */
+	@Override
 	public boolean removeGroups( final Collection< ? extends SourceGroup > collection )
 	{
 		checkAllNonNull( collection );
@@ -1131,6 +1175,7 @@ public class BasicViewerState implements ViewerState
 	 * @throws IllegalArgumentException
 	 * 		if either of {@code source} and {@code group} is not contained in the state (and not {@code null}).
 	 */
+	@Override
 	public boolean addSourceToGroup( final SourceAndConverter< ? > source, final SourceGroup group )
 	{
 		checkSourcePresent( source );
@@ -1158,6 +1203,7 @@ public class BasicViewerState implements ViewerState
 	 * @throws IllegalArgumentException
 	 * 		if {@code group} or any element of {@code collection} is is not contained in the state (and not {@code null}).
 	 */
+	@Override
 	public boolean addSourcesToGroup( final Collection< ? extends SourceAndConverter< ? > > collection, final SourceGroup group )
 	{
 		checkSourcesPresent( collection );
@@ -1185,6 +1231,7 @@ public class BasicViewerState implements ViewerState
 	 * @throws IllegalArgumentException
 	 * 		if either of {@code source} and {@code group} is not contained in the state (and not {@code null}).
 	 */
+	@Override
 	public boolean removeSourceFromGroup( final SourceAndConverter< ? > source, final SourceGroup group )
 	{
 		checkSourcePresent( source );
@@ -1213,6 +1260,7 @@ public class BasicViewerState implements ViewerState
 	 * @throws IllegalArgumentException
 	 * 		if {@code group} or any element of {@code collection} is is not contained in the state (and not {@code null}).
 	 */
+	@Override
 	public boolean removeSourcesFromGroup( final Collection< ? extends SourceAndConverter< ? > > collection, final SourceGroup group )
 	{
 		checkSourcesPresent( collection );
@@ -1240,6 +1288,7 @@ public class BasicViewerState implements ViewerState
 	 * @throws IllegalArgumentException
 	 * 		if {@code group} is not contained in the state (and not {@code null}).
 	 */
+	@Override
 	public Set< SourceAndConverter< ? > > getSourcesInGroup( final SourceGroup group )
 	{
 		checkGroupPresent( group );
@@ -1250,6 +1299,7 @@ public class BasicViewerState implements ViewerState
 	/**
 	 * Remove all groups from the state.
 	 */
+	@Override
 	public void clearGroups()
 	{
 		if ( groups.isEmpty() )
@@ -1274,6 +1324,7 @@ public class BasicViewerState implements ViewerState
 	 * according to the order in which they occur in the groups list.
 	 * (Groups that do not occur in the list are ordered before any group in the list).
 	 */
+	@Override
 	public Comparator< SourceGroup > groupOrder()
 	{
 		return Comparator.comparingInt( groupIndices::get );
@@ -1299,7 +1350,7 @@ public class BasicViewerState implements ViewerState
 		}
 
 		// copy constructor
-		GroupData( GroupData other )
+		GroupData( final GroupData other )
 		{
 			name = other.name;
 			sources = new HashSet<>( other.sources );
@@ -1405,7 +1456,7 @@ public class BasicViewerState implements ViewerState
 	{
 		if ( collection == null )
 			throw new NullPointerException();
-		for ( SourceAndConverter< ? > source : collection )
+		for ( final SourceAndConverter< ? > source : collection )
 			checkSourcePresent( source );
 	}
 
@@ -1443,7 +1494,7 @@ public class BasicViewerState implements ViewerState
 	{
 		if ( collection == null )
 			throw new NullPointerException();
-		for ( SourceGroup group : collection )
+		for ( final SourceGroup group : collection )
 			checkGroupPresent( group );
 	}
 
@@ -1455,12 +1506,12 @@ public class BasicViewerState implements ViewerState
 	{
 		if ( collection == null )
 			throw new NullPointerException();
-		for ( Object e : collection )
+		for ( final Object e : collection )
 			if ( e == null )
 				throw new NullPointerException();
 	}
 
-	private void notifyListeners( ViewerStateChange change )
+	private void notifyListeners( final ViewerStateChange change )
 	{
 		listeners.list.forEach( l -> l.viewerStateChanged( change ) );
 	}

@@ -73,51 +73,61 @@ public class SynchronizedViewerState implements ViewerState
 		return state.snapshot();
 	}
 
+	@Override
 	public synchronized Interpolation getInterpolation()
 	{
 		return state.getInterpolation();
 	}
 
+	@Override
 	public synchronized void setInterpolation( final Interpolation interpolation )
 	{
 		state.setInterpolation( interpolation );
 	}
 
+	@Override
 	public synchronized DisplayMode getDisplayMode()
 	{
 		return state.getDisplayMode();
 	}
 
+	@Override
 	public synchronized void setDisplayMode( final DisplayMode mode )
 	{
 		state.setDisplayMode( mode );
 	}
 
+	@Override
 	public synchronized int getNumTimepoints()
 	{
 		return state.getNumTimepoints();
 	}
 
+	@Override
 	public synchronized void setNumTimepoints( final int n )
 	{
 		state.setNumTimepoints( n );
 	}
 
+	@Override
 	public synchronized int getCurrentTimepoint()
 	{
 		return state.getCurrentTimepoint();
 	}
 
+	@Override
 	public synchronized void setCurrentTimepoint( final int t )
 	{
 		state.setCurrentTimepoint( t );
 	}
 
+	@Override
 	public synchronized void getViewerTransform( final AffineTransform3D transform )
 	{
 		state.getViewerTransform( transform );
 	}
 
+	@Override
 	public synchronized void setViewerTransform( final AffineTransform3D transform )
 	{
 		state.setViewerTransform( transform );
@@ -136,6 +146,7 @@ public class SynchronizedViewerState implements ViewerState
 	 *
 	 * @return the list of sources
 	 */
+	@Override
 	public synchronized List< SourceAndConverter< ? > > getSources()
 	{
 		return state.getSources();
@@ -147,6 +158,7 @@ public class SynchronizedViewerState implements ViewerState
 	 *
 	 * @return the current source
 	 */
+	@Override
 	public synchronized SourceAndConverter< ? > getCurrentSource()
 	{
 		return state.getCurrentSource();
@@ -160,6 +172,7 @@ public class SynchronizedViewerState implements ViewerState
 	 *
 	 * @return {@code true} if {@code source} is the current source
 	 */
+	@Override
 	public synchronized boolean isCurrentSource( final SourceAndConverter< ? > source )
 	{
 		return state.isCurrentSource( source );
@@ -178,13 +191,14 @@ public class SynchronizedViewerState implements ViewerState
 	 *
 	 * @return {@code true}, if current source changed as a result of the call
 	 */
+	@Override
 	public synchronized boolean setCurrentSource( final SourceAndConverter< ? > source )
 	{
 		try
 		{
 			return state.setCurrentSource( source );
 		}
-		catch ( IllegalArgumentException e )
+		catch ( final IllegalArgumentException e )
 		{
 			if ( DEBUG )
 				e.printStackTrace();
@@ -199,6 +213,7 @@ public class SynchronizedViewerState implements ViewerState
 	 *
 	 * @return the set of active sources
 	 */
+	@Override
 	public synchronized Set< SourceAndConverter< ? > > getActiveSources()
 	{
 		return state.getActiveSources();
@@ -216,13 +231,14 @@ public class SynchronizedViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code source == null}
 	 */
+	@Override
 	public synchronized boolean isSourceActive( final SourceAndConverter< ? > source )
 	{
 		try
 		{
 			return state.isSourceActive( source );
 		}
-		catch ( IllegalArgumentException e )
+		catch ( final IllegalArgumentException e )
 		{
 			if ( DEBUG )
 				e.printStackTrace();
@@ -244,13 +260,14 @@ public class SynchronizedViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code source == null}
 	 */
+	@Override
 	public synchronized boolean setSourceActive( final SourceAndConverter< ? > source, final boolean active )
 	{
 		try
 		{
 			return state.setSourceActive( source, active );
 		}
-		catch ( IllegalArgumentException e )
+		catch ( final IllegalArgumentException e )
 		{
 			if ( DEBUG )
 				e.printStackTrace();
@@ -272,13 +289,14 @@ public class SynchronizedViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code collection == null} or any element of {@code collection} is {@code null}.
 	 */
+	@Override
 	public synchronized boolean setSourcesActive( final Collection< ? extends SourceAndConverter< ? > > collection, final boolean active )
 	{
 		try
 		{
 			return state.setSourcesActive( collection, active );
 		}
-		catch ( IllegalArgumentException e )
+		catch ( final IllegalArgumentException e )
 		{
 			if ( DEBUG )
 				e.printStackTrace();
@@ -307,13 +325,14 @@ public class SynchronizedViewerState implements ViewerState
 	 * @throws IllegalArgumentException
 	 * 		if {@code source} is not contained in the state (and not {@code null}).
 	 */
+	@Override
 	public synchronized boolean isSourceVisible( final SourceAndConverter< ? > source )
 	{
 		try
 		{
 			return state.isSourceVisible( source );
 		}
-		catch ( IllegalArgumentException e )
+		catch ( final IllegalArgumentException e )
 		{
 			if ( DEBUG )
 				e.printStackTrace();
@@ -341,13 +360,14 @@ public class SynchronizedViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code source == null}
 	 */
+	@Override
 	public synchronized boolean isSourceVisibleAndPresent( final SourceAndConverter< ? > source )
 	{
 		try
 		{
 			return state.isSourceVisibleAndPresent( source );
 		}
-		catch ( IllegalArgumentException e )
+		catch ( final IllegalArgumentException e )
 		{
 			if ( DEBUG )
 				e.printStackTrace();
@@ -370,6 +390,7 @@ public class SynchronizedViewerState implements ViewerState
 	 *
 	 * @return the set of visible sources
 	 */
+	@Override
 	public synchronized Set< SourceAndConverter< ? > > getVisibleSources()
 	{
 		return state.getVisibleSources();
@@ -391,6 +412,7 @@ public class SynchronizedViewerState implements ViewerState
 	 *
 	 * @return the set of sources that are both visible and present
 	 */
+	@Override
 	public synchronized Set< SourceAndConverter< ? > > getVisibleAndPresentSources()
 	{
 		return state.getVisibleAndPresentSources();
@@ -404,6 +426,7 @@ public class SynchronizedViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code source == null}
 	 */
+	@Override
 	public synchronized boolean containsSource( final SourceAndConverter< ? > source )
 	{
 		return state.containsSource( source );
@@ -421,6 +444,7 @@ public class SynchronizedViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code source == null}
 	 */
+	@Override
 	public synchronized boolean addSource( final SourceAndConverter< ? > source )
 	{
 		return state.addSource( source );
@@ -438,6 +462,7 @@ public class SynchronizedViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code collection == null} or any element of {@code collection} is {@code null}.
 	 */
+	@Override
 	public synchronized boolean addSources( final Collection< ? extends SourceAndConverter< ? > > collection )
 	{
 		return state.addSources( collection );
@@ -457,6 +482,7 @@ public class SynchronizedViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code source == null}
 	 */
+	@Override
 	public synchronized boolean removeSource( final SourceAndConverter< ? > source )
 	{
 		return state.removeSource( source );
@@ -475,6 +501,7 @@ public class SynchronizedViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code collection == null} or any element of {@code collection} is {@code null}.
 	 */
+	@Override
 	public synchronized boolean removeSources( final Collection< ? extends SourceAndConverter< ? > > collection )
 	{
 		return state.removeSources( collection );
@@ -486,6 +513,7 @@ public class SynchronizedViewerState implements ViewerState
 	/**
 	 * Remove all sources from the state.
 	 */
+	@Override
 	public synchronized void clearSources()
 	{
 		state.clearSources();
@@ -496,6 +524,7 @@ public class SynchronizedViewerState implements ViewerState
 	 * according to the order in which they occur in the sources list.
 	 * (Sources that do not occur in the list are ordered before any source in the list).
 	 */
+	@Override
 	public synchronized Comparator< SourceAndConverter< ? > > sourceOrder()
 	{
 		return state.sourceOrder();
@@ -514,6 +543,7 @@ public class SynchronizedViewerState implements ViewerState
 	 *
 	 * @return the list of groups
 	 */
+	@Override
 	public synchronized List< SourceGroup > getGroups()
 	{
 		return state.getGroups();
@@ -525,6 +555,7 @@ public class SynchronizedViewerState implements ViewerState
 	 *
 	 * @return the current group
 	 */
+	@Override
 	public synchronized SourceGroup getCurrentGroup()
 	{
 		return state.getCurrentGroup();
@@ -539,6 +570,7 @@ public class SynchronizedViewerState implements ViewerState
 	 *
 	 * @return {@code true} if {@code group} is the current group
 	 */
+	@Override
 	public synchronized boolean isCurrentGroup( final SourceGroup group )
 	{
 		return state.isCurrentGroup( group );
@@ -558,13 +590,14 @@ public class SynchronizedViewerState implements ViewerState
 	 *
 	 * @return {@code true}, if current group changed as a result of the call.
 	 */
+	@Override
 	public synchronized boolean setCurrentGroup( final SourceGroup group )
 	{
 		try
 		{
 			return state.setCurrentGroup( group );
 		}
-		catch ( IllegalArgumentException e )
+		catch ( final IllegalArgumentException e )
 		{
 			if ( DEBUG )
 				e.printStackTrace();
@@ -579,6 +612,7 @@ public class SynchronizedViewerState implements ViewerState
 	 *
 	 * @return the set of active groups
 	 */
+	@Override
 	public synchronized Set< SourceGroup > getActiveGroups()
 	{
 		return state.getActiveGroups();
@@ -598,13 +632,14 @@ public class SynchronizedViewerState implements ViewerState
 	 * @throws IllegalArgumentException
 	 * 		if {@code group} is not contained in the state (and not {@code null}).
 	 */
+	@Override
 	public synchronized boolean isGroupActive( final SourceGroup group )
 	{
 		try
 		{
 			return state.isGroupActive( group );
 		}
-		catch ( IllegalArgumentException e )
+		catch ( final IllegalArgumentException e )
 		{
 			if ( DEBUG )
 				e.printStackTrace();
@@ -626,13 +661,14 @@ public class SynchronizedViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code group == null}
 	 */
+	@Override
 	public synchronized boolean setGroupActive( final SourceGroup group, final boolean active )
 	{
 		try
 		{
 			return state.setGroupActive( group, active );
 		}
-		catch ( IllegalArgumentException e )
+		catch ( final IllegalArgumentException e )
 		{
 			if ( DEBUG )
 				e.printStackTrace();
@@ -654,13 +690,14 @@ public class SynchronizedViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code collection == null} or any element of {@code collection} is {@code null}.
 	 */
+	@Override
 	public synchronized boolean setGroupsActive( final Collection< ? extends SourceGroup > collection, final boolean active )
 	{
 		try
 		{
 			return state.setGroupsActive( collection, active );
 		}
-		catch ( IllegalArgumentException e )
+		catch ( final IllegalArgumentException e )
 		{
 			if ( DEBUG )
 				e.printStackTrace();
@@ -679,13 +716,14 @@ public class SynchronizedViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code group == null}
 	 */
+	@Override
 	public synchronized String getGroupName( final SourceGroup group )
 	{
 		try
 		{
 			return state.getGroupName( group );
 		}
-		catch ( IllegalArgumentException e )
+		catch ( final IllegalArgumentException e )
 		{
 			if ( DEBUG )
 				e.printStackTrace();
@@ -702,13 +740,14 @@ public class SynchronizedViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code group == null}
 	 */
+	@Override
 	public synchronized void setGroupName( final SourceGroup group, final String name )
 	{
 		try
 		{
 			state.setGroupName( group, name );
 		}
-		catch ( IllegalArgumentException e )
+		catch ( final IllegalArgumentException e )
 		{
 			if ( DEBUG )
 				e.printStackTrace();
@@ -723,6 +762,7 @@ public class SynchronizedViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code group == null}
 	 */
+	@Override
 	public synchronized boolean containsGroup( final SourceGroup group )
 	{
 		return state.containsGroup( group );
@@ -740,6 +780,7 @@ public class SynchronizedViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code group == null}
 	 */
+	@Override
 	public synchronized boolean addGroup( final SourceGroup group )
 	{
 		return state.addGroup( group );
@@ -757,6 +798,7 @@ public class SynchronizedViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code collection == null} or any element of {@code collection} is {@code null}.
 	 */
+	@Override
 	public synchronized boolean addGroups( final Collection< ? extends SourceGroup > collection )
 	{
 		return state.addGroups( collection );
@@ -775,6 +817,7 @@ public class SynchronizedViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code group == null}
 	 */
+	@Override
 	public synchronized boolean removeGroup( final SourceGroup group )
 	{
 		return state.removeGroup( group );
@@ -792,6 +835,7 @@ public class SynchronizedViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code collection == null} or any element of {@code collection} is {@code null}.
 	 */
+	@Override
 	public synchronized boolean removeGroups( final Collection< ? extends SourceGroup > collection )
 	{
 		return state.removeGroups( collection );
@@ -812,13 +856,14 @@ public class SynchronizedViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code source == null} or {@code group == null}
 	 */
+	@Override
 	public synchronized boolean addSourceToGroup( final SourceAndConverter< ? > source, final SourceGroup group )
 	{
 		try
 		{
 			return state.addSourceToGroup( source, group );
 		}
-		catch ( IllegalArgumentException e )
+		catch ( final IllegalArgumentException e )
 		{
 			if ( DEBUG )
 				e.printStackTrace();
@@ -840,13 +885,14 @@ public class SynchronizedViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code group == null} or {@code collection == null} or any element of {@code collection} is {@code null}.
 	 */
+	@Override
 	public synchronized boolean addSourcesToGroup( final Collection< ? extends SourceAndConverter< ? > > collection, final SourceGroup group )
 	{
 		try
 		{
 			return state.addSourcesToGroup( collection, group );
 		}
-		catch ( IllegalArgumentException e )
+		catch ( final IllegalArgumentException e )
 		{
 			if ( DEBUG )
 				e.printStackTrace();
@@ -868,13 +914,14 @@ public class SynchronizedViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code source == null} or {@code group == null}
 	 */
+	@Override
 	public synchronized boolean removeSourceFromGroup( final SourceAndConverter< ? > source, final SourceGroup group )
 	{
 		try
 		{
 			return state.removeSourceFromGroup( source, group );
 		}
-		catch ( IllegalArgumentException e )
+		catch ( final IllegalArgumentException e )
 		{
 			if ( DEBUG )
 				e.printStackTrace();
@@ -896,13 +943,14 @@ public class SynchronizedViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code group == null} or {@code collection == null} or any element of {@code collection} is {@code null}.
 	 */
+	@Override
 	public synchronized boolean removeSourcesFromGroup( final Collection< ? extends SourceAndConverter< ? > > collection, final SourceGroup group )
 	{
 		try
 		{
 			return state.removeSourcesFromGroup( collection, group );
 		}
-		catch ( IllegalArgumentException e )
+		catch ( final IllegalArgumentException e )
 		{
 			if ( DEBUG )
 				e.printStackTrace();
@@ -923,13 +971,14 @@ public class SynchronizedViewerState implements ViewerState
 	 * @throws NullPointerException
 	 * 		if {@code group == null}
 	 */
+	@Override
 	public synchronized Set< SourceAndConverter< ? > > getSourcesInGroup( final SourceGroup group )
 	{
 		try
 		{
 			return state.getSourcesInGroup( group );
 		}
-		catch ( IllegalArgumentException e )
+		catch ( final IllegalArgumentException e )
 		{
 			if ( DEBUG )
 				e.printStackTrace();
@@ -940,6 +989,7 @@ public class SynchronizedViewerState implements ViewerState
 	/**
 	 * Remove all groups from the state.
 	 */
+	@Override
 	public synchronized void clearGroups()
 	{
 		state.clearGroups();
@@ -950,6 +1000,7 @@ public class SynchronizedViewerState implements ViewerState
 	 * according to the order in which they occur in the groups list.
 	 * (Groups that do not occur in the list are ordered before any group in the list).
 	 */
+	@Override
 	public synchronized Comparator< SourceGroup > groupOrder()
 	{
 		return state.groupOrder();
