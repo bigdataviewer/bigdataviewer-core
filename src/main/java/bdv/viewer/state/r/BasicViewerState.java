@@ -1,6 +1,7 @@
 package bdv.viewer.state.r;
 
 import bdv.util.Affine3DHelpers;
+import bdv.util.WrappedList;
 import bdv.viewer.DisplayMode;
 import bdv.viewer.Interpolation;
 import bdv.viewer.SourceAndConverter;

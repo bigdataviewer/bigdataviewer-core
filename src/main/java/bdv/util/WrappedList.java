@@ -1,4 +1,4 @@
-package bdv.viewer.state.r;
+package bdv.util;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -10,7 +10,6 @@ import java.util.ListIterator;
  *
  * @author Tobias Pietzsch
  */
-// TODO: move to Util
 public class WrappedList< E > implements List< E >
 {
 	private final List< E > list;
