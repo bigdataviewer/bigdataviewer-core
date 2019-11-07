@@ -32,8 +32,8 @@ public interface ViewerState
 	/**
 	 * Set the interpolation method (optional operation).
 	 *
-	 * @throws UnsupportedOperationException if the operation
-	 *         is not supported by this ViewerState
+	 * @throws UnsupportedOperationException
+	 *     if the operation is not supported by this ViewerState
 	 */
 	void setInterpolation( Interpolation interpolation );
 
@@ -53,8 +53,8 @@ public interface ViewerState
 	/**
 	 * Set the {@link DisplayMode} (optional operation).
 	 *
-	 * @throws UnsupportedOperationException if the operation
-	 *         is not supported by this ViewerState
+	 * @throws UnsupportedOperationException
+	 *     if the operation is not supported by this ViewerState
 	 */
 	void setDisplayMode( DisplayMode mode );
 
@@ -68,8 +68,8 @@ public interface ViewerState
 	/**
 	 * Set the number of timepoints (optional operation).
 	 *
-	 * @throws UnsupportedOperationException if the operation
-	 *         is not supported by this ViewerState
+	 * @throws UnsupportedOperationException
+	 *     if the operation is not supported by this ViewerState
 	 */
 	void setNumTimepoints( int n );
 
@@ -83,8 +83,8 @@ public interface ViewerState
 	/**
 	 * Set the current timepoint (optional operation).
 	 *
-	 * @throws UnsupportedOperationException if the operation
-	 *         is not supported by this ViewerState
+	 * @throws UnsupportedOperationException
+	 *     if the operation is not supported by this ViewerState
 	 */
 	void setCurrentTimepoint( int t );
 
@@ -92,7 +92,7 @@ public interface ViewerState
 	 * Get the viewer transform.
 	 *
 	 * @param transform
-	 * 		is set to the viewer transform
+	 *     is set to the viewer transform
 	 */
 	void getViewerTransform( AffineTransform3D transform );
 
@@ -111,8 +111,8 @@ public interface ViewerState
 	/**
 	 * Set the viewer transform (optional operation).
 	 *
-	 * @throws UnsupportedOperationException if the operation
-	 *         is not supported by this ViewerState
+	 * @throws UnsupportedOperationException
+	 *     if the operation is not supported by this ViewerState
 	 */
 	void setViewerTransform( AffineTransform3D transform );
 
@@ -121,52 +121,53 @@ public interface ViewerState
 	// --------------------
 
 	/**
-	 * Get the list of sources.
-	 * The returned {@code List} reflects changes to the viewer state.
-	 * It is unmodifiable and not thread-safe.
+	 * Get the list of sources. The returned {@code List} reflects changes to
+	 * the viewer state. It is unmodifiable and not thread-safe.
 	 *
 	 * @return the list of sources
 	 */
 	List< SourceAndConverter< ? > > getSources();
 
 	/**
-	 * Get the current source.
-	 * (May return {@code null} if there is no current source)
+	 * Get the current source. (May return {@code null} if there is no current
+	 * source)
 	 *
 	 * @return the current source
 	 */
 	SourceAndConverter< ? > getCurrentSource();
 
 	/**
-	 * Returns {@code true} if {@code source} is the current source.
-	 * Equivalent to {@code (getCurrentSource() == source)}.
+	 * Returns {@code true} if {@code source} is the current source. Equivalent
+	 * to {@code (getCurrentSource() == source)}.
 	 *
-	 * @param source the source. Passing {@code null} checks whether no source is current.
+	 * @param source
+	 *     the source. Passing {@code null} checks whether no source is current.
 	 * @return {@code true} if {@code source} is the current source
 	 */
 	boolean isCurrentSource( SourceAndConverter< ? > source );
 
 	/**
-	 * Make {@code source} the current source (optional operation).
-	 * Returns {@code true}, if current source changes as a result of the call.
-	 * Returns {@code false}, if {@code source} is already the current source.
+	 * Make {@code source} the current source (optional operation). Returns
+	 * {@code true}, if current source changes as a result of the call. Returns
+	 * {@code false}, if {@code source} is already the current source.
 	 *
 	 * @param source
-	 * 		the source to make current. Passing {@code null} clears the current source.
+	 *     the source to make current. Passing {@code null} clears the current
+	 *     source.
 	 *
 	 * @return {@code true}, if current source changed as a result of the call
 	 *
 	 * @throws IllegalArgumentException
-	 * 		if {@code source} is not contained in the state (and not {@code null}).
-	 * @throws UnsupportedOperationException if the operation
-	 *         is not supported by this ViewerState
+	 *     if {@code source} is not contained in the state (and not
+	 *     {@code null}).
+	 * @throws UnsupportedOperationException
+	 *     if the operation is not supported by this ViewerState
 	 */
 	boolean setCurrentSource( SourceAndConverter< ? > source );
 
 	/**
-	 * Get the set of active sources.
-	 * The returned {@code Set} reflects changes to the viewer state.
-	 * It is unmodifiable and not thread-safe.
+	 * Get the set of active sources. The returned {@code Set} reflects changes
+	 * to the viewer state. It is unmodifiable and not thread-safe.
 	 *
 	 * @return the set of active sources
 	 */
@@ -178,9 +179,10 @@ public interface ViewerState
 	 * @return {@code true}, if {@code source} is active
 	 *
 	 * @throws NullPointerException
-	 * 		if {@code source == null}
+	 *     if {@code source == null}
 	 * @throws IllegalArgumentException
-	 * 		if {@code source} is not contained in the state (and not {@code null}).
+	 *     if {@code source} is not contained in the state (and not
+	 *     {@code null}).
 	 */
 	boolean isSourceActive( SourceAndConverter< ? > source );
 
@@ -188,40 +190,46 @@ public interface ViewerState
 	 * Set {@code source} active or inactive (optional operation).
 	 * <p>
 	 * Returns {@code true}, if source activity changes as a result of the call.
-	 * Returns {@code false}, if {@code source} is already in the desired {@code active} state.
+	 * Returns {@code false}, if {@code source} is already in the desired
+	 * {@code active} state.
 	 *
 	 * @return {@code true}, if source activity changed as a result of the call
 	 *
 	 * @throws NullPointerException
-	 * 		if {@code source == null}
+	 *     if {@code source == null}
 	 * @throws IllegalArgumentException
-	 * 		if {@code source} is not contained in the state (and not {@code null}).
-	 * @throws UnsupportedOperationException if the operation
-	 *         is not supported by this ViewerState
+	 *     if {@code source} is not contained in the state (and not
+	 *     {@code null}).
+	 * @throws UnsupportedOperationException
+	 *     if the operation is not supported by this ViewerState
 	 */
 	boolean setSourceActive( SourceAndConverter< ? > source, boolean active );
 
 	/**
-	 * Set all sources in {@code collection} active or inactive (optional operation).
+	 * Set all sources in {@code collection} active or inactive (optional
+	 * operation).
 	 * <p>
 	 * Returns {@code true}, if source activity changes as a result of the call.
-	 * Returns {@code false}, if all sources were already in the desired {@code active} state.
+	 * Returns {@code false}, if all sources were already in the desired
+	 * {@code active} state.
 	 *
 	 * @return {@code true}, if source activity changed as a result of the call
 	 *
 	 * @throws NullPointerException
-	 * 		if {@code collection == null} or any element of {@code collection} is {@code null}.
+	 *     if {@code collection == null} or any element of {@code collection} is
+	 *     {@code null}.
 	 * @throws IllegalArgumentException
-	 * 		if any element of {@code collection} is not contained in the state.
-	 * @throws UnsupportedOperationException if the operation
-	 *         is not supported by this ViewerState
+	 *     if any element of {@code collection} is not contained in the state.
+	 * @throws UnsupportedOperationException
+	 *     if the operation is not supported by this ViewerState
 	 */
 	boolean setSourcesActive( Collection< ? extends SourceAndConverter< ? > > collection, boolean active );
 
 	/**
 	 * Check whether the given {@code source} is visible.
 	 * <p>
-	 * Whether a source is visible depends on the {@link #getDisplayMode() display mode}:
+	 * Whether a source is visible depends on the {@link #getDisplayMode()
+	 * display mode}:
 	 * <ul>
 	 * <li>In {@code DisplayMode.SINGLE} only the current source is visible.</li>
 	 * <li>In {@code DisplayMode.GROUP} the sources in the current group are visible.</li>
@@ -232,39 +240,47 @@ public interface ViewerState
 	 * @return {@code true}, if {@code source} is visible
 	 *
 	 * @throws NullPointerException
-	 * 		if {@code source == null}
+	 *     if {@code source == null}
 	 * @throws IllegalArgumentException
-	 * 		if {@code source} is not contained in the state (and not {@code null}).
+	 *     if {@code source} is not contained in the state (and not
+	 *     {@code null}).
 	 */
 	boolean isSourceVisible( SourceAndConverter< ? > source );
 
 	/**
-	 * Check whether the given {@code source} is both visible and provides image data for the current timepoint.
+	 * Check whether the given {@code source} is both visible and provides image
+	 * data for the current timepoint.
 	 * <p>
-	 * Whether a source is visible depends on the {@link #getDisplayMode() display mode}:
+	 * Whether a source is visible depends on the {@link #getDisplayMode()
+	 * display mode}:
 	 * <ul>
 	 * <li>In {@code DisplayMode.SINGLE} only the current source is visible.</li>
 	 * <li>In {@code DisplayMode.GROUP} the sources in the current group are visible.</li>
 	 * <li>In {@code DisplayMode.FUSED} all active sources are visible.</li>
 	 * <li>In {@code DisplayMode.FUSEDROUP} the sources in all active groups are visible.</li>
 	 * </ul>
-	 * Additionally, the source must be {@link bdv.viewer.Source#isPresent(int) present}, i.e., provide image data for the {@link #getCurrentTimepoint() current timepoint}.
+	 * Additionally, the source must be {@link bdv.viewer.Source#isPresent(int)
+	 * present}, i.e., provide image data for the {@link #getCurrentTimepoint()
+	 * current timepoint}.
 	 *
 	 * @return {@code true}, if {@code source} is both visible and present
 	 *
 	 * @throws NullPointerException
-	 * 		if {@code source == null}
+	 *     if {@code source == null}
 	 * @throws IllegalArgumentException
-	 * 		if {@code source} is not contained in the state (and not {@code null}).
+	 *     if {@code source} is not contained in the state (and not
+	 *     {@code null}).
 	 */
 	boolean isSourceVisibleAndPresent( SourceAndConverter< ? > source );
 
 	/**
 	 * Get the set of visible sources.
 	 * <p>
-	 * The returned {@code Set} is a copy. Changes to the set will not be reflected in the viewer state, and vice versa.
+	 * The returned {@code Set} is a copy. Changes to the set will not be
+	 * reflected in the viewer state, and vice versa.
 	 * <p>
-	 * Whether a source is visible depends on the {@link #getDisplayMode() display mode}:
+	 * Whether a source is visible depends on the {@link #getDisplayMode()
+	 * display mode}:
 	 * <ul>
 	 * <li>In {@code DisplayMode.SINGLE} only the current source is visible.</li>
 	 * <li>In {@code DisplayMode.GROUP} the sources in the current group are visible.</li>
@@ -277,18 +293,23 @@ public interface ViewerState
 	Set< SourceAndConverter< ? > > getVisibleSources();
 
 	/**
-	 * Get the set of visible sources that also provide image data for the current timepoint.
+	 * Get the set of visible sources that also provide image data for the
+	 * current timepoint.
 	 * <p>
-	 * The returned {@code Set} is a copy. Changes to the set will not be reflected in the viewer state, and vice versa.
+	 * The returned {@code Set} is a copy. Changes to the set will not be
+	 * reflected in the viewer state, and vice versa.
 	 * <p>
-	 * Whether a source is visible depends on the {@link #getDisplayMode() display mode}:
+	 * Whether a source is visible depends on the {@link #getDisplayMode()
+	 * display mode}:
 	 * <ul>
 	 * <li>In {@code DisplayMode.SINGLE} only the current source is visible.</li>
 	 * <li>In {@code DisplayMode.GROUP} the sources in the current group are visible.</li>
 	 * <li>In {@code DisplayMode.FUSED} all active sources are visible.</li>
 	 * <li>In {@code DisplayMode.FUSEDROUP} the sources in all active groups are visible.</li>
 	 * </ul>
-	 * Additionally, the source must be {@link bdv.viewer.Source#isPresent(int) present}, i.e., provide image data for the {@link #getCurrentTimepoint() current timepoint}.
+	 * Additionally, the source must be {@link bdv.viewer.Source#isPresent(int)
+	 * present}, i.e., provide image data for the {@link #getCurrentTimepoint()
+	 * current timepoint}.
 	 *
 	 * @return the set of sources that are both visible and present
 	 */
@@ -300,74 +321,80 @@ public interface ViewerState
 	 * @return {@code true}, if {@code source} is in the list of sources.
 	 *
 	 * @throws NullPointerException
-	 * 		if {@code source == null}
+	 *     if {@code source == null}
 	 */
 	boolean containsSource( SourceAndConverter< ? > source );
 
 	/**
-	 * Add {@code source} to the state (optional operation).
-	 * Returns {@code true}, if the source is added.
-	 * Returns {@code false}, if the source is already present.
+	 * Add {@code source} to the state (optional operation). Returns
+	 * {@code true}, if the source is added. Returns {@code false}, if the
+	 * source is already present.
 	 * <p>
-	 * If {@code source} is added and no other source was current, then {@code source} is made current
+	 * If {@code source} is added and no other source was current, then
+	 * {@code source} is made current
 	 *
 	 * @return {@code true}, if list of sources changed as a result of the call.
 	 *
 	 * @throws NullPointerException
-	 * 		if {@code source == null}
-	 * @throws UnsupportedOperationException if the operation
-	 *         is not supported by this ViewerState
+	 *     if {@code source == null}
+	 * @throws UnsupportedOperationException
+	 *     if the operation is not supported by this ViewerState
 	 */
 	boolean addSource( SourceAndConverter< ? > source );
 
 	/**
 	 * Add all sources in {@code collection} to the state (optional operation).
-	 * Returns {@code true}, if at least one source was added.
-	 * Returns {@code false}, if all sources were already present.
+	 * Returns {@code true}, if at least one source was added. Returns
+	 * {@code false}, if all sources were already present.
 	 * <p>
-	 * If any sources are added and no other source was current, then the first added sources will be made current.
+	 * If any sources are added and no other source was current, then the first
+	 * added sources will be made current.
 	 *
 	 * @return {@code true}, if list of sources changed as a result of the call.
 	 *
 	 * @throws NullPointerException
-	 * 		if {@code collection == null} or any element of {@code collection} is {@code null}.
-	 * @throws UnsupportedOperationException if the operation
-	 *         is not supported by this ViewerState
+	 *     if {@code collection == null} or any element of {@code collection} is
+	 *     {@code null}.
+	 * @throws UnsupportedOperationException
+	 *     if the operation is not supported by this ViewerState
 	 */
 	boolean addSources( Collection< ? extends SourceAndConverter< ? > > collection );
 
 	/**
 	 * Remove {@code source} from the state (optional operation).
 	 * <p>
-	 * Returns {@code true}, if  {@code source} was removed from the state.
+	 * Returns {@code true}, if {@code source} was removed from the state.
 	 * Returns {@code false}, if {@code source} was not contained in state.
 	 * <p>
-	 * The {@code source} is also removed from any groups that contained it.
-	 * If {@code source} was current, then the first source in the list of sources is made current (if it exists).
+	 * The {@code source} is also removed from any groups that contained it. If
+	 * {@code source} was current, then the first source in the list of sources
+	 * is made current (if it exists).
 	 *
 	 * @return {@code true}, if list of sources changed as a result of the call
 	 *
 	 * @throws NullPointerException
-	 * 		if {@code source == null}
-	 * @throws UnsupportedOperationException if the operation
-	 *         is not supported by this ViewerState
+	 *     if {@code source == null}
+	 * @throws UnsupportedOperationException
+	 *     if the operation is not supported by this ViewerState
 	 */
 	boolean removeSource( SourceAndConverter< ? > source );
 
 	/**
-	 * Remove all sources in {@code collection} from the state (optional operation).
-	 * Returns {@code true}, if at least one source was removed.
+	 * Remove all sources in {@code collection} from the state (optional
+	 * operation). Returns {@code true}, if at least one source was removed.
 	 * Returns {@code false}, if none of the sources was present.
 	 * <p>
-	 * Removed sources are also removed from any groups containing them.
-	 * If the current source was removed, then the first source in the remaining list of sources is made current (if it exists).
+	 * Removed sources are also removed from any groups containing them. If the
+	 * current source was removed, then the first source in the remaining list
+	 * of sources is made current (if it exists).
 	 *
 	 * @return {@code true}, if list of sources changed as a result of the call.
 	 *
 	 * @throws NullPointerException
-	 * 		if {@code collection == null} or any element of {@code collection} is {@code null}.
-	 * @throws UnsupportedOperationException if the operation
-	 *         is not supported by this ViewerState
+	 *     if {@code collection == null} or any element of {@code collection} is
+	 *     {@code null}.
+	 * @throws UnsupportedOperationException
+	 *     if the operation is not supported by this ViewerState
 	 */
 	boolean removeSources( Collection< ? extends SourceAndConverter< ? > > collection );
 
@@ -377,15 +404,15 @@ public interface ViewerState
 	/**
 	 * Remove all sources from the state (optional operation).
 	 *
-	 * @throws UnsupportedOperationException if the operation
-	 *         is not supported by this ViewerState
+	 * @throws UnsupportedOperationException
+	 *     if the operation is not supported by this ViewerState
 	 */
 	void clearSources();
 
 	/**
-	 * Returns a {@link Comparator} that compares sources
-	 * according to the order in which they occur in the sources list.
-	 * (Sources that do not occur in the list are ordered before any source in the list).
+	 * Returns a {@link Comparator} that compares sources according to the order
+	 * in which they occur in the sources list. (Sources that do not occur in
+	 * the list are ordered before any source in the list).
 	 */
 	Comparator< SourceAndConverter< ? > > sourceOrder();
 
@@ -394,50 +421,49 @@ public interface ViewerState
 	// --------------------
 
 	/**
-	 * Get the list of groups.
-	 * The returned {@code List} reflects changes to the viewer state.
-	 * It is unmodifiable and not thread-safe.
+	 * Get the list of groups. The returned {@code List} reflects changes to the
+	 * viewer state. It is unmodifiable and not thread-safe.
 	 *
 	 * @return the list of groups
 	 */
 	List< SourceGroup > getGroups();
 
 	/**
-	 * Get the current group.
-	 * (May return {@code null} if there is no current group)
+	 * Get the current group. (May return {@code null} if there is no current
+	 * group)
 	 *
 	 * @return the current group
 	 */
 	SourceGroup getCurrentGroup();
 
 	/**
-	 * Returns {@code true} if {@code group} is the current group.
-	 * Equivalent to {@code (getCurrentGroup() == group)}.
+	 * Returns {@code true} if {@code group} is the current group. Equivalent to
+	 * {@code (getCurrentGroup() == group)}.
 	 *
 	 * @return {@code true} if {@code group} is the current group
 	 */
 	boolean isCurrentGroup( SourceGroup group );
 
 	/**
-	 * Make {@code group} the current group (optional operation).
-	 * Returns {@code true}, if current group changes as a result of the call.
-	 * Returns {@code false}, if {@code group} is already the current group.
+	 * Make {@code group} the current group (optional operation). Returns
+	 * {@code true}, if current group changes as a result of the call. Returns
+	 * {@code false}, if {@code group} is already the current group.
 	 *
 	 * @param group
-	 * 		the group to make current
+	 *     the group to make current
 	 * @return {@code true}, if current group changed as a result of the call.
 	 *
 	 * @throws IllegalArgumentException
-	 * 		if {@code group} is not contained in the state (and not {@code null}).
-	 * @throws UnsupportedOperationException if the operation
-	 *         is not supported by this ViewerState
+	 *     if {@code group} is not contained in the state (and not
+	 *     {@code null}).
+	 * @throws UnsupportedOperationException
+	 *     if the operation is not supported by this ViewerState
 	 */
 	boolean setCurrentGroup( SourceGroup group );
 
 	/**
-	 * Get the set of active groups.
-	 * The returned {@code Set} reflects changes to the viewer state.
-	 * It is unmodifiable and not thread-safe.
+	 * Get the set of active groups. The returned {@code Set} reflects changes
+	 * to the viewer state. It is unmodifiable and not thread-safe.
 	 *
 	 * @return the set of active groups
 	 */
@@ -449,9 +475,10 @@ public interface ViewerState
 	 * @return {@code true}, if {@code group} is active
 	 *
 	 * @throws NullPointerException
-	 * 		if {@code group == null}
+	 *     if {@code group == null}
 	 * @throws IllegalArgumentException
-	 * 		if {@code group} is not contained in the state (and not {@code null}).
+	 *     if {@code group} is not contained in the state (and not
+	 *     {@code null}).
 	 */
 	boolean isGroupActive( SourceGroup group );
 
@@ -459,33 +486,38 @@ public interface ViewerState
 	 * Set {@code group} active or inactive (optional operation).
 	 * <p>
 	 * Returns {@code true}, if group activity changes as a result of the call.
-	 * Returns {@code false}, if {@code group} is already in the desired {@code active} state.
+	 * Returns {@code false}, if {@code group} is already in the desired
+	 * {@code active} state.
 	 *
 	 * @return {@code true}, if group activity changed as a result of the call
 	 *
 	 * @throws NullPointerException
-	 * 		if {@code group == null}
+	 *     if {@code group == null}
 	 * @throws IllegalArgumentException
-	 * 		if {@code group} is not contained in the state (and not {@code null}).
-	 * @throws UnsupportedOperationException if the operation
-	 *         is not supported by this ViewerState
+	 *     if {@code group} is not contained in the state (and not
+	 *     {@code null}).
+	 * @throws UnsupportedOperationException
+	 *     if the operation is not supported by this ViewerState
 	 */
 	boolean setGroupActive( SourceGroup group, boolean active );
 
 	/**
-	 * Set all groups in {@code collection} active or inactive (optional operation).
+	 * Set all groups in {@code collection} active or inactive (optional
+	 * operation).
 	 * <p>
 	 * Returns {@code true}, if group activity changes as a result of the call.
-	 * Returns {@code false}, if all groups were already in the desired {@code active} state.
+	 * Returns {@code false}, if all groups were already in the desired
+	 * {@code active} state.
 	 *
 	 * @return {@code true}, if group activity changed as a result of the call
 	 *
 	 * @throws NullPointerException
-	 * 		if {@code collection == null} or any element of {@code collection} is {@code null}.
+	 *     if {@code collection == null} or any element of {@code collection} is
+	 *     {@code null}.
 	 * @throws IllegalArgumentException
-	 * 		if any element of {@code collection} is not contained in the state.
-	 * @throws UnsupportedOperationException if the operation
-	 *         is not supported by this ViewerState
+	 *     if any element of {@code collection} is not contained in the state.
+	 * @throws UnsupportedOperationException
+	 *     if the operation is not supported by this ViewerState
 	 */
 	boolean setGroupsActive( Collection< ? extends SourceGroup > collection, boolean active );
 
@@ -495,9 +527,10 @@ public interface ViewerState
 	 * @return name of the group, may be {@code null}
 	 *
 	 * @throws NullPointerException
-	 * 		if {@code group == null}
+	 *     if {@code group == null}
 	 * @throws IllegalArgumentException
-	 * 		if {@code group} is not contained in the state (and not {@code null}).
+	 *     if {@code group} is not contained in the state (and not
+	 *     {@code null}).
 	 */
 	String getGroupName( final SourceGroup group );
 
@@ -505,11 +538,12 @@ public interface ViewerState
 	 * Set the {@code name} of a {@code group} (optional operation).
 	 *
 	 * @throws NullPointerException
-	 * 		if {@code group == null}
+	 *     if {@code group == null}
 	 * @throws IllegalArgumentException
-	 * 		if {@code group} is not contained in the state (and not {@code null}).
-	 * @throws UnsupportedOperationException if the operation
-	 *         is not supported by this ViewerState
+	 *     if {@code group} is not contained in the state (and not
+	 *     {@code null}).
+	 * @throws UnsupportedOperationException
+	 *     if the operation is not supported by this ViewerState
 	 */
 	void setGroupName( SourceGroup group, String name );
 
@@ -519,171 +553,192 @@ public interface ViewerState
 	 * @return {@code true}, if {@code group} is in the list of groups.
 	 *
 	 * @throws NullPointerException
-	 * 		if {@code group == null}
+	 *     if {@code group == null}
 	 */
 	boolean containsGroup( SourceGroup group );
 
 	/**
-	 * Add {@code group} to the state (optional operation).
-	 * Returns {@code true}, if the group is added.
-	 * Returns {@code false}, if the group is already present.
+	 * Add {@code group} to the state (optional operation). Returns
+	 * {@code true}, if the group is added. Returns {@code false}, if the group
+	 * is already present.
 	 * <p>
-	 * If {@code group} is added and no other group was current, then {@code group} is made current
+	 * If {@code group} is added and no other group was current, then
+	 * {@code group} is made current
 	 *
 	 * @return {@code true}, if list of groups changed as a result of the call.
 	 *
 	 * @throws NullPointerException
-	 * 		if {@code group == null}
-	 * @throws UnsupportedOperationException if the operation
-	 *         is not supported by this ViewerState
+	 *     if {@code group == null}
+	 * @throws UnsupportedOperationException
+	 *     if the operation is not supported by this ViewerState
 	 */
 	boolean addGroup( SourceGroup group );
 
 	/**
 	 * Add all groups in {@code collection} to the state (optional operation).
-	 * Returns {@code true}, if at least one group was added.
-	 * Returns {@code false}, if all groups were already present.
+	 * Returns {@code true}, if at least one group was added. Returns
+	 * {@code false}, if all groups were already present.
 	 * <p>
-	 * If any groups are added and no other group was current, then the first added groups will be made current.
+	 * If any groups are added and no other group was current, then the first
+	 * added groups will be made current.
 	 *
 	 * @return {@code true}, if list of groups changed as a result of the call.
 	 *
 	 * @throws NullPointerException
-	 * 		if {@code collection == null} or any element of {@code collection} is {@code null}.
-	 * @throws UnsupportedOperationException if the operation
-	 *         is not supported by this ViewerState
+	 *     if {@code collection == null} or any element of {@code collection} is
+	 *     {@code null}.
+	 * @throws UnsupportedOperationException
+	 *     if the operation is not supported by this ViewerState
 	 */
 	boolean addGroups( Collection< ? extends SourceGroup > collection );
 
 	/**
 	 * Remove {@code group} from the state (optional operation).
 	 * <p>
-	 * Returns {@code true}, if  {@code group} was removed from the state.
+	 * Returns {@code true}, if {@code group} was removed from the state.
 	 * Returns {@code false}, if {@code group} was not contained in state.
 	 * <p>
-	 * If {@code group} was current, then the first group in the list of groups is made current (if it exists).
+	 * If {@code group} was current, then the first group in the list of groups
+	 * is made current (if it exists).
 	 *
 	 * @return {@code true}, if list of groups changed as a result of the call
 	 *
 	 * @throws NullPointerException
-	 * 		if {@code group == null}
-	 * @throws UnsupportedOperationException if the operation
-	 *         is not supported by this ViewerState
+	 *     if {@code group == null}
+	 * @throws UnsupportedOperationException
+	 *     if the operation is not supported by this ViewerState
 	 */
 	boolean removeGroup( SourceGroup group );
 
 	/**
-	 * Remove all groups in {@code collection} from the state (optional operation).
-	 * Returns {@code true}, if at least one group was removed.
+	 * Remove all groups in {@code collection} from the state (optional
+	 * operation). Returns {@code true}, if at least one group was removed.
 	 * Returns {@code false}, if none of the groups was present.
 	 * <p>
-	 * If the current group was removed, then the first group in the remaining list of groups is made current (if it exists).
+	 * If the current group was removed, then the first group in the remaining
+	 * list of groups is made current (if it exists).
 	 *
 	 * @return {@code true}, if list of groups changed as a result of the call.
 	 *
 	 * @throws NullPointerException
-	 * 		if {@code collection == null} or any element of {@code collection} is {@code null}.
-	 * @throws UnsupportedOperationException if the operation
-	 *         is not supported by this ViewerState
+	 *     if {@code collection == null} or any element of {@code collection} is
+	 *     {@code null}.
+	 * @throws UnsupportedOperationException
+	 *     if the operation is not supported by this ViewerState
 	 */
-	boolean removeGroups(  Collection< ? extends SourceGroup > collection );
+	boolean removeGroups( Collection< ? extends SourceGroup > collection );
 
 	/**
 	 * Add {@code source} to {@code group} (optional operation).
 	 * <p>
-	 * Returns {@code true}, if  {@code source} was added to {@code group}.
-	 * Returns {@code false}, if {@code source} was already contained in {@code group}.
-	 * or either of {@code source} and {@code group} is not valid (not in the BDV sources/groups list).
+	 * Returns {@code true}, if {@code source} was added to {@code group}.
+	 * Returns {@code false}, if {@code source} was already contained in
+	 * {@code group}. or either of {@code source} and {@code group} is not valid
+	 * (not in the BDV sources/groups list).
 	 *
-	 * @return {@code true}, if set of sources in {@code group} changed as a result of the call
+	 * @return {@code true}, if set of sources in {@code group} changed as a
+	 * result of the call
 	 *
 	 * @throws NullPointerException
-	 * 		if {@code source == null} or {@code group == null}
+	 *     if {@code source == null} or {@code group == null}
 	 * @throws IllegalArgumentException
-	 * 		if either of {@code source} and {@code group} is not contained in the state (and not {@code null}).
-	 * @throws UnsupportedOperationException if the operation
-	 *         is not supported by this ViewerState
+	 *     if either of {@code source} and {@code group} is not contained in the
+	 *     state (and not {@code null}).
+	 * @throws UnsupportedOperationException
+	 *     if the operation is not supported by this ViewerState
 	 */
-	 boolean addSourceToGroup(  SourceAndConverter< ? > source,  SourceGroup group );
+	boolean addSourceToGroup( SourceAndConverter< ? > source, SourceGroup group );
 
 	/**
-	 * Add all sources in {@code collection} to {@code group} (optional operation).
+	 * Add all sources in {@code collection} to {@code group} (optional
+	 * operation).
 	 * <p>
 	 * Returns {@code true}, if at least one source was added to {@code group}.
-	 * Returns {@code false}, if all sources were already contained in {@code group}.
+	 * Returns {@code false}, if all sources were already contained in
+	 * {@code group}.
 	 *
-	 * @return {@code true}, if set of sources in {@code group} changed as a result of the call
+	 * @return {@code true}, if set of sources in {@code group} changed as a
+	 * result of the call
 	 *
 	 * @throws NullPointerException
-	 * 		if {@code group == null} or {@code collection == null} or any element of {@code collection} is {@code null}.
+	 *     if {@code group == null} or {@code collection == null} or any element
+	 *     of {@code collection} is {@code null}.
 	 * @throws IllegalArgumentException
-	 * 		if {@code group} or any element of {@code collection} is is not contained in the state (and not {@code null}).
-	 * @throws UnsupportedOperationException if the operation
-	 *         is not supported by this ViewerState
+	 *     if {@code group} or any element of {@code collection} is is not
+	 *     contained in the state (and not {@code null}).
+	 * @throws UnsupportedOperationException
+	 *     if the operation is not supported by this ViewerState
 	 */
-	 boolean addSourcesToGroup(  Collection< ? extends SourceAndConverter< ? > > collection,  SourceGroup group );
+	boolean addSourcesToGroup( Collection< ? extends SourceAndConverter< ? > > collection, SourceGroup group );
 
 	/**
 	 * Remove {@code source} from {@code group} (optional operation).
 	 * <p>
-	 * Returns {@code true}, if  {@code source} was removed from {@code group}.
-	 * Returns {@code false}, if {@code source} was not contained in {@code group},
+	 * Returns {@code true}, if {@code source} was removed from {@code group}.
+	 * Returns {@code false}, if {@code source} was not contained in
+	 * {@code group},
 	 *
-	 * @return {@code true}, if set of sources in {@code group} changed as a result of the call
-	 *
-	 * @throws NullPointerException
-	 * 		if {@code source == null} or {@code group == null}
-	 * @throws IllegalArgumentException
-	 * 		if either of {@code source} and {@code group} is not contained in the state (and not {@code null}).
-	 * @throws UnsupportedOperationException if the operation
-	 *         is not supported by this ViewerState
-	 */
-	 boolean removeSourceFromGroup(  SourceAndConverter< ? > source,  SourceGroup group );
-
-	/**
-	 * Remove all sources in {@code collection} from {@code group} (optional operation).
-	 * <p>
-	 * Returns {@code true}, if at least one source was removed from {@code group}.
-	 * Returns {@code false}, if none of the sources were contained in {@code group}.
-	 *
-	 * @return {@code true}, if set of sources in {@code group} changed as a result of the call
+	 * @return {@code true}, if set of sources in {@code group} changed as a
+	 * result of the call
 	 *
 	 * @throws NullPointerException
-	 * 		if {@code group == null} or {@code collection == null} or any element of {@code collection} is {@code null}.
+	 *     if {@code source == null} or {@code group == null}
 	 * @throws IllegalArgumentException
-	 * 		if {@code group} or any element of {@code collection} is is not contained in the state (and not {@code null}).
+	 *     if either of {@code source} and {@code group} is not contained in the
+	 *     state (and not {@code null}).
 	 * @throws UnsupportedOperationException
-	 * 		if the operation
-	 * 		is not supported by this ViewerState
+	 *     if the operation is not supported by this ViewerState
 	 */
-	 boolean removeSourcesFromGroup(  Collection< ? extends SourceAndConverter< ? > > collection,  SourceGroup group );
+	boolean removeSourceFromGroup( SourceAndConverter< ? > source, SourceGroup group );
 
 	/**
-	 * Get the set sources in {@code group}.
-	 * The returned {@code Set} reflects changes to the viewer state.
-	 * It is unmodifiable and not thread-safe.
+	 * Remove all sources in {@code collection} from {@code group} (optional
+	 * operation).
+	 * <p>
+	 * Returns {@code true}, if at least one source was removed from
+	 * {@code group}. Returns {@code false}, if none of the sources were
+	 * contained in {@code group}.
+	 *
+	 * @return {@code true}, if set of sources in {@code group} changed as a
+	 * result of the call
+	 *
+	 * @throws NullPointerException
+	 *     if {@code group == null} or {@code collection == null} or any element
+	 *     of {@code collection} is {@code null}.
+	 * @throws IllegalArgumentException
+	 *     if {@code group} or any element of {@code collection} is is not
+	 *     contained in the state (and not {@code null}).
+	 * @throws UnsupportedOperationException
+	 *     if the operation is not supported by this ViewerState
+	 */
+	boolean removeSourcesFromGroup( Collection< ? extends SourceAndConverter< ? > > collection, SourceGroup group );
+
+	/**
+	 * Get the set sources in {@code group}. The returned {@code Set} reflects
+	 * changes to the viewer state. It is unmodifiable and not thread-safe.
 	 *
 	 * @return the set of sources in {@code group}
 	 *
 	 * @throws NullPointerException
-	 * 		if {@code group == null}
+	 *     if {@code group == null}
 	 * @throws IllegalArgumentException
-	 * 		if {@code group} is not contained in the state (and not {@code null}).
+	 *     if {@code group} is not contained in the state (and not
+	 *     {@code null}).
 	 */
-	 Set< SourceAndConverter< ? > > getSourcesInGroup(  SourceGroup group );
+	Set< SourceAndConverter< ? > > getSourcesInGroup( SourceGroup group );
 
 	/**
 	 * Remove all groups from the state (optional operation).
 	 *
-	 * @throws UnsupportedOperationException if the operation
-	 *         is not supported by this ViewerState
+	 * @throws UnsupportedOperationException
+	 *     if the operation is not supported by this ViewerState
 	 */
-	 void clearGroups();
+	void clearGroups();
 
 	/**
-	 * Returns a {@link Comparator} that compares groups
-	 * according to the order in which they occur in the groups list.
-	 * (Groups that do not occur in the list are ordered before any group in the list).
+	 * Returns a {@link Comparator} that compares groups according to the order
+	 * in which they occur in the groups list. (Groups that do not occur in the
+	 * list are ordered before any group in the list).
 	 */
-	 Comparator< SourceGroup > groupOrder();
+	Comparator< SourceGroup > groupOrder();
 }

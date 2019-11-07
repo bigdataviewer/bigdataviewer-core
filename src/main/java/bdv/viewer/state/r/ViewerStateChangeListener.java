@@ -1,7 +1,8 @@
 package bdv.viewer.state.r;
 
 /**
- * {@link ViewerStateChangeListener}s are notified about BigDataViewer state changes.
+ * {@link ViewerStateChangeListener}s are notified about BigDataViewer state
+ * changes.
  *
  * @author Tobias Pietzsch
  */
