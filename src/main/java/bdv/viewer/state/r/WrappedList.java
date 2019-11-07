@@ -5,6 +5,11 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 
+/**
+ * A {@link List} wrapper that forwards all calls to another {@link List}.
+ *
+ * @author Tobias Pietzsch
+ */
 // TODO: move to Util
 public class WrappedList< E > implements List< E >
 {

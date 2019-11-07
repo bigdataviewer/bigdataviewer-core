@@ -10,54 +10,97 @@ import java.util.Set;
 import net.imglib2.realtransform.AffineTransform3D;
 
 /**
- * Holds viewer state and exposes query and modification methods.
+ * Reading and writing the BigDataViewer state:
+ * <ul>
+ * <li>interpolation and display mode</li>
+ * <li>contained sources and source groups</li>
+ * <li>activeness / currentness of sources and groups</li>
+ * <li>current timepoint and transformation</li>
+ * </ul>
  *
  * @author Tobias Pietzsch
  */
 public interface ViewerState
 {
+	/**
+	 * Get the interpolation method.
+	 *
+	 * @return interpolation method
+	 */
 	Interpolation getInterpolation();
 
 	/**
-	 * (optional operation)
+	 * Set the interpolation method (optional operation).
 	 *
 	 * @throws UnsupportedOperationException if the operation
 	 *         is not supported by this ViewerState
 	 */
-	void setInterpolation( Interpolation i );
+	void setInterpolation( Interpolation interpolation );
 
+	/**
+	 * Get the current {@code DisplayMode}.
+	 * <ul>
+	 * <li>In {@code DisplayMode.SINGLE} only the current source is visible.</li>
+	 * <li>In {@code DisplayMode.GROUP} the sources in the current group are visible.</li>
+	 * <li>In {@code DisplayMode.FUSED} all active sources are visible.</li>
+	 * <li>In {@code DisplayMode.FUSEDROUP} the sources in all active groups are visible.</li>
+	 * </ul>
+	 *
+	 * @return the current display mode
+	 */
 	DisplayMode getDisplayMode();
 
 	/**
-	 * (optional operation)
+	 * Set the {@link DisplayMode} (optional operation).
 	 *
 	 * @throws UnsupportedOperationException if the operation
 	 *         is not supported by this ViewerState
 	 */
 	void setDisplayMode( DisplayMode mode );
 
+	/**
+	 * Get the number of timepoints.
+	 *
+	 * @return the number of timepoints
+	 */
 	int getNumTimepoints();
 
 	/**
-	 * (optional operation)
+	 * Set the number of timepoints (optional operation).
 	 *
 	 * @throws UnsupportedOperationException if the operation
 	 *         is not supported by this ViewerState
 	 */
 	void setNumTimepoints( int n );
 
+	/**
+	 * Get the current timepoint.
+	 *
+	 * @return current timepoint (index)
+	 */
 	int getCurrentTimepoint();
 
 	/**
-	 * (optional operation)
+	 * Set the current timepoint (optional operation).
 	 *
 	 * @throws UnsupportedOperationException if the operation
 	 *         is not supported by this ViewerState
 	 */
 	void setCurrentTimepoint( int t );
 
+	/**
+	 * Get the viewer transform.
+	 *
+	 * @param transform
+	 * 		is set to the viewer transform
+	 */
 	void getViewerTransform( AffineTransform3D transform );
 
+	/**
+	 * Get the viewer transform.
+	 *
+	 * @return a copy of the current viewer transform
+	 */
 	default AffineTransform3D getViewerTransform()
 	{
 		final AffineTransform3D transform = new AffineTransform3D();
@@ -66,7 +109,7 @@ public interface ViewerState
 	}
 
 	/**
-	 * (optional operation)
+	 * Set the viewer transform (optional operation).
 	 *
 	 * @throws UnsupportedOperationException if the operation
 	 *         is not supported by this ViewerState

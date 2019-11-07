@@ -1,5 +1,10 @@
 package bdv.viewer.state.r;
 
+/**
+ * Types of BigDataViewer state changes that {@link ViewerStateChangeListener}s can be notified about.
+ *
+ * @author Tobias Pietzsch
+ */
 public enum ViewerStateChange
 {
 	CURRENT_SOURCE_CHANGED,

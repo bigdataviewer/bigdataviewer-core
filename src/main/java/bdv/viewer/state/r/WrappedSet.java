@@ -2,9 +2,13 @@ package bdv.viewer.state.r;
 
 import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Set;
 
+/**
+ * A {@link Set} wrapper that forwards all calls to another {@link Set}.
+ *
+ * @author Tobias Pietzsch
+ */
 // TODO: move to Util
 public class WrappedSet< E > implements Set< E >
 {

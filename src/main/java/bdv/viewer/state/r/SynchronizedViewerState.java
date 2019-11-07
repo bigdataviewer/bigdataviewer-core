@@ -12,10 +12,14 @@ import net.imglib2.realtransform.AffineTransform3D;
 import org.scijava.listeners.Listeners;
 
 /**
- * Holds viewer state and exposes low-level query and modification methods.
- * Notifies {@code ViewerStateChangeListener}s.
+ * Maintains the BigDataViewer state and implements {@link ViewerState} to expose query and modification methods.
+ * {@code ViewerStateChangeListener}s can be registered and will be notified about various {@link ViewerStateChange state changes}.
  * <p>
  * All methods of this class are {@code synchronized}, so that every individual change to the viewer state is atomic.
+ * {@code IllegalArgumentException}s thrown by the wrapped {@code BasicViewerState} are silently swallowed, under the assumption that they result from concurrent changes
+ * (for example another thread might have removed the source that you are trying to make current).
+ * </p>
+ * <p>
  * To perform sequences of operations atomically explicit synchronization is required.
  * In particular, this is true when using the collections returned by
  * {@link #getSources()},
@@ -25,22 +29,27 @@ import org.scijava.listeners.Listeners;
  * {@link #getSourcesInGroup(SourceGroup)}.
  * These collections are backed by the ViewerState, they reflect changes, and they are <em>not thread-safe</em>.
  * It is possible to run into {@code ConcurrentModificationException} when iterating them, etc.
+ * </p>
  * <p>
  * Example where explicit synchronization is required:
- * <pre>{@code
+ * <pre>{@code List<SourceGroup> groupsContainingCurrentSource;
  * synchronized (state) {
  *     SourceAndConverter<?> currentSource = state.getCurrentSource();
- *     List<SourceGroup> groupsContainingCurrentSource =
+ *     groupsContainingCurrentSource =
  *         state.getGroups().stream()
  *             .filter(g -> state.getSourcesInGroup(g).contains(currentSource))
  *             .collect(Collectors.toList());
  * }}</pre>
+ * </p>
+ * <p>
+ * Alternatively, for read-only access, it is possible to (atomically) take an unmodifiable {@link #snapshot()} of the current state.
+ * </p>
  *
  * @author Tobias Pietzsch
  */
 public class SynchronizedViewerState implements ViewerState
 {
-	private static final boolean DEBUG = true;
+	private static final boolean DEBUG = false;
 
 	private final BasicViewerState state;
 

@@ -37,10 +37,11 @@ import static gnu.trove.impl.Constants.DEFAULT_CAPACITY;
 import static gnu.trove.impl.Constants.DEFAULT_LOAD_FACTOR;
 
 /**
- * Holds viewer state and exposes low-level query and modification methods.
- * Notifies {@code ViewerStateChangeListener}s.
- *
+ * Maintains the BigDataViewer state and implements {@link ViewerState} to expose query and modification methods.
+ * {@code ViewerStateChangeListener}s can be registered and will be notified about various {@link ViewerStateChange state changes}.
+ * <p>
  * <em>This class is not thread-safe.</em>
+ * </p>
  *
  * @author Tobias Pietzsch
  */
@@ -167,6 +168,9 @@ public class BasicViewerState implements ViewerState
 			groupIndices.put( groups.get( i ), i );
 	}
 
+	/**
+	 * {@code ViewerStateChangeListener}s can be added/removed here.
+	 */
 	public Listeners< ViewerStateChangeListener > changeListeners()
 	{
 		return listeners;

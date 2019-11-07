@@ -10,10 +10,7 @@ import java.util.Set;
 import net.imglib2.realtransform.AffineTransform3D;
 
 /**
- * Holds viewer state and exposes low-level query and modification methods.
- * Notifies {@code ViewerStateChangeListener}s.
- *
- * <em>This class is not thread-safe.</em>
+ * Wraps another {@link ViewerState} and throws {@code UnsupportedOperationException} for all modification operations.
  *
  * @author Tobias Pietzsch
  */
