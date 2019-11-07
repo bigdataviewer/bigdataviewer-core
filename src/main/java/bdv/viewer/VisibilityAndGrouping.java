@@ -57,6 +57,7 @@ import static bdv.viewer.VisibilityAndGrouping.Event.VISIBILITY_CHANGED;
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
+@Deprecated
 public class VisibilityAndGrouping
 {
 	public static final class Event
