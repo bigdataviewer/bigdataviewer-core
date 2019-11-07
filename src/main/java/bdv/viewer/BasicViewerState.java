@@ -1,10 +1,7 @@
-package bdv.viewer.state.r;
+package bdv.viewer;
 
 import bdv.util.Affine3DHelpers;
 import bdv.util.WrappedList;
-import bdv.viewer.DisplayMode;
-import bdv.viewer.Interpolation;
-import bdv.viewer.SourceAndConverter;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import java.util.ArrayList;
@@ -20,20 +17,20 @@ import java.util.Set;
 import net.imglib2.realtransform.AffineTransform3D;
 import org.scijava.listeners.Listeners;
 
-import static bdv.viewer.state.r.ViewerStateChange.CURRENT_GROUP_CHANGED;
-import static bdv.viewer.state.r.ViewerStateChange.CURRENT_SOURCE_CHANGED;
-import static bdv.viewer.state.r.ViewerStateChange.CURRENT_TIMEPOINT_CHANGED;
-import static bdv.viewer.state.r.ViewerStateChange.DISPLAY_MODE_CHANGED;
-import static bdv.viewer.state.r.ViewerStateChange.GROUP_ACTIVITY_CHANGED;
-import static bdv.viewer.state.r.ViewerStateChange.GROUP_NAME_CHANGED;
-import static bdv.viewer.state.r.ViewerStateChange.INTERPOLATION_CHANGED;
-import static bdv.viewer.state.r.ViewerStateChange.NUM_GROUPS_CHANGED;
-import static bdv.viewer.state.r.ViewerStateChange.NUM_SOURCES_CHANGED;
-import static bdv.viewer.state.r.ViewerStateChange.NUM_TIMEPOINTS_CHANGED;
-import static bdv.viewer.state.r.ViewerStateChange.SOURCE_ACTIVITY_CHANGED;
-import static bdv.viewer.state.r.ViewerStateChange.SOURCE_TO_GROUP_ASSIGNMENT_CHANGED;
-import static bdv.viewer.state.r.ViewerStateChange.VIEWER_TRANSFORM_CHANGED;
-import static bdv.viewer.state.r.ViewerStateChange.VISIBILITY_CHANGED;
+import static bdv.viewer.ViewerStateChange.CURRENT_GROUP_CHANGED;
+import static bdv.viewer.ViewerStateChange.CURRENT_SOURCE_CHANGED;
+import static bdv.viewer.ViewerStateChange.CURRENT_TIMEPOINT_CHANGED;
+import static bdv.viewer.ViewerStateChange.DISPLAY_MODE_CHANGED;
+import static bdv.viewer.ViewerStateChange.GROUP_ACTIVITY_CHANGED;
+import static bdv.viewer.ViewerStateChange.GROUP_NAME_CHANGED;
+import static bdv.viewer.ViewerStateChange.INTERPOLATION_CHANGED;
+import static bdv.viewer.ViewerStateChange.NUM_GROUPS_CHANGED;
+import static bdv.viewer.ViewerStateChange.NUM_SOURCES_CHANGED;
+import static bdv.viewer.ViewerStateChange.NUM_TIMEPOINTS_CHANGED;
+import static bdv.viewer.ViewerStateChange.SOURCE_ACTIVITY_CHANGED;
+import static bdv.viewer.ViewerStateChange.SOURCE_TO_GROUP_ASSIGNMENT_CHANGED;
+import static bdv.viewer.ViewerStateChange.VIEWER_TRANSFORM_CHANGED;
+import static bdv.viewer.ViewerStateChange.VISIBILITY_CHANGED;
 import static gnu.trove.impl.Constants.DEFAULT_CAPACITY;
 import static gnu.trove.impl.Constants.DEFAULT_LOAD_FACTOR;
 

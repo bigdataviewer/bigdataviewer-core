@@ -38,7 +38,6 @@ import static bdv.viewer.VisibilityAndGrouping.Event.NUM_SOURCES_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.SOURCE_ACTVITY_CHANGED;
 import static bdv.viewer.VisibilityAndGrouping.Event.VISIBILITY_CHANGED;
 
-import bdv.viewer.state.r.SynchronizedViewerState;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;

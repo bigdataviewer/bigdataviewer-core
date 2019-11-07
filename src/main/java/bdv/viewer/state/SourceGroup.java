@@ -29,6 +29,7 @@
  */
 package bdv.viewer.state;
 
+import bdv.viewer.ViewerState;
 import java.util.Collections;
 import java.util.SortedSet;
 import java.util.TreeSet;
@@ -45,9 +46,9 @@ public class SourceGroup
 {
 	protected final SortedSet< Integer > sourceIds;
 
-	private final bdv.viewer.state.r.ViewerState state;
+	private final ViewerState state;
 
-	private final bdv.viewer.state.r.SourceGroup handle;
+	private final bdv.viewer.SourceGroup handle;
 
 	protected String name;
 
@@ -62,7 +63,7 @@ public class SourceGroup
 	 */
 	protected boolean isCurrent;
 
-	public SourceGroup( final bdv.viewer.state.r.ViewerState state, final bdv.viewer.state.r.SourceGroup handle )
+	public SourceGroup( final ViewerState state, final bdv.viewer.SourceGroup handle )
 	{
 		this.state = state;
 		this.handle = handle;

@@ -1,4 +1,4 @@
-package bdv.viewer.state.r;
+package bdv.viewer;
 
 /**
  * {@link ViewerStateChangeListener}s are notified about BigDataViewer state

@@ -1,8 +1,5 @@
-package bdv.viewer.state.r;
+package bdv.viewer;
 
-import bdv.viewer.Interpolation;
-import bdv.viewer.Source;
-import bdv.viewer.SourceAndConverter;
 import java.util.Collections;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.IntPredicate;

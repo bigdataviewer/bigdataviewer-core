@@ -34,8 +34,8 @@ import bdv.viewer.DisplayMode;
 import bdv.viewer.Interpolation;
 import bdv.viewer.Source;
 import bdv.viewer.SourceAndConverter;
-import bdv.viewer.state.r.BasicViewerState;
-import bdv.viewer.state.r.SynchronizedViewerState;
+import bdv.viewer.BasicViewerState;
+import bdv.viewer.SynchronizedViewerState;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -81,7 +81,7 @@ public class ViewerState
 		state.addSources( sources );
 		state.setSourcesActive( sources, true );
 		sourceGroups.forEach( sourceGroup -> {
-			final bdv.viewer.state.r.SourceGroup handle = new bdv.viewer.state.r.SourceGroup();
+			final bdv.viewer.SourceGroup handle = new bdv.viewer.SourceGroup();
 			state.addGroup( handle );
 			state.setGroupName( handle, sourceGroup.getName() );
 			state.setGroupActive( handle, sourceGroup.isActive() );
@@ -198,9 +198,9 @@ public class ViewerState
 		state.setCurrentGroup( getHandle( group ) );
 	}
 
-	private bdv.viewer.state.r.SourceGroup getHandle( final SourceGroup group )
+	private bdv.viewer.SourceGroup getHandle( final SourceGroup group )
 	{
-		for ( bdv.viewer.state.r.SourceGroup handle : state.getGroups() )
+		for ( bdv.viewer.SourceGroup handle : state.getGroups() )
 		{
 			SourceGroup g = new SourceGroup( state.getGroupName( handle ) );
 			state.getSourcesInGroup( handle ).forEach( s -> g.addSource( state.getSources().indexOf( s ) ) );
@@ -348,7 +348,7 @@ public class ViewerState
 		return state.getSources().size();
 	}
 
-	final Map< bdv.viewer.state.r.SourceGroup, SourceGroup > handleToSourceGroup = new HashMap<>();
+	final Map< bdv.viewer.SourceGroup, SourceGroup > handleToSourceGroup = new HashMap<>();
 	/**
 	 * Returns a list of all source groups.
 	 *
@@ -357,7 +357,7 @@ public class ViewerState
 	public List< SourceGroup > getSourceGroups()
 	{
 		List< SourceGroup > sourceGroups = new ArrayList<>();
-		for ( bdv.viewer.state.r.SourceGroup handle : state.getGroups() )
+		for ( bdv.viewer.SourceGroup handle : state.getGroups() )
 		{
 			sourceGroups.add( handleToSourceGroup.computeIfAbsent( handle, h -> {
 				SourceGroup g = new SourceGroup( state, handle );
@@ -395,7 +395,7 @@ public class ViewerState
 
 	public synchronized void addGroup( final SourceGroup group )
 	{
-		final bdv.viewer.state.r.SourceGroup handle = new bdv.viewer.state.r.SourceGroup();
+		final bdv.viewer.SourceGroup handle = new bdv.viewer.SourceGroup();
 		state.addGroup( handle );
 		state.setGroupName( handle, group.getName() );
 		state.setGroupActive( handle, group.isActive() );

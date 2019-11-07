@@ -31,9 +31,6 @@ package bdv.viewer;
 
 import bdv.viewer.state.SourceGroup;
 import bdv.viewer.state.SourceState;
-import bdv.viewer.state.r.SynchronizedViewerState;
-import bdv.viewer.state.r.ViewerState;
-import bdv.viewer.state.r.ViewerStateChange;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -231,7 +228,7 @@ public class VisibilityAndGrouping
 		if ( groupIndex < 0 || groupIndex >= numGroups() )
 			return;
 
-		final bdv.viewer.state.r.SourceGroup group = state.getGroups().get( groupIndex );
+		final bdv.viewer.SourceGroup group = state.getGroups().get( groupIndex );
 		state.setCurrentGroup( group );
 		update( CURRENT_GROUP_CHANGED );
 		final List< SourceAndConverter< ? > > sources = new ArrayList<>( state.getSourcesInGroup( group ) );

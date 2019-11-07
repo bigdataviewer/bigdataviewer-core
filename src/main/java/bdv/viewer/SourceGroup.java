@@ -1,4 +1,4 @@
-package bdv.viewer.state.r;
+package bdv.viewer;
 
 /**
  * A SourceGroup handle. Identifies the same source group over time (while both

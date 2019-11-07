@@ -31,10 +31,10 @@ package bdv.tools;
 
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.VisibilityAndGrouping;
-import bdv.viewer.state.r.SourceGroup;
-import bdv.viewer.state.r.SynchronizedViewerState;
-import bdv.viewer.state.r.ViewerStateChange;
-import bdv.viewer.state.r.ViewerStateChangeListener;
+import bdv.viewer.SourceGroup;
+import bdv.viewer.SynchronizedViewerState;
+import bdv.viewer.ViewerStateChange;
+import bdv.viewer.ViewerStateChangeListener;
 import java.awt.BorderLayout;
 import java.awt.Frame;
 import java.awt.GridBagConstraints;

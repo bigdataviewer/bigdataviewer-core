@@ -1,4 +1,4 @@
-package bdv.viewer.state.r;
+package bdv.viewer;
 
 /**
  * Types of BigDataViewer state changes that {@link ViewerStateChangeListener}s
