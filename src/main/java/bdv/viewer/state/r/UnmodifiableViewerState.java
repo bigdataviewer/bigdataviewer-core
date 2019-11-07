@@ -10,7 +10,8 @@ import java.util.Set;
 import net.imglib2.realtransform.AffineTransform3D;
 
 /**
- * Wraps another {@link ViewerState} and throws {@code UnsupportedOperationException} for all modification operations.
+ * Wraps another {@link ViewerState} and throws
+ * {@code UnsupportedOperationException} for all modification operations.
  *
  * @author Tobias Pietzsch
  */
