@@ -817,7 +817,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		return state.copy();
 	}
 
-	public SynchronizedViewerState getViewerState()
+	public SynchronizedViewerState state()
 	{
 		return state.getState();
 	}
