@@ -96,6 +96,11 @@ public class ViewerState
 		state.setCurrentTimepoint( 0 );
 	}
 
+	public ViewerState( final SynchronizedViewerState state )
+	{
+		this.state = state;
+	}
+
 	/**
 	 * copy constructor
 	 *
