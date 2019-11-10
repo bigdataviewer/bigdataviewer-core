@@ -110,7 +110,7 @@ import net.imglib2.util.LinAlgHelpers;
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
-public class ViewerPanel extends JPanel implements OverlayRenderer, TransformListener< AffineTransform3D >, PainterThread.Paintable, VisibilityAndGrouping.UpdateListener, RequestRepaint
+public class ViewerPanel extends JPanel implements OverlayRenderer, TransformListener< AffineTransform3D >, PainterThread.Paintable, ViewerStateChangeListener, VisibilityAndGrouping.UpdateListener, RequestRepaint
 {
 	private static final long serialVersionUID = 1L;
 
@@ -590,6 +590,58 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 			break;
 		case VISIBILITY_CHANGED:
 			requestRepaint();
+			break;
+		}
+	}
+
+	@Override
+	public void viewerStateChanged( final ViewerStateChange change )
+	{
+		switch ( change )
+		{
+		case CURRENT_SOURCE_CHANGED:
+			multiBoxOverlayRenderer.highlight( visibilityAndGrouping.getCurrentSource() );
+			display.repaint();
+			break;
+		case DISPLAY_MODE_CHANGED:
+			showMessage( visibilityAndGrouping.getDisplayMode().getName() );
+			display.repaint();
+			break;
+		case GROUP_NAME_CHANGED:
+			display.repaint();
+			break;
+		case CURRENT_GROUP_CHANGED:
+			// TODO multiBoxOverlayRenderer.highlight() all sources in group that became current
+			break;
+		case SOURCE_ACTIVITY_CHANGED:
+			// TODO multiBoxOverlayRenderer.highlight() all sources that became visible
+			break;
+		case GROUP_ACTIVITY_CHANGED:
+			// TODO multiBoxOverlayRenderer.highlight() all sources that became visible
+			break;
+		case VISIBILITY_CHANGED:
+			requestRepaint();
+			break;
+
+		// TODO
+		// TODO
+		// TODO
+		// TODO
+		// TODO
+		// TODO
+		case SOURCE_TO_GROUP_ASSIGNMENT_CHANGED:
+			break;
+		case NUM_SOURCES_CHANGED:
+			break;
+		case NUM_GROUPS_CHANGED:
+			break;
+		case INTERPOLATION_CHANGED:
+			break;
+		case NUM_TIMEPOINTS_CHANGED:
+			break;
+		case CURRENT_TIMEPOINT_CHANGED:
+			break;
+		case VIEWER_TRANSFORM_CHANGED:
 			break;
 		}
 	}

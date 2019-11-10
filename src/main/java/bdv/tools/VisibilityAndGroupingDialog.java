@@ -79,6 +79,7 @@ public class VisibilityAndGroupingDialog extends JDialog
 
 	private final ModePanel modePanel;
 
+	@Deprecated
 	public VisibilityAndGroupingDialog( final Frame owner, final VisibilityAndGrouping visibilityAndGrouping )
 	{
 		this( owner, visibilityAndGrouping.getState() );

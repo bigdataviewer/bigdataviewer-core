@@ -57,6 +57,7 @@ import static bdv.viewer.VisibilityAndGrouping.Event.VISIBILITY_CHANGED;
 @Deprecated
 public class VisibilityAndGrouping
 {
+	@Deprecated
 	public static final class Event
 	{
 		public static final int CURRENT_SOURCE_CHANGED = 0;
@@ -90,22 +91,26 @@ public class VisibilityAndGrouping
 		}
 	}
 
+	@Deprecated
 	public interface UpdateListener
 	{
-		public void visibilityChanged( Event e );
+		void visibilityChanged( Event e );
 	}
 
 	protected final CopyOnWriteArrayList< UpdateListener > updateListeners;
 
 	private final bdv.viewer.state.ViewerState deprecatedViewerState;
 
+	@Deprecated
 	private final SynchronizedViewerState state;
 
+	@Deprecated
 	public SynchronizedViewerState getState()
 	{
 		return state;
 	}
 
+	@Deprecated
 	public VisibilityAndGrouping( final bdv.viewer.state.ViewerState viewerState )
 	{
 		updateListeners = new CopyOnWriteArrayList<>();
@@ -113,46 +118,79 @@ public class VisibilityAndGrouping
 		state = viewerState.getState();
 		viewerState.getState().changeListeners().add( e ->
 		{
-			if ( e == ViewerStateChange.VISIBILITY_CHANGED )
-				update( VISIBILITY_CHANGED );
-		} );
-		viewerState.getState().changeListeners().add( e ->
-		{
-			// log
+			switch ( e )
+			{
+			case CURRENT_SOURCE_CHANGED:
+				update( Event.CURRENT_SOURCE_CHANGED );
+				break;
+			case CURRENT_GROUP_CHANGED:
+				update( Event.CURRENT_GROUP_CHANGED );
+				break;
+			case SOURCE_ACTIVITY_CHANGED:
+				update( Event.SOURCE_ACTVITY_CHANGED );
+				break;
+			case GROUP_ACTIVITY_CHANGED:
+				update( Event.GROUP_ACTIVITY_CHANGED );
+				break;
+			case SOURCE_TO_GROUP_ASSIGNMENT_CHANGED:
+				update( Event.SOURCE_TO_GROUP_ASSIGNMENT_CHANGED );
+				break;
+			case GROUP_NAME_CHANGED:
+				update( Event.GROUP_NAME_CHANGED );
+				break;
+			case NUM_SOURCES_CHANGED:
+				update( Event.NUM_SOURCES_CHANGED );
+				break;
+			case NUM_GROUPS_CHANGED:
+				update( Event.NUM_GROUPS_CHANGED );
+				break;
+			case VISIBILITY_CHANGED:
+				update( Event.VISIBILITY_CHANGED );
+				break;
+			case DISPLAY_MODE_CHANGED:
+				update( Event.DISPLAY_MODE_CHANGED );
+				break;
+			}
 		} );
 	}
 
+	@Deprecated
 	public int numSources()
 	{
 		return state.getSources().size();
 	}
 
+	@Deprecated
 	public List< SourceState< ? > > getSources()
 	{
 		return deprecatedViewerState.getSources();
 	}
 
+	@Deprecated
 	public int numGroups()
 	{
 		return state.getGroups().size();
 	}
 
+	@Deprecated
 	public List< SourceGroup > getSourceGroups()
 	{
 		return deprecatedViewerState.getSourceGroups();
 	}
 
+	@Deprecated
 	public synchronized DisplayMode getDisplayMode()
 	{
 		return state.getDisplayMode();
 	}
 
+	@Deprecated
 	public synchronized void setDisplayMode( final DisplayMode displayMode )
 	{
 		state.setDisplayMode( displayMode );
-		update( DISPLAY_MODE_CHANGED );
 	}
 
+	@Deprecated
 	public synchronized int getCurrentSource()
 	{
 		return state.getSources().indexOf( state.getCurrentSource() );
@@ -163,21 +201,22 @@ public class VisibilityAndGrouping
 	 *
 	 * @param sourceIndex
 	 */
+	@Deprecated
 	public synchronized void setCurrentSource( final int sourceIndex )
 	{
 		if ( sourceIndex < 0 || sourceIndex >= numSources() )
 			return;
 
 		state.setCurrentSource( state.getSources().get( sourceIndex ) );
-		update( CURRENT_SOURCE_CHANGED );
 	};
 
+	@Deprecated
 	public synchronized void setCurrentSource( final Source< ? > source )
 	{
 		state.setCurrentSource( soc( source ) );
-		update( CURRENT_SOURCE_CHANGED );
 	};
 
+	@Deprecated
 	public synchronized boolean isSourceActive( final int sourceIndex )
 	{
 		if ( sourceIndex < 0 || sourceIndex >= numSources() )
@@ -192,13 +231,13 @@ public class VisibilityAndGrouping
 	 * @param sourceIndex
 	 * @param isActive
 	 */
+	@Deprecated
 	public synchronized void setSourceActive( final int sourceIndex, final boolean isActive )
 	{
 		if ( sourceIndex < 0 || sourceIndex >= numSources() )
 			return;
 
 		state.setSourceActive( state.getSources().get( sourceIndex ), isActive );
-		update( SOURCE_ACTVITY_CHANGED );
 	}
 
 	/**
@@ -207,12 +246,13 @@ public class VisibilityAndGrouping
 	 * @param source
 	 * @param isActive
 	 */
+	@Deprecated
 	public synchronized void setSourceActive( final Source< ? > source, final boolean isActive )
 	{
 		state.setSourceActive( soc( source ), isActive );
-		update( SOURCE_ACTVITY_CHANGED );
 	}
 
+	@Deprecated
 	public synchronized int getCurrentGroup()
 	{
 		return state.getGroups().indexOf( state.getCurrentGroup() );
@@ -223,6 +263,7 @@ public class VisibilityAndGrouping
 	 *
 	 * @param groupIndex
 	 */
+	@Deprecated
 	public synchronized void setCurrentGroup( final int groupIndex )
 	{
 		if ( groupIndex < 0 || groupIndex >= numGroups() )
@@ -230,7 +271,6 @@ public class VisibilityAndGrouping
 
 		final bdv.viewer.SourceGroup group = state.getGroups().get( groupIndex );
 		state.setCurrentGroup( group );
-		update( CURRENT_GROUP_CHANGED );
 		final List< SourceAndConverter< ? > > sources = new ArrayList<>( state.getSourcesInGroup( group ) );
 		if ( ! sources.isEmpty() )
 		{
@@ -239,6 +279,7 @@ public class VisibilityAndGrouping
 		}
 	}
 
+	@Deprecated
 	public synchronized boolean isGroupActive( final int groupIndex )
 	{
 		if ( groupIndex < 0 || groupIndex >= numGroups() )
@@ -253,46 +294,47 @@ public class VisibilityAndGrouping
 	 * @param groupIndex
 	 * @param isActive
 	 */
+	@Deprecated
 	public synchronized void setGroupActive( final int groupIndex, final boolean isActive )
 	{
 		if ( groupIndex < 0 || groupIndex >= numGroups() )
 			return;
 
 		state.setGroupActive( state.getGroups().get( groupIndex ), isActive );
-		update( GROUP_ACTIVITY_CHANGED );
 	}
 
+	@Deprecated
 	public synchronized void setGroupName( final int groupIndex, final String name )
 	{
 		if ( groupIndex < 0 || groupIndex >= numGroups() )
 			return;
 
 		state.setGroupName( state.getGroups().get( groupIndex ), name );
-		update( GROUP_NAME_CHANGED );
 	}
 
+	@Deprecated
 	public synchronized void addSourceToGroup( final int sourceIndex, final int groupIndex )
 	{
 		if ( groupIndex < 0 || groupIndex >= numGroups() )
 			return;
 
 		state.addSourceToGroup( state.getSources().get( sourceIndex ), state.getGroups().get( groupIndex ) );
-		update( SOURCE_TO_GROUP_ASSIGNMENT_CHANGED );
 	}
 
+	@Deprecated
 	public synchronized void removeSourceFromGroup( final int sourceIndex, final int groupIndex )
 	{
 		if ( groupIndex < 0 || groupIndex >= numGroups() )
 			return;
 
 		state.removeSourceFromGroup( state.getSources().get( sourceIndex ), state.getGroups().get( groupIndex ) );
-		update( SOURCE_TO_GROUP_ASSIGNMENT_CHANGED );
 	}
 
 	/**
 	 * TODO
 	 * @param index
 	 */
+	@Deprecated
 	public synchronized void setCurrentGroupOrSource( final int index )
 	{
 		if ( isGroupingEnabled() )
@@ -305,6 +347,7 @@ public class VisibilityAndGrouping
 	 * TODO
 	 * @param index
 	 */
+	@Deprecated
 	public synchronized void toggleActiveGroupOrSource( final int index )
 	{
 		if ( isGroupingEnabled() )
@@ -313,33 +356,39 @@ public class VisibilityAndGrouping
 			setSourceActive( index, !isSourceActive( index ) );
 	}
 
+	@Deprecated
 	public synchronized boolean isGroupingEnabled()
 	{
 		final DisplayMode mode = state.getDisplayMode();
 		return ( mode == GROUP ) || ( mode == FUSEDGROUP );
 	}
 
+	@Deprecated
 	public synchronized boolean isFusedEnabled()
 	{
 		final DisplayMode mode = state.getDisplayMode();
 		return ( mode == FUSED ) || ( mode == FUSEDGROUP );
 	}
 
+	@Deprecated
 	public synchronized void setGroupingEnabled( final boolean enable )
 	{
 		setDisplayMode( isFusedEnabled() ? ( enable ? FUSEDGROUP : FUSED ) : ( enable ? GROUP : SINGLE ) );
 	}
 
+	@Deprecated
 	public synchronized void setFusedEnabled( final boolean enable )
 	{
 		setDisplayMode( isGroupingEnabled() ? ( enable ? FUSEDGROUP : GROUP ) : ( enable ? FUSED : SINGLE ) );
 	}
 
+	@Deprecated
 	public synchronized boolean isSourceVisible( final int sourceIndex )
 	{
 		return state.isSourceVisibleAndPresent( state.getSources().get( sourceIndex ) );
 	}
 
+	@Deprecated
 	protected void update( final int id )
 	{
 		final Event event = new Event( id, this );
@@ -347,16 +396,19 @@ public class VisibilityAndGrouping
 			l.visibilityChanged( event );
 	}
 
+	@Deprecated
 	public void addUpdateListener( final UpdateListener l )
 	{
 		updateListeners.add( l );
 	}
 
+	@Deprecated
 	public void removeUpdateListener( final UpdateListener l )
 	{
 		updateListeners.remove( l );
 	}
 
+	@Deprecated
 	private SourceAndConverter< ? > soc( Source< ? > source )
 	{
 		for ( SourceAndConverter< ? > soc : state.getSources() )
