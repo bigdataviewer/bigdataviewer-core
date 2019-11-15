@@ -30,6 +30,7 @@
 package bdv.tools;
 
 import bdv.viewer.SourceAndConverter;
+import bdv.viewer.ViewerState;
 import bdv.viewer.VisibilityAndGrouping;
 import bdv.viewer.SourceGroup;
 import bdv.viewer.SynchronizedViewerState;
@@ -85,7 +86,7 @@ public class VisibilityAndGroupingDialog extends JDialog
 		this( owner, visibilityAndGrouping.getState() );
 	}
 
-	public VisibilityAndGroupingDialog( final Frame owner, final SynchronizedViewerState state )
+	public VisibilityAndGroupingDialog( final Frame owner, final ViewerState state )
 	{
 		super( owner, "visibility and grouping", false );
 
@@ -147,7 +148,7 @@ public class VisibilityAndGroupingDialog extends JDialog
 	{
 		private static final long serialVersionUID = 1L;
 
-		private final SynchronizedViewerState state;
+		private final ViewerState state;
 
 		private final Map< SourceAndConverter< ? >, JRadioButton > currentButtonsMap = new HashMap<>();
 
@@ -155,7 +156,7 @@ public class VisibilityAndGroupingDialog extends JDialog
 
 		private final ArrayList< Consumer< Set< SourceAndConverter< ? > > > > updateVisibleBoxes = new ArrayList<>();
 
-		public VisibilityPanel( final SynchronizedViewerState state )
+		public VisibilityPanel( final ViewerState state )
 		{
 			super( new GridBagLayout() );
 			this.state = state;
@@ -276,13 +277,13 @@ public class VisibilityAndGroupingDialog extends JDialog
 	{
 		private static final long serialVersionUID = 1L;
 
-		private final SynchronizedViewerState state;
+		private final ViewerState state;
 
 		private JCheckBox groupingBox;
 
 		private JCheckBox fusedModeBox;
 
-		public ModePanel( final SynchronizedViewerState state )
+		public ModePanel( final ViewerState state )
 		{
 			super( new GridBagLayout() );
 			this.state = state;
@@ -354,9 +355,9 @@ public class VisibilityAndGroupingDialog extends JDialog
 
 		private final ArrayList< Runnable > updateAssignBoxes = new ArrayList<>();
 
-		private final SynchronizedViewerState state;
+		private final ViewerState state;
 
-		public GroupingPanel( final SynchronizedViewerState state )
+		public GroupingPanel( final ViewerState state )
 		{
 			super( new GridBagLayout() );
 			this.state = state;

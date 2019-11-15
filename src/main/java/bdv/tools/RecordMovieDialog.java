@@ -29,8 +29,15 @@
  */
 package bdv.tools;
 
+import bdv.cache.CacheControl;
+import bdv.export.ProgressWriter;
+import bdv.util.Prefs;
 import bdv.viewer.BasicViewerState;
 import bdv.viewer.SynchronizedViewerState;
+import bdv.viewer.ViewerPanel;
+import bdv.viewer.ViewerState;
+import bdv.viewer.overlay.ScaleBarOverlayRenderer;
+import bdv.viewer.render.MultiResolutionRenderer;
 import java.awt.BorderLayout;
 import java.awt.Frame;
 import java.awt.Graphics;
@@ -41,7 +48,6 @@ import java.awt.event.KeyEvent;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-
 import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -61,13 +67,6 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.WindowConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-
-import bdv.cache.CacheControl;
-import bdv.export.ProgressWriter;
-import bdv.util.Prefs;
-import bdv.viewer.ViewerPanel;
-import bdv.viewer.overlay.ScaleBarOverlayRenderer;
-import bdv.viewer.render.MultiResolutionRenderer;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.PainterThread;
@@ -256,7 +255,7 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 
 	public void recordMovie( final int width, final int height, final int minTimepointIndex, final int maxTimepointIndex, final File dir ) throws IOException
 	{
-		final SynchronizedViewerState renderState = new SynchronizedViewerState( new BasicViewerState( viewer.state().snapshot() ) );
+		final ViewerState renderState = new BasicViewerState( viewer.state().snapshot() );
 		final int canvasW = viewer.getDisplay().getWidth();
 		final int canvasH = viewer.getDisplay().getHeight();
 
@@ -303,7 +302,7 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 		{
 			renderState.setCurrentTimepoint( timepoint );
 			renderer.requestRepaint();
-			renderer.paint( new bdv.viewer.state.ViewerState( renderState ) );
+			renderer.paint( new bdv.viewer.state.ViewerState( new SynchronizedViewerState( renderState ) ) );
 
 			if ( Prefs.showScaleBarInMovie() )
 			{

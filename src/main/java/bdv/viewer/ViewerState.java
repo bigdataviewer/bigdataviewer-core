@@ -5,6 +5,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import net.imglib2.realtransform.AffineTransform3D;
+import org.scijava.listeners.Listeners;
 
 /**
  * Reading and writing the BigDataViewer state:
@@ -19,6 +20,19 @@ import net.imglib2.realtransform.AffineTransform3D;
  */
 public interface ViewerState
 {
+	/**
+	 * Get a snapshot of this ViewerState.
+	 *
+	 * @return unmodifiable copy of the current state
+	 */
+	ViewerState snapshot();
+
+	/**
+	 * {@code ViewerStateChangeListener}s can be added/removed here,
+	 * and will be notified about changes to this ViewerState.
+	 */
+	Listeners< ViewerStateChangeListener > changeListeners();
+
 	/**
 	 * Get the interpolation method.
 	 *

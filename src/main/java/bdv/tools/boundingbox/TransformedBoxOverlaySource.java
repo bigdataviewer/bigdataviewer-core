@@ -33,8 +33,8 @@ import bdv.tools.brightness.SetupAssignments;
 import bdv.util.PlaceHolderConverterSetup;
 import bdv.viewer.DisplayMode;
 import bdv.viewer.SourceAndConverter;
-import bdv.viewer.SynchronizedViewerState;
 import bdv.viewer.ViewerPanel;
+import bdv.viewer.ViewerState;
 import bdv.viewer.ViewerStateChange;
 import bdv.viewer.ViewerStateChangeListener;
 import java.awt.Color;
@@ -87,7 +87,7 @@ public class TransformedBoxOverlaySource
 
 	public void addToViewer()
 	{
-		final SynchronizedViewerState state = viewer.state();
+		final ViewerState state = viewer.state();
 		synchronized ( state )
 		{
 			if ( state.getDisplayMode() != DisplayMode.FUSED )

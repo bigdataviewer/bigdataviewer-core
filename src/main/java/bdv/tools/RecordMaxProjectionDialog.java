@@ -35,6 +35,7 @@ import bdv.util.Prefs;
 import bdv.viewer.BasicViewerState;
 import bdv.viewer.SynchronizedViewerState;
 import bdv.viewer.ViewerPanel;
+import bdv.viewer.ViewerState;
 import bdv.viewer.overlay.ScaleBarOverlayRenderer;
 import bdv.viewer.render.MultiResolutionRenderer;
 import java.awt.BorderLayout;
@@ -284,7 +285,7 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 	 */
 	public void recordMovie( final int width, final int height, final int minTimepointIndex, final int maxTimepointIndex, final double stepSize, final int numSteps, final File dir ) throws IOException
 	{
-		final SynchronizedViewerState renderState = new SynchronizedViewerState( new BasicViewerState( viewer.state().snapshot() ) );
+		final ViewerState renderState = new BasicViewerState( viewer.state().snapshot() );
 		final int canvasW = viewer.getDisplay().getWidth();
 		final int canvasH = viewer.getDisplay().getHeight();
 
@@ -377,7 +378,7 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 				affine.concatenate( tGV );
 				renderState.setViewerTransform( affine );
 				renderer.requestRepaint();
-				renderer.paint( new bdv.viewer.state.ViewerState( renderState ) );
+				renderer.paint( new bdv.viewer.state.ViewerState( new SynchronizedViewerState( renderState ) ) );
 			}
 
 			final BufferedImage bi = target.accumulated.image();

@@ -5,6 +5,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 import net.imglib2.realtransform.AffineTransform3D;
+import org.scijava.listeners.Listeners;
 
 /**
  * Wraps another {@link ViewerState} and throws
@@ -19,6 +20,18 @@ class UnmodifiableViewerState implements ViewerState
 	public UnmodifiableViewerState( final ViewerState state )
 	{
 		this.state = state;
+	}
+
+	@Override
+	public ViewerState snapshot()
+	{
+		return new UnmodifiableViewerState( state.snapshot() );
+	}
+
+	@Override
+	public Listeners< ViewerStateChangeListener > changeListeners()
+	{
+		return state.changeListeners();
 	}
 
 	@Override

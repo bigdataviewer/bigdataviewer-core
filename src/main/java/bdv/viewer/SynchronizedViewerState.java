@@ -52,13 +52,14 @@ public class SynchronizedViewerState implements ViewerState
 {
 	private static final boolean DEBUG = false;
 
-	private final BasicViewerState state;
+	private final ViewerState state;
 
-	public SynchronizedViewerState( final BasicViewerState state )
+	public SynchronizedViewerState( final ViewerState state )
 	{
 		this.state = state;
 	}
 
+	@Override
 	public Listeners< ViewerStateChangeListener > changeListeners()
 	{
 		return state.changeListeners();
@@ -69,6 +70,7 @@ public class SynchronizedViewerState implements ViewerState
 	 *
 	 * @return unmodifiable copy of the current state
 	 */
+	@Override
 	public synchronized ViewerState snapshot()
 	{
 		return state.snapshot();
@@ -1053,13 +1055,13 @@ public class SynchronizedViewerState implements ViewerState
 	}
 
 	/**
-	 * Returns the wrapped {@code BasicViewerState}.
+	 * Returns the wrapped {@code ViewerState}.
 	 * <p>
 	 * <em>When using this, explicit synchronization (on this
 	 * {@code SynchronizedViewerState}) is required. PLEASE BE CAREFUL!</em>
 	 */
 	// TODO: REMOVE?
-	public BasicViewerState getWrappedState()
+	public ViewerState getWrappedState()
 	{
 		return state;
 	}

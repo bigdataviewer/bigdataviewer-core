@@ -101,11 +101,10 @@ public class VisibilityAndGrouping
 
 	private final bdv.viewer.state.ViewerState deprecatedViewerState;
 
-	@Deprecated
-	private final SynchronizedViewerState state;
+	private final ViewerState state;
 
 	@Deprecated
-	public SynchronizedViewerState getState()
+	public ViewerState getState()
 	{
 		return state;
 	}

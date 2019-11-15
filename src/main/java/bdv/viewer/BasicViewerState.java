@@ -179,6 +179,7 @@ public class BasicViewerState implements ViewerState
 	/**
 	 * {@code ViewerStateChangeListener}s can be added/removed here.
 	 */
+	@Override
 	public Listeners< ViewerStateChangeListener > changeListeners()
 	{
 		return listeners;
@@ -189,6 +190,7 @@ public class BasicViewerState implements ViewerState
 	 *
 	 * @return unmodifiable copy of the current state
 	 */
+	@Override
 	public ViewerState snapshot()
 	{
 		return new UnmodifiableViewerState( new BasicViewerState( this ) );
