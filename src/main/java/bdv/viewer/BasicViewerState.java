@@ -177,6 +177,46 @@ public class BasicViewerState implements ViewerState
 	}
 
 	/**
+	 * Set this {@code ViewerState} to {@code other}.
+	 * <em>No {@code ViewerStateChange} events are fired.</em>
+	 */
+	public void set( final ViewerState other )
+	{
+		numTimepoints = other.getNumTimepoints();
+		currentTimepoint = other.getCurrentTimepoint();
+		viewerTransform.set( other.getViewerTransform() );
+		interpolation = other.getInterpolation();
+		displayMode = other.getDisplayMode();
+
+		sources.clear();
+		sources.addAll( other.getSources() );
+		activeSources.clear();
+		activeSources.addAll( other.getActiveSources() );
+		currentSource = other.getCurrentSource();
+		sourceIndices.clear();
+		for ( int i = 0; i < sources.size(); ++i )
+			sourceIndices.put( sources.get( i ), i );
+		previousVisibleSources.clear();
+		previousVisibleSources.addAll( other.getVisibleSources() );
+
+		groups.clear();
+		groups.addAll( other.getGroups() );
+		groupData.clear();
+		other.getGroups().forEach( group -> {
+			final GroupData data = new GroupData();
+			data.name = other.getGroupName( group );
+			data.sources.addAll( other.getSourcesInGroup( group ) );
+			groupData.put( group, data );
+		} );
+		activeGroups.clear();
+		activeGroups.addAll( other.getActiveGroups() );
+		currentGroup = other.getCurrentGroup();
+		groupIndices.clear();
+		for ( int i = 0; i < groups.size(); ++i )
+			groupIndices.put( groups.get( i ), i );
+	}
+
+	/**
 	 * {@code ViewerStateChangeListener}s can be added/removed here.
 	 */
 	@Override
