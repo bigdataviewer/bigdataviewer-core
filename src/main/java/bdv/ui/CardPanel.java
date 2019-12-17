@@ -14,21 +14,23 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import net.miginfocom.swing.MigLayout;
-import org.scijava.Context;
-import org.scijava.InstantiableException;
-import org.scijava.plugin.Parameter;
-import org.scijava.plugin.PluginInfo;
+import org.scijava.command.CommandInfo;
+import org.scijava.command.CommandModule;
+import org.scijava.command.CommandService;
+import org.scijava.module.ModuleException;
+import org.scijava.module.ModuleItem;
 
 /**
  * CardPanel handles components in named {@link CardWrapper}s which can be opened or closed.
  *
  * @author Tim-Oliver Buchholz, MPI-CBG CSBD, Dresden
+ * @author Deborah Schmidt, CSBD / MPI-CBG, Dresden
+ * @author Tobias Pietzsch, CSBD / MPI-CBG, Dresden
  */
 public class CardPanel extends JPanel
 {
 
-	@Parameter
-	private Context context;
+	private final CommandService commandService;
 
 	/**
 	 * Color scheme.
@@ -44,8 +46,10 @@ public class CardPanel extends JPanel
 	/**
 	 * Empty card panel.
 	 */
-	public CardPanel()
+	public CardPanel( final CommandService commandService )
 	{
+		this.commandService = commandService;
+
 		this.setLayout( new MigLayout( "fillx, ins 2", "[grow]", "[]" ) );
 		this.setBackground( BACKGROUND_TAB_PANEL );
 
@@ -54,18 +58,44 @@ public class CardPanel extends JPanel
 	}
 
 	/**
-	 * Discover all {@link Card}s and add them to the card panel.
+	 * Add all {@link DiscoverableCard}s for which all inputs can be resolved to this panel.
+	 *
+	 * @param type
+	 * 		of the cards
+	 * @param parameterMap
+	 * 		used to resolve inputs
 	 */
-	public void populatePanel()
+	public void addAll( final Class< ? extends DiscoverableCard > type, final Map< Class< ? >, Object > parameterMap )
 	{
-		final List< PluginInfo< ? > > cardInfos = context.getPluginIndex().get( Card.class );
+		final List< CommandInfo > cardInfos = commandService.getCommandsOfType( type );
+
 		cardInfos.forEach( cardInfo -> {
 			try
 			{
-				final Card card = ( Card ) cardInfo.createInstance();
-				addCard( card.getName(), card.getComponent(), card.getDefaultVisibilty() );
+				final CommandModule cardModule = new CommandModule( cardInfo );
+				boolean allInputsResolved = true;
+				for ( final ModuleItem item : cardInfo.inputs() )
+				{
+					final Class< ? > inputKlass = item.getType();
+
+					if ( parameterMap.containsKey( inputKlass ) )
+					{
+						cardModule.setInput( item.getName(), parameterMap.get( inputKlass ) );
+						cardModule.resolveInput( item.getName() );
+					}
+					else
+					{
+						allInputsResolved = false;
+						break;
+					}
+				}
+				if ( allInputsResolved )
+				{
+					final Card card = ( ( DiscoverableCard ) cardModule.getCommand() ).getCard();
+					addCard( card.getName(), card.getComponent(), card.getDefaultVisibilty() );
+				}
 			}
-			catch ( InstantiableException e )
+			catch ( ModuleException e )
 			{
 				e.printStackTrace();
 			}

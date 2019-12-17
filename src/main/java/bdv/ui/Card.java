@@ -1,15 +1,15 @@
 package bdv.ui;
 
 import javax.swing.JComponent;
-import org.scijava.plugin.SciJavaPlugin;
 
 /**
  * Interface for cards which are discoverable by {@link CardPanel}.
  *
  * @author Tim-Oliver Buchholz, CSBD / MPI-CBG, Dresden
  * @author Deborah Schmidt, CSBD / MPI-CBG, Dresden
+ * @author Tobias Pietzsch, CSBD / MPI-CBG, Dresden
  */
-public interface Card extends SciJavaPlugin
+public interface Card
 {
 	/**
 	 * This name is displayed in the card header.
