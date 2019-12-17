@@ -7,6 +7,7 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.swing.ImageIcon;
 import javax.swing.JComponent;
@@ -14,6 +15,9 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import net.miginfocom.swing.MigLayout;
 import org.scijava.Context;
+import org.scijava.InstantiableException;
+import org.scijava.plugin.Parameter;
+import org.scijava.plugin.PluginInfo;
 
 /**
  * CardPanel handles components in named {@link CardWrapper}s which can be opened or closed.
@@ -46,6 +50,26 @@ public class CardPanel extends JPanel
 		this.setBackground( BACKGROUND_TAB_PANEL );
 
 		this.cards = new HashMap<>();
+
+	}
+
+	/**
+	 * Discover all {@link Card}s and add them to the card panel.
+	 */
+	public void populatePanel()
+	{
+		final List< PluginInfo< ? > > cardInfos = context.getPluginIndex().get( Card.class );
+		cardInfos.forEach( cardInfo -> {
+			try
+			{
+				final Card card = ( Card ) cardInfo.createInstance();
+				addCard( card.getName(), card.getComponent(), card.getDefaultVisibilty() );
+			}
+			catch ( InstantiableException e )
+			{
+				e.printStackTrace();
+			}
+		} );
 	}
 
 	/**
