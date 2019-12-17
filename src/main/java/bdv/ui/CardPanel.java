@@ -2,10 +2,10 @@ package bdv.ui;
 
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.awt.event.ComponentListener;
+import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.util.HashMap;
 import java.util.Map;
 import javax.swing.ImageIcon;
@@ -38,8 +38,6 @@ public class CardPanel extends JPanel
 	 */
 	public CardPanel()
 	{
-		super();
-
 		this.setLayout( new MigLayout( "fillx, ins 2", "[grow]", "[]" ) );
 		this.setBackground( BACKGROUND_TAB_PANEL );
 
@@ -60,7 +58,7 @@ public class CardPanel extends JPanel
 	 */
 	public boolean addCard( final String name, final JComponent component, final boolean open )
 	{
-		if ( !cards.keySet().contains( name ) )
+		if ( !cards.containsKey( name ) )
 		{
 			final Card card = new Card( name, component, open );
 			cards.put( name, card );
@@ -78,11 +76,10 @@ public class CardPanel extends JPanel
 	 */
 	public void removeCard( final String name )
 	{
-		if ( cards.keySet().contains( name ) )
+		final Card card = cards.remove( name );
+		if ( card != null )
 		{
-			final Card card = cards.get( name );
 			this.remove( card );
-			cards.remove( name );
 		}
 	}
 
@@ -96,14 +93,8 @@ public class CardPanel extends JPanel
 	 */
 	public boolean isCardOpen( final String name )
 	{
-		if ( cards.keySet().contains( name ) )
-		{
-			return cards.get( name ).isOpen();
-		}
-		else
-		{
-			return false;
-		}
+		final Card card = cards.get( name );
+		return card != null && card.isOpen();
 	}
 
 	/**
@@ -116,13 +107,14 @@ public class CardPanel extends JPanel
 	 */
 	public void setCardOpen( final String name, final boolean open )
 	{
-		if ( cards.keySet().contains( name ) )
+		final Card card = cards.get( name );
+		if ( card != null )
 		{
-			cards.get( name ).setCardOpen( open );
+			card.setCardOpen( open );
 		}
 	}
 
-	private class Card extends JPanel
+	private static class Card extends JPanel
 	{
 		private final JPanel componentPanel;
 
@@ -143,7 +135,6 @@ public class CardPanel extends JPanel
 
 		public Card( final String name, final JComponent component, final boolean open )
 		{
-			super();
 			this.name = name;
 			downIcon = new ImageIcon( CardPanel.class.getResource( "downbutton.png" ), "Open Dialog." );
 			upIcon = new ImageIcon( CardPanel.class.getResource( "upbutton.png" ), "Close Dialog." );
@@ -155,7 +146,7 @@ public class CardPanel extends JPanel
 			componentPanel.setBackground( CardPanel.BACKGROUND_TAB_PANEL );
 			componentPanel.add( component, "growx" );
 
-			final JComponent header = createHeader( name, componentPanel, open );
+			final JComponent header = createHeader( name, open );
 			this.add( header, "growx, wrap" );
 			this.add( componentPanel, "growx" );
 			this.setCardOpen( open );
@@ -164,7 +155,7 @@ public class CardPanel extends JPanel
 		/**
 		 * Create clickable header.
 		 */
-		private JComponent createHeader( final String name, final JComponent component, final boolean visible )
+		private JComponent createHeader( final String name, final boolean visible )
 		{
 			final JPanel header = new JPanel( new MigLayout( "fillx, aligny center, ins 0 0 0 4", "[grow][]", "" ) );
 			header.setPreferredSize( new Dimension( 30, 30 ) );
@@ -181,20 +172,8 @@ public class CardPanel extends JPanel
 			icon.setBackground( Color.WHITE );
 			icon.setIcon( visible ? upIcon : downIcon );
 
-			componentPanel.addComponentListener( new ComponentListener()
+			componentPanel.addComponentListener( new ComponentAdapter()
 			{
-				@Override
-				public void componentResized( final ComponentEvent e )
-				{
-					// nothing
-				}
-
-				@Override
-				public void componentMoved( final ComponentEvent e )
-				{
-					// nothing
-				}
-
 				@Override
 				public void componentShown( final ComponentEvent e )
 				{
@@ -210,33 +189,8 @@ public class CardPanel extends JPanel
 			} );
 
 			// By default closed.
-			header.addMouseListener( new MouseListener()
+			header.addMouseListener( new MouseAdapter()
 			{
-
-				@Override
-				public void mouseReleased( MouseEvent e )
-				{
-					// nothing
-				}
-
-				@Override
-				public void mousePressed( MouseEvent e )
-				{
-					// nothing
-				}
-
-				@Override
-				public void mouseExited( MouseEvent e )
-				{
-					// nothing
-				}
-
-				@Override
-				public void mouseEntered( MouseEvent e )
-				{
-					// nothing
-				}
-
 				@Override
 				public void mouseClicked( MouseEvent e )
 				{
