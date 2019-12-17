@@ -15,7 +15,7 @@ import javax.swing.JPanel;
 import net.miginfocom.swing.MigLayout;
 
 /**
- * CardPanel handles components in named {@link Card}s which can be opened or closed.
+ * CardPanel handles components in named {@link CardWrapper}s which can be opened or closed.
  *
  * @author Tim-Oliver Buchholz, MPI-CBG CSBD, Dresden
  */
@@ -31,7 +31,7 @@ public class CardPanel extends JPanel
 
 	private final static Color FONT_COLOR = Color.darkGray;
 
-	private final Map< String, Card > cards;
+	private final Map< String, CardWrapper > cards;
 
 	/**
 	 * Empty card panel.
@@ -60,7 +60,7 @@ public class CardPanel extends JPanel
 	{
 		if ( !cards.containsKey( name ) )
 		{
-			final Card card = new Card( name, component, open );
+			final CardWrapper card = new CardWrapper( name, component, open );
 			cards.put( name, card );
 			this.add( card, "growx, wrap" );
 			return true;
@@ -76,7 +76,7 @@ public class CardPanel extends JPanel
 	 */
 	public void removeCard( final String name )
 	{
-		final Card card = cards.remove( name );
+		final CardWrapper card = cards.remove( name );
 		if ( card != null )
 		{
 			this.remove( card );
@@ -93,7 +93,7 @@ public class CardPanel extends JPanel
 	 */
 	public boolean isCardOpen( final String name )
 	{
-		final Card card = cards.get( name );
+		final CardWrapper card = cards.get( name );
 		return card != null && card.isOpen();
 	}
 
@@ -107,14 +107,14 @@ public class CardPanel extends JPanel
 	 */
 	public void setCardOpen( final String name, final boolean open )
 	{
-		final Card card = cards.get( name );
+		final CardWrapper card = cards.get( name );
 		if ( card != null )
 		{
 			card.setCardOpen( open );
 		}
 	}
 
-	private static class Card extends JPanel
+	private static class CardWrapper extends JPanel
 	{
 		private final JPanel componentPanel;
 
@@ -129,11 +129,11 @@ public class CardPanel extends JPanel
 		private final ImageIcon upIcon;
 
 		/**
-		 * Card name.
+		 * CardWrapper name.
 		 */
 		private final String name;
 
-		public Card( final String name, final JComponent component, final boolean open )
+		public CardWrapper( final String name, final JComponent component, final boolean open )
 		{
 			this.name = name;
 			downIcon = new ImageIcon( CardPanel.class.getResource( "downbutton.png" ), "Open Dialog." );
@@ -219,9 +219,9 @@ public class CardPanel extends JPanel
 		@Override
 		public boolean equals( final Object obj )
 		{
-			if ( obj instanceof Card )
+			if ( obj instanceof CardWrapper )
 			{
-				return this.name.equals( ( ( Card ) obj ).name );
+				return this.name.equals( ( ( CardWrapper ) obj ).name );
 			}
 			else
 			{
