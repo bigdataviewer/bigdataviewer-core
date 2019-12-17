@@ -11,6 +11,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.WindowConstants;
 import net.miginfocom.swing.MigLayout;
+import org.scijava.Context;
 
 /**
  * Card panel example.
@@ -33,9 +34,12 @@ public class CardPanelExample
 		frame.add( remove, "growx, wrap" );
 		frame.add( toggle, "growx, wrap" );
 
+		final Context context = new Context();
 		final CardPanel cardPanel = new CardPanel();
+		context.inject( cardPanel );
+		cardPanel.populatePanel();
 
-		frame.setPreferredSize( new Dimension( 200, 300 ) );
+		frame.setPreferredSize( new Dimension( 250, 300 ) );
 		frame.add( cardPanel, "growx, growy" );
 		frame.pack();
 		frame.setDefaultCloseOperation( WindowConstants.DISPOSE_ON_CLOSE );
