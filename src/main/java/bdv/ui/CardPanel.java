@@ -13,6 +13,7 @@ import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import net.miginfocom.swing.MigLayout;
+import org.scijava.Context;
 
 /**
  * CardPanel handles components in named {@link CardWrapper}s which can be opened or closed.
@@ -21,6 +22,9 @@ import net.miginfocom.swing.MigLayout;
  */
 public class CardPanel extends JPanel
 {
+
+	@Parameter
+	private Context context;
 
 	/**
 	 * Color scheme.
