@@ -13,11 +13,14 @@ import org.scijava.plugin.Plugin;
  *
  * @author Tim-Oliver Buchholz, CSBD / MPI-CBG, Dresden
  * @author Deborah Schmidt, CSBD / MPI-CBG, Dresden
+ * @author Tobias Pietzsch, CSBD / MPI-CBG, Dresden
  */
-@Plugin( type = Card.class, priority = Priority.NORMAL )
-public class ExampleCard extends JPanel implements Card
+@Plugin( type = DiscoverableCard.class, priority = Priority.NORMAL )
+public class ExampleCard extends JPanel implements DiscoverableCard
 {
-	public ExampleCard()
+
+	@Override
+	public Card getCard()
 	{
 		this.setLayout( new MigLayout( "fillx", "[]", "" ) );
 		this.setBackground( Color.white );
@@ -26,6 +29,7 @@ public class ExampleCard extends JPanel implements Card
 		content.setBackground( Color.white );
 
 		this.add( content, "growx" );
+		return this;
 	}
 
 	@Override
@@ -44,5 +48,11 @@ public class ExampleCard extends JPanel implements Card
 	public boolean getDefaultVisibilty()
 	{
 		return false;
+	}
+
+	@Override
+	public void run()
+	{
+		// nothing
 	}
 }

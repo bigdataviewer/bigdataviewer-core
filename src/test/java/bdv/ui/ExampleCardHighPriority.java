@@ -6,6 +6,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import net.miginfocom.swing.MigLayout;
 import org.scijava.Priority;
+import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
 /**
@@ -13,19 +14,25 @@ import org.scijava.plugin.Plugin;
  *
  * @author Tim-Oliver Buchholz, CSBD / MPI-CBG, Dresden
  * @author Deborah Schmidt, CSBD / MPI-CBG, Dresden
+ * @author Tobias Pietzsch, CSBD / MPI-CBG, Dresden
  */
-@Plugin( type = Card.class, priority = Priority.HIGH )
-public class ExampleCardHighPriority extends JPanel implements Card
+@Plugin( type = HighPriorityCard.class, priority = Priority.HIGH )
+public class ExampleCardHighPriority extends JPanel implements HighPriorityCard
 {
-	public ExampleCardHighPriority()
+
+	@Parameter
+	private Age age;
+
+	@Override
+	public Card getCard()
 	{
 		this.setLayout( new MigLayout( "fillx", "[]", "" ) );
 		this.setBackground( Color.white );
 
-		final JLabel content = new JLabel( "My priority is 10" );
+		final JLabel content = new JLabel( "My age is " + age.getAge() );
 		content.setBackground( Color.white );
-
 		this.add( content, "growx" );
+		return this;
 	}
 
 	@Override
@@ -44,5 +51,26 @@ public class ExampleCardHighPriority extends JPanel implements Card
 	public boolean getDefaultVisibilty()
 	{
 		return true;
+	}
+
+	@Override
+	public void run()
+	{
+		// nothing
+	}
+
+	static class Age
+	{
+		private final long age;
+
+		public Age( final long age )
+		{
+			this.age = age;
+		}
+
+		public long getAge()
+		{
+			return age;
+		}
 	}
 }
