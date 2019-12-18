@@ -46,42 +46,27 @@ public class CardPanelExample
 		final Random rand = new Random();
 		final List< String > names = new ArrayList<>();
 
-		add.addActionListener( new AbstractAction()
-		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
+		add.addActionListener( e -> {
+			final String name = "Card " + rand.nextInt();
+			cardPanel.addCard( name, new JLabel( "Conent " + rand.nextFloat() ), rand.nextBoolean() );
+			names.add( name );
+			cardPanel.revalidate();
+		} );
+		remove.addActionListener( e -> {
+			if ( names.size() > 0 )
 			{
-				final String name = "Card " + rand.nextInt();
-				cardPanel.addCard( name, new JLabel( "Conent " + rand.nextFloat() ), rand.nextBoolean() );
-				names.add( name );
+				final int idx = rand.nextInt( names.size() );
+				cardPanel.removeCard( names.get( idx ) );
+				names.remove( idx );
 				cardPanel.revalidate();
 			}
 		} );
-		remove.addActionListener( new AbstractAction()
-		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
+		toggle.addActionListener( e -> {
+			if ( names.size() > 0 )
 			{
-				if ( names.size() > 0 )
-				{
-					final int idx = rand.nextInt( names.size() );
-					cardPanel.removeCard( names.get( idx ) );
-					names.remove( idx );
-					cardPanel.revalidate();
-				}
-			}
-		} );
-		toggle.addActionListener( new AbstractAction()
-		{
-			@Override
-			public void actionPerformed( final ActionEvent e )
-			{
-				if ( names.size() > 0 )
-				{
-					final int idx = rand.nextInt( names.size() );
-					cardPanel.setCardOpen( names.get( idx ), !cardPanel.isCardOpen( names.get( idx ) ) );
-					cardPanel.revalidate();
-				}
+				final int idx = rand.nextInt( names.size() );
+				cardPanel.setCardOpen( names.get( idx ), !cardPanel.isCardOpen( names.get( idx ) ) );
+				cardPanel.revalidate();
 			}
 		} );
 	}
