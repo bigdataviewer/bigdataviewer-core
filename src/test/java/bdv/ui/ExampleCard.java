@@ -49,10 +49,4 @@ public class ExampleCard extends JPanel implements DiscoverableCard
 	{
 		return false;
 	}
-
-	@Override
-	public void run()
-	{
-		// nothing
-	}
 }

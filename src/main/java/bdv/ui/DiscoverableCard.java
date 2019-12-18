@@ -13,4 +13,10 @@ import org.scijava.command.Command;
 public interface DiscoverableCard extends Card, Command
 {
 	Card getCard();
+
+	@Override
+	default void run()
+	{
+		// is never called
+	}
 }

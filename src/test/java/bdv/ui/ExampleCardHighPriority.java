@@ -53,12 +53,6 @@ public class ExampleCardHighPriority extends JPanel implements HighPriorityCard
 		return true;
 	}
 
-	@Override
-	public void run()
-	{
-		// nothing
-	}
-
 	static class Age
 	{
 		private final long age;
