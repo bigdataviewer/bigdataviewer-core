@@ -99,10 +99,9 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 
 		// No move animation required
 		final int x = viewPortWidth - imgw;
-		final int y = getLocationY();
 
-		drawBackground( g, x, y, imgw + 50, imgh, Math.min( alpha, backgroundAlpha ) );
-		drawImg( g, rightarrow, x, y, alpha );
+		drawBackground( g, x, Math.min( alpha, backgroundAlpha ) );
+		drawImg( g, rightarrow, x, alpha );
 
 		// Reset animation keyFrame-frame
 		keyFrame = 0;
@@ -142,10 +141,9 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 		getAlpha( true );
 
 		final int x = viewPortWidth - ( int ) ( imgw + 10 * cos( expandRatio ) );
-		final int y = getLocationY();
 
-		drawBackground( g, x, y, imgw + 50 + 10, imgh, Math.min( alpha, backgroundAlpha ) );
-		drawImg( g, rightarrow, x, y, alpha );
+		drawBackground( g, x, Math.min( alpha, backgroundAlpha ) );
+		drawImg( g, rightarrow, x, alpha );
 
 		repaint = keyFrame != 2 || alpha != 1.0;
 	}
@@ -168,12 +166,10 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 		// Fade-out
 		getAlpha( false );
 
-//		final int x = viewPortWidth - ( int ) ( imgw * expandRatio );
 		final int x = viewPortWidth - ( int ) ( imgw * cos( expandRatio ) );
-		final int y = getLocationY();
 
-		drawBackground( g, x, y, imgw + 50, imgh, alpha );
-		drawImg( g, leftarrow, x, y, alpha );
+		drawBackground( g, x, alpha );
+		drawImg( g, leftarrow, x, alpha );
 
 		// Set keyFrame-frames back based on expandRatio
 		if ( expandRatio > 0.5 )
@@ -237,15 +233,14 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 		getAlpha( true );
 
 		final int x = viewPortWidth - ( int ) ( imgw * cos( expandRatio ) );
-		final int y = getLocationY();
 
 		// Background should only move out and stay
 		if ( keyFrame > 0 )
-			drawBackground( g, viewPortWidth - imgw, y, imgw + 50, imgh, alpha );
+			drawBackground( g, viewPortWidth - imgw, alpha );
 		else
-			drawBackground( g, x, y, imgw + 50, imgh, alpha );
+			drawBackground( g, x, alpha );
 
-		drawImg( g, leftarrow, x, y, alpha );
+		drawImg( g, leftarrow, x, alpha );
 
 		repaint = keyFrame != 3;
 	}
@@ -256,11 +251,6 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 	private double cos( final double t )
 	{
 		return 0.5 - 0.5 * Math.cos( Math.PI * t );
-	}
-
-	private int getLocationY()
-	{
-		return ( viewPortHeight - imgh ) / 2;
 	}
 
 	private void getAlpha( final boolean fadeIn )
@@ -277,14 +267,20 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 		}
 	}
 
-	private void drawBackground( final Graphics2D g, final int x, final int y, final int width, final int height, final float alpha )
+	private void drawBackground( final Graphics2D g, final int x, final float alpha )
 	{
+		final int y = ( viewPortHeight - imgh ) / 2;
+		final int width = imgw + 60;
+		final int height = imgh;
+
 		g.setColor( new Color( 0, 0, 0, Math.min( alpha, backgroundAlpha ) ) );
 		g.fillRoundRect( x, y, width, height, 25, 25 );
 	}
 
-	private void drawImg( final Graphics2D g, final BufferedImage img, final int x, final int y, final float alpha )
+	private void drawImg( final Graphics2D g, final BufferedImage img, final int x, final float alpha )
 	{
+		final int y = ( viewPortHeight - imgh ) / 2;
+
 		Composite oldComposite = g.getComposite();
 		final AlphaComposite alcom = AlphaComposite.getInstance( AlphaComposite.SRC_OVER, alpha );
 		g.setComposite( alcom );
@@ -328,6 +324,7 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 		mouseX = e.getX();
 		mouseY = e.getY();
 
+		// TODO: expand trigger region (>imgw) ?
 		if ( viewPortWidth - mouseX < imgw )
 		{
 			if ( !nearBorderX )
@@ -346,7 +343,8 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 
 		}
 
-		if ( getLocationY() < mouseY && mouseY < getLocationY() + imgh )
+		// TODO: expand trigger region (>imgh) ?
+		if ( Math.abs( viewPortHeight - 2 * mouseY ) < imgh )
 		{
 			if ( !nearBorderY )
 			{
