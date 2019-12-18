@@ -45,9 +45,9 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 
 	private int keyFrame;
 
-	private double animationSpeed = 0.09;
+	private final double animationSpeed = 0.09;
 
-	private float backgroundAlpha = 0.65f;
+	private final float backgroundAlpha = 0.65f;
 
 	public SplitPaneOneTouchExpandAnimator( final SplitPanel viewer ) throws IOException
 	{
@@ -100,7 +100,7 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 		// No move animation required
 		final int x = viewPortWidth - imgw;
 
-		drawBackground( g, x, Math.min( alpha, backgroundAlpha ) );
+		drawBackground( g, x, alpha );
 		drawImg( g, rightarrow, x, alpha );
 
 		// Reset animation keyFrame-frame
@@ -142,7 +142,7 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 
 		final int x = viewPortWidth - ( int ) ( imgw + 10 * cos( expandRatio ) );
 
-		drawBackground( g, x, Math.min( alpha, backgroundAlpha ) );
+		drawBackground( g, x, alpha );
 		drawImg( g, rightarrow, x, alpha );
 
 		repaint = keyFrame != 2 || alpha != 1.0;
