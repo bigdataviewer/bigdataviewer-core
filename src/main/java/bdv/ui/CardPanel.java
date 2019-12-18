@@ -37,7 +37,7 @@ public class CardPanel extends JPanel
 	 */
 	private final static Color BACKGROUND_TAB_PANEL = Color.white;
 
-	private final static Color HEADER_COLOR = new Color( 238, 238, 238 );
+	private final static Color HEADER_COLOR = new Color( 0xeeeeee );
 
 	private final static Color FONT_COLOR = Color.darkGray;
 
@@ -74,7 +74,7 @@ public class CardPanel extends JPanel
 			{
 				final CommandModule cardModule = new CommandModule( cardInfo );
 				boolean allInputsResolved = true;
-				for ( final ModuleItem item : cardInfo.inputs() )
+				for ( final ModuleItem< ? > item : cardInfo.inputs() )
 				{
 					final Class< ? > inputKlass = item.getType();
 
