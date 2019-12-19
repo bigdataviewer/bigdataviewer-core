@@ -11,6 +11,7 @@ import java.awt.event.MouseMotionListener;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import javax.imageio.ImageIO;
+import javax.swing.ImageIcon;
 
 import static bdv.ui.SplitPaneOneTouchExpandAnimator.AnimationType.SHOW_COLLAPSE;
 import static bdv.ui.SplitPaneOneTouchExpandAnimator.AnimationType.SHOW_EXPAND;
@@ -20,10 +21,13 @@ import static bdv.ui.SplitPaneOneTouchExpandAnimator.AnimationType.NONE;
 
 public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMotionListener, MouseListener
 {
-	private final BufferedImage leftarrow;
-	private final BufferedImage rightarrow;
+	private final ImageIcon rightArrowIcon;
+	private final ImageIcon leftArrowIcon;
 	private final int imgw;
 	private final int imgh;
+	private int borderWidth;
+	private int triggerHeight;
+
 	private final double animationSpeed = 0.09;
 	private final float backgroundAlpha = 0.65f;
 
@@ -32,23 +36,18 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 	private int viewPortWidth;
 	private int viewPortHeight;
 
-
-
 	private final SplitPanel splitPanel;
 	private boolean collapsed;
 
-
-	private int mouseX;
-	private int mouseY;
-
-
 	public SplitPaneOneTouchExpandAnimator( final SplitPanel viewer ) throws IOException
 	{
-		rightarrow = ImageIO.read( SplitPaneOneTouchExpandAnimator.class.getResource( "rightdoublearrow_tiny.png" ) ); // TODO: use ImageIcon instead?
-		leftarrow = ImageIO.read( SplitPaneOneTouchExpandAnimator.class.getResource( "leftdoublearrow_tiny.png" ) ); // TODO: use ImageIcon instead?
-		this.imgw = leftarrow.getWidth();
-		this.imgh = leftarrow.getHeight() + 2; // TODO: why +2?
-		this.splitPanel = viewer;
+		rightArrowIcon = new ImageIcon( SplitPaneOneTouchExpandAnimator.class.getResource( "rightdoublearrow_tiny.png" ) );
+		leftArrowIcon = new ImageIcon( SplitPaneOneTouchExpandAnimator.class.getResource( "leftdoublearrow_tiny.png" ) );
+		imgw = leftArrowIcon.getIconWidth();
+		imgh = leftArrowIcon.getIconHeight();
+		borderWidth = imgw + 10;
+		triggerHeight = imgh + 10;
+		splitPanel = viewer;
 	}
 
 	public enum AnimationType
@@ -128,6 +127,19 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 	}
 
 
+	// == TRIGGER REGION =====================================================
+
+	public boolean isInBorderRegion( final int x, final int y )
+	{
+		return x > viewPortWidth - borderWidth;
+	}
+
+	public boolean isInTriggerRegion( final int x, final int y )
+	{
+		return x > viewPortWidth - borderWidth && Math.abs( viewPortHeight - 2 * y ) < triggerHeight;
+	}
+
+
 	// == PAINTING ===========================================================
 
 	private static class PaintState
@@ -155,7 +167,7 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 		final int y = ( viewPortHeight - imgh ) / 2;
 
 		drawBackground( g, bgX, y, state.alpha );
-		drawImg( g, collapsed ? leftarrow : rightarrow, imgX, y, state.alpha );
+		drawImg( g, collapsed ? leftArrowIcon : rightArrowIcon, imgX, y, state.alpha );
 	}
 
 	private void drawBackground( final Graphics2D g, final int x, final int y, final float alpha )
@@ -167,12 +179,12 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 		g.fillRoundRect( x, y, width, height, 25, 25 );
 	}
 
-	private void drawImg( final Graphics2D g, final BufferedImage img, final int x, final int y, final float alpha )
+	private void drawImg( final Graphics2D g, final ImageIcon img, final int x, final int y, final float alpha )
 	{
 		Composite oldComposite = g.getComposite();
 		final AlphaComposite alcom = AlphaComposite.getInstance( AlphaComposite.SRC_OVER, alpha );
 		g.setComposite( alcom );
-		g.drawImage( img, x, y, null );
+		g.drawImage( img.getImage(), x, y, null );
 		g.setComposite(oldComposite);
 	}
 
@@ -455,17 +467,17 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 	@Override
 	public void mouseMoved( final MouseEvent e )
 	{
-		mouseX = e.getX();
-		mouseY = e.getY();
+		final int x = e.getX();
+		final int y = e.getY();
 
 		// check whether in border region
-		if ( viewPortWidth - mouseX < imgw )
+		if ( isInBorderRegion( x, y ) )
 			checkEnterBorderRegion();
 		else
 			checkExitBorderRegion();
 
 		// check whether in trigger region
-		if ( viewPortWidth - mouseX < imgw && Math.abs( viewPortHeight - 2 * mouseY ) < imgh )
+		if ( isInTriggerRegion( x, y ) )
 			checkEnterTriggerRegion();
 		else
 			checkExitTriggerRegion();
@@ -528,7 +540,7 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 	@Override
 	public void mouseClicked( final MouseEvent e )
 	{
-		if ( mouseX > viewPortWidth - imgw && e.getY() < ( viewPortHeight / 2 ) + 50 && e.getY() > ( viewPortHeight / 2 ) - 50 )
+		if ( isInTriggerRegion( e.getX(), e.getY() ) )
 		{
 			collapsed = !collapsed;
 			splitPanel.collapseUI();
