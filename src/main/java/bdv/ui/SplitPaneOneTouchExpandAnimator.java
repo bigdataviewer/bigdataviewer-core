@@ -53,6 +53,8 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 
 	private final float backgroundAlpha = 0.65f;
 
+	private PaintState paintState;
+
 	public SplitPaneOneTouchExpandAnimator( final SplitPanel viewer ) throws IOException
 	{
 		rightarrow = ImageIO.read( SplitPaneOneTouchExpandAnimator.class.getResource( "rightdoublearrow_tiny.png" ) );
@@ -80,185 +82,261 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 		viewPortHeight = g.getClipBounds().height;
 
 		if (!isAnimating)
+		{
 			last_time = time;
+			switch ( animationType )
+			{
+			case ACTIVATE_EXPAND:
+				animation = new ActivateExpand();
+				isAnimating = true;
+				animationType = NONE;
+				break;
+			case DEACTIVATE_EXPAND:
+				animation = new DeactivateExpand();
+				isAnimating = true;
+				animationType = NONE;
+				break;
+			case ACTIVATE_COLLAPS:
+				animation = new ActivateCollapse();
+				isAnimating = true;
+				animationType = NONE;
+				break;
+			case DEACTIVATE_COLLAPS:
+				animation = new DeactivateCollapse();
+				isAnimating = true;
+				animationType = NONE;
+				break;
+			}
+		}
 
 		final long delta_time = time - last_time;
-		switch ( animationType )
+		if ( animation != null )
 		{
-		case ACTIVATE_EXPAND:
-			activateExpand( g, delta_time );
-			break;
-		case DEACTIVATE_EXPAND:
-			deactivateExpand( g, delta_time );
-			break;
-		case ACTIVATE_COLLAPS:
-			activateCollapse( g, delta_time );
-			break;
-		case DEACTIVATE_COLLAPS:
-			deactivateCollapse( g, delta_time );
-			break;
+			paintState = animation.animate( delta_time );
+			if ( animation.isComplete() )
+			{
+				animation = null;
+				isAnimating = false;
+			}
 		}
 
 		last_time = time;
+
+		if ( paintState != null )
+			paint( g, paintState );
 	}
 
-	private void deactivateCollapse( final Graphics2D g, final long delta_time )
+	interface Animation
 	{
-		// TODO : should become new animation speed
-		final double expandAnimationSpeed = animationSpeed / imgw;
+		PaintState animate( final long delta_time );
 
-		// Fade-out
-		updateAlpha( false, delta_time );
-
-		// No move animation required
-		final int x = viewPortWidth - imgw;
-
-		drawBackground( g, x, alpha );
-		drawImg( g, rightarrow, x, alpha );
-
-		// Reset animation keyFrame-frame
-		keyFrame = 0;
-		isAnimating = alpha > 0.25;
+		boolean isComplete();
 	}
 
-	private void activateCollapse( final Graphics2D g, final long delta_time )
+	private static class PaintState
 	{
-		// TODO : should become new animation speed
-		// Slide image 10px to the left
-		final double expandAnimationSpeed = animationSpeed / 10;
+		final double imgRatio;
+		final double bgRatio;
+		final double bumpRatio;
+		final float alpha;
 
-		if ( keyFrame == 0 )
+		private PaintState( final double imgRatio, final double bgRatio, final double bumpRatio, final float alpha )
 		{
-			// Slide image to the left
-			expandRatio += expandAnimationSpeed * delta_time;
-			expandRatio = Math.min( 1, Math.max( 0, expandRatio ) );
-			if ( expandRatio == 1 )
-				keyFrame = 1;
-
+			this.imgRatio = imgRatio;
+			this.bgRatio = bgRatio;
+			this.bumpRatio = bumpRatio;
+			this.alpha = alpha;
 		}
-		else if ( keyFrame == 1 )
-		{
-			// Slide image back to the initial position
-			expandRatio -= expandAnimationSpeed * delta_time;
-			expandRatio = Math.min( 1, Math.max( 0, expandRatio ) );
-			if ( expandRatio == 0 )
-				keyFrame = 2;
-		}
-		else
-		{
-			// Animation finished
-			alpha = 1;
-			expandRatio = 0; // TODO: remove?
-		}
-
-		// Fade-in
-		updateAlpha( true, delta_time );
-
-		final int x = viewPortWidth - ( int ) ( imgw + 10 * cos( expandRatio ) );
-
-		drawBackground( g, x, alpha );
-		drawImg( g, rightarrow, x, alpha );
-
-		isAnimating = keyFrame < 2;
-		System.out.println( "isAnimating = " + isAnimating );
 	}
 
+	private void paint( final Graphics2D g, final PaintState state )
+	{
+		final int imgX = viewPortWidth - ( int ) ( imgw * state.imgRatio + 10 * state.bumpRatio );
+		final int bgX = viewPortWidth - ( int ) ( imgw * state.bgRatio + 10 * state.bumpRatio );
 
+		drawBackground( g, bgX, state.alpha );
+		drawImg( g, collapsed ? leftarrow : rightarrow, imgX, state.alpha );
+	}
 
+	private Animation animation;
+
+	private class DeactivateCollapse implements Animation
+	{
+		private boolean complete = false;
+
+		@Override
+		public PaintState animate( final long delta_time )
+		{
+			// Fade-out
+			updateAlpha( false, delta_time );
+
+			// No move animation required
+			final int x = viewPortWidth - imgw;
+
+			complete = alpha <= 0.25;
+
+			return new PaintState( 1, 1, 0, alpha );
+		}
+
+		@Override
+		public boolean isComplete()
+		{
+			return complete;
+		}
+	}
+
+	private class ActivateCollapse implements Animation
+	{
+		private int keyFrame = 0;
+
+		// ratio to which the image is slid left (0 = all the way right, 1 = all the way left)
+		private double expandRatio = 0;
+
+		@Override
+		public PaintState animate( final long delta_time )
+		{
+			// TODO : should become new animation speed
+			// Slide image 10px to the left
+			final double expandAnimationSpeed = animationSpeed / 10;
+
+			if ( keyFrame == 0 )
+			{
+				// Slide image to the left
+				expandRatio += expandAnimationSpeed * delta_time;
+				expandRatio = Math.min( 1, Math.max( 0, expandRatio ) );
+				if ( expandRatio == 1 )
+					keyFrame = 1;
+
+			}
+			else if ( keyFrame == 1 )
+			{
+				// Slide image back to the initial position
+				expandRatio -= expandAnimationSpeed * delta_time;
+				expandRatio = Math.min( 1, Math.max( 0, expandRatio ) );
+				if ( expandRatio == 0 )
+					keyFrame = 2;
+			}
+
+			// Fade-in
+			updateAlpha( true, delta_time );
+
+			isAnimating = keyFrame < 2;
+
+			return new PaintState( 1, 1, cos( expandRatio ), alpha );
+		}
+
+		@Override
+		public boolean isComplete()
+		{
+			return !isAnimating;
+		}
+	}
 
 	// ratio to which the image is expanded (0 = hidden, 1 = fully expanded)
 	private double expandRatio = 0;
 
-	private void deactivateExpand( final Graphics2D g, final long delta_time )
+	private class DeactivateExpand implements Animation
 	{
-		System.out.println( "SplitPaneOneTouchExpandAnimator.deactivateExpand " + delta_time );
-		// TODO : should become new animation speed
-		final double expandAnimationSpeed = animationSpeed / imgw;
 
-		// Speed up animation by factor 2
-		expandRatio -= 2 * expandAnimationSpeed * delta_time;
-		expandRatio = Math.min( 1, Math.max( 0, expandRatio ) );
-
-		// Fade-out
-		updateAlpha( false, delta_time );
-
-		final int x = viewPortWidth - ( int ) ( imgw * cos( expandRatio ) );
-
-		drawBackground( g, x, alpha );
-		drawImg( g, leftarrow, x, alpha );
-
-		// Set keyFrame-frames back based on expandRatio
-		if ( expandRatio > 0.5 )
+		@Override
+		public PaintState animate( final long delta_time )
 		{
-			keyFrame = 2;
-		}
-		else if ( expandRatio > 0 )
-		{
-			keyFrame = 1;
-		}
-		else
-		{
-			keyFrame = 0;
-		}
+			// TODO : should become new animation speed
+			final double expandAnimationSpeed = animationSpeed / imgw;
 
-		isAnimating = expandRatio > 0;
-	}
-
-	private void activateExpand( final Graphics2D g, final long delta_time )
-	{
-		// TODO : should become new animation speed
-		final double expandAnimationSpeed = animationSpeed / imgw;
-
-		// Slide image in
-		if ( keyFrame == 0 )
-		{
-			// Slide image in with doubled speed
-			expandRatio += delta_time * 2 * expandAnimationSpeed;
+			// Speed up animation by factor 2
+			expandRatio -= 2 * expandAnimationSpeed * delta_time;
 			expandRatio = Math.min( 1, Math.max( 0, expandRatio ) );
-			if ( expandRatio == 1 )
-			{
-				keyFrame = 1;
-			}
-		}
-		else if ( keyFrame == 1 )
-		{
-			// Move it half back
-			expandRatio -= delta_time * expandAnimationSpeed;
-			expandRatio = Math.min( 1, Math.max( 0, expandRatio ) );
-			if ( expandRatio <= 0.5 )
+
+			// Fade-out
+			updateAlpha( false, delta_time );
+
+			// Set keyFrame-frames back based on expandRatio
+			if ( expandRatio > 0.5 )
 			{
 				keyFrame = 2;
 			}
-		}
-		else if ( keyFrame == 2 )
-		{
-			// And move it again full in
-			expandRatio += delta_time * expandAnimationSpeed;
-			expandRatio = Math.min( 1, Math.max( 0, expandRatio ) );
-			if ( expandRatio == 1 )
+			else if ( expandRatio > 0 )
 			{
-				keyFrame = 3;
+				keyFrame = 1;
 			}
+			else
+			{
+				keyFrame = 0;
+			}
+
+			isAnimating = expandRatio > 0;
+
+			final double imgRatio = cos( expandRatio );
+			return new PaintState( imgRatio, imgRatio, 0, alpha );
 		}
-		else
+
+		@Override
+		public boolean isComplete()
 		{
-			expandRatio = 1;
+			return !isAnimating;
+		}
+	}
+
+	private class ActivateExpand implements Animation
+	{
+		@Override
+		public PaintState animate( final long delta_time )
+		{
+			// TODO : should become new animation speed
+			final double expandAnimationSpeed = animationSpeed / imgw;
+
+			// Slide image in
+			if ( keyFrame == 0 )
+			{
+				// Slide image in with doubled speed
+				expandRatio += delta_time * 2 * expandAnimationSpeed;
+				expandRatio = Math.min( 1, Math.max( 0, expandRatio ) );
+				if ( expandRatio == 1 )
+				{
+					keyFrame = 1;
+				}
+			}
+			else if ( keyFrame == 1 )
+			{
+				// Move it half back
+				expandRatio -= delta_time * expandAnimationSpeed;
+				expandRatio = Math.min( 1, Math.max( 0, expandRatio ) );
+				if ( expandRatio <= 0.5 )
+				{
+					keyFrame = 2;
+				}
+			}
+			else if ( keyFrame == 2 )
+			{
+				// And move it again full in
+				expandRatio += delta_time * expandAnimationSpeed;
+				expandRatio = Math.min( 1, Math.max( 0, expandRatio ) );
+				if ( expandRatio == 1 )
+				{
+					keyFrame = 3;
+				}
+			}
+			else
+			{
+				expandRatio = 1;
+			}
+
+			// Fade-in
+			updateAlpha( true, delta_time );
+
+			isAnimating = keyFrame != 3;
+
+			final double imgRatio = cos( expandRatio );
+			final double bgRatio = keyFrame > 0 ? 1 : imgRatio; // Background should only move out and stay
+			return new PaintState( imgRatio, bgRatio, 0, alpha );
 		}
 
-		// Fade-in
-		updateAlpha( true, delta_time );
-
-		final int x = viewPortWidth - ( int ) ( imgw * cos( expandRatio ) );
-
-		// Background should only move out and stay
-		if ( keyFrame > 0 )
-			drawBackground( g, viewPortWidth - imgw, alpha );
-		else
-			drawBackground( g, x, alpha );
-
-		drawImg( g, leftarrow, x, alpha );
-
-		isAnimating = keyFrame != 3;
+		@Override
+		public boolean isComplete()
+		{
+			return !isAnimating;
+		}
 	}
 
 	/**
@@ -399,6 +477,7 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 	private void repaint( final AnimationType animationType )
 	{
 		this.animationType = animationType;
+		isAnimating = false;
 		splitPanel.getViewerPanel().getDisplay().repaint();
 	}
 
