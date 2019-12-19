@@ -8,9 +8,7 @@ import java.awt.Graphics2D;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.awt.image.BufferedImage;
 import java.io.IOException;
-import javax.imageio.ImageIO;
 import javax.swing.ImageIcon;
 
 import static bdv.ui.SplitPaneOneTouchExpandAnimator.AnimationType.SHOW_COLLAPSE;
@@ -19,6 +17,10 @@ import static bdv.ui.SplitPaneOneTouchExpandAnimator.AnimationType.HIDE_COLLAPSE
 import static bdv.ui.SplitPaneOneTouchExpandAnimator.AnimationType.HIDE_EXPAND;
 import static bdv.ui.SplitPaneOneTouchExpandAnimator.AnimationType.NONE;
 
+/**
+ * @author Tim-Oliver Buchholz
+ * @author Tobias Pietzsch
+ */
 public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMotionListener, MouseListener
 {
 	private final ImageIcon rightArrowIcon;
@@ -37,9 +39,8 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 	private int viewPortHeight;
 
 	private final SplitPanel splitPanel;
-	private boolean collapsed;
 
-	public SplitPaneOneTouchExpandAnimator( final SplitPanel viewer ) throws IOException
+	public SplitPaneOneTouchExpandAnimator( final SplitPanel viewer )
 	{
 		rightArrowIcon = new ImageIcon( SplitPaneOneTouchExpandAnimator.class.getResource( "rightdoublearrow_tiny.png" ) );
 		leftArrowIcon = new ImageIcon( SplitPaneOneTouchExpandAnimator.class.getResource( "leftdoublearrow_tiny.png" ) );
@@ -167,7 +168,7 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 		final int y = ( viewPortHeight - imgh ) / 2;
 
 		drawBackground( g, bgX, y, state.alpha );
-		drawImg( g, collapsed ? leftArrowIcon : rightArrowIcon, imgX, y, state.alpha );
+		drawImg( g, splitPanel.isCollapsed() ? leftArrowIcon : rightArrowIcon, imgX, y, state.alpha );
 	}
 
 	private void drawBackground( final Graphics2D g, final int x, final int y, final float alpha )
@@ -488,7 +489,7 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 		if ( inTriggerRegion )
 		{
 			inTriggerRegion = false;
-			if ( !collapsed )
+			if ( !splitPanel.isCollapsed() )
 				startAnimation( HIDE_COLLAPSE );
 		}
 	}
@@ -498,7 +499,7 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 		if ( !inTriggerRegion )
 		{
 			inTriggerRegion = true;
-			if ( !collapsed )
+			if ( !splitPanel.isCollapsed() )
 				startAnimation( SHOW_COLLAPSE );
 		}
 	}
@@ -508,7 +509,7 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 		if ( inBorderRegion )
 		{
 			inBorderRegion = false;
-			if ( collapsed )
+			if ( splitPanel.isCollapsed() )
 				startAnimation( HIDE_EXPAND );
 		}
 	}
@@ -518,7 +519,7 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 		if ( !inBorderRegion )
 		{
 			inBorderRegion = true;
-			if ( collapsed )
+			if ( splitPanel.isCollapsed() )
 				startAnimation( SHOW_EXPAND );
 		}
 	}
@@ -526,13 +527,8 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 	@Override
 	public void mouseExited( final MouseEvent e )
 	{
-		if ( collapsed && inBorderRegion )
-			startAnimation( HIDE_EXPAND );
-		else if ( !collapsed && inTriggerRegion )
-			startAnimation( HIDE_COLLAPSE );
-
-		inBorderRegion = false;
-		inTriggerRegion = false;
+		checkExitBorderRegion();
+		checkExitTriggerRegion();
 	}
 
 
@@ -542,8 +538,7 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 	{
 		if ( isInTriggerRegion( e.getX(), e.getY() ) )
 		{
-			collapsed = !collapsed;
-			splitPanel.collapseUI();
+			splitPanel.setCollapsed( !splitPanel.isCollapsed() );
 			splitPanel.getViewerPanel().requestRepaint();
 			checkExitBorderRegion();
 			checkExitTriggerRegion();
