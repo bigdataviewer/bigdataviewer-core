@@ -42,9 +42,6 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 	private int mouseY;
 
 
-	private boolean isAnimating;
-	private long last_time;
-
 	public SplitPaneOneTouchExpandAnimator( final SplitPanel viewer ) throws IOException
 	{
 		rightarrow = ImageIO.read( SplitPaneOneTouchExpandAnimator.class.getResource( "rightdoublearrow_tiny.png" ) ); // TODO: use ImageIcon instead?
@@ -54,7 +51,7 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 		this.splitPanel = viewer;
 	}
 
-	enum AnimationType
+	public enum AnimationType
 	{
 		SHOW_EXPAND,
 		HIDE_EXPAND,
@@ -63,7 +60,15 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 		NONE
 	}
 
-	private AnimationType animationType = NONE;
+	synchronized void startAnimation( final AnimationType animationType )
+	{
+		requestedAnimationType = animationType;
+		splitPanel.getViewerPanel().getDisplay().repaint();
+	}
+
+	private AnimationType requestedAnimationType = NONE;
+
+	private long last_time;
 
 	@Override
 	public void paint( final Graphics2D g, final long time )
@@ -71,46 +76,40 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 		viewPortWidth = g.getClipBounds().width;
 		viewPortHeight = g.getClipBounds().height;
 
-		if (!isAnimating)
+		if ( requestedAnimationType != NONE )
 		{
+			if ( animator == null || animator.animationType() != requestedAnimationType )
+			{
+				last_time = time;
+
+				switch ( requestedAnimationType )
+				{
+				case SHOW_EXPAND:
+					animator = new ShowExpandButton( animator );
+					break;
+				case HIDE_EXPAND:
+					animator = new HideExpandButton( animator );
+					break;
+				case SHOW_COLLAPSE:
+					animator = new ShowCollapseButton();
+					break;
+				case HIDE_COLLAPSE:
+					animator = new HideCollapseButton();
+					break;
+				}
+			}
+			requestedAnimationType = NONE;
+		}
+
+		if ( animator != null )
+		{
+			final long delta_time = time - last_time;
 			last_time = time;
-			switch ( animationType )
-			{
-			case SHOW_EXPAND:
-				animation = new ShowExpandButton( animation );
-				isAnimating = true;
-				animationType = NONE;
-				break;
-			case HIDE_EXPAND:
-				animation = new HideExpandButton( animation );
-				isAnimating = true;
-				animationType = NONE;
-				break;
-			case SHOW_COLLAPSE:
-				animation = new ShowCollapseButton();
-				isAnimating = true;
-				animationType = NONE;
-				break;
-			case HIDE_COLLAPSE:
-				animation = new HideCollapseButton();
-				isAnimating = true;
-				animationType = NONE;
-				break;
-			}
-		}
 
-		final long delta_time = time - last_time;
-		if ( animation != null )
-		{
-			paintState = animation.animate( delta_time );
-			if ( animation.isComplete() )
-			{
-				animation = null;
-				isAnimating = false;
-			}
+			paintState = animator.animate( delta_time );
+			if ( animator.isComplete() )
+				animator = null;
 		}
-
-		last_time = time;
 
 		if ( paintState != null )
 			paint( g, paintState );
@@ -125,7 +124,7 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 	@Override
 	public boolean requiresRepaint()
 	{
-		return isAnimating;
+		return animator != null;
 	}
 
 
@@ -205,20 +204,20 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 
 	// == ANIMATORS ==========================================================
 
-	interface Animation
+	interface Animator
 	{
 		PaintState animate( final long delta_time );
+
+		AnimationType animationType();
 
 		boolean isComplete();
 	}
 
-	private Animation animation;
-
-
+	private Animator animator;
 
 	// =======================================================================
 
-	private class HideCollapseButton implements Animation
+	private class HideCollapseButton implements Animator
 	{
 		private boolean complete = false;
 
@@ -234,17 +233,21 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 		}
 
 		@Override
+		public AnimationType animationType()
+		{
+			return HIDE_COLLAPSE;
+		}
+
+		@Override
 		public boolean isComplete()
 		{
 			return complete;
 		}
 	}
 
-
-
 	// =======================================================================
 
-	private class ShowCollapseButton implements Animation
+	private class ShowCollapseButton implements Animator
 	{
 		// TODO (?)
 		// Slide image 10px to the left
@@ -287,17 +290,21 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 		}
 
 		@Override
+		public AnimationType animationType()
+		{
+			return SHOW_COLLAPSE;
+		}
+
+		@Override
 		public boolean isComplete()
 		{
 			return complete;
 		}
 	}
 
-
-
 	// =======================================================================
 
-	private class HideExpandButton implements Animation
+	private class HideExpandButton implements Animator
 	{
 		// TODO (?)
 		private final double expandAnimationSpeed = animationSpeed / imgw;
@@ -307,11 +314,11 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 
 		private boolean complete = false;
 
-		public HideExpandButton( Animation currentAnimation )
+		public HideExpandButton( Animator currentAnimator )
 		{
-			if ( currentAnimation != null && !currentAnimation.isComplete() && currentAnimation instanceof ShowExpandButton )
+			if ( currentAnimator != null && !currentAnimator.isComplete() && currentAnimator instanceof ShowExpandButton )
 				// if an incomplete ShowExpandButton animation is running, initialize expandRatio to match
-				expandRatio = ( ( ShowExpandButton ) currentAnimation ).expandRatio;
+				expandRatio = ( ( ShowExpandButton ) currentAnimator ).expandRatio;
 			else
 				// otherwise start from fully expanded image
 				expandRatio = 1;
@@ -335,13 +342,21 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 		}
 
 		@Override
+		public AnimationType animationType()
+		{
+			return HIDE_EXPAND;
+		}
+
+		@Override
 		public boolean isComplete()
 		{
 			return complete;
 		}
 	}
 
-	private class ShowExpandButton implements Animation
+	// =======================================================================
+
+	private class ShowExpandButton implements Animator
 	{
 		// TODO (?)
 		private final double expandAnimationSpeed = animationSpeed / imgw;
@@ -353,19 +368,16 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 
 		private boolean complete = false;
 
-		public ShowExpandButton( Animation currentAnimation )
+		public ShowExpandButton( Animator currentAnimator )
 		{
-			if ( currentAnimation != null && !currentAnimation.isComplete() && currentAnimation instanceof HideExpandButton )
+			if ( currentAnimator != null && !currentAnimator.isComplete() && currentAnimator instanceof HideExpandButton )
 				// if an incomplete HideExpandButton animation is running, initialize expandRatio to match
-				expandRatio = ( ( HideExpandButton ) currentAnimation ).expandRatio;
+				expandRatio = ( ( HideExpandButton ) currentAnimator ).expandRatio;
 			else
 				// otherwise start from fully hidden image
 				expandRatio = 0;
 
 			// initialize keyFrame based on expandRatio
-//			if ( expandRatio > 0.5 )
-//				keyFrame = 2;
-//			else
 			if ( expandRatio > 0 )
 				keyFrame = 1;
 			else
@@ -422,6 +434,12 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 		}
 
 		@Override
+		public AnimationType animationType()
+		{
+			return SHOW_EXPAND;
+		}
+
+		@Override
 		public boolean isComplete()
 		{
 			return complete;
@@ -429,39 +447,10 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 	}
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 	// == MOUSE HANDLER ======================================================
 
-	@Override
-	public void mouseDragged( final MouseEvent e )
-	{
-	}
-
-	private boolean nearBorderX = false;
-	private boolean nearBorderY = false;
-
-	public boolean isNearBorder()
-	{
-		return nearBorderX;
-	}
-
-	public boolean isInTriggerRegion()
-	{
-		return nearBorderX && nearBorderY;
-	}
+	private boolean inBorderRegion = false;
+	private boolean inTriggerRegion = false;
 
 	@Override
 	public void mouseMoved( final MouseEvent e )
@@ -469,88 +458,72 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 		mouseX = e.getX();
 		mouseY = e.getY();
 
-		// TODO: expand trigger region (>imgw) ?
+		// check whether in border region
 		if ( viewPortWidth - mouseX < imgw )
-		{
-			if ( !nearBorderX )
-			{
-				nearBorderX = true;
-				enterBorderRegionX();
-			}
-		}
+			checkEnterBorderRegion();
 		else
-		{
-			if ( nearBorderX )
-			{
-				nearBorderX = false;
-				exitBorderRegionX();
-			}
+			checkExitBorderRegion();
 
-		}
-
-		// TODO: expand trigger region (>imgh) ?
-		if ( Math.abs( viewPortHeight - 2 * mouseY ) < imgh )
-		{
-			if ( !nearBorderY )
-			{
-				nearBorderY = true;
-				enterBorderRegionY();
-			}
-		}
+		// check whether in trigger region
+		if ( viewPortWidth - mouseX < imgw && Math.abs( viewPortHeight - 2 * mouseY ) < imgh )
+			checkEnterTriggerRegion();
 		else
+			checkExitTriggerRegion();
+	}
+
+	private void checkExitTriggerRegion()
+	{
+		if ( inTriggerRegion )
 		{
-			if ( nearBorderY )
-			{
-				nearBorderY = false;
-				exitBorderRegionY();
-			}
+			inTriggerRegion = false;
+			if ( !collapsed )
+				startAnimation( HIDE_COLLAPSE );
 		}
 	}
 
-	private void repaint()
+	private void checkEnterTriggerRegion()
 	{
-		if ( collapsed )
+		if ( !inTriggerRegion )
 		{
-			if ( isNearBorder() )
-				repaint( SHOW_EXPAND );
-			else
-				repaint( HIDE_EXPAND );
-		}
-		else
-		{
-			if ( isInTriggerRegion() )
-				repaint( SHOW_COLLAPSE );
-			else
-				repaint( HIDE_COLLAPSE );
+			inTriggerRegion = true;
+			if ( !collapsed )
+				startAnimation( SHOW_COLLAPSE );
 		}
 	}
 
-	private void repaint( final AnimationType animationType )
+	private void checkExitBorderRegion()
 	{
-		this.animationType = animationType;
-		isAnimating = false;
-		splitPanel.getViewerPanel().getDisplay().repaint();
+		if ( inBorderRegion )
+		{
+			inBorderRegion = false;
+			if ( collapsed )
+				startAnimation( HIDE_EXPAND );
+		}
 	}
 
-	private void exitBorderRegionY()
+	private void checkEnterBorderRegion()
 	{
-		repaint();
+		if ( !inBorderRegion )
+		{
+			inBorderRegion = true;
+			if ( collapsed )
+				startAnimation( SHOW_EXPAND );
+		}
 	}
 
-	private void enterBorderRegionY()
+	@Override
+	public void mouseExited( final MouseEvent e )
 	{
-		repaint();
+		if ( collapsed && inBorderRegion )
+			startAnimation( HIDE_EXPAND );
+		else if ( !collapsed && inTriggerRegion )
+			startAnimation( HIDE_COLLAPSE );
+
+		inBorderRegion = false;
+		inTriggerRegion = false;
 	}
 
-	private void exitBorderRegionX()
-	{
-		repaint();
-	}
 
-	private void enterBorderRegionX()
-	{
-		repaint();
-	}
 
 	@Override
 	public void mouseClicked( final MouseEvent e )
@@ -558,40 +531,28 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 		if ( mouseX > viewPortWidth - imgw && e.getY() < ( viewPortHeight / 2 ) + 50 && e.getY() > ( viewPortHeight / 2 ) - 50 )
 		{
 			collapsed = !collapsed;
-			isAnimating = true;
 			splitPanel.collapseUI();
-			if ( collapsed )
-			{
-				isAnimating = false;
-				repaint( HIDE_EXPAND );
-			}
 			splitPanel.getViewerPanel().requestRepaint();
+			checkExitBorderRegion();
+			checkExitTriggerRegion();
 		}
 	}
 
-	@Override
-	public void mousePressed( final MouseEvent e )
-	{
 
-	}
-
-	@Override
-	public void mouseReleased( final MouseEvent e )
-	{
-
-	}
 
 	@Override
 	public void mouseEntered( final MouseEvent e )
-	{
-		System.out.println( "mouseEntered" );
-		repaint();
-	}
+	{}
 
 	@Override
-	public void mouseExited( final MouseEvent e )
-	{
-		System.out.println( "mouseExited" );
-		repaint();
-	}
+	public void mousePressed( final MouseEvent e )
+	{}
+
+	@Override
+	public void mouseReleased( final MouseEvent e )
+	{}
+
+	@Override
+	public void mouseDragged( final MouseEvent e )
+	{}
 }
