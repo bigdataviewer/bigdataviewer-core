@@ -9,6 +9,7 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.io.IOException;
+import java.util.function.BooleanSupplier;
 import javax.swing.ImageIcon;
 
 import static bdv.ui.SplitPaneOneTouchExpandAnimator.AnimationType.SHOW_COLLAPSE;
@@ -23,10 +24,13 @@ import static bdv.ui.SplitPaneOneTouchExpandAnimator.AnimationType.NONE;
  */
 class SplitPaneOneTouchExpandAnimator implements OverlayAnimator
 {
+	private final BooleanSupplier isCollapsed;
+
 	private final ImageIcon rightArrowIcon;
 	private final ImageIcon leftArrowIcon;
 	private final int imgw;
 	private final int imgh;
+
 	private int borderWidth;
 	private int triggerHeight;
 
@@ -38,17 +42,18 @@ class SplitPaneOneTouchExpandAnimator implements OverlayAnimator
 	private int viewPortWidth;
 	private int viewPortHeight;
 
-	private final SplitPanel splitPanel;
-
-	public SplitPaneOneTouchExpandAnimator( final SplitPanel viewer )
+	/**
+	 * @param isCollapsed provides collapsed state to decide whether to display left-arrow of right-arrow icon
+	 */
+	public SplitPaneOneTouchExpandAnimator( final BooleanSupplier isCollapsed )
 	{
+		this.isCollapsed = isCollapsed;
 		rightArrowIcon = new ImageIcon( SplitPaneOneTouchExpandAnimator.class.getResource( "rightdoublearrow_tiny.png" ) );
 		leftArrowIcon = new ImageIcon( SplitPaneOneTouchExpandAnimator.class.getResource( "leftdoublearrow_tiny.png" ) );
 		imgw = leftArrowIcon.getIconWidth();
 		imgh = leftArrowIcon.getIconHeight();
 		borderWidth = imgw + 10;
 		triggerHeight = imgh + 10;
-		splitPanel = viewer;
 	}
 
 	public enum AnimationType
@@ -167,7 +172,7 @@ class SplitPaneOneTouchExpandAnimator implements OverlayAnimator
 		final int y = ( viewPortHeight - imgh ) / 2;
 
 		drawBackground( g, bgX, y, state.alpha );
-		drawImg( g, splitPanel.isCollapsed() ? leftArrowIcon : rightArrowIcon, imgX, y, state.alpha );
+		drawImg( g, isCollapsed.getAsBoolean() ? leftArrowIcon : rightArrowIcon, imgX, y, state.alpha );
 	}
 
 	private void drawBackground( final Graphics2D g, final int x, final int y, final float alpha )

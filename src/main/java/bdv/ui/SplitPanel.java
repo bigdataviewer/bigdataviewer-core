@@ -36,7 +36,7 @@ public class SplitPanel extends JSplitPane
 		this.getLeftComponent().setPreferredSize( viewerPanel.getPreferredSize() );
 		this.setDividerLocation( viewerPanel.getOptionValues().getWidth() );
 
-		final SplitPaneOneTouchExpandAnimator oneTouchExpandAnimator = new SplitPaneOneTouchExpandAnimator( this );
+		final SplitPaneOneTouchExpandAnimator oneTouchExpandAnimator = new SplitPaneOneTouchExpandAnimator( this::isCollapsed );
 		viewerPanel.addOverlayAnimator( oneTouchExpandAnimator );
 
 		final SplitPaneOneTouchExpandTrigger oneTouchExpandTrigger = new SplitPaneOneTouchExpandTrigger( oneTouchExpandAnimator, this );
