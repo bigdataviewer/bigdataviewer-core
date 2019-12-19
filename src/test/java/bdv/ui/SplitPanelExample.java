@@ -19,7 +19,7 @@ public class SplitPanelExample
 		System.setProperty( "apple.laf.useScreenMenuBar", "true" );
 
 		final JFrame frame = new JFrame( "SplitPanel Example" );
-		frame.setLayout( new MigLayout( "fillx, filly", "[grow]", "" ) );
+		frame.setLayout( new MigLayout( "ins 0, fillx, filly", "[grow]", "" ) );
 
 		final Context context = new Context();
 		final CardPanel cardPanel = new CardPanel(context.service( CommandService.class ));
@@ -29,6 +29,7 @@ public class SplitPanelExample
 		final ViewerPanel viewerPanel = new ViewerPanel( new ArrayList<>(), 1, new CacheControl.Dummy(), ViewerOptions.options().width( 600 ) );
 
 		final SplitPanel splitPanel = new SplitPanel( viewerPanel, cardPanel );
+		splitPanel.setBorder( null );
 
 		frame.setPreferredSize( new Dimension( 800, 600 ) );
 		frame.add( splitPanel, "growx, growy" );
