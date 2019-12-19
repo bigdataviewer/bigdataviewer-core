@@ -8,7 +8,7 @@ import static bdv.ui.SplitPaneOneTouchExpandAnimator.AnimationType.HIDE_EXPAND;
 import static bdv.ui.SplitPaneOneTouchExpandAnimator.AnimationType.SHOW_COLLAPSE;
 import static bdv.ui.SplitPaneOneTouchExpandAnimator.AnimationType.SHOW_EXPAND;
 
-public class SplitPaneOneTouchExpandTrigger extends MouseAdapter
+class SplitPaneOneTouchExpandTrigger extends MouseAdapter
 {
 	private final SplitPaneOneTouchExpandAnimator animator;
 

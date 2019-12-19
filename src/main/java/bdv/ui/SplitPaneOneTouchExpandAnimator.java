@@ -21,7 +21,7 @@ import static bdv.ui.SplitPaneOneTouchExpandAnimator.AnimationType.NONE;
  * @author Tim-Oliver Buchholz
  * @author Tobias Pietzsch
  */
-public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator
+class SplitPaneOneTouchExpandAnimator implements OverlayAnimator
 {
 	private final ImageIcon rightArrowIcon;
 	private final ImageIcon leftArrowIcon;
@@ -60,7 +60,7 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator
 		NONE
 	}
 
-	synchronized void startAnimation( final AnimationType animationType )
+	public synchronized void startAnimation( final AnimationType animationType )
 	{
 		requestedAnimationType = animationType;
 		splitPanel.getViewerPanel().getDisplay().repaint();
@@ -195,11 +195,12 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator
 	/**
 	 * Cosine shape acceleration/ deceleration curve  of linear [0,1]
 	 */
-	private double cos( final double t )
+	private static double cos( final double t )
 	{
 		return 0.5 - 0.5 * Math.cos( Math.PI * t );
 	}
 
+	// TODO: Animator implementations should maintain their own private alpha instead of using this shared method
 	private void updateAlpha( final boolean fadeIn, final long delta_time )
 	{
 		if ( fadeIn )
@@ -217,7 +218,7 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator
 
 	// == ANIMATORS ==========================================================
 
-	interface Animator
+	private interface Animator
 	{
 		PaintState animate( final long delta_time );
 
