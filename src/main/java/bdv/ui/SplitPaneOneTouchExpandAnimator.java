@@ -21,7 +21,7 @@ import static bdv.ui.SplitPaneOneTouchExpandAnimator.AnimationType.NONE;
  * @author Tim-Oliver Buchholz
  * @author Tobias Pietzsch
  */
-public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMotionListener, MouseListener
+public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator
 {
 	private final ImageIcon rightArrowIcon;
 	private final ImageIcon leftArrowIcon;
@@ -458,108 +458,4 @@ public class SplitPaneOneTouchExpandAnimator implements OverlayAnimator, MouseMo
 			return complete;
 		}
 	}
-
-
-	// == MOUSE HANDLER ======================================================
-
-	private boolean inBorderRegion = false;
-	private boolean inTriggerRegion = false;
-
-	@Override
-	public void mouseMoved( final MouseEvent e )
-	{
-		final int x = e.getX();
-		final int y = e.getY();
-
-		// check whether in border region
-		if ( isInBorderRegion( x, y ) )
-			checkEnterBorderRegion();
-		else
-			checkExitBorderRegion();
-
-		// check whether in trigger region
-		if ( isInTriggerRegion( x, y ) )
-			checkEnterTriggerRegion();
-		else
-			checkExitTriggerRegion();
-	}
-
-	private void checkExitTriggerRegion()
-	{
-		if ( inTriggerRegion )
-		{
-			inTriggerRegion = false;
-			if ( !splitPanel.isCollapsed() )
-				startAnimation( HIDE_COLLAPSE );
-		}
-	}
-
-	private void checkEnterTriggerRegion()
-	{
-		if ( !inTriggerRegion )
-		{
-			inTriggerRegion = true;
-			if ( !splitPanel.isCollapsed() )
-				startAnimation( SHOW_COLLAPSE );
-		}
-	}
-
-	private void checkExitBorderRegion()
-	{
-		if ( inBorderRegion )
-		{
-			inBorderRegion = false;
-			if ( splitPanel.isCollapsed() )
-				startAnimation( HIDE_EXPAND );
-		}
-	}
-
-	private void checkEnterBorderRegion()
-	{
-		if ( !inBorderRegion )
-		{
-			inBorderRegion = true;
-			if ( splitPanel.isCollapsed() )
-				startAnimation( SHOW_EXPAND );
-		}
-	}
-
-	@Override
-	public void mouseExited( final MouseEvent e )
-	{
-		checkExitBorderRegion();
-		checkExitTriggerRegion();
-	}
-
-
-
-	@Override
-	public void mouseClicked( final MouseEvent e )
-	{
-		if ( isInTriggerRegion( e.getX(), e.getY() ) )
-		{
-			splitPanel.setCollapsed( !splitPanel.isCollapsed() );
-			splitPanel.getViewerPanel().requestRepaint();
-			checkExitBorderRegion();
-			checkExitTriggerRegion();
-		}
-	}
-
-
-
-	@Override
-	public void mouseEntered( final MouseEvent e )
-	{}
-
-	@Override
-	public void mousePressed( final MouseEvent e )
-	{}
-
-	@Override
-	public void mouseReleased( final MouseEvent e )
-	{}
-
-	@Override
-	public void mouseDragged( final MouseEvent e )
-	{}
 }
