@@ -15,6 +15,7 @@ import javax.swing.plaf.basic.BasicSplitPaneUI;
 public class SplitPanel extends JSplitPane
 {
 
+	// TODO should be Component
 	private final ViewerPanel viewerPanel;
 
 	public SplitPanel( final ViewerPanel viewerPanel, final CardPanel cardPanel )
@@ -87,23 +88,39 @@ public class SplitPanel extends JSplitPane
 		this.setDividerSize( 3 );
 	}
 
-	/**
-	 * Collapse the UI-Panel.
-	 */
+	// TODO REMOVE
+	@Deprecated
 	public void collapseUI()
 	{
-		if ( this.getDividerLocation() < this.getMaximumDividerLocation() )
+		setCollapsed( !isCollapsed() );
+	}
+
+	/**
+	 * Un/collapse the UI-Panel.
+	 */
+	public void setCollapsed( final boolean collapsed )
+	{
+		if ( isCollapsed() == collapsed )
+			return;
+
+		if ( collapsed )
 		{
-			this.setDividerSize( 0 );
-			this.setDividerLocation( 1.0d );
+			setDividerSize( 0 );
+			setDividerLocation( 1.0d );
 		}
 		else
 		{
-			this.setDividerLocation( this.getLastDividerLocation() );
+			setDividerLocation( getLastDividerLocation() );
 			setDividerSize();
 		}
 	}
 
+	public boolean isCollapsed()
+	{
+		return getDividerLocation() >= getMaximumDividerLocation();
+	}
+
+	// TODO should not be obtainable from here
 	public ViewerPanel getViewerPanel()
 	{
 		return viewerPanel;
