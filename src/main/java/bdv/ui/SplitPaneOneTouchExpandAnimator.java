@@ -63,7 +63,6 @@ class SplitPaneOneTouchExpandAnimator implements OverlayAnimator
 	public synchronized void startAnimation( final AnimationType animationType )
 	{
 		requestedAnimationType = animationType;
-		splitPanel.getViewerPanel().getDisplay().repaint();
 	}
 
 	private AnimationType requestedAnimationType = NONE;

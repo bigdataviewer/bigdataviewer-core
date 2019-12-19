@@ -1,5 +1,6 @@
 package bdv.ui;
 
+import bdv.ui.SplitPaneOneTouchExpandAnimator.AnimationType;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
@@ -67,7 +68,7 @@ class SplitPaneOneTouchExpandTrigger extends MouseAdapter
 		{
 			inTriggerRegion = false;
 			if ( !splitPanel.isCollapsed() )
-				animator.startAnimation( HIDE_COLLAPSE );
+				startAnimation( HIDE_COLLAPSE );
 		}
 	}
 
@@ -77,7 +78,7 @@ class SplitPaneOneTouchExpandTrigger extends MouseAdapter
 		{
 			inTriggerRegion = true;
 			if ( !splitPanel.isCollapsed() )
-				animator.startAnimation( SHOW_COLLAPSE );
+				startAnimation( SHOW_COLLAPSE );
 		}
 	}
 
@@ -87,7 +88,7 @@ class SplitPaneOneTouchExpandTrigger extends MouseAdapter
 		{
 			inBorderRegion = false;
 			if ( splitPanel.isCollapsed() )
-				animator.startAnimation( HIDE_EXPAND );
+				startAnimation( HIDE_EXPAND );
 		}
 	}
 
@@ -97,7 +98,13 @@ class SplitPaneOneTouchExpandTrigger extends MouseAdapter
 		{
 			inBorderRegion = true;
 			if ( splitPanel.isCollapsed() )
-				animator.startAnimation( SHOW_EXPAND );
+				startAnimation( SHOW_EXPAND );
 		}
+	}
+
+	private void startAnimation( final AnimationType animationType )
+	{
+		animator.startAnimation( animationType );
+		splitPanel.getViewerPanel().getDisplay().repaint();
 	}
 }
