@@ -92,7 +92,7 @@ public class CardPanel extends JPanel
 				if ( allInputsResolved )
 				{
 					final Card card = ( ( DiscoverableCard ) cardModule.getCommand() ).getCard();
-					addCard( card.getName(), card.getComponent(), card.getDefaultVisibilty() );
+					addCard( card.getName(), card.getComponent(), card.getDefaultVisibility() );
 				}
 			}
 			catch ( ModuleException e )
