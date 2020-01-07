@@ -19,6 +19,9 @@ import org.scijava.command.CommandModule;
 import org.scijava.command.CommandService;
 import org.scijava.module.ModuleException;
 import org.scijava.module.ModuleItem;
+import org.scijava.module.process.ServicePreprocessor;
+import org.scijava.plugin.PluginInfo;
+import org.scijava.plugin.SciJavaPlugin;
 
 /**
  * CardPanel handles components in named {@link CardWrapper}s which can be opened or closed.
@@ -73,9 +76,11 @@ public class CardPanel extends JPanel
 			try
 			{
 				final CommandModule cardModule = new CommandModule( cardInfo );
+				populateServices(cardModule, commandService);
 				boolean allInputsResolved = true;
 				for ( final ModuleItem< ? > item : cardInfo.inputs() )
 				{
+					if(cardModule.isInputResolved(item.getName())) continue;
 					final Class< ? > inputKlass = item.getType();
 
 					if ( parameterMap.containsKey( inputKlass ) )
@@ -100,6 +105,12 @@ public class CardPanel extends JPanel
 				e.printStackTrace();
 			}
 		} );
+	}
+
+	private void populateServices(CommandModule module, CommandService commandService) {
+		PluginInfo<SciJavaPlugin> preprocessorInfo = commandService.pluginService().getPlugin(ServicePreprocessor.class);
+		ServicePreprocessor preprocessor = (ServicePreprocessor) commandService.pluginService().createInstance(preprocessorInfo);
+		preprocessor.process(module);
 	}
 
 	/**
