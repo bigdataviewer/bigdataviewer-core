@@ -29,7 +29,7 @@ public interface Card
 	 *
 	 * @return is visible
 	 */
-	default boolean getDefaultVisibilty()
+	default boolean getDefaultVisibility()
 	{
 		return true;
 	}

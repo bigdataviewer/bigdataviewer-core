@@ -45,7 +45,7 @@ public class ExampleCard extends JPanel implements DiscoverableCard
 	}
 
 	@Override
-	public boolean getDefaultVisibilty()
+	public boolean getDefaultVisibility()
 	{
 		return false;
 	}

@@ -48,7 +48,7 @@ public class ExampleCardHighPriority extends JPanel implements HighPriorityCard
 	}
 
 	@Override
-	public boolean getDefaultVisibilty()
+	public boolean getDefaultVisibility()
 	{
 		return true;
 	}
