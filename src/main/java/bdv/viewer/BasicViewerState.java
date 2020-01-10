@@ -233,7 +233,7 @@ public class BasicViewerState implements ViewerState
 	@Override
 	public ViewerState snapshot()
 	{
-		throw new UnsupportedOperationException();
+		return new UnmodifiableViewerState( new BasicViewerState( this ) );
 	}
 
 	@Override
