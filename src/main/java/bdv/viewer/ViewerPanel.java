@@ -523,7 +523,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		boolean requiresRepaint = false;
 		if ( Prefs.showMultibox() )
 		{
-			multiBoxOverlayRenderer.setViewerState( state );
+			multiBoxOverlayRenderer.setViewerState( state() );
 			multiBoxOverlayRenderer.updateVirtualScreenSize( display.getWidth(), display.getHeight() );
 			multiBoxOverlayRenderer.paint( ( Graphics2D ) g );
 			requiresRepaint = multiBoxOverlayRenderer.isHighlightInProgress();
