@@ -545,7 +545,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 		if ( Prefs.showScaleBar() )
 		{
-			scaleBarOverlayRenderer.setViewerState( state );
+			scaleBarOverlayRenderer.setViewerState( state() );
 			scaleBarOverlayRenderer.paint( ( Graphics2D ) g );
 		}
 
