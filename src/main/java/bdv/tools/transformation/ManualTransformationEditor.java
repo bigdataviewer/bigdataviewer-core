@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -29,24 +29,20 @@
  */
 package bdv.tools.transformation;
 
+import bdv.viewer.SourceAndConverter;
+import bdv.viewer.ViewerPanel;
+import bdv.viewer.ViewerState;
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.swing.Action;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
 import javax.swing.KeyStroke;
-
-import org.scijava.listeners.Listeners;
-import org.scijava.ui.behaviour.util.InputActionBindings;
-
-import bdv.viewer.Source;
-import bdv.viewer.ViewerPanel;
-import bdv.viewer.state.SourceGroup;
-import bdv.viewer.state.ViewerState;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.ui.TransformListener;
+import org.scijava.listeners.Listeners;
+import org.scijava.ui.behaviour.util.InputActionBindings;
 import org.scijava.ui.behaviour.util.RunnableAction;
 
 // TODO: what happens when the current source, display mode, etc is changed while the editor is active? deactivate?
@@ -133,18 +129,17 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 		if ( this.active == a ) { return; }
 		if ( a )
 		{
-			active = a;
+			active = true;
 			// Enter manual edit mode
-			final ViewerState state = viewer.getState();
-			final List< Integer > indices = new ArrayList<>();
+			final ViewerState state = viewer.state().snapshot();
+			final List< SourceAndConverter< ? > > currentSources = new ArrayList<>();
 			switch ( state.getDisplayMode() )
 			{
 			case FUSED:
-				indices.add( state.getCurrentSource() );
+				currentSources.add( state.getCurrentSource() );
 				break;
 			case FUSEDGROUP:
-				final SourceGroup group = state.getSourceGroups().get( state.getCurrentGroup() );
-				indices.addAll( group.getSourceIds() );
+				currentSources.addAll( state.getSourcesInGroup( state.getCurrentGroup() ) );
 				break;
 			default:
 				viewer.showMessage( "Can only do manual transformation when in FUSED mode." );
@@ -153,16 +148,14 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 			state.getViewerTransform( frozenTransform );
 			sourcesToModify.clear();
 			sourcesToFix.clear();
-			final int numSources = state.numSources();
-			for ( int i = 0; i < numSources; ++i )
+			for ( SourceAndConverter< ? > source : state.getSources() )
 			{
-				final Source< ? > source = state.getSources().get( i ).getSpimSource();
-				if ( TransformedSource.class.isInstance( source ) )
+				if ( source.getSpimSource() instanceof TransformedSource )
 				{
-					if ( indices.contains( i ) )
-						sourcesToModify.add( ( bdv.tools.transformation.TransformedSource< ? > ) source );
+					if ( currentSources.contains( source ) )
+						sourcesToModify.add( ( TransformedSource< ? > ) source.getSpimSource() );
 					else
-						sourcesToFix.add( ( bdv.tools.transformation.TransformedSource< ? > ) source );
+						sourcesToFix.add( ( TransformedSource< ? > ) source.getSpimSource() );
 				}
 			}
 			active = true;
@@ -171,7 +164,8 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 			viewer.showMessage( "starting manual transform" );
 		}
 		else
-		{ // Exit manual edit mode.
+		{
+			// Exit manual edit mode.
 			active = false;
 			viewer.removeTransformListener( this );
 			bindings.removeInputMap( "manual transform" );
