@@ -367,7 +367,7 @@ public class BigDataViewer
 		// this is just to get updates of window size:
 		viewer.getDisplay().addOverlayRenderer( movieMaxProjectDialog );
 
-		activeSourcesDialog = new VisibilityAndGroupingDialog( viewerFrame, viewer.getVisibilityAndGrouping() );
+		activeSourcesDialog = new VisibilityAndGroupingDialog( viewerFrame, viewer.state() );
 
 		helpDialog = new HelpDialog( viewerFrame );
 
