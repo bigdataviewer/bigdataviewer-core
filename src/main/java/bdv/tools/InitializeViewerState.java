@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -40,12 +40,14 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.util.LinAlgHelpers;
 import net.imglib2.view.Views;
+
 import bdv.tools.brightness.MinMaxGroup;
 import bdv.tools.brightness.SetupAssignments;
 import bdv.util.Affine3DHelpers;
 import bdv.viewer.Source;
+import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerPanel;
-import bdv.viewer.state.ViewerState;
+import bdv.viewer.ViewerState;
 
 public class InitializeViewerState
 {
@@ -68,8 +70,7 @@ public class InitializeViewerState
 	public static void initTransform( final ViewerPanel viewer )
 	{
 		final Dimension dim = viewer.getDisplay().getSize();
-		final ViewerState state = viewer.getState();
-		final AffineTransform3D viewerTransform = initTransform( dim.width, dim.height, false, state );
+		final AffineTransform3D viewerTransform = initTransform( dim.width, dim.height, false, viewer.state().snapshot() );
 		viewer.setCurrentViewerTransform( viewerTransform );
 	}
 
@@ -93,13 +94,17 @@ public class InitializeViewerState
 	 */
 	public static AffineTransform3D initTransform( final int viewerWidth, final int viewerHeight, final boolean zoomedIn, final ViewerState state )
 	{
+		final AffineTransform3D viewerTransform = new AffineTransform3D();
 		final double cX = viewerWidth / 2.0;
 		final double cY = viewerHeight / 2.0;
 
-		final Source< ? > source = state.getSources().get( state.getCurrentSource() ).getSpimSource();
+		final SourceAndConverter< ? > current = state.getCurrentSource();
+		if ( current == null )
+			return viewerTransform;
+		final Source< ? > source = current.getSpimSource();
 		final int timepoint = state.getCurrentTimepoint();
 		if ( !source.isPresent( timepoint ) )
-			return new AffineTransform3D();
+			return viewerTransform;
 
 		final AffineTransform3D sourceTransform = new AffineTransform3D();
 		source.getSourceTransform( timepoint, 0, sourceTransform );
@@ -133,7 +138,6 @@ public class InitializeViewerState
 		LinAlgHelpers.scale( translation, -1, translation );
 		LinAlgHelpers.setCol( 3, translation, m );
 
-		final AffineTransform3D viewerTransform = new AffineTransform3D();
 		viewerTransform.set( m );
 
 		// scale
@@ -159,7 +163,7 @@ public class InitializeViewerState
 
 	public static void initBrightness( final double cumulativeMinCutoff, final double cumulativeMaxCutoff, final ViewerPanel viewer, final SetupAssignments setupAssignments )
 	{
-		initBrightness( cumulativeMinCutoff, cumulativeMaxCutoff, viewer.getState(), setupAssignments );
+		initBrightness( cumulativeMinCutoff, cumulativeMaxCutoff, viewer.state().snapshot(), setupAssignments );
 	}
 
 	/**
@@ -172,18 +176,22 @@ public class InitializeViewerState
 	 */
 	public static void initBrightness( final double cumulativeMinCutoff, final double cumulativeMaxCutoff, final ViewerState state, final SetupAssignments setupAssignments )
 	{
-		final Source< ? > source = state.getSources().get( state.getCurrentSource() ).getSpimSource();
+		final SourceAndConverter< ? > current = state.getCurrentSource();
+		if ( current == null )
+			return;
+
+		final Source< ? > source = current.getSpimSource();
 		final int timepoint = state.getCurrentTimepoint();
 		if ( !source.isPresent( timepoint ) )
 			return;
-		if ( !UnsignedShortType.class.isInstance( source.getType() ) )
+		if ( !( source.getType() instanceof UnsignedShortType ) )
 			return;
 		@SuppressWarnings( "unchecked" )
 		final RandomAccessibleInterval< UnsignedShortType > img = ( RandomAccessibleInterval< UnsignedShortType > ) source.getSource( timepoint, source.getNumMipmapLevels() - 1 );
 		final long z = ( img.min( 2 ) + img.max( 2 ) + 1 ) / 2;
 
 		final int numBins = 6535;
-		final Histogram1d< UnsignedShortType > histogram = new Histogram1d<>( Views.iterable( Views.hyperSlice( img, 2, z ) ), new Real1dBinMapper< UnsignedShortType >( 0, 65535, numBins, false ) );
+		final Histogram1d< UnsignedShortType > histogram = new Histogram1d<>( Views.iterable( Views.hyperSlice( img, 2, z ) ), new Real1dBinMapper<>( 0, 65535, numBins, false ) );
 		final DiscreteFrequencyDistribution dfd = histogram.dfd();
 		final long[] bin = new long[] { 0 };
 		double cumulative = 0;
@@ -204,4 +212,17 @@ public class InitializeViewerState
 		minmax.getMinBoundedValue().setCurrentValue( min );
 		minmax.getMaxBoundedValue().setCurrentValue( max );
 	}
+
+	@Deprecated
+	public static AffineTransform3D initTransform( final int viewerWidth, final int viewerHeight, final boolean zoomedIn, final bdv.viewer.state.ViewerState state )
+	{
+		return initTransform( viewerWidth, viewerHeight, zoomedIn, state.getState() );
+	}
+
+	@Deprecated
+	public static void initBrightness( final double cumulativeMinCutoff, final double cumulativeMaxCutoff, final bdv.viewer.state.ViewerState state, final SetupAssignments setupAssignments )
+	{
+		initBrightness( cumulativeMinCutoff, cumulativeMaxCutoff, state.getState(), setupAssignments );
+	}
+
 }
