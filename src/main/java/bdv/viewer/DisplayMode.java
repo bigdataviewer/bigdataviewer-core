@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -53,6 +53,44 @@ public enum DisplayMode
 	public String getName()
 	{
 		return name;
+	}
+
+	public DisplayMode withFused( final boolean activate )
+	{
+		switch ( this )
+		{
+		default:
+		case SINGLE:
+		case FUSED:
+			return activate ? FUSED : SINGLE;
+		case GROUP:
+		case FUSEDGROUP:
+			return activate ? FUSEDGROUP : GROUP;
+		}
+	}
+
+	public DisplayMode withGrouping( final boolean activate )
+	{
+		switch ( this )
+		{
+		default:
+		case SINGLE:
+		case GROUP:
+			return activate ? GROUP : SINGLE;
+		case FUSED:
+		case FUSEDGROUP:
+			return activate ? FUSEDGROUP : FUSED;
+		}
+	}
+
+	public boolean hasFused()
+	{
+		return this == FUSED || this == FUSEDGROUP;
+	}
+
+	public boolean hasGrouping()
+	{
+		return this == GROUP || this == FUSEDGROUP;
 	}
 
 	public static final int length;
