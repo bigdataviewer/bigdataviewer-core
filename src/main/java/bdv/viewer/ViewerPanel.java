@@ -531,7 +531,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 		if ( Prefs.showTextOverlay() )
 		{
-			sourceInfoOverlayRenderer.setViewerState( state );
+			sourceInfoOverlayRenderer.setViewerState( state() );
 			sourceInfoOverlayRenderer.paint( ( Graphics2D ) g );
 
 			final RealPoint gPos = new RealPoint( 3 );
