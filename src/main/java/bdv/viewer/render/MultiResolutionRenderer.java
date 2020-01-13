@@ -463,8 +463,7 @@ public class MultiResolutionRenderer
 		// the BufferedImage that is rendered to (to paint to the canvas)
 		final BufferedImage bufferedImage;
 
-		// the projector that paints to the screenImage.
-		final VolatileProjector p;
+		final ARGBScreenImage screenImage;
 
 		final boolean clearQueue;
 
@@ -487,24 +486,42 @@ public class MultiResolutionRenderer
 				final int renderId = renderIdQueue.peek();
 				currentScreenScaleIndex = requestedScreenScaleIndex;
 				bufferedImage = bufferedImages[ currentScreenScaleIndex ][ renderId ];
-				final ARGBScreenImage screenImage = screenImages[ currentScreenScaleIndex ][ renderId ];
-				synchronized ( state.getState() )
-				{
-					final int numVisibleSources = state.getVisibleSourceIndices().size();
-					checkRenewRenderImages( numVisibleSources );
-					checkRenewMaskArrays( numVisibleSources );
-					p = createProjector( state, screenImage );
-				}
-				projector = p;
+				screenImage = screenImages[ currentScreenScaleIndex ][ renderId ];
 			}
 			else
 			{
 				bufferedImage = null;
-				p = projector;
+				screenImage = null;
 			}
 
 			requestedScreenScaleIndex = 0;
 		}
+
+		// the projector that paints to the screenImage.
+		final VolatileProjector p;
+
+		if ( createProjector )
+		{
+			synchronized ( state.getState() )
+			{
+				final int numVisibleSources = state.getVisibleSourceIndices().size();
+				checkRenewRenderImages( numVisibleSources );
+				checkRenewMaskArrays( numVisibleSources );
+				p = createProjector( state, screenImage );
+			}
+			synchronized ( this )
+			{
+				projector = p;
+			}
+		}
+		else
+		{
+			synchronized ( this )
+			{
+				p = projector;
+			}
+		}
+
 
 		// try rendering
 		final boolean success = p.map( createProjector );
