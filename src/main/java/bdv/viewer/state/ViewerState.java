@@ -131,7 +131,7 @@ public class ViewerState
 	 * @param t
 	 * 		is set to the viewer transform.
 	 */
-	public synchronized void getViewerTransform( final AffineTransform3D t )
+	public void getViewerTransform( final AffineTransform3D t )
 	{
 		state.getViewerTransform( t );
 	}
@@ -142,7 +142,7 @@ public class ViewerState
 	 * @param t
 	 * 		transform parameters.
 	 */
-	public synchronized void setViewerTransform( final AffineTransform3D t )
+	public void setViewerTransform( final AffineTransform3D t )
 	{
 		state.setViewerTransform( t );
 	}
@@ -150,23 +150,29 @@ public class ViewerState
 	/**
 	 * Get the index of the current source.
 	 */
-	public synchronized int getCurrentSource()
+	public int getCurrentSource()
 	{
-		return state.getSources().indexOf( state.getCurrentSource() );
+		synchronized ( state )
+		{
+			return state.getSources().indexOf( state.getCurrentSource() );
+		}
 	}
 
 	/**
 	 * Make the source with the given index current.
 	 */
-	public synchronized void setCurrentSource( final int index )
+	public void setCurrentSource( final int index )
 	{
-		state.setCurrentSource( state.getSources().get( index ) );
+		synchronized ( state )
+		{
+			state.setCurrentSource( state.getSources().get( index ) );
+		}
 	}
 
 	/**
 	 * Make the given source current.
 	 */
-	public synchronized void setCurrentSource( final Source< ? > source )
+	public void setCurrentSource( final Source< ? > source )
 	{
 		state.setCurrentSource( soc( source ) );
 	}
@@ -182,25 +188,34 @@ public class ViewerState
 	/**
 	 * Get the index of the current group.
 	 */
-	public synchronized int getCurrentGroup()
+	public int getCurrentGroup()
 	{
-		return state.getGroups().indexOf( state.getCurrentGroup() );
+		synchronized ( state )
+		{
+			return state.getGroups().indexOf( state.getCurrentGroup() );
+		}
 	}
 
 	/**
 	 * Make the group with the given index current.
 	 */
-	public synchronized void setCurrentGroup( final int index )
+	public void setCurrentGroup( final int index )
 	{
-		state.setCurrentGroup( state.getGroups().get( index ) );
+		synchronized ( state )
+		{
+			state.setCurrentGroup( state.getGroups().get( index ) );
+		}
 	}
 
 	/**
 	 * Make the given group current.
 	 */
-	public synchronized void setCurrentGroup( final SourceGroup group )
+	public void setCurrentGroup( final SourceGroup group )
 	{
-		state.setCurrentGroup( getHandle( group ) );
+		synchronized ( state )
+		{
+			state.setCurrentGroup( getHandle( group ) );
+		}
 	}
 
 	private bdv.viewer.SourceGroup getHandle( final SourceGroup group )
@@ -220,7 +235,7 @@ public class ViewerState
 	 *
 	 * @return interpolation method.
 	 */
-	public synchronized Interpolation getInterpolation()
+	public Interpolation getInterpolation()
 	{
 		return state.getInterpolation();
 	}
@@ -231,7 +246,7 @@ public class ViewerState
 	 * @param method
 	 * 		interpolation method.
 	 */
-	public synchronized void setInterpolation( final Interpolation method )
+	public void setInterpolation( final Interpolation method )
 	{
 		state.setInterpolation( method );
 	}
@@ -246,7 +261,7 @@ public class ViewerState
 	 * @deprecated replaced by {@link #getDisplayMode()}
 	 */
 	@Deprecated
-	public synchronized boolean isSingleSourceMode()
+	public boolean isSingleSourceMode()
 	{
 		return state.getDisplayMode() == SINGLE;
 	}
@@ -263,7 +278,7 @@ public class ViewerState
 	 * @deprecated replaced by {@link #setDisplayMode(DisplayMode)}
 	 */
 	@Deprecated
-	public synchronized void setSingleSourceMode( final boolean singleSourceMode )
+	public void setSingleSourceMode( final boolean singleSourceMode )
 	{
 		if ( singleSourceMode )
 			setDisplayMode( SINGLE );
@@ -284,7 +299,7 @@ public class ViewerState
 	 * @param mode
 	 * 		the display mode
 	 */
-	public synchronized void setDisplayMode( final DisplayMode mode )
+	public void setDisplayMode( final DisplayMode mode )
 	{
 		state.setDisplayMode( mode );
 	}
@@ -301,7 +316,7 @@ public class ViewerState
 	 *
 	 * @return the current display mode
 	 */
-	public synchronized DisplayMode getDisplayMode()
+	public DisplayMode getDisplayMode()
 	{
 		return state.getDisplayMode();
 	}
@@ -311,7 +326,7 @@ public class ViewerState
 	 *
 	 * @return current timepoint index
 	 */
-	public synchronized int getCurrentTimepoint()
+	public int getCurrentTimepoint()
 	{
 		return state.getCurrentTimepoint();
 	}
@@ -322,7 +337,7 @@ public class ViewerState
 	 * @param timepoint
 	 * 		timepoint index.
 	 */
-	public synchronized void setCurrentTimepoint( final int timepoint )
+	public void setCurrentTimepoint( final int timepoint )
 	{
 		state.setCurrentTimepoint( timepoint );
 	}
@@ -334,13 +349,16 @@ public class ViewerState
 	 */
 	public List< SourceState< ? > > getSources()
 	{
-		List< SourceState< ? > > sourceStates = new ArrayList<>();
-		for ( SourceAndConverter< ? > source : state.getSources() )
+		synchronized ( state )
 		{
-			final SourceState< ? > ss = new SourceState<>( source, this );
-			sourceStates.add( ss );
+			List< SourceState< ? > > sourceStates = new ArrayList<>();
+			for ( SourceAndConverter< ? > source : state.getSources() )
+			{
+				final SourceState< ? > ss = new SourceState<>( source, this );
+				sourceStates.add( ss );
+			}
+			return sourceStates;
 		}
-		return sourceStates;
 	}
 
 	/**
@@ -354,6 +372,7 @@ public class ViewerState
 	}
 
 	final Map< bdv.viewer.SourceGroup, SourceGroup > handleToSourceGroup = new HashMap<>();
+
 	/**
 	 * Returns a list of all source groups.
 	 *
@@ -361,15 +380,18 @@ public class ViewerState
 	 */
 	public List< SourceGroup > getSourceGroups()
 	{
-		List< SourceGroup > sourceGroups = new ArrayList<>();
-		for ( bdv.viewer.SourceGroup handle : state.getGroups() )
+		synchronized ( state )
 		{
-			sourceGroups.add( handleToSourceGroup.computeIfAbsent( handle, h -> {
-				SourceGroup g = new SourceGroup( state, handle );
-				return g;
-			} ) );
+			List< SourceGroup > sourceGroups = new ArrayList<>();
+			for ( bdv.viewer.SourceGroup handle : state.getGroups() )
+			{
+				sourceGroups.add( handleToSourceGroup.computeIfAbsent( handle, h -> {
+					SourceGroup g = new SourceGroup( state, handle );
+					return g;
+				} ) );
+			}
+			return sourceGroups;
 		}
-		return sourceGroups;
 	}
 
 	/**
@@ -379,37 +401,55 @@ public class ViewerState
 	 */
 	public int numSourceGroups()
 	{
-		return state.getGroups().size();
+		synchronized ( state )
+		{
+			return state.getGroups().size();
+		}
 	}
 
-	public synchronized void addSource( final SourceAndConverter< ? > source )
+	public void addSource( final SourceAndConverter< ? > source )
 	{
-		state.addSource( source );
-		state.setSourceActive( source, true );
+		synchronized ( state )
+		{
+			state.addSource( source );
+			state.setSourceActive( source, true );
+		}
 	}
 
-	public synchronized void removeSource( final Source< ? > source )
+	public void removeSource( final Source< ? > source )
 	{
-		state.removeSource( soc ( source ) );
+		synchronized ( state )
+		{
+			state.removeSource( soc ( source ) );
+		}
 	}
 
 	protected void removeSource( final int index )
 	{
-		state.removeSource( state.getSources().get( index ) );
+		synchronized ( state )
+		{
+			state.removeSource( state.getSources().get( index ) );
+		}
 	}
 
-	public synchronized void addGroup( final SourceGroup group )
+	public void addGroup( final SourceGroup group )
 	{
-		final bdv.viewer.SourceGroup handle = new bdv.viewer.SourceGroup();
-		state.addGroup( handle );
-		state.setGroupName( handle, group.getName() );
-		state.setGroupActive( handle, group.isActive() );
-		group.getSourceIds().forEach( i -> state.addSourceToGroup( state.getSources().get( i ), handle ) );
+		synchronized ( state )
+		{
+			final bdv.viewer.SourceGroup handle = new bdv.viewer.SourceGroup();
+			state.addGroup( handle );
+			state.setGroupName( handle, group.getName() );
+			state.setGroupActive( handle, group.isActive() );
+			group.getSourceIds().forEach( i -> state.addSourceToGroup( state.getSources().get( i ), handle ) );
+		}
 	}
 
-	public synchronized void removeGroup( final SourceGroup group )
+	public void removeGroup( final SourceGroup group )
 	{
-		state.removeGroup( getHandle( group ) );
+		synchronized ( state )
+		{
+			state.removeGroup( getHandle( group ) );
+		}
 	}
 
 	protected void removeGroup( final int index )
@@ -417,9 +457,12 @@ public class ViewerState
 		state.removeGroup( state.getGroups().get( index ) );
 	}
 
-	public synchronized boolean isSourceVisible( final int index )
+	public boolean isSourceVisible( final int index )
 	{
-		return state.isSourceVisibleAndPresent( state.getSources().get( index ) );
+		synchronized ( state )
+		{
+			return state.isSourceVisibleAndPresent( state.getSources().get( index ) );
+		}
 	}
 
 	/**
@@ -427,11 +470,14 @@ public class ViewerState
 	 *
 	 * @return indices of all currently visible sources.
 	 */
-	public synchronized List< Integer > getVisibleSourceIndices()
+	public List< Integer > getVisibleSourceIndices()
 	{
-		final List< SourceAndConverter< ? > > sources = new ArrayList<>( state.getVisibleSources() );
-		sources.sort( state.sourceOrder() );
-		return sources.stream().map( state.getSources()::indexOf ).collect( Collectors.toList() );
+		synchronized ( state )
+		{
+			final List< SourceAndConverter< ? > > sources = new ArrayList<>( state.getVisibleSources() );
+			sources.sort( state.sourceOrder() );
+			return sources.stream().map( state.getSources()::indexOf ).collect( Collectors.toList() );
+		}
 	}
 
 	/*
@@ -446,9 +492,12 @@ public class ViewerState
 	 *
 	 * @return mipmap level
 	 */
-	public synchronized int getBestMipMapLevel( final AffineTransform3D screenScaleTransform, final int sourceIndex )
+	public int getBestMipMapLevel( final AffineTransform3D screenScaleTransform, final int sourceIndex )
 	{
-		return getBestMipMapLevel( screenScaleTransform, state.getSources().get( sourceIndex ).getSpimSource() );
+		synchronized ( state )
+		{
+			return getBestMipMapLevel( screenScaleTransform, state.getSources().get( sourceIndex ).getSpimSource() );
+		}
 	}
 
 	/**
@@ -459,13 +508,16 @@ public class ViewerState
 	 *
 	 * @return mipmap level
 	 */
-	public synchronized int getBestMipMapLevel( final AffineTransform3D screenScaleTransform, final Source< ? > source )
+	public int getBestMipMapLevel( final AffineTransform3D screenScaleTransform, final Source< ? > source )
 	{
-		final AffineTransform3D screenTransform = new AffineTransform3D();
-		getViewerTransform( screenTransform );
-		screenTransform.preConcatenate( screenScaleTransform );
+		synchronized ( state )
+		{
+			final AffineTransform3D screenTransform = new AffineTransform3D();
+			getViewerTransform( screenTransform );
+			screenTransform.preConcatenate( screenScaleTransform );
 
-		return MipmapTransforms.getBestMipMapLevel( screenTransform, source, state.getCurrentTimepoint() );
+			return MipmapTransforms.getBestMipMapLevel( screenTransform, source, state.getCurrentTimepoint() );
+		}
 	}
 
 	/**
@@ -473,7 +525,7 @@ public class ViewerState
 	 *
 	 * @return the number of timepoints.
 	 */
-	public synchronized int getNumTimepoints()
+	public int getNumTimepoints()
 	{
 		return state.getNumTimepoints();
 	}
@@ -484,7 +536,7 @@ public class ViewerState
 	 * @param numTimepoints
 	 * 		the number of timepoints.
 	 */
-	public synchronized void setNumTimepoints( final int numTimepoints )
+	public void setNumTimepoints( final int numTimepoints )
 	{
 		state.setNumTimepoints( numTimepoints );
 	}

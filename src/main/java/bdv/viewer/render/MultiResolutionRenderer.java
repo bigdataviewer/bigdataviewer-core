@@ -488,7 +488,7 @@ public class MultiResolutionRenderer
 				currentScreenScaleIndex = requestedScreenScaleIndex;
 				bufferedImage = bufferedImages[ currentScreenScaleIndex ][ renderId ];
 				final ARGBScreenImage screenImage = screenImages[ currentScreenScaleIndex ][ renderId ];
-				synchronized ( state )
+				synchronized ( state.getState() )
 				{
 					final int numVisibleSources = state.getVisibleSourceIndices().size();
 					checkRenewRenderImages( numVisibleSources );
