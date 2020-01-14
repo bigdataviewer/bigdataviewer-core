@@ -139,6 +139,7 @@
 		<imglib2.version>5.8.0</imglib2.version>
 		<imglib2-cache.version>1.0.0-beta-12</imglib2-cache.version>
 		<spim_data.version>2.2.3</spim_data.version>
+		<ui-behaviour.version>2.0.1</ui-behaviour.version>
 
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>deploy-to-scijava</releaseProfiles>
