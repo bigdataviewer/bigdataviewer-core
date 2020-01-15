@@ -29,6 +29,7 @@
  */
 package bdv;
 
+import bdv.viewer.ConverterSetups;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
@@ -345,6 +346,18 @@ public class BigDataViewer
 		bookmarks = new Bookmarks();
 		bookmarkEditor = new BookmarksEditor( viewer, viewerFrame.getKeybindings(), bookmarks );
 
+		final ConverterSetups setups = viewerFrame.getConverterSetups();
+		if ( converterSetups.size() != sources.size() )
+			System.err.println( "WARNING! Constructing BigDataViewer, with converterSetups.size() that is not the same as sources.size()." );
+		final int numSetups = Math.min( converterSetups.size(), sources.size() );
+		for ( int i = 0; i < numSetups; ++i )
+		{
+			final SourceAndConverter< ? > source = sources.get( i );
+			final ConverterSetup setup = converterSetups.get( i );
+			if ( setup != null )
+				setups.put( source, setup );
+		}
+
 		setupAssignments = new SetupAssignments( converterSetups, 0, 65535 );
 		if ( setupAssignments.getMinMaxGroups().size() > 0 )
 		{
@@ -515,6 +528,11 @@ public class BigDataViewer
 	public ViewerFrame getViewerFrame()
 	{
 		return viewerFrame;
+	}
+
+	public ConverterSetups getConverterSetups()
+	{
+		return viewerFrame.getConverterSetups();
 	}
 
 	public SetupAssignments getSetupAssignments()

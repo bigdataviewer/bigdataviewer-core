@@ -64,6 +64,8 @@ public class ViewerFrame extends JFrame
 
 	private final TriggerBehaviourBindings triggerbindings;
 
+	private final ConverterSetups setups;
+
 	public ViewerFrame(
 			final List< SourceAndConverter< ? > > sources,
 			final int numTimepoints,
@@ -92,6 +94,7 @@ public class ViewerFrame extends JFrame
 //		super( "BigDataViewer", GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.ARGB_COLOR_MODEL ) );
 		super( "BigDataViewer", GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.RGB_COLOR_MODEL ) );
 		viewer = new ViewerPanel( sources, numTimepoints, cacheControl, optional );
+		setups = new ConverterSetups( viewer.state() );
 		keybindings = new InputActionBindings();
 		triggerbindings = new TriggerBehaviourBindings();
 
@@ -135,5 +138,10 @@ public class ViewerFrame extends JFrame
 	public TriggerBehaviourBindings getTriggerbindings()
 	{
 		return triggerbindings;
+	}
+
+	public ConverterSetups getConverterSetups()
+	{
+		return setups;
 	}
 }
