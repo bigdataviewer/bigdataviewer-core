@@ -32,49 +32,75 @@ package bdv.tools.brightness;
 import java.util.Arrays;
 import java.util.List;
 
-import bdv.viewer.RequestRepaint;
 import net.imglib2.display.ColorConverter;
 import net.imglib2.type.numeric.ARGBType;
 
+import org.scijava.listeners.Listeners;
+
 public class RealARGBColorConverterSetup implements ConverterSetup
 {
-	protected final int id;
+	private final int id;
 
-	protected final List< ColorConverter > converters;
+	private final List< ColorConverter > converters;
 
-	protected RequestRepaint viewer;
+	private final Listeners.List< SetupChangeListener > listeners;
 
-	public RealARGBColorConverterSetup( final int setupId, final ColorConverter ... converters )
+	public RealARGBColorConverterSetup( final int setupId, final ColorConverter... converters )
 	{
-		this( setupId, Arrays.< ColorConverter >asList( converters ) );
+		this( setupId, Arrays.asList( converters ) );
 	}
 
 	public RealARGBColorConverterSetup( final int setupId, final List< ColorConverter > converters )
 	{
 		this.id = setupId;
 		this.converters = converters;
-		this.viewer = null;
+		this.listeners = new Listeners.SynchronizedList<>();
+	}
+
+	@Override
+	public Listeners< SetupChangeListener > setupChangeListeners()
+	{
+		return listeners;
 	}
 
 	@Override
 	public void setDisplayRange( final double min, final double max )
 	{
+		boolean changed = false;
 		for ( final ColorConverter converter : converters )
 		{
-			converter.setMin( min );
-			converter.setMax( max );
+			if ( converter.getMin() != min )
+			{
+				converter.setMin( min );
+				changed = true;
+			}
+			if ( converter.getMax() != max )
+			{
+				converter.setMax( max );
+				changed = true;
+			}
 		}
-		if ( viewer != null )
-			viewer.requestRepaint();
+		if ( changed )
+			listeners.list.forEach( l -> l.setupParametersChanged( this ) );
 	}
 
 	@Override
 	public void setColor( final ARGBType color )
 	{
+		if ( !supportsColor() )
+			return;
+
+		boolean changed = false;
 		for ( final ColorConverter converter : converters )
-			converter.setColor( color );
-		if ( viewer != null )
-			viewer.requestRepaint();
+		{
+			if ( converter.getColor().get() != color.get() )
+			{
+				converter.setColor( color );
+				changed = true;
+			}
+		}
+		if ( changed )
+			listeners.list.forEach( l -> l.setupParametersChanged( this ) );
 	}
 
 	@Override
@@ -105,11 +131,5 @@ public class RealARGBColorConverterSetup implements ConverterSetup
 	public ARGBType getColor()
 	{
 		return converters.get( 0 ).getColor();
-	}
-
-	@Override
-	public void setViewer( final RequestRepaint viewer )
-	{
-		this.viewer = viewer;
 	}
 }

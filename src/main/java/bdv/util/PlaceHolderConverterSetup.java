@@ -1,10 +1,8 @@
 package bdv.util;
 
-import java.util.ArrayList;
-
 import bdv.tools.brightness.ConverterSetup;
-import bdv.viewer.RequestRepaint;
 import net.imglib2.type.numeric.ARGBType;
+import org.scijava.listeners.Listeners;
 
 public final class PlaceHolderConverterSetup implements ConverterSetup
 {
@@ -18,14 +16,7 @@ public final class PlaceHolderConverterSetup implements ConverterSetup
 
 	private final boolean supportsColor;
 
-	private RequestRepaint viewer;
-
-	private final ArrayList< SetupChangeListener > listeners;
-
-	public interface SetupChangeListener
-	{
-		void setupParametersChanged();
-	}
+	private final Listeners.List< SetupChangeListener > listeners;
 
 	public PlaceHolderConverterSetup(
 			final int setupId,
@@ -49,8 +40,13 @@ public final class PlaceHolderConverterSetup implements ConverterSetup
 		if ( color != null )
 			this.color.set( color );
 		this.supportsColor = color != null;
-		this.viewer = null;
-		this.listeners = new ArrayList<>();
+		this.listeners = new Listeners.SynchronizedList<>();
+	}
+
+	@Override
+	public Listeners< SetupChangeListener > setupChangeListeners()
+	{
+		return listeners;
 	}
 
 	@Override
@@ -62,15 +58,12 @@ public final class PlaceHolderConverterSetup implements ConverterSetup
 	@Override
 	public void setDisplayRange( final double min, final double max )
 	{
+		if ( this.min == min && this.max == max )
+			return;
+
 		this.min = min;
 		this.max = max;
-		synchronized ( listeners )
-		{
-			for ( final SetupChangeListener l : listeners )
-				l.setupParametersChanged();
-		}
-		if ( viewer != null )
-			viewer.requestRepaint();
+		listeners.list.forEach( l -> l.setupParametersChanged( this ) );
 	}
 
 	@Override
@@ -81,14 +74,11 @@ public final class PlaceHolderConverterSetup implements ConverterSetup
 
 	public void setColor( final int rgb )
 	{
-		this.color.set( rgb );
-		synchronized ( listeners )
-		{
-			for ( final SetupChangeListener l : listeners )
-				l.setupParametersChanged();
-		}
-		if ( viewer != null )
-			viewer.requestRepaint();
+		if ( !supportsColor() || color.get() == rgb )
+			return;
+
+		color.set( rgb );
+		listeners.list.forEach( l -> l.setupParametersChanged( this ) );
 	}
 
 	@Override
@@ -113,49 +103,5 @@ public final class PlaceHolderConverterSetup implements ConverterSetup
 	public ARGBType getColor()
 	{
 		return color;
-	}
-
-	@Override
-	public void setViewer( final RequestRepaint viewer )
-	{
-		this.viewer = viewer;
-	}
-
-	/**
-	 * Registers a SetupChangeListener, that will be notified when the display
-	 * range or the color of this {@link ConverterSetup} changes.
-	 *
-	 * @param listener
-	 *            the listener to register.
-	 * @return {@code true} if the listener was successfully registered.
-	 *         {@code false} if it was already registered.
-	 */
-	public boolean addSetupChangeListener( final SetupChangeListener listener )
-	{
-		synchronized( listeners )
-		{
-			if ( !listeners.contains( listener ) )
-			{
-				listeners.add( listener );
-				return true;
-			}
-			return false;
-		}
-	}
-
-	/**
-	 * Removes the specified listener.
-	 *
-	 * @param listener
-	 *            the listener to remove.
-	 * @return {@code true} if the listener was present in the listeners of
-	 *         this model and was successfully removed.
-	 */
-	public boolean removeSetupChangeListener( final SetupChangeListener listener )
-	{
-		synchronized( listeners )
-		{
-			return listeners.remove( listener );
-		}
 	}
 }
