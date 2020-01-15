@@ -52,6 +52,7 @@ import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 
 import bdv.tools.boundingbox.BoxSelectionPanel.Box;
+import bdv.tools.brightness.ConverterSetup.SetupChangeListener;
 import bdv.tools.brightness.RealARGBColorConverterSetup;
 import bdv.tools.brightness.SetupAssignments;
 import bdv.tools.transformation.TransformedSource;
@@ -134,7 +135,8 @@ public class BoundingBoxDialog extends JDialog
 
 		// create a ConverterSetup (can be used by the brightness dialog to adjust the converter settings)
 		boxConverterSetup = new RealARGBColorConverterSetup( boxSetupId, converter );
-		boxConverterSetup.setViewer( viewer );
+		final SetupChangeListener requestRepaint = s -> viewer.requestRepaint();
+		boxConverterSetup.setupChangeListeners().add( requestRepaint );
 
 		// create a SourceAndConverter (can be added to the viewer for display)
 		final TransformedSource< UnsignedShortType > ts = new TransformedSource<>( boxSource );
@@ -186,7 +188,7 @@ public class BoundingBoxDialog extends JDialog
 				{
 					viewer.addSource( boxSourceAndConverter );
 					setupAssignments.addSetup( boxConverterSetup );
-					boxConverterSetup.setViewer( viewer );
+					boxConverterSetup.setupChangeListeners().add( requestRepaint );
 
 					final int bbSourceIndex = viewer.getState().numSources() - 1;
 					final VisibilityAndGrouping vg = viewer.getVisibilityAndGrouping();
@@ -213,6 +215,7 @@ public class BoundingBoxDialog extends JDialog
 				{
 					viewer.removeSource( boxSourceAndConverter.getSpimSource() );
 					setupAssignments.removeSetup( boxConverterSetup );
+					boxConverterSetup.setupChangeListeners().remove( requestRepaint );
 				}
 				if ( showBoxOverlay )
 				{

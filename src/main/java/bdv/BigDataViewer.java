@@ -335,8 +335,9 @@ public class BigDataViewer
 			viewerFrame.setTitle( windowTitle );
 		viewer = viewerFrame.getViewerPanel();
 
+		final ConverterSetup.SetupChangeListener requestRepaint = s -> viewer.requestRepaint();
 		for ( final ConverterSetup cs : converterSetups )
-			cs.setViewer( viewer );
+			cs.setupChangeListeners().add( requestRepaint );
 
 		manualTransformation = new ManualTransformation( viewer );
 		manualTransformationEditor = new ManualTransformationEditor( viewer, viewerFrame.getKeybindings() );

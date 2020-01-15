@@ -79,7 +79,7 @@ public class TransformedBoxOverlaySource
 		final int setupId = SetupAssignments.getUnusedSetupId( setupAssignments );
 		boxConverterSetup = new PlaceHolderConverterSetup( setupId, 0, 128, new ARGBType( 0x00994499) );
 
-		boxConverterSetup.setViewer( this::repaint );
+		boxConverterSetup.setupChangeListeners().add( s -> this.repaint() );
 		boxSourceAndConverter = new SourceAndConverter<>(
 				new TransformedBoxPlaceHolderSource( name, bbSource ),
 				( input, output ) -> output.set( 0 ) );
