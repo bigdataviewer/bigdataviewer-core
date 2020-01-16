@@ -92,6 +92,7 @@ class BoundedRangeEditor
 		notEqualColor = UIUtils.mix( equalColor, Color.red, 0.9 );
 
 		final JPopupMenu menu = new JPopupMenu();
+		menu.add( runnableItem(  "set bounds ...", rangePanel::setBoundsDialog ) );
 		menu.add( setBoundsItem( "set bounds 0..1", 0, 1 ) );
 		menu.add( setBoundsItem( "set bounds 0..255", 0, 255 ) );
 		menu.add( setBoundsItem( "set bounds 0..65535", 0, 65535 ) );

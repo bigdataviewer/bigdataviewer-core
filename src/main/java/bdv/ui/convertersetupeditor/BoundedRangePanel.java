@@ -13,6 +13,7 @@ import java.util.function.Supplier;
 
 import javax.swing.JFormattedTextField;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JSpinner;
@@ -210,7 +211,8 @@ class BoundedRangePanel extends JPanel
 			@Override
 			public void mousePressed( final MouseEvent e )
 			{
-				if ( e.isPopupTrigger() )
+				if ( e.isPopupTrigger() ||
+						( e.getButton() == MouseEvent.BUTTON1 && e.getX() > upperBoundLabel.getX() ) )
 					doPop( e );
 			}
 
@@ -346,5 +348,37 @@ class BoundedRangePanel extends JPanel
 	public void shrinkBoundsToRange()
 	{
 		updateRange( range.withMinBound( range.getMin() ).withMaxBound( range.getMax() ) );
+	}
+
+	public void setBoundsDialog()
+	{
+		final JPanel panel = new JPanel( new MigLayout( "fillx", "[][grow]", "" ) );
+		final JSpinner minSpinner = new JSpinner( new SpinnerNumberModel( 0.0, 0.0, 1.0, 1.0 ) );
+		final JSpinner maxSpinner = new JSpinner( new SpinnerNumberModel( 0.0, 0.0, 1.0, 1.0 ) );
+		minSpinner.setEditor( new UnboundedNumberEditor( minSpinner ) );
+		maxSpinner.setEditor( new UnboundedNumberEditor( maxSpinner ) );
+		minSpinner.setValue( range.getMinBound() );
+		maxSpinner.setValue( range.getMaxBound() );
+		minSpinner.addChangeListener( e -> {
+			final double value = ( Double ) minSpinner.getValue();
+			if ( value > ( Double ) maxSpinner.getValue() )
+				maxSpinner.setValue( value );
+		} );
+		maxSpinner.addChangeListener( e -> {
+			final double value = ( Double ) maxSpinner.getValue();
+			if ( value < ( Double ) minSpinner.getValue() )
+				minSpinner.setValue( value );
+		} );
+		panel.add( "right", new JLabel( "min" ) );
+		panel.add( "growx, wrap", minSpinner );
+		panel.add( "right", new JLabel( "max" ) );
+		panel.add( "growx", maxSpinner );
+		final int result = JOptionPane.showConfirmDialog( null, panel, "Set Bounds", JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE );
+		if ( result == JOptionPane.YES_OPTION )
+		{
+			final double min = ( Double ) minSpinner.getValue();
+			final double max = ( Double ) maxSpinner.getValue();
+			updateRange( range.withMinBound( min ).withMaxBound( max ) );
+		}
 	}
 }
