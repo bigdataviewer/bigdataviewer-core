@@ -132,6 +132,7 @@ public class SourceTable extends JTable
 	// -- Process clicks on active and current checkboxes --
 	// These clicks are consumed, because they should not cause selection changes, etc, in the table.
 
+	private Point pressedAt;
 	private boolean consumeNext = false;
 	private long releasedWhen = 0;
 
@@ -143,6 +144,7 @@ public class SourceTable extends JTable
 			if ( e.getID() == MouseEvent.MOUSE_PRESSED )
 			{
 				final Point point = e.getPoint();
+				pressedAt = point;
 				final int vcol = columnAtPoint( point );
 				final int vrow = rowAtPoint( point );
 				if ( vcol >= 0 && vrow >= 0 )
@@ -170,13 +172,14 @@ public class SourceTable extends JTable
 					consumeNext = false;
 					e.consume();
 				}
-			}
-			else if ( e.getID() == MouseEvent.MOUSE_CLICKED )
-			{
-				if ( e.getWhen() == releasedWhen )
-					e.consume();
+
+				if ( pressedAt == null )
+					return;
 
 				final Point point = e.getPoint();
+				if ( point.distanceSq( pressedAt ) > 2 )
+					return;
+
 				final int vcol = columnAtPoint( point );
 				final int vrow = rowAtPoint( point );
 				if ( vcol >= 0 && vrow >= 0 )
@@ -226,6 +229,11 @@ public class SourceTable extends JTable
 						}
 					}
 				}
+			}
+			else if ( e.getID() == MouseEvent.MOUSE_CLICKED )
+			{
+				if ( e.getWhen() == releasedWhen )
+					e.consume();
 			}
 		}
 		super.processMouseEvent( e );

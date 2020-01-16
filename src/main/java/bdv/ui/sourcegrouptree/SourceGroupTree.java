@@ -8,6 +8,7 @@ import bdv.viewer.ViewerState;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
+import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.InputEvent;
@@ -203,6 +204,7 @@ public class SourceGroupTree extends JTree
 	// -- Process clicks on active and current checkboxes --
 	// These clicks are consumed, because they should not cause selection changes, etc, in the tree.
 
+	private Point pressedAt;
 	private boolean consumeNext = false;
 	private long releasedWhen = 0;
 
@@ -215,6 +217,7 @@ public class SourceGroupTree extends JTree
 		{
 			if ( e.getID() == MouseEvent.MOUSE_PRESSED )
 			{
+				pressedAt = e.getPoint();
 				int x = e.getX();
 				int y = e.getY();
 				final TreePath path = getPathForLocation( x, y );
@@ -256,11 +259,13 @@ public class SourceGroupTree extends JTree
 					consumeNext = false;
 					e.consume();
 				}
-			}
-			else if ( e.getID() == MouseEvent.MOUSE_CLICKED )
-			{
-				if ( e.getWhen() == releasedWhen )
-					e.consume();
+
+				if ( pressedAt == null )
+					return;
+
+				final Point point = e.getPoint();
+				if ( point.distanceSq( pressedAt ) > 2 )
+					return;
 
 				int x = e.getX();
 				int y = e.getY();
@@ -286,6 +291,11 @@ public class SourceGroupTree extends JTree
 						}
 					}
 				}
+			}
+			else if ( e.getID() == MouseEvent.MOUSE_CLICKED )
+			{
+				if ( e.getWhen() == releasedWhen )
+					e.consume();
 			}
 		}
 
