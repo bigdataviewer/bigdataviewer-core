@@ -72,7 +72,7 @@ public class BdvDefaultCards
 		// -- handle focus --
 		KeyboardFocusManager.getCurrentKeyboardFocusManager().addPropertyChangeListener( "focusOwner", new PropertyChangeListener()
 		{
-			static final int MAX_DEPTH = 7;
+			static final int MAX_DEPTH = 8;
 			boolean tableFocused;
 			boolean treeFocused;
 
@@ -107,7 +107,7 @@ public class BdvDefaultCards
 							break;
 
 						component = ( JComponent ) parent;
-						if ( component == treePanel && !treeFocused )
+						if ( component == treePanel )
 						{
 							focusTable( false );
 							focusTree( true );

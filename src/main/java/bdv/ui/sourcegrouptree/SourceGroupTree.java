@@ -69,7 +69,7 @@ public class SourceGroupTree extends JTree
 		this.installActions( inputTriggerConfig );
 
 		focusedSelectionBg = renderer.getBackgroundSelectionColor();
-		unfocusedSelectionBg = UIUtils.mix( focusedSelectionBg, getBackground(), 0.6 );
+		unfocusedSelectionBg = UIUtils.mix( focusedSelectionBg, getBackground(), 0.8 );
 	}
 
 	public void setSelectionBackground( final boolean hasFocus )
