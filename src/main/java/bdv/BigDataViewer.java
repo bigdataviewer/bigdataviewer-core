@@ -331,7 +331,7 @@ public class BigDataViewer
 		if ( options.values.getTransformEventHandlerFactory() instanceof BehaviourTransformEventHandlerFactory )
 			( ( BehaviourTransformEventHandlerFactory< ? > ) options.values.getTransformEventHandlerFactory() ).setConfig( inputTriggerConfig );
 
-		viewerFrame = new ViewerFrame( sources, numTimepoints, cache, options );
+		viewerFrame = new ViewerFrame( sources, numTimepoints, cache, options.inputTriggerConfig( inputTriggerConfig ) );
 		if ( windowTitle != null )
 			viewerFrame.setTitle( windowTitle );
 		viewer = viewerFrame.getViewerPanel();
@@ -696,6 +696,18 @@ public class BigDataViewer
 		bookmarks.restoreFromXml( root );
 		activeSourcesDialog.update();
 		viewer.requestRepaint();
+	}
+
+	public void expandAndFocusCardPanel()
+	{
+		viewerFrame.getSplitPanel().setCollapsed( false );
+		viewerFrame.getSplitPanel().getRightComponent().requestFocusInWindow();
+	}
+
+	public void collapseCardPanel()
+	{
+		viewerFrame.getSplitPanel().setCollapsed( true );
+		viewer.requestFocusInWindow();
 	}
 
 	public static void main( final String[] args )

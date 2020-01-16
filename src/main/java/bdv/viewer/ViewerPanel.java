@@ -304,6 +304,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		add( display, BorderLayout.CENTER );
 		if ( numTimepoints > 1 )
 			add( sliderTime, BorderLayout.SOUTH );
+		setFocusable( false );
 
 		visibilityAndGrouping = new VisibilityAndGrouping( state );
 
@@ -1195,5 +1196,11 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	public TransformAwareBufferedImageOverlayRenderer renderTarget()
 	{
 		return this.renderTarget;
+	}
+
+	@Override
+	public boolean requestFocusInWindow()
+	{
+		return display.requestFocusInWindow();
 	}
 }
