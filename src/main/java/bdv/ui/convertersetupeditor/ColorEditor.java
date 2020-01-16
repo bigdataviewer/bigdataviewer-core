@@ -2,6 +2,7 @@ package bdv.ui.convertersetupeditor;
 
 import bdv.tools.brightness.ConverterSetup;
 import bdv.viewer.ConverterSetups;
+import bdv.ui.sourcetable.SourceTable;
 import bdv.ui.UIUtils;
 import java.awt.Color;
 import java.util.List;
@@ -17,6 +18,15 @@ class ColorEditor
 	private final Color equalColor;
 
 	private final Color notEqualColor;
+
+	public ColorEditor(
+			final SourceTable table,
+			final ConverterSetups converterSetups,
+			final ColorPanel colorPanel )
+	{
+		this( table::getSelectedConverterSetups, converterSetups, colorPanel );
+		table.getSelectionModel().addListSelectionListener( e -> updateSelection() );
+	}
 
 	private ColorEditor(
 			final Supplier< List< ConverterSetup > > selectedConverterSetups,

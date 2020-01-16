@@ -2,6 +2,7 @@ package bdv.ui.convertersetupeditor;
 
 import bdv.tools.brightness.ConverterSetup;
 import bdv.viewer.ConverterSetups;
+import bdv.ui.sourcetable.SourceTable;
 import bdv.util.BoundedRange;
 import bdv.util.Bounds;
 import bdv.ui.UIUtils;
@@ -22,6 +23,16 @@ class BoundedRangeEditor
 	private final Color equalColor;
 
 	private final Color notEqualColor;
+
+	public BoundedRangeEditor(
+			final SourceTable table,
+			final ConverterSetups converterSetups,
+			final BoundedRangePanel rangePanel,
+			final ConverterSetupBounds converterSetupBounds )
+	{
+		this( table::getSelectedConverterSetups, converterSetups, rangePanel, converterSetupBounds );
+		table.getSelectionModel().addListSelectionListener( e -> updateSelection() );
+	}
 
 	private BoundedRangeEditor(
 			final Supplier< List< ConverterSetup > > selectedConverterSetups,

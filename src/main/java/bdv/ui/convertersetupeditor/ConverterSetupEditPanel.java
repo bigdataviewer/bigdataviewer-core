@@ -4,9 +4,12 @@ import javax.swing.JPanel;
 
 import net.miginfocom.swing.MigLayout;
 
+import bdv.viewer.ConverterSetups;
+import bdv.ui.sourcetable.SourceTable;
+
 /**
  * A {@code JPanel} containing a {@link ColorPanel} and a
- * {@link BoundedRangePanel}. It can be constructed for a {@code SourceTable} or
+ * {@link BoundedRangePanel}. It can be constructed for a {@link SourceTable} or
  * a {@code SourceGroupTree}, and will be set up to edit the selected
  * source/groups respectively.
  *
@@ -17,6 +20,15 @@ public class ConverterSetupEditPanel extends JPanel
 	private final ColorPanel colorPanel;
 
 	private final BoundedRangePanel rangePanel;
+
+	public ConverterSetupEditPanel(
+			final SourceTable table,
+			final ConverterSetups converterSetups )
+	{
+		this();
+		new BoundedRangeEditor( table, converterSetups, rangePanel, new ConverterSetupBounds( converterSetups ) );
+		new ColorEditor( table, converterSetups, colorPanel );
+	}
 
 	public ConverterSetupEditPanel()
 	{
