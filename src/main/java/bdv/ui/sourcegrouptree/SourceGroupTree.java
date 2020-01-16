@@ -328,6 +328,8 @@ public class SourceGroupTree extends JTree
 	@Override
 	public void paintComponent( final Graphics g )
 	{
+		g.setColor( getBackground() );
+		g.fillRect( 0, 0, getWidth(), getHeight() );
 		final int[] rows = getSelectionRows();
 		if ( rows != null )
 		{

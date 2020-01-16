@@ -365,6 +365,10 @@ public class CardPanel
 				collapseButton.setRolloverSelectedIcon( collapsedMouseOverIcon );
 				collapseButton.setFocusable( false );
 				collapseButton.setBorder( new EmptyBorder( 5, 5, 5, 5 ) );
+				collapseButton.setBorderPainted( false );
+				collapseButton.setFocusPainted( false );
+				collapseButton.setContentAreaFilled( false );
+
 				collapseButton.addActionListener( e -> setExpanded( !collapseButton.isSelected() ) );
 
 				componentPanel.addComponentListener( new ComponentAdapter()

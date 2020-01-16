@@ -230,8 +230,10 @@ class SourceGroupTreeCellRenderer implements TreeCellRenderer
 //			UIUtils.setPreferredWidth( nameLabel, 100 );
 			currentRadioButton = new JRadioButton();
 			currentRadioButton.setBorder( new EmptyBorder( 0, 0, 0, 5 ) );
+			currentRadioButton.setOpaque( false );
 			activeCheckBox = new JCheckBox();
 			activeCheckBox.setBorder( new EmptyBorder( 0, 0, 0, 5 ) );
+			activeCheckBox.setOpaque( false );
 			add( currentRadioButton );
 			add( activeCheckBox );
 			add( nameLabel );

@@ -2,6 +2,7 @@ package bdv.ui.convertersetupeditor;
 
 import java.awt.Color;
 
+import java.awt.Dimension;
 import javax.swing.JButton;
 import javax.swing.JColorChooser;
 import javax.swing.JPanel;
@@ -41,6 +42,10 @@ class ColorPanel extends JPanel
 		colorButton.addActionListener( e -> chooseColor() );
 
 		colorButton.setBorderPainted( false );
+		colorButton.setFocusPainted( false );
+		colorButton.setContentAreaFilled( false );
+		colorButton.setMinimumSize( new Dimension( 46, 42 ) );
+		colorButton.setPreferredSize( new Dimension( 46, 42 ) );
 		setColor( null );
 	}
 

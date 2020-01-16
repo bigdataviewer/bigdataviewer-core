@@ -49,7 +49,7 @@ public class BdvDefaultCards
 		scrollPaneTable.setBorder( new EmptyBorder( 0, 0, 0, 0 ) );
 		tablePanel.add( scrollPaneTable, BorderLayout.CENTER );
 		tablePanel.add( editPanelTable, BorderLayout.SOUTH );
-		tablePanel.setPreferredSize( new Dimension( 300, 290 ) );
+		tablePanel.setPreferredSize( new Dimension( 300, 270 ) );
 
 		// -- Groups tree --
 		SourceGroupTree tree = new SourceGroupTree( state, viewer.getOptionValues().getInputTriggerConfig() );
@@ -67,7 +67,7 @@ public class BdvDefaultCards
 		scrollPaneTree.setBorder( new EmptyBorder( 0, 0, 0, 0 ) );
 		treePanel.add( scrollPaneTree, BorderLayout.CENTER );
 		treePanel.add( editPanelTree, BorderLayout.SOUTH );
-		treePanel.setPreferredSize( new Dimension( 300, 290 ) );
+		treePanel.setPreferredSize( new Dimension( 300, 260 ) );
 
 		// -- handle focus --
 		KeyboardFocusManager.getCurrentKeyboardFocusManager().addPropertyChangeListener( "focusOwner", new PropertyChangeListener()

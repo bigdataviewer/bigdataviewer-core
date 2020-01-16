@@ -159,7 +159,9 @@ public class SplitPanel extends JSplitPane
 		{
 			setRightComponent( scrollPane );
 			super.setDividerSize( dividerSizeWhenVisible );
-			setDividerLocation( getLastDividerLocation() );
+			final int dl = getLastDividerLocation();
+			final int w = getWidth();
+			setDividerLocation( Math.max( Math.min ( w / 2, 50 ), Math.min( w - 50, dl ) ) );
 		}
 	}
 
