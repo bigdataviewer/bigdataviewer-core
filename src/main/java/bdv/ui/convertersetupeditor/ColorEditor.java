@@ -3,10 +3,13 @@ package bdv.ui.convertersetupeditor;
 import bdv.tools.brightness.ConverterSetup;
 import bdv.viewer.ConverterSetups;
 import bdv.ui.sourcetable.SourceTable;
+import bdv.ui.sourcegrouptree.SourceGroupTree;
 import bdv.ui.UIUtils;
 import java.awt.Color;
 import java.util.List;
 import java.util.function.Supplier;
+import javax.swing.event.TreeModelEvent;
+import javax.swing.event.TreeModelListener;
 import net.imglib2.type.numeric.ARGBType;
 
 class ColorEditor
@@ -26,6 +29,43 @@ class ColorEditor
 	{
 		this( table::getSelectedConverterSetups, converterSetups, colorPanel );
 		table.getSelectionModel().addListSelectionListener( e -> updateSelection() );
+	}
+
+	public ColorEditor(
+			final SourceGroupTree tree,
+			final ConverterSetups converterSetups,
+			final ColorPanel colorPanel )
+	{
+		this(
+				() -> converterSetups.getConverterSetups( tree.getSelectedSources() ),
+				converterSetups, colorPanel );
+		tree.getSelectionModel().addTreeSelectionListener( e -> updateSelection() );
+		tree.getModel().addTreeModelListener( new TreeModelListener()
+		{
+			@Override
+			public void treeNodesChanged( final TreeModelEvent e )
+			{
+				updateSelection();
+			}
+
+			@Override
+			public void treeNodesInserted( final TreeModelEvent e )
+			{
+				updateSelection();
+			}
+
+			@Override
+			public void treeNodesRemoved( final TreeModelEvent e )
+			{
+				updateSelection();
+			}
+
+			@Override
+			public void treeStructureChanged( final TreeModelEvent e )
+			{
+				updateSelection();
+			}
+		} );
 	}
 
 	private ColorEditor(

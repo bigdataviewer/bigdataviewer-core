@@ -6,11 +6,12 @@ import net.miginfocom.swing.MigLayout;
 
 import bdv.viewer.ConverterSetups;
 import bdv.ui.sourcetable.SourceTable;
+import bdv.ui.sourcegrouptree.SourceGroupTree;
 
 /**
  * A {@code JPanel} containing a {@link ColorPanel} and a
  * {@link BoundedRangePanel}. It can be constructed for a {@link SourceTable} or
- * a {@code SourceGroupTree}, and will be set up to edit the selected
+ * a {@link SourceGroupTree}, and will be set up to edit the selected
  * source/groups respectively.
  *
  * @author Tobias Pietzsch
@@ -20,6 +21,15 @@ public class ConverterSetupEditPanel extends JPanel
 	private final ColorPanel colorPanel;
 
 	private final BoundedRangePanel rangePanel;
+
+	public ConverterSetupEditPanel(
+			final SourceGroupTree tree,
+			final ConverterSetups converterSetups )
+	{
+		this();
+		new BoundedRangeEditor( tree, converterSetups, rangePanel, new ConverterSetupBounds( converterSetups ) );
+		new ColorEditor( tree, converterSetups, colorPanel );
+	}
 
 	public ConverterSetupEditPanel(
 			final SourceTable table,

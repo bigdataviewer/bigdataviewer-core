@@ -5,12 +5,15 @@ import bdv.viewer.ConverterSetups;
 import bdv.ui.sourcetable.SourceTable;
 import bdv.util.BoundedRange;
 import bdv.util.Bounds;
+import bdv.ui.sourcegrouptree.SourceGroupTree;
 import bdv.ui.UIUtils;
 import java.awt.Color;
 import java.util.List;
 import java.util.function.Supplier;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
+import javax.swing.event.TreeModelEvent;
+import javax.swing.event.TreeModelListener;
 
 class BoundedRangeEditor
 {
@@ -32,6 +35,44 @@ class BoundedRangeEditor
 	{
 		this( table::getSelectedConverterSetups, converterSetups, rangePanel, converterSetupBounds );
 		table.getSelectionModel().addListSelectionListener( e -> updateSelection() );
+	}
+
+	public BoundedRangeEditor(
+			final SourceGroupTree tree,
+			final ConverterSetups converterSetups,
+			final BoundedRangePanel rangePanel,
+			final ConverterSetupBounds converterSetupBounds )
+	{
+		this(
+				() -> converterSetups.getConverterSetups( tree.getSelectedSources() ),
+				converterSetups, rangePanel, converterSetupBounds );
+		tree.getSelectionModel().addTreeSelectionListener( e -> updateSelection() );
+		tree.getModel().addTreeModelListener( new TreeModelListener()
+		{
+			@Override
+			public void treeNodesChanged( final TreeModelEvent e )
+			{
+				updateSelection();
+			}
+
+			@Override
+			public void treeNodesInserted( final TreeModelEvent e )
+			{
+				updateSelection();
+			}
+
+			@Override
+			public void treeNodesRemoved( final TreeModelEvent e )
+			{
+				updateSelection();
+			}
+
+			@Override
+			public void treeStructureChanged( final TreeModelEvent e )
+			{
+				updateSelection();
+			}
+		} );
 	}
 
 	private BoundedRangeEditor(
