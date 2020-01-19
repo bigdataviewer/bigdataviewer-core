@@ -1,8 +1,9 @@
 package bdv.ui;
 
-import bdv.ui.sourcetable.SourceTable;
-import bdv.ui.sourcegrouptree.SourceGroupTree;
 import bdv.ui.convertersetupeditor.ConverterSetupEditPanel;
+import bdv.ui.sourcegrouptree.SourceGroupTree;
+import bdv.ui.sourcetable.SourceTable;
+import bdv.ui.viewermodepanel.ViewerModesPanel;
 import bdv.viewer.ConverterSetups;
 import bdv.viewer.SynchronizedViewerState;
 import bdv.viewer.ViewerPanel;
@@ -18,6 +19,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.border.EmptyBorder;
 import javax.swing.tree.TreeSelectionModel;
+import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
 
 /**
  * Default cards added to the card panel.
@@ -34,7 +36,9 @@ public class BdvDefaultCards
 
 	public static final String DEFAULT_SOURCEGROUPS_CARD = "default bdv groups card";
 
-	public static void setup( final CardPanel cards, final ViewerPanel viewer, final ConverterSetups converterSetups )
+	public static final String DEFAULT_VIEWERMODES_CARD = "default bdv viewer modes card";
+
+	public static void setup( final CardPanel cards, final ViewerPanel viewer, final ConverterSetups converterSetups, final TriggerBehaviourBindings triggerbindings )
 	{
 		final SynchronizedViewerState state = viewer.state();
 
@@ -49,7 +53,7 @@ public class BdvDefaultCards
 		scrollPaneTable.setBorder( new EmptyBorder( 0, 0, 0, 0 ) );
 		tablePanel.add( scrollPaneTable, BorderLayout.CENTER );
 		tablePanel.add( editPanelTable, BorderLayout.SOUTH );
-		tablePanel.setPreferredSize( new Dimension( 300, 270 ) );
+		tablePanel.setPreferredSize( new Dimension( 300, 250 ) );
 
 		// -- Groups tree --
 		SourceGroupTree tree = new SourceGroupTree( state, viewer.getOptionValues().getInputTriggerConfig() );
@@ -67,7 +71,7 @@ public class BdvDefaultCards
 		scrollPaneTree.setBorder( new EmptyBorder( 0, 0, 0, 0 ) );
 		treePanel.add( scrollPaneTree, BorderLayout.CENTER );
 		treePanel.add( editPanelTree, BorderLayout.SOUTH );
-		treePanel.setPreferredSize( new Dimension( 300, 260 ) );
+		treePanel.setPreferredSize( new Dimension( 300, 230 ) );
 
 		// -- handle focus --
 		KeyboardFocusManager.getCurrentKeyboardFocusManager().addPropertyChangeListener( "focusOwner", new PropertyChangeListener()
@@ -128,5 +132,6 @@ public class BdvDefaultCards
 
 		cards.addCard( DEFAULT_SOURCES_CARD, "Sources", tablePanel, true, new Insets( 0, 4, 0, 0 ) );
 		cards.addCard( DEFAULT_SOURCEGROUPS_CARD, "Groups", treePanel, true, new Insets( 0, 4, 0, 0 ) );
+		cards.addCard( DEFAULT_VIEWERMODES_CARD, "Viewer Modes", new ViewerModesPanel( viewer.state(), triggerbindings ), true, new Insets( 0, 4, 0, 0 ) );
 	}
 }

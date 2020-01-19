@@ -106,7 +106,7 @@ public class ViewerFrame extends JFrame
 		triggerbindings = new TriggerBehaviourBindings();
 
 		cards = new CardPanel();
-		BdvDefaultCards.setup( cards, viewer, setups );
+		BdvDefaultCards.setup( cards, viewer, setups, triggerbindings );
 		splitPanel = new SplitPanel( viewer, cards );
 
 		getRootPane().setDoubleBuffered( true );
