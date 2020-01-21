@@ -54,7 +54,7 @@ public class BdvDefaultCards
 		scrollPaneTable.setBorder( new EmptyBorder( 0, 0, 0, 0 ) );
 		tablePanel.add( scrollPaneTable, BorderLayout.CENTER );
 		tablePanel.add( editPanelTable, BorderLayout.SOUTH );
-		tablePanel.setPreferredSize( new Dimension( 300, 250 ) );
+		tablePanel.setPreferredSize( new Dimension( 300, 230 ) );
 
 		// -- Groups tree --
 		SourceGroupTree tree = new SourceGroupTree( state, viewer.getOptionValues().getInputTriggerConfig() );
@@ -73,7 +73,7 @@ public class BdvDefaultCards
 		scrollPaneTree.setBorder( new EmptyBorder( 0, 0, 0, 0 ) );
 		treePanel.add( scrollPaneTree, BorderLayout.CENTER );
 		treePanel.add( editPanelTree, BorderLayout.SOUTH );
-		treePanel.setPreferredSize( new Dimension( 300, 230 ) );
+		treePanel.setPreferredSize( new Dimension( 300, 215 ) );
 
 		// -- handle focus --
 		KeyboardFocusManager.getCurrentKeyboardFocusManager().addPropertyChangeListener( "focusOwner", new PropertyChangeListener()
@@ -132,8 +132,8 @@ public class BdvDefaultCards
 			}
 		} );
 
+		cards.addCard( DEFAULT_VIEWERMODES_CARD, "Viewer Modes", new ViewerModesPanel( viewer.state(), triggerbindings ), true, new Insets( 0, 4, 0, 0 ) );
 		cards.addCard( DEFAULT_SOURCES_CARD, "Sources", tablePanel, true, new Insets( 0, 4, 0, 0 ) );
 		cards.addCard( DEFAULT_SOURCEGROUPS_CARD, "Groups", treePanel, true, new Insets( 0, 4, 0, 0 ) );
-		cards.addCard( DEFAULT_VIEWERMODES_CARD, "Viewer Modes", new ViewerModesPanel( viewer.state(), triggerbindings ), true, new Insets( 0, 4, 0, 0 ) );
 	}
 }
