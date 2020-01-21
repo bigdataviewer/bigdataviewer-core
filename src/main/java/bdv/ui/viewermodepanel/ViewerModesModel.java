@@ -1,6 +1,7 @@
 package bdv.ui.viewermodepanel;
 
 import bdv.viewer.DisplayMode;
+import bdv.viewer.Interpolation;
 import bdv.viewer.ViewerState;
 import bdv.viewer.ViewerStateChange;
 import java.util.ArrayList;
@@ -44,6 +45,9 @@ public class ViewerModesModel
 			if ( e == ViewerStateChange.DISPLAY_MODE_CHANGED )
 			{
 				changeDisplayMode();
+			} else if ( e == ViewerStateChange.INTERPOLATION_CHANGED )
+			{
+				fireInterpolationMode( state.getInterpolation() );
 			}
 		} );
 
@@ -258,6 +262,16 @@ public class ViewerModesModel
 		}
 	}
 
+	/**
+	 * Set the viewer {@link Interpolation}-mode.
+	 *
+	 * @param interpolation_mode
+	 */
+	public void setInterpolation( final Interpolation interpolation_mode )
+	{
+		state.setInterpolation( interpolation_mode );
+	}
+
 	interface ViewerModeListener
 	{
 		void fusedMode();
@@ -267,6 +281,8 @@ public class ViewerModesModel
 		void sourceMode();
 
 		void groupMode();
+
+		void interpolationMode( final Interpolation interpolation_mode );
 	}
 
 	public void addViewerModeListener( final ViewerModeListener listener )
@@ -292,5 +308,10 @@ public class ViewerModesModel
 	private void fireGroupMode()
 	{
 		viewerModeListeners.forEach( l -> l.groupMode() );
+	}
+
+	private void fireInterpolationMode( final Interpolation interpolation_mode )
+	{
+		viewerModeListeners.forEach( l -> l.interpolationMode( interpolation_mode ) );
 	}
 }
