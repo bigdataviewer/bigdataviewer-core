@@ -27,7 +27,7 @@ class SourceGroupEditor extends DefaultTreeCellEditor
 	@Override
 	protected void determineOffset( final JTree tree, final Object value, final boolean isSelected, final boolean expanded, final boolean leaf, final int row )
 	{
-		editingIcon = null;
+		super.determineOffset(tree, value, isSelected, expanded, leaf, row);
 		offset = sourceGroupRenderer.determineOffset( value );
 	}
 }
