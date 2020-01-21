@@ -29,6 +29,7 @@
  */
 package bdv.viewer.render;
 
+import bdv.viewer.SourceAndConverter;
 import java.awt.image.BufferedImage;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -654,7 +655,7 @@ public class MultiResolutionRenderer
 		{
 			final ArrayList< VolatileProjector > sourceProjectors = new ArrayList<>();
 			final ArrayList< ARGBScreenImage > sourceImages = new ArrayList<>();
-			final ArrayList< Source< ? > > sources = new ArrayList<>();
+			final ArrayList< SourceAndConverter< ? > > sources = new ArrayList<>();
 			int j = 0;
 			for ( final int i : visibleSourceIndices )
 			{
@@ -665,10 +666,10 @@ public class MultiResolutionRenderer
 						viewerState, sourceStates.get( i ), i, currentScreenScaleIndex,
 						renderImage, maskArray );
 				sourceProjectors.add( p );
-				sources.add( sourceStates.get( i ).getSpimSource() );
+				sources.add( sourceStates.get( i ).getHandle() );
 				sourceImages.add( renderImage );
 			}
-			projector = accumulateProjectorFactory.createAccumulateProjector( sourceProjectors, sources, sourceImages, screenImage, numRenderingThreads, renderingExecutorService );
+			projector = accumulateProjectorFactory.createProjector( sourceProjectors, sources, sourceImages, screenImage, numRenderingThreads, renderingExecutorService );
 		}
 		previousTimepoint = viewerState.getCurrentTimepoint();
 		viewerState.getViewerTransform( currentProjectorTransform );

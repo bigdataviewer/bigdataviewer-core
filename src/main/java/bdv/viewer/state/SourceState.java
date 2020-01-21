@@ -149,5 +149,14 @@ public class SourceState< T > extends SourceAndConverter< T >
 	{
 		return volatileSourceState;
 	}
+
+	/**
+	 * Get the SourceAndConverter that this SourceState represents.
+	 * This handle is used to make modifications to the {@link bdv.viewer.ViewerState}
+	 */
+	public SourceAndConverter< ? > getHandle()
+	{
+		return handle;
+	}
 }
 
