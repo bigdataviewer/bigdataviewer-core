@@ -130,10 +130,11 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 
 	public synchronized void setActive( final boolean a )
 	{
-		if ( this.active == a ) { return; }
+		if ( this.active == a )
+			return;
+
 		if ( a )
 		{
-			active = a;
 			// Enter manual edit mode
 			final ViewerState state = viewer.getState();
 			final List< Integer > indices = new ArrayList<>();
