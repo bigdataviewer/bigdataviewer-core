@@ -336,9 +336,9 @@ public class BigDataViewer
 			viewerFrame.setTitle( windowTitle );
 		viewer = viewerFrame.getViewerPanel();
 
-		final ConverterSetup.SetupChangeListener requestRepaint = s -> viewer.requestRepaint();
-		for ( final ConverterSetup cs : converterSetups )
-			cs.setupChangeListeners().add( requestRepaint );
+//		final ConverterSetup.SetupChangeListener requestRepaint = s -> viewer.requestRepaint();
+//		for ( final ConverterSetup cs : converterSetups )
+//			cs.setupChangeListeners().add( requestRepaint );
 
 		manualTransformation = new ManualTransformation( viewer );
 		manualTransformationEditor = new ManualTransformationEditor( viewer, viewerFrame.getKeybindings() );
@@ -347,6 +347,7 @@ public class BigDataViewer
 		bookmarkEditor = new BookmarksEditor( viewer, viewerFrame.getKeybindings(), bookmarks );
 
 		final ConverterSetups setups = viewerFrame.getConverterSetups();
+		setups.listeners().add( s -> viewer.requestRepaint() );
 		if ( converterSetups.size() != sources.size() )
 			System.err.println( "WARNING! Constructing BigDataViewer, with converterSetups.size() that is not the same as sources.size()." );
 		final int numSetups = Math.min( converterSetups.size(), sources.size() );
