@@ -263,11 +263,16 @@ public class VisibilityAndGroupingDialog extends JDialog
 			case CURRENT_SOURCE_CHANGED:
 			case SOURCE_ACTIVITY_CHANGED:
 			case VISIBILITY_CHANGED:
-				update();
+				SwingUtilities.invokeLater( this::update );
 				break;
 			case NUM_SOURCES_CHANGED:
-				recreateContent();
-				update();
+				SwingUtilities.invokeLater( () -> {
+					synchronized ( state )
+					{
+						recreateContent();
+						update();
+					}
+				} );
 				break;
 			}
 		}
@@ -339,7 +344,7 @@ public class VisibilityAndGroupingDialog extends JDialog
 		public void viewerStateChanged( final ViewerStateChange change )
 		{
 			if ( change == ViewerStateChange.DISPLAY_MODE_CHANGED )
-				update();
+				SwingUtilities.invokeLater( this::update );
 		}
 	}
 
@@ -546,21 +551,26 @@ public class VisibilityAndGroupingDialog extends JDialog
 			switch( change )
 			{
 			case CURRENT_GROUP_CHANGED:
-				updateCurrentGroup();
+				SwingUtilities.invokeLater( this::updateCurrentGroup );
 				break;
 			case GROUP_ACTIVITY_CHANGED:
-				updateGroupActivity();
+				SwingUtilities.invokeLater( this::updateGroupActivity );
 				break;
 			case SOURCE_TO_GROUP_ASSIGNMENT_CHANGED:
-				updateGroupAssignments();
+				SwingUtilities.invokeLater( this::updateGroupAssignments );
 				break;
 			case GROUP_NAME_CHANGED:
-				updateGroupNames();
+				SwingUtilities.invokeLater( this::updateGroupNames );
 				break;
 			case NUM_GROUPS_CHANGED:
 			case NUM_SOURCES_CHANGED:
-				recreateContent();
-				update();
+				SwingUtilities.invokeLater( () -> {
+					synchronized ( state )
+					{
+						recreateContent();
+						update();
+					}
+				} );
 				break;
 			}
 		}
