@@ -1,25 +1,21 @@
 package bdv.ui;
 
 import bdv.ui.convertersetupeditor.ConverterSetupEditPanel;
+import bdv.ui.iconcards.options.BdvIconOptions;
+import bdv.ui.iconcards.options.DefaultIconOptionsCard;
 import bdv.ui.sourcegrouptree.SourceGroupTree;
 import bdv.ui.sourcetable.SourceTable;
-import bdv.ui.viewermodepanel.ViewerModesPanel;
 import bdv.viewer.ConverterSetups;
 import bdv.viewer.SynchronizedViewerState;
 import bdv.viewer.ViewerPanel;
-import java.awt.BorderLayout;
-import java.awt.Container;
-import java.awt.Dimension;
-import java.awt.Insets;
-import java.awt.KeyboardFocusManager;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import javax.swing.JComponent;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
+import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
+
+import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.tree.TreeSelectionModel;
-import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
+import java.awt.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
 
 /**
  * Default cards added to the card panel.
@@ -38,7 +34,7 @@ public class BdvDefaultCards
 
 	public static final String DEFAULT_VIEWERMODES_CARD = "default bdv viewer modes card";
 
-	public static void setup( final CardPanel cards, final ViewerPanel viewer, final ConverterSetups converterSetups, final TriggerBehaviourBindings triggerbindings )
+	public static void addSourcesAndGroups(final CardPanel cards, final ViewerPanel viewer, final ConverterSetups converterSetups, final TriggerBehaviourBindings triggerbindings )
 	{
 		final SynchronizedViewerState state = viewer.state();
 
@@ -130,8 +126,14 @@ public class BdvDefaultCards
 			}
 		} );
 
-		cards.addCard( DEFAULT_VIEWERMODES_CARD, "Viewer Modes", new ViewerModesPanel( viewer.state(), triggerbindings ), true, new Insets( 0, 4, 0, 0 ) );
 		cards.addCard( DEFAULT_SOURCES_CARD, "Sources", tablePanel, true, new Insets( 0, 4, 0, 0 ) );
 		cards.addCard( DEFAULT_SOURCEGROUPS_CARD, "Groups", treePanel, true, new Insets( 0, 4, 0, 0 ) );
+	}
+
+	public static void addOptions( CardPanel cards, ViewerPanel viewer, TriggerBehaviourBindings triggerbindings )
+	{
+		DefaultIconOptionsCard optionsCard = new DefaultIconOptionsCard();
+		BdvIconOptions.addToCard( viewer.state(), triggerbindings, optionsCard );
+		cards.addCard( DEFAULT_VIEWERMODES_CARD, "Options", optionsCard, true, new Insets( 0, 4, 0, 0 ) );
 	}
 }

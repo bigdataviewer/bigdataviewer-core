@@ -4,8 +4,10 @@ import bdv.viewer.DisplayMode;
 import bdv.viewer.Interpolation;
 import bdv.viewer.ViewerState;
 import bdv.viewer.ViewerStateChange;
+
 import java.util.ArrayList;
 import java.util.List;
+
 import org.scijava.ui.behaviour.Behaviour;
 import org.scijava.ui.behaviour.BehaviourMap;
 import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
@@ -30,7 +32,7 @@ public class ViewerModesModel
 
 	private BehaviourMap blockTranslationBehaviourMap;
 
-	private final List< ViewerModeListener > viewerModeListeners = new ArrayList<>();
+	private final List<ViewerModeListener> viewerModeListeners = new ArrayList<>();
 
 	/**
 	 * Keeps track of the current viewer state and handles the transformation blocking.
@@ -45,7 +47,8 @@ public class ViewerModesModel
 			if ( e == ViewerStateChange.DISPLAY_MODE_CHANGED )
 			{
 				changeDisplayMode();
-			} else if ( e == ViewerStateChange.INTERPOLATION_CHANGED )
+			}
+			else if ( e == ViewerStateChange.INTERPOLATION_CHANGED )
 			{
 				fireInterpolationMode( state.getInterpolation() );
 			}
@@ -272,7 +275,7 @@ public class ViewerModesModel
 		state.setInterpolation( interpolation_mode );
 	}
 
-	interface ViewerModeListener
+	public interface ViewerModeListener
 	{
 		void fusedMode();
 
