@@ -46,6 +46,7 @@ public class BdvDefaultCards
 		final ConverterSetupEditPanel editPanelTable = new ConverterSetupEditPanel( table, converterSetups );
 		final JPanel tablePanel = new JPanel( new BorderLayout() );
 		final JScrollPane scrollPaneTable = new JScrollPane( table );
+		scrollPaneTable.addMouseWheelListener( new MouseWheelScrollListener( scrollPaneTable ) );
 		scrollPaneTable.setBorder( new EmptyBorder( 0, 0, 0, 0 ) );
 		tablePanel.add( scrollPaneTable, BorderLayout.CENTER );
 		tablePanel.add( editPanelTable, BorderLayout.SOUTH );
@@ -64,6 +65,7 @@ public class BdvDefaultCards
 		final ConverterSetupEditPanel editPanelTree = new ConverterSetupEditPanel( tree, converterSetups );
 		final JPanel treePanel = new JPanel( new BorderLayout() );
 		final JScrollPane scrollPaneTree = new JScrollPane( tree );
+		scrollPaneTree.addMouseWheelListener( new MouseWheelScrollListener( scrollPaneTree ) );
 		scrollPaneTree.setBorder( new EmptyBorder( 0, 0, 0, 0 ) );
 		treePanel.add( scrollPaneTree, BorderLayout.CENTER );
 		treePanel.add( editPanelTree, BorderLayout.SOUTH );
