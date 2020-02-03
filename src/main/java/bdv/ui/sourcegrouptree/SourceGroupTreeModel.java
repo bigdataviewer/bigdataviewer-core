@@ -10,6 +10,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
+import javax.swing.SwingUtilities;
 import javax.swing.event.EventListenerList;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
@@ -288,7 +289,7 @@ public class SourceGroupTreeModel implements TreeModel
 			final int[] childIndices = new int[ list.size() ];
 			Arrays.setAll( childIndices, i -> state.getGroups().indexOf( list.get( i ) ) );
 			final Object[] children = list.toArray( new Object[ 0 ] );
-			fireTreeNodesInserted( new TreeModelEvent( this, rootPath, childIndices, children ) );
+			SwingUtilities.invokeLater( () -> fireTreeNodesInserted( new TreeModelEvent( this, rootPath, childIndices, children ) ) );
 		}
 		else if ( !removedGroups.isEmpty() )
 		{
@@ -297,7 +298,7 @@ public class SourceGroupTreeModel implements TreeModel
 			final int[] childIndices = new int[ list.size() ];
 			Arrays.setAll( childIndices, i -> previousState.getGroups().indexOf( list.get( i ) ) );
 			final Object[] children = list.toArray( new Object[ 0 ] );
-			fireTreeNodesRemoved( new TreeModelEvent( this, rootPath, childIndices, children ) );
+			SwingUtilities.invokeLater( () -> fireTreeNodesRemoved( new TreeModelEvent( this, rootPath, childIndices, children ) ) );
 		}
 
 		// groups that change currentness, activeness, or name
@@ -308,7 +309,7 @@ public class SourceGroupTreeModel implements TreeModel
 			final int[] childIndices = new int[ list.size() ];
 			Arrays.setAll( childIndices, i -> state.getGroups().indexOf( list.get( i ) ) );
 			final Object[] children = list.toArray( new Object[ 0 ] );
-			fireTreeNodesChanged( new TreeModelEvent( this, rootPath, childIndices, children ) );
+			SwingUtilities.invokeLater( () -> fireTreeNodesChanged( new TreeModelEvent( this, rootPath, childIndices, children ) ) );
 		}
 
 		// groups that had children added or removed
@@ -317,7 +318,7 @@ public class SourceGroupTreeModel implements TreeModel
 			for ( SourceGroup group : structurallyChangedGroups )
 			{
 				final Object[] path = new Object[] { root, group };
-				fireTreeStructureChanged( new TreeModelEvent( this, path, null, null ) );
+				SwingUtilities.invokeLater( () -> fireTreeStructureChanged( new TreeModelEvent( this, path, null, null ) ) );
 			}
 		}
 

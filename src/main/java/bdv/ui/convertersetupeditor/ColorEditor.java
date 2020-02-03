@@ -8,6 +8,7 @@ import bdv.ui.UIUtils;
 import java.awt.Color;
 import java.util.List;
 import java.util.function.Supplier;
+import javax.swing.SwingUtilities;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
 import net.imglib2.type.numeric.ARGBType;
@@ -76,8 +77,8 @@ class ColorEditor
 		this.selectedConverterSetups = selectedConverterSetups;
 		this.colorPanel = colorPanel;
 
-		colorPanel.changeListeners().add( () -> updateConverterSetupColors() );
-		converterSetups.listeners().add( s -> updateColorPanel() );
+		colorPanel.changeListeners().add( this::updateConverterSetupColors );
+		converterSetups.listeners().add( s -> SwingUtilities.invokeLater( this::updateColorPanel ) );
 
 		equalColor = colorPanel.getBackground();
 		notEqualColor = UIUtils.mix( equalColor, Color.red, 0.9 );
@@ -106,7 +107,7 @@ class ColorEditor
 	private synchronized void updateSelection()
 	{
 		converterSetups = selectedConverterSetups.get();
-		updateColorPanel();
+		SwingUtilities.invokeLater( this::updateColorPanel );
 	}
 
 	private synchronized void updateColorPanel()

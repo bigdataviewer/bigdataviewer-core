@@ -9,6 +9,7 @@ import bdv.viewer.ViewerState;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Objects;
+import javax.swing.SwingUtilities;
 import javax.swing.table.AbstractTableModel;
 import net.imglib2.type.numeric.ARGBType;
 
@@ -103,7 +104,7 @@ public class SourceTableModel extends AbstractTableModel
 			list.sort( state.sourceOrder() );
 			final int firstRow = state.getSources().indexOf( list.get( 0 ) );
 			final int lastRow = state.getSources().indexOf( list.get( list.size() - 1 ) );
-			fireTableRowsInserted( firstRow, lastRow );
+			SwingUtilities.invokeLater( () -> fireTableRowsInserted( firstRow, lastRow ) );
 		}
 		else if ( !removedSources.isEmpty() )
 		{
@@ -111,7 +112,7 @@ public class SourceTableModel extends AbstractTableModel
 			list.sort( previousState.sourceOrder() );
 			final int firstRow = state.getSources().indexOf( list.get( 0 ) );
 			final int lastRow = state.getSources().indexOf( list.get( list.size() - 1 ) );
-			fireTableRowsDeleted( firstRow, lastRow );
+			SwingUtilities.invokeLater( () -> fireTableRowsDeleted( firstRow, lastRow ) );
 		}
 
 		// sources that changed currentness or activeness
@@ -121,7 +122,7 @@ public class SourceTableModel extends AbstractTableModel
 			list.sort( state.sourceOrder() );
 			final int firstRow = state.getSources().indexOf( list.get( 0 ) );
 			final int lastRow = state.getSources().indexOf( list.get( list.size() - 1 ) );
-			fireTableRowsUpdated( firstRow, lastRow );
+			SwingUtilities.invokeLater( () -> fireTableRowsUpdated( firstRow, lastRow ) );
 		}
 
 		previousState.set( state );

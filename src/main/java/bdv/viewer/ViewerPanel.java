@@ -54,6 +54,7 @@ import javax.swing.DefaultBoundedRangeModel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -616,10 +617,12 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 //		case NUM_TIMEPOINTS_CHANGED:
 		case CURRENT_TIMEPOINT_CHANGED:
 			final int timepoint = state().getCurrentTimepoint();
-			sliderTime.setValue( timepoint );
-			for ( final TimePointListener l : timePointListeners )
-				l.timePointChanged( timepoint );
-			requestRepaint();
+			SwingUtilities.invokeLater( () -> {
+				sliderTime.setValue( timepoint );
+				for ( final TimePointListener l : timePointListeners )
+					l.timePointChanged( timepoint );
+				requestRepaint();
+			} );
 			break;
 //		case VIEWER_TRANSFORM_CHANGED:
 		}
