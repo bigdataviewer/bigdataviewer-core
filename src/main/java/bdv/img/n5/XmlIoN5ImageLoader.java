@@ -59,11 +59,18 @@ public class XmlIoN5ImageLoader implements XmlIoBasicImgLoader< N5ImageLoader >
 	public N5ImageLoader fromXml( final Element elem, final File basePath, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
 	{
 //		final String version = elem.getAttributeValue( "version" );
-		final File path = loadPath( elem, "n5", basePath );
-		final N5FSReader n5FSReader;
-		n5FSReader = new N5FSReader( path.getAbsolutePath() );
-		final N5ImageLoader n5ImageLoader = new N5ImageLoader( n5FSReader, sequenceDescription );
-		n5ImageLoader.setN5File( path );
-		return n5ImageLoader;
+
+		try
+		{
+			final File path = loadPath( elem, "n5", basePath );
+			final N5FSReader n5FSReader = new N5FSReader( path.getAbsolutePath() );
+			final N5ImageLoader n5ImageLoader = new N5ImageLoader( n5FSReader, sequenceDescription );
+			n5ImageLoader.setN5File( path );
+			return n5ImageLoader;
+		}
+		catch ( IOException e )
+		{
+			throw new RuntimeException( e );
+		}
 	}
 }
