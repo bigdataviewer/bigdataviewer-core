@@ -30,10 +30,13 @@
 package bdv.img.n5;
 
 import java.io.File;
+import java.io.IOException;
+
 import mpicbg.spim.data.XmlHelpers;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.ImgLoaderIo;
 import mpicbg.spim.data.generic.sequence.XmlIoBasicImgLoader;
+import org.janelia.saalfeldlab.n5.N5FSReader;
 import org.jdom2.Element;
 
 import static mpicbg.spim.data.XmlHelpers.loadPath;
@@ -57,6 +60,10 @@ public class XmlIoN5ImageLoader implements XmlIoBasicImgLoader< N5ImageLoader >
 	{
 //		final String version = elem.getAttributeValue( "version" );
 		final File path = loadPath( elem, "n5", basePath );
-		return new N5ImageLoader( path, sequenceDescription );
+		final N5FSReader n5FSReader;
+		n5FSReader = new N5FSReader( path.getAbsolutePath() );
+		final N5ImageLoader n5ImageLoader = new N5ImageLoader( n5FSReader, sequenceDescription );
+		n5ImageLoader.setN5File( path );
+		return n5ImageLoader;
 	}
 }
