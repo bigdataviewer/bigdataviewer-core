@@ -160,7 +160,7 @@ public abstract class AbstractTransformedBoxSelectionDialog< R > extends JDialog
 			mode = options.values.getTimepointSelection();
 			if ( mode == SINGLE || mode == RANGE )
 			{
-				final int tmaxViewer = viewer.getState().getNumTimepoints() - 1;
+				final int tmaxViewer = viewer.state().getNumTimepoints() - 1;
 				final int tmin = Math.max( 0, Math.min( tmaxViewer, options.values.getRangeMinTimepoint() ) );
 				final int tmax = Math.max( tmin, Math.min( tmaxViewer, options.values.getRangeMaxTimepoint() ) );;
 
