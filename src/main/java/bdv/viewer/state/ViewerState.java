@@ -474,7 +474,7 @@ public class ViewerState
 	{
 		synchronized ( state )
 		{
-			final List< SourceAndConverter< ? > > sources = new ArrayList<>( state.getVisibleSources() );
+			final List< SourceAndConverter< ? > > sources = new ArrayList<>( state.getVisibleAndPresentSources() );
 			sources.sort( state.sourceOrder() );
 			return sources.stream().map( state.getSources()::indexOf ).collect( Collectors.toList() );
 		}
