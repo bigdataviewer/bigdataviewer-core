@@ -342,6 +342,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	public void addSource( final SourceAndConverter< ? > sourceAndConverter )
 	{
 		state().addSource( sourceAndConverter );
+		state().setSourceActive( sourceAndConverter, true );
 	}
 
 	/**
