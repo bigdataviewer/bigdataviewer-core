@@ -39,8 +39,8 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -615,8 +615,23 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 				l.interpolationModeChanged( interpolation );
 			requestRepaint();
 			break;
-//		case NUM_TIMEPOINTS_CHANGED:
+		case NUM_TIMEPOINTS_CHANGED:
+		{
+			final int numTimepoints = state().getNumTimepoints();
+			final int timepoint = Math.max( 0, Math.min( state.getCurrentTimepoint(), numTimepoints - 1 ) );
+			SwingUtilities.invokeLater( () -> {
+				final boolean sliderVisible = Arrays.asList( getComponents() ).contains( sliderTime );
+				if ( numTimepoints > 1 && !sliderVisible )
+					add( sliderTime, BorderLayout.SOUTH );
+				else if ( numTimepoints == 1 && sliderVisible )
+					remove( sliderTime );
+				sliderTime.setModel( new DefaultBoundedRangeModel( timepoint, 0, 0, numTimepoints - 1 ) );
+				revalidate();
+			} );
+			break;
+		}
 		case CURRENT_TIMEPOINT_CHANGED:
+		{
 			final int timepoint = state().getCurrentTimepoint();
 			SwingUtilities.invokeLater( () -> {
 				sliderTime.setValue( timepoint );
@@ -625,6 +640,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 				requestRepaint();
 			} );
 			break;
+		}
 //		case VIEWER_TRANSFORM_CHANGED:
 		}
 	}
@@ -791,45 +807,15 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 * this will hide the time slider, otherwise show it. If the currently
 	 * displayed timepoint would be out of range with the new number of
 	 * timepoints, the current timepoint is set to {@code numTimepoints - 1}.
+	 * <p>
+	 * This is equivalent to {@code state().setNumTimepoints(numTimepoints}}.
 	 *
 	 * @param numTimepoints
 	 *            number of available timepoints. Must be {@code >= 1}.
 	 */
-	// TODO: Deprecate or leave as convenience?
 	public void setNumTimepoints( final int numTimepoints )
 	{
-		try
-		{
-			InvokeOnEDT.invokeAndWait( () -> setNumTimepointsSynchronized( numTimepoints ) );
-		}
-		catch ( InvocationTargetException | InterruptedException e )
-		{
-			e.printStackTrace();
-		}
-	}
-
-	private synchronized void setNumTimepointsSynchronized( final int numTimepoints )
-	{
-		// TODO: Revise. Modify state() and make slider modifications in viewerStateChanged()
-
-		if ( numTimepoints < 1 || state.getNumTimepoints() == numTimepoints )
-			return;
-		else if ( numTimepoints == 1 && state.getNumTimepoints() > 1 )
-			remove( sliderTime );
-		else if ( numTimepoints > 1 && state.getNumTimepoints() == 1 )
-			add( sliderTime, BorderLayout.SOUTH );
-
 		state.setNumTimepoints( numTimepoints );
-		if ( state.getCurrentTimepoint() >= numTimepoints )
-		{
-			final int timepoint = numTimepoints - 1;
-			state.setCurrentTimepoint( timepoint );
-			for ( final TimePointListener l : timePointListeners )
-				l.timePointChanged( timepoint );
-		}
-		sliderTime.setModel( new DefaultBoundedRangeModel( state.getCurrentTimepoint(), 0, 0, numTimepoints - 1 ) );
-		revalidate();
-		requestRepaint();
 	}
 
 	/**
