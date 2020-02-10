@@ -78,7 +78,12 @@ public interface ViewerState
 
 	/**
 	 * Set the number of timepoints (optional operation).
+	 * <p>
+	 * If {@link #getCurrentTimepoint()} current timepoint} is
+	 * {@code >= n}, it will be adjusted to {@code n-1}.
 	 *
+	 * @throws IllegalArgumentException
+	 *     if {@code n < 1}.
 	 * @throws UnsupportedOperationException
 	 *     if the operation is not supported by this ViewerState
 	 */
@@ -94,6 +99,8 @@ public interface ViewerState
 	/**
 	 * Set the current timepoint (optional operation).
 	 *
+	 * @throws IllegalArgumentException
+	 *     if {@code t >= getNumTimepoints()} or {@code t < 0}.
 	 * @throws UnsupportedOperationException
 	 *     if the operation is not supported by this ViewerState
 	 */

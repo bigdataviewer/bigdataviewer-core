@@ -278,12 +278,16 @@ public class BasicViewerState implements ViewerState
 	@Override
 	public void setNumTimepoints( final int n )
 	{
+		if ( n < 1 )
+			throw new IllegalArgumentException("numTimepoints must be >= 1");
+
 		if ( numTimepoints != n )
 		{
 			numTimepoints = n;
 			notifyListeners( NUM_TIMEPOINTS_CHANGED );
 
-			// TODO: Should the current timepoint also be changed to be < numTimePoints?
+			if ( currentTimepoint > n - 1 )
+				setCurrentTimepoint( n - 1 );
 		}
 	}
 
@@ -296,6 +300,9 @@ public class BasicViewerState implements ViewerState
 	@Override
 	public void setCurrentTimepoint( final int t )
 	{
+		if ( t >= numTimepoints || t < 0 )
+			throw new IllegalArgumentException( "currentTimepoint must be < numTimepoints and >= 0" );
+
 		if ( currentTimepoint != t )
 		{
 			currentTimepoint = t;

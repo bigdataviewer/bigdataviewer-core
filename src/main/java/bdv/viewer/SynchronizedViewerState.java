@@ -119,7 +119,15 @@ public class SynchronizedViewerState implements ViewerState
 	@Override
 	public synchronized void setCurrentTimepoint( final int t )
 	{
-		state.setCurrentTimepoint( t );
+		try
+		{
+			state.setCurrentTimepoint( t );
+		}
+		catch ( final IllegalArgumentException e )
+		{
+			if ( DEBUG )
+				e.printStackTrace();
+		}
 	}
 
 	@Override
