@@ -66,13 +66,9 @@ public class SplitPanel extends JSplitPane
 		setLeftComponent( viewerPanel );
 		setRightComponent( null );
 		setBorder( null );
-
-		final Dimension size = viewerPanel.getPreferredSize();
-		setPreferredSize( size );
+		setPreferredSize( viewerPanel.getPreferredSize() );
 
 		super.setDividerSize( 0 );
-		setDividerLocation( size.width );
-		setLastDividerLocation( Math.max( size.width / 2, size.width - Math.max( 200, cardPanelComponent.getPreferredSize().width ) ) );
 
 		final SplitPaneOneTouchExpandAnimator oneTouchExpandAnimator = new SplitPaneOneTouchExpandAnimator( this::isCollapsed );
 		viewerPanel.addOverlayAnimator( oneTouchExpandAnimator );
@@ -89,10 +85,18 @@ public class SplitPanel extends JSplitPane
 			public void componentResized( final ComponentEvent e )
 			{
 				final int w = getWidth();
+				System.out.println( "SplitPanel.componentResized" );
+				System.out.println( "w = " + w );
 				if ( width > 0 )
 				{
 					final int dl = getLastDividerLocation() + w - width;
 					setLastDividerLocation( Math.max( 50, dl ) );
+				}
+				else
+				{
+					// When the component is first made visible, set LastDividerLocation to a reasonable value
+					setDividerLocation( w );
+					setLastDividerLocation( Math.max( w / 2, w - Math.max( 200, cardPanelComponent.getPreferredSize().width ) ) );
 				}
 				width = w;
 			}
