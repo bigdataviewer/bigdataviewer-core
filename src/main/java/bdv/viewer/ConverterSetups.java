@@ -42,12 +42,15 @@ public class ConverterSetups implements SourceToConverterSetupBimap
 
 	private final Listeners.List< SetupChangeListener > forwardedSetupChangeListeners = new Listeners.SynchronizedList<>();
 
+	private final ConverterSetupBounds bounds;
+
 	public ConverterSetups( final ViewerState state )
 	{
 		this.state = state;
 		previousState = new BasicViewerState( state );
 		converterSetupChangeListener = setup -> forwardedSetupChangeListeners.list.forEach( l -> l.setupParametersChanged( setup ) );
 		state.changeListeners().add( this::analyzeChanges );
+		bounds = new ConverterSetupBounds( this );
 	}
 
 	/**
@@ -85,6 +88,11 @@ public class ConverterSetups implements SourceToConverterSetupBimap
 		}
 		if ( previousSource != null && previousSource != source )
 			sourceToSetup.remove( previousSource );
+	}
+
+	public ConverterSetupBounds getBounds()
+	{
+		return bounds;
 	}
 
 	private synchronized void analyzeChanges( final ViewerStateChange change )

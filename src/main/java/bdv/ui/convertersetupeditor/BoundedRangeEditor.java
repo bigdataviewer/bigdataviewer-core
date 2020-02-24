@@ -1,6 +1,7 @@
 package bdv.ui.convertersetupeditor;
 
 import bdv.tools.brightness.ConverterSetup;
+import bdv.viewer.ConverterSetupBounds;
 import bdv.viewer.ConverterSetups;
 import bdv.ui.sourcetable.SourceTable;
 import bdv.util.BoundedRange;

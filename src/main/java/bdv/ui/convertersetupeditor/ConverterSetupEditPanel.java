@@ -1,5 +1,6 @@
 package bdv.ui.convertersetupeditor;
 
+import bdv.viewer.ConverterSetupBounds;
 import javax.swing.JPanel;
 
 import net.miginfocom.swing.MigLayout;
@@ -27,7 +28,7 @@ public class ConverterSetupEditPanel extends JPanel
 			final ConverterSetups converterSetups )
 	{
 		this();
-		new BoundedRangeEditor( tree, converterSetups, rangePanel, new ConverterSetupBounds( converterSetups ) );
+		new BoundedRangeEditor( tree, converterSetups, rangePanel, converterSetups.getBounds() );
 		new ColorEditor( tree, converterSetups, colorPanel );
 	}
 
@@ -36,7 +37,7 @@ public class ConverterSetupEditPanel extends JPanel
 			final ConverterSetups converterSetups )
 	{
 		this();
-		new BoundedRangeEditor( table, converterSetups, rangePanel, new ConverterSetupBounds( converterSetups ) );
+		new BoundedRangeEditor( table, converterSetups, rangePanel, converterSetups.getBounds() );
 		new ColorEditor( table, converterSetups, colorPanel );
 	}
 

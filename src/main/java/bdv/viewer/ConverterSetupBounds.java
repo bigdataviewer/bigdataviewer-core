@@ -1,4 +1,4 @@
-package bdv.ui.convertersetupeditor;
+package bdv.viewer;
 
 import bdv.tools.brightness.ConverterSetup;
 import bdv.viewer.SourceToConverterSetupBimap;
@@ -17,13 +17,13 @@ import net.imglib2.type.volatiles.VolatileARGBType;
  *
  * @author Tobias Pietzsch
  */
-class ConverterSetupBounds
+public class ConverterSetupBounds
 {
 	private final SourceToConverterSetupBimap bimap;
 
 	private final Map< ConverterSetup, Bounds > setupToBounds = new HashMap<>();
 
-	public ConverterSetupBounds( final SourceToConverterSetupBimap bimap )
+	ConverterSetupBounds( final SourceToConverterSetupBimap bimap )
 	{
 		this.bimap = bimap;
 	}
