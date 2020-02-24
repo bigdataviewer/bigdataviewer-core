@@ -74,8 +74,8 @@ public class BigDataViewerActions extends Actions
 	static final String[] RECORD_MOVIE_KEYS                = new String[] { "F10" };
 	static final String[] SAVE_SETTINGS_KEYS               = new String[] { "F11" };
 	static final String[] LOAD_SETTINGS_KEYS               = new String[] { "F12" };
-	static final String[] EXPAND_CARDS_KEYS                = new String[] { "P" };
-	static final String[] COLLAPSE_CARDS_KEYS              = new String[] { "shift P", "shift ESCAPE" };
+	public static final String[] EXPAND_CARDS_KEYS         = new String[] { "P" };
+	public static final String[] COLLAPSE_CARDS_KEYS       = new String[] { "shift P", "shift ESCAPE" };
 	static final String[] GO_TO_BOOKMARK_KEYS              = new String[] { "B" };
 	static final String[] GO_TO_BOOKMARK_ROTATION_KEYS     = new String[] { "O" };
 	static final String[] SET_BOOKMARK_KEYS                = new String[] { "shift B" };
