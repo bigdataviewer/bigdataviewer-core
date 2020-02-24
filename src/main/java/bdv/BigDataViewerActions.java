@@ -125,11 +125,13 @@ public class BigDataViewerActions extends Actions
 		new ToggleDialogAction( name, dialog ).put( getActionMap() );
 	}
 
+	@Deprecated
 	public void dialog( final BrightnessDialog brightnessDialog )
 	{
 		toggleDialogAction( brightnessDialog, BRIGHTNESS_SETTINGS, BRIGHTNESS_SETTINGS_KEYS );
 	}
 
+	@Deprecated
 	public void dialog( final VisibilityAndGroupingDialog visibilityAndGroupingDialog )
 	{
 		toggleDialogAction( visibilityAndGroupingDialog, VISIBILITY_AND_GROUPING, VISIBILITY_AND_GROUPING_KEYS );

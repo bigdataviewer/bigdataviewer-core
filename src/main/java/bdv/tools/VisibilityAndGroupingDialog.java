@@ -70,6 +70,7 @@ import javax.swing.WindowConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
+@Deprecated
 public class VisibilityAndGroupingDialog extends JDialog
 {
 	private static final long serialVersionUID = 1L;
@@ -80,7 +81,6 @@ public class VisibilityAndGroupingDialog extends JDialog
 
 	private final ModePanel modePanel;
 
-	@Deprecated
 	public VisibilityAndGroupingDialog( final Frame owner, final VisibilityAndGrouping visibilityAndGrouping )
 	{
 		this( owner, visibilityAndGrouping.getState() );
