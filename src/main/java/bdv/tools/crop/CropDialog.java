@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -29,6 +29,8 @@
  */
 package bdv.tools.crop;
 
+import bdv.viewer.SourceAndConverter;
+import bdv.viewer.ViewerState;
 import java.awt.BorderLayout;
 import java.awt.Frame;
 import java.awt.event.ActionEvent;
@@ -71,7 +73,6 @@ import bdv.spimdata.XmlIoSpimDataMinimal;
 import bdv.tools.transformation.TransformedSource;
 import bdv.viewer.Source;
 import bdv.viewer.ViewerPanel;
-import bdv.viewer.state.SourceState;
 import mpicbg.spim.data.SpimDataException;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
@@ -101,7 +102,7 @@ public class CropDialog extends JDialog
 	{
 		if ( b )
 		{
-			final int tp = viewer.getState().getCurrentTimepoint();
+			final int tp = viewer.state().getCurrentTimepoint();
 			spinnerMinTimepoint.setValue( tp );
 			spinnerMaxTimepoint.setValue( tp );
 		}
@@ -291,9 +292,6 @@ public class CropDialog extends JDialog
 	 */
 	public void cropGlobal( final int minTimepointIndex, final int maxTimepointIndex, final File hdf5File, final File xmlFile ) throws SpimDataException
 	{
-		final AffineTransform3D globalToCropTransform = new AffineTransform3D();
-		viewer.getState().getViewerTransform( globalToCropTransform );
-
 		final int w = viewer.getDisplay().getWidth();
 		final int h = viewer.getDisplay().getHeight();
 		final int d = Math.min( w, h );
@@ -322,30 +320,37 @@ public class CropDialog extends JDialog
 		// This is needed because the CropImgLoader is asked for (timepointId,
 		// setupId) pair and needs to retrieve from corresponding source.
 		final HashMap< Integer, Integer > setupIdToSourceIndex = new HashMap<>();
-		for( final SourceState< ? > s : viewer.getState().getSources() )
+
+		final AffineTransform3D globalToCropTransform = new AffineTransform3D();
+		final ViewerState state = viewer.state();
+		synchronized ( state )
 		{
-			Source< ? > source = s.getSpimSource();
-			sources.add( source );
-
-			// try to find the BasicViewSetup for the source
-			final BasicViewSetup setup;
-
-			// strip TransformedSource wrapper
-			while ( source instanceof TransformedSource )
-				source = ( ( TransformedSource< ? > ) source ).getWrappedSource();
-
-			if ( source instanceof AbstractSpimSource )
+			state.getViewerTransform( globalToCropTransform );
+			for ( SourceAndConverter< ? > s : state.getSources() )
 			{
-				 final int setupId = ( ( AbstractSpimSource< ? > ) source ).getSetupId();
-				 setup = sequenceDescription.getViewSetups().get( setupId );
+				Source< ? > source = s.getSpimSource();
+				sources.add( source );
+
+				// try to find the BasicViewSetup for the source
+				final BasicViewSetup setup;
+
+				// strip TransformedSource wrapper
+				while ( source instanceof TransformedSource )
+					source = ( ( TransformedSource< ? > ) source ).getWrappedSource();
+
+				if ( source instanceof AbstractSpimSource )
+				{
+					final int setupId = ( ( AbstractSpimSource< ? > ) source ).getSetupId();
+					setup = sequenceDescription.getViewSetups().get( setupId );
+				}
+				else
+				{
+					final int setupId = nextSetupIndex++;
+					setup = new BasicViewSetup( setupId, Integer.toString( setupId ), null, null );
+				}
+				cropSetups.put( setup.getId(), setup );
+				setupIdToSourceIndex.put( setup.getId(), sources.size() - 1 );
 			}
-			else
-			{
-				final int setupId = nextSetupIndex++;
-				setup = new BasicViewSetup( setupId, Integer.toString( setupId ), null, null );
-			}
-			cropSetups.put( setup.getId(), setup );
-			setupIdToSourceIndex.put( setup.getId(), sources.size() - 1 );
 		}
 
 		// Map from timepoint id to timepoint index (in the list of timepoints
