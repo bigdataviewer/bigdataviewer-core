@@ -98,6 +98,7 @@ public class TransformedBoxOverlaySource
 			}
 
 			state.addSource( boxSourceAndConverter );
+			state.changeListeners().add( viewerStateChangeListener );
 			state.setSourceActive( boxSourceAndConverter, true );
 			state.setCurrentSource( boxSourceAndConverter );
 
