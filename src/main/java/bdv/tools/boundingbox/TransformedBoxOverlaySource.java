@@ -29,8 +29,9 @@
  */
 package bdv.tools.boundingbox;
 
-import bdv.tools.brightness.SetupAssignments;
+import bdv.util.Bounds;
 import bdv.util.PlaceHolderConverterSetup;
+import bdv.viewer.ConverterSetups;
 import bdv.viewer.DisplayMode;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerPanel;
@@ -61,7 +62,7 @@ public class TransformedBoxOverlaySource
 
 	private final ViewerPanel viewer;
 
-	private final SetupAssignments setupAssignments;
+	private final ConverterSetups setups;
 
 	private boolean isVisible;
 
@@ -70,13 +71,13 @@ public class TransformedBoxOverlaySource
 			final TransformedBoxOverlay boxOverlay,
 			final TransformedBox bbSource,
 			final ViewerPanel viewer,
-			final SetupAssignments setupAssignments )
+			final ConverterSetups converterSetups,
+			final int setupId )
 	{
 		this.boxOverlay = boxOverlay;
 		this.viewer = viewer;
-		this.setupAssignments = setupAssignments;
+		this.setups = converterSetups;
 
-		final int setupId = SetupAssignments.getUnusedSetupId( setupAssignments );
 		boxConverterSetup = new PlaceHolderConverterSetup( setupId, 0, 128, new ARGBType( 0x00994499) );
 
 		boxConverterSetup.setupChangeListeners().add( s -> this.repaint() );
@@ -102,11 +103,12 @@ public class TransformedBoxOverlaySource
 			state.setSourceActive( boxSourceAndConverter, true );
 			state.setCurrentSource( boxSourceAndConverter );
 
-			setupAssignments.addSetup( boxConverterSetup );
-			setupAssignments.getMinMaxGroup( boxConverterSetup ).setRange( 0, 255 );
-
 			isVisible = state.isSourceVisible( boxSourceAndConverter );
 		}
+
+		setups.put( boxSourceAndConverter, boxConverterSetup );
+		setups.getBounds().setBounds( boxConverterSetup, new Bounds( 0, 255 ) );
+
 		repaint();
 	}
 
@@ -114,7 +116,6 @@ public class TransformedBoxOverlaySource
 	{
 		viewer.state().changeListeners().remove( viewerStateChangeListener );
 		viewer.state().removeSource( boxSourceAndConverter );
-		setupAssignments.removeSetup( boxConverterSetup );
 	}
 
 	private final ViewerStateChangeListener viewerStateChangeListener = this::viewerStateChanged;
@@ -132,6 +133,7 @@ public class TransformedBoxOverlaySource
 
 	private void repaint()
 	{
+		System.out.println( "TransformedBoxOverlaySource.repaint" );
 		boxOverlay.fillIntersection( isVisible );
 		if ( isVisible )
 		{
