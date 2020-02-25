@@ -39,14 +39,6 @@ import static bdv.viewer.DisplayMode.FUSED;
 import static bdv.viewer.DisplayMode.FUSEDGROUP;
 import static bdv.viewer.DisplayMode.GROUP;
 import static bdv.viewer.DisplayMode.SINGLE;
-import static bdv.viewer.VisibilityAndGrouping.Event.CURRENT_GROUP_CHANGED;
-import static bdv.viewer.VisibilityAndGrouping.Event.CURRENT_SOURCE_CHANGED;
-import static bdv.viewer.VisibilityAndGrouping.Event.DISPLAY_MODE_CHANGED;
-import static bdv.viewer.VisibilityAndGrouping.Event.GROUP_ACTIVITY_CHANGED;
-import static bdv.viewer.VisibilityAndGrouping.Event.GROUP_NAME_CHANGED;
-import static bdv.viewer.VisibilityAndGrouping.Event.SOURCE_ACTVITY_CHANGED;
-import static bdv.viewer.VisibilityAndGrouping.Event.SOURCE_TO_GROUP_ASSIGNMENT_CHANGED;
-import static bdv.viewer.VisibilityAndGrouping.Event.VISIBILITY_CHANGED;
 
 /**
  * @deprecated This is not necessary anymore, because {@link ViewerState} can be modified directly.
