@@ -502,7 +502,7 @@ public class BigDataViewer
 		final SpimDataMinimal spimData = new XmlIoSpimDataMinimal().load( xmlFilename );
 		final BigDataViewer bdv = open( spimData, windowTitle, progressWriter, options );
 		if ( !bdv.tryLoadSettings( xmlFilename ) )
-			InitializeViewerState.initBrightness( 0.001, 0.999, bdv.viewer, bdv.setupAssignments );
+			InitializeViewerState.initBrightness( 0.001, 0.999, bdv.viewerFrame );
 		return bdv;
 	}
 

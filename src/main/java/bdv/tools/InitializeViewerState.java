@@ -29,6 +29,10 @@
  */
 package bdv.tools;
 
+import bdv.tools.brightness.ConverterSetup;
+import bdv.util.Bounds;
+import bdv.viewer.ConverterSetups;
+import bdv.viewer.ViewerFrame;
 import java.awt.Dimension;
 
 import net.imglib2.Interval;
@@ -37,8 +41,11 @@ import net.imglib2.histogram.DiscreteFrequencyDistribution;
 import net.imglib2.histogram.Histogram1d;
 import net.imglib2.histogram.Real1dBinMapper;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.util.LinAlgHelpers;
+import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
 import bdv.tools.brightness.MinMaxGroup;
@@ -161,56 +168,65 @@ public class InitializeViewerState
 		return viewerTransform;
 	}
 
-	public static void initBrightness( final double cumulativeMinCutoff, final double cumulativeMaxCutoff, final ViewerPanel viewer, final SetupAssignments setupAssignments )
+	public static void initBrightness( final double cumulativeMinCutoff, final double cumulativeMaxCutoff, final ViewerFrame viewerFrame )
 	{
-		initBrightness( cumulativeMinCutoff, cumulativeMaxCutoff, viewer.state().snapshot(), setupAssignments );
+		initBrightness( cumulativeMinCutoff, cumulativeMaxCutoff, viewerFrame.getViewerPanel().state().snapshot(), viewerFrame.getConverterSetups() );
 	}
 
-	/**
-	 * TODO
-	 *
-	 * @param cumulativeMinCutoff
-	 * @param cumulativeMaxCutoff
-	 * @param state
-	 * @param setupAssignments
-	 */
-	public static void initBrightness( final double cumulativeMinCutoff, final double cumulativeMaxCutoff, final ViewerState state, final SetupAssignments setupAssignments )
+	public static void initBrightness( final double cumulativeMinCutoff, final double cumulativeMaxCutoff, final ViewerState state, final ConverterSetups converterSetups )
 	{
 		final SourceAndConverter< ? > current = state.getCurrentSource();
 		if ( current == null )
 			return;
-
 		final Source< ? > source = current.getSpimSource();
 		final int timepoint = state.getCurrentTimepoint();
-		if ( !source.isPresent( timepoint ) )
-			return;
-		if ( !( source.getType() instanceof UnsignedShortType ) )
-			return;
-		@SuppressWarnings( "unchecked" )
-		final RandomAccessibleInterval< UnsignedShortType > img = ( RandomAccessibleInterval< UnsignedShortType > ) source.getSource( timepoint, source.getNumMipmapLevels() - 1 );
-		final long z = ( img.min( 2 ) + img.max( 2 ) + 1 ) / 2;
+		final Bounds bounds = estimateSourceRange( source, timepoint, cumulativeMinCutoff, cumulativeMaxCutoff );
+		for ( SourceAndConverter< ? > s : state.getSources() )
+		{
+			final ConverterSetup setup = converterSetups.getConverterSetup( s );
+			setup.setDisplayRange( bounds.getMinBound(), bounds.getMaxBound() );
+		}
+	}
 
-		final int numBins = 6535;
-		final Histogram1d< UnsignedShortType > histogram = new Histogram1d<>( Views.iterable( Views.hyperSlice( img, 2, z ) ), new Real1dBinMapper<>( 0, 65535, numBins, false ) );
-		final DiscreteFrequencyDistribution dfd = histogram.dfd();
-		final long[] bin = new long[] { 0 };
-		double cumulative = 0;
-		int i = 0;
-		for ( ; i < numBins && cumulative < cumulativeMinCutoff; ++i )
+	/**
+	 * @param cumulativeMinCutoff
+	 * 		fraction of pixels that are allowed to be saturated at the lower end of the range.
+	 * @param cumulativeMaxCutoff
+	 * 		fraction of pixels that are allowed to be saturated at the upper end of the range.
+	 */
+	private static Bounds estimateSourceRange( final Source< ? > source, final int timepoint, final double cumulativeMinCutoff, final double cumulativeMaxCutoff )
+	{
+		final Object type = source.getType();
+		if ( type instanceof UnsignedShortType && source.isPresent( timepoint ) )
 		{
-			bin[ 0 ] = i;
-			cumulative += dfd.relativeFrequency( bin );
+			@SuppressWarnings( "unchecked" )
+			final RandomAccessibleInterval< UnsignedShortType > img = ( RandomAccessibleInterval< UnsignedShortType > ) source.getSource( timepoint, source.getNumMipmapLevels() - 1 );
+			final long z = ( img.min( 2 ) + img.max( 2 ) + 1 ) / 2;
+
+			final int numBins = 6535;
+			final Histogram1d< ? > histogram = new Histogram1d<>( Views.hyperSlice( img, 2, z ), new Real1dBinMapper<>( 0, 65535, numBins, false ) );
+			final DiscreteFrequencyDistribution dfd = histogram.dfd();
+			final long[] bin = new long[] { 0 };
+			double cumulative = 0;
+			int i = 0;
+			for ( ; i < numBins && cumulative < cumulativeMinCutoff; ++i )
+			{
+				bin[ 0 ] = i;
+				cumulative += dfd.relativeFrequency( bin );
+			}
+			final int min = i * 65535 / numBins;
+			for ( ; i < numBins && cumulative < cumulativeMaxCutoff; ++i )
+			{
+				bin[ 0 ] = i;
+				cumulative += dfd.relativeFrequency( bin );
+			}
+			final int max = i * 65535 / numBins;
+			return new Bounds( min, max );
 		}
-		final int min = i * 65535 / numBins;
-		for ( ; i < numBins && cumulative < cumulativeMaxCutoff; ++i )
-		{
-			bin[ 0 ] = i;
-			cumulative += dfd.relativeFrequency( bin );
-		}
-		final int max = i * 65535 / numBins;
-		final MinMaxGroup minmax = setupAssignments.getMinMaxGroups().get( 0 );
-		minmax.getMinBoundedValue().setCurrentValue( min );
-		minmax.getMaxBoundedValue().setCurrentValue( max );
+		else if ( type instanceof UnsignedByteType )
+			return new Bounds( 0, 255 );
+		else
+			return new Bounds( 0, 65535 );
 	}
 
 	@Deprecated
@@ -225,4 +241,24 @@ public class InitializeViewerState
 		initBrightness( cumulativeMinCutoff, cumulativeMaxCutoff, state.getState(), setupAssignments );
 	}
 
+	@Deprecated
+	public static void initBrightness( final double cumulativeMinCutoff, final double cumulativeMaxCutoff, final ViewerPanel viewer, final SetupAssignments setupAssignments )
+	{
+		initBrightness( cumulativeMinCutoff, cumulativeMaxCutoff, viewer.state().snapshot(), setupAssignments );
+	}
+
+	@Deprecated
+	public static void initBrightness( final double cumulativeMinCutoff, final double cumulativeMaxCutoff, final ViewerState state, final SetupAssignments setupAssignments )
+	{
+		final SourceAndConverter< ? > current = state.getCurrentSource();
+		if ( current == null )
+			return;
+
+		final Source< ? > source = current.getSpimSource();
+		final int timepoint = state.getCurrentTimepoint();
+		final Bounds bounds = estimateSourceRange( source, timepoint, cumulativeMinCutoff, cumulativeMaxCutoff );
+		final MinMaxGroup minmax = setupAssignments.getMinMaxGroups().get( 0 );
+		minmax.getMinBoundedValue().setCurrentValue( bounds.getMinBound() );
+		minmax.getMaxBoundedValue().setCurrentValue( bounds.getMaxBound() );
+	}
 }
