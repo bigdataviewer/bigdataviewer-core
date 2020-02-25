@@ -96,7 +96,7 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 	{
 		super( owner, "record movie", false );
 		this.viewer = viewer;
-		maxTimepoint = viewer.getState().getNumTimepoints() - 1;
+		maxTimepoint = viewer.state().getNumTimepoints() - 1;
 		this.progressWriter = progressWriter;
 
 		final JPanel boxes = new JPanel();
