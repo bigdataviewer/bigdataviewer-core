@@ -30,6 +30,7 @@
 package bdv;
 
 import bdv.viewer.ConverterSetups;
+import bdv.viewer.ViewerState;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
@@ -536,6 +537,10 @@ public class BigDataViewer
 		return viewerFrame.getConverterSetups();
 	}
 
+	/**
+	 * @deprecated Instead {@code getViewer().state()} returns the {@link ViewerState} that can be modified directly.
+	 */
+	@Deprecated
 	public SetupAssignments getSetupAssignments()
 	{
 		return setupAssignments;
