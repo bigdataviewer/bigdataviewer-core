@@ -348,7 +348,6 @@ public class BigDataViewer
 		bookmarkEditor = new BookmarksEditor( viewer, viewerFrame.getKeybindings(), bookmarks );
 
 		final ConverterSetups setups = viewerFrame.getConverterSetups();
-		setups.listeners().add( s -> viewer.requestRepaint() );
 		if ( converterSetups.size() != sources.size() )
 			System.err.println( "WARNING! Constructing BigDataViewer, with converterSetups.size() that is not the same as sources.size()." );
 		final int numSetups = Math.min( converterSetups.size(), sources.size() );

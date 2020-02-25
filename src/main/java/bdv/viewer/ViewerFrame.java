@@ -102,6 +102,8 @@ public class ViewerFrame extends JFrame
 		super( "BigDataViewer", GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.RGB_COLOR_MODEL ) );
 		viewer = new ViewerPanel( sources, numTimepoints, cacheControl, optional );
 		setups = new ConverterSetups( viewer.state() );
+		setups.listeners().add( s -> viewer.requestRepaint() );
+
 		keybindings = new InputActionBindings();
 		triggerbindings = new TriggerBehaviourBindings();
 
