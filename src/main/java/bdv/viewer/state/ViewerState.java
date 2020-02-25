@@ -551,7 +551,7 @@ public class ViewerState
 	 */
 	public void kill()
 	{
-		state.clearSources();
 		state.clearGroups();
+		state.clearSources();
 	}
 }
