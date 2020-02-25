@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.function.Supplier;
 import javax.swing.JMenuItem;
 import javax.swing.JPopupMenu;
+import javax.swing.SwingUtilities;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
 
@@ -156,12 +157,12 @@ class BoundedRangeEditor
 
 	private synchronized void updateRangePanel()
 	{
-		blockUpdates = true;
-
 		if ( converterSetups == null || converterSetups.isEmpty() )
 		{
-			rangePanel.setEnabled( false );
-			rangePanel.setBackground( equalColor );
+			SwingUtilities.invokeLater( () -> {
+				rangePanel.setEnabled( false );
+				rangePanel.setBackground( equalColor );
+			} );
 		}
 		else
 		{
@@ -184,11 +185,18 @@ class BoundedRangeEditor
 					range = range.join( converterSetupRange );
 				}
 			}
-			rangePanel.setEnabled( true );
-			rangePanel.setRange( range );
-			rangePanel.setBackground( allRangesEqual ? equalColor : notEqualColor );
+			final BoundedRange finalRange = range;
+			final Color bg = allRangesEqual ? equalColor : notEqualColor;
+			SwingUtilities.invokeLater( () -> {
+				synchronized ( BoundedRangeEditor.this )
+				{
+					blockUpdates = true;
+					rangePanel.setEnabled( true );
+					rangePanel.setRange( finalRange );
+					rangePanel.setBackground( bg );
+					blockUpdates = false;
+				}
+			} );
 		}
-
-		blockUpdates = false;
 	}
 }
