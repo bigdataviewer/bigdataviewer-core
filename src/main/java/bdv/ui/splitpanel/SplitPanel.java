@@ -85,8 +85,6 @@ public class SplitPanel extends JSplitPane
 			public void componentResized( final ComponentEvent e )
 			{
 				final int w = getWidth();
-				System.out.println( "SplitPanel.componentResized" );
-				System.out.println( "w = " + w );
 				if ( width > 0 )
 				{
 					final int dl = getLastDividerLocation() + w - width;
