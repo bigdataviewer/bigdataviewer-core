@@ -4,6 +4,7 @@ import bdv.viewer.Interpolation;
 import bdv.viewer.ViewerState;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
@@ -63,13 +64,10 @@ public class ViewerModesPanel extends JPanel implements ViewerModesModel.ViewerM
 		this.setBackground( Color.white );
 
 		fusion = new JToggleButton();
-		setupFusedModeButton();
 
 		grouping = new JToggleButton();
-		setupGroupedModeButton();
 
 		interpolation = new JToggleButton();
-		setupInterpolationModeButton();
 
 		translation = new JToggleButton();
 		setupTranslationBlockButton();
@@ -80,9 +78,9 @@ public class ViewerModesPanel extends JPanel implements ViewerModesModel.ViewerM
 		final JPanel display_modes = new JPanel( new MigLayout( "ins 0, fillx, filly", "[][][]", "top" ) );
 		display_modes.setBackground( Color.white );
 		display_modes.add( new JLabel( "Display Modes" ), "span 3, growx, center, wrap" );
-		display_modes.add( fusion );
-		display_modes.add( grouping );
-		display_modes.add( interpolation );
+		display_modes.add( setupFusedModeButton() );
+		display_modes.add( setupGroupedModeButton() );
+		display_modes.add( setupInterpolationModeButton() );
 
 		final JPanel navigation = new JPanel( new MigLayout( "ins 0, fillx, filly", "[][]", "top" ) );
 		navigation.setBackground( Color.white );
@@ -94,10 +92,17 @@ public class ViewerModesPanel extends JPanel implements ViewerModesModel.ViewerM
 		this.add( navigation );
 	}
 
-	private void setupFusedModeButton()
+	private void setFont(final JLabel label) {
+		label.setFont( new Font(Font.MONOSPACED, Font.BOLD, 9) );
+	}
+
+	private JPanel setupFusedModeButton()
 	{
 		final Icon fusion_icon = new ImageIcon( this.getClass().getResource( "fusion_mode.png" ) );
 		final Icon single_icon = new ImageIcon( this.getClass().getResource( "single_mode.png" ) );
+
+		final JLabel fusionLabel = new JLabel( "Single" );
+		setFont( fusionLabel );
 
 		fusion.setIcon( single_icon );
 		fusion.setToolTipText( SINGLE_MODE_TOOL_TIP );
@@ -107,22 +112,29 @@ public class ViewerModesPanel extends JPanel implements ViewerModesModel.ViewerM
 			{
 				fusion.setIcon( fusion_icon );
 				fusion.setToolTipText( FUSED_MODE_TOOL_TIP );
+				fusionLabel.setText( "Fused" );
 			}
 			else
 			{
 				fusion.setIcon( single_icon );
 				fusion.setToolTipText( SINGLE_MODE_TOOL_TIP );
+				fusionLabel.setText( "Single" );
 			}
 		} );
 		fusion.addActionListener( e -> {
 			viewerModesModel.setFused( fusion.getModel().isSelected() );
 		} );
+
+		return new LabeledToggleButton( fusion, fusionLabel );
 	}
 
-	private void setupGroupedModeButton()
+	private LabeledToggleButton setupGroupedModeButton()
 	{
 		final Icon grouping_icon = new ImageIcon( this.getClass().getResource( "grouping_mode.png" ) );
 		final Icon source_icon = new ImageIcon( this.getClass().getResource( "source_mode.png" ) );
+
+		final JLabel groupLabel = new JLabel( "Source" );
+		setFont( groupLabel );
 
 		grouping.setIcon( source_icon );
 		grouping.setToolTipText( SOURCE_MODE_TOOL_TIP );
@@ -132,22 +144,29 @@ public class ViewerModesPanel extends JPanel implements ViewerModesModel.ViewerM
 			{
 				grouping.setIcon( grouping_icon );
 				grouping.setToolTipText( GROUP_MODE_TOOL_TIP );
+				groupLabel.setText( "Group" );
 			}
 			else
 			{
 				grouping.setIcon( source_icon );
 				grouping.setToolTipText( SOURCE_MODE_TOOL_TIP );
+				groupLabel.setText( "Source" );
 			}
 		} );
 		grouping.addActionListener( e -> {
 			viewerModesModel.setGrouping( grouping.getModel().isSelected() );
 		} );
+
+		return new LabeledToggleButton( grouping, groupLabel );
 	}
 
-	private void setupInterpolationModeButton()
+	private LabeledToggleButton setupInterpolationModeButton()
 	{
 		final Icon nearest_icon = new ImageIcon( this.getClass().getResource( "nearest.png" ) );
 		final Icon linear_icon = new ImageIcon( this.getClass().getResource( "linear.png" ) );
+
+		final JLabel interpolationLabel = new JLabel( "Nearest" );
+		setFont( interpolationLabel );
 
 		interpolation.setIcon( nearest_icon );
 		interpolation.setToolTipText( NEAREST_INTERPOLATION_TOOL_TIP );
@@ -157,14 +176,19 @@ public class ViewerModesPanel extends JPanel implements ViewerModesModel.ViewerM
 			{
 				interpolation.setIcon( linear_icon );
 				interpolation.setToolTipText( LINEAR_INTERPOLATION_TOOL_TIP );
+				interpolationLabel.setText( "Linear" );
 				viewerModesModel.setInterpolation( Interpolation.NLINEAR );
-			} else
+			}
+			else
 			{
 				interpolation.setIcon( nearest_icon );
 				interpolation.setToolTipText( NEAREST_INTERPOLATION_TOOL_TIP );
+				interpolationLabel.setText( "Nearest" );
 				viewerModesModel.setInterpolation( Interpolation.NEARESTNEIGHBOR );
 			}
 		} );
+
+		return new LabeledToggleButton( interpolation, interpolationLabel );
 	}
 
 	private void setupTranslationBlockButton()
@@ -252,5 +276,18 @@ public class ViewerModesPanel extends JPanel implements ViewerModesModel.ViewerM
 	public void interpolationMode( final Interpolation interpolation_mode )
 	{
 		interpolation.setSelected( interpolation_mode == Interpolation.NLINEAR );
+	}
+
+	private class LabeledToggleButton extends JPanel
+	{
+		public LabeledToggleButton( final JToggleButton button, final JLabel label )
+		{
+			this.setLayout( new MigLayout( "ins 0, fillx, filly", "[]", "[]0lp![]" ) );
+			this.setBackground( Color.white );
+
+			this.add( button, "growx, center, wrap" );
+			this.add( label, "center" );
+		}
+
 	}
 }
