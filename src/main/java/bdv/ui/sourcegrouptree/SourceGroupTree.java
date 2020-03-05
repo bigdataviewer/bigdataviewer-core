@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 import javax.swing.JComponent;
 import javax.swing.JTree;
+import javax.swing.SwingUtilities;
 import javax.swing.TransferHandler;
 import javax.swing.tree.TreePath;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
@@ -394,8 +395,10 @@ public class SourceGroupTree extends JTree
 						state.addGroup( group );
 						state.setGroupName( group, "new group" );
 						state.addSourcesToGroup( sources, group );
-						tree.expandPath( tree.getPathTo( group ) );
-						tree.startEditingAtPath( tree.getPathTo( group ) );
+						SwingUtilities.invokeLater( () -> {
+							tree.expandPath( tree.getPathTo( group ) );
+							tree.startEditingAtPath( tree.getPathTo( group ) );
+						} );
 					}
 					else
 					{
