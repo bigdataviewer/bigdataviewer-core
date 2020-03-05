@@ -78,7 +78,7 @@ class ColorEditor
 		this.colorPanel = colorPanel;
 
 		colorPanel.changeListeners().add( this::updateConverterSetupColors );
-		converterSetups.listeners().add( s -> SwingUtilities.invokeLater( this::updateColorPanel ) );
+		converterSetups.listeners().add( s -> updateColorPanel() );
 
 		equalColor = colorPanel.getBackground();
 		notEqualColor = UIUtils.mix( equalColor, Color.red, 0.9 );
@@ -107,18 +107,18 @@ class ColorEditor
 	private synchronized void updateSelection()
 	{
 		converterSetups = selectedConverterSetups.get();
-		SwingUtilities.invokeLater( this::updateColorPanel );
+		updateColorPanel();
 	}
 
 	private synchronized void updateColorPanel()
 	{
-		blockUpdates = true;
-
 		if ( converterSetups == null || converterSetups.isEmpty() )
 		{
-			colorPanel.setEnabled( false );
-			colorPanel.setColor( null );
-			colorPanel.setBackground( equalColor );
+			SwingUtilities.invokeLater( () -> {
+				colorPanel.setEnabled( false );
+				colorPanel.setColor( null );
+				colorPanel.setBackground( equalColor );
+			} );
 		}
 		else
 		{
@@ -134,11 +134,18 @@ class ColorEditor
 						allColorsEqual &= color.equals( converterSetup.getColor() );
 				}
 			}
-			colorPanel.setEnabled( color != null );
-			colorPanel.setColor( color );
-			colorPanel.setBackground( allColorsEqual ? equalColor : notEqualColor );
+			final ARGBType finalColor = color;
+			final Color bg = allColorsEqual ? equalColor : notEqualColor;
+			SwingUtilities.invokeLater( () -> {
+				synchronized ( ColorEditor.this )
+				{
+					blockUpdates = true;
+					colorPanel.setEnabled( finalColor != null );
+					colorPanel.setColor( finalColor );
+					colorPanel.setBackground( bg );
+					blockUpdates = false;
+				}
+			} );
 		}
-
-		blockUpdates = false;
 	}
 }
