@@ -1,8 +1,7 @@
 package bdv.ui.sourcegrouptree;
 
-import bdv.viewer.SourceAndConverter;
-import bdv.viewer.SourceGroup;
-import bdv.viewer.ViewerState;
+import bdv.ui.sourcegrouptree.SourceGroupTreeModel.GroupModel;
+import bdv.ui.sourcegrouptree.SourceGroupTreeModel.SourceModel;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.ComponentOrientation;
@@ -26,8 +25,6 @@ import javax.swing.tree.TreeCellRenderer;
  */
 class SourceGroupTreeCellRenderer implements TreeCellRenderer
 {
-	private final ViewerState state;
-
 	/**
 	 * Last tree the renderer was painted in.
 	 */
@@ -77,16 +74,14 @@ class SourceGroupTreeCellRenderer implements TreeCellRenderer
 	private Color focusBGColor;
 
 	// actual renderers
-	private SourceGroupRenderer groupRenderer = new SourceGroupRenderer();
+	private GroupRenderer groupRenderer = new GroupRenderer();
 	private SourceRenderer sourceRenderer = new SourceRenderer();
 
 	// fallback for debugging
 	private final DefaultTreeCellRenderer defaultRenderer = new DefaultTreeCellRenderer();
 
-	SourceGroupTreeCellRenderer( final ViewerState state )
+	SourceGroupTreeCellRenderer()
 	{
-		this.state = state;
-
 		textSelectionColor = getUIColor( "Tree.selectionForeground" );
 		textNonSelectionColor = getUIColor( "Tree.textForeground" );
 		backgroundSelectionColor = getUIColor( "Tree.selectionBackground" );
@@ -143,19 +138,19 @@ class SourceGroupTreeCellRenderer implements TreeCellRenderer
 		this.hasFocus = hasFocus;
 		this.selected = selected;
 
-		if ( value instanceof SourceGroup )
-			return groupRenderer.getTreeCellRendererComponent( ( SourceGroup ) value );
-		else if ( value instanceof SourceAndConverter )
-			return sourceRenderer.getTreeCellRendererComponent( ( SourceAndConverter< ? > ) value );
+		if ( value instanceof GroupModel )
+			return groupRenderer.getTreeCellRendererComponent( ( GroupModel ) value );
+		else if ( value instanceof SourceModel )
+			return sourceRenderer.getTreeCellRendererComponent( ( SourceModel ) value );
 		else
 			return defaultRenderer.getTreeCellRendererComponent( tree, value, selected, expanded, leaf, row, hasFocus );
 	}
 
 	public int determineOffset( final Object value )
 	{
-		if ( value instanceof SourceGroup )
+		if ( value instanceof GroupModel )
 			return groupRenderer.getOffset();
-		else if ( value instanceof SourceAndConverter )
+		else if ( value instanceof SourceModel )
 			return sourceRenderer.getOffset();
 		else
 			return 0;
@@ -214,7 +209,7 @@ class SourceGroupTreeCellRenderer implements TreeCellRenderer
 		}
 	}
 
-	class SourceGroupRenderer extends JPanel
+	class GroupRenderer extends JPanel
 	{
 		private final TreeLabel nameLabel;
 
@@ -222,7 +217,7 @@ class SourceGroupTreeCellRenderer implements TreeCellRenderer
 
 		private final JCheckBox activeCheckBox;
 
-		SourceGroupRenderer()
+		GroupRenderer()
 		{
 			setLayout( new BoxLayout( this, BoxLayout.X_AXIS ) );
 			setBorder( new EmptyBorder( 0, 0, 0, 0 ) );
@@ -260,11 +255,11 @@ class SourceGroupTreeCellRenderer implements TreeCellRenderer
 			return font;
 		}
 
-		public Component getTreeCellRendererComponent( final SourceGroup group )
+		public Component getTreeCellRendererComponent( final GroupModel group )
 		{
-			nameLabel.setText( state.getGroupName( group ) );
-			currentRadioButton.setSelected( state.isCurrentGroup( group ) );
-			activeCheckBox.setSelected( state.isGroupActive( group ) );
+			nameLabel.setText( group.getName() );
+			currentRadioButton.setSelected( group.isCurrent() );
+			activeCheckBox.setSelected( group.isActive() );
 
 			final Color fg;
 			if ( selected )
@@ -346,9 +341,9 @@ class SourceGroupTreeCellRenderer implements TreeCellRenderer
 			setOpaque( false );
 		}
 
-		public Component getTreeCellRendererComponent( final SourceAndConverter< ? > source )
+		public Component getTreeCellRendererComponent( final SourceModel source )
 		{
-			setText( source.getSpimSource().getName() );
+			setText( source.getName() );
 
 			final Color fg;
 			if ( selected )

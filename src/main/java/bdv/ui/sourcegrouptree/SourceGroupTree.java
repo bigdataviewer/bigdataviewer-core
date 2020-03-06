@@ -2,6 +2,8 @@ package bdv.ui.sourcegrouptree;
 
 import bdv.ui.SourcesTransferable;
 import bdv.ui.UIUtils;
+import bdv.ui.sourcegrouptree.SourceGroupTreeModel.GroupModel;
+import bdv.ui.sourcegrouptree.SourceGroupTreeModel.SourceModel;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.SourceGroup;
 import bdv.viewer.ViewerState;
@@ -57,7 +59,7 @@ public class SourceGroupTree extends JTree
 		model = new SourceGroupTreeModel( state );
 		setModel( model );
 
-		renderer = new SourceGroupTreeCellRenderer( state );
+		renderer = new SourceGroupTreeCellRenderer();
 		setCellRenderer( renderer );
 
 		editor = new SourceGroupEditor( this, renderer );
@@ -150,7 +152,7 @@ public class SourceGroupTree extends JTree
 		if ( path != null )
 		{
 			final Object obj = path.getLastPathComponent();
-			if ( obj instanceof SourceGroup )
+			if ( obj instanceof GroupModel )
 				startEditingAtPath( path );
 		}
 	}
@@ -163,8 +165,8 @@ public class SourceGroupTree extends JTree
 			for ( final TreePath path : selectionPaths )
 			{
 				final Object obj = path.getLastPathComponent();
-				if ( obj instanceof SourceGroup )
-					selectedGroups.add( ( SourceGroup ) obj );
+				if ( obj instanceof GroupModel )
+					selectedGroups.add( ( ( GroupModel ) obj ).getGroup() );
 			}
 		return selectedGroups;
 	}
@@ -180,10 +182,10 @@ public class SourceGroupTree extends JTree
 		for ( final TreePath path : getSelectionPaths() )
 		{
 			final Object obj = path.getLastPathComponent();
-			if ( obj instanceof SourceAndConverter )
+			if ( obj instanceof SourceModel )
 			{
-				final SourceGroup group = ( SourceGroup ) path.getParentPath().getLastPathComponent();
-				final SourceAndConverter< ? > source = ( SourceAndConverter< ? > ) obj;
+				final SourceGroup group = ( ( GroupModel ) path.getParentPath().getLastPathComponent() ).getGroup();
+				final SourceAndConverter< ? > source = ( ( SourceModel ) obj ).getSource();
 				selected.computeIfAbsent( group, g -> new ArrayList<>() ).add( source );
 			}
 		}
@@ -193,9 +195,9 @@ public class SourceGroupTree extends JTree
 	@Override
 	public String convertValueToText( final Object value, final boolean selected, final boolean expanded, final boolean leaf, final int row, final boolean hasFocus )
 	{
-		if ( value instanceof SourceGroup )
+		if ( value instanceof GroupModel )
 		{
-			final String groupName = state.getGroupName( ( SourceGroup ) value );
+			final String groupName = ( ( GroupModel ) value ).getName();
 			if ( groupName != null )
 				return groupName;
 		}
@@ -235,7 +237,7 @@ public class SourceGroupTree extends JTree
 								0, 0, e.getClickCount(), e.isPopupTrigger(), e.getButton() );
 					}
 
-					if ( path.getLastPathComponent() instanceof SourceGroup )
+					if ( path.getLastPathComponent() instanceof GroupModel )
 					{
 						x -= bounds.getX();
 						y -= bounds.getY();
@@ -271,7 +273,7 @@ public class SourceGroupTree extends JTree
 				int x = e.getX();
 				int y = e.getY();
 				final TreePath path = getPathForLocation( x, y );
-				if ( path != null && path.getLastPathComponent() instanceof SourceGroup )
+				if ( path != null && path.getLastPathComponent() instanceof GroupModel )
 				{
 					final Rectangle bounds = getPathBounds( path );
 					x -= bounds.getX();
@@ -280,7 +282,7 @@ public class SourceGroupTree extends JTree
 					final boolean activeHit = !currentHit && renderer.activeHit( x, y );
 					if ( currentHit || activeHit )
 					{
-						final SourceGroup group = ( SourceGroup ) path.getLastPathComponent();
+						final SourceGroup group = ( ( GroupModel ) path.getLastPathComponent() ).getGroup();
 						if ( currentHit )
 							state.setCurrentGroup( group );
 						else
@@ -323,7 +325,7 @@ public class SourceGroupTree extends JTree
 	@Override
 	public boolean isPathEditable( final TreePath path )
 	{
-		return path != null && path.getLastPathComponent() instanceof SourceGroup;
+		return path != null && path.getLastPathComponent() instanceof GroupModel;
 	}
 
 	@Override
@@ -346,7 +348,13 @@ public class SourceGroupTree extends JTree
 
 	public TreePath getPathTo( final SourceGroup group )
 	{
-		return model.getPathTo( group );
+		synchronized ( state )
+		{
+			if ( state.containsGroup( group ) )
+				return model.getPathTo( new GroupModel( group, state ) );
+			else
+				return null;
+		}
 	}
 
 	/**
@@ -396,15 +404,18 @@ public class SourceGroupTree extends JTree
 						state.setGroupName( group, "new group" );
 						state.addSourcesToGroup( sources, group );
 						SwingUtilities.invokeLater( () -> {
-							tree.expandPath( tree.getPathTo( group ) );
-							tree.startEditingAtPath( tree.getPathTo( group ) );
+							final TreePath path1 = tree.getPathTo( group );
+							tree.expandPath( path1 );
+							tree.startEditingAtPath( path1 );
 						} );
 					}
 					else
 					{
-						final SourceGroup group = ( SourceGroup ) path.getPathComponent( 1 );
-						state.addSourcesToGroup( sources, group );
-						tree.expandPath( tree.getPathTo( group ) );
+						final GroupModel groupModel = ( GroupModel ) path.getPathComponent( 1 );
+						state.addSourcesToGroup( sources, groupModel.getGroup() );
+						SwingUtilities.invokeLater( () -> {
+							tree.expandPath( tree.getPathTo( groupModel.getGroup() ) );
+						} );
 					}
 					return true;
 				}

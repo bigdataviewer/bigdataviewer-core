@@ -2,6 +2,7 @@ package bdv.ui.sourcegrouptree;
 
 import bdv.ui.CreateViewerState;
 import bdv.ui.sourcegrouptree.SourceGroupTree;
+import bdv.ui.sourcegrouptree.SourceGroupTreeModel.GroupModel;
 import bdv.viewer.BasicViewerState;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.SourceGroup;

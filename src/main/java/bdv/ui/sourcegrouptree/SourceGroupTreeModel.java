@@ -1,21 +1,26 @@
 package bdv.ui.sourcegrouptree;
 
-import bdv.viewer.BasicViewerState;
+import bdv.util.WrappedList;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.SourceGroup;
 import bdv.viewer.ViewerState;
+import gnu.trove.map.TObjectIntMap;
+import gnu.trove.map.hash.TObjectIntHashMap;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.Set;
 import javax.swing.SwingUtilities;
 import javax.swing.event.EventListenerList;
 import javax.swing.event.TreeModelEvent;
 import javax.swing.event.TreeModelListener;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
+
+import static gnu.trove.impl.Constants.DEFAULT_CAPACITY;
+import static gnu.trove.impl.Constants.DEFAULT_LOAD_FACTOR;
 
 /**
  * @author Tobias Pietzsch
@@ -30,12 +35,12 @@ public class SourceGroupTreeModel implements TreeModel
 
 	private final ViewerState state;
 
-	private final BasicViewerState previousState;
+	private StateModel model;
 
 	public SourceGroupTreeModel( final ViewerState state )
 	{
+		model = new StateModel( state );
 		this.state = state;
-		previousState = new BasicViewerState( state );
 		state.changeListeners().add( e ->
 		{
 			switch ( e )
@@ -45,7 +50,8 @@ public class SourceGroupTreeModel implements TreeModel
 			case SOURCE_TO_GROUP_ASSIGNMENT_CHANGED:
 			case GROUP_NAME_CHANGED:
 			case NUM_GROUPS_CHANGED:
-				analyzeChanges();
+				final StateModel model = new StateModel( state );
+				SwingUtilities.invokeLater( () -> analyzeChanges( model ) );
 			}
 		} );
 	}
@@ -61,11 +67,11 @@ public class SourceGroupTreeModel implements TreeModel
 	{
 		if ( parent == root )
 		{
-			return state.getGroups().get( index );
+			return model.getGroups().get( index );
 		}
-		else if ( parent instanceof SourceGroup )
+		else if ( parent instanceof GroupModel )
 		{
-			return getOrderedSources( parent ).get( index );
+			return ( ( GroupModel ) parent ).getSources().get( index );
 		}
 		else
 		{
@@ -73,25 +79,16 @@ public class SourceGroupTreeModel implements TreeModel
 		}
 	}
 
-	private List< SourceAndConverter< ? > > getOrderedSources( final Object parent )
-	{
-		if ( !( parent instanceof SourceGroup ) )
-			throw new IllegalArgumentException();
-		List< SourceAndConverter< ? > > sources = new ArrayList<>( state.getSourcesInGroup( ( SourceGroup ) parent ) );
-		sources.sort( state.sourceOrder() );
-		return sources;
-	}
-
 	@Override
 	public int getChildCount( final Object parent )
 	{
 		if ( parent == root )
 		{
-			return state.getGroups().size();
+			return model.getGroups().size();
 		}
-		else if ( parent instanceof SourceGroup )
+		else if ( parent instanceof GroupModel )
 		{
-			return state.getSourcesInGroup( ( SourceGroup ) parent ).size();
+			return ( ( GroupModel ) parent ).getSources().size();
 		}
 		else
 		{
@@ -104,11 +101,11 @@ public class SourceGroupTreeModel implements TreeModel
 	{
 		if ( node == root )
 		{
-			return state.getGroups().isEmpty();
+			return model.getGroups().isEmpty();
 		}
-		else if ( node instanceof SourceGroup )
+		else if ( node instanceof GroupModel )
 		{
-			return state.getSourcesInGroup( ( SourceGroup ) node ).isEmpty();
+			return ( ( GroupModel ) node ).getSources().isEmpty();
 		}
 		else
 		{
@@ -120,8 +117,8 @@ public class SourceGroupTreeModel implements TreeModel
 	public void valueForPathChanged( final TreePath path, final Object newValue )
 	{
 		final Object o = path.getLastPathComponent();
-		if ( o instanceof  SourceGroup )
-			state.setGroupName( ( SourceGroup ) o, newValue.toString() );
+		if ( o instanceof GroupModel )
+			state.setGroupName( ( ( GroupModel ) o ).group, newValue.toString() );
 	}
 
 	@Override
@@ -129,11 +126,11 @@ public class SourceGroupTreeModel implements TreeModel
 	{
 		if ( parent == root )
 		{
-			return state.getGroups().indexOf( child );
+			return model.getGroups().indexOf( child );
 		}
-		else if ( parent instanceof SourceGroup )
+		else if ( parent instanceof GroupModel )
 		{
-			return getOrderedSources( parent ).indexOf( child );
+			return ( ( GroupModel ) parent ).getSources().indexOf( child );
 		}
 		else
 		{
@@ -171,14 +168,6 @@ public class SourceGroupTreeModel implements TreeModel
 		listenerList.remove( TreeModelListener.class, l );
 	}
 
-	private void fireTreeNodesChanged()
-	{
-		final Object[] path = new Object[] { root };
-		final Object[] children = state.getGroups().toArray( new Object[] {} );
-		final int[] childIndices = state.getGroups().stream().mapToInt( g -> getIndexOfChild( root, g ) ).toArray();
-		fireTreeNodesChanged( new TreeModelEvent( this, path, childIndices, children ) );
-	}
-
 	private void fireTreeNodesChanged(final TreeModelEvent e)
 	{
 		final Object[] listeners = listenerList.getListenerList();
@@ -211,69 +200,55 @@ public class SourceGroupTreeModel implements TreeModel
 				( ( TreeModelListener ) listeners[ i + 1 ] ).treeStructureChanged( e );
 	}
 
-	private void analyzeChanges()
+	public TreePath getPathTo( final GroupModel group )
 	{
+		return new TreePath( new Object[] { root, group } );
+	}
+
+	private void analyzeChanges( final StateModel model )
+	{
+		final StateModel previousModel = this.model;
+		this.model = model;
+
 		// -- NUM_GROUPS_CHANGED --
 
-		final HashSet< SourceGroup > removedGroups = new HashSet<>( previousState.getGroups() );
-		removedGroups.removeAll( state.getGroups() );
-//		removedGroups.forEach( g -> System.out.println( "    " + previousState.getGroupName( g ) ) );
+		final List< GroupModel > removedGroups = new ArrayList<>();
+		for ( GroupModel group : previousModel.getGroups() )
+			if ( !model.getGroups().contains( group ) )
+				removedGroups.add( group );
 
-		final HashSet< SourceGroup > addedGroups = new HashSet<>( state.getGroups() );
-		addedGroups.removeAll( previousState.getGroups() );
-//		addedGroups.forEach( g -> System.out.println( "    " + state.getGroupName( g ) ) );
+		final List< GroupModel > addedGroups = new ArrayList<>();
+		for ( GroupModel group : model.getGroups() )
+			if ( !previousModel.getGroups().contains( group ) )
+				addedGroups.add( group );
 
-		// -- GROUP_NAME_CHANGED --
+		// -- GROUP_NAME_CHANGED, CURRENT_GROUP_CHANGED, GROUP_ACTIVITY_CHANGED --
 
-		final HashSet< SourceGroup > changedGroups = new HashSet<>();
-		for ( SourceGroup group : state.getGroups() )
+		final List< GroupModel > changedGroups = new ArrayList<>();
+		for ( GroupModel group : model.getGroups() )
 		{
-			if ( previousState.getGroups().contains( group ) )
+			final GroupModel previousGroup = previousModel.getGroups().get( group );
+			if ( previousGroup != null )
 			{
-				final String groupName = state.getGroupName( group );
-				final String previousGroupName = previousState.getGroupName( group );
-				if ( !Objects.equals( groupName, previousGroupName ) )
+				if ( group.isCurrent() != previousGroup.isCurrent() ||
+						group.isActive() != previousGroup.isActive() ||
+						!Objects.equals( group.getName(), previousGroup.getName() ) )
 				{
-//					System.out.println( "    '" + previousGroupName + "' -> '" + groupName + "'" );
 					changedGroups.add( group );
 				}
 			}
 		}
 
-		// -- CURRENT_GROUP_CHANGED --
-
-		final SourceGroup prevCurrent = previousState.getCurrentGroup();
-		final SourceGroup curCurrent = state.getCurrentGroup();
-		if ( !Objects.equals( prevCurrent, curCurrent ) )
-		{
-			if ( prevCurrent != null && state.getGroups().contains( prevCurrent ) )
-				changedGroups.add( prevCurrent );
-			if ( curCurrent != null )
-				changedGroups.add( curCurrent );
-		}
-
-		// -- GROUP_ACTIVITY_CHANGED --
-
-		for ( SourceGroup group : state.getGroups() )
-		{
-			if ( previousState.getGroups().contains( group ) )
-			{
-				final boolean wasActive = previousState.isGroupActive( group );
-				final boolean isActive = state.isGroupActive( group );
-				if ( wasActive != isActive )
-					changedGroups.add( group );
-			}
-		}
-
 		// -- SOURCE_TO_GROUP_ASSIGNMENT_CHANGED --
 
-		final HashSet< SourceGroup > structurallyChangedGroups = new HashSet<>();
-		for ( SourceGroup group : state.getGroups() )
+		final List< GroupModel > structurallyChangedGroups = new ArrayList<>();
+		for ( GroupModel group : model.getGroups() )
 		{
-			if ( previousState.getGroups().contains( group ) )
+			final GroupModel previousGroup = previousModel.getGroups().get( group );
+			if ( previousGroup != null )
 			{
-				final Set< SourceAndConverter< ? > > content = state.getSourcesInGroup( group );
-				final Set< SourceAndConverter< ? > > previousContent = previousState.getSourcesInGroup( group );
+				final List< SourceModel > content = group.getSources();
+				final List< SourceModel > previousContent = previousGroup.getSources();
 				if ( !content.equals( previousContent ) )
 					structurallyChangedGroups.add( group );
 			}
@@ -284,49 +259,246 @@ public class SourceGroupTreeModel implements TreeModel
 		// groups added or removed
 		if ( !addedGroups.isEmpty() )
 		{
-			final ArrayList< SourceGroup > list = new ArrayList<>( addedGroups );
-			list.sort( state.groupOrder() );
-			final int[] childIndices = new int[ list.size() ];
-			Arrays.setAll( childIndices, i -> state.getGroups().indexOf( list.get( i ) ) );
-			final Object[] children = list.toArray( new Object[ 0 ] );
-			SwingUtilities.invokeLater( () -> fireTreeNodesInserted( new TreeModelEvent( this, rootPath, childIndices, children ) ) );
+			final int[] childIndices = new int[ addedGroups.size() ];
+			Arrays.setAll( childIndices, i -> model.getGroups().indexOf( addedGroups.get( i ) ) );
+			final Object[] children = addedGroups.toArray( new Object[ 0 ] );
+			fireTreeNodesInserted( new TreeModelEvent( this, rootPath, childIndices, children ) );
 		}
 		else if ( !removedGroups.isEmpty() )
 		{
-			final ArrayList< SourceGroup > list = new ArrayList<>( removedGroups );
-			list.sort( previousState.groupOrder() );
-			final int[] childIndices = new int[ list.size() ];
-			Arrays.setAll( childIndices, i -> previousState.getGroups().indexOf( list.get( i ) ) );
-			final Object[] children = list.toArray( new Object[ 0 ] );
-			SwingUtilities.invokeLater( () -> fireTreeNodesRemoved( new TreeModelEvent( this, rootPath, childIndices, children ) ) );
+			final int[] childIndices = new int[ removedGroups.size() ];
+			Arrays.setAll( childIndices, i -> previousModel.getGroups().indexOf( removedGroups.get( i ) ) );
+			final Object[] children = removedGroups.toArray( new Object[ 0 ] );
+			fireTreeNodesRemoved( new TreeModelEvent( this, rootPath, childIndices, children ) );
 		}
 
 		// groups that change currentness, activeness, or name
 		if ( !changedGroups.isEmpty() )
 		{
-			final ArrayList< SourceGroup > list = new ArrayList<>( changedGroups );
-			list.sort( state.groupOrder() );
-			final int[] childIndices = new int[ list.size() ];
-			Arrays.setAll( childIndices, i -> state.getGroups().indexOf( list.get( i ) ) );
-			final Object[] children = list.toArray( new Object[ 0 ] );
-			SwingUtilities.invokeLater( () -> fireTreeNodesChanged( new TreeModelEvent( this, rootPath, childIndices, children ) ) );
+			final int[] childIndices = new int[ changedGroups.size() ];
+			Arrays.setAll( childIndices, i -> model.getGroups().indexOf( changedGroups.get( i ) ) );
+			final Object[] children = changedGroups.toArray( new Object[ 0 ] );
+			fireTreeNodesChanged( new TreeModelEvent( this, rootPath, childIndices, children ) );
 		}
 
 		// groups that had children added or removed
 		if ( !structurallyChangedGroups.isEmpty() )
 		{
-			for ( SourceGroup group : structurallyChangedGroups )
+			for ( GroupModel group : structurallyChangedGroups )
 			{
 				final Object[] path = new Object[] { root, group };
-				SwingUtilities.invokeLater( () -> fireTreeStructureChanged( new TreeModelEvent( this, path, null, null ) ) );
+				fireTreeStructureChanged( new TreeModelEvent( this, path, null, null ) );
 			}
 		}
-
-		previousState.set( state );
 	}
 
-	public TreePath getPathTo( final SourceGroup group )
+	//
+	//  Internal state model
+	//
+
+	private static final int NO_ENTRY_VALUE = -1;
+
+	static class StateModel
 	{
-		return new TreePath( new Object[] { root, group } );
+		private final UnmodifiableGroups groups;
+
+		public StateModel( final ViewerState state )
+		{
+			final List< GroupModel > glist = new ArrayList<>();
+			final TObjectIntMap< GroupModel > gindices = new TObjectIntHashMap<>( DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR, NO_ENTRY_VALUE );
+			final List< SourceGroup > sgroups = state.getGroups();
+			for ( int i = 0; i < sgroups.size(); ++i )
+			{
+				final GroupModel groupModel = new GroupModel( sgroups.get( i ), state );
+				glist.add( groupModel );
+				gindices.put( groupModel, i );
+			}
+			groups = new UnmodifiableGroups( glist, gindices );
+		}
+
+		public UnmodifiableGroups getGroups()
+		{
+			return groups;
+		}
+
+		static class UnmodifiableGroups extends WrappedList< GroupModel >
+		{
+			private final TObjectIntMap< GroupModel > groupIndices;
+
+			public UnmodifiableGroups(final List< GroupModel > groups, final TObjectIntMap< GroupModel > groupIndices)
+			{
+				super( Collections.unmodifiableList( groups ) );
+				this.groupIndices = groupIndices;
+			}
+
+			public GroupModel get( GroupModel groupModel )
+			{
+				final int index = groupIndices.get( groupModel );
+				return index == NO_ENTRY_VALUE ? null : get( index );
+			}
+
+			@Override
+			public boolean contains( final Object o )
+			{
+				return groupIndices.containsKey( o );
+			}
+
+			@Override
+			public boolean containsAll( final Collection< ? > c )
+			{
+				return groupIndices.keySet().containsAll( c );
+			}
+
+			@Override
+			public int indexOf( final Object o )
+			{
+				return groupIndices.get( o );
+			}
+
+			@Override
+			public int lastIndexOf( final Object o )
+			{
+				return groupIndices.get( o );
+			}
+		}
+	}
+
+	static class GroupModel
+	{
+		private final String name;
+		private final boolean active;
+		private final boolean current;
+
+		private final List< SourceModel > sources;
+
+		private final SourceGroup group;
+
+		public GroupModel( final SourceGroup group, final ViewerState state )
+		{
+			name = state.getGroupName( group );
+			active = state.isGroupActive( group );
+			current = state.isCurrentGroup( group );
+
+			final List< SourceAndConverter< ? > > orderedSources = new ArrayList<>( state.getSourcesInGroup( group ) );
+			orderedSources.sort( state.sourceOrder() );
+			final List< SourceModel > slist = new ArrayList<>();
+			final TObjectIntMap< SourceModel > sindices = new TObjectIntHashMap<>( DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR, NO_ENTRY_VALUE );
+			for ( int i = 0; i < orderedSources.size(); ++i )
+			{
+				final SourceModel sourceModel = new SourceModel( orderedSources.get( i ) );
+				slist.add( sourceModel );
+				sindices.put( sourceModel, i );
+			}
+			sources = new UnmodifiableSources( slist, sindices );
+
+			this.group = group;
+		}
+
+		public String getName()
+		{
+			return name;
+		}
+
+		public boolean isActive()
+		{
+			return active;
+		}
+
+		public boolean isCurrent()
+		{
+			return current;
+		}
+
+		public List< SourceModel > getSources()
+		{
+			return sources;
+		}
+
+		public SourceGroup getGroup()
+		{
+			return group;
+		}
+
+		@Override
+		public boolean equals( final Object o )
+		{
+			return ( o instanceof GroupModel ) && group.equals( ( ( GroupModel ) o ).group );
+		}
+
+		@Override
+		public int hashCode()
+		{
+			return group.hashCode();
+		}
+
+		static class UnmodifiableSources extends WrappedList< SourceModel >
+		{
+			private final TObjectIntMap< SourceModel > sourceIndices;
+
+			public UnmodifiableSources( final List< SourceModel > sources, final TObjectIntMap< SourceModel > sourceIndices )
+			{
+				super( Collections.unmodifiableList( sources ) );
+				this.sourceIndices = sourceIndices;
+			}
+
+			@Override
+			public boolean contains( final Object o )
+			{
+				return sourceIndices.containsKey( o );
+			}
+
+			@Override
+			public boolean containsAll( final Collection< ? > c )
+			{
+				return sourceIndices.keySet().containsAll( c );
+			}
+
+			@Override
+			public int indexOf( final Object o )
+			{
+				return sourceIndices.get( o );
+			}
+
+			@Override
+			public int lastIndexOf( final Object o )
+			{
+				return sourceIndices.get( o );
+			}
+		}
+	}
+
+	static class SourceModel
+	{
+		private final String name;
+
+		private final SourceAndConverter< ? > source;
+
+		public SourceModel( final SourceAndConverter< ? > source )
+		{
+			name = source.getSpimSource().getName();
+			this.source = source;
+		}
+
+		public String getName()
+		{
+			return name;
+		}
+
+		public SourceAndConverter<?> getSource()
+		{
+			return source;
+		}
+
+		@Override
+		public boolean equals( final Object o )
+		{
+			return ( o instanceof SourceModel ) && source.equals( ( ( SourceModel ) o ).source );
+		}
+
+		@Override
+		public int hashCode()
+		{
+			return source.hashCode();
+		}
 	}
 }
