@@ -235,9 +235,9 @@ public class VisibilityAndGroupingDialog extends JDialog
 			}
 
 			invalidate();
-			final Window frame = SwingUtilities.getWindowAncestor( this );
-			if ( frame != null )
-				frame.pack();
+//			final Window frame = SwingUtilities.getWindowAncestor( this );
+//			if ( frame != null )
+//				frame.pack();
 		}
 
 		protected void update()
@@ -507,9 +507,9 @@ public class VisibilityAndGroupingDialog extends JDialog
 			}
 
 			invalidate();
-			final Window frame = SwingUtilities.getWindowAncestor( this );
-			if ( frame != null )
-				frame.pack();
+//			final Window frame = SwingUtilities.getWindowAncestor( this );
+//			if ( frame != null )
+//				frame.pack();
 		}
 
 		private void update()
