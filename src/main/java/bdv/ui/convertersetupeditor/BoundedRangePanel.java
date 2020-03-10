@@ -225,7 +225,7 @@ class BoundedRangePanel extends JPanel
 
 			private void doPop( final MouseEvent e )
 			{
-				if ( popup != null )
+				if ( isEnabled() && popup != null )
 				{
 					final JPopupMenu menu = popup.get();
 					if ( menu != null )
