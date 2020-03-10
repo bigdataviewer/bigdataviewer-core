@@ -40,6 +40,8 @@ public class SplitPanel extends JSplitPane
 
 	private int width;
 
+	private final SplitPaneOneTouchExpandAnimator oneTouchExpandAnimator;
+
 	public SplitPanel( final ViewerPanel viewerPanel, final CardPanel cardPanel )
 	{
 		super( JSplitPane.HORIZONTAL_SPLIT );
@@ -70,7 +72,7 @@ public class SplitPanel extends JSplitPane
 
 		super.setDividerSize( 0 );
 
-		final SplitPaneOneTouchExpandAnimator oneTouchExpandAnimator = new SplitPaneOneTouchExpandAnimator( this::isCollapsed );
+		oneTouchExpandAnimator = new SplitPaneOneTouchExpandAnimator( this::isCollapsed );
 		viewerPanel.addOverlayAnimator( oneTouchExpandAnimator );
 
 		final SplitPaneOneTouchExpandTrigger oneTouchExpandTrigger = new SplitPaneOneTouchExpandTrigger( oneTouchExpandAnimator, this, viewerPanel );
@@ -151,6 +153,7 @@ public class SplitPanel extends JSplitPane
 		if ( isCollapsed() == collapsed )
 			return;
 
+		oneTouchExpandAnimator.clearPaintState();
 		if ( collapsed )
 		{
 			setRightComponent( null );

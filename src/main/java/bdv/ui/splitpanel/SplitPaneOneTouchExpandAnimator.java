@@ -115,6 +115,11 @@ class SplitPaneOneTouchExpandAnimator implements OverlayAnimator
 			paint( g, paintState );
 	}
 
+	void clearPaintState()
+	{
+		paintState = null;
+	}
+
 	@Override
 	public boolean isComplete()
 	{
