@@ -66,8 +66,8 @@ public class SourceTable extends JTable
 
 		setShowGrid( false );
 
-		getColumnModel().getColumn( IS_ACTIVE_COLUMN ).setMinWidth( 20 );
 		getColumnModel().getColumn( IS_CURRENT_COLUMN ).setMinWidth( 20 );
+		getColumnModel().getColumn( IS_ACTIVE_COLUMN ).setMinWidth( 20 );
 		getColumnModel().getColumn( COLOR_COLUMN ).setMinWidth( 40 );
 
 		this.installActions( inputTriggerConfig );

@@ -31,8 +31,8 @@ public class SourceTableModel extends AbstractTableModel
 	private StateModel model;
 
 	public static final int NAME_COLUMN = 0;
-	public static final int IS_ACTIVE_COLUMN = 1;
-	public static final int IS_CURRENT_COLUMN = 2;
+	public static final int IS_CURRENT_COLUMN = 1;
+	public static final int IS_ACTIVE_COLUMN = 2;
 	public static final int COLOR_COLUMN = 3;
 
 	public SourceTableModel( final ViewerState state, final ConverterSetups converterSetups )
