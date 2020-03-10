@@ -87,7 +87,7 @@ public class SourceTable extends JTable
 	{
 		final List< SourceAndConverter< ? > > sources = new ArrayList<>();
 		for ( final int row : getSelectedRows() )
-			sources.add( model.getValueAt( row ) );
+			sources.add( model.getValueAt( row ).getSource() );
 		return sources;
 	}
 
@@ -193,7 +193,7 @@ public class SourceTable extends JTable
 					case IS_CURRENT_COLUMN:
 					case COLOR_COLUMN:
 						final int mrow = convertRowIndexToModel( vrow );
-						final SourceAndConverter< ? > source = model.getValueAt( mrow );
+						final SourceAndConverter< ? > source = model.getValueAt( mrow ).getSource();
 						if ( mcol == IS_ACTIVE_COLUMN )
 						{
 							if ( isRowSelected( mrow ) )
@@ -282,7 +282,7 @@ public class SourceTable extends JTable
 
 			final List< SourceAndConverter< ? > > sources = new ArrayList<>();
 			for ( final int row : table.getSelectedRows() )
-				sources.add( model.getValueAt( row ) );
+				sources.add( model.getValueAt( row ).getSource() );
 
 			return new SourcesTransferable( sources );
 		}

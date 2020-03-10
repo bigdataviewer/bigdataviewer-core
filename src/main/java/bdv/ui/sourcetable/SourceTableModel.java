@@ -1,17 +1,23 @@
 package bdv.ui.sourcetable;
 
 import bdv.tools.brightness.ConverterSetup;
-import bdv.viewer.BasicViewerState;
+import bdv.util.WrappedList;
 import bdv.viewer.ConverterSetups;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.SourceToConverterSetupBimap;
 import bdv.viewer.ViewerState;
+import gnu.trove.map.TObjectIntMap;
+import gnu.trove.map.hash.TObjectIntHashMap;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Objects;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import javax.swing.SwingUtilities;
 import javax.swing.table.AbstractTableModel;
 import net.imglib2.type.numeric.ARGBType;
+
+import static gnu.trove.impl.Constants.DEFAULT_CAPACITY;
+import static gnu.trove.impl.Constants.DEFAULT_LOAD_FACTOR;
 
 /**
  * @author Tobias Pietzsch
@@ -20,9 +26,9 @@ public class SourceTableModel extends AbstractTableModel
 {
 	private final ViewerState state;
 
-	private final BasicViewerState previousState;
-
 	private final SourceToConverterSetupBimap converters;
+
+	private StateModel model;
 
 	public static final int NAME_COLUMN = 0;
 	public static final int IS_ACTIVE_COLUMN = 1;
@@ -32,17 +38,20 @@ public class SourceTableModel extends AbstractTableModel
 	public SourceTableModel( final ViewerState state, final ConverterSetups converterSetups )
 	{
 		this.state = state;
-		previousState = new BasicViewerState( state );
 		this.converters = converterSetups;
+		model = new StateModel( state );
 
 		converterSetups.listeners().add( converterSetup ->
 		{
 			final SourceAndConverter< ? > source = converters.getSource( converterSetup );
 			if ( source != null )
 			{
-				final int row = state.getSources().indexOf( source );
-				if ( row != -1 )
-					fireTableRowsUpdated( row, row );
+				final SourceModel sourceModel = new SourceModel( source, state );
+				SwingUtilities.invokeLater( () -> {
+					final int row = model.getSources().indexOf( sourceModel );
+					if ( row != -1 )
+						fireTableRowsUpdated( row, row );
+				} );
 			}
 		} );
 
@@ -53,85 +62,16 @@ public class SourceTableModel extends AbstractTableModel
 			case CURRENT_SOURCE_CHANGED:
 			case SOURCE_ACTIVITY_CHANGED:
 			case NUM_SOURCES_CHANGED:
-				analyzeChanges();
+				final StateModel model = new StateModel( state );
+				SwingUtilities.invokeLater( () -> analyzeChanges( model ) );
 			}
 		} );
-	}
-
-	private void analyzeChanges()
-	{
-		// -- NUM_SOURCES_CHANGED --
-
-		final HashSet< SourceAndConverter< ? > > removedSources = new HashSet<>( previousState.getSources() );
-		removedSources.removeAll( state.getSources() );
-
-		final HashSet< SourceAndConverter< ? > > addedSources = new HashSet<>( state.getSources() );
-		addedSources.removeAll( previousState.getSources() );
-
-		final HashSet< SourceAndConverter< ? > > changedSources = new HashSet<>();
-
-		// -- CURRENT_SOURCE_CHANGED --
-
-		final SourceAndConverter< ? > prevCurrent = previousState.getCurrentSource();
-		final SourceAndConverter< ? > curCurrent = state.getCurrentSource();
-		if ( !Objects.equals( prevCurrent, curCurrent ) )
-		{
-			if ( prevCurrent != null )
-				changedSources.add( prevCurrent );
-			if ( curCurrent != null )
-				changedSources.add( curCurrent );
-		}
-
-		// -- SOURCE_ACTIVITY_CHANGED --
-
-		for ( SourceAndConverter< ? > source : state.getSources() )
-		{
-			if ( previousState.getSources().contains( source ) )
-			{
-				final boolean wasActive = previousState.isSourceActive( source );
-				final boolean isActive = state.isSourceActive( source );
-				if ( wasActive != isActive )
-					changedSources.add( source );
-			}
-		}
-
-		// -- create corresponding TreeModelEvents --
-
-		// sources added or removed
-		if ( !addedSources.isEmpty() )
-		{
-			final ArrayList< SourceAndConverter< ? > > list = new ArrayList<>( addedSources );
-			list.sort( state.sourceOrder() );
-			final int firstRow = state.getSources().indexOf( list.get( 0 ) );
-			final int lastRow = state.getSources().indexOf( list.get( list.size() - 1 ) );
-			SwingUtilities.invokeLater( () -> fireTableRowsInserted( firstRow, lastRow ) );
-		}
-		else if ( !removedSources.isEmpty() )
-		{
-			final ArrayList< SourceAndConverter< ? > > list = new ArrayList<>( removedSources );
-			list.sort( previousState.sourceOrder() );
-			final int firstRow = state.getSources().indexOf( list.get( 0 ) );
-			final int lastRow = state.getSources().indexOf( list.get( list.size() - 1 ) );
-			SwingUtilities.invokeLater( () -> fireTableRowsDeleted( firstRow, lastRow ) );
-		}
-
-		// sources that changed currentness or activeness
-		if ( !changedSources.isEmpty() )
-		{
-			final ArrayList< SourceAndConverter< ? > > list = new ArrayList<>( changedSources );
-			list.sort( state.sourceOrder() );
-			final int firstRow = state.getSources().indexOf( list.get( 0 ) );
-			final int lastRow = state.getSources().indexOf( list.get( list.size() - 1 ) );
-			SwingUtilities.invokeLater( () -> fireTableRowsUpdated( firstRow, lastRow ) );
-		}
-
-		previousState.set( state );
 	}
 
 	@Override
 	public int getRowCount()
 	{
-		return state.getSources().size();
+		return model.getSources().size();
 	}
 
 	@Override
@@ -161,17 +101,17 @@ public class SourceTableModel extends AbstractTableModel
 	@Override
 	public Object getValueAt( final int rowIndex, final int columnIndex )
 	{
-		final SourceAndConverter< ? > source = state.getSources().get( rowIndex );
+		final SourceModel source = model.getSources().get( rowIndex );
 		switch( columnIndex )
 		{
 		case NAME_COLUMN:
-			return source.getSpimSource().getName();
+			return source.getName();
 		case IS_ACTIVE_COLUMN:
-			return state.isSourceActive( source );
+			return source.isActive();
 		case IS_CURRENT_COLUMN:
-			return state.isCurrentSource( source );
+			return source.isCurrent();
 		case COLOR_COLUMN:
-			final ConverterSetup c = converters.getConverterSetup( source );
+			final ConverterSetup c = converters.getConverterSetup( source.getSource() );
 			return ( c != null && c.supportsColor() ) ? c.getColor() : null;
 		default:
 			throw new IllegalArgumentException();
@@ -201,8 +141,187 @@ public class SourceTableModel extends AbstractTableModel
 		return columnIndex != 0;
 	}
 
-	public SourceAndConverter< ? > getValueAt( final int rowIndex )
+	public SourceModel getValueAt( final int rowIndex )
 	{
-		return state.getSources().get( rowIndex );
+		return model.getSources().get( rowIndex );
+	}
+
+	private void analyzeChanges( final StateModel model )
+	{
+		final StateModel previousModel = this.model;
+		this.model = model;
+
+		// -- NUM_SOURCES_CHANGED --
+
+		final List< SourceModel > removedSources = new ArrayList<>();
+		for ( SourceModel source : previousModel.getSources() )
+			if ( !model.getSources().contains( source ) )
+				removedSources.add( source );
+
+		final List< SourceModel > addedSources = new ArrayList<>();
+		for ( SourceModel source : model.getSources() )
+			if ( !previousModel.getSources().contains( source ) )
+				addedSources.add( source );
+
+		// -- CURRENT_SOURCE_CHANGED, SOURCE_ACTIVITY_CHANGED --
+
+		final List< SourceModel > changedSources = new ArrayList<>();
+		for ( SourceModel source : model.getSources() )
+		{
+			final SourceModel previousSource = previousModel.getSources().get( source );
+			if ( previousSource != null )
+			{
+				if ( source.isCurrent() != previousSource.isCurrent() ||
+						source.isActive() != previousSource.isActive() )
+				{
+					changedSources.add( source );
+				}
+			}
+		}
+
+		// -- create corresponding TableModelEvents --
+
+		// sources added or removed
+		if ( !addedSources.isEmpty() )
+		{
+			final int firstRow = model.getSources().indexOf( addedSources.get( 0 ) );
+			final int lastRow = model.getSources().indexOf( addedSources.get( addedSources.size() - 1 ) );
+			fireTableRowsInserted( firstRow, lastRow );
+		}
+		else if ( !removedSources.isEmpty() )
+		{
+			final int firstRow = previousModel.getSources().indexOf( removedSources.get( 0 ) );
+			final int lastRow = previousModel.getSources().indexOf( removedSources.get( removedSources.size() - 1 ) );
+			fireTableRowsDeleted( firstRow, lastRow );
+		}
+
+		// sources that changed currentness or activeness
+		if ( !changedSources.isEmpty() )
+		{
+			final int firstRow = model.getSources().indexOf( changedSources.get( 0 ) );
+			final int lastRow = model.getSources().indexOf( changedSources.get( changedSources.size() - 1 ) );
+			fireTableRowsUpdated( firstRow, lastRow );
+		}
+	}
+
+	//
+	//  Internal state model
+	//
+
+	private static final int NO_ENTRY_VALUE = -1;
+
+	static class StateModel
+	{
+		private final StateModel.UnmodifiableSources sources;
+
+		public StateModel( final ViewerState state )
+		{
+			final List< SourceModel > slist = new ArrayList<>();
+			final TObjectIntMap< SourceModel > sindices = new TObjectIntHashMap<>( DEFAULT_CAPACITY, DEFAULT_LOAD_FACTOR, NO_ENTRY_VALUE );
+			final List< SourceAndConverter< ? > > ssources = state.getSources();
+			for ( int i = 0; i < ssources.size(); ++i )
+			{
+				final SourceModel sourceModel = new SourceModel( ssources.get( i ), state );
+				slist.add( sourceModel );
+				sindices.put( sourceModel, i );
+			}
+			sources = new StateModel.UnmodifiableSources( slist, sindices );
+		}
+
+		public StateModel.UnmodifiableSources getSources()
+		{
+			return sources;
+		}
+
+		static class UnmodifiableSources extends WrappedList< SourceModel >
+		{
+			private final TObjectIntMap< SourceModel > sourceIndices;
+
+			public UnmodifiableSources( final List< SourceModel > sources, final TObjectIntMap< SourceModel > sourceIndices )
+			{
+				super( Collections.unmodifiableList( sources ) );
+				this.sourceIndices = sourceIndices;
+			}
+
+			public SourceModel get( SourceModel sourceModel )
+			{
+				final int index = sourceIndices.get( sourceModel );
+				return index == NO_ENTRY_VALUE ? null : get( index );
+			}
+
+			@Override
+			public boolean contains( final Object o )
+			{
+				return sourceIndices.containsKey( o );
+			}
+
+			@Override
+			public boolean containsAll( final Collection< ? > c )
+			{
+				return sourceIndices.keySet().containsAll( c );
+			}
+
+			@Override
+			public int indexOf( final Object o )
+			{
+				return sourceIndices.get( o );
+			}
+
+			@Override
+			public int lastIndexOf( final Object o )
+			{
+				return sourceIndices.get( o );
+			}
+		}
+	}
+
+	static class SourceModel
+	{
+		private final String name;
+		private final boolean active;
+		private final boolean current;
+
+		private final SourceAndConverter< ? > source;
+
+		public SourceModel( final SourceAndConverter< ? > source, final ViewerState state )
+		{
+			name = source.getSpimSource().getName();
+			active = state.isSourceActive( source );
+			current = state.isCurrentSource( source );
+
+			this.source = source;
+		}
+
+		public String getName()
+		{
+			return name;
+		}
+
+		public boolean isActive()
+		{
+			return active;
+		}
+
+		public boolean isCurrent()
+		{
+			return current;
+		}
+
+		public SourceAndConverter<?> getSource()
+		{
+			return source;
+		}
+
+		@Override
+		public boolean equals( final Object o )
+		{
+			return ( o instanceof SourceModel ) && source.equals( ( ( SourceModel ) o ).source );
+		}
+
+		@Override
+		public int hashCode()
+		{
+			return source.hashCode();
+		}
 	}
 }
