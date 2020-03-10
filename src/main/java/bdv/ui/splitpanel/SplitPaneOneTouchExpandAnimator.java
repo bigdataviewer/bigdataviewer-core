@@ -181,7 +181,7 @@ class SplitPaneOneTouchExpandAnimator implements OverlayAnimator
 		final int width = imgw + 60;
 		final int height = imgh;
 
-		g.setColor( new Color( 0, 0, 0, Math.min( alpha, backgroundAlpha ) ) );
+		g.setColor( new Color( 0.28f, 0.5f, 0.96f, Math.min( alpha, backgroundAlpha ) ) );
 		g.fillRoundRect( x, y, width, height, 25, 25 );
 	}
 
