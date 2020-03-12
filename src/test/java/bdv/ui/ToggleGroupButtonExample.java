@@ -3,6 +3,8 @@ package bdv.ui;
 import bdv.ui.iconcards.options.ToggleGroupButton;
 import java.awt.Dimension;
 import java.awt.Image;
+import java.util.ArrayList;
+import java.util.List;
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JFrame;
@@ -23,9 +25,22 @@ public class ToggleGroupButtonExample
 		final Image translation_on = new ImageIcon( frame.getClass().getResource( "/bdv/ui/viewermodepanel/translation_on.png" ) ).getImage().getScaledInstance( 40, 40, Image.SCALE_SMOOTH );
 		final Image translation_off = new ImageIcon( frame.getClass().getResource( "/bdv/ui/viewermodepanel/translation_off.png" ) ).getImage().getScaledInstance( 40, 40, Image.SCALE_SMOOTH );
 
-		final ToggleGroupButton button = new ToggleGroupButton( new Icon[] { new ImageIcon( rotation_on ), new ImageIcon( rotation_off ), new ImageIcon( translation_on ), new ImageIcon( translation_off ) },
-				new String[] { "Rotation On", "Rotation Off", "Translation On", "Translation Off" },
-				new Runnable[] { () -> System.out.println( "Rotation On" ), () -> System.out.println( "Rotation Off" ), () -> System.out.println( "Translation On" ), () -> System.out.println( "Translation Off" ) } );
+		final List< Icon > icons = new ArrayList<>();
+		icons.add( new ImageIcon( rotation_on ) );
+		icons.add( new ImageIcon( rotation_off ) );
+		final List< String > labels = new ArrayList<>();
+		labels.add( "Rotation On" );
+		labels.add( "Rotation Off" );
+		final List< Runnable > actions = new ArrayList<>();
+		actions.add( () -> System.out.println( "Rotation On" ) );
+		actions.add( () -> System.out.println( "Rotation Off" ) );
+
+		final ToggleGroupButton button = new ToggleGroupButton( icons, labels, actions );
+
+		button.addOption( new ImageIcon( translation_on ), "Translation On", () -> System.out.println( "Translation On" ) );
+		button.addOption( new ImageIcon( translation_off ), "Uups", () -> System.out.println( "uups" ) );
+		button.removeOption( "Uups" );
+		button.addOption( new ImageIcon( translation_off ), "Translation Off", () -> System.out.println( "Translation Off" ) );
 
 		button.setPreferredSize( new Dimension( 40, 40 ) );
 		frame.add( button, "growx, growy" );
