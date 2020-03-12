@@ -100,6 +100,8 @@ class BoundedRangeEditor
 		menu.add( setBoundsItem( "set bounds 0..65535", 0, 65535 ) );
 		menu.add( runnableItem(  "shrink bounds to selection", rangePanel::shrinkBoundsToRange ) );
 		rangePanel.setPopup( () -> menu );
+
+		updateRangePanel();
 	}
 
 	private JMenuItem setBoundsItem( final String text, final double min, final double max )
