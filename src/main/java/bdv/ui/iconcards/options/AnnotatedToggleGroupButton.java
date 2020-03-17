@@ -5,6 +5,7 @@ import java.util.List;
 import javax.swing.Icon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 import net.miginfocom.swing.MigLayout;
 
 public class AnnotatedToggleGroupButton extends JPanel
@@ -14,7 +15,7 @@ public class AnnotatedToggleGroupButton extends JPanel
 
 	private final JLabel annotation;
 
-	private final List< String > annotations;
+	private final List< String> annotations;
 
 	public AnnotatedToggleGroupButton( final List< Icon > toggleIcons, final List< String > toggleLabels, final List< Runnable > toggleActions, final List< String > annotations )
 	{
@@ -28,60 +29,49 @@ public class AnnotatedToggleGroupButton extends JPanel
 		this.add( button, "growx, center, wrap" );
 		this.add( annotation, "center" );
 
-		button.addChangeListener( l -> {
-			updateAnnotation();
-		} );
+		button.addChangeListener( l -> {updateAnnotation();} );
 	}
 
 	private void updateAnnotation()
 	{
 		annotation.setText( annotations.get( button.getCurrent() ) );
-		annotation.repaint();
+//		annotation.invalidate();
+		this.update( annotation.getGraphics() );
 	}
 
-	public void setAnnotationFont( final Font font )
+	public void setAnnotationFont(final Font font)
 	{
 		annotation.setFont( font );
 	}
 
-	public synchronized void next()
-	{
+	public synchronized void next() {
 		button.next();
 	}
 
-	public synchronized void setCurrent( final int index )
-	{
+	public synchronized void setCurrent(final int index) {
 		button.setCurrent( index );
 	}
 
-	public synchronized void setCurrent( final String label )
-	{
+	public synchronized void setCurrent(final String label) {
 		button.setCurrent( label );
 	}
 
-	public synchronized int getCurrent()
-	{
-		return button.getCurrent();
-	}
+	public synchronized int getCurrent() { return button.getCurrent(); }
 
-	public synchronized int getIndexOfLabel( final String label )
-	{
+	public synchronized int getIndexOfLabel(final String label) {
 		return button.getIndexOfLabel( label );
 	}
 
-	public synchronized void addOption( final Icon icon, final String label, final Runnable action, final String annotation )
-	{
+	public synchronized void addOption( final Icon icon, final String label, final Runnable action, final String annotation) {
 		button.addOption( icon, label, action );
-		annotations.add( annotation );
+		annotations.add(annotation);
 	}
 
-	public synchronized void removeOption( final String label )
-	{
+	public synchronized void removeOption(final String label) {
 		removeOption( button.getIndexOfLabel( label ) );
 	}
 
-	public synchronized void removeOption( final int index )
-	{
+	public synchronized void removeOption(final int index) {
 		button.removeOption( index );
 		annotations.remove( index );
 	}

@@ -89,7 +89,7 @@ public class ToggleGroupButton extends JButton
 	/**
 	 * Toggle to the next action in the list.
 	 */
-	public void next()
+	public synchronized void next()
 	{
 		current = ( current + 1 ) % toggleActions.size();
 		trigger();
@@ -100,7 +100,7 @@ public class ToggleGroupButton extends JButton
 	 *
 	 * @param index modulo number-of-options is set.
 	 */
-	public void setCurrent( final int index )
+	public synchronized void setCurrent( final int index )
 	{
 		this.current = index % toggleActions.size();
 		trigger();
@@ -111,7 +111,7 @@ public class ToggleGroupButton extends JButton
 	 *
 	 * @param label of the option
 	 */
-	public void setCurrent( final String label )
+	public synchronized void setCurrent( final String label )
 	{
 		if ( toggleLabels.contains( label ) )
 		{
@@ -121,13 +121,27 @@ public class ToggleGroupButton extends JButton
 	}
 
 	/**
+	 * Get current selected option index.
+	 *
+	 * @return current index
+	 */
+	public synchronized int getCurrent()
+	{
+		return current;
+	}
+
+	public synchronized int getIndexOfLabel(final String label) {
+		return toggleLabels.indexOf( label );
+	}
+
+	/**
 	 * Add a new option.
 	 *
 	 * @param icon of the option
 	 * @param label of the option
 	 * @param action triggered by this option
 	 */
-	public void addOption( final Icon icon, final String label, final Runnable action )
+	public synchronized void addOption( final Icon icon, final String label, final Runnable action )
 	{
 		toggleIcons.add( icon );
 		toggleLabels.add( label );
@@ -140,7 +154,7 @@ public class ToggleGroupButton extends JButton
 	 *
 	 * @param label of the option
 	 */
-	public void removeOption( final String label )
+	public synchronized void removeOption( final String label )
 	{
 		if ( toggleLabels.contains( label ) )
 		{
@@ -150,10 +164,10 @@ public class ToggleGroupButton extends JButton
 
 	/**
 	 * Remove option via index.
-	 * 
+	 *
 	 * @param index
 	 */
-	public void removeOption( final int index )
+	public synchronized void removeOption( final int index )
 	{
 		if ( index < toggleLabels.size() )
 		{
@@ -168,6 +182,6 @@ public class ToggleGroupButton extends JButton
 	{
 		this.setIcon( toggleIcons.get( current ) );
 		this.setToolTipText( toggleLabels.get( current ) );
-		toggleActions.get( current ).run();
+		SwingUtilities.invokeLater( toggleActions.get( current ) );
 	}
 }
