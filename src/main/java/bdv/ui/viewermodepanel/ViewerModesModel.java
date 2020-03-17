@@ -17,6 +17,8 @@ public class ViewerModesModel
 
 	private static final String BLOCK_TRANSLATION_KEY = "block translation";
 
+	private static final Behaviour blocked = new Behaviour() {};
+
 	private final TriggerBehaviourBindings bindings;
 
 	private BehaviourMap blockRotationBehaviourMap;
@@ -38,14 +40,10 @@ public class ViewerModesModel
 		if ( blockTranslationBehaviourMap == null )
 		{
 			blockTranslationBehaviourMap = new BehaviourMap();
-			blockTranslationBehaviourMap.put( "drag translate", new Behaviour()
-			{
-			} );
+			blockTranslationBehaviourMap.put( "drag translate", blocked );
 
 			// 2D
-			blockTranslationBehaviourMap.put( "2d drag translate", new Behaviour()
-			{
-			} );
+			blockTranslationBehaviourMap.put( "2d drag translate", blocked );
 		}
 		return blockTranslationBehaviourMap;
 	}
@@ -55,58 +53,26 @@ public class ViewerModesModel
 		if ( blockRotationBehaviourMap == null )
 		{
 			blockRotationBehaviourMap = new BehaviourMap();
-			blockRotationBehaviourMap.put( "rotate left", new Behaviour()
-			{
-			} );
-			blockRotationBehaviourMap.put( "rotate left slow", new Behaviour()
-			{
-			} );
-			blockRotationBehaviourMap.put( "rotate left fast", new Behaviour()
-			{
-			} );
+			blockRotationBehaviourMap.put( "rotate left", blocked );
+			blockRotationBehaviourMap.put( "rotate left slow", blocked );
+			blockRotationBehaviourMap.put( "rotate left fast", blocked );
 
-			blockRotationBehaviourMap.put( "rotate right", new Behaviour()
-			{
-			} );
-			blockRotationBehaviourMap.put( "rotate right slow", new Behaviour()
-			{
-			} );
-			blockRotationBehaviourMap.put( "rotate right fast", new Behaviour()
-			{
-			} );
+			blockRotationBehaviourMap.put( "rotate right", blocked );
+			blockRotationBehaviourMap.put( "rotate right slow", blocked );
+			blockRotationBehaviourMap.put( "rotate right fast", blocked );
 
-			blockRotationBehaviourMap.put( "drag rotate", new Behaviour()
-			{
-			} );
-			blockRotationBehaviourMap.put( "drag rotate slow", new Behaviour()
-			{
-			} );
-			blockRotationBehaviourMap.put( "drag rotate fast", new Behaviour()
-			{
-			} );
+			blockRotationBehaviourMap.put( "drag rotate", blocked );
+			blockRotationBehaviourMap.put( "drag rotate slow", blocked );
+			blockRotationBehaviourMap.put( "drag rotate fast", blocked );
 
 			// 2D
-			blockRotationBehaviourMap.put( "2d drag rotate", new Behaviour()
-			{
-			} );
-			blockRotationBehaviourMap.put( "2d scroll rotate", new Behaviour()
-			{
-			} );
-			blockRotationBehaviourMap.put( "2d scroll rotate slow", new Behaviour()
-			{
-			} );
-			blockRotationBehaviourMap.put( "2d scroll rotate fast", new Behaviour()
-			{
-			} );
-			blockRotationBehaviourMap.put( "2d scroll translate", new Behaviour()
-			{
-			} );
-			blockRotationBehaviourMap.put( "2d rotate left", new Behaviour()
-			{
-			} );
-			blockRotationBehaviourMap.put( "2d rotate right", new Behaviour()
-			{
-			} );
+			blockRotationBehaviourMap.put( "2d drag rotate", blocked );
+			blockRotationBehaviourMap.put( "2d scroll rotate", blocked );
+			blockRotationBehaviourMap.put( "2d scroll rotate slow", blocked );
+			blockRotationBehaviourMap.put( "2d scroll rotate fast", blocked );
+			blockRotationBehaviourMap.put( "2d scroll translate", blocked );
+			blockRotationBehaviourMap.put( "2d rotate left", blocked );
+			blockRotationBehaviourMap.put( "2d rotate right", blocked );
 		}
 		return blockRotationBehaviourMap;
 	}
