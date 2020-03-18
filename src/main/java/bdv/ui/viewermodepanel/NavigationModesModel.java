@@ -1,38 +1,48 @@
 package bdv.ui.viewermodepanel;
 
 import bdv.viewer.DisplayMode;
+import bdv.viewer.ViewerStateChange;
+import bdv.viewer.ViewerStateChangeListener;
+import org.scijava.listeners.Listeners;
 import org.scijava.ui.behaviour.Behaviour;
 import org.scijava.ui.behaviour.BehaviourMap;
 import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
 
 /**
- * This model handles the {@link DisplayMode}s and toggles the translation-
+ * This model handles the translation-
  * and rotation-block behaviours.
  *
  * @author Tim-Oliver Buchholz, CSBD/MPI-CBG, Dresden
  */
-public class ViewerModesModel
+public class NavigationModesModel
 {
 	private static final String BLOCK_ROTATION_KEY = "block rotation";
-
 	private static final String BLOCK_TRANSLATION_KEY = "block translation";
-
-	private static final Behaviour blocked = new Behaviour() {};
 
 	private final TriggerBehaviourBindings bindings;
 
 	private BehaviourMap blockRotationBehaviourMap;
-
 	private BehaviourMap blockTranslationBehaviourMap;
+
+	private boolean isRotationBlocked = false;
+	private boolean isTranslationBlocked = false;
+
+	public interface NavigationModeChangeListener
+	{
+		void navigationModeChanged();
+	}
+
+	private final Listeners.List< NavigationModeChangeListener > listeners;
 
 	/**
 	 * Keeps track of the current viewer state and handles the transformation blocking.
 	 *
 	 * @param triggerBindings
 	 */
-	public ViewerModesModel( final TriggerBehaviourBindings triggerBindings )
+	public NavigationModesModel( final TriggerBehaviourBindings triggerBindings )
 	{
-		this.bindings = triggerBindings;
+		bindings = triggerBindings;
+		listeners = new Listeners.List<>();
 	}
 
 	private BehaviourMap getBlockTranslationBehaviourMap()
@@ -40,6 +50,7 @@ public class ViewerModesModel
 		if ( blockTranslationBehaviourMap == null )
 		{
 			blockTranslationBehaviourMap = new BehaviourMap();
+			final Behaviour blocked = new Behaviour() {};
 			blockTranslationBehaviourMap.put( "drag translate", blocked );
 
 			// 2D
@@ -53,6 +64,7 @@ public class ViewerModesModel
 		if ( blockRotationBehaviourMap == null )
 		{
 			blockRotationBehaviourMap = new BehaviourMap();
+			final Behaviour blocked = new Behaviour() {};
 			blockRotationBehaviourMap.put( "rotate left", blocked );
 			blockRotationBehaviourMap.put( "rotate left slow", blocked );
 			blockRotationBehaviourMap.put( "rotate left fast", blocked );
@@ -77,23 +89,49 @@ public class ViewerModesModel
 		return blockRotationBehaviourMap;
 	}
 
-	public void blockTranslation()
+	/**
+	 * {@code NavigationModeChangeListener}s can be added/removed here.
+	 */
+	public Listeners< NavigationModeChangeListener > changeListeners()
 	{
-		bindings.addBehaviourMap( BLOCK_TRANSLATION_KEY, getBlockTranslationBehaviourMap() );
+		return listeners;
 	}
 
-	public void unblockTranslation()
+	public boolean isTranslationBlocked()
 	{
-		bindings.removeBehaviourMap( BLOCK_TRANSLATION_KEY );
+		return isTranslationBlocked;
 	}
 
-	public void blockRotation()
+	public void setTranslationBlocked( boolean isBlocked )
 	{
-		bindings.addBehaviourMap( BLOCK_ROTATION_KEY, getBlockRotationBehaviourMap() );
+		System.out.println( "NavigationModesModel.setTranslationBlocked" );
+		System.out.println( "isBlocked = " + isBlocked );
+		final boolean notify = isTranslationBlocked != isBlocked;
+		isTranslationBlocked = isBlocked;
+		if ( isBlocked )
+			bindings.addBehaviourMap( BLOCK_TRANSLATION_KEY, getBlockTranslationBehaviourMap() );
+		else
+			bindings.removeBehaviourMap( BLOCK_TRANSLATION_KEY );
+		if ( notify )
+			listeners.list.forEach( NavigationModeChangeListener::navigationModeChanged );
 	}
 
-	public void unblockRotation()
+	public boolean isRotationBlocked()
 	{
-		bindings.removeBehaviourMap( BLOCK_ROTATION_KEY );
+		return isRotationBlocked;
+	}
+
+	public void setRotationBlocked( boolean isBlocked )
+	{
+		System.out.println( "NavigationModesModel.setRotationBlocked" );
+		System.out.println( "isBlocked = " + isBlocked );
+		final boolean notify = isRotationBlocked != isBlocked;
+		isRotationBlocked = isBlocked;
+		if ( isBlocked )
+			bindings.addBehaviourMap( BLOCK_ROTATION_KEY, getBlockRotationBehaviourMap() );
+		else
+			bindings.removeBehaviourMap( BLOCK_ROTATION_KEY );
+		if ( notify )
+			listeners.list.forEach( NavigationModeChangeListener::navigationModeChanged );
 	}
 }
