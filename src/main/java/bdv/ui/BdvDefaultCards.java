@@ -23,6 +23,7 @@ import javax.swing.tree.TreeSelectionModel;
 /**
  * Default cards added to the card panel.
  * <ul>
+ * <li>Display Modes</li>
  * <li>SourceTable with ConverterSetup editor</li>
  * <li>SourceGroupTree with ConverterSetup editor</li>
  * </ul>
