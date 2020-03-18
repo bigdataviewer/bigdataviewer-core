@@ -14,7 +14,7 @@ import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
  *
  * @author Tim-Oliver Buchholz, CSBD/MPI-CBG, Dresden
  */
-public class NavigationModesModel
+class NavigationModesModel
 {
 	private static final String BLOCK_ROTATION_KEY = "block rotation";
 	private static final String BLOCK_TRANSLATION_KEY = "block translation";
@@ -104,8 +104,6 @@ public class NavigationModesModel
 
 	public void setTranslationBlocked( boolean isBlocked )
 	{
-		System.out.println( "NavigationModesModel.setTranslationBlocked" );
-		System.out.println( "isBlocked = " + isBlocked );
 		final boolean notify = isTranslationBlocked != isBlocked;
 		isTranslationBlocked = isBlocked;
 		if ( isBlocked )
@@ -123,8 +121,6 @@ public class NavigationModesModel
 
 	public void setRotationBlocked( boolean isBlocked )
 	{
-		System.out.println( "NavigationModesModel.setRotationBlocked" );
-		System.out.println( "isBlocked = " + isBlocked );
 		final boolean notify = isRotationBlocked != isBlocked;
 		isRotationBlocked = isBlocked;
 		if ( isBlocked )

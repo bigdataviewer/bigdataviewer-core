@@ -4,13 +4,9 @@ import bdv.viewer.DisplayMode;
 import bdv.viewer.Interpolation;
 import bdv.viewer.ViewerState;
 import java.awt.Color;
-import java.awt.Dimension;
-import java.awt.Font;
-import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JToggleButton;
 import javax.swing.SwingUtilities;
 import net.miginfocom.swing.MigLayout;
 
@@ -86,79 +82,21 @@ public class DisplaySettingsPanel extends JPanel
 			}
 		} );
 
-		fusion.button.addActionListener( e -> {
-			state.setDisplayMode( state.getDisplayMode().withFused( fusion.button.isSelected() ) );
+		fusion.addActionListener( e -> {
+			state.setDisplayMode( state.getDisplayMode().withFused( fusion.isSelected() ) );
 		} );
 
-		grouping.button.addActionListener( e -> {
-			state.setDisplayMode( state.getDisplayMode().withGrouping( grouping.button.isSelected() ) );
+		grouping.addActionListener( e -> {
+			state.setDisplayMode( state.getDisplayMode().withGrouping( grouping.isSelected() ) );
 		} );
 
-		interpolation.button.addActionListener( e -> {
-			state.setInterpolation( interpolation.button.isSelected() ? NLINEAR : NEARESTNEIGHBOR );
+		interpolation.addActionListener( e -> {
+			state.setInterpolation( interpolation.isSelected() ? NLINEAR : NEARESTNEIGHBOR );
 		} );
 
 		this.add( new JLabel( "Display Modes" ), "span 3, growx, center, wrap" );
 		this.add( fusion );
 		this.add( grouping );
 		this.add( interpolation );
-	}
-
-	private class LabeledToggleButton extends JPanel
-	{
-		private final String text;
-		private final String selectedText;
-		private final String tooltipText;
-		private final String selectedTooltipText;
-
-		private final JToggleButton button;
-		private final JLabel label;
-
-		public LabeledToggleButton(
-				final Icon icon,
-				final Icon selectedIcon,
-				final String text,
-				final String selectedText,
-				final String tooltipText,
-				final String selectedTooltipText )
-		{
-			this.text = text;
-			this.selectedText = selectedText;
-			this.tooltipText = tooltipText;
-			this.selectedTooltipText = selectedTooltipText;
-			this.setLayout( new MigLayout( "ins 0, fillx, filly", "[]", "[]0lp![]" ) );
-			this.setBackground( Color.white );
-
-			button = new JToggleButton( icon );
-			button.setSelectedIcon( selectedIcon );
-			setLook( button );
-
-			label = new JLabel( text );
-			setFont( label );
-
-			this.add( button, "growx, center, wrap" );
-			this.add( label, "center" );
-		}
-
-		public void setSelected( final boolean selected )
-		{
-			button.setSelected( selected );
-			label.setText( selected ? selectedText : text );
-			button.setToolTipText( selected ? selectedTooltipText : tooltipText );
-		}
-
-		private void setFont( final JLabel label )
-		{
-			label.setFont( new Font( Font.MONOSPACED, Font.BOLD, 9 ) );
-		}
-
-		private void setLook( final JToggleButton button )
-		{
-			button.setMaximumSize( new Dimension( button.getIcon().getIconWidth(), button.getIcon().getIconHeight() ) );
-			button.setBackground( Color.white );
-			button.setBorderPainted( false );
-			button.setFocusPainted( false );
-			button.setContentAreaFilled( false );
-		}
 	}
 }
