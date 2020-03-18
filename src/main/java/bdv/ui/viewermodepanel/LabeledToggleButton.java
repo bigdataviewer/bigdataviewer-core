@@ -3,7 +3,6 @@ package bdv.ui.viewermodepanel;
 import java.awt.Font;
 import javax.swing.Icon;
 import javax.swing.JLabel;
-import javax.swing.JToggleButton;
 
 class LabeledToggleButton extends ToggleButton
 {

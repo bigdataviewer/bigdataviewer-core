@@ -2,7 +2,6 @@ package bdv.ui.viewermodepanel;
 
 import java.awt.Color;
 import javax.swing.ImageIcon;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import net.miginfocom.swing.MigLayout;
@@ -61,7 +60,6 @@ class NavigationModesPanel extends JPanel
 			model.setRotationBlocked( rotation.isSelected() );
 		} );
 
-		this.add( new JLabel( "Navigation" ), "span 2, growx, center, wrap" );
 		this.add( translation );
 		this.add( rotation );
 	}

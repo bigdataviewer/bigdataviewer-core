@@ -1,8 +1,5 @@
 package bdv.ui.viewermodepanel;
 
-import bdv.viewer.DisplayMode;
-import bdv.viewer.ViewerStateChange;
-import bdv.viewer.ViewerStateChangeListener;
 import org.scijava.listeners.Listeners;
 import org.scijava.ui.behaviour.Behaviour;
 import org.scijava.ui.behaviour.BehaviourMap;

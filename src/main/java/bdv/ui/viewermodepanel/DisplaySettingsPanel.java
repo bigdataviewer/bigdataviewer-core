@@ -5,7 +5,6 @@ import bdv.viewer.Interpolation;
 import bdv.viewer.ViewerState;
 import java.awt.Color;
 import javax.swing.ImageIcon;
-import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import net.miginfocom.swing.MigLayout;
@@ -37,7 +36,7 @@ public class DisplaySettingsPanel extends JPanel
 
 	public DisplaySettingsPanel( final ViewerState state )
 	{
-		this.setLayout( new MigLayout( "ins 0, fillx, filly", "[][][]", "top" ) );
+		super( new MigLayout( "ins 0, fillx, filly", "[][][]", "top" ) );
 		this.setBackground( Color.white );
 
 		fusion = new LabeledToggleButton(
@@ -94,7 +93,6 @@ public class DisplaySettingsPanel extends JPanel
 			state.setInterpolation( interpolation.isSelected() ? NLINEAR : NEARESTNEIGHBOR );
 		} );
 
-		this.add( new JLabel( "Display Modes" ), "span 3, growx, center, wrap" );
 		this.add( fusion );
 		this.add( grouping );
 		this.add( interpolation );
