@@ -188,15 +188,6 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	protected final CopyOnWriteArrayList< TransformListener< AffineTransform3D > > transformListeners;
 
 	/**
-	 * These listeners will be notified about changes to the
-	 * {@link #viewerTransform} that was used to render the current image. This
-	 * is intended for example for {@link OverlayRenderer}s that need to exactly
-	 * match the transform of their overlaid content to the transform of the
-	 * image.
-	 */
-	protected final CopyOnWriteArrayList< TransformListener< AffineTransform3D > > lastRenderTransformListeners;
-
-	/**
 	 * These listeners will be notified about changes to the current timepoint
 	 * {@link ViewerState#getCurrentTimepoint()}. This is done <em>before</em>
 	 * calling {@link #requestRepaint()} so listeners have the chance to
@@ -310,7 +301,6 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		visibilityAndGrouping = new VisibilityAndGrouping( state );
 
 		transformListeners = new CopyOnWriteArrayList<>();
-		lastRenderTransformListeners = new CopyOnWriteArrayList<>();
 		timePointListeners = new CopyOnWriteArrayList<>();
 		interpolationModeListeners = new CopyOnWriteArrayList<>();
 
