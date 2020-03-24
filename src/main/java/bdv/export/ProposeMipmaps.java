@@ -240,7 +240,7 @@ public class ProposeMipmaps
 		final double[] numBits = new double[ n ];
 		Arrays.setAll( numBits, d -> Math.log( m * shape[ d ] ) / Math.log( 2 ) );
 		final int[] intNumBits = new int[ n ];
-		Arrays.setAll( intNumBits, d -> ( int ) numBits[ d ] );
+		Arrays.setAll( intNumBits, d -> Math.max( 0, ( int ) numBits[ d ] ) );
 		for ( int sumIntNumBits = Arrays.stream( intNumBits ).sum(); sumIntNumBits + 1 <= sumNumBits; ++sumIntNumBits )
 		{
 			double maxDiff = 0;
