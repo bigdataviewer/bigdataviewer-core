@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -36,15 +36,15 @@ import java.awt.font.FontRenderContext;
 import java.awt.font.TextLayout;
 import java.awt.geom.Rectangle2D;
 import java.text.DecimalFormat;
-import java.util.List;
 
-import mpicbg.spim.data.sequence.VoxelDimensions;
 import net.imglib2.realtransform.AffineTransform3D;
+
 import bdv.util.Affine3DHelpers;
 import bdv.util.Prefs;
 import bdv.viewer.Source;
-import bdv.viewer.state.SourceState;
-import bdv.viewer.state.ViewerState;
+import bdv.viewer.SourceAndConverter;
+import bdv.viewer.ViewerState;
+import mpicbg.spim.data.sequence.VoxelDimensions;
 
 public class ScaleBarOverlayRenderer
 {
@@ -116,86 +116,101 @@ public class ScaleBarOverlayRenderer
 	/**
 	 * Update data to show in the overlay.
 	 */
+	@Deprecated
+	public synchronized void setViewerState( final bdv.viewer.state.ViewerState state )
+	{
+		synchronized ( state )
+		{
+			setViewerState( state.getState() );
+		}
+	}
+
+	/**
+	 * Update data to show in the overlay.
+	 */
 	public synchronized void setViewerState( final ViewerState state )
 	{
 		synchronized ( state )
 		{
-			final List< SourceState< ? > > sources = state.getSources();
-			if ( ! sources.isEmpty() )
+			final SourceAndConverter< ? > current = state.getCurrentSource();
+			if ( current == null )
 			{
-				final Source< ? > spimSource = sources.get( state.getCurrentSource() ).getSpimSource();
-				final VoxelDimensions voxelDimensions = spimSource.getVoxelDimensions();
-				if ( voxelDimensions == null )
+				drawScaleBar = false;
+				return;
+			}
+
+			final Source< ? > spimSource = current.getSpimSource();
+			final VoxelDimensions voxelDimensions = spimSource.getVoxelDimensions();
+			if ( voxelDimensions == null )
+			{
+				drawScaleBar = false;
+				return;
+			}
+			drawScaleBar = true;
+
+			state.getViewerTransform( transform );
+
+			final int t = state.getCurrentTimepoint();
+			spimSource.getSourceTransform( t, 0, sourceTransform );
+			transform.concatenate( sourceTransform );
+			final double sizeOfOnePixel = voxelDimensions.dimension( 0 ) / Affine3DHelpers.extractScale( transform, 0 );
+
+			// find good scaleBarLength and corresponding scale value
+			final double sT = targetScaleBarLength * sizeOfOnePixel;
+			final double pot = Math.floor( Math.log10( sT ) );
+			final double l2 =  sT / Math.pow( 10, pot );
+			final int fracs = ( int ) ( 0.1 * l2 * subdivPerPowerOfTen );
+			final double scale1 = ( fracs > 0 ) ? Math.pow( 10, pot + 1 ) * fracs / subdivPerPowerOfTen : Math.pow( 10, pot );
+			final double scale2 = ( fracs == 3 ) ? Math.pow( 10, pot + 1 ) : Math.pow( 10, pot + 1 ) * ( fracs + 1 ) / subdivPerPowerOfTen;
+
+			final double lB1 = scale1 / sizeOfOnePixel;
+			final double lB2 = scale2 / sizeOfOnePixel;
+
+			if ( Math.abs( lB1 - targetScaleBarLength ) < Math.abs( lB2 - targetScaleBarLength ) )
+			{
+				scale = scale1;
+				scaleBarLength = lB1;
+			}
+			else
+			{
+				scale = scale2;
+				scaleBarLength = lB2;
+			}
+
+			// If unit is a known unit (such as nm) then try to modify scale
+			// and unit such that the displayed string is short.
+			// For example, replace "0.021 µm" by "21 nm".
+			String scaleUnit = voxelDimensions.unit();
+			if ( "um".equals( scaleUnit ) )
+				scaleUnit = "µm";
+			int scaleUnitIndex = -1;
+			for ( int i = 0; i < lengthUnits.length; ++i )
+				if ( lengthUnits[ i ].equals( scaleUnit ) )
 				{
-					drawScaleBar = false;
-					return;
+					scaleUnitIndex = i;
+					break;
 				}
-				drawScaleBar = true;
-
-				state.getViewerTransform( transform );
-
-				final int t = state.getCurrentTimepoint();
-				spimSource.getSourceTransform( t, 0, sourceTransform );
-				transform.concatenate( sourceTransform );
-				final double sizeOfOnePixel = voxelDimensions.dimension( 0 ) / Affine3DHelpers.extractScale( transform, 0 );
-
-				// find good scaleBarLength and corresponding scale value
-				final double sT = targetScaleBarLength * sizeOfOnePixel;
-				final double pot = Math.floor( Math.log10( sT ) );
-				final double l2 =  sT / Math.pow( 10, pot );
-				final int fracs = ( int ) ( 0.1 * l2 * subdivPerPowerOfTen );
-				final double scale1 = ( fracs > 0 ) ? Math.pow( 10, pot + 1 ) * fracs / subdivPerPowerOfTen : Math.pow( 10, pot );
-				final double scale2 = ( fracs == 3 ) ? Math.pow( 10, pot + 1 ) : Math.pow( 10, pot + 1 ) * ( fracs + 1 ) / subdivPerPowerOfTen;
-
-				final double lB1 = scale1 / sizeOfOnePixel;
-				final double lB2 = scale2 / sizeOfOnePixel;
-
-				if ( Math.abs( lB1 - targetScaleBarLength ) < Math.abs( lB2 - targetScaleBarLength ) )
+			if ( scaleUnitIndex >= 0 )
+			{
+				int shifts = ( int ) Math.floor( ( Math.log10( scale ) + 1 ) / 3 );
+				int shiftedIndex = scaleUnitIndex + shifts;
+				if ( shiftedIndex < 0 )
 				{
-					scale = scale1;
-					scaleBarLength = lB1;
+					shifts = -scaleUnitIndex;
+					shiftedIndex = 0;
 				}
-				else
+				else if ( shiftedIndex >= lengthUnits.length )
 				{
-					scale = scale2;
-					scaleBarLength = lB2;
+					shifts = lengthUnits.length - 1 - scaleUnitIndex;
+					shiftedIndex = lengthUnits.length - 1;
 				}
 
-				// If unit is a known unit (such as nm) then try to modify scale
-				// and unit such that the displayed string is short.
-				// For example, replace "0.021 µm" by "21 nm".
-				String scaleUnit = voxelDimensions.unit();
-				if ( "um".equals( scaleUnit ) )
-					scaleUnit = "µm";
-				int scaleUnitIndex = -1;
-				for ( int i = 0; i < lengthUnits.length; ++i )
-					if ( lengthUnits[ i ].equals( scaleUnit ) )
-					{
-						scaleUnitIndex = i;
-						break;
-					}
-				if ( scaleUnitIndex >= 0 )
-				{
-					int shifts = ( int ) Math.floor( ( Math.log10( scale ) + 1 ) / 3 );
-					int shiftedIndex = scaleUnitIndex + shifts;
-					if ( shiftedIndex < 0 )
-					{
-						shifts = -scaleUnitIndex;
-						shiftedIndex = 0;
-					}
-					else if ( shiftedIndex >= lengthUnits.length )
-					{
-						shifts = lengthUnits.length - 1 - scaleUnitIndex;
-						shiftedIndex = lengthUnits.length - 1;
-					}
-
-					scale = scale / Math.pow( 1000, shifts );
-					unit = lengthUnits[ shiftedIndex ];
-				}
-				else
-				{
-					unit = scaleUnit;
-				}
+				scale = scale / Math.pow( 1000, shifts );
+				unit = lengthUnits[ shiftedIndex ];
+			}
+			else
+			{
+				unit = scaleUnit;
 			}
 		}
 	}

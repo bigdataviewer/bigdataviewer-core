@@ -29,6 +29,7 @@
  */
 package bdv.viewer.render;
 
+import bdv.viewer.SourceAndConverter;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
 
@@ -53,11 +54,46 @@ public interface AccumulateProjectorFactory< A >
 	 * @param executorService
 	 *            {@link ExecutorService} to use for rendering. may be null.
 	 */
-	public VolatileProjector createAccumulateProjector(
+	default VolatileProjector createProjector(
+			final ArrayList< VolatileProjector > sourceProjectors,
+			final ArrayList< SourceAndConverter< ? > > sources,
+			final ArrayList< ? extends RandomAccessible< ? extends A > > sourceScreenImages,
+			final RandomAccessibleInterval< A > targetScreenImage,
+			final int numThreads,
+			final ExecutorService executorService )
+	{
+		final ArrayList< Source< ? > > spimSources = new ArrayList<>();
+		for ( SourceAndConverter< ? > source : sources )
+			spimSources.add( source.getSpimSource() );
+		return createAccumulateProjector( sourceProjectors, spimSources, sourceScreenImages, targetScreenImage, numThreads, executorService );
+	}
+
+	/**
+	 * @deprecated Use {@link #createProjector(ArrayList, ArrayList, ArrayList, RandomAccessibleInterval, int, ExecutorService)} instead.
+	 *
+	 * @param sourceProjectors
+	 *            projectors that will be used to render {@code sources}.
+	 * @param sources
+	 *            sources to identify which channels are being rendered
+	 * @param sourceScreenImages
+	 *            rendered images that will be accumulated into
+	 *            {@code target}.
+	 * @param targetScreenImage
+	 *            final image to render.
+	 * @param numThreads
+	 *            how many threads to use for rendering.
+	 * @param executorService
+	 *            {@link ExecutorService} to use for rendering. may be null.
+	 */
+	@Deprecated
+	default VolatileProjector createAccumulateProjector(
 			final ArrayList< VolatileProjector > sourceProjectors,
 			final ArrayList< Source< ? > > sources,
 			final ArrayList< ? extends RandomAccessible< ? extends A > > sourceScreenImages,
 			final RandomAccessibleInterval< A > targetScreenImage,
 			final int numThreads,
-			final ExecutorService executorService );
+			final ExecutorService executorService )
+	{
+		throw new UnsupportedOperationException( "AccumulateProjectorFactory::createAccumulateProjector is deprecated and by default not implemented" );
+	}
 }

@@ -29,22 +29,19 @@
  */
 package bdv.tools.boundingbox;
 
-import bdv.tools.brightness.SetupAssignments;
+import bdv.util.Bounds;
 import bdv.util.PlaceHolderConverterSetup;
+import bdv.viewer.ConverterSetups;
 import bdv.viewer.DisplayMode;
-import bdv.viewer.Source;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerPanel;
-import bdv.viewer.VisibilityAndGrouping;
-import bdv.viewer.VisibilityAndGrouping.Event;
-import bdv.viewer.state.SourceGroup;
-import bdv.viewer.state.SourceState;
-import bdv.viewer.state.ViewerState;
+import bdv.viewer.ViewerState;
+import bdv.viewer.ViewerStateChange;
+import bdv.viewer.ViewerStateChangeListener;
 import java.awt.Color;
 import net.imglib2.type.numeric.ARGBType;
 
-import static bdv.viewer.VisibilityAndGrouping.Event.SOURCE_ACTVITY_CHANGED;
-import static bdv.viewer.VisibilityAndGrouping.Event.VISIBILITY_CHANGED;
+import static bdv.viewer.ViewerStateChange.VISIBILITY_CHANGED;
 
 /**
  * A BDV source (and converter etc) representing a {@code TransformedBox}.
@@ -61,13 +58,11 @@ public class TransformedBoxOverlaySource
 
 	private final PlaceHolderConverterSetup boxConverterSetup;
 
-	private final Source< Void > boxSource;
-
 	private final SourceAndConverter< Void > boxSourceAndConverter;
 
 	private final ViewerPanel viewer;
 
-	private final SetupAssignments setupAssignments;
+	private final ConverterSetups setups;
 
 	private boolean isVisible;
 
@@ -76,85 +71,61 @@ public class TransformedBoxOverlaySource
 			final TransformedBoxOverlay boxOverlay,
 			final TransformedBox bbSource,
 			final ViewerPanel viewer,
-			final SetupAssignments setupAssignments )
+			final ConverterSetups converterSetups,
+			final int setupId )
 	{
 		this.boxOverlay = boxOverlay;
 		this.viewer = viewer;
-		this.setupAssignments = setupAssignments;
+		this.setups = converterSetups;
 
-		final int setupId = SetupAssignments.getUnusedSetupId( setupAssignments );
 		boxConverterSetup = new PlaceHolderConverterSetup( setupId, 0, 128, new ARGBType( 0x00994499) );
 
-		boxConverterSetup.setViewer( this::repaint );
-		boxSource = new TransformedBoxPlaceHolderSource( name, bbSource );
-		boxSourceAndConverter = new SourceAndConverter<>( boxSource, ( input, output ) -> output.set( 0 ) );
+		boxConverterSetup.setupChangeListeners().add( s -> this.repaint() );
+		boxSourceAndConverter = new SourceAndConverter<>(
+				new TransformedBoxPlaceHolderSource( name, bbSource ),
+				( input, output ) -> output.set( 0 ) );
 	}
 
 	public void addToViewer()
 	{
-		final VisibilityAndGrouping vg = viewer.getVisibilityAndGrouping();
-		if ( vg.getDisplayMode() != DisplayMode.FUSED )
+		final ViewerState state = viewer.state();
+		synchronized ( state )
 		{
-			final int numSources = vg.numSources();
-			for ( int i = 0; i < numSources; ++i )
-				vg.setSourceActive( i, vg.isSourceVisible( i ) );
-			vg.setDisplayMode( DisplayMode.FUSED );
+			if ( state.getDisplayMode() != DisplayMode.FUSED )
+			{
+				for ( SourceAndConverter< ? > source : state.getSources() )
+					state.setSourceActive( source, state.isSourceVisible( source ) );
+				state.setDisplayMode( DisplayMode.FUSED );
+			}
+
+			state.addSource( boxSourceAndConverter );
+			state.changeListeners().add( viewerStateChangeListener );
+			state.setSourceActive( boxSourceAndConverter, true );
+			state.setCurrentSource( boxSourceAndConverter );
+
+			isVisible = state.isSourceVisible( boxSourceAndConverter );
 		}
 
-		viewer.addSource( boxSourceAndConverter );
-		vg.addUpdateListener( visibilityChanged );
-		vg.setSourceActive( boxSource, true );
-		vg.setCurrentSource( boxSource );
+		setups.put( boxSourceAndConverter, boxConverterSetup );
+		setups.getBounds().setBounds( boxConverterSetup, new Bounds( 0, 255 ) );
 
-		setupAssignments.addSetup( boxConverterSetup );
-		setupAssignments.getMinMaxGroup( boxConverterSetup ).setRange( 0, 255 );
-
-		isVisible = isVisible();
 		repaint();
 	}
 
 	public void removeFromViewer()
 	{
-		final VisibilityAndGrouping vg = viewer.getVisibilityAndGrouping();
-		vg.removeUpdateListener( visibilityChanged );
-		viewer.removeSource( boxSource );
-		setupAssignments.removeSetup( boxConverterSetup );
+		viewer.state().changeListeners().remove( viewerStateChangeListener );
+		viewer.state().removeSource( boxSourceAndConverter );
 	}
 
-	private boolean isVisible()
-	{
-		final ViewerState state = viewer.getState();
-		int sourceIndex = 0;
-		for ( final SourceState< ? > s : state.getSources() )
-			if ( s.getSpimSource() == boxSource )
-				break;
-			else
-				++sourceIndex;
-		switch ( state.getDisplayMode() )
-		{
-		case SINGLE:
-			return ( sourceIndex == state.getCurrentSource() );
-		case GROUP:
-			return state.getSourceGroups().get( state.getCurrentGroup() ).getSourceIds().contains( sourceIndex );
-		case FUSED:
-			return state.getSources().get( sourceIndex ).isActive();
-		case FUSEDGROUP:
-		default:
-			for ( final SourceGroup group : state.getSourceGroups() )
-				if ( group.isActive() && group.getSourceIds().contains( sourceIndex ) )
-					return true;
-		}
-		return false;
-	}
+	private final ViewerStateChangeListener viewerStateChangeListener = this::viewerStateChanged;
 
-	private final VisibilityAndGrouping.UpdateListener visibilityChanged = this::visibilityChanged;
-
-	private void visibilityChanged( final Event e )
+	private void viewerStateChanged( final ViewerStateChange change )
 	{
-		if ( e.id == VISIBILITY_CHANGED || e.id == SOURCE_ACTVITY_CHANGED )
+		if ( change == VISIBILITY_CHANGED )
 		{
 			final boolean wasVisible = isVisible;
-			isVisible = isVisible();
+			isVisible = viewer.state().isSourceVisible( boxSourceAndConverter );
 			if ( wasVisible != isVisible )
 				repaint();
 		}
@@ -162,6 +133,7 @@ public class TransformedBoxOverlaySource
 
 	private void repaint()
 	{
+		System.out.println( "TransformedBoxOverlaySource.repaint" );
 		boxOverlay.fillIntersection( isVisible );
 		if ( isVisible )
 		{

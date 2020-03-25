@@ -29,10 +29,9 @@
  */
 package bdv.viewer.render;
 
+import bdv.viewer.SourceAndConverter;
 import java.util.ArrayList;
 import java.util.concurrent.ExecutorService;
-
-import bdv.viewer.Source;
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
@@ -43,15 +42,15 @@ public class AccumulateProjectorARGB extends AccumulateProjector< ARGBType, ARGB
 	public static AccumulateProjectorFactory< ARGBType > factory = new AccumulateProjectorFactory< ARGBType >()
 	{
 		@Override
-		public AccumulateProjectorARGB createAccumulateProjector(
+		public AccumulateProjectorARGB createProjector(
 				final ArrayList< VolatileProjector > sourceProjectors,
-				final ArrayList< Source< ? > > sources,
+				final ArrayList< SourceAndConverter< ? > > sources,
 				final ArrayList< ? extends RandomAccessible< ? extends ARGBType > > sourceScreenImages,
-				final RandomAccessibleInterval< ARGBType > targetScreenImages,
+				final RandomAccessibleInterval< ARGBType > targetScreenImage,
 				final int numThreads,
 				final ExecutorService executorService )
 		{
-			return new AccumulateProjectorARGB( sourceProjectors, sourceScreenImages, targetScreenImages, numThreads, executorService );
+			return new AccumulateProjectorARGB( sourceProjectors, sourceScreenImages, targetScreenImage, numThreads, executorService );
 		}
 	};
 

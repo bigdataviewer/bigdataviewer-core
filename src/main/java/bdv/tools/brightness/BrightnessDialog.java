@@ -74,6 +74,7 @@ import net.imglib2.type.numeric.ARGBType;
  *
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
+@Deprecated
 public class BrightnessDialog extends JDialog
 {
 	public BrightnessDialog( final Frame owner, final SetupAssignments setupAssignments )

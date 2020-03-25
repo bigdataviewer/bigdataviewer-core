@@ -40,7 +40,7 @@ import bdv.img.cache.VolatileGlobalCellCache;
  * {@link VolatileGlobalCellCache}, these can be simply implemented to do
  * nothing.
  *
- * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+ * @author Tobias Pietzsch
  */
 public interface CacheControl
 {
@@ -54,12 +54,12 @@ public interface CacheControl
 	 * previously enqueued requests to be enqueued again for the new frame.
 	 * </ul>
 	 */
-	public void prepareNextFrame();
+	void prepareNextFrame();
 
 	/**
 	 * {@link CacheControl} that does nothing.
 	 */
-	public static class Dummy implements CacheControl
+	class Dummy implements CacheControl
 	{
 		@Override
 		public void prepareNextFrame()
@@ -70,7 +70,7 @@ public interface CacheControl
 	 * {@link CacheControl} backed by a set of {@link CacheControl}s.
 	 * {@link #prepareNextFrame()} forwards to all of them.
 	 */
-	public static class CacheControls implements CacheControl
+	class CacheControls implements CacheControl
 	{
 		private final CopyOnWriteArrayList< CacheControl > cacheControls = new CopyOnWriteArrayList<>();
 
@@ -92,6 +92,11 @@ public interface CacheControl
 		public synchronized void removeCacheControl( final CacheControl cacheControl )
 		{
 			cacheControls.remove( cacheControl );
+		}
+
+		public synchronized void clear()
+		{
+			cacheControls.clear();
 		}
 
 		@Override

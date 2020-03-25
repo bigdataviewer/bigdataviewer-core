@@ -31,6 +31,7 @@ package bdv.tools.boundingbox;
 
 import static bdv.tools.boundingbox.TransformedBoxOverlay.BoxDisplayMode.FULL;
 
+import bdv.viewer.ConverterSetups;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
@@ -45,7 +46,6 @@ import org.scijava.ui.behaviour.util.Behaviours;
 import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
 
 import bdv.tools.boundingbox.TransformedBoxOverlay.BoxDisplayMode;
-import bdv.tools.brightness.SetupAssignments;
 import bdv.viewer.ViewerPanel;
 
 /**
@@ -94,17 +94,19 @@ public class TransformedBoxEditor
 	public TransformedBoxEditor(
 			final InputTriggerConfig keyconf,
 			final ViewerPanel viewer,
-			final SetupAssignments setupAssignments,
+			final ConverterSetups converterSetups,
+			final int setupId,
 			final TriggerBehaviourBindings triggerbindings,
 			final AbstractTransformedBoxModel model )
 	{
-		this( keyconf, viewer, setupAssignments, triggerbindings, model, "selection", BoxSourceType.PLACEHOLDER );
+		this( keyconf, viewer, converterSetups, setupId, triggerbindings, model, "selection", BoxSourceType.PLACEHOLDER );
 	}
 
 	public TransformedBoxEditor(
 			final InputTriggerConfig keyconf,
 			final ViewerPanel viewer,
-			final SetupAssignments setupAssignments,
+			final ConverterSetups converterSetups,
+			final int setupId,
 			final TriggerBehaviourBindings triggerbindings,
 			final AbstractTransformedBoxModel model,
 			final String boxSourceName,
@@ -129,7 +131,7 @@ public class TransformedBoxEditor
 		switch ( boxSourceType )
 		{
 		case PLACEHOLDER:
-			boxSource = new TransformedBoxOverlaySource( boxSourceName, boxOverlay, model, viewer, setupAssignments );
+			boxSource = new TransformedBoxOverlaySource( boxSourceName, boxOverlay, model, viewer, converterSetups, setupId );
 			break;
 		case NONE:
 		default:

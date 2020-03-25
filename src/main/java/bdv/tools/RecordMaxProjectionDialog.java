@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -29,6 +29,15 @@
  */
 package bdv.tools;
 
+import bdv.cache.CacheControl;
+import bdv.export.ProgressWriter;
+import bdv.util.Prefs;
+import bdv.viewer.BasicViewerState;
+import bdv.viewer.SynchronizedViewerState;
+import bdv.viewer.ViewerPanel;
+import bdv.viewer.ViewerState;
+import bdv.viewer.overlay.ScaleBarOverlayRenderer;
+import bdv.viewer.render.MultiResolutionRenderer;
 import java.awt.BorderLayout;
 import java.awt.Frame;
 import java.awt.Graphics;
@@ -40,7 +49,6 @@ import java.awt.image.BufferedImage;
 import java.awt.image.DataBufferInt;
 import java.io.File;
 import java.io.IOException;
-
 import javax.imageio.ImageIO;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
@@ -60,7 +68,6 @@ import javax.swing.SpinnerNumberModel;
 import javax.swing.WindowConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
-
 import net.imglib2.Cursor;
 import net.imglib2.display.screenimage.awt.ARGBScreenImage;
 import net.imglib2.img.Img;
@@ -71,13 +78,6 @@ import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
 import net.imglib2.util.LinAlgHelpers;
-import bdv.cache.CacheControl;
-import bdv.export.ProgressWriter;
-import bdv.util.Prefs;
-import bdv.viewer.ViewerPanel;
-import bdv.viewer.overlay.ScaleBarOverlayRenderer;
-import bdv.viewer.render.MultiResolutionRenderer;
-import bdv.viewer.state.ViewerState;
 
 public class RecordMaxProjectionDialog extends JDialog implements OverlayRenderer
 {
@@ -107,7 +107,7 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 	{
 		super( owner, "record max projection movie", false );
 		this.viewer = viewer;
-		maxTimepoint = viewer.getState().getNumTimepoints() - 1;
+		maxTimepoint = viewer.state().getNumTimepoints() - 1;
 		this.progressWriter = progressWriter;
 
 		final JPanel boxes = new JPanel();
@@ -285,7 +285,7 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 	 */
 	public void recordMovie( final int width, final int height, final int minTimepointIndex, final int maxTimepointIndex, final double stepSize, final int numSteps, final File dir ) throws IOException
 	{
-		final ViewerState renderState = viewer.getState();
+		final ViewerState renderState = new BasicViewerState( viewer.state().snapshot() );
 		final int canvasW = viewer.getDisplay().getWidth();
 		final int canvasH = viewer.getDisplay().getHeight();
 
@@ -378,7 +378,7 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 				affine.concatenate( tGV );
 				renderState.setViewerTransform( affine );
 				renderer.requestRepaint();
-				renderer.paint( renderState );
+				renderer.paint( new bdv.viewer.state.ViewerState( new SynchronizedViewerState( renderState ) ) );
 			}
 
 			final BufferedImage bi = target.accumulated.image();

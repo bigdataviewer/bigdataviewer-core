@@ -22,13 +22,15 @@ public class ColorIcon implements Icon
 
 	private final int arcHeight;
 
+	private final boolean drawOutline;
+
 	private final Color color;
 
 	private final int size; // == min(width, height)
 
-	private int ox;
+	private final int ox;
 
-	private int oy;
+	private final int oy;
 
 	public ColorIcon( final Color color )
 	{
@@ -37,15 +39,20 @@ public class ColorIcon implements Icon
 
 	public ColorIcon( final Color color, final int width, final int height, final boolean drawAsCircle )
 	{
-		this( color, width, height, drawAsCircle, 3, 3 );
+		this( color, width, height, drawAsCircle, 3, 3, false );
 	}
 
 	public ColorIcon( final Color color, final int width, final int height, final int arcWidth, final int arcHeight )
 	{
-		this( color, width, height, false, arcWidth, arcHeight );
+		this( color, width, height, false, arcWidth, arcHeight, false );
 	}
 
-	private ColorIcon( final Color color, final int width, final int height, final boolean drawAsCircle, final int arcWidth, final int arcHeight )
+	public ColorIcon( final Color color, final int width, final int height, final int arcWidth, final int arcHeight, final boolean drawOutline )
+	{
+		this( color, width, height, false, arcWidth, arcHeight, drawOutline );
+	}
+
+	private ColorIcon( final Color color, final int width, final int height, final boolean drawAsCircle, final int arcWidth, final int arcHeight, final boolean drawOutline )
 	{
 		this.color = color;
 		this.width = width;
@@ -53,6 +60,7 @@ public class ColorIcon implements Icon
 		this.drawAsCircle = drawAsCircle;
 		this.arcWidth = arcWidth;
 		this.arcHeight = arcHeight;
+		this.drawOutline = drawOutline;
 
 		size = Math.min( width, height );
 		ox = ( width - size ) / 2;
@@ -82,6 +90,15 @@ public class ColorIcon implements Icon
 				g2d.fillOval( x0, y0, size, size );
 			else
 				g2d.fillRoundRect( x, y, width, height, arcWidth, arcHeight );
+
+			if ( drawOutline )
+			{
+				g2d.setColor( c.isFocusOwner() ? new Color( 0x8FC4F9 ) : Color.gray );
+				if ( drawAsCircle )
+					g2d.drawOval( x0, y0, size, size );
+				else
+					g2d.drawRoundRect( x, y, width, height, arcWidth, arcHeight );
+			}
 		}
 	}
 

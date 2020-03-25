@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -29,6 +29,8 @@
  */
 package bdv.tools.transformation;
 
+import bdv.viewer.SynchronizedViewerState;
+import bdv.viewer.ViewerState;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -88,14 +90,23 @@ public class ManualTransformation
 
 	private ArrayList< TransformedSource< ? > > getTransformedSources()
 	{
+		final List< ? extends SourceAndConverter< ? > > sourceList;
+		if ( sources != null )
+			sourceList = sources;
+		else
+		{
+			final ViewerState state = viewer.state();
+			synchronized ( state )
+			{
+				sourceList = new ArrayList<>( state.getSources() );
+			}
+		}
+
 		final ArrayList< TransformedSource< ? > > list = new ArrayList<>();
-		final List< ? extends SourceAndConverter< ? > > sourceList = ( sources != null )
-				? sources
-				: viewer.getState().getSources();
 		for ( final SourceAndConverter< ? > soc : sourceList )
 		{
 			final Source< ? > source = soc.getSpimSource();
-			if ( TransformedSource.class.isInstance( source ) )
+			if ( source instanceof TransformedSource )
 				list.add( (TransformedSource< ? > ) source );
 		}
 		return list;

@@ -44,6 +44,7 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JDialog;
 import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
 import javax.swing.WindowConstants;
 
 import bdv.tools.boundingbox.BoxSelectionOptions.TimepointSelection;
@@ -118,7 +119,7 @@ public abstract class AbstractTransformedBoxSelectionDialog< R > extends JDialog
 		synchronized ( monitor )
 		{
 			result = null;
-			setVisible( true );
+			SwingUtilities.invokeLater( () -> setVisible( true ) );
 			while( true )
 			{
 				try
@@ -160,7 +161,7 @@ public abstract class AbstractTransformedBoxSelectionDialog< R > extends JDialog
 			mode = options.values.getTimepointSelection();
 			if ( mode == SINGLE || mode == RANGE )
 			{
-				final int tmaxViewer = viewer.getState().getNumTimepoints() - 1;
+				final int tmaxViewer = viewer.state().getNumTimepoints() - 1;
 				final int tmin = Math.max( 0, Math.min( tmaxViewer, options.values.getRangeMinTimepoint() ) );
 				final int tmax = Math.max( tmin, Math.min( tmaxViewer, options.values.getRangeMaxTimepoint() ) );;
 

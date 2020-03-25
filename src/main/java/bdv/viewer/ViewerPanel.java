@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -29,15 +29,6 @@
  */
 package bdv.viewer;
 
-import static bdv.viewer.VisibilityAndGrouping.Event.CURRENT_SOURCE_CHANGED;
-import static bdv.viewer.VisibilityAndGrouping.Event.DISPLAY_MODE_CHANGED;
-import static bdv.viewer.VisibilityAndGrouping.Event.GROUP_ACTIVITY_CHANGED;
-import static bdv.viewer.VisibilityAndGrouping.Event.GROUP_NAME_CHANGED;
-import static bdv.viewer.VisibilityAndGrouping.Event.NUM_GROUPS_CHANGED;
-import static bdv.viewer.VisibilityAndGrouping.Event.NUM_SOURCES_CHANGED;
-import static bdv.viewer.VisibilityAndGrouping.Event.SOURCE_ACTVITY_CHANGED;
-import static bdv.viewer.VisibilityAndGrouping.Event.VISIBILITY_CHANGED;
-
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
@@ -48,8 +39,8 @@ import java.awt.event.ComponentEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -63,6 +54,7 @@ import javax.swing.DefaultBoundedRangeModel;
 import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.SwingConstants;
+import javax.swing.SwingUtilities;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -84,7 +76,6 @@ import bdv.viewer.overlay.SourceInfoOverlayRenderer;
 import bdv.viewer.render.MultiResolutionRenderer;
 import bdv.viewer.render.TransformAwareBufferedImageOverlayRenderer;
 import bdv.viewer.state.SourceGroup;
-import bdv.viewer.state.SourceState;
 import bdv.viewer.state.ViewerState;
 import bdv.viewer.state.XmlIoViewerState;
 import net.imglib2.Positionable;
@@ -108,9 +99,9 @@ import net.imglib2.util.LinAlgHelpers;
  * {@link PainterThread} for painting, which is started on construction (use
  * {@link #stop() to stop the PainterThread}.
  *
- * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+ * @author Tobias Pietzsch
  */
-public class ViewerPanel extends JPanel implements OverlayRenderer, TransformListener< AffineTransform3D >, PainterThread.Paintable, VisibilityAndGrouping.UpdateListener, RequestRepaint
+public class ViewerPanel extends JPanel implements OverlayRenderer, TransformListener< AffineTransform3D >, PainterThread.Paintable, ViewerStateChangeListener, RequestRepaint
 {
 	private static final long serialVersionUID = 1L;
 
@@ -195,15 +186,6 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 * {@link #requestRepaint()} so listeners have the chance to interfere.
 	 */
 	protected final CopyOnWriteArrayList< TransformListener< AffineTransform3D > > transformListeners;
-
-	/**
-	 * These listeners will be notified about changes to the
-	 * {@link #viewerTransform} that was used to render the current image. This
-	 * is intended for example for {@link OverlayRenderer}s that need to exactly
-	 * match the transform of their overlaid content to the transform of the
-	 * image.
-	 */
-	protected final CopyOnWriteArrayList< TransformListener< AffineTransform3D > > lastRenderTransformListeners;
 
 	/**
 	 * These listeners will be notified about changes to the current timepoint
@@ -314,12 +296,11 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		add( display, BorderLayout.CENTER );
 		if ( numTimepoints > 1 )
 			add( sliderTime, BorderLayout.SOUTH );
+		setFocusable( false );
 
 		visibilityAndGrouping = new VisibilityAndGrouping( state );
-		visibilityAndGrouping.addUpdateListener( this );
 
 		transformListeners = new CopyOnWriteArrayList<>();
-		lastRenderTransformListeners = new CopyOnWriteArrayList<>();
 		timePointListeners = new CopyOnWriteArrayList<>();
 		interpolationModeListeners = new CopyOnWriteArrayList<>();
 
@@ -339,75 +320,95 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 			}
 		} );
 
+		state.getState().changeListeners().add( this );
+
 		painterThread.start();
 	}
 
+	/**
+	 * @deprecated Modify {@link #state()} directly
+	 */
+	@Deprecated
 	public void addSource( final SourceAndConverter< ? > sourceAndConverter )
 	{
-		synchronized ( visibilityAndGrouping )
-		{
-			state.addSource( sourceAndConverter );
-			visibilityAndGrouping.update( NUM_SOURCES_CHANGED );
-		}
-		requestRepaint();
+		state().addSource( sourceAndConverter );
+		state().setSourceActive( sourceAndConverter, true );
 	}
 
+	/**
+	 * @deprecated Modify {@link #state()} directly
+	 */
+	@Deprecated
 	public void addSources( final Collection< SourceAndConverter< ? > > sourceAndConverter )
 	{
-		synchronized ( visibilityAndGrouping )
-		{
-			sourceAndConverter.forEach( state::addSource );
-			visibilityAndGrouping.update( NUM_SOURCES_CHANGED );
-		}
-		requestRepaint();
+		state().addSources( sourceAndConverter );
 	}
 
+	// helper for deprecated methods taking Source<?>
+	@Deprecated
+	private SourceAndConverter< ? > soc( final Source< ? > source )
+	{
+		for ( final SourceAndConverter< ? > soc : state().getSources() )
+			if ( soc.getSpimSource() == source )
+				return soc;
+		return null;
+	}
+
+	/**
+	 * @deprecated Modify {@link #state()} directly
+	 */
+	@Deprecated
 	public void removeSource( final Source< ? > source )
 	{
-		synchronized ( visibilityAndGrouping )
+		synchronized ( state() )
 		{
-			state.removeSource( source );
-			visibilityAndGrouping.update( NUM_SOURCES_CHANGED );
+			state().removeSource( soc( source ) );
 		}
-		requestRepaint();
 	}
 
+	/**
+	 * @deprecated Modify {@link #state()} directly
+	 */
+	@Deprecated
 	public void removeSources( final Collection< Source< ? > > sources )
 	{
-		synchronized ( visibilityAndGrouping )
+		synchronized ( state() )
 		{
-			sources.forEach( state::removeSource );
-			visibilityAndGrouping.update( NUM_SOURCES_CHANGED );
+			state().removeSources( sources.stream().map( this::soc ).collect( Collectors.toList() ) );
 		}
-		requestRepaint();
 	}
 
+	/**
+	 * @deprecated Modify {@link #state()} directly
+	 */
+	@Deprecated
 	public void removeAllSources()
 	{
-		synchronized ( visibilityAndGrouping )
-		{
-			removeSources( getState().getSources().stream().map( SourceAndConverter::getSpimSource ).collect( Collectors.toList() ) );
-		}
+		state().clearSources();
 	}
 
+	/**
+	 * @deprecated Modify {@link #state()} directly
+	 */
+	@Deprecated
 	public void addGroup( final SourceGroup group )
 	{
-		synchronized ( visibilityAndGrouping )
+		synchronized ( state() )
 		{
 			state.addGroup( group );
-			visibilityAndGrouping.update( NUM_GROUPS_CHANGED );
 		}
-		requestRepaint();
 	}
 
+	/**
+	 * @deprecated Modify {@link #state()} directly
+	 */
+	@Deprecated
 	public void removeGroup( final SourceGroup group )
 	{
-		synchronized ( visibilityAndGrouping )
+		synchronized ( state() )
 		{
 			state.removeGroup( group );
-			visibilityAndGrouping.update( NUM_GROUPS_CHANGED );
 		}
-		requestRepaint();
 	}
 
 	/**
@@ -515,15 +516,15 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		boolean requiresRepaint = false;
 		if ( Prefs.showMultibox() )
 		{
-			multiBoxOverlayRenderer.setViewerState( state );
+			multiBoxOverlayRenderer.setViewerState( state() );
 			multiBoxOverlayRenderer.updateVirtualScreenSize( display.getWidth(), display.getHeight() );
 			multiBoxOverlayRenderer.paint( ( Graphics2D ) g );
 			requiresRepaint = multiBoxOverlayRenderer.isHighlightInProgress();
 		}
 
-		if( Prefs.showTextOverlay() )
+		if ( Prefs.showTextOverlay() )
 		{
-			sourceInfoOverlayRenderer.setViewerState( state );
+			sourceInfoOverlayRenderer.setViewerState( state() );
 			sourceInfoOverlayRenderer.paint( ( Graphics2D ) g );
 
 			final RealPoint gPos = new RealPoint( 3 );
@@ -537,7 +538,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 		if ( Prefs.showScaleBar() )
 		{
-			scaleBarOverlayRenderer.setViewerState( state );
+			scaleBarOverlayRenderer.setViewerState( state() );
 			scaleBarOverlayRenderer.paint( ( Graphics2D ) g );
 		}
 
@@ -567,22 +568,25 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	}
 
 	@Override
-	public void visibilityChanged( final VisibilityAndGrouping.Event e )
+	public void viewerStateChanged( final ViewerStateChange change )
 	{
-		switch ( e.id )
+		switch ( change )
 		{
 		case CURRENT_SOURCE_CHANGED:
-			multiBoxOverlayRenderer.highlight( visibilityAndGrouping.getCurrentSource() );
+			multiBoxOverlayRenderer.highlight( state().getSources().indexOf( state().getCurrentSource() ) );
 			display.repaint();
 			break;
 		case DISPLAY_MODE_CHANGED:
-			showMessage( visibilityAndGrouping.getDisplayMode().getName() );
+			showMessage( state().getDisplayMode().getName() );
 			display.repaint();
 			break;
 		case GROUP_NAME_CHANGED:
 			display.repaint();
 			break;
-		case SOURCE_ACTVITY_CHANGED:
+		case CURRENT_GROUP_CHANGED:
+			// TODO multiBoxOverlayRenderer.highlight() all sources in group that became current
+			break;
+		case SOURCE_ACTIVITY_CHANGED:
 			// TODO multiBoxOverlayRenderer.highlight() all sources that became visible
 			break;
 		case GROUP_ACTIVITY_CHANGED:
@@ -591,6 +595,43 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		case VISIBILITY_CHANGED:
 			requestRepaint();
 			break;
+//		case SOURCE_TO_GROUP_ASSIGNMENT_CHANGED:
+//		case NUM_SOURCES_CHANGED:
+//		case NUM_GROUPS_CHANGED:
+		case INTERPOLATION_CHANGED:
+			final Interpolation interpolation = state().getInterpolation();
+			showMessage( interpolation.getName() );
+			for ( final InterpolationModeListener l : interpolationModeListeners )
+				l.interpolationModeChanged( interpolation );
+			requestRepaint();
+			break;
+		case NUM_TIMEPOINTS_CHANGED:
+		{
+			final int numTimepoints = state().getNumTimepoints();
+			final int timepoint = Math.max( 0, Math.min( state.getCurrentTimepoint(), numTimepoints - 1 ) );
+			SwingUtilities.invokeLater( () -> {
+				final boolean sliderVisible = Arrays.asList( getComponents() ).contains( sliderTime );
+				if ( numTimepoints > 1 && !sliderVisible )
+					add( sliderTime, BorderLayout.SOUTH );
+				else if ( numTimepoints == 1 && sliderVisible )
+					remove( sliderTime );
+				sliderTime.setModel( new DefaultBoundedRangeModel( timepoint, 0, 0, numTimepoints - 1 ) );
+				revalidate();
+			} );
+			break;
+		}
+		case CURRENT_TIMEPOINT_CHANGED:
+		{
+			final int timepoint = state().getCurrentTimepoint();
+			SwingUtilities.invokeLater( () -> {
+				sliderTime.setValue( timepoint );
+				for ( final TimePointListener l : timePointListeners )
+					l.timePointChanged( timepoint );
+				requestRepaint();
+			} );
+			break;
+		}
+//		case VIEWER_TRANSFORM_CHANGED:
 		}
 	}
 
@@ -600,7 +641,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 * The planes which can be aligned with the viewer coordinate system: XY,
 	 * ZY, and XZ plane.
 	 */
-	public static enum AlignPlane
+	public enum AlignPlane
 	{
 		XY( "XY", 2, new double[] { 1, 0, 0, 0 } ),
 		ZY( "ZY", 0, new double[] { c, 0, -c, 0 } ),
@@ -643,9 +684,9 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 */
 	protected synchronized void align( final AlignPlane plane )
 	{
-		final SourceState< ? > source = state.getSources().get( state.getCurrentSource() );
+		final Source< ? > source = state().getCurrentSource().getSpimSource();
 		final AffineTransform3D sourceTransform = new AffineTransform3D();
-		source.getSpimSource().getSourceTransform( state.getCurrentTimepoint(), 0, sourceTransform );
+		source.getSourceTransform( state.getCurrentTimepoint(), 0, sourceTransform );
 
 		final double[] qSource = new double[ 4 ];
 		Affine3DHelpers.extractRotationAnisotropic( sourceTransform, qSource );
@@ -686,36 +727,28 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 * Switch to next interpolation mode. (Currently, there are two
 	 * interpolation modes: nearest-neighbor and N-linear.)
 	 */
+	// TODO: Deprecate or leave as convenience?
 	public synchronized void toggleInterpolation()
 	{
-		final int i = state.getInterpolation().ordinal();
-		final int n = Interpolation.values().length;
-		final Interpolation mode = Interpolation.values()[ ( i + 1 ) % n ];
-		setInterpolation( mode );
+		state().setInterpolation( state().getInterpolation().next() );
 	}
 
 	/**
 	 * Set the {@link Interpolation} mode.
 	 */
+	// TODO: Deprecate or leave as convenience?
 	public synchronized void setInterpolation( final Interpolation mode )
 	{
-		final Interpolation interpolation = state.getInterpolation();
-		if ( mode != interpolation )
-		{
-			state.setInterpolation( mode );
-			showMessage( mode.getName() );
-			for ( final InterpolationModeListener l : interpolationModeListeners )
-				l.interpolationModeChanged( state.getInterpolation() );
-			requestRepaint();
-		}
+		state().setInterpolation( mode );
 	}
 
 	/**
 	 * Set the {@link DisplayMode}.
 	 */
+	// TODO: Deprecate or leave as convenience?
 	public synchronized void setDisplayMode( final DisplayMode displayMode )
 	{
-		visibilityAndGrouping.setDisplayMode( displayMode );
+		state().setDisplayMode( displayMode );
 	}
 
 	/**
@@ -733,21 +766,16 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 * @param timepoint
 	 *            time-point index.
 	 */
+	// TODO: Deprecate or leave as convenience?
 	public synchronized void setTimepoint( final int timepoint )
 	{
-		if ( state.getCurrentTimepoint() != timepoint )
-		{
-			state.setCurrentTimepoint( timepoint );
-			sliderTime.setValue( timepoint );
-			for ( final TimePointListener l : timePointListeners )
-				l.timePointChanged( timepoint );
-			requestRepaint();
-		}
+		state().setCurrentTimepoint( timepoint );
 	}
 
 	/**
 	 * Show the next time-point.
 	 */
+	// TODO: Deprecate or leave as convenience?
 	public synchronized void nextTimePoint()
 	{
 		if ( state.getNumTimepoints() > 1 )
@@ -757,6 +785,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	/**
 	 * Show the previous time-point.
 	 */
+	// TODO: Deprecate or leave as convenience?
 	public synchronized void previousTimePoint()
 	{
 		if ( state.getNumTimepoints() > 1 )
@@ -768,52 +797,38 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 * this will hide the time slider, otherwise show it. If the currently
 	 * displayed timepoint would be out of range with the new number of
 	 * timepoints, the current timepoint is set to {@code numTimepoints - 1}.
+	 * <p>
+	 * This is equivalent to {@code state().setNumTimepoints(numTimepoints}}.
 	 *
 	 * @param numTimepoints
 	 *            number of available timepoints. Must be {@code >= 1}.
 	 */
 	public void setNumTimepoints( final int numTimepoints )
 	{
-		try
-		{
-			InvokeOnEDT.invokeAndWait( () -> setNumTimepointsSynchronized( numTimepoints ) );
-		}
-		catch ( InvocationTargetException | InterruptedException e )
-		{
-			e.printStackTrace();
-		}
-	}
-
-	private synchronized void setNumTimepointsSynchronized( final int numTimepoints )
-	{
-		if ( numTimepoints < 1 || state.getNumTimepoints() == numTimepoints )
-			return;
-		else if ( numTimepoints == 1 && state.getNumTimepoints() > 1 )
-			remove( sliderTime );
-		else if ( numTimepoints > 1 && state.getNumTimepoints() == 1 )
-			add( sliderTime, BorderLayout.SOUTH );
-
 		state.setNumTimepoints( numTimepoints );
-		if ( state.getCurrentTimepoint() >= numTimepoints )
-		{
-			final int timepoint = numTimepoints - 1;
-			state.setCurrentTimepoint( timepoint );
-			for ( final TimePointListener l : timePointListeners )
-				l.timePointChanged( timepoint );
-		}
-		sliderTime.setModel( new DefaultBoundedRangeModel( state.getCurrentTimepoint(), 0, 0, numTimepoints - 1 ) );
-		revalidate();
-		requestRepaint();
 	}
 
 	/**
+	 * @deprecated Use {@link #state()} instead.
+	 *
 	 * Get a copy of the current {@link ViewerState}.
 	 *
 	 * @return a copy of the current {@link ViewerState}.
 	 */
+	@Deprecated
 	public ViewerState getState()
 	{
 		return state.copy();
+	}
+
+	/**
+	 * Get the ViewerState. This can be directly used for modifications, e.g.,
+	 * adding/removing sources etc. See {@link SynchronizedViewerState} for
+	 * thread-safety considerations.
+	 */
+	public SynchronizedViewerState state()
+	{
+		return state.getState();
 	}
 
 	/**
@@ -1093,10 +1108,13 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	{}
 
 	/**
+	 * @deprecated Modify {@link #state()} directly
+	 *
 	 * Returns the {@link VisibilityAndGrouping} that can be used to modify
 	 * visibility and currentness of sources and groups, as well as grouping of
 	 * sources, and display mode.
 	 */
+	@Deprecated
 	public VisibilityAndGrouping getVisibilityAndGrouping()
 	{
 		return visibilityAndGrouping;
@@ -1160,4 +1178,9 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		return this.renderTarget;
 	}
 
+	@Override
+	public boolean requestFocusInWindow()
+	{
+		return display.requestFocusInWindow();
+	}
 }

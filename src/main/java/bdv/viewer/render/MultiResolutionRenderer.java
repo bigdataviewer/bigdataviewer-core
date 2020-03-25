@@ -29,6 +29,7 @@
  */
 package bdv.viewer.render;
 
+import bdv.viewer.SourceAndConverter;
 import java.awt.image.BufferedImage;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -463,8 +464,7 @@ public class MultiResolutionRenderer
 		// the BufferedImage that is rendered to (to paint to the canvas)
 		final BufferedImage bufferedImage;
 
-		// the projector that paints to the screenImage.
-		final VolatileProjector p;
+		final ARGBScreenImage screenImage;
 
 		final boolean clearQueue;
 
@@ -487,24 +487,42 @@ public class MultiResolutionRenderer
 				final int renderId = renderIdQueue.peek();
 				currentScreenScaleIndex = requestedScreenScaleIndex;
 				bufferedImage = bufferedImages[ currentScreenScaleIndex ][ renderId ];
-				final ARGBScreenImage screenImage = screenImages[ currentScreenScaleIndex ][ renderId ];
-				synchronized ( state )
-				{
-					final int numVisibleSources = state.getVisibleSourceIndices().size();
-					checkRenewRenderImages( numVisibleSources );
-					checkRenewMaskArrays( numVisibleSources );
-					p = createProjector( state, screenImage );
-				}
-				projector = p;
+				screenImage = screenImages[ currentScreenScaleIndex ][ renderId ];
 			}
 			else
 			{
 				bufferedImage = null;
-				p = projector;
+				screenImage = null;
 			}
 
 			requestedScreenScaleIndex = 0;
 		}
+
+		// the projector that paints to the screenImage.
+		final VolatileProjector p;
+
+		if ( createProjector )
+		{
+			synchronized ( state.getState() )
+			{
+				final int numVisibleSources = state.getVisibleSourceIndices().size();
+				checkRenewRenderImages( numVisibleSources );
+				checkRenewMaskArrays( numVisibleSources );
+				p = createProjector( state, screenImage );
+			}
+			synchronized ( this )
+			{
+				projector = p;
+			}
+		}
+		else
+		{
+			synchronized ( this )
+			{
+				p = projector;
+			}
+		}
+
 
 		// try rendering
 		final boolean success = p.map( createProjector );
@@ -637,7 +655,7 @@ public class MultiResolutionRenderer
 		{
 			final ArrayList< VolatileProjector > sourceProjectors = new ArrayList<>();
 			final ArrayList< ARGBScreenImage > sourceImages = new ArrayList<>();
-			final ArrayList< Source< ? > > sources = new ArrayList<>();
+			final ArrayList< SourceAndConverter< ? > > sources = new ArrayList<>();
 			int j = 0;
 			for ( final int i : visibleSourceIndices )
 			{
@@ -648,10 +666,10 @@ public class MultiResolutionRenderer
 						viewerState, sourceStates.get( i ), i, currentScreenScaleIndex,
 						renderImage, maskArray );
 				sourceProjectors.add( p );
-				sources.add( sourceStates.get( i ).getSpimSource() );
+				sources.add( sourceStates.get( i ).getHandle() );
 				sourceImages.add( renderImage );
 			}
-			projector = accumulateProjectorFactory.createAccumulateProjector( sourceProjectors, sources, sourceImages, screenImage, numRenderingThreads, renderingExecutorService );
+			projector = accumulateProjectorFactory.createProjector( sourceProjectors, sources, sourceImages, screenImage, numRenderingThreads, renderingExecutorService );
 		}
 		previousTimepoint = viewerState.getCurrentTimepoint();
 		viewerState.getViewerTransform( currentProjectorTransform );

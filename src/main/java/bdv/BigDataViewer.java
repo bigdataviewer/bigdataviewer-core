@@ -29,6 +29,8 @@
  */
 package bdv;
 
+import bdv.viewer.ConverterSetups;
+import bdv.viewer.ViewerState;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
@@ -330,19 +332,32 @@ public class BigDataViewer
 		if ( options.values.getTransformEventHandlerFactory() instanceof BehaviourTransformEventHandlerFactory )
 			( ( BehaviourTransformEventHandlerFactory< ? > ) options.values.getTransformEventHandlerFactory() ).setConfig( inputTriggerConfig );
 
-		viewerFrame = new ViewerFrame( sources, numTimepoints, cache, options );
+		viewerFrame = new ViewerFrame( sources, numTimepoints, cache, options.inputTriggerConfig( inputTriggerConfig ) );
 		if ( windowTitle != null )
 			viewerFrame.setTitle( windowTitle );
 		viewer = viewerFrame.getViewerPanel();
 
-		for ( final ConverterSetup cs : converterSetups )
-			cs.setViewer( viewer );
+//		final ConverterSetup.SetupChangeListener requestRepaint = s -> viewer.requestRepaint();
+//		for ( final ConverterSetup cs : converterSetups )
+//			cs.setupChangeListeners().add( requestRepaint );
 
 		manualTransformation = new ManualTransformation( viewer );
 		manualTransformationEditor = new ManualTransformationEditor( viewer, viewerFrame.getKeybindings() );
 
 		bookmarks = new Bookmarks();
 		bookmarkEditor = new BookmarksEditor( viewer, viewerFrame.getKeybindings(), bookmarks );
+
+		final ConverterSetups setups = viewerFrame.getConverterSetups();
+		if ( converterSetups.size() != sources.size() )
+			System.err.println( "WARNING! Constructing BigDataViewer, with converterSetups.size() that is not the same as sources.size()." );
+		final int numSetups = Math.min( converterSetups.size(), sources.size() );
+		for ( int i = 0; i < numSetups; ++i )
+		{
+			final SourceAndConverter< ? > source = sources.get( i );
+			final ConverterSetup setup = converterSetups.get( i );
+			if ( setup != null )
+				setups.put( source, setup );
+		}
 
 		setupAssignments = new SetupAssignments( converterSetups, 0, 65535 );
 		if ( setupAssignments.getMinMaxGroups().size() > 0 )
@@ -367,7 +382,7 @@ public class BigDataViewer
 		// this is just to get updates of window size:
 		viewer.getDisplay().addOverlayRenderer( movieMaxProjectDialog );
 
-		activeSourcesDialog = new VisibilityAndGroupingDialog( viewerFrame, viewer.getVisibilityAndGrouping() );
+		activeSourcesDialog = new VisibilityAndGroupingDialog( viewerFrame, viewer.state() );
 
 		helpDialog = new HelpDialog( viewerFrame );
 
@@ -487,7 +502,7 @@ public class BigDataViewer
 		final SpimDataMinimal spimData = new XmlIoSpimDataMinimal().load( xmlFilename );
 		final BigDataViewer bdv = open( spimData, windowTitle, progressWriter, options );
 		if ( !bdv.tryLoadSettings( xmlFilename ) )
-			InitializeViewerState.initBrightness( 0.001, 0.999, bdv.viewer, bdv.setupAssignments );
+			InitializeViewerState.initBrightness( 0.001, 0.999, bdv.viewerFrame );
 		return bdv;
 	}
 
@@ -516,6 +531,15 @@ public class BigDataViewer
 		return viewerFrame;
 	}
 
+	public ConverterSetups getConverterSetups()
+	{
+		return viewerFrame.getConverterSetups();
+	}
+
+	/**
+	 * @deprecated Instead {@code getViewer().state()} returns the {@link ViewerState} that can be modified directly.
+	 */
+	@Deprecated
 	public SetupAssignments getSetupAssignments()
 	{
 		return setupAssignments;
@@ -677,6 +701,18 @@ public class BigDataViewer
 		bookmarks.restoreFromXml( root );
 		activeSourcesDialog.update();
 		viewer.requestRepaint();
+	}
+
+	public void expandAndFocusCardPanel()
+	{
+		viewerFrame.getSplitPanel().setCollapsed( false );
+		viewerFrame.getSplitPanel().getRightComponent().requestFocusInWindow();
+	}
+
+	public void collapseCardPanel()
+	{
+		viewerFrame.getSplitPanel().setCollapsed( true );
+		viewer.requestFocusInWindow();
 	}
 
 	public static void main( final String[] args )

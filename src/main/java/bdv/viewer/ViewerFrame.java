@@ -29,6 +29,9 @@
  */
 package bdv.viewer;
 
+import bdv.ui.CardPanel;
+import bdv.ui.BdvDefaultCards;
+import bdv.ui.splitpanel.SplitPanel;
 import java.awt.BorderLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -58,11 +61,17 @@ public class ViewerFrame extends JFrame
 {
 	private static final long serialVersionUID = 1L;
 
-	protected final ViewerPanel viewer;
+	private final ViewerPanel viewer;
+
+	private final CardPanel cards;
+
+	private final SplitPanel splitPanel;
 
 	private final InputActionBindings keybindings;
 
 	private final TriggerBehaviourBindings triggerbindings;
+
+	private final ConverterSetups setups;
 
 	public ViewerFrame(
 			final List< SourceAndConverter< ? > > sources,
@@ -92,11 +101,19 @@ public class ViewerFrame extends JFrame
 //		super( "BigDataViewer", GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.ARGB_COLOR_MODEL ) );
 		super( "BigDataViewer", GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.RGB_COLOR_MODEL ) );
 		viewer = new ViewerPanel( sources, numTimepoints, cacheControl, optional );
+		setups = new ConverterSetups( viewer.state() );
+		setups.listeners().add( s -> viewer.requestRepaint() );
+
 		keybindings = new InputActionBindings();
 		triggerbindings = new TriggerBehaviourBindings();
 
+		cards = new CardPanel();
+		BdvDefaultCards.setup( cards, viewer, setups );
+		splitPanel = new SplitPanel( viewer, cards );
+
 		getRootPane().setDoubleBuffered( true );
-		add( viewer, BorderLayout.CENTER );
+//		add( viewer, BorderLayout.CENTER );
+		add( splitPanel, BorderLayout.CENTER );
 		pack();
 		setDefaultCloseOperation( WindowConstants.DISPOSE_ON_CLOSE );
 		addWindowListener( new WindowAdapter()
@@ -108,8 +125,8 @@ public class ViewerFrame extends JFrame
 			}
 		} );
 
-		SwingUtilities.replaceUIActionMap( getRootPane(), keybindings.getConcatenatedActionMap() );
-		SwingUtilities.replaceUIInputMap( getRootPane(), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, keybindings.getConcatenatedInputMap() );
+		SwingUtilities.replaceUIActionMap( viewer, keybindings.getConcatenatedActionMap() );
+		SwingUtilities.replaceUIInputMap( viewer, JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, keybindings.getConcatenatedInputMap() );
 
 		final MouseAndKeyHandler mouseAndKeyHandler = new MouseAndKeyHandler();
 		mouseAndKeyHandler.setInputMap( triggerbindings.getConcatenatedInputTriggerMap() );
@@ -127,6 +144,16 @@ public class ViewerFrame extends JFrame
 		return viewer;
 	}
 
+	public CardPanel getCardPanel()
+	{
+		return cards;
+	}
+
+	public SplitPanel getSplitPanel()
+	{
+		return splitPanel;
+	}
+
 	public InputActionBindings getKeybindings()
 	{
 		return keybindings;
@@ -135,5 +162,10 @@ public class ViewerFrame extends JFrame
 	public TriggerBehaviourBindings getTriggerbindings()
 	{
 		return triggerbindings;
+	}
+
+	public ConverterSetups getConverterSetups()
+	{
+		return setups;
 	}
 }
