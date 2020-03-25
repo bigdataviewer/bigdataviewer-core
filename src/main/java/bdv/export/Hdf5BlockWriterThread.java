@@ -163,6 +163,7 @@ class Hdf5BlockWriterThread extends Thread implements IHDF5Access
 	public void closeDataset()
 	{
 		put( new CloseDatasetTask() );
+		waitUntilEmpty();
 	}
 
 	private boolean put( final Hdf5BlockWriterThread.Hdf5Task task )
