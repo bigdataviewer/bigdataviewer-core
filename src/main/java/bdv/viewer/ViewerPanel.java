@@ -151,6 +151,8 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 	protected final JSlider sliderTime;
 
+	private boolean blockSliderTimeEvents;
+
 	/**
 	 * A {@link ThreadGroup} for (only) the threads used by this
 	 * {@link ViewerPanel}, that is, {@link #painterThread} and
@@ -283,14 +285,9 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		display.addHandler( mouseCoordinates );
 
 		sliderTime = new JSlider( SwingConstants.HORIZONTAL, 0, numTimepoints - 1, 0 );
-		sliderTime.addChangeListener( new ChangeListener()
-		{
-			@Override
-			public void stateChanged( final ChangeEvent e )
-			{
-				if ( e.getSource().equals( sliderTime ) )
-					setTimepoint( sliderTime.getValue() );
-			}
+		sliderTime.addChangeListener( e -> {
+			if ( !blockSliderTimeEvents )
+				setTimepoint( sliderTime.getValue() );
 		} );
 
 		add( display, BorderLayout.CENTER );
@@ -624,7 +621,10 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		{
 			final int timepoint = state().getCurrentTimepoint();
 			SwingUtilities.invokeLater( () -> {
-				sliderTime.setValue( timepoint );
+				blockSliderTimeEvents = true;
+				if ( sliderTime.getValue() != timepoint )
+					sliderTime.setValue( timepoint );
+				blockSliderTimeEvents = false;
 				for ( final TimePointListener l : timePointListeners )
 					l.timePointChanged( timepoint );
 				requestRepaint();
@@ -778,8 +778,13 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	// TODO: Deprecate or leave as convenience?
 	public synchronized void nextTimePoint()
 	{
-		if ( state.getNumTimepoints() > 1 )
-			sliderTime.setValue( sliderTime.getValue() + 1 );
+		final SynchronizedViewerState state = state();
+		synchronized ( state )
+		{
+			final int t = state.getCurrentTimepoint() + 1;
+			if ( t < state.getNumTimepoints() )
+				state.setCurrentTimepoint( t );
+		}
 	}
 
 	/**
@@ -788,8 +793,13 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	// TODO: Deprecate or leave as convenience?
 	public synchronized void previousTimePoint()
 	{
-		if ( state.getNumTimepoints() > 1 )
-			sliderTime.setValue( sliderTime.getValue() - 1 );
+		final SynchronizedViewerState state = state();
+		synchronized ( state )
+		{
+			final int t = state.getCurrentTimepoint() - 1;
+			if ( t >= 0 )
+				state.setCurrentTimepoint( t );
+		}
 	}
 
 	/**
