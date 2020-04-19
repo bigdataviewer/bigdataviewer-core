@@ -625,10 +625,10 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 				if ( sliderTime.getValue() != timepoint )
 					sliderTime.setValue( timepoint );
 				blockSliderTimeEvents = false;
-				for ( final TimePointListener l : timePointListeners )
-					l.timePointChanged( timepoint );
-				requestRepaint();
 			} );
+			for ( final TimePointListener l : timePointListeners )
+				l.timePointChanged( timepoint );
+			requestRepaint();
 			break;
 		}
 //		case VIEWER_TRANSFORM_CHANGED:
