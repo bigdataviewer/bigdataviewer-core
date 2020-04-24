@@ -194,7 +194,7 @@ public class InitializeViewerState
 	 * @param cumulativeMaxCutoff
 	 * 		fraction of pixels that are allowed to be saturated at the upper end of the range.
 	 */
-	private static Bounds estimateSourceRange( final Source< ? > source, final int timepoint, final double cumulativeMinCutoff, final double cumulativeMaxCutoff )
+	public static Bounds estimateSourceRange( final Source< ? > source, final int timepoint, final double cumulativeMinCutoff, final double cumulativeMaxCutoff )
 	{
 		final Object type = source.getType();
 		if ( type instanceof UnsignedShortType && source.isPresent( timepoint ) )
