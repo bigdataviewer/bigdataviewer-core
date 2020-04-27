@@ -118,7 +118,7 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 
 	protected final int setupId;
 
-	protected final String name;
+	protected String name;
 
 	protected final List< TimePoint > timePointsOrdered;
 
@@ -260,6 +260,9 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 	{
 		return name;
 	}
+
+	@Override
+	public void setName(String name) { this.name = name; }
 
 	@Override
 	public VoxelDimensions getVoxelDimensions()

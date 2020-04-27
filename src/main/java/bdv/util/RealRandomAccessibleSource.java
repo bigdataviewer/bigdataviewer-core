@@ -54,7 +54,7 @@ public abstract class RealRandomAccessibleSource< T extends Type< T > > implemen
 
 	protected final T type;
 
-	protected final String name;
+	protected String name;
 
 	protected final VoxelDimensions voxelDimensions;
 
@@ -114,6 +114,9 @@ public abstract class RealRandomAccessibleSource< T extends Type< T > > implemen
 	{
 		return name;
 	}
+
+	@Override
+	public void setName(String name) { this.name = name; }
 
 	@Override
 	public VoxelDimensions getVoxelDimensions()

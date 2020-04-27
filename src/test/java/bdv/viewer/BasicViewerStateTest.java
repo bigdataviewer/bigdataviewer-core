@@ -302,7 +302,7 @@ public class BasicViewerStateTest
 			return "source(" + id.getAndIncrement() + ")";
 		}
 
-		private final String name;
+		private String name;
 
 		private final IntPredicate isPresent;
 
@@ -338,6 +338,9 @@ public class BasicViewerStateTest
 		{
 			return name;
 		}
+
+		@Override
+		public void setName(String name) { this.name = name; }
 
 		@Override
 		public VoxelDimensions getVoxelDimensions()
