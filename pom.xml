@@ -140,6 +140,7 @@
 		<imglib2-cache.version>1.0.0-beta-13</imglib2-cache.version>
 		<spim_data.version>2.2.3</spim_data.version>
 		<ui-behaviour.version>2.0.1</ui-behaviour.version>
+		<miglayout-swing.version>5.2</miglayout-swing.version>
 
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>deploy-to-scijava</releaseProfiles>
@@ -210,8 +211,8 @@
 		</dependency>
 		<dependency>
 			<groupId>com.miglayout</groupId>
-			<artifactId>miglayout</artifactId>
-			<classifier>swing</classifier>
+			<artifactId>miglayout-swing</artifactId>
+			<version>${miglayout-swing.version}</version>
 		</dependency>
 
 		<!-- test dependencies -->
