@@ -325,7 +325,7 @@ class UnmodifiableViewerState implements ViewerState
 	@Override
 	public Set< SourceAndConverter< ? > > getSourcesInGroup( final SourceGroup group )
 	{
-		return getSourcesInGroup( group );
+		return state.getSourcesInGroup( group );
 	}
 
 	@Override
