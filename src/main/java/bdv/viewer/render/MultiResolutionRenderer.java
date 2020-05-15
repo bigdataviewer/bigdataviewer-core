@@ -62,19 +62,18 @@ import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
-import net.imglib2.ui.Renderer;
 import net.imglib2.ui.SimpleInterruptibleProjector;
 import net.imglib2.ui.TransformListener;
 import net.imglib2.ui.util.GuiUtil;
 
 /**
- * A {@link Renderer} that uses a coarse-to-fine rendering scheme. First, a
- * small {@link BufferedImage} at a fraction of the canvas resolution is
+ * A renderer that uses a coarse-to-fine rendering scheme. First, a
+ * small target image at a fraction of the canvas resolution is
  * rendered. Then, increasingly larger images are rendered, until the full
  * canvas resolution is reached.
  * <p>
- * When drawing the low-resolution {@link BufferedImage} to the screen, they
- * will be scaled up by Java2D to the full canvas size, which is relatively
+ * When drawing the low-resolution target images to the screen, they
+ * will be scaled up by Java2D (or JavaFX, etc) to the full canvas size, which is relatively
  * fast. Rendering the small, low-resolution images is usually very fast, such
  * that the display is very interactive while the user changes the viewing
  * transformation for example. When the transformation remains fixed for a
@@ -123,7 +122,7 @@ import net.imglib2.ui.util.GuiUtil;
  * <p>
  * Rendering timing is tied to a {@link CacheControl} control for IO budgeting, etc.
  *
- * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+ * @author Tobias Pietzsch
  */
 public class MultiResolutionRenderer
 {
