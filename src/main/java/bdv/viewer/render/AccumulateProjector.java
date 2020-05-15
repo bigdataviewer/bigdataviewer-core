@@ -39,7 +39,7 @@ import net.imglib2.IterableInterval;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.ui.InterruptibleProjector;
-import net.imglib2.ui.util.StopWatch;
+import net.imglib2.util.StopWatch;
 import net.imglib2.view.Views;
 
 public abstract class AccumulateProjector< A, B > implements VolatileProjector
@@ -105,8 +105,7 @@ public abstract class AccumulateProjector< A, B > implements VolatileProjector
 	{
 		interrupted.set( false );
 
-		final StopWatch stopWatch = new StopWatch();
-		stopWatch.start();
+		final StopWatch stopWatch = StopWatch.createAndStart();
 
 		valid = true;
 		for ( final VolatileProjector p : sourceProjectors )
