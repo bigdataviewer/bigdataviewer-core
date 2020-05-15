@@ -55,14 +55,11 @@ import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
-import javax.swing.event.ChangeEvent;
-import javax.swing.event.ChangeListener;
 
 import org.jdom2.Element;
 
 import bdv.cache.CacheControl;
 import bdv.util.Affine3DHelpers;
-import bdv.util.InvokeOnEDT;
 import bdv.util.Prefs;
 import bdv.viewer.animate.AbstractTransformAnimator;
 import bdv.viewer.animate.MessageOverlayAnimator;
@@ -83,7 +80,7 @@ import net.imglib2.RealLocalizable;
 import net.imglib2.RealPoint;
 import net.imglib2.RealPositionable;
 import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.ui.InteractiveDisplayCanvasComponent;
+import net.imglib2.ui.InteractiveDisplayCanvas;
 import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.TransformEventHandler;
@@ -93,7 +90,7 @@ import net.imglib2.util.LinAlgHelpers;
 
 /**
  * A JPanel for viewing multiple of {@link Source}s. The panel contains a
- * {@link InteractiveDisplayCanvasComponent canvas} and a time slider (if there
+ * {@link InteractiveDisplayCanvas canvas} and a time slider (if there
  * are multiple time-points). Maintains a {@link ViewerState render state}, the
  * renderer, and basic navigation help overlays. It has it's own
  * {@link PainterThread} for painting, which is started on construction (use
@@ -147,7 +144,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 * Canvas used for displaying the rendered {@link #renderTarget image} and
 	 * overlays.
 	 */
-	protected final InteractiveDisplayCanvasComponent< AffineTransform3D > display;
+	protected final InteractiveDisplayCanvas< AffineTransform3D > display;
 
 	protected final JSlider sliderTime;
 
@@ -259,7 +256,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		painterThread = new PainterThread( threadGroup, this );
 		painterThread.setDaemon( true );
 		viewerTransform = new AffineTransform3D();
-		display = new InteractiveDisplayCanvasComponent<>(
+		display = new InteractiveDisplayCanvas<>(
 				options.getWidth(), options.getHeight(), options.getTransformEventHandlerFactory() );
 		display.addTransformListener( this );
 		renderTarget = new TransformAwareBufferedImageOverlayRenderer();
@@ -846,7 +843,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 *
 	 * @return the viewer canvas.
 	 */
-	public InteractiveDisplayCanvasComponent< AffineTransform3D > getDisplay()
+	public InteractiveDisplayCanvas< AffineTransform3D > getDisplay()
 	{
 		return display;
 	}
