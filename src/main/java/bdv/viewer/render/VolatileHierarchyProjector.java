@@ -53,7 +53,7 @@ import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.numeric.NumericType;
 import net.imglib2.type.numeric.integer.ByteType;
 import net.imglib2.ui.AbstractInterruptibleProjector;
-import net.imglib2.ui.util.StopWatch;
+import net.imglib2.util.StopWatch;
 import net.imglib2.view.Views;
 
 /**
@@ -232,8 +232,7 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 	{
 		interrupted.set( false );
 
-		final StopWatch stopWatch = new StopWatch();
-		stopWatch.start();
+		final StopWatch stopWatch = StopWatch.createAndStart();
 		final IoStatistics iostat = CacheIoTiming.getIoStatistics();
 		final long startTimeIo = iostat.getIoNanoTime();
 		final long startTimeIoCumulative = iostat.getCumulativeIoNanoTime();

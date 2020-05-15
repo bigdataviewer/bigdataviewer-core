@@ -31,7 +31,7 @@ package bdv.viewer.render;
 
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.type.numeric.NumericType;
-import net.imglib2.ui.util.StopWatch;
+import net.imglib2.util.StopWatch;
 import net.imglib2.view.Views;
 
 public class EmptyProjector< T extends NumericType< T> > implements VolatileProjector
@@ -55,8 +55,7 @@ public class EmptyProjector< T extends NumericType< T> > implements VolatileProj
 	@Override
 	public boolean map( final boolean clearUntouchedTargetPixels )
 	{
-		final StopWatch stopWatch = new StopWatch();
-		stopWatch.start();
+		final StopWatch stopWatch = StopWatch.createAndStart();
 		if ( clearUntouchedTargetPixels )
 			for ( final T t : Views.iterable( target ) )
 				t.setZero();
