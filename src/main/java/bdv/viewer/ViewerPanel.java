@@ -56,6 +56,7 @@ import javax.swing.JSlider;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
+import net.imglib2.ui.overlay.BufferedImageOverlayRenderer;
 import org.jdom2.Element;
 
 import bdv.cache.CacheControl;
@@ -71,7 +72,6 @@ import bdv.viewer.overlay.MultiBoxOverlayRenderer;
 import bdv.viewer.overlay.ScaleBarOverlayRenderer;
 import bdv.viewer.overlay.SourceInfoOverlayRenderer;
 import bdv.viewer.render.MultiResolutionRenderer;
-import bdv.viewer.render.TransformAwareBufferedImageOverlayRenderer;
 import bdv.viewer.state.SourceGroup;
 import bdv.viewer.state.ViewerState;
 import bdv.viewer.state.XmlIoViewerState;
@@ -116,7 +116,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	/**
 	 * TODO
 	 */
-	protected final TransformAwareBufferedImageOverlayRenderer renderTarget;
+	protected final BufferedImageOverlayRenderer renderTarget;
 
 	/**
 	 * Overlay navigation boxes.
@@ -259,7 +259,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		display = new InteractiveDisplayCanvas<>(
 				options.getWidth(), options.getHeight(), options.getTransformEventHandlerFactory() );
 		display.addTransformListener( this );
-		renderTarget = new TransformAwareBufferedImageOverlayRenderer();
+		renderTarget = new BufferedImageOverlayRenderer();
 		renderTarget.setCanvasSize( options.getWidth(), options.getHeight() );
 		display.addOverlayRenderer( renderTarget );
 		display.addOverlayRenderer( this );
@@ -1178,11 +1178,6 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 				t.setPriority( Thread.NORM_PRIORITY );
 			return t;
 		}
-	}
-
-	public TransformAwareBufferedImageOverlayRenderer renderTarget()
-	{
-		return this.renderTarget;
 	}
 
 	@Override

@@ -65,6 +65,7 @@ import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
 import net.imglib2.ui.SimpleInterruptibleProjector;
 import net.imglib2.ui.TransformListener;
+import net.imglib2.ui.overlay.BufferedImageOverlayRenderer;
 import net.imglib2.ui.util.GuiUtil;
 
 /**
@@ -130,7 +131,7 @@ public class MultiResolutionRenderer
 	/**
 	 * Receiver for the {@link BufferedImage BufferedImages} that we render.
 	 */
-	protected final TransformAwareRenderTarget display;
+	protected final RenderTarget display;
 
 	/**
 	 * Thread that triggers repainting of the display.
@@ -327,7 +328,7 @@ public class MultiResolutionRenderer
 			final AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory,
 			final CacheControl cacheControl )
 	{
-		this.display = wrapTransformAwareRenderTarget( display );
+		this.display = display;
 		this.painterThread = painterThread;
 		projector = null;
 		currentScreenScaleIndex = -1;
@@ -616,8 +617,8 @@ public class MultiResolutionRenderer
 	 */
 	public void kill()
 	{
-		if ( display instanceof TransformAwareBufferedImageOverlayRenderer )
-			( ( TransformAwareBufferedImageOverlayRenderer ) display ).kill();
+		if ( display instanceof BufferedImageOverlayRenderer )
+			( ( BufferedImageOverlayRenderer ) display ).kill();
 		projector = null;
 		renderIdQueue.clear();
 		bufferedImageToRenderId.clear();
@@ -839,50 +840,5 @@ public class MultiResolutionRenderer
 
 			Prefetcher.fetchCells( sourceToScreen, cellDimensions, dimensions, screenInterval, interpolation, cellsRandomAccess );
 		}
-	}
-
-	private static TransformAwareRenderTarget wrapTransformAwareRenderTarget( final RenderTarget t )
-	{
-		if ( t instanceof TransformAwareRenderTarget )
-			return ( TransformAwareRenderTarget ) t;
-		else
-			return new TransformAwareRenderTarget()
-			{
-				@Override
-				public BufferedImage setBufferedImage( final BufferedImage img )
-				{
-					return t.setBufferedImage( img );
-				}
-
-				@Override
-				public int getWidth()
-				{
-					return t.getWidth();
-				}
-
-				@Override
-				public int getHeight()
-				{
-					return t.getHeight();
-				}
-
-				@Override
-				public BufferedImage setBufferedImageAndTransform( final BufferedImage img, final AffineTransform3D transform )
-				{
-					return t.setBufferedImage( img );
-				}
-
-				@Override
-				public void removeTransformListener( final TransformListener< AffineTransform3D > listener )
-				{}
-
-				@Override
-				public void addTransformListener( final TransformListener< AffineTransform3D > listener, final int index )
-				{}
-
-				@Override
-				public void addTransformListener( final TransformListener< AffineTransform3D > listener )
-				{}
-			};
 	}
 }
