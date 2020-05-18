@@ -34,6 +34,7 @@
 package net.imglib2.ui;
 
 import java.awt.image.BufferedImage;
+import net.imglib2.realtransform.AffineTransform3D;
 
 /**
  * Receiver for a {@link BufferedImage} (to be drawn onto a canvas later).
@@ -71,4 +72,21 @@ public interface RenderTarget
 	 * @return canvas height.
 	 */
 	int getHeight();
+
+	default BufferedImage setBufferedImageAndTransform( BufferedImage img, AffineTransform3D transform )
+	{
+		return setBufferedImage( img );
+	}
+
+	default void addTransformListener( TransformListener< AffineTransform3D > listener )
+	{
+	}
+
+	default void addTransformListener( TransformListener< AffineTransform3D > listener, int index )
+	{
+	}
+
+	default void removeTransformListener( TransformListener< AffineTransform3D > listener )
+	{
+	}
 }
