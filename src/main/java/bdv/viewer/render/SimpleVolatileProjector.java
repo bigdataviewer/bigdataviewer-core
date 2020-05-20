@@ -128,12 +128,6 @@ public class SimpleVolatileProjector< A, B > implements VolatileProjector
 		return valid;
 	}
 
-	@Override
-	public boolean map()
-	{
-		return map( true );
-	}
-
 	/**
 	 * Render the 2D target image by copying values from the source. Source can
 	 * have more dimensions than the target. Target coordinate <em>(x,y)</em> is

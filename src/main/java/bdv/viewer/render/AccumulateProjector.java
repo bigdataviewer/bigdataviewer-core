@@ -96,12 +96,6 @@ public abstract class AccumulateProjector< A, B > implements VolatileProjector
 	}
 
 	@Override
-	public boolean map()
-	{
-		return map( true );
-	}
-
-	@Override
 	public boolean map( final boolean clearUntouchedTargetPixels )
 	{
 		interrupted.set( false );
