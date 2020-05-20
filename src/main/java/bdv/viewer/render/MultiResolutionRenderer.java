@@ -56,15 +56,12 @@ import net.imglib2.Volatile;
 import net.imglib2.cache.iotiming.CacheIoTiming;
 import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.cache.volatiles.LoadingStrategy;
-import net.imglib2.converter.Converter;
 import net.imglib2.display.screenimage.awt.ARGBScreenImage;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
-import net.imglib2.ui.SimpleInterruptibleProjector;
-import net.imglib2.ui.TransformListener;
 import net.imglib2.ui.overlay.BufferedImageOverlayRenderer;
 import net.imglib2.ui.util.GuiUtil;
 
@@ -675,35 +672,6 @@ public class MultiResolutionRenderer
 		viewerState.getViewerTransform( currentProjectorTransform );
 		CacheIoTiming.getIoTimeBudget().reset( iobudget );
 		return projector;
-	}
-
-	private static class SimpleVolatileProjector< A, B > extends SimpleInterruptibleProjector< A, B > implements VolatileProjector
-	{
-		private boolean valid = false;
-
-		public SimpleVolatileProjector(
-				final RandomAccessible< A > source,
-				final Converter< ? super A, B > converter,
-				final RandomAccessibleInterval< B > target,
-				final int numThreads,
-				final ExecutorService executorService )
-		{
-			super( source, converter, target, numThreads, executorService );
-		}
-
-		@Override
-		public boolean map( final boolean clearUntouchedTargetPixels )
-		{
-			final boolean success = super.map();
-			valid |= success;
-			return success;
-		}
-
-		@Override
-		public boolean isValid()
-		{
-			return valid;
-		}
 	}
 
 	private < T > VolatileProjector createSingleSourceProjector(
