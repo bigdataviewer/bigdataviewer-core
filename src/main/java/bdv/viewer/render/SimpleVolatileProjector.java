@@ -11,7 +11,6 @@ import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.converter.Converter;
-import net.imglib2.ui.InterruptibleProjector;
 import net.imglib2.util.Intervals;
 import net.imglib2.util.StopWatch;
 
@@ -42,7 +41,7 @@ public class SimpleVolatileProjector< A, B > implements VolatileProjector
 
 	/**
 	 * The target interval. Pixels of the target interval should be set by
-	 * {@link InterruptibleProjector#map()}
+	 * {@link #map}
 	 */
 	private final RandomAccessibleInterval< B > target;
 
