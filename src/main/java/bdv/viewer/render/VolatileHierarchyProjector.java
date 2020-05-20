@@ -238,12 +238,6 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends Nume
 	}
 
 	@Override
-	public boolean map()
-	{
-		return map( true );
-	}
-
-	@Override
 	public boolean map( final boolean clearUntouchedTargetPixels )
 	{
 		interrupted.set( false );

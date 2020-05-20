@@ -46,12 +46,6 @@ public class EmptyProjector< T extends NumericType< T> > implements VolatileProj
 	}
 
 	@Override
-	public boolean map()
-	{
-		return map( false );
-	}
-
-	@Override
 	public boolean map( final boolean clearUntouchedTargetPixels )
 	{
 		final StopWatch stopWatch = StopWatch.createAndStart();

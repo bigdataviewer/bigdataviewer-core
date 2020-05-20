@@ -46,4 +46,9 @@ public interface VolatileProjector extends InterruptibleProjector
 	 * @return true if all mapped pixels were {@link Volatile#isValid() valid}.
 	 */
 	boolean isValid();
+
+	default boolean map()
+	{
+		return map( true );
+	}
 }
