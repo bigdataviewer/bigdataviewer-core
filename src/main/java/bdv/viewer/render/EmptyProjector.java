@@ -28,9 +28,15 @@
  */
 package bdv.viewer.render;
 
+import java.util.Arrays;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.array.ArrayImg;
+import net.imglib2.img.basictypeaccess.array.IntArray;
+import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.NumericType;
+import net.imglib2.util.Intervals;
 import net.imglib2.util.StopWatch;
+import net.imglib2.util.Util;
 import net.imglib2.view.Views;
 
 public class EmptyProjector< T extends NumericType< T> > implements VolatileProjector
@@ -50,8 +56,19 @@ public class EmptyProjector< T extends NumericType< T> > implements VolatileProj
 	{
 		final StopWatch stopWatch = StopWatch.createAndStart();
 		if ( clearUntouchedTargetPixels )
-			for ( final T t : Views.iterable( target ) )
-				t.setZero();
+		{
+			if ( target instanceof ArrayImg && Util.getTypeFromInterval( target ) instanceof ARGBType )
+			{
+				final int[] data = ( ( ArrayImg<?, IntArray > ) target ).update( null ).getCurrentStorageArray();
+				final int size = ( int ) Intervals.numElements( target );
+				Arrays.fill( data, 0, size, 0 );
+			}
+			else
+			{
+				for ( final T t : Views.iterable( target ) )
+					t.setZero();
+			}
+		}
 		lastFrameRenderNanoTime = stopWatch.nanoTime();
 		return true;
 	}
