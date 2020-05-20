@@ -47,7 +47,7 @@ import net.imglib2.converter.Converter;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.basictypeaccess.array.IntArray;
 import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.type.numeric.NumericType;
+import net.imglib2.type.operators.SetZero;
 import net.imglib2.ui.InterruptibleProjector;
 import net.imglib2.util.Intervals;
 import net.imglib2.util.StopWatch;
@@ -62,7 +62,7 @@ import net.imglib2.view.Views;
  * @author Stephan Saalfeld
  * @author Tobias Pietzsch
  */
-public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends NumericType< B > > implements VolatileProjector
+public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends SetZero > implements VolatileProjector
 {
 	/**
 	 * A converter from the source pixel type to the target pixel type.
