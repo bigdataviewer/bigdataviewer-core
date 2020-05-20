@@ -48,7 +48,6 @@ import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.basictypeaccess.array.IntArray;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.operators.SetZero;
-import net.imglib2.ui.InterruptibleProjector;
 import net.imglib2.util.Intervals;
 import net.imglib2.util.StopWatch;
 import net.imglib2.util.Util;
@@ -71,7 +70,7 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends SetZ
 
 	/**
 	 * The target interval. Pixels of the target interval should be set by
-	 * {@link InterruptibleProjector#map()}
+	 * {@link #map}
 	 */
 	private final RandomAccessibleInterval< B > target;
 

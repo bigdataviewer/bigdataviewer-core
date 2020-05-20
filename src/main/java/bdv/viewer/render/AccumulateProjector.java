@@ -38,7 +38,6 @@ import net.imglib2.Cursor;
 import net.imglib2.IterableInterval;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.ui.InterruptibleProjector;
 import net.imglib2.util.StopWatch;
 import net.imglib2.view.Views;
 
@@ -50,7 +49,7 @@ public abstract class AccumulateProjector< A, B > implements VolatileProjector
 
 	/**
 	 * The target interval. Pixels of the target interval should be set by
-	 * {@link InterruptibleProjector#map()}
+	 * {@link #map}
 	 */
 	protected final RandomAccessibleInterval< B > target;
 
