@@ -30,18 +30,27 @@ package bdv.viewer.render;
 
 import bdv.viewer.SourceAndConverter;
 import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicBoolean;
 import net.imglib2.Cursor;
+import net.imglib2.Interval;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.array.ArrayImg;
+import net.imglib2.img.basictypeaccess.array.IntArray;
 import net.imglib2.type.numeric.ARGBType;
+import net.imglib2.util.Intervals;
+import net.imglib2.util.StopWatch;
 
-public class AccumulateProjectorARGB extends AccumulateProjector< ARGBType, ARGBType >
+public class AccumulateProjectorARGB implements VolatileProjector
 {
 	public static AccumulateProjectorFactory< ARGBType > factory = new AccumulateProjectorFactory< ARGBType >()
 	{
 		@Override
-		public AccumulateProjectorARGB createProjector(
+		public VolatileProjector createProjector(
 				final ArrayList< VolatileProjector > sourceProjectors,
 				final ArrayList< SourceAndConverter< ? > > sources,
 				final ArrayList< ? extends RandomAccessible< ? extends ARGBType > > sourceScreenImages,
@@ -49,9 +58,92 @@ public class AccumulateProjectorARGB extends AccumulateProjector< ARGBType, ARGB
 				final int numThreads,
 				final ExecutorService executorService )
 		{
-			return new AccumulateProjectorARGB( sourceProjectors, sourceScreenImages, targetScreenImage, numThreads, executorService );
+			try
+			{
+				return new AccumulateProjectorARGB( sourceProjectors, sourceScreenImages, targetScreenImage, numThreads, executorService );
+			}
+			catch ( IllegalArgumentException ignored )
+			{}
+			return new AccumulateProjectorARGBGeneric( sourceProjectors, sourceScreenImages, targetScreenImage, numThreads, executorService );
 		}
 	};
+
+	public static class AccumulateProjectorARGBGeneric extends AccumulateProjector< ARGBType, ARGBType >
+	{
+		public AccumulateProjectorARGBGeneric(
+				final ArrayList< VolatileProjector > sourceProjectors,
+				final ArrayList< ? extends RandomAccessible< ? extends ARGBType > > sources,
+				final RandomAccessibleInterval< ARGBType > target,
+				final int numThreads,
+				final ExecutorService executorService )
+		{
+			super( sourceProjectors, sources, target, numThreads, executorService );
+		}
+
+		@Override
+		protected void accumulate( final Cursor< ? extends ARGBType >[] accesses, final ARGBType target )
+		{
+			int aSum = 0, rSum = 0, gSum = 0, bSum = 0;
+			for ( final Cursor< ? extends ARGBType > access : accesses )
+			{
+				final int value = access.get().get();
+				final int a = ARGBType.alpha( value );
+				final int r = ARGBType.red( value );
+				final int g = ARGBType.green( value );
+				final int b = ARGBType.blue( value );
+				aSum += a;
+				rSum += r;
+				gSum += g;
+				bSum += b;
+			}
+			if ( aSum > 255 )
+				aSum = 255;
+			if ( rSum > 255 )
+				rSum = 255;
+			if ( gSum > 255 )
+				gSum = 255;
+			if ( bSum > 255 )
+				bSum = 255;
+			target.set( ARGBType.rgba( rSum, gSum, bSum, aSum ) );
+		}
+	}
+
+	/**
+	 * Projectors that render the source images to accumulate.
+	 * For every rendering pass, ({@link VolatileProjector#map(boolean)}) is run on each source projector that is not yet {@link VolatileProjector#isValid() valid}.
+	 */
+	private final ArrayList< VolatileProjector > sourceProjectors;
+
+	/**
+	 * The source images to accumulate
+	 */
+	private final ArrayList< ? extends RandomAccessible< ? extends ARGBType > > sources;
+
+	private final int[][] sourceData;
+
+	/**
+	 * The target interval. Pixels of the target interval should be set by
+	 * {@link #map}
+	 */
+	private final RandomAccessibleInterval< ARGBType > target;
+
+	private final int[] targetData;
+
+	/**
+     * Number of threads to use for rendering
+     */
+    private final int numThreads;
+
+	private final ExecutorService executorService;
+
+    /**
+     * Time needed for rendering the last frame, in nano-seconds.
+     */
+    private long lastFrameRenderNanoTime;
+
+	private final AtomicBoolean interrupted = new AtomicBoolean();
+
+	private volatile boolean valid = false;
 
 	public AccumulateProjectorARGB(
 			final ArrayList< VolatileProjector > sourceProjectors,
@@ -60,16 +152,147 @@ public class AccumulateProjectorARGB extends AccumulateProjector< ARGBType, ARGB
 			final int numThreads,
 			final ExecutorService executorService )
 	{
-		super( sourceProjectors, sources, target, numThreads, executorService );
+		this.sourceProjectors = sourceProjectors;
+		this.sources = sources;
+		this.target = target;
+		this.numThreads = numThreads;
+		this.executorService = executorService;
+		lastFrameRenderNanoTime = -1;
+
+		targetData = getDataArray( target );
+		if ( targetData == null )
+			throw new IllegalArgumentException();
+
+		final int numSources = sources.size();
+		sourceData = new int[ numSources ][];
+		for ( int i = 0; i < numSources; ++i )
+		{
+			final RandomAccessible< ? extends ARGBType > source = sources.get( i );
+			if ( ! ( source instanceof RandomAccessibleInterval ) )
+				throw new IllegalArgumentException();
+			if ( ! Intervals.equals( target, ( Interval ) source ) )
+				throw new IllegalArgumentException();
+			sourceData[ i ] = getDataArray( source );
+		}
 	}
 
 	@Override
-	protected void accumulate( final Cursor< ? extends ARGBType >[] accesses, final ARGBType target )
+	public boolean map( final boolean clearUntouchedTargetPixels )
+	{
+		interrupted.set( false );
+
+		final StopWatch stopWatch = StopWatch.createAndStart();
+
+		valid = true;
+		for ( final VolatileProjector p : sourceProjectors )
+			if ( !p.isValid() )
+				if ( !p.map( clearUntouchedTargetPixels ) )
+					return false;
+				else
+					valid &= p.isValid();
+
+		final int size = ( int ) Intervals.numElements( target );
+
+		final int numTasks = numThreads <= 1 ? 1 : Math.min( numThreads * 10, size );
+		final double taskLength = ( double ) size / numTasks;
+		final int[] taskOffsets = new int[ numTasks + 1 ];
+		for ( int i = 0; i < numTasks; ++i )
+			taskOffsets[ i ] = ( int ) ( i * taskLength );
+		taskOffsets[ numTasks ] = size;
+
+		final boolean createExecutor = ( executorService == null );
+		final ExecutorService ex = createExecutor ? Executors.newFixedThreadPool( numThreads ) : executorService;
+
+		final List< Callable< Void > > tasks = new ArrayList<>( numTasks );
+		for( int i = 0; i < numTasks; ++i )
+			tasks.add( createMapTask( taskOffsets[ i ], taskOffsets[ i + 1 ] ) );
+		try
+		{
+			ex.invokeAll( tasks );
+		}
+		catch ( final InterruptedException e )
+		{
+			Thread.currentThread().interrupt();
+		}
+		if ( createExecutor )
+			ex.shutdown();
+
+		lastFrameRenderNanoTime = stopWatch.nanoTime();
+
+		return !interrupted.get();
+	}
+
+	@Override
+	public void cancel()
+	{
+		interrupted.set( true );
+		for ( final VolatileProjector p : sourceProjectors )
+			p.cancel();
+	}
+
+	@Override
+	public long getLastFrameRenderNanoTime()
+	{
+		return lastFrameRenderNanoTime;
+	}
+
+	@Override
+	public boolean isValid()
+	{
+		return valid;
+	}
+
+	private int[] getDataArray( final RandomAccessible< ? > img )
+	{
+		if ( ! ( img instanceof ArrayImg ) )
+			return null;
+		final ArrayImg< ?, ? > aimg = ( ArrayImg< ?, ? > ) img;
+		if( ! ( aimg.firstElement() instanceof ARGBType ) )
+			return null;
+		final Object access = aimg.update( null );
+		if ( ! ( access instanceof IntArray ) )
+			return null;
+		return ( ( IntArray ) access ).getCurrentStorageArray();
+	}
+
+	/**
+	 * @return a {@code Callable} that runs {@code map(startOffset, endOffset)}
+	 */
+	private Callable< Void > createMapTask( final int startOffset, final int endOffset )
+	{
+		return Executors.callable( () -> map( startOffset, endOffset ), null );
+	}
+
+	/**
+	 * Accumulate pixels from {@code startOffset} up to {@code endOffset}
+	 * (exclusive) of all sources to target. Before starting, check
+	 * whether rendering was {@link #cancel() canceled}.
+	 *
+	 * @param startOffset
+	 *     pixel range start (flattened index)
+	 * @param endOffset
+	 *     pixel range end (exclusive, flattened index)
+	 */
+	private void map( final int startOffset, final int endOffset )
+	{
+		if ( interrupted.get() )
+			return;
+
+		final int numSources = sources.size();
+		final int[] values = new int[ numSources ];
+		for ( int i = startOffset; i < endOffset; ++i )
+		{
+			for ( int s = 0; s < numSources; ++s )
+				values[ s ] = sourceData[ s ][ i ];
+			targetData[ i ] = accumulate( values );
+		}
+	}
+
+	protected int accumulate( final int[] values )
 	{
 		int aSum = 0, rSum = 0, gSum = 0, bSum = 0;
-		for ( final Cursor< ? extends ARGBType > access : accesses )
+		for ( final int value : values )
 		{
-			final int value = access.get().get();
 			final int a = ARGBType.alpha( value );
 			final int r = ARGBType.red( value );
 			final int g = ARGBType.green( value );
@@ -87,6 +310,6 @@ public class AccumulateProjectorARGB extends AccumulateProjector< ARGBType, ARGB
 			gSum = 255;
 		if ( bSum > 255 )
 			bSum = 255;
-		target.set( ARGBType.rgba( rSum, gSum, bSum, aSum ) );
+		return ARGBType.rgba( rSum, gSum, bSum, aSum );
 	}
 }
