@@ -40,8 +40,6 @@ import net.imglib2.Cursor;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.img.array.ArrayImg;
-import net.imglib2.img.basictypeaccess.array.IntArray;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.util.Intervals;
 import net.imglib2.util.StopWatch;
@@ -160,7 +158,7 @@ public class AccumulateProjectorARGB implements VolatileProjector
 		this.executorService = executorService;
 		lastFrameRenderNanoTime = -1;
 
-		targetData = getDataArray( target );
+		targetData = ProjectorUtils.getARGBArrayImgData( target );
 		if ( targetData == null )
 			throw new IllegalArgumentException();
 
@@ -173,7 +171,9 @@ public class AccumulateProjectorARGB implements VolatileProjector
 				throw new IllegalArgumentException();
 			if ( ! Intervals.equals( target, ( Interval ) source ) )
 				throw new IllegalArgumentException();
-			sourceData[ i ] = getDataArray( source );
+			sourceData[ i ] = ProjectorUtils.getARGBArrayImgData( source );
+			if ( sourceData[ i ] == null )
+				throw new IllegalArgumentException();
 		}
 	}
 
@@ -241,19 +241,6 @@ public class AccumulateProjectorARGB implements VolatileProjector
 	public boolean isValid()
 	{
 		return valid;
-	}
-
-	private int[] getDataArray( final RandomAccessible< ? > img )
-	{
-		if ( ! ( img instanceof ArrayImg ) )
-			return null;
-		final ArrayImg< ?, ? > aimg = ( ArrayImg< ?, ? > ) img;
-		if( ! ( aimg.firstElement() instanceof ARGBType ) )
-			return null;
-		final Object access = aimg.update( null );
-		if ( ! ( access instanceof IntArray ) )
-			return null;
-		return ( ( IntArray ) access ).getCurrentStorageArray();
 	}
 
 	/**
