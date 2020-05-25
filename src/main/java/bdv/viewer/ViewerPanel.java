@@ -137,6 +137,8 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 	/**
 	 * Transformation set by the interactive viewer.
+	 * TODO: make sure that this is only used as a temporary variable,
+	 *   maybe remove to make code clearer
 	 */
 	protected final AffineTransform3D viewerTransform;
 
@@ -629,6 +631,9 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 			break;
 		}
 //		case VIEWER_TRANSFORM_CHANGED:
+			// TODO: trigger repaint
+			//  do not write ViewerPanel.viewerTransform here,
+			//  instead it should always be obtained from state when needed to avoid deadlocks
 		}
 	}
 
