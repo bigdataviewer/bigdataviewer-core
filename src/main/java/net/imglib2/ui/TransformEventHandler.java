@@ -33,6 +33,8 @@
  */
 package net.imglib2.ui;
 
+import org.scijava.ui.behaviour.util.Behaviours;
+
 /**
  * Change a transformation in response to user input (mouse events, key events,
  * etc.). Report to a {@link TransformListener} when the transformation changes.
@@ -90,10 +92,4 @@ public interface TransformEventHandler< A >
 	 *            will receive transformation updates.
 	 */
 	void setTransformListener( TransformListener< A > transformListener );
-
-	/**
-	 * Get description of how mouse and keyboard actions map to transformations.
-	 */
-	// TODO REMOVE
-	String getHelpString();
 }

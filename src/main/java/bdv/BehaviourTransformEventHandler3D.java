@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -29,54 +29,133 @@
  */
 package bdv;
 
+import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.ui.TransformEventHandler;
+import net.imglib2.ui.TransformListener;
 import org.scijava.ui.behaviour.Behaviour;
 import org.scijava.ui.behaviour.ClickBehaviour;
 import org.scijava.ui.behaviour.DragBehaviour;
 import org.scijava.ui.behaviour.ScrollBehaviour;
-import org.scijava.ui.behaviour.io.InputTriggerConfig;
+import org.scijava.ui.behaviour.util.AbstractNamedBehaviour;
 import org.scijava.ui.behaviour.util.Behaviours;
-import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
-
-import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.ui.TransformEventHandler;
-import net.imglib2.ui.TransformEventHandlerFactory;
-import net.imglib2.ui.TransformListener;
 
 /**
  * A {@link TransformEventHandler} that changes an {@link AffineTransform3D}
  * through a set of {@link Behaviour}s.
  *
  * @author Stephan Saalfeld
- * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+ * @author Tobias Pietzsch
  */
 public class BehaviourTransformEventHandler3D implements BehaviourTransformEventHandler< AffineTransform3D >
 {
-	public static TransformEventHandlerFactory< AffineTransform3D > factory()
-	{
-		return new BehaviourTransformEventHandler3DFactory();
-	}
+	// -- behaviour names --
 
-	public static class BehaviourTransformEventHandler3DFactory implements BehaviourTransformEventHandlerFactory< AffineTransform3D >
-	{
-		private InputTriggerConfig config = new InputTriggerConfig();
+	public static final String DRAG_TRANSLATE = "drag translate";
+	public static final String ZOOM_NORMAL = "scroll zoom";
+	public static final String SELECT_AXIS_X = "axis x";
+	public static final String SELECT_AXIS_Y = "axis y";
+	public static final String SELECT_AXIS_Z = "axis z";
 
-		@Override
-		public void setConfig( final InputTriggerConfig config )
-		{
-			this.config = config;
-		}
+	public static final String DRAG_ROTATE = "drag rotate";
+	public static final String SCROLL_Z = "scroll browse z";
+	public static final String ROTATE_LEFT = "rotate left";
+	public static final String ROTATE_RIGHT = "rotate right";
+	public static final String KEY_ZOOM_IN = "zoom in";
+	public static final String KEY_ZOOM_OUT = "zoom out";
+	public static final String KEY_FORWARD_Z = "forward z";
+	public static final String KEY_BACKWARD_Z = "backward z";
 
-		@Override
-		public BehaviourTransformEventHandler3D create( final TransformListener< AffineTransform3D > transformListener )
-		{
-			return new BehaviourTransformEventHandler3D( transformListener, config );
-		}
-	}
+	public static final String DRAG_ROTATE_FAST = "drag rotate fast";
+	public static final String SCROLL_Z_FAST = "scroll browse z fast";
+	public static final String ROTATE_LEFT_FAST = "rotate left fast";
+	public static final String ROTATE_RIGHT_FAST = "rotate right fast";
+	public static final String KEY_ZOOM_IN_FAST = "zoom in fast";
+	public static final String KEY_ZOOM_OUT_FAST = "zoom out fast";
+	public static final String KEY_FORWARD_Z_FAST = "forward z fast";
+	public static final String KEY_BACKWARD_Z_FAST = "backward z fast";
+
+	public static final String DRAG_ROTATE_SLOW = "drag rotate slow";
+	public static final String SCROLL_Z_SLOW = "scroll browse z slow";
+	public static final String ROTATE_LEFT_SLOW = "rotate left slow";
+	public static final String ROTATE_RIGHT_SLOW = "rotate right slow";
+	public static final String KEY_ZOOM_IN_SLOW = "zoom in slow";
+	public static final String KEY_ZOOM_OUT_SLOW = "zoom out slow";
+	public static final String KEY_FORWARD_Z_SLOW = "forward z slow";
+	public static final String KEY_BACKWARD_Z_SLOW = "backward z slow";
+
+	// -- default shortcuts --
+
+	private static final String[] DRAG_TRANSLATE_KEYS = new String[] { "button2", "button3" };
+	private static final String[] ZOOM_NORMAL_KEYS = new String[] { "meta scroll", "ctrl shift scroll" };
+	private static final String[] SELECT_AXIS_X_KEYS = new String[] { "X" };
+	private static final String[] SELECT_AXIS_Y_KEYS = new String[] { "Y" };
+	private static final String[] SELECT_AXIS_Z_KEYS = new String[] { "Z" };
+
+	private static final String[] DRAG_ROTATE_KEYS = new String[] { "button1" };
+	private static final String[] SCROLL_Z_KEYS = new String[] { "scroll" };
+	private static final String[] ROTATE_LEFT_KEYS = new String[] { "LEFT" };
+	private static final String[] ROTATE_RIGHT_KEYS = new String[] { "RIGHT" };
+	private static final String[] KEY_ZOOM_IN_KEYS = new String[] { "UP" };
+	private static final String[] KEY_ZOOM_OUT_KEYS = new String[] { "DOWN" };
+	private static final String[] KEY_FORWARD_Z_KEYS = new String[] { "COMMA" };
+	private static final String[] KEY_BACKWARD_Z_KEYS = new String[] { "PERIOD" };
+
+	private static final String[] DRAG_ROTATE_FAST_KEYS = new String[] { "shift button1" };
+	private static final String[] SCROLL_Z_FAST_KEYS = new String[] { "shift scroll" };
+	private static final String[] ROTATE_LEFT_FAST_KEYS = new String[] { "shift LEFT" };
+	private static final String[] ROTATE_RIGHT_FAST_KEYS = new String[] { "shift RIGHT" };
+	private static final String[] KEY_ZOOM_IN_FAST_KEYS = new String[] { "shift UP" };
+	private static final String[] KEY_ZOOM_OUT_FAST_KEYS = new String[] { "shift DOWN" };
+	private static final String[] KEY_FORWARD_Z_FAST_KEYS = new String[] { "shift COMMA" };
+	private static final String[] KEY_BACKWARD_Z_FAST_KEYS = new String[] { "shift PERIOD" };
+
+	private static final String[] DRAG_ROTATE_SLOW_KEYS = new String[] { "ctrl button1" };
+	private static final String[] SCROLL_Z_SLOW_KEYS = new String[] { "ctrl scroll" };
+	private static final String[] ROTATE_LEFT_SLOW_KEYS = new String[] { "ctrl LEFT" };
+	private static final String[] ROTATE_RIGHT_SLOW_KEYS = new String[] { "ctrl RIGHT" };
+	private static final String[] KEY_ZOOM_IN_SLOW_KEYS = new String[] { "ctrl UP" };
+	private static final String[] KEY_ZOOM_OUT_SLOW_KEYS = new String[] { "ctrl DOWN" };
+	private static final String[] KEY_FORWARD_Z_SLOW_KEYS = new String[] { "ctrl COMMA" };
+	private static final String[] KEY_BACKWARD_Z_SLOW_KEYS = new String[] { "ctrl PERIOD" };
+
+	// -- behaviours --
+
+	private final TranslateXY dragTranslateBehaviour;
+	private final Zoom zoomBehaviour;
+	private final SelectRotationAxis selectRotationAxisXBehaviour;
+	private final SelectRotationAxis selectRotationAxisYBehaviour;
+	private final SelectRotationAxis selectRotationAxisZBehaviour;
+	private final Rotate dragRotateBehaviour;
+	private final Rotate dragRotateFastBehaviour;
+	private final Rotate dragRotateSlowBehaviour;
+	private final TranslateZ translateZBehaviour;
+	private final TranslateZ translateZFastBehaviour;
+	private final TranslateZ translateZSlowBehaviour;
+	private final KeyRotate rotateLeftBehaviour;
+	private final KeyRotate rotateLeftFastBehaviour;
+	private final KeyRotate rotateLeftSlowBehaviour;
+	private final KeyRotate rotateRightBehaviour;
+	private final KeyRotate rotateRightFastBehaviour;
+	private final KeyRotate rotateRightSlowBehaviour;
+	private final KeyZoom keyZoomInBehaviour;
+	private final KeyZoom keyZoomInFastBehaviour;
+	private final KeyZoom keyZoomInSlowBehaviour;
+	private final KeyZoom keyZoomOutBehaviour;
+	private final KeyZoom keyZoomOutFastBehaviour;
+	private final KeyZoom keyZoomOutSlowBehaviour;
+	private final KeyTranslateZ keyForwardZBehaviour;
+	private final KeyTranslateZ keyForwardZFastBehaviour;
+	private final KeyTranslateZ keyForwardZSlowBehaviour;
+	private final KeyTranslateZ keyBackwardZBehaviour;
+	private final KeyTranslateZ keyBackwardZFastBehaviour;
+	private final KeyTranslateZ keyBackwardZSlowBehaviour;
+
+	private static final double[] speed = { 1.0, 10.0, 0.1 };
 
 	/**
 	 * Current source to screen transform.
 	 */
-	protected final AffineTransform3D affine = new AffineTransform3D();
+	private final AffineTransform3D affine = new AffineTransform3D();
 
 	/**
 	 * Whom to notify when the {@link #affine current transform} is changed.
@@ -86,81 +165,106 @@ public class BehaviourTransformEventHandler3D implements BehaviourTransformEvent
 	/**
 	 * Copy of {@link #affine current transform} when mouse dragging started.
 	 */
-	final protected AffineTransform3D affineDragStart = new AffineTransform3D();
+	private final AffineTransform3D affineDragStart = new AffineTransform3D();
 
 	/**
 	 * Coordinates where mouse dragging started.
 	 */
-	protected double oX, oY;
+	private double oX, oY;
 
 	/**
 	 * Current rotation axis for rotating with keyboard, indexed {@code x->0, y->1,
 	 * z->2}.
 	 */
-	protected int axis = 0;
+	private int axis = 0;
 
 	/**
 	 * The screen size of the canvas (the component displaying the image and
 	 * generating mouse events).
 	 */
-	protected int canvasW = 1, canvasH = 1;
+	private int canvasW = 1, canvasH = 1;
 
 	/**
 	 * Screen coordinates to keep centered while zooming or rotating with the
 	 * keyboard. These are set to <em>(canvasW/2, canvasH/2)</em>
 	 */
-	protected int centerX = 0, centerY = 0;
+	private int centerX = 0, centerY = 0;
 
-	protected final Behaviours behaviours;
-
-	public BehaviourTransformEventHandler3D( final TransformListener< AffineTransform3D > listener, final InputTriggerConfig config )
+	public BehaviourTransformEventHandler3D( final TransformListener< AffineTransform3D > listener )
 	{
 		this.listener = listener;
 
-		final String DRAG_TRANSLATE = "drag translate";
-		final String ZOOM_NORMAL = "scroll zoom";
-		final String SELECT_AXIS_X = "axis x";
-		final String SELECT_AXIS_Y = "axis y";
-		final String SELECT_AXIS_Z = "axis z";
+		dragTranslateBehaviour = new TranslateXY( DRAG_TRANSLATE );
+		zoomBehaviour = new Zoom( ZOOM_NORMAL );
+		selectRotationAxisXBehaviour = new SelectRotationAxis( SELECT_AXIS_X, 0 );
+		selectRotationAxisYBehaviour = new SelectRotationAxis( SELECT_AXIS_Y, 1 );
+		selectRotationAxisZBehaviour = new SelectRotationAxis( SELECT_AXIS_Z, 2 );
 
-		final double[] speed =      { 1.0,     10.0,     0.1 };
-		final String[] SPEED_NAME = {  "",  " fast", " slow" };
-		final String[] speedMod =   {  "", "shift ", "ctrl " };
+		dragRotateBehaviour = new Rotate( DRAG_ROTATE, speed[ 0 ] );
+		dragRotateFastBehaviour = new Rotate( DRAG_ROTATE_FAST, speed[ 1 ] );
+		dragRotateSlowBehaviour = new Rotate( DRAG_ROTATE_SLOW, speed[ 2 ] );
 
-		final String DRAG_ROTATE = "drag rotate";
-		final String SCROLL_Z = "scroll browse z";
-		final String ROTATE_LEFT = "rotate left";
-		final String ROTATE_RIGHT = "rotate right";
-		final String KEY_ZOOM_IN = "zoom in";
-		final String KEY_ZOOM_OUT = "zoom out";
-		final String KEY_FORWARD_Z = "forward z";
-		final String KEY_BACKWARD_Z = "backward z";
+		translateZBehaviour = new TranslateZ( SCROLL_Z, speed[ 0 ] );
+		translateZFastBehaviour = new TranslateZ( SCROLL_Z_FAST, speed[ 1 ] );
+		translateZSlowBehaviour = new TranslateZ( SCROLL_Z_SLOW, speed[ 2 ] );
 
-		behaviours = new Behaviours( config, "bdv" );
+		rotateLeftBehaviour = new KeyRotate( ROTATE_LEFT, speed[ 0 ] );
+		rotateLeftFastBehaviour = new KeyRotate( ROTATE_LEFT_FAST, speed[ 1 ] );
+		rotateLeftSlowBehaviour = new KeyRotate( ROTATE_LEFT_SLOW, speed[ 2 ] );
 
-		behaviours.behaviour( new TranslateXY(), DRAG_TRANSLATE, "button2", "button3" );
-		behaviours.behaviour( new Zoom( speed[ 0 ] ), ZOOM_NORMAL, "meta scroll", "ctrl shift scroll" );
-		behaviours.behaviour( new SelectRotationAxis( 0 ), SELECT_AXIS_X, "X" );
-		behaviours.behaviour( new SelectRotationAxis( 1 ), SELECT_AXIS_Y, "Y" );
-		behaviours.behaviour( new SelectRotationAxis( 2 ), SELECT_AXIS_Z, "Z" );
+		rotateRightBehaviour = new KeyRotate( ROTATE_RIGHT, -speed[ 0 ] );
+		rotateRightFastBehaviour = new KeyRotate( ROTATE_RIGHT_FAST, -speed[ 1 ] );
+		rotateRightSlowBehaviour = new KeyRotate( ROTATE_RIGHT_SLOW, -speed[ 2 ] );
 
-		for ( int s = 0; s < 3; ++s )
-		{
-			behaviours.behaviour( new Rotate( speed[ s ] ), DRAG_ROTATE + SPEED_NAME[ s ], speedMod[ s ] + "button1" );
-			behaviours.behaviour( new TranslateZ( speed[ s ] ), SCROLL_Z + SPEED_NAME[ s ], speedMod[ s ] + "scroll" );
-			behaviours.behaviour( new KeyRotate( speed[ s ] ), ROTATE_LEFT + SPEED_NAME[ s ], speedMod[ s ] + "LEFT" );
-			behaviours.behaviour( new KeyRotate( -speed[ s ] ), ROTATE_RIGHT + SPEED_NAME[ s ], speedMod[ s ] + "RIGHT" );
-			behaviours.behaviour( new KeyZoom( speed[ s ] ), KEY_ZOOM_IN + SPEED_NAME[ s ], speedMod[ s ] + "UP" );
-			behaviours.behaviour( new KeyZoom( -speed[ s ] ), KEY_ZOOM_OUT + SPEED_NAME[ s ], speedMod[ s ] + "DOWN" );
-			behaviours.behaviour( new KeyTranslateZ( speed[ s ] ), KEY_FORWARD_Z + SPEED_NAME[ s ], speedMod[ s ] + "COMMA" );
-			behaviours.behaviour( new KeyTranslateZ( -speed[ s ] ), KEY_BACKWARD_Z + SPEED_NAME[ s ], speedMod[ s ] + "PERIOD" );
-		}
+		keyZoomInBehaviour = new KeyZoom( KEY_ZOOM_IN, speed[ 0 ] );
+		keyZoomInFastBehaviour = new KeyZoom( KEY_ZOOM_IN_FAST, speed[ 1 ] );
+		keyZoomInSlowBehaviour = new KeyZoom( KEY_ZOOM_IN_SLOW, speed[ 2 ] );
+
+		keyZoomOutBehaviour = new KeyZoom( KEY_ZOOM_OUT, -speed[ 0 ] );
+		keyZoomOutFastBehaviour = new KeyZoom( KEY_ZOOM_OUT_FAST, -speed[ 1 ] );
+		keyZoomOutSlowBehaviour = new KeyZoom( KEY_ZOOM_OUT_SLOW, -speed[ 2 ] );
+
+		keyForwardZBehaviour = new KeyTranslateZ( KEY_FORWARD_Z, speed[ 0 ] );
+		keyForwardZFastBehaviour = new KeyTranslateZ( KEY_FORWARD_Z_FAST, speed[ 1 ] );
+		keyForwardZSlowBehaviour = new KeyTranslateZ( KEY_FORWARD_Z_SLOW, speed[ 2 ] );
+
+		keyBackwardZBehaviour = new KeyTranslateZ( KEY_BACKWARD_Z, -speed[ 0 ] );
+		keyBackwardZFastBehaviour = new KeyTranslateZ( KEY_BACKWARD_Z_FAST, -speed[ 1 ] );
+		keyBackwardZSlowBehaviour = new KeyTranslateZ( KEY_BACKWARD_Z_SLOW, -speed[ 2 ] );
 	}
 
 	@Override
-	public void install( final TriggerBehaviourBindings bindings )
+	public void install( final Behaviours behaviours )
 	{
-		behaviours.install( bindings, "transform" );
+		behaviours.namedBehaviour( dragTranslateBehaviour, DRAG_TRANSLATE_KEYS );
+		behaviours.namedBehaviour( zoomBehaviour, ZOOM_NORMAL_KEYS );
+		behaviours.namedBehaviour( selectRotationAxisXBehaviour, SELECT_AXIS_X_KEYS );
+		behaviours.namedBehaviour( selectRotationAxisYBehaviour, SELECT_AXIS_Y_KEYS );
+		behaviours.namedBehaviour( selectRotationAxisZBehaviour, SELECT_AXIS_Z_KEYS );
+		behaviours.namedBehaviour( dragRotateBehaviour, DRAG_ROTATE_KEYS );
+		behaviours.namedBehaviour( dragRotateFastBehaviour, DRAG_ROTATE_FAST_KEYS );
+		behaviours.namedBehaviour( dragRotateSlowBehaviour, DRAG_ROTATE_SLOW_KEYS );
+		behaviours.namedBehaviour( translateZBehaviour, SCROLL_Z_KEYS );
+		behaviours.namedBehaviour( translateZFastBehaviour, SCROLL_Z_FAST_KEYS );
+		behaviours.namedBehaviour( translateZSlowBehaviour, SCROLL_Z_SLOW_KEYS );
+		behaviours.namedBehaviour( rotateLeftBehaviour, ROTATE_LEFT_KEYS );
+		behaviours.namedBehaviour( rotateLeftFastBehaviour, ROTATE_LEFT_FAST_KEYS );
+		behaviours.namedBehaviour( rotateLeftSlowBehaviour, ROTATE_LEFT_SLOW_KEYS );
+		behaviours.namedBehaviour( rotateRightBehaviour, ROTATE_RIGHT_KEYS );
+		behaviours.namedBehaviour( rotateRightFastBehaviour, ROTATE_RIGHT_FAST_KEYS );
+		behaviours.namedBehaviour( rotateRightSlowBehaviour, ROTATE_RIGHT_SLOW_KEYS );
+		behaviours.namedBehaviour( keyZoomInBehaviour, KEY_ZOOM_IN_KEYS );
+		behaviours.namedBehaviour( keyZoomInFastBehaviour, KEY_ZOOM_IN_FAST_KEYS );
+		behaviours.namedBehaviour( keyZoomInSlowBehaviour, KEY_ZOOM_IN_SLOW_KEYS );
+		behaviours.namedBehaviour( keyZoomOutBehaviour, KEY_ZOOM_OUT_KEYS );
+		behaviours.namedBehaviour( keyZoomOutFastBehaviour, KEY_ZOOM_OUT_FAST_KEYS );
+		behaviours.namedBehaviour( keyZoomOutSlowBehaviour, KEY_ZOOM_OUT_SLOW_KEYS );
+		behaviours.namedBehaviour( keyForwardZBehaviour, KEY_FORWARD_Z_KEYS );
+		behaviours.namedBehaviour( keyForwardZFastBehaviour, KEY_FORWARD_Z_SLOW_KEYS );
+		behaviours.namedBehaviour( keyForwardZSlowBehaviour, KEY_FORWARD_Z_FAST_KEYS );
+		behaviours.namedBehaviour( keyBackwardZBehaviour, KEY_BACKWARD_Z_KEYS );
+		behaviours.namedBehaviour( keyBackwardZFastBehaviour, KEY_BACKWARD_Z_FAST_KEYS );
+		behaviours.namedBehaviour( keyBackwardZSlowBehaviour, KEY_BACKWARD_Z_SLOW_KEYS );
 	}
 
 	@Override
@@ -214,12 +318,6 @@ public class BehaviourTransformEventHandler3D implements BehaviourTransformEvent
 		listener = transformListener;
 	}
 
-	@Override
-	public String getHelpString()
-	{
-		return helpString;
-	}
-
 	/**
 	 * notifies {@link #listener} that the current transform changed.
 	 */
@@ -233,27 +331,6 @@ public class BehaviourTransformEventHandler3D implements BehaviourTransformEvent
 	 * One step of rotation (radian).
 	 */
 	final protected static double step = Math.PI / 180;
-
-	final protected static String NL = System.getProperty( "line.separator" );
-
-	final protected static String helpString =
-			"Mouse control:" + NL + " " + NL +
-					"Pan and tilt the volume by left-click and dragging the image in the canvas, " + NL +
-					"move the volume by middle-or-right-click and dragging the image in the canvas, " + NL +
-					"browse alongside the z-axis using the mouse-wheel, and" + NL +
-					"zoom in and out using the mouse-wheel holding CTRL+SHIFT or META." + NL + " " + NL +
-					"Key control:" + NL + " " + NL +
-					"X - Select x-axis as rotation axis." + NL +
-					"Y - Select y-axis as rotation axis." + NL +
-					"Z - Select z-axis as rotation axis." + NL +
-					"CURSOR LEFT - Rotate clockwise around the choosen rotation axis." + NL +
-					"CURSOR RIGHT - Rotate counter-clockwise around the choosen rotation axis." + NL +
-					"CURSOR UP - Zoom in." + NL +
-					"CURSOR DOWN - Zoom out." + NL +
-					"./> - Forward alongside z-axis." + NL +
-					",/< - Backward alongside z-axis." + NL +
-					"SHIFT - Rotate and browse 10x faster." + NL +
-					"CTRL - Rotate and browse 10x slower.";
 
 	private void scale( final double s, final double x, final double y )
 	{
@@ -287,12 +364,13 @@ public class BehaviourTransformEventHandler3D implements BehaviourTransformEvent
 		affine.set( affine.get( 1, 3 ) + centerY, 1, 3 );
 	}
 
-	private class Rotate implements DragBehaviour
+	private class Rotate extends AbstractNamedBehaviour implements DragBehaviour
 	{
 		private final double speed;
 
-		public Rotate( final double speed )
+		public Rotate( final String name, final double speed )
 		{
+			super( name );
 			this.speed = speed;
 		}
 
@@ -337,8 +415,13 @@ public class BehaviourTransformEventHandler3D implements BehaviourTransformEvent
 		{}
 	}
 
-	private class TranslateXY implements DragBehaviour
+	private class TranslateXY extends AbstractNamedBehaviour implements DragBehaviour
 	{
+		public TranslateXY( final String name )
+		{
+			super( name );
+		}
+
 		@Override
 		public void init( final int x, final int y )
 		{
@@ -370,12 +453,13 @@ public class BehaviourTransformEventHandler3D implements BehaviourTransformEvent
 		{}
 	}
 
-	private class TranslateZ implements ScrollBehaviour
+	private class TranslateZ extends AbstractNamedBehaviour implements ScrollBehaviour
 	{
 		private final double speed;
 
-		public TranslateZ( final double speed )
+		public TranslateZ( final String name, final double speed )
 		{
+			super( name );
 			this.speed = speed;
 		}
 
@@ -392,13 +476,13 @@ public class BehaviourTransformEventHandler3D implements BehaviourTransformEvent
 		}
 	}
 
-	private class Zoom implements ScrollBehaviour
+	private class Zoom extends AbstractNamedBehaviour implements ScrollBehaviour
 	{
-		private final double speed;
+		private final double speed = 1.0;
 
-		public Zoom( final double speed )
+		public Zoom( final String name )
 		{
-			this.speed = speed;
+			super( name );
 		}
 
 		@Override
@@ -417,12 +501,13 @@ public class BehaviourTransformEventHandler3D implements BehaviourTransformEvent
 		}
 	}
 
-	private class SelectRotationAxis implements ClickBehaviour
+	private class SelectRotationAxis extends AbstractNamedBehaviour implements ClickBehaviour
 	{
 		private final int axis;
 
-		public SelectRotationAxis( final int axis )
+		public SelectRotationAxis( final String name, final int axis )
 		{
+			super ( name );
 			this.axis = axis;
 		}
 
@@ -433,12 +518,13 @@ public class BehaviourTransformEventHandler3D implements BehaviourTransformEvent
 		}
 	}
 
-	private class KeyRotate implements ClickBehaviour
+	private class KeyRotate extends AbstractNamedBehaviour implements ClickBehaviour
 	{
 		private final double speed;
 
-		public KeyRotate( final double speed )
+		public KeyRotate( final String name, final double speed )
 		{
+			super( name );
 			this.speed = speed;
 		}
 
@@ -453,12 +539,13 @@ public class BehaviourTransformEventHandler3D implements BehaviourTransformEvent
 		}
 	}
 
-	private class KeyZoom implements ClickBehaviour
+	private class KeyZoom extends AbstractNamedBehaviour implements ClickBehaviour
 	{
 		private final double dScale;
 
-		public KeyZoom( final double speed )
+		public KeyZoom( final String name, final double speed )
 		{
+			super( name );
 			if ( speed > 0 )
 				dScale = 1.0 + 0.1 * speed;
 			else
@@ -476,12 +563,13 @@ public class BehaviourTransformEventHandler3D implements BehaviourTransformEvent
 		}
 	}
 
-	private class KeyTranslateZ implements ClickBehaviour
+	private class KeyTranslateZ extends AbstractNamedBehaviour implements ClickBehaviour
 	{
 		private final double speed;
 
-		public KeyTranslateZ( final double speed )
+		public KeyTranslateZ( final String name, final double speed )
 		{
+			super( name );
 			this.speed = speed;
 		}
 

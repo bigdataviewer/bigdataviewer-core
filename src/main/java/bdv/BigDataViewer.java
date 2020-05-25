@@ -329,8 +329,6 @@ public class BigDataViewer
 			final ViewerOptions options )
 	{
 		final InputTriggerConfig inputTriggerConfig = getInputTriggerConfig( options );
-		if ( options.values.getTransformEventHandlerFactory() instanceof BehaviourTransformEventHandlerFactory )
-			( ( BehaviourTransformEventHandlerFactory< ? > ) options.values.getTransformEventHandlerFactory() ).setConfig( inputTriggerConfig );
 
 		viewerFrame = new ViewerFrame( sources, numTimepoints, cache, options.inputTriggerConfig( inputTriggerConfig ) );
 		if ( windowTitle != null )
