@@ -47,6 +47,7 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelListener;
 import java.util.concurrent.CopyOnWriteArrayList;
 import javax.swing.JComponent;
+import org.scijava.listeners.Listeners;
 
 /*
  * A {@link JComponent} that uses {@link OverlayRenderer OverlayRenderers}
@@ -77,12 +78,7 @@ public class InteractiveDisplayCanvas< A > extends JComponent
 	 * Listeners that we have to notify about view transformation changes.
 	 */
 	final private CopyOnWriteArrayList< TransformListener< A > > transformListeners;
-
-	/**
-	 * The {@link OverlayRenderer} that draws on top of the current buffered
-	 * image.
-	 */
-	final private CopyOnWriteArrayList< OverlayRenderer > overlayRenderers;
+	final private Listeners.List< OverlayRenderer > overlayRenderers;
 
 	/**
 	 * Create a new {@link InteractiveDisplayCanvas} with initially no
@@ -105,7 +101,7 @@ public class InteractiveDisplayCanvas< A > extends JComponent
 		setPreferredSize( new Dimension( width, height ) );
 		setFocusable( true );
 
-		this.overlayRenderers = new CopyOnWriteArrayList< >();
+		this.overlayRenderers = new Listeners.SynchronizedList<>( r -> r.setCanvasSize( getWidth(), getHeight() ) );
 		this.transformListeners = new CopyOnWriteArrayList< >();
 
 		addComponentListener( new ComponentAdapter()
@@ -117,8 +113,7 @@ public class InteractiveDisplayCanvas< A > extends JComponent
 				final int h = getHeight();
 				if ( handler != null )
 					handler.setCanvasSize( w, h, true );
-				for ( final OverlayRenderer or : overlayRenderers )
-					or.setCanvasSize( w, h );
+				overlayRenderers.list.forEach( r -> r.setCanvasSize( w, h ) );
 				// enableEvents( AWTEvent.MOUSE_MOTION_EVENT_MASK );
 			}
 		} );
@@ -138,30 +133,6 @@ public class InteractiveDisplayCanvas< A > extends JComponent
 	}
 
 	/**
-	 * Add an {@link OverlayRenderer} that draws on top of the current buffered
-	 * image.
-	 *
-	 * @param renderer overlay renderer to add.
-	 */
-//	@Override
-	public void addOverlayRenderer( final OverlayRenderer renderer )
-	{
-		overlayRenderers.add( renderer );
-		renderer.setCanvasSize( getWidth(), getHeight() );
-	}
-
-	/**
-	 * Remove an {@link OverlayRenderer}.
-	 *
-	 * @param renderer
-	 *            overlay renderer to remove.
-	 */
-//	@Override
-	public void removeOverlayRenderer( final OverlayRenderer renderer )
-	{
-		overlayRenderers.remove( renderer );
-	}
-
 	/**
 	 * Add a {@link TransformListener} to notify about view transformation
 	 * changes.
@@ -275,20 +246,26 @@ public class InteractiveDisplayCanvas< A > extends JComponent
 	@Override
 	public void paintComponent( final Graphics g )
 	{
-		for ( final OverlayRenderer or : overlayRenderers )
-			or.drawOverlays( g );
+		overlayRenderers.list.forEach( r -> r.drawOverlays( g ) );
+	}
+
+	// -- deprecated API --
+
+	/**
+	 * @deprecated Use {@code overlays().add(renderer)} instead
+	 */
+	@Deprecated
+	public void addOverlayRenderer( final OverlayRenderer renderer )
+	{
+		overlayRenderers.add( renderer );
 	}
 
 	/**
-	 * This is called by our {@link #getTransformEventHandler() transform event
-	 * handler} when the transform is changed. In turn, we notify all our
-	 * {@link TransformListener TransformListeners} that the view transform has
-	 * changed.
+	 * @deprecated Use {@code overlays().remove(renderer)} instead
 	 */
-//	@Override
-	public void transformChanged( final A transform )
+	@Deprecated
+	public void removeOverlayRenderer( final OverlayRenderer renderer )
 	{
-		for ( final TransformListener< A > l : transformListeners )
-			l.transformChanged( transform );
+		overlayRenderers.remove( renderer );
 	}
 }
