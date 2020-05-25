@@ -260,7 +260,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		viewerTransform = new AffineTransform3D();
 		display = new InteractiveDisplayCanvas<>(
 				options.getWidth(), options.getHeight(), options.getTransformEventHandlerFactory() );
-		display.addTransformListener( this );
+		display.getTransformEventHandler().setTransformListener( this );
 		renderTarget = new BufferedImageOverlayRenderer();
 		renderTarget.setCanvasSize( options.getWidth(), options.getHeight() );
 		display.overlays().add( renderTarget );

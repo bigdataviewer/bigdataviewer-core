@@ -45,7 +45,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelListener;
-import java.util.concurrent.CopyOnWriteArrayList;
 import javax.swing.JComponent;
 import org.scijava.listeners.Listeners;
 
@@ -56,11 +55,6 @@ import org.scijava.listeners.Listeners;
  * {@link InteractiveDisplayCanvas} also owns a {@link TransformEventHandler},
  * which is registered to listen to mouse and keyboard events if it implements
  * {@link MouseListener}, etc.
- * <p>
- * Moreover, {@link InteractiveDisplayCanvas} is a transform event multi-caster.
- * It receives {@link TransformListener#transformChanged(Object)
- * transformChanged} events (usually from its {@link TransformEventHandler}) and
- * propagates them to all registered listeners.
  *
  * @param <A>
  *            transform type
@@ -75,9 +69,8 @@ public class InteractiveDisplayCanvas< A > extends JComponent
 	private TransformEventHandler< A > handler;
 
 	/**
-	 * Listeners that we have to notify about view transformation changes.
+	 * To draw this component, {@link OverlayRenderer#drawOverlays} is invoked for each renderer.
 	 */
-	final private CopyOnWriteArrayList< TransformListener< A > > transformListeners;
 	final private Listeners.List< OverlayRenderer > overlayRenderers;
 
 	/**
@@ -102,7 +95,6 @@ public class InteractiveDisplayCanvas< A > extends JComponent
 		setFocusable( true );
 
 		this.overlayRenderers = new Listeners.SynchronizedList<>( r -> r.setCanvasSize( getWidth(), getHeight() ) );
-		this.transformListeners = new CopyOnWriteArrayList< >();
 
 		addComponentListener( new ComponentAdapter()
 		{
@@ -127,35 +119,18 @@ public class InteractiveDisplayCanvas< A > extends JComponent
 			}
 		} );
 
-		handler = transformEventHandlerFactory.create( this::transformChanged );
+		handler = transformEventHandlerFactory.create( null );
 		handler.setCanvasSize( width, height, false );
 		addHandler( handler );
 	}
 
 	/**
-	/**
-	 * Add a {@link TransformListener} to notify about view transformation
-	 * changes.
-	 *
-	 * @param listener
-	 *            the transform listener to add.
+	 * OverlayRenderers can be added/removed here.
+	 * {@link OverlayRenderer#drawOverlays} is invoked for each renderer (in the order they were added).
 	 */
-//	@Override
-	public void addTransformListener( final TransformListener< A > listener )
+	public Listeners< OverlayRenderer > overlays()
 	{
-		transformListeners.add( listener );
-	}
-
-	/**
-	 * Remove a {@link TransformListener}.
-	 *
-	 * @param listener
-	 *            the transform listener to remove.
-	 */
-//	@Override
-	public void removeTransformListener( final TransformListener< A > listener )
-	{
-		transformListeners.remove( listener );
+		return overlayRenderers;
 	}
 
 	/**
@@ -221,7 +196,6 @@ public class InteractiveDisplayCanvas< A > extends JComponent
 	 *
 	 * @return handles mouse and key events to update the view transform.
 	 */
-//	@Override
 	public TransformEventHandler< A > getTransformEventHandler()
 	{
 		return handler;
@@ -234,8 +208,7 @@ public class InteractiveDisplayCanvas< A > extends JComponent
 	 * @param transformEventHandler
 	 *            handler to use
 	 */
-//	@Override
-	public synchronized void setTransformEventHandler( final TransformEventHandler< A > transformEventHandler )
+	public void setTransformEventHandler( final TransformEventHandler< A > transformEventHandler )
 	{
 		removeHandler( handler );
 		handler = transformEventHandler;
