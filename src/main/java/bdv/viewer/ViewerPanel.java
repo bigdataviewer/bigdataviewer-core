@@ -263,8 +263,8 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		display.addTransformListener( this );
 		renderTarget = new BufferedImageOverlayRenderer();
 		renderTarget.setCanvasSize( options.getWidth(), options.getHeight() );
-		display.addOverlayRenderer( renderTarget );
-		display.addOverlayRenderer( this );
+		display.overlays().add( renderTarget );
+		display.overlays().add( this );
 
 		renderingExecutorService = Executors.newFixedThreadPool(
 				options.getNumRenderingThreads(),
