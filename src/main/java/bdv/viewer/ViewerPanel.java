@@ -56,6 +56,7 @@ import javax.swing.JSlider;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
+import net.imglib2.ui.TransformEventHandlerFactory;
 import net.imglib2.ui.overlay.BufferedImageOverlayRenderer;
 import org.jdom2.Element;
 
@@ -142,11 +143,13 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 */
 	protected final AffineTransform3D viewerTransform;
 
+	private final TransformEventHandler< AffineTransform3D > transformEventHandler;
+
 	/**
 	 * Canvas used for displaying the rendered {@link #renderTarget image} and
 	 * overlays.
 	 */
-	protected final InteractiveDisplayCanvas< AffineTransform3D > display;
+	protected final InteractiveDisplayCanvas display;
 
 	protected final JSlider sliderTime;
 
@@ -258,11 +261,10 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		painterThread = new PainterThread( threadGroup, this );
 		painterThread.setDaemon( true );
 		viewerTransform = new AffineTransform3D();
-		display = new InteractiveDisplayCanvas<>(
-				options.getWidth(), options.getHeight(), options.getTransformEventHandlerFactory() );
-		display.getTransformEventHandler().setTransformListener( this );
+		transformEventHandler = options.getTransformEventHandlerFactory().create( this );
 		renderTarget = new BufferedImageOverlayRenderer();
-		renderTarget.setCanvasSize( options.getWidth(), options.getHeight() );
+		display = new InteractiveDisplayCanvas( options.getWidth(), options.getHeight() );
+		display.setTransformEventHandler( transformEventHandler );
 		display.overlays().add( renderTarget );
 		display.overlays().add( this );
 
@@ -487,9 +489,8 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		{
 			if ( currentAnimator != null )
 			{
-				final TransformEventHandler< AffineTransform3D > handler = display.getTransformEventHandler();
 				final AffineTransform3D transform = currentAnimator.getCurrent( System.currentTimeMillis() );
-				handler.setTransform( transform );
+				transformEventHandler.setTransform( transform );
 				transformChanged( transform );
 				if ( currentAnimator.isComplete() )
 					currentAnimator = null;
@@ -700,7 +701,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		final double[] qTarget = new double[ 4 ];
 		LinAlgHelpers.quaternionInvert( qTmpSource, qTarget );
 
-		final AffineTransform3D transform = display.getTransformEventHandler().getTransform();
+		final AffineTransform3D transform = transformEventHandler.getTransform();
 		double centerX;
 		double centerY;
 		if ( mouseCoordinates.isMouseInsidePanel() )
@@ -758,7 +759,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 */
 	public void setCurrentViewerTransform( final AffineTransform3D viewerTransform )
 	{
-		display.getTransformEventHandler().setTransform( viewerTransform );
+		transformEventHandler.setTransform( viewerTransform );
 		transformChanged( viewerTransform );
 	}
 
@@ -848,9 +849,14 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	 *
 	 * @return the viewer canvas.
 	 */
-	public InteractiveDisplayCanvas< AffineTransform3D > getDisplay()
+	public InteractiveDisplayCanvas getDisplay()
 	{
 		return display;
+	}
+
+	public TransformEventHandler< AffineTransform3D > getTransformEventHandler()
+	{
+		return transformEventHandler;
 	}
 
 	/**
