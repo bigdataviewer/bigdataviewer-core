@@ -36,6 +36,9 @@ package net.imglib2.ui;
 import org.scijava.ui.behaviour.util.Behaviours;
 
 /**
+ * TODO revise interface, are all methods still necessary?
+ * TODO revise javadoc
+ *
  * Change a transformation in response to user input (mouse events, key events,
  * etc.). Report to a {@link TransformListener} when the transformation changes.
  * The {@link TransformEventHandler} receives notifications about changes of the
@@ -49,6 +52,11 @@ import org.scijava.ui.behaviour.util.Behaviours;
  */
 public interface TransformEventHandler< A >
 {
+	/**
+	 * Install transformation behaviours into the specified {@code behaviours} contrainer.
+	 */
+	void install( Behaviours behaviours );
+
 	/**
 	 * Get (a copy of) the current source-to-screen transform.
 	 *
@@ -92,4 +100,5 @@ public interface TransformEventHandler< A >
 	 *            will receive transformation updates.
 	 */
 	void setTransformListener( TransformListener< A > transformListener );
+
 }
