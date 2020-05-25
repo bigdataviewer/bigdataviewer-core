@@ -52,21 +52,21 @@ import org.scijava.listeners.Listeners;
  * A {@link JComponent} that uses {@link OverlayRenderer OverlayRenderers}
  * to render a canvas displayed on screen.
  * <p>
- * {@link InteractiveDisplayCanvas} also owns a {@link TransformEventHandler},
- * which is registered to listen to mouse and keyboard events if it implements
- * {@link MouseListener}, etc.
+ * {@code InteractiveDisplayCanvas} has a {@code TransformEventHandler} that is notified when the component size is changed.
+ * <p>
+ * {@link #addHandler}/{@link #removeHandler} provide simplified that implement {@code MouseListener}, {@code KeyListener}, etc can be
  *
  * @param <A>
  *            transform type
  *
  * @author Tobias Pietzsch
  */
-public class InteractiveDisplayCanvas< A > extends JComponent
+public class InteractiveDisplayCanvas extends JComponent
 {
 	/**
 	 * Mouse/Keyboard handler that manipulates the view transformation.
 	 */
-	private TransformEventHandler< A > handler;
+	private TransformEventHandler< ? > handler;
 
 	/**
 	 * To draw this component, {@link OverlayRenderer#drawOverlays} is invoked for each renderer.
@@ -74,27 +74,20 @@ public class InteractiveDisplayCanvas< A > extends JComponent
 	final private Listeners.List< OverlayRenderer > overlayRenderers;
 
 	/**
-	 * Create a new {@link InteractiveDisplayCanvas} with initially no
-	 * {@link OverlayRenderer OverlayRenderers} and no {@link TransformListener
-	 * TransformListeners}. A {@link TransformEventHandler} is instantiated
-	 * using the given factory, and registered for mouse and key events if it
-	 * implements the appropriate interfaces ({@link MouseListener} etc.)
+	 * Create a new {@code InteractiveDisplayCanvas}.
 	 *
 	 * @param width
 	 *            preferred component width.
 	 * @param height
 	 *            preferred component height.
-	 * @param transformEventHandlerFactory
-	 *            factory to create a {@link TransformEventHandler} appropriate
-	 *            for our transform type A.
 	 */
-	public InteractiveDisplayCanvas( final int width, final int height, final TransformEventHandlerFactory< A > transformEventHandlerFactory )
+	public InteractiveDisplayCanvas( final int width, final int height )
 	{
 		super();
 		setPreferredSize( new Dimension( width, height ) );
 		setFocusable( true );
 
-		this.overlayRenderers = new Listeners.SynchronizedList<>( r -> r.setCanvasSize( getWidth(), getHeight() ) );
+		overlayRenderers = new Listeners.SynchronizedList<>( r -> r.setCanvasSize( getWidth(), getHeight() ) );
 
 		addComponentListener( new ComponentAdapter()
 		{
@@ -118,10 +111,6 @@ public class InteractiveDisplayCanvas< A > extends JComponent
 				requestFocusInWindow();
 			}
 		} );
-
-		handler = transformEventHandlerFactory.create( null );
-		handler.setCanvasSize( width, height, false );
-		addHandler( handler );
 	}
 
 	/**
@@ -145,19 +134,19 @@ public class InteractiveDisplayCanvas< A > extends JComponent
 //	@Override
 	public void addHandler( final Object h )
 	{
-		if ( KeyListener.class.isInstance( h ) )
+		if ( h instanceof KeyListener )
 			addKeyListener( ( KeyListener ) h );
 
-		if ( MouseMotionListener.class.isInstance( h ) )
+		if ( h instanceof MouseMotionListener )
 			addMouseMotionListener( ( MouseMotionListener ) h );
 
-		if ( MouseListener.class.isInstance( h ) )
+		if ( h instanceof MouseListener )
 			addMouseListener( ( MouseListener ) h );
 
-		if ( MouseWheelListener.class.isInstance( h ) )
+		if ( h instanceof MouseWheelListener )
 			addMouseWheelListener( ( MouseWheelListener ) h );
 
-		if ( FocusListener.class.isInstance( h ) )
+		if ( h instanceof FocusListener )
 			addFocusListener( ( FocusListener ) h );
 	}
 
@@ -174,43 +163,32 @@ public class InteractiveDisplayCanvas< A > extends JComponent
 //	@Override
 	public void removeHandler( final Object h )
 	{
-		if ( KeyListener.class.isInstance( h ) )
+		if ( h instanceof KeyListener )
 			removeKeyListener( ( KeyListener ) h );
 
-		if ( MouseMotionListener.class.isInstance( h ) )
+		if ( h instanceof MouseMotionListener )
 			removeMouseMotionListener( ( MouseMotionListener ) h );
 
-		if ( MouseListener.class.isInstance( h ) )
+		if ( h instanceof MouseListener )
 			removeMouseListener( ( MouseListener ) h );
 
-		if ( MouseWheelListener.class.isInstance( h ) )
+		if ( h instanceof MouseWheelListener )
 			removeMouseWheelListener( ( MouseWheelListener ) h );
 
-		if ( FocusListener.class.isInstance( h ) )
+		if ( h instanceof FocusListener )
 			removeFocusListener( ( FocusListener ) h );
 	}
 
 	/**
-	 * Get the {@link TransformEventHandler} that handles mouse and key events
-	 * to update our view transform.
-	 *
-	 * @return handles mouse and key events to update the view transform.
-	 */
-	public TransformEventHandler< A > getTransformEventHandler()
-	{
-		return handler;
-	}
-
-	/**
-	 * Set the {@link TransformEventHandler} that handles mouse and key events
-	 * to update our view transform.
+	 * Set the {@link TransformEventHandler} that will be notified when component is resized.
 	 *
 	 * @param transformEventHandler
 	 *            handler to use
 	 */
-	public void setTransformEventHandler( final TransformEventHandler< A > transformEventHandler )
+	public void setTransformEventHandler( final TransformEventHandler< ? > transformEventHandler )
 	{
-		removeHandler( handler );
+		if ( handler != null )
+			removeHandler( handler );
 		handler = transformEventHandler;
 		handler.setCanvasSize( getWidth(), getHeight(), false );
 		addHandler( handler );
