@@ -47,7 +47,6 @@ import org.scijava.ui.behaviour.util.Behaviours;
 import org.scijava.ui.behaviour.util.InputActionBindings;
 import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
 
-import bdv.BehaviourTransformEventHandler;
 import bdv.cache.CacheControl;
 import net.imglib2.ui.TransformEventHandler;
 import net.imglib2.ui.util.GuiUtil;
@@ -140,8 +139,7 @@ public class ViewerFrame extends JFrame
 		transformBehaviours.install( triggerbindings, "transform" );
 
 		final TransformEventHandler< ? > tfHandler = viewer.getDisplay().getTransformEventHandler();
-		if ( tfHandler instanceof BehaviourTransformEventHandler )
-			( ( BehaviourTransformEventHandler< ? > ) tfHandler ).install( transformBehaviours );
+		tfHandler.install( transformBehaviours );
 	}
 
 	public ViewerPanel getViewerPanel()

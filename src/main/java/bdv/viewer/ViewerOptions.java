@@ -29,7 +29,7 @@
  */
 package bdv.viewer;
 
-import bdv.BehaviourTransformEventHandler3D;
+import bdv.TransformEventHandler3D;
 import java.awt.event.KeyListener;
 
 import org.scijava.ui.behaviour.KeyPressedManager;
@@ -242,7 +242,7 @@ public class ViewerOptions
 
 		private MessageOverlayAnimator msgOverlay = new MessageOverlayAnimator( 800 );
 
-		private TransformEventHandlerFactory< AffineTransform3D > transformEventHandlerFactory = BehaviourTransformEventHandler3D::new;
+		private TransformEventHandlerFactory< AffineTransform3D > transformEventHandlerFactory = TransformEventHandler3D::new;
 
 		private AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory = AccumulateProjectorARGB.factory;
 

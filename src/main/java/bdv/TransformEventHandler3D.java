@@ -46,7 +46,7 @@ import org.scijava.ui.behaviour.util.Behaviours;
  * @author Stephan Saalfeld
  * @author Tobias Pietzsch
  */
-public class BehaviourTransformEventHandler3D implements BehaviourTransformEventHandler< AffineTransform3D >
+public class TransformEventHandler3D implements TransformEventHandler< AffineTransform3D >
 {
 	// -- behaviour names --
 
@@ -190,7 +190,7 @@ public class BehaviourTransformEventHandler3D implements BehaviourTransformEvent
 	 */
 	private int centerX = 0, centerY = 0;
 
-	public BehaviourTransformEventHandler3D( final TransformListener< AffineTransform3D > listener )
+	public TransformEventHandler3D( final TransformListener< AffineTransform3D > listener )
 	{
 		this.listener = listener;
 
@@ -514,7 +514,7 @@ public class BehaviourTransformEventHandler3D implements BehaviourTransformEvent
 		@Override
 		public void click( final int x, final int y )
 		{
-			BehaviourTransformEventHandler3D.this.axis = axis;
+			TransformEventHandler3D.this.axis = axis;
 		}
 	}
 
