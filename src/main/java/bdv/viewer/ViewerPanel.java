@@ -755,7 +755,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	/**
 	 * Set the viewer transform.
 	 */
-	public synchronized void setCurrentViewerTransform( final AffineTransform3D viewerTransform )
+	public void setCurrentViewerTransform( final AffineTransform3D viewerTransform )
 	{
 		display.getTransformEventHandler().setTransform( viewerTransform );
 		transformChanged( viewerTransform );
