@@ -41,39 +41,56 @@ import org.janelia.saalfeldlab.n5.s3.N5AmazonS3Reader;
 
 import java.io.IOException;
 
-public class N5S3ImageLoader extends AbstractN5ImageLoader
+public class N5S3ImageLoader extends N5ImageLoader
 {
-	public N5S3ImageLoader( String serviceEndpoint, String signingRegion, String bucketName, String key, AbstractSequenceDescription<?, ?, ?> sequenceDescription ) throws IOException
+	static class N5AmazonS3ReaderCreator
 	{
-		super( createN5AmazonS3Reader( serviceEndpoint, signingRegion, bucketName, key ), sequenceDescription );
+		private final String serviceEndpoint;
+		private final String signingRegion;
+		private final String bucketName;
+		private final String key;
+
+		public N5AmazonS3ReaderCreator( String serviceEndpoint, String signingRegion, String bucketName, String key  )
+		{
+			this.serviceEndpoint = serviceEndpoint;
+			this.signingRegion = signingRegion;
+			this.bucketName = bucketName;
+			this.key = key;
+		}
+
+		public N5AmazonS3Reader create() throws IOException
+		{
+			final AwsClientBuilder.EndpointConfiguration endpoint = new AwsClientBuilder.EndpointConfiguration( serviceEndpoint, signingRegion );
+
+			AWSCredentialsProvider credentialsProvider;
+			try
+			{
+				final DefaultAWSCredentialsProviderChain defaultAWSCredentialsProviderChain = new DefaultAWSCredentialsProviderChain();
+				// Below call throws error if there are no credentials
+				defaultAWSCredentialsProviderChain.getCredentials();
+				credentialsProvider = defaultAWSCredentialsProviderChain;
+			}
+			catch ( Exception e )
+			{
+				// User has no credentials on their computer
+				credentialsProvider = new AWSStaticCredentialsProvider( new AnonymousAWSCredentials() );
+			}
+
+			final AmazonS3 s3 = AmazonS3ClientBuilder
+					.standard()
+					.withPathStyleAccessEnabled( true )
+					.withEndpointConfiguration( endpoint )
+					.withCredentials( credentialsProvider )
+					.build();
+
+			return new N5AmazonS3Reader( s3, bucketName, key );
+		}
+
 	}
 
-	private static N5AmazonS3Reader createN5AmazonS3Reader( String serviceEndpoint, String signingRegion, String bucketName, String key ) throws IOException
+	public N5S3ImageLoader( String serviceEndpoint, String signingRegion, String bucketName, String key, AbstractSequenceDescription<?, ?, ?> sequenceDescription ) throws IOException
 	{
-		final AwsClientBuilder.EndpointConfiguration endpoint = new AwsClientBuilder.EndpointConfiguration( serviceEndpoint, signingRegion );
-
-		AWSCredentialsProvider credentialsProvider;
-		try
-		{
-			final DefaultAWSCredentialsProviderChain defaultAWSCredentialsProviderChain = new DefaultAWSCredentialsProviderChain();
-			// Below call throws error if there are no credentials
-			defaultAWSCredentialsProviderChain.getCredentials();
-			credentialsProvider = defaultAWSCredentialsProviderChain;
-		}
-		catch ( Exception e )
-		{
-			// User has no credentials on their computer
-			credentialsProvider = new AWSStaticCredentialsProvider( new AnonymousAWSCredentials() );
-		}
-
-		final AmazonS3 s3 = AmazonS3ClientBuilder
-				.standard()
-				.withPathStyleAccessEnabled( true )
-				.withEndpointConfiguration( endpoint )
-				.withCredentials( credentialsProvider )
-				.build();
-
-		return new N5AmazonS3Reader( s3, bucketName, key );
+		super( new N5AmazonS3ReaderCreator( serviceEndpoint, signingRegion, bucketName, key ).create(), sequenceDescription );
 	}
 
 }

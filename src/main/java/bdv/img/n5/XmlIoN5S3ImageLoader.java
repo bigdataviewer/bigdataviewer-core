@@ -38,7 +38,7 @@ import org.jdom2.Element;
 import java.io.File;
 import java.io.IOException;
 
-@ImgLoaderIo( format = "bdv.n5.s3", type = N5ImageLoader.class )
+@ImgLoaderIo( format = "bdv.n5.s3", type = N5FSImageLoader.class )
 public class XmlIoN5S3ImageLoader implements XmlIoBasicImgLoader< N5S3ImageLoader >
 {
 	@Override

@@ -29,42 +29,24 @@
  */
 package bdv.img.n5;
 
+import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
+import org.janelia.saalfeldlab.n5.N5FSReader;
+
 import java.io.File;
 import java.io.IOException;
 
-import mpicbg.spim.data.XmlHelpers;
-import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
-import mpicbg.spim.data.generic.sequence.ImgLoaderIo;
-import mpicbg.spim.data.generic.sequence.XmlIoBasicImgLoader;
-import org.jdom2.Element;
-
-import static mpicbg.spim.data.XmlHelpers.loadPath;
-import static mpicbg.spim.data.XmlKeys.IMGLOADER_FORMAT_ATTRIBUTE_NAME;
-
-@ImgLoaderIo( format = "bdv.n5", type = N5FSImageLoader.class )
-public class XmlIoN5ImageLoader implements XmlIoBasicImgLoader< N5FSImageLoader >
+public class N5FSImageLoader extends N5ImageLoader
 {
-	@Override
-	public Element toXml( final N5FSImageLoader imgLoader, final File basePath )
+	private final File n5File;
+
+	public N5FSImageLoader( final File n5File, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription ) throws IOException
 	{
-		final Element elem = new Element( "ImageLoader" );
-		elem.setAttribute( IMGLOADER_FORMAT_ATTRIBUTE_NAME, "bdv.n5" );
-		elem.setAttribute( "version", "1.0" );
-		elem.addContent( XmlHelpers.pathElement( "n5", imgLoader.getN5File(), basePath ) );
-		return elem;
+		super( new N5FSReader( n5File.getAbsolutePath() ), sequenceDescription );
+		this.n5File = n5File;
 	}
 
-	@Override
-	public N5FSImageLoader fromXml( final Element elem, final File basePath, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
+	public File getN5File()
 	{
-//		final String version = elem.getAttributeValue( "version" );
-		final File path = loadPath( elem, "n5", basePath );
-		try
-		{
-			return new N5FSImageLoader( path, sequenceDescription );
-		} catch ( IOException e )
-		{
-			throw new RuntimeException( e );
-		}
+		return n5File;
 	}
 }

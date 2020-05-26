@@ -8,7 +8,7 @@ import bdv.export.SubTaskProgressWriter;
 import bdv.export.ExportScalePyramid.AfterEachPlane;
 import bdv.export.ExportScalePyramid.LoopbackHeuristic;
 import bdv.img.cache.SimpleCacheArrayLoader;
-import bdv.img.n5.N5ImageLoader;
+import bdv.img.n5.N5FSImageLoader;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -325,7 +325,7 @@ public class WriteSequenceToN5
 			final long[] dimensions = attributes.getDimensions();
 			final int[] cellDimensions = attributes.getBlockSize();
 			final CellGrid grid = new CellGrid( dimensions, cellDimensions );
-			final SimpleCacheArrayLoader< ? > cacheArrayLoader = N5ImageLoader.createCacheArrayLoader( n5, pathName );
+			final SimpleCacheArrayLoader< ? > cacheArrayLoader = N5FSImageLoader.createCacheArrayLoader( n5, pathName );
 			return new ReadOnlyCachedCellImgFactory().createWithCacheLoader(
 					dimensions, type,
 					key -> {
