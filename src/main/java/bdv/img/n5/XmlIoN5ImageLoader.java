@@ -30,6 +30,8 @@
 package bdv.img.n5;
 
 import java.io.File;
+import java.io.IOException;
+
 import mpicbg.spim.data.XmlHelpers;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.ImgLoaderIo;
@@ -57,6 +59,12 @@ public class XmlIoN5ImageLoader implements XmlIoBasicImgLoader< N5ImageLoader >
 	{
 //		final String version = elem.getAttributeValue( "version" );
 		final File path = loadPath( elem, "n5", basePath );
-		return new N5ImageLoader( path, sequenceDescription );
+		try
+		{
+			return new N5ImageLoader( path, sequenceDescription );
+		} catch ( IOException e )
+		{
+			throw new RuntimeException( e );
+		}
 	}
 }
