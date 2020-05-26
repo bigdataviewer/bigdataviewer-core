@@ -43,22 +43,14 @@ import java.io.IOException;
 
 public class N5S3ImageLoader extends N5ImageLoader
 {
+	private final String serviceEndpoint;
+	private final String signingRegion;
+	private final String bucketName;
+	private final String key;
+
 	static class N5AmazonS3ReaderCreator
 	{
-		private final String serviceEndpoint;
-		private final String signingRegion;
-		private final String bucketName;
-		private final String key;
-
-		public N5AmazonS3ReaderCreator( String serviceEndpoint, String signingRegion, String bucketName, String key  )
-		{
-			this.serviceEndpoint = serviceEndpoint;
-			this.signingRegion = signingRegion;
-			this.bucketName = bucketName;
-			this.key = key;
-		}
-
-		public N5AmazonS3Reader create() throws IOException
+		public N5AmazonS3Reader create( String serviceEndpoint, String signingRegion, String bucketName, String key  ) throws IOException
 		{
 			final AwsClientBuilder.EndpointConfiguration endpoint = new AwsClientBuilder.EndpointConfiguration( serviceEndpoint, signingRegion );
 
@@ -85,12 +77,34 @@ public class N5S3ImageLoader extends N5ImageLoader
 
 			return new N5AmazonS3Reader( s3, bucketName, key );
 		}
-
 	}
 
 	public N5S3ImageLoader( String serviceEndpoint, String signingRegion, String bucketName, String key, AbstractSequenceDescription<?, ?, ?> sequenceDescription ) throws IOException
 	{
-		super( new N5AmazonS3ReaderCreator( serviceEndpoint, signingRegion, bucketName, key ).create(), sequenceDescription );
+		super( new N5AmazonS3ReaderCreator().create( serviceEndpoint, signingRegion, bucketName, key ), sequenceDescription );
+		this.serviceEndpoint = serviceEndpoint;
+		this.signingRegion = signingRegion;
+		this.bucketName = bucketName;
+		this.key = key;
 	}
 
+	public String getServiceEndpoint()
+	{
+		return serviceEndpoint;
+	}
+
+	public String getSigningRegion()
+	{
+		return signingRegion;
+	}
+
+	public String getBucketName()
+	{
+		return bucketName;
+	}
+
+	public String getKey()
+	{
+		return key;
+	}
 }

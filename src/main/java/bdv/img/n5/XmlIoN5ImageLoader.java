@@ -44,13 +44,16 @@ import static mpicbg.spim.data.XmlKeys.IMGLOADER_FORMAT_ATTRIBUTE_NAME;
 @ImgLoaderIo( format = "bdv.n5", type = N5FSImageLoader.class )
 public class XmlIoN5ImageLoader implements XmlIoBasicImgLoader< N5FSImageLoader >
 {
+
+	public static final String N5 = "n5";
+
 	@Override
 	public Element toXml( final N5FSImageLoader imgLoader, final File basePath )
 	{
 		final Element elem = new Element( "ImageLoader" );
 		elem.setAttribute( IMGLOADER_FORMAT_ATTRIBUTE_NAME, "bdv.n5" );
 		elem.setAttribute( "version", "1.0" );
-		elem.addContent( XmlHelpers.pathElement( "n5", imgLoader.getN5File(), basePath ) );
+		elem.addContent( XmlHelpers.pathElement( N5, imgLoader.getN5File(), basePath ) );
 		return elem;
 	}
 
@@ -58,7 +61,7 @@ public class XmlIoN5ImageLoader implements XmlIoBasicImgLoader< N5FSImageLoader 
 	public N5FSImageLoader fromXml( final Element elem, final File basePath, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
 	{
 //		final String version = elem.getAttributeValue( "version" );
-		final File path = loadPath( elem, "n5", basePath );
+		final File path = loadPath( elem, N5, basePath );
 		try
 		{
 			return new N5FSImageLoader( path, sequenceDescription );

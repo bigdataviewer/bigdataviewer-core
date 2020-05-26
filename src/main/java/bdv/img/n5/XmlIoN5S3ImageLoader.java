@@ -38,17 +38,26 @@ import org.jdom2.Element;
 import java.io.File;
 import java.io.IOException;
 
+import static mpicbg.spim.data.XmlKeys.IMGLOADER_FORMAT_ATTRIBUTE_NAME;
+
 @ImgLoaderIo( format = "bdv.n5.s3", type = N5FSImageLoader.class )
 public class XmlIoN5S3ImageLoader implements XmlIoBasicImgLoader< N5S3ImageLoader >
 {
+	public static final String SERVICE_ENDPOINT = "ServiceEndpoint";
+	public static final String SIGNING_REGION = "SigningRegion";
+	public static final String BUCKET_NAME = "BucketName";
+	public static final String KEY = "Key";
+
 	@Override
 	public Element toXml( final N5S3ImageLoader imgLoader, final File basePath )
 	{
 		final Element elem = new Element( "ImageLoader" );
-		// TODO
-//		elem.setAttribute( IMGLOADER_FORMAT_ATTRIBUTE_NAME, "bdv.n5.s3" );
-//		elem.setAttribute( "version", "1.0" );
-//		elem.addContent( XmlHelpers.pathElement( "n5", imgLoader.getN5File(), basePath ) );
+		elem.setAttribute( IMGLOADER_FORMAT_ATTRIBUTE_NAME, "bdv.n5.s3" );
+		elem.setAttribute( "version", "1.0" );
+		elem.setAttribute( SERVICE_ENDPOINT, imgLoader.getServiceEndpoint() );
+		elem.setAttribute( SIGNING_REGION, imgLoader.getSigningRegion() );
+		elem.setAttribute( BUCKET_NAME, imgLoader.getBucketName() );
+		elem.setAttribute( KEY, imgLoader.getKey() );
 		return elem;
 	}
 
@@ -57,10 +66,10 @@ public class XmlIoN5S3ImageLoader implements XmlIoBasicImgLoader< N5S3ImageLoade
 	{
 		final String version = elem.getAttributeValue( "version" );
 
-		final String serviceEndpoint = XmlHelpers.getText( elem, "ServiceEndpoint" );
-		final String signingRegion = XmlHelpers.getText( elem, "SigningRegion" );
-		final String bucketName = XmlHelpers.getText( elem, "BucketName" );
-		final String key = XmlHelpers.getText( elem, "Key" );
+		final String serviceEndpoint = XmlHelpers.getText( elem, SERVICE_ENDPOINT );
+		final String signingRegion = XmlHelpers.getText( elem, SIGNING_REGION );
+		final String bucketName = XmlHelpers.getText( elem, BUCKET_NAME );
+		final String key = XmlHelpers.getText( elem, KEY );
 
 		try
 		{
