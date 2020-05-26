@@ -29,28 +29,20 @@
  */
 package bdv.img.n5;
 
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.AnonymousAWSCredentials;
-import com.amazonaws.auth.DefaultAWSCredentialsProviderChain;
-import com.amazonaws.client.builder.AwsClientBuilder;
-import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3ClientBuilder;
 import mpicbg.spim.data.XmlHelpers;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.ImgLoaderIo;
 import mpicbg.spim.data.generic.sequence.XmlIoBasicImgLoader;
-import org.janelia.saalfeldlab.n5.s3.N5AmazonS3Reader;
 import org.jdom2.Element;
 
 import java.io.File;
 import java.io.IOException;
 
 @ImgLoaderIo( format = "bdv.n5.s3", type = N5ImageLoader.class )
-public class XmlIoN5S3ImageLoader implements XmlIoBasicImgLoader< N5GenericImageLoader >
+public class XmlIoN5S3ImageLoader implements XmlIoBasicImgLoader< N5S3ImageLoader >
 {
 	@Override
-	public Element toXml( final N5GenericImageLoader imgLoader, final File basePath )
+	public Element toXml( final N5S3ImageLoader imgLoader, final File basePath )
 	{
 		final Element elem = new Element( "ImageLoader" );
 		// TODO
@@ -61,7 +53,7 @@ public class XmlIoN5S3ImageLoader implements XmlIoBasicImgLoader< N5GenericImage
 	}
 
 	@Override
-	public N5GenericImageLoader fromXml( final Element elem, final File basePath, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
+	public N5S3ImageLoader fromXml( final Element elem, final File basePath, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
 	{
 		final String version = elem.getAttributeValue( "version" );
 
@@ -70,43 +62,13 @@ public class XmlIoN5S3ImageLoader implements XmlIoBasicImgLoader< N5GenericImage
 		final String bucketName = XmlHelpers.getText( elem, "BucketName" );
 		final String key = XmlHelpers.getText( elem, "Key" );
 
-		final AwsClientBuilder.EndpointConfiguration endpoint = new AwsClientBuilder.EndpointConfiguration( serviceEndpoint, signingRegion );
-
-		AWSCredentialsProvider credentialsProvider;
 		try
 		{
-			final DefaultAWSCredentialsProviderChain defaultAWSCredentialsProviderChain = new DefaultAWSCredentialsProviderChain();
-			// Below call throws error if there are no credentials
-			defaultAWSCredentialsProviderChain.getCredentials();
-			credentialsProvider = defaultAWSCredentialsProviderChain;
+			return new N5S3ImageLoader( serviceEndpoint, signingRegion, bucketName, key, sequenceDescription );
 		}
-		catch ( Exception e )
+		catch ( IOException e )
 		{
-			// User has no credentials on their computer
-			credentialsProvider = new AWSStaticCredentialsProvider( new AnonymousAWSCredentials() );
+			throw new RuntimeException( e );
 		}
-
-		final AmazonS3 s3 = AmazonS3ClientBuilder
-				.standard()
-				.withPathStyleAccessEnabled( true )
-				.withEndpointConfiguration( endpoint )
-				.withCredentials( credentialsProvider )
-				.build();
-
-		final N5AmazonS3Reader reader = getReader( s3, bucketName, key );
-
-		return new N5GenericImageLoader( reader, sequenceDescription );
-	}
-
-	private N5AmazonS3Reader getReader( AmazonS3 s3, String bucketName, String key )
-	{
-		try
-		{
-			return new N5AmazonS3Reader( s3, bucketName, key );
-		} catch ( IOException e )
-		{
-			e.printStackTrace();
-		}
-		return null;
 	}
 }
