@@ -42,9 +42,8 @@ import static mpicbg.spim.data.XmlHelpers.loadPath;
 import static mpicbg.spim.data.XmlKeys.IMGLOADER_FORMAT_ATTRIBUTE_NAME;
 
 @ImgLoaderIo( format = "bdv.n5", type = N5FSImageLoader.class )
-public class XmlIoN5ImageLoader implements XmlIoBasicImgLoader< N5FSImageLoader >
+public class XmlIoN5FSImageLoader implements XmlIoBasicImgLoader< N5FSImageLoader >
 {
-
 	public static final String N5 = "n5";
 
 	@Override
@@ -65,7 +64,8 @@ public class XmlIoN5ImageLoader implements XmlIoBasicImgLoader< N5FSImageLoader 
 		try
 		{
 			return new N5FSImageLoader( path, sequenceDescription );
-		} catch ( IOException e )
+		}
+		catch ( IOException e )
 		{
 			throw new RuntimeException( e );
 		}

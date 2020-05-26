@@ -38,6 +38,7 @@ import org.jdom2.Element;
 import java.io.File;
 import java.io.IOException;
 
+import static bdv.img.n5.N5S3ImageLoader.N5AmazonS3ReaderCreator.*;
 import static mpicbg.spim.data.XmlKeys.IMGLOADER_FORMAT_ATTRIBUTE_NAME;
 
 @ImgLoaderIo( format = "bdv.n5.s3", type = N5FSImageLoader.class )
@@ -47,6 +48,8 @@ public class XmlIoN5S3ImageLoader implements XmlIoBasicImgLoader< N5S3ImageLoade
 	public static final String SIGNING_REGION = "SigningRegion";
 	public static final String BUCKET_NAME = "BucketName";
 	public static final String KEY = "Key";
+	public static final String AUTHENTICATION = "Authentication";
+
 
 	@Override
 	public Element toXml( final N5S3ImageLoader imgLoader, final File basePath )
@@ -58,22 +61,26 @@ public class XmlIoN5S3ImageLoader implements XmlIoBasicImgLoader< N5S3ImageLoade
 		elem.setAttribute( SIGNING_REGION, imgLoader.getSigningRegion() );
 		elem.setAttribute( BUCKET_NAME, imgLoader.getBucketName() );
 		elem.setAttribute( KEY, imgLoader.getKey() );
+		elem.setAttribute( AUTHENTICATION, imgLoader.getAuthentication().toString() );
+
 		return elem;
 	}
 
 	@Override
 	public N5S3ImageLoader fromXml( final Element elem, final File basePath, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
 	{
-		final String version = elem.getAttributeValue( "version" );
+//		final String version = elem.getAttributeValue( "version" );
 
 		final String serviceEndpoint = XmlHelpers.getText( elem, SERVICE_ENDPOINT );
 		final String signingRegion = XmlHelpers.getText( elem, SIGNING_REGION );
 		final String bucketName = XmlHelpers.getText( elem, BUCKET_NAME );
 		final String key = XmlHelpers.getText( elem, KEY );
+		final Authentication authentication = Authentication.valueOf( XmlHelpers.getText( elem, AUTHENTICATION ) );
+
 
 		try
 		{
-			return new N5S3ImageLoader( serviceEndpoint, signingRegion, bucketName, key, sequenceDescription );
+			return new N5S3ImageLoader( serviceEndpoint, signingRegion, bucketName, key, authentication, sequenceDescription );
 		}
 		catch ( IOException e )
 		{

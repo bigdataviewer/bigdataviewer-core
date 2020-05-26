@@ -47,45 +47,73 @@ public class N5S3ImageLoader extends N5ImageLoader
 	private final String signingRegion;
 	private final String bucketName;
 	private final String key;
+	private final N5AmazonS3ReaderCreator.Authentication authentication;
 
 	static class N5AmazonS3ReaderCreator
 	{
-		public N5AmazonS3Reader create( String serviceEndpoint, String signingRegion, String bucketName, String key  ) throws IOException
+		/**
+		 * It seems that the way S3 works is that when a user has no credentials it means anonymous,
+		 * but as soon as you provide some credentials it tries to get access with those,
+		 * which indeed don't have access for that specific bucket.
+		 * So it seems the way to go is to define in the application whether
+		 * you want to use anonymous access or credentials based access
+		 */
+		public enum Authentication
+		{
+			Anonymous,
+			Protected
+		}
+
+		public N5AmazonS3Reader create( String serviceEndpoint, String signingRegion, String bucketName, String key, Authentication authentication ) throws IOException
 		{
 			final AwsClientBuilder.EndpointConfiguration endpoint = new AwsClientBuilder.EndpointConfiguration( serviceEndpoint, signingRegion );
-
-			AWSCredentialsProvider credentialsProvider;
-			try
-			{
-				final DefaultAWSCredentialsProviderChain defaultAWSCredentialsProviderChain = new DefaultAWSCredentialsProviderChain();
-				// Below call throws error if there are no credentials
-				defaultAWSCredentialsProviderChain.getCredentials();
-				credentialsProvider = defaultAWSCredentialsProviderChain;
-			}
-			catch ( Exception e )
-			{
-				// User has no credentials on their computer
-				credentialsProvider = new AWSStaticCredentialsProvider( new AnonymousAWSCredentials() );
-			}
 
 			final AmazonS3 s3 = AmazonS3ClientBuilder
 					.standard()
 					.withPathStyleAccessEnabled( true )
 					.withEndpointConfiguration( endpoint )
-					.withCredentials( credentialsProvider )
+					.withCredentials( getCredentialsProvider( authentication ) )
 					.build();
 
 			return new N5AmazonS3Reader( s3, bucketName, key );
 		}
+
+		private AWSCredentialsProvider getCredentialsProvider( Authentication authentication )
+		{
+			switch ( authentication )
+			{
+				case Anonymous:
+					return new AWSStaticCredentialsProvider( new AnonymousAWSCredentials() );
+				case Protected:
+					final DefaultAWSCredentialsProviderChain credentialsProvider = new DefaultAWSCredentialsProviderChain();
+					checkCredentialsExistence( credentialsProvider );
+					return credentialsProvider;
+				default:
+					throw new UnsupportedOperationException( "Authentication not supported: " + authentication );
+			}
+		}
+
+		private void checkCredentialsExistence( AWSCredentialsProvider credentialsProvider )
+		{
+			try
+			{
+				credentialsProvider.getCredentials();
+			}
+			catch ( Exception e )
+			{
+				throw  new RuntimeException( e ); // No credentials could be found
+			}
+		}
 	}
 
-	public N5S3ImageLoader( String serviceEndpoint, String signingRegion, String bucketName, String key, AbstractSequenceDescription<?, ?, ?> sequenceDescription ) throws IOException
+	public N5S3ImageLoader( String serviceEndpoint, String signingRegion, String bucketName, String key, N5AmazonS3ReaderCreator.Authentication authentication, AbstractSequenceDescription< ?, ?, ? > sequenceDescription ) throws IOException
 	{
-		super( new N5AmazonS3ReaderCreator().create( serviceEndpoint, signingRegion, bucketName, key ), sequenceDescription );
+		super( new N5AmazonS3ReaderCreator().create( serviceEndpoint, signingRegion, bucketName, key, authentication ), sequenceDescription );
 		this.serviceEndpoint = serviceEndpoint;
 		this.signingRegion = signingRegion;
 		this.bucketName = bucketName;
 		this.key = key;
+		this.authentication = authentication;
 	}
 
 	public String getServiceEndpoint()
@@ -106,5 +134,10 @@ public class N5S3ImageLoader extends N5ImageLoader
 	public String getKey()
 	{
 		return key;
+	}
+
+	public N5AmazonS3ReaderCreator.Authentication getAuthentication()
+	{
+		return authentication;
 	}
 }
