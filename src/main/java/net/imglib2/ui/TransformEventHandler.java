@@ -33,6 +33,8 @@
  */
 package net.imglib2.ui;
 
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import org.scijava.ui.behaviour.util.Behaviours;
 
 /**
@@ -58,16 +60,18 @@ public interface TransformEventHandler< A >
 	void install( Behaviours behaviours );
 
 	/**
-	 * Get (a copy of) the current source-to-screen transform.
-	 *
-	 * @return current transform.
+	 * Provides access to the transform which {@code TransformEventHandler} modifies.
 	 */
-	A getTransform();
+	interface Transform< A >
+	{
+		A getTransform();
 
-	/**
-	 * Set the current source-to-screen transform.
-	 */
-	void setTransform( A transform );
+		void setTransform( A transform );
+	}
+
+	void setTransformStore( Transform< A > store );
+
+	void setTransformStore( Supplier< A > get, Consumer< A > set );
 
 	/**
 	 * This is called, when the screen size of the canvas (the component
@@ -99,6 +103,12 @@ public interface TransformEventHandler< A >
 	 * @param transformListener
 	 *            will receive transformation updates.
 	 */
+	@Deprecated
 	void setTransformListener( TransformListener< A > transformListener );
 
+	@Deprecated
+	A getTransform();
+
+	@Deprecated
+	void setTransform( A transform );
 }

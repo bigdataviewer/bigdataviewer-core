@@ -29,6 +29,8 @@
  */
 package bdv;
 
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.ui.TransformEventHandler;
 import net.imglib2.ui.TransformListener;
@@ -229,6 +231,33 @@ public class TransformEventHandler2D implements TransformEventHandler< AffineTra
 		behaviours.behaviour( keyZoomOut, KEY_ZOOM_OUT, KEY_ZOOM_OUT_KEYS );
 		behaviours.behaviour( keyZoomOutFast, KEY_ZOOM_OUT_FAST, KEY_ZOOM_OUT_FAST_KEYS );
 		behaviours.behaviour( keyZoomOutSlow, KEY_ZOOM_OUT_SLOW, KEY_ZOOM_OUT_SLOW_KEYS );
+	}
+
+	private Transform< AffineTransform3D > transformStore;
+
+	@Override
+	public void setTransformStore( final Transform< AffineTransform3D > store )
+	{
+		transformStore = store;
+	}
+
+	@Override
+	public void setTransformStore( final Supplier< AffineTransform3D > get, final Consumer< AffineTransform3D > set )
+	{
+		transformStore = new Transform< AffineTransform3D >()
+		{
+			@Override
+			public AffineTransform3D getTransform()
+			{
+				return get.get();
+			}
+
+			@Override
+			public void setTransform( final AffineTransform3D transform )
+			{
+				set.accept( transform );
+			}
+		};
 	}
 
 	@Override
