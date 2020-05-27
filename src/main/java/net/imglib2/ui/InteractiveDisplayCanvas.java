@@ -96,9 +96,11 @@ public class InteractiveDisplayCanvas extends JComponent
 			{
 				final int w = getWidth();
 				final int h = getHeight();
+				// NB: Update of overlayRenderers needs to happen before update of handler
+				// Otherwise repaint might start before the render target receives the size change.
+				overlayRenderers.list.forEach( r -> r.setCanvasSize( w, h ) );
 				if ( handler != null )
 					handler.setCanvasSize( w, h, true );
-				overlayRenderers.list.forEach( r -> r.setCanvasSize( w, h ) );
 				// enableEvents( AWTEvent.MOUSE_MOTION_EVENT_MASK );
 			}
 		} );
