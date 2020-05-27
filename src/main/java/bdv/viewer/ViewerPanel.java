@@ -253,6 +253,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		painterThread = new PainterThread( threadGroup, this );
 		painterThread.setDaemon( true );
 		transformEventHandler = options.getTransformEventHandlerFactory().create( this );
+		transformEventHandler.setTransformStore( state()::getViewerTransform, state()::setViewerTransform );
 		renderTarget = new BufferedImageOverlayRenderer();
 		display = new InteractiveDisplayCanvas( options.getWidth(), options.getHeight() );
 		display.setTransformEventHandler( transformEventHandler );
@@ -481,10 +482,11 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 			if ( currentAnimator != null )
 			{
 				final AffineTransform3D transform = currentAnimator.getCurrent( System.currentTimeMillis() );
-				transformEventHandler.setTransform( transform );
-				transformChanged( transform );
+				state().setViewerTransform( transform );
 				if ( currentAnimator.isComplete() )
 					currentAnimator = null;
+				else
+					requestRepaint();
 			}
 		}
 	}
@@ -546,12 +548,9 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 	}
 
 	@Override
-	public synchronized void transformChanged( final AffineTransform3D transform )
+	public void transformChanged( final AffineTransform3D transform )
 	{
-		state.setViewerTransform( transform );
-		for ( final TransformListener< AffineTransform3D > l : transformListeners )
-			l.transformChanged( transform );
-		requestRepaint();
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
@@ -621,10 +620,11 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 			requestRepaint();
 			break;
 		}
-//		case VIEWER_TRANSFORM_CHANGED:
-			// TODO: trigger repaint
-			//  do not write ViewerPanel.viewerTransform here,
-			//  instead it should always be obtained from state when needed to avoid deadlocks
+		case VIEWER_TRANSFORM_CHANGED:
+			final AffineTransform3D transform = state().getViewerTransform();
+			for ( final TransformListener< AffineTransform3D > l : transformListeners )
+				l.transformChanged( transform );
+			requestRepaint();
 		}
 	}
 
@@ -691,7 +691,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		final double[] qTarget = new double[ 4 ];
 		LinAlgHelpers.quaternionInvert( qTmpSource, qTarget );
 
-		final AffineTransform3D transform = transformEventHandler.getTransform();
+		final AffineTransform3D transform = state().getViewerTransform();
 		double centerX;
 		double centerY;
 		if ( mouseCoordinates.isMouseInsidePanel() )
@@ -706,7 +706,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		}
 		currentAnimator = new RotationAnimator( transform, centerX, centerY, qTarget, 300 );
 		currentAnimator.setTime( System.currentTimeMillis() );
-		transformChanged( transform );
+		requestRepaint();
 	}
 
 	public synchronized void setTransformAnimator( final AbstractTransformAnimator animator )
@@ -746,11 +746,12 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 	/**
 	 * Set the viewer transform.
+	 * TODO: deprecated, use state().setViewerTransform()...
 	 */
+	@Deprecated
 	public void setCurrentViewerTransform( final AffineTransform3D viewerTransform )
 	{
-		transformEventHandler.setTransform( viewerTransform );
-		transformChanged( viewerTransform );
+		state().setViewerTransform( viewerTransform );
 	}
 
 	/**
