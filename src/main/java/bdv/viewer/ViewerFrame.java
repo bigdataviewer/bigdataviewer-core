@@ -138,7 +138,7 @@ public class ViewerFrame extends JFrame
 		final Behaviours transformBehaviours = new Behaviours( optional.values.getInputTriggerConfig(), "bdv" );
 		transformBehaviours.install( triggerbindings, "transform" );
 
-		final TransformEventHandler< ? > tfHandler = viewer.getTransformEventHandler();
+		final TransformEventHandler tfHandler = viewer.getTransformEventHandler();
 		tfHandler.install( transformBehaviours );
 	}
 

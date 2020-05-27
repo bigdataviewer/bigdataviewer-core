@@ -33,45 +33,23 @@
  */
 package net.imglib2.ui;
 
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 import org.scijava.ui.behaviour.util.Behaviours;
 
 /**
- * TODO revise interface, are all methods still necessary?
- * TODO revise javadoc
+ * Change a transformation in response to user input (mouse events, key events, etc.)
  *
- * Change a transformation in response to user input (mouse events, key events,
- * etc.). Report to a {@link TransformListener} when the transformation changes.
  * The {@link TransformEventHandler} receives notifications about changes of the
  * canvas size (it may react for example by changing the scale of the
  * transformation accordingly).
  *
- * @param <A>
- *            type of transformation.
- *
  * @author Tobias Pietzsch
  */
-public interface TransformEventHandler< A >
+public interface TransformEventHandler
 {
 	/**
 	 * Install transformation behaviours into the specified {@code behaviours} contrainer.
 	 */
 	void install( Behaviours behaviours );
-
-	/**
-	 * Provides access to the transform which {@code TransformEventHandler} modifies.
-	 */
-	interface Transform< A >
-	{
-		A getTransform();
-
-		void setTransform( A transform );
-	}
-
-	void setTransformStore( Transform< A > store );
-
-	void setTransformStore( Supplier< A > get, Consumer< A > set );
 
 	/**
 	 * This is called, when the screen size of the canvas (the component
@@ -90,9 +68,7 @@ public interface TransformEventHandler< A >
 	 *            whether the current source-to-screen transform should be
 	 *            updated. This will be <code>false</code> for the initial
 	 *            update of a new {@link TransformEventHandler} and
-	 *            <code>true</code> on subsequent calls. If <code>true</code>,
-	 *            an update to its {@link TransformListener} should be
-	 *            triggered.
+	 *            <code>true</code> on subsequent calls.
 	 */
 	void setCanvasSize( int width, int height, boolean updateTransform );
 }

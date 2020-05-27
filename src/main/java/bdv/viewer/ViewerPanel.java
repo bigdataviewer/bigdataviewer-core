@@ -29,6 +29,7 @@
  */
 package bdv.viewer;
 
+import bdv.TransformState;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
@@ -135,7 +136,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 	 */
 	protected final ScaleBarOverlayRenderer scaleBarOverlayRenderer;
 
-	private final TransformEventHandler< AffineTransform3D > transformEventHandler;
+	private final TransformEventHandler transformEventHandler;
 
 	/**
 	 * Canvas used for displaying the rendered {@link #renderTarget image} and
@@ -252,8 +253,8 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 		threadGroup = new ThreadGroup( this.toString() );
 		painterThread = new PainterThread( threadGroup, this );
 		painterThread.setDaemon( true );
-		transformEventHandler = options.getTransformEventHandlerFactory().create( null /*TODO*/ );
-		transformEventHandler.setTransformStore( state()::getViewerTransform, state()::setViewerTransform );
+		transformEventHandler = options.getTransformEventHandlerFactory().create(
+				TransformState.from( state()::getViewerTransform, state()::setViewerTransform ) );
 		renderTarget = new BufferedImageOverlayRenderer();
 		display = new InteractiveDisplayCanvas( options.getWidth(), options.getHeight() );
 		display.setTransformEventHandler( transformEventHandler );
@@ -839,7 +840,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 		return display;
 	}
 
-	public TransformEventHandler< AffineTransform3D > getTransformEventHandler()
+	public TransformEventHandler getTransformEventHandler()
 	{
 		return transformEventHandler;
 	}

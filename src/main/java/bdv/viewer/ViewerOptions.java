@@ -42,7 +42,7 @@ import bdv.viewer.render.AccumulateProjectorFactory;
 import bdv.viewer.render.MultiResolutionRenderer;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.ui.TransformEventHandlerFactory;
+import bdv.TransformEventHandlerFactory;
 
 /**
  * Optional parameters for {@link ViewerPanel}.
@@ -169,7 +169,7 @@ public class ViewerOptions
 		return this;
 	}
 
-	public ViewerOptions transformEventHandlerFactory( final TransformEventHandlerFactory< AffineTransform3D > f )
+	public ViewerOptions transformEventHandlerFactory( final TransformEventHandlerFactory f )
 	{
 		values.transformEventHandlerFactory = f;
 		return this;
@@ -242,7 +242,7 @@ public class ViewerOptions
 
 		private MessageOverlayAnimator msgOverlay = new MessageOverlayAnimator( 800 );
 
-		private TransformEventHandlerFactory< AffineTransform3D > transformEventHandlerFactory = l -> new TransformEventHandler3D();
+		private TransformEventHandlerFactory transformEventHandlerFactory = TransformEventHandler3D::new;
 
 		private AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory = AccumulateProjectorARGB.factory;
 
@@ -312,7 +312,7 @@ public class ViewerOptions
 			return msgOverlay;
 		}
 
-		public TransformEventHandlerFactory< AffineTransform3D > getTransformEventHandlerFactory()
+		public TransformEventHandlerFactory getTransformEventHandlerFactory()
 		{
 			return transformEventHandlerFactory;
 		}
