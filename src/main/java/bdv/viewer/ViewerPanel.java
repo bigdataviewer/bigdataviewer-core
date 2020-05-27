@@ -98,7 +98,7 @@ import net.imglib2.util.LinAlgHelpers;
  *
  * @author Tobias Pietzsch
  */
-public class ViewerPanel extends JPanel implements OverlayRenderer, TransformListener< AffineTransform3D >, PainterThread.Paintable, ViewerStateChangeListener, RequestRepaint
+public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThread.Paintable, ViewerStateChangeListener, RequestRepaint
 {
 	private static final long serialVersionUID = 1L;
 
@@ -252,7 +252,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 		threadGroup = new ThreadGroup( this.toString() );
 		painterThread = new PainterThread( threadGroup, this );
 		painterThread.setDaemon( true );
-		transformEventHandler = options.getTransformEventHandlerFactory().create( this );
+		transformEventHandler = options.getTransformEventHandlerFactory().create( null /*TODO*/ );
 		transformEventHandler.setTransformStore( state()::getViewerTransform, state()::setViewerTransform );
 		renderTarget = new BufferedImageOverlayRenderer();
 		display = new InteractiveDisplayCanvas( options.getWidth(), options.getHeight() );
@@ -545,12 +545,6 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, TransformLis
 
 		if ( requiresRepaint )
 			display.repaint();
-	}
-
-	@Override
-	public void transformChanged( final AffineTransform3D transform )
-	{
-		throw new UnsupportedOperationException();
 	}
 
 	@Override
