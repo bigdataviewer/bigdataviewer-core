@@ -66,7 +66,7 @@ public class InteractiveDisplayCanvas extends JComponent
 	/**
 	 * Mouse/Keyboard handler that manipulates the view transformation.
 	 */
-	private TransformEventHandler< ? > handler;
+	private TransformEventHandler handler;
 
 	/**
 	 * To draw this component, {@link OverlayRenderer#drawOverlays} is invoked for each renderer.
@@ -185,7 +185,7 @@ public class InteractiveDisplayCanvas extends JComponent
 	 * @param transformEventHandler
 	 *            handler to use
 	 */
-	public void setTransformEventHandler( final TransformEventHandler< ? > transformEventHandler )
+	public void setTransformEventHandler( final TransformEventHandler transformEventHandler )
 	{
 		if ( handler != null )
 			removeHandler( handler );

@@ -28,11 +28,8 @@
  */
 package bdv;
 
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.ui.TransformEventHandler;
-import net.imglib2.ui.TransformListener;
 import org.scijava.ui.behaviour.Behaviour;
 import org.scijava.ui.behaviour.ClickBehaviour;
 import org.scijava.ui.behaviour.DragBehaviour;
@@ -46,7 +43,7 @@ import org.scijava.ui.behaviour.util.Behaviours;
  * @author Stephan Saalfeld
  * @author Tobias Pietzsch
  */
-public class TransformEventHandler3D implements TransformEventHandler< AffineTransform3D >
+public class TransformEventHandler3D implements TransformEventHandler
 {
 	// -- behaviour names --
 
@@ -185,8 +182,12 @@ public class TransformEventHandler3D implements TransformEventHandler< AffineTra
 	 */
 	private int centerX = 0, centerY = 0;
 
-	public TransformEventHandler3D()
+	private final TransformState transform;
+
+	public TransformEventHandler3D( final TransformState transform )
 	{
+		this.transform = transform;
+
 		dragTranslate = new TranslateXY();
 		zoom = new Zoom();
 		selectRotationAxisX = new SelectRotationAxis( 0 );
@@ -263,33 +264,6 @@ public class TransformEventHandler3D implements TransformEventHandler< AffineTra
 		behaviours.behaviour( keyBackwardZSlow, KEY_BACKWARD_Z_SLOW, KEY_BACKWARD_Z_SLOW_KEYS );
 	}
 
-	private Transform< AffineTransform3D > transformStore;
-
-	@Override
-	public void setTransformStore( final Transform< AffineTransform3D > store )
-	{
-		transformStore = store;
-	}
-
-	@Override
-	public void setTransformStore( final Supplier< AffineTransform3D > get, final Consumer< AffineTransform3D > set )
-	{
-		transformStore = new Transform< AffineTransform3D >()
-		{
-			@Override
-			public AffineTransform3D getTransform()
-			{
-				return get.get();
-			}
-
-			@Override
-			public void setTransform( final AffineTransform3D transform )
-			{
-				set.accept( transform );
-			}
-		};
-	}
-
 	@Override
 	public void setCanvasSize( final int width, final int height, final boolean updateTransform )
 	{
@@ -301,13 +275,13 @@ public class TransformEventHandler3D implements TransformEventHandler< AffineTra
 		}
 		if ( updateTransform )
 		{
-			final AffineTransform3D affine = transformStore.getTransform();
+			final AffineTransform3D affine = transform.get();
 			affine.set( affine.get( 0, 3 ) - canvasW / 2, 0, 3 );
 			affine.set( affine.get( 1, 3 ) - canvasH / 2, 1, 3 );
 			affine.scale( ( double ) width / canvasW );
 			affine.set( affine.get( 0, 3 ) + width / 2, 0, 3 );
 			affine.set( affine.get( 1, 3 ) + height / 2, 1, 3 );
-			transformStore.setTransform( affine );
+			transform.set( affine );
 		}
 		canvasW = width;
 		canvasH = height;
@@ -322,7 +296,7 @@ public class TransformEventHandler3D implements TransformEventHandler< AffineTra
 
 	private void scale( final double s, final double x, final double y )
 	{
-		final AffineTransform3D affine = transformStore.getTransform();
+		final AffineTransform3D affine = transform.get();
 
 		// center shift
 		affine.set( affine.get( 0, 3 ) - x, 0, 3 );
@@ -335,7 +309,7 @@ public class TransformEventHandler3D implements TransformEventHandler< AffineTra
 		affine.set( affine.get( 0, 3 ) + x, 0, 3 );
 		affine.set( affine.get( 1, 3 ) + y, 1, 3 );
 
-		transformStore.setTransform( affine );
+		transform.set( affine );
 	}
 
 	/**
@@ -344,7 +318,7 @@ public class TransformEventHandler3D implements TransformEventHandler< AffineTra
 	 */
 	private void rotate( final int axis, final double d )
 	{
-		final AffineTransform3D affine = transformStore.getTransform();
+		final AffineTransform3D affine = transform.get();
 
 		// center shift
 		affine.set( affine.get( 0, 3 ) - centerX, 0, 3 );
@@ -357,7 +331,7 @@ public class TransformEventHandler3D implements TransformEventHandler< AffineTra
 		affine.set( affine.get( 0, 3 ) + centerX, 0, 3 );
 		affine.set( affine.get( 1, 3 ) + centerY, 1, 3 );
 
-		transformStore.setTransform( affine );
+		transform.set( affine );
 	}
 
 	private class Rotate implements DragBehaviour
@@ -374,7 +348,7 @@ public class TransformEventHandler3D implements TransformEventHandler< AffineTra
 		{
 			oX = x;
 			oY = y;
-			affineDragStart.set( transformStore.getTransform() );
+			transform.get( affineDragStart );
 		}
 
 		@Override
@@ -397,7 +371,7 @@ public class TransformEventHandler3D implements TransformEventHandler< AffineTra
 			affineDragCurrent.set( affineDragCurrent.get( 0, 3 ) + oX, 0, 3 );
 			affineDragCurrent.set( affineDragCurrent.get( 1, 3 ) + oY, 1, 3 );
 
-			transformStore.setTransform( affineDragCurrent );
+			transform.set( affineDragCurrent );
 		}
 
 		@Override
@@ -412,7 +386,7 @@ public class TransformEventHandler3D implements TransformEventHandler< AffineTra
 		{
 			oX = x;
 			oY = y;
-			affineDragStart.set( transformStore.getTransform() );
+			transform.get( affineDragStart );
 		}
 
 		@Override
@@ -425,7 +399,7 @@ public class TransformEventHandler3D implements TransformEventHandler< AffineTra
 			affineDragCurrent.set( affineDragCurrent.get( 0, 3 ) - dX, 0, 3 );
 			affineDragCurrent.set( affineDragCurrent.get( 1, 3 ) - dY, 1, 3 );
 
-			transformStore.setTransform( affineDragCurrent );
+			transform.set( affineDragCurrent );
 		}
 
 		@Override
@@ -445,13 +419,13 @@ public class TransformEventHandler3D implements TransformEventHandler< AffineTra
 		@Override
 		public void scroll( final double wheelRotation, final boolean isHorizontal, final int x, final int y )
 		{
-			final AffineTransform3D affine = transformStore.getTransform();
+			final AffineTransform3D affine = transform.get();
 
 			final double dZ = speed * -wheelRotation;
 			// TODO (optionally) correct for zoom
 			affine.set( affine.get( 2, 3 ) - dZ, 2, 3 );
 
-			transformStore.setTransform( affine );
+			transform.set( affine );
 		}
 	}
 
@@ -534,9 +508,9 @@ public class TransformEventHandler3D implements TransformEventHandler< AffineTra
 		@Override
 		public void click( final int x, final int y )
 		{
-			final AffineTransform3D affine = transformStore.getTransform();
+			final AffineTransform3D affine = transform.get();
 			affine.set( affine.get( 2, 3 ) + speed, 2, 3 );
-			transformStore.setTransform( affine );
+			transform.set( affine );
 		}
 	}
 }

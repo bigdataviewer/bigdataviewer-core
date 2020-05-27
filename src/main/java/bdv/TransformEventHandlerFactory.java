@@ -31,24 +31,19 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package net.imglib2.ui;
+package bdv;
+
+import net.imglib2.ui.TransformEventHandler;
 
 /**
- * Factory for {@link TransformEventHandler}.
- *
- * @param <A>
- *            type of transformation.
+ * Factory for {@code TransformEventHandler}.
  *
  * @author Tobias Pietzsch
  */
-public interface TransformEventHandlerFactory< A >
+public interface TransformEventHandlerFactory
 {
 	/**
-	 * Create a new {@link TransformEventHandler} which reports to the given
-	 * {@link TransformListener}.
-	 *
-	 * @param transformListener
-	 *            will receive transformation updates.
+	 * Create a new {@code TransformEventHandler}.
 	 */
-	TransformEventHandler< A > create( TransformListener< A > transformListener );
+	TransformEventHandler create( TransformState transformState );
 }
