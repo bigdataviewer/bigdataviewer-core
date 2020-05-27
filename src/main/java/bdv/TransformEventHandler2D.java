@@ -42,112 +42,93 @@ import org.scijava.ui.behaviour.util.Behaviours;
  * A {@link TransformEventHandler} that changes an {@link AffineTransform3D}
  * through a set of {@link Behaviour}s.
  *
- * @author Stephan Saalfeld
  * @author Tobias Pietzsch
  */
-public class TransformEventHandler3D implements TransformEventHandler< AffineTransform3D >
+public class TransformEventHandler2D implements TransformEventHandler< AffineTransform3D >
 {
 	// -- behaviour names --
 
-	public static final String DRAG_TRANSLATE = "drag translate";
-	public static final String ZOOM_NORMAL = "scroll zoom";
-	public static final String SELECT_AXIS_X = "axis x";
-	public static final String SELECT_AXIS_Y = "axis y";
-	public static final String SELECT_AXIS_Z = "axis z";
+	private static final String DRAG_TRANSLATE = "2d drag translate";
+	private static final String DRAG_ROTATE = "2d drag rotate";
 
-	public static final String DRAG_ROTATE = "drag rotate";
-	public static final String SCROLL_Z = "scroll browse z";
-	public static final String ROTATE_LEFT = "rotate left";
-	public static final String ROTATE_RIGHT = "rotate right";
-	public static final String KEY_ZOOM_IN = "zoom in";
-	public static final String KEY_ZOOM_OUT = "zoom out";
-	public static final String KEY_FORWARD_Z = "forward z";
-	public static final String KEY_BACKWARD_Z = "backward z";
+	private static final String ZOOM_NORMAL = "2d scroll zoom";
+	private static final String SCROLL_TRANSLATE = "2d scroll translate";
+	private static final String SCROLL_ROTATE = "2d scroll rotate";
+	private static final String ROTATE_LEFT = "2d rotate left";
+	private static final String ROTATE_RIGHT = "2d rotate right";
+	private static final String KEY_ZOOM_IN = "2d zoom in";
+	private static final String KEY_ZOOM_OUT = "2d zoom out";
 
-	public static final String DRAG_ROTATE_FAST = "drag rotate fast";
-	public static final String SCROLL_Z_FAST = "scroll browse z fast";
-	public static final String ROTATE_LEFT_FAST = "rotate left fast";
-	public static final String ROTATE_RIGHT_FAST = "rotate right fast";
-	public static final String KEY_ZOOM_IN_FAST = "zoom in fast";
-	public static final String KEY_ZOOM_OUT_FAST = "zoom out fast";
-	public static final String KEY_FORWARD_Z_FAST = "forward z fast";
-	public static final String KEY_BACKWARD_Z_FAST = "backward z fast";
+	private static final String ZOOM_FAST = "2d scroll zoom fast";
+	private static final String SCROLL_TRANSLATE_FAST = "2d scroll translate fast";
+	private static final String SCROLL_ROTATE_FAST = "2d scroll rotate fast";
+	private static final String ROTATE_LEFT_FAST = "2d rotate left fast";
+	private static final String ROTATE_RIGHT_FAST = "2d rotate right fast";
+	private static final String KEY_ZOOM_IN_FAST = "2d zoom in fast";
+	private static final String KEY_ZOOM_OUT_FAST = "2d zoom out fast";
 
-	public static final String DRAG_ROTATE_SLOW = "drag rotate slow";
-	public static final String SCROLL_Z_SLOW = "scroll browse z slow";
-	public static final String ROTATE_LEFT_SLOW = "rotate left slow";
-	public static final String ROTATE_RIGHT_SLOW = "rotate right slow";
-	public static final String KEY_ZOOM_IN_SLOW = "zoom in slow";
-	public static final String KEY_ZOOM_OUT_SLOW = "zoom out slow";
-	public static final String KEY_FORWARD_Z_SLOW = "forward z slow";
-	public static final String KEY_BACKWARD_Z_SLOW = "backward z slow";
+	private static final String ZOOM_SLOW = "2d scroll zoom slow";
+	private static final String SCROLL_TRANSLATE_SLOW = "2d scroll translate slow";
+	private static final String SCROLL_ROTATE_SLOW = "2d scroll rotate slow";
+	private static final String ROTATE_LEFT_SLOW = "2d rotate left slow";
+	private static final String ROTATE_RIGHT_SLOW = "2d rotate right slow";
+	private static final String KEY_ZOOM_IN_SLOW = "2d zoom in slow";
+	private static final String KEY_ZOOM_OUT_SLOW = "2d zoom out slow";
 
 	// -- default shortcuts --
 
 	private static final String[] DRAG_TRANSLATE_KEYS = new String[] { "button2", "button3" };
-	private static final String[] ZOOM_NORMAL_KEYS = new String[] { "meta scroll", "ctrl shift scroll" };
-	private static final String[] SELECT_AXIS_X_KEYS = new String[] { "X" };
-	private static final String[] SELECT_AXIS_Y_KEYS = new String[] { "Y" };
-	private static final String[] SELECT_AXIS_Z_KEYS = new String[] { "Z" };
-
 	private static final String[] DRAG_ROTATE_KEYS = new String[] { "button1" };
-	private static final String[] SCROLL_Z_KEYS = new String[] { "scroll" };
+
+	private static final String[] ZOOM_NORMAL_KEYS = new String[] { "meta scroll", "ctrl shift scroll" };
+	private static final String[] SCROLL_TRANSLATE_KEYS = new String[] { "not mapped" };
+	private static final String[] SCROLL_ROTATE_KEYS = new String[] { "scroll" };
 	private static final String[] ROTATE_LEFT_KEYS = new String[] { "LEFT" };
 	private static final String[] ROTATE_RIGHT_KEYS = new String[] { "RIGHT" };
 	private static final String[] KEY_ZOOM_IN_KEYS = new String[] { "UP" };
 	private static final String[] KEY_ZOOM_OUT_KEYS = new String[] { "DOWN" };
-	private static final String[] KEY_FORWARD_Z_KEYS = new String[] { "COMMA" };
-	private static final String[] KEY_BACKWARD_Z_KEYS = new String[] { "PERIOD" };
 
-	private static final String[] DRAG_ROTATE_FAST_KEYS = new String[] { "shift button1" };
-	private static final String[] SCROLL_Z_FAST_KEYS = new String[] { "shift scroll" };
+	private static final String[] ZOOM_FAST_KEYS = new String[] { "shift scroll" };
+	private static final String[] SCROLL_TRANSLATE_FAST_KEYS = new String[] { "not mapped" };
+	private static final String[] SCROLL_TRANSLATE_SLOW_KEYS = new String[] { "not mapped" };
 	private static final String[] ROTATE_LEFT_FAST_KEYS = new String[] { "shift LEFT" };
 	private static final String[] ROTATE_RIGHT_FAST_KEYS = new String[] { "shift RIGHT" };
 	private static final String[] KEY_ZOOM_IN_FAST_KEYS = new String[] { "shift UP" };
 	private static final String[] KEY_ZOOM_OUT_FAST_KEYS = new String[] { "shift DOWN" };
-	private static final String[] KEY_FORWARD_Z_FAST_KEYS = new String[] { "shift COMMA" };
-	private static final String[] KEY_BACKWARD_Z_FAST_KEYS = new String[] { "shift PERIOD" };
 
-	private static final String[] DRAG_ROTATE_SLOW_KEYS = new String[] { "ctrl button1" };
-	private static final String[] SCROLL_Z_SLOW_KEYS = new String[] { "ctrl scroll" };
+	private static final String[] ZOOM_SLOW_KEYS = new String[] { "ctrl scroll" };
+	private static final String[] SCROLL_ROTATE_FAST_KEYS = new String[] { "shift scroll" };
+	private static final String[] SCROLL_ROTATE_SLOW_KEYS = new String[] { "ctrl scroll" };
 	private static final String[] ROTATE_LEFT_SLOW_KEYS = new String[] { "ctrl LEFT" };
 	private static final String[] ROTATE_RIGHT_SLOW_KEYS = new String[] { "ctrl RIGHT" };
 	private static final String[] KEY_ZOOM_IN_SLOW_KEYS = new String[] { "ctrl UP" };
 	private static final String[] KEY_ZOOM_OUT_SLOW_KEYS = new String[] { "ctrl DOWN" };
-	private static final String[] KEY_FORWARD_Z_SLOW_KEYS = new String[] { "ctrl COMMA" };
-	private static final String[] KEY_BACKWARD_Z_SLOW_KEYS = new String[] { "ctrl PERIOD" };
 
 	// -- behaviours --
 
-	private final TranslateXY dragTranslate;
+	private final DragTranslate dragTranslate;
+	private final DragRotate dragRotate;
 	private final Zoom zoom;
-	private final SelectRotationAxis selectRotationAxisX;
-	private final SelectRotationAxis selectRotationAxisY;
-	private final SelectRotationAxis selectRotationAxisZ;
-	private final Rotate dragRotate;
-	private final Rotate dragRotateFast;
-	private final Rotate dragRotateSlow;
-	private final TranslateZ translateZ;
-	private final TranslateZ translateZFast;
-	private final TranslateZ translateZSlow;
-	private final KeyRotate rotateLeft;
-	private final KeyRotate rotateLeftFast;
-	private final KeyRotate rotateLeftSlow;
-	private final KeyRotate rotateRight;
-	private final KeyRotate rotateRightFast;
-	private final KeyRotate rotateRightSlow;
+	private final Zoom zoomFast;
+	private final Zoom zoomSlow;
+	private final ScrollTranslate scrollTranslate;
+	private final ScrollTranslate scrollTranslateFast;
+	private final ScrollTranslate scrollTranslateSlow;
+	private final ScrollRotate scrollRotate;
+	private final ScrollRotate scrollRotateFast;
+	private final ScrollRotate scrollRotateSlow;
+	private final KeyRotate keyRotateLeft;
+	private final KeyRotate keyRotateLeftFast;
+	private final KeyRotate keyRotateLeftSlow;
+	private final KeyRotate keyRotateRight;
+	private final KeyRotate keyRotateRightFast;
+	private final KeyRotate keyRotateRightSlow;
 	private final KeyZoom keyZoomIn;
 	private final KeyZoom keyZoomInFast;
 	private final KeyZoom keyZoomInSlow;
 	private final KeyZoom keyZoomOut;
 	private final KeyZoom keyZoomOutFast;
 	private final KeyZoom keyZoomOutSlow;
-	private final KeyTranslateZ keyForwardZ;
-	private final KeyTranslateZ keyForwardZFast;
-	private final KeyTranslateZ keyForwardZSlow;
-	private final KeyTranslateZ keyBackwardZ;
-	private final KeyTranslateZ keyBackwardZFast;
-	private final KeyTranslateZ keyBackwardZSlow;
 
 	private static final double[] speed = { 1.0, 10.0, 0.1 };
 
@@ -172,12 +153,6 @@ public class TransformEventHandler3D implements TransformEventHandler< AffineTra
 	private double oX, oY;
 
 	/**
-	 * Current rotation axis for rotating with keyboard, indexed {@code x->0, y->1,
-	 * z->2}.
-	 */
-	private int axis = 0;
-
-	/**
 	 * The screen size of the canvas (the component displaying the image and
 	 * generating mouse events).
 	 */
@@ -189,30 +164,31 @@ public class TransformEventHandler3D implements TransformEventHandler< AffineTra
 	 */
 	private int centerX = 0, centerY = 0;
 
-	public TransformEventHandler3D( final TransformListener< AffineTransform3D > listener )
+	public TransformEventHandler2D( final TransformListener< AffineTransform3D > listener )
 	{
 		this.listener = listener;
 
-		dragTranslate = new TranslateXY();
-		zoom = new Zoom();
-		selectRotationAxisX = new SelectRotationAxis( 0 );
-		selectRotationAxisY = new SelectRotationAxis( 1 );
-		selectRotationAxisZ = new SelectRotationAxis( 2 );
+		dragTranslate = new DragTranslate();
+		dragRotate = new DragRotate();
 
-		dragRotate = new Rotate( speed[ 0 ] );
-		dragRotateFast = new Rotate( speed[ 1 ] );
-		dragRotateSlow = new Rotate( speed[ 2 ] );
+		scrollTranslate = new ScrollTranslate( speed[ 0 ] );
+		scrollTranslateFast = new ScrollTranslate( speed[ 1 ] );
+		scrollTranslateSlow = new ScrollTranslate( speed[ 2 ] );
 
-		translateZ = new TranslateZ( speed[ 0 ] );
-		translateZFast = new TranslateZ( speed[ 1 ] );
-		translateZSlow = new TranslateZ( speed[ 2 ] );
+		zoom = new Zoom( speed[ 0 ] );
+		zoomFast = new Zoom( speed[ 1 ] );
+		zoomSlow = new Zoom( speed[ 2 ] );
 
-		rotateLeft = new KeyRotate( speed[ 0 ] );
-		rotateLeftFast = new KeyRotate( speed[ 1 ] );
-		rotateLeftSlow = new KeyRotate( speed[ 2 ] );
-		rotateRight = new KeyRotate( -speed[ 0 ] );
-		rotateRightFast = new KeyRotate( -speed[ 1 ] );
-		rotateRightSlow = new KeyRotate( -speed[ 2 ] );
+		scrollRotate = new ScrollRotate( 2 * speed[ 0 ] );
+		scrollRotateFast = new ScrollRotate( 2 * speed[ 1 ] );
+		scrollRotateSlow = new ScrollRotate( 2 * speed[ 2 ] );
+
+		keyRotateLeft = new KeyRotate( speed[ 0 ] );
+		keyRotateLeftFast = new KeyRotate( speed[ 1 ] );
+		keyRotateLeftSlow = new KeyRotate( speed[ 2 ] );
+		keyRotateRight = new KeyRotate( -speed[ 0 ] );
+		keyRotateRightFast = new KeyRotate( -speed[ 1 ] );
+		keyRotateRightSlow = new KeyRotate( -speed[ 2 ] );
 
 		keyZoomIn = new KeyZoom( speed[ 0 ] );
 		keyZoomInFast = new KeyZoom( speed[ 1 ] );
@@ -220,53 +196,39 @@ public class TransformEventHandler3D implements TransformEventHandler< AffineTra
 		keyZoomOut = new KeyZoom( -speed[ 0 ] );
 		keyZoomOutFast = new KeyZoom( -speed[ 1 ] );
 		keyZoomOutSlow = new KeyZoom( -speed[ 2 ] );
-
-		keyForwardZ = new KeyTranslateZ( speed[ 0 ] );
-		keyForwardZFast = new KeyTranslateZ( speed[ 1 ] );
-		keyForwardZSlow = new KeyTranslateZ( speed[ 2 ] );
-		keyBackwardZ = new KeyTranslateZ( -speed[ 0 ] );
-		keyBackwardZFast = new KeyTranslateZ( -speed[ 1 ] );
-		keyBackwardZSlow = new KeyTranslateZ( -speed[ 2 ] );
 	}
 
 	@Override
 	public void install( final Behaviours behaviours )
 	{
 		behaviours.behaviour( dragTranslate, DRAG_TRANSLATE, DRAG_TRANSLATE_KEYS );
+		behaviours.behaviour( dragRotate, DRAG_ROTATE,  DRAG_ROTATE_KEYS );
+
+		behaviours.behaviour( scrollTranslate, SCROLL_TRANSLATE, SCROLL_TRANSLATE_KEYS );
+		behaviours.behaviour( scrollTranslateFast, SCROLL_TRANSLATE_FAST, SCROLL_TRANSLATE_FAST_KEYS );
+		behaviours.behaviour( scrollTranslateSlow, SCROLL_TRANSLATE_SLOW, SCROLL_TRANSLATE_SLOW_KEYS );
+
 		behaviours.behaviour( zoom, ZOOM_NORMAL, ZOOM_NORMAL_KEYS );
+		behaviours.behaviour( zoomFast, ZOOM_FAST, ZOOM_FAST_KEYS );
+		behaviours.behaviour( zoomSlow, ZOOM_SLOW, ZOOM_SLOW_KEYS );
 
-		behaviours.behaviour( selectRotationAxisX, SELECT_AXIS_X, SELECT_AXIS_X_KEYS );
-		behaviours.behaviour( selectRotationAxisY, SELECT_AXIS_Y, SELECT_AXIS_Y_KEYS );
-		behaviours.behaviour( selectRotationAxisZ, SELECT_AXIS_Z, SELECT_AXIS_Z_KEYS );
+		behaviours.behaviour( scrollRotate, SCROLL_ROTATE, SCROLL_ROTATE_KEYS );
+		behaviours.behaviour( scrollRotateFast, SCROLL_ROTATE_FAST, SCROLL_ROTATE_FAST_KEYS );
+		behaviours.behaviour( scrollRotateSlow, SCROLL_ROTATE_SLOW, SCROLL_ROTATE_SLOW_KEYS );
 
-		behaviours.behaviour( dragRotate, DRAG_ROTATE, DRAG_ROTATE_KEYS );
-		behaviours.behaviour( dragRotateFast, DRAG_ROTATE_FAST, DRAG_ROTATE_FAST_KEYS );
-		behaviours.behaviour( dragRotateSlow, DRAG_ROTATE_SLOW, DRAG_ROTATE_SLOW_KEYS );
+		behaviours.behaviour( keyRotateLeft, ROTATE_LEFT, ROTATE_LEFT_KEYS );
+		behaviours.behaviour( keyRotateLeftFast, ROTATE_LEFT_FAST, ROTATE_LEFT_FAST_KEYS );
+		behaviours.behaviour( keyRotateLeftSlow, ROTATE_LEFT_SLOW, ROTATE_LEFT_SLOW_KEYS );
+		behaviours.behaviour( keyRotateRight, ROTATE_RIGHT, ROTATE_RIGHT_KEYS );
+		behaviours.behaviour( keyRotateRightFast, ROTATE_RIGHT_FAST, ROTATE_RIGHT_FAST_KEYS );
+		behaviours.behaviour( keyRotateRightSlow, ROTATE_RIGHT_SLOW, ROTATE_RIGHT_SLOW_KEYS );
 
-		behaviours.behaviour( translateZ, SCROLL_Z, SCROLL_Z_KEYS );
-		behaviours.behaviour( translateZFast, SCROLL_Z_FAST, SCROLL_Z_FAST_KEYS );
-		behaviours.behaviour( translateZSlow, SCROLL_Z_SLOW, SCROLL_Z_SLOW_KEYS );
-
-		behaviours.behaviour( rotateLeft, ROTATE_LEFT, ROTATE_LEFT_KEYS );
-		behaviours.behaviour( rotateLeftFast, ROTATE_LEFT_FAST, ROTATE_LEFT_FAST_KEYS );
-		behaviours.behaviour( rotateLeftSlow, ROTATE_LEFT_SLOW, ROTATE_LEFT_SLOW_KEYS );
-		behaviours.behaviour( rotateRight, ROTATE_RIGHT, ROTATE_RIGHT_KEYS );
-		behaviours.behaviour( rotateRightFast, ROTATE_RIGHT_FAST, ROTATE_RIGHT_FAST_KEYS );
-		behaviours.behaviour( rotateRightSlow, ROTATE_RIGHT_SLOW, ROTATE_RIGHT_SLOW_KEYS );
-
-		behaviours.behaviour( keyZoomIn, KEY_ZOOM_IN, KEY_ZOOM_IN_KEYS );
+		behaviours.behaviour( keyZoomIn,  KEY_ZOOM_IN, KEY_ZOOM_IN_KEYS );
 		behaviours.behaviour( keyZoomInFast, KEY_ZOOM_IN_FAST, KEY_ZOOM_IN_FAST_KEYS );
 		behaviours.behaviour( keyZoomInSlow, KEY_ZOOM_IN_SLOW, KEY_ZOOM_IN_SLOW_KEYS );
 		behaviours.behaviour( keyZoomOut, KEY_ZOOM_OUT, KEY_ZOOM_OUT_KEYS );
 		behaviours.behaviour( keyZoomOutFast, KEY_ZOOM_OUT_FAST, KEY_ZOOM_OUT_FAST_KEYS );
 		behaviours.behaviour( keyZoomOutSlow, KEY_ZOOM_OUT_SLOW, KEY_ZOOM_OUT_SLOW_KEYS );
-
-		behaviours.behaviour( keyForwardZ, KEY_FORWARD_Z, KEY_FORWARD_Z_KEYS );
-		behaviours.behaviour( keyForwardZFast, KEY_FORWARD_Z_SLOW, KEY_FORWARD_Z_SLOW_KEYS );
-		behaviours.behaviour( keyForwardZSlow, KEY_FORWARD_Z_FAST, KEY_FORWARD_Z_FAST_KEYS );
-		behaviours.behaviour( keyBackwardZ, KEY_BACKWARD_Z, KEY_BACKWARD_Z_KEYS );
-		behaviours.behaviour( keyBackwardZFast, KEY_BACKWARD_Z_FAST, KEY_BACKWARD_Z_FAST_KEYS );
-		behaviours.behaviour( keyBackwardZSlow, KEY_BACKWARD_Z_SLOW, KEY_BACKWARD_Z_SLOW_KEYS );
 	}
 
 	@Override
@@ -366,15 +328,8 @@ public class TransformEventHandler3D implements TransformEventHandler< AffineTra
 		affine.set( affine.get( 1, 3 ) + centerY, 1, 3 );
 	}
 
-	private class Rotate implements DragBehaviour
+	private class DragRotate implements DragBehaviour
 	{
-		private final double speed;
-
-		public Rotate( final double speed )
-		{
-			this.speed = speed;
-		}
-
 		@Override
 		public void init( final int x, final int y )
 		{
@@ -391,22 +346,14 @@ public class TransformEventHandler3D implements TransformEventHandler< AffineTra
 		{
 			synchronized ( affine )
 			{
-				final double dX = oX - x;
-				final double dY = oY - y;
+				final double dX = x - centerX;
+				final double dY = y - centerY;
+				final double odX = oX - centerX;
+				final double odY = oY - centerY;
+				final double theta = Math.atan2( dY, dX ) - Math.atan2( odY, odX );
 
 				affine.set( affineDragStart );
-
-				// center shift
-				affine.set( affine.get( 0, 3 ) - oX, 0, 3 );
-				affine.set( affine.get( 1, 3 ) - oY, 1, 3 );
-
-				final double v = step * speed;
-				affine.rotate( 0, -dY * v );
-				affine.rotate( 1, dX * v );
-
-				// center un-shift
-				affine.set( affine.get( 0, 3 ) + oX, 0, 3 );
-				affine.set( affine.get( 1, 3 ) + oY, 1, 3 );
+				rotate( 2, theta );
 				notifyListener();
 			}
 		}
@@ -416,7 +363,38 @@ public class TransformEventHandler3D implements TransformEventHandler< AffineTra
 		{}
 	}
 
-	private class TranslateXY implements DragBehaviour
+	private class ScrollRotate implements ScrollBehaviour
+	{
+		private final double speed;
+
+		public ScrollRotate( final double speed )
+		{
+			this.speed = speed;
+		}
+
+		@Override
+		public void scroll( final double wheelRotation, final boolean isHorizontal, final int x, final int y )
+		{
+			synchronized ( affine )
+			{
+				final double theta = speed * wheelRotation * Math.PI / 180.0;
+
+				// center shift
+				affine.set( affine.get( 0, 3 ) - x, 0, 3 );
+				affine.set( affine.get( 1, 3 ) - y, 1, 3 );
+
+				affine.rotate( 2, theta );
+
+				// center un-shift
+				affine.set( affine.get( 0, 3 ) + x, 0, 3 );
+				affine.set( affine.get( 1, 3 ) + y, 1, 3 );
+
+				notifyListener();
+			}
+		}
+	}
+
+	private class DragTranslate implements DragBehaviour
 	{
 		@Override
 		public void init( final int x, final int y )
@@ -449,11 +427,12 @@ public class TransformEventHandler3D implements TransformEventHandler< AffineTra
 		{}
 	}
 
-	private class TranslateZ implements ScrollBehaviour
+	private class ScrollTranslate implements ScrollBehaviour
 	{
+
 		private final double speed;
 
-		public TranslateZ( final double speed )
+		public ScrollTranslate( final double speed )
 		{
 			this.speed = speed;
 		}
@@ -463,9 +442,11 @@ public class TransformEventHandler3D implements TransformEventHandler< AffineTra
 		{
 			synchronized ( affine )
 			{
-				final double dZ = speed * -wheelRotation;
-				// TODO (optionally) correct for zoom
-				affine.set( affine.get( 2, 3 ) - dZ, 2, 3 );
+				final double d = -wheelRotation * 10 * speed;
+				if ( isHorizontal )
+					affine.translate( d, 0, 0 );
+				else
+					affine.translate( 0, d, 0 );
 				notifyListener();
 			}
 		}
@@ -473,7 +454,13 @@ public class TransformEventHandler3D implements TransformEventHandler< AffineTra
 
 	private class Zoom implements ScrollBehaviour
 	{
-		private final double speed = 1.0;
+
+		private final double speed;
+
+		public Zoom( final double speed )
+		{
+			this.speed = speed;
+		}
 
 		@Override
 		public void scroll( final double wheelRotation, final boolean isHorizontal, final int x, final int y )
@@ -481,29 +468,13 @@ public class TransformEventHandler3D implements TransformEventHandler< AffineTra
 			synchronized ( affine )
 			{
 				final double s = speed * wheelRotation;
-				final double dScale = 1.0 + 0.05;
+				final double dScale = 1.0 + 0.05 * Math.abs( s );
 				if ( s > 0 )
 					scale( 1.0 / dScale, x, y );
 				else
 					scale( dScale, x, y );
 				notifyListener();
 			}
-		}
-	}
-
-	private class SelectRotationAxis implements ClickBehaviour
-	{
-		private final int axis;
-
-		public SelectRotationAxis( final int axis )
-		{
-			this.axis = axis;
-		}
-
-		@Override
-		public void click( final int x, final int y )
-		{
-			TransformEventHandler3D.this.axis = axis;
 		}
 	}
 
@@ -521,7 +492,7 @@ public class TransformEventHandler3D implements TransformEventHandler< AffineTra
 		{
 			synchronized ( affine )
 			{
-				rotate( axis, step * speed );
+				rotate( 2, step * speed );
 				notifyListener();
 			}
 		}
@@ -545,26 +516,6 @@ public class TransformEventHandler3D implements TransformEventHandler< AffineTra
 			synchronized ( affine )
 			{
 				scale( dScale, centerX, centerY );
-				notifyListener();
-			}
-		}
-	}
-
-	private class KeyTranslateZ implements ClickBehaviour
-	{
-		private final double speed;
-
-		public KeyTranslateZ( final double speed )
-		{
-			this.speed = speed;
-		}
-
-		@Override
-		public void click( final int x, final int y )
-		{
-			synchronized ( affine )
-			{
-				affine.set( affine.get( 2, 3 ) + speed, 2, 3 );
 				notifyListener();
 			}
 		}
