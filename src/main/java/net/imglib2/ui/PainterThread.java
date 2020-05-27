@@ -40,12 +40,12 @@ import java.util.concurrent.RejectedExecutionException;
  */
 final public class PainterThread extends Thread
 {
-	public static interface Paintable
+	public interface Paintable
 	{
 		/**
 		 * This is called by the painter thread to repaint the display.
 		 */
-		public void paint();
+		void paint();
 	}
 
 	private final Paintable paintable;
