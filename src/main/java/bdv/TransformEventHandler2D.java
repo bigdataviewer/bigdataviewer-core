@@ -261,24 +261,6 @@ public class TransformEventHandler2D implements TransformEventHandler< AffineTra
 	}
 
 	@Override
-	public AffineTransform3D getTransform()
-	{
-		synchronized ( affine )
-		{
-			return affine.copy();
-		}
-	}
-
-	@Override
-	public void setTransform( final AffineTransform3D transform )
-	{
-		synchronized ( affine )
-		{
-			affine.set( transform );
-		}
-	}
-
-	@Override
 	public void setCanvasSize( final int width, final int height, final boolean updateTransform )
 	{
 		if ( width == 0 || height == 0 ) {
@@ -303,12 +285,6 @@ public class TransformEventHandler2D implements TransformEventHandler< AffineTra
 		canvasH = height;
 		centerX = width / 2;
 		centerY = height / 2;
-	}
-
-	@Override
-	public void setTransformListener( final TransformListener< AffineTransform3D > transformListener )
-	{
-		listener = transformListener;
 	}
 
 	/**

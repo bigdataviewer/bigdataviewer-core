@@ -95,20 +95,4 @@ public interface TransformEventHandler< A >
 	 *            triggered.
 	 */
 	void setCanvasSize( int width, int height, boolean updateTransform );
-
-	/**
-	 * Set the {@link TransformListener} who will receive updated
-	 * transformations.
-	 *
-	 * @param transformListener
-	 *            will receive transformation updates.
-	 */
-	@Deprecated
-	void setTransformListener( TransformListener< A > transformListener );
-
-	@Deprecated
-	A getTransform();
-
-	@Deprecated
-	void setTransform( A transform );
 }

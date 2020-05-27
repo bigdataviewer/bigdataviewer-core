@@ -292,18 +292,6 @@ public class TransformEventHandler3D implements TransformEventHandler< AffineTra
 	}
 
 	@Override
-	public AffineTransform3D getTransform()
-	{
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
-	public void setTransform( final AffineTransform3D transform )
-	{
-		throw new UnsupportedOperationException();
-	}
-
-	@Override
 	public void setCanvasSize( final int width, final int height, final boolean updateTransform )
 	{
 		if ( width == 0 || height == 0 ) {
@@ -326,13 +314,6 @@ public class TransformEventHandler3D implements TransformEventHandler< AffineTra
 		canvasH = height;
 		centerX = width / 2;
 		centerY = height / 2;
-	}
-
-	@Override
-	public void setTransformListener( final TransformListener< AffineTransform3D > transformListener )
-	{
-		// TODO REMOVE
-		throw new UnsupportedOperationException();
 	}
 
 	/**
