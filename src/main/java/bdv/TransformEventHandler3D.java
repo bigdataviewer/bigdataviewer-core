@@ -154,11 +154,6 @@ public class TransformEventHandler3D implements TransformEventHandler< AffineTra
 	private static final double[] speed = { 1.0, 10.0, 0.1 };
 
 	/**
-	 * Whom to notify when the {@link #affineDragCurrent current transform} is changed.
-	 */
-	private TransformListener< AffineTransform3D > listener;
-
-	/**
 	 * Copy of transform when mouse dragging started.
 	 */
 	private final AffineTransform3D affineDragStart = new AffineTransform3D();
@@ -191,10 +186,8 @@ public class TransformEventHandler3D implements TransformEventHandler< AffineTra
 	 */
 	private int centerX = 0, centerY = 0;
 
-	public TransformEventHandler3D( final TransformListener< AffineTransform3D > listener )
+	public TransformEventHandler3D()
 	{
-		this.listener = listener;
-
 		dragTranslate = new TranslateXY();
 		zoom = new Zoom();
 		selectRotationAxisX = new SelectRotationAxis( 0 );
@@ -338,16 +331,8 @@ public class TransformEventHandler3D implements TransformEventHandler< AffineTra
 	@Override
 	public void setTransformListener( final TransformListener< AffineTransform3D > transformListener )
 	{
-		listener = transformListener;
-	}
-
-	/**
-	 * notifies {@link #listener} that the current transform changed.
-	 */
-	private void notifyListener()
-	{
-		if ( listener != null )
-			listener.transformChanged( affineDragCurrent );
+		// TODO REMOVE
+		throw new UnsupportedOperationException();
 	}
 
 	/**

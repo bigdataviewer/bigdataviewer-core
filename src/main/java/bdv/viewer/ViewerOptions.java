@@ -242,7 +242,7 @@ public class ViewerOptions
 
 		private MessageOverlayAnimator msgOverlay = new MessageOverlayAnimator( 800 );
 
-		private TransformEventHandlerFactory< AffineTransform3D > transformEventHandlerFactory = TransformEventHandler3D::new;
+		private TransformEventHandlerFactory< AffineTransform3D > transformEventHandlerFactory = l -> new TransformEventHandler3D();
 
 		private AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory = AccumulateProjectorARGB.factory;
 
