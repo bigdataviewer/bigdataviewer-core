@@ -220,9 +220,14 @@ public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarg
 		synchronized ( paintedTransformListeners )
 		{
 			final int s = paintedTransformListeners.size();
-			paintedTransformListeners.add( Math.max( 0, Math.min( index, s ) ), listener );
+			paintedTransformListeners.add( clamp( index, 0, s ), listener );
 			listener.transformChanged( paintedTransform );
 		}
+	}
+
+	private static int clamp( int value, int min, int max )
+	{
+		return Math.min( max, Math.max( min, value ) );
 	}
 
 	/**
