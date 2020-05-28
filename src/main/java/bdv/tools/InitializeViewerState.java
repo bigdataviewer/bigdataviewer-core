@@ -78,7 +78,7 @@ public class InitializeViewerState
 	{
 		final Dimension dim = viewer.getDisplay().getSize();
 		final AffineTransform3D viewerTransform = initTransform( dim.width, dim.height, false, viewer.state().snapshot() );
-		viewer.setCurrentViewerTransform( viewerTransform );
+		viewer.state().setViewerTransform( viewerTransform );
 	}
 
 	/**

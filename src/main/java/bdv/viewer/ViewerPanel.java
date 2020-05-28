@@ -740,8 +740,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 	}
 
 	/**
-	 * Set the viewer transform.
-	 * TODO: deprecated, use state().setViewerTransform()...
+	 * @deprecated Modify {@link #state()} directly ({@code state().setViewerTransform(t)})
 	 */
 	@Deprecated
 	public void setCurrentViewerTransform( final AffineTransform3D viewerTransform )
