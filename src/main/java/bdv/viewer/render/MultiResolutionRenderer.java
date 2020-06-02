@@ -7,13 +7,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -176,6 +176,10 @@ public class MultiResolutionRenderer
 	 */
 	private byte[][] renderMaskArrays;
 
+	private final int[] screenW;
+
+	private final int[] screenH;
+
 	/**
 	 * Used to render the image for display. Three images per screen resolution
 	 * if double buffering is enabled. First index is screen scale, second index
@@ -335,6 +339,8 @@ public class MultiResolutionRenderer
 		bufferedImageToRenderId = new HashMap<>();
 		renderImages = new ARGBScreenImage[ screenScales.length ][ 0 ];
 		renderMaskArrays = new byte[ 0 ][];
+		screenW = new int[ screenScales.length ];
+		screenH = new int[ screenScales.length ];
 		screenImages = new ARGBScreenImage[ screenScales.length ][ 3 ];
 		bufferedImages = new BufferedImage[ screenScales.length ][ 3 ];
 		screenScaleTransforms = new AffineTransform3D[ screenScales.length ];
@@ -363,7 +369,9 @@ public class MultiResolutionRenderer
 	{
 		final int componentW = display.getWidth();
 		final int componentH = display.getHeight();
-		if ( screenImages[ 0 ][ 0 ] == null || screenImages[ 0 ][ 0 ].dimension( 0 ) != ( int ) ( componentW * screenScales[ 0 ] ) || screenImages[ 0 ][ 0 ].dimension( 1 ) != ( int ) ( componentH  * screenScales[ 0 ] ) )
+		final int newTargetW = ( int ) ( componentW * screenScales[ 0 ] );
+		final int newTargetH = ( int ) ( componentH * screenScales[ 0 ] );
+		if ( screenImages[ 0 ][ 0 ] == null || newTargetW != screenW[ 0 ] || newTargetH != screenH[ 0 ] )
 		{
 			renderIdQueue.clear();
 			renderIdQueue.addAll( Arrays.asList( 0, 1, 2 ) );
@@ -371,16 +379,16 @@ public class MultiResolutionRenderer
 			for ( int i = 0; i < screenScales.length; ++i )
 			{
 				final double screenToViewerScale = screenScales[ i ];
-				final int w = ( int ) ( screenToViewerScale * componentW );
-				final int h = ( int ) ( screenToViewerScale * componentH );
+				screenW[ i ] = ( int ) ( screenToViewerScale * componentW );
+				screenH[ i ] = ( int ) ( screenToViewerScale * componentH );
 				if ( doubleBuffered )
 				{
 					for ( int b = 0; b < 3; ++b )
 					{
 						// reuse storage arrays of level 0 (highest resolution)
 						screenImages[ i ][ b ] = ( i == 0 ) ?
-								new ARGBScreenImage( w, h ) :
-								new ARGBScreenImage( w, h, screenImages[ 0 ][ b ].getData() );
+								new ARGBScreenImage( screenW[ i ], screenH[ i ] ) :
+								new ARGBScreenImage( screenW[ i ], screenH[ i ], screenImages[ 0 ][ b ].getData() );
 						final BufferedImage bi = GuiUtil.getBufferedImage( screenImages[ i ][ b ] );
 						bufferedImages[ i ][ b ] = bi;
 						bufferedImageToRenderId.put( bi, b );
@@ -388,12 +396,12 @@ public class MultiResolutionRenderer
 				}
 				else
 				{
-					screenImages[ i ][ 0 ] = new ARGBScreenImage( w, h );
+					screenImages[ i ][ 0 ] = new ARGBScreenImage( screenW[ i ], screenH[ i ] );
 					bufferedImages[ i ][ 0 ] = GuiUtil.getBufferedImage( screenImages[ i ][ 0 ] );
 				}
 				final AffineTransform3D scale = new AffineTransform3D();
-				final double xScale = ( double ) w / componentW;
-				final double yScale = ( double ) h / componentH;
+				final double xScale = ( double ) screenW[ i ] / componentW;
+				final double yScale = ( double ) screenH[ i ] / componentH;
 				scale.set( xScale, 0, 0 );
 				scale.set( yScale, 1, 1 );
 				scale.set( 0.5 * xScale - 0.5, 0, 3 );
@@ -411,19 +419,17 @@ public class MultiResolutionRenderer
 		final int n = numVisibleSources > 1 ? numVisibleSources : 0;
 		if ( n != renderImages[ 0 ].length ||
 				( n != 0 &&
-					( renderImages[ 0 ][ 0 ].dimension( 0 ) != screenImages[ 0 ][ 0 ].dimension( 0 ) ||
-					  renderImages[ 0 ][ 0 ].dimension( 1 ) != screenImages[ 0 ][ 0 ].dimension( 1 ) ) ) )
+					( renderImages[ 0 ][ 0 ].dimension( 0 ) != screenW[ 0 ] ||
+					  renderImages[ 0 ][ 0 ].dimension( 1 ) != screenH[ 0 ] ) ) )
 		{
 			renderImages = new ARGBScreenImage[ screenScales.length ][ n ];
 			for ( int i = 0; i < screenScales.length; ++i )
 			{
-				final int w = ( int ) screenImages[ i ][ 0 ].dimension( 0 );
-				final int h = ( int ) screenImages[ i ][ 0 ].dimension( 1 );
 				for ( int j = 0; j < n; ++j )
 				{
 					renderImages[ i ][ j ] = ( i == 0 ) ?
-						new ARGBScreenImage( w, h ) :
-						new ARGBScreenImage( w, h, renderImages[ 0 ][ j ].getData() );
+						new ARGBScreenImage( screenW[ i ], screenH[ i ] ) :
+						new ARGBScreenImage( screenW[ i ], screenH[ i ], renderImages[ 0 ][ j ].getData() );
 				}
 			}
 			return true;
@@ -433,10 +439,10 @@ public class MultiResolutionRenderer
 
 	private boolean checkRenewMaskArrays( final int numVisibleSources )
 	{
+		final int size = screenW[ 0 ] * screenH[ 0 ];
 		if ( numVisibleSources != renderMaskArrays.length ||
-				( numVisibleSources != 0 &&	( renderMaskArrays[ 0 ].length < screenImages[ 0 ][ 0 ].size() ) ) )
+				( numVisibleSources != 0 &&	( renderMaskArrays[ 0 ].length < size ) ) )
 		{
-			final int size = ( int ) screenImages[ 0 ][ 0 ].size();
 			renderMaskArrays = new byte[ numVisibleSources ][];
 			for ( int j = 0; j < numVisibleSources; ++j )
 				renderMaskArrays[ j ] = new byte[ size ];
