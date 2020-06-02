@@ -258,41 +258,41 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends SetZ
 
 		final boolean createExecutor = ( executorService == null );
 		final ExecutorService ex = createExecutor ? Executors.newFixedThreadPool( numThreads ) : executorService;
-
-		/*
-		 * After the for loop, resolutionLevel is the highest (coarsest)
-		 * resolution for which all pixels could be filled from valid data. This
-		 * means that in the next pass, i.e., map() call, levels up to
-		 * resolutionLevel have to be re-rendered.
-		 */
-		int resolutionLevel;
-		for ( resolutionLevel = 0; resolutionLevel < numInvalidLevels; ++resolutionLevel )
+		try
 		{
-			final List< Callable< Void > > tasks = new ArrayList<>( numTasks );
-			for( int i = 0; i < numTasks; ++i )
-				tasks.add( createMapTask( ( byte ) resolutionLevel, taskStartHeights[ i ], taskStartHeights[ i + 1 ] ) );
-			numInvalidPixels.set( 0 );
-			try
+			/*
+			 * After the for loop, resolutionLevel is the highest (coarsest)
+			 * resolution for which all pixels could be filled from valid data. This
+			 * means that in the next pass, i.e., map() call, levels up to
+			 * resolutionLevel have to be re-rendered.
+			 */
+			int resolutionLevel;
+			for ( resolutionLevel = 0; resolutionLevel < numInvalidLevels; ++resolutionLevel )
 			{
-				ex.invokeAll( tasks );
+				final List< Callable< Void > > tasks = new ArrayList<>( numTasks );
+				for ( int i = 0; i < numTasks; ++i )
+					tasks.add( createMapTask( ( byte ) resolutionLevel, taskStartHeights[ i ], taskStartHeights[ i + 1 ] ) );
+				numInvalidPixels.set( 0 );
+				try
+				{
+					ex.invokeAll( tasks );
+				}
+				catch ( final InterruptedException e )
+				{
+					Thread.currentThread().interrupt();
+				}
+				if ( interrupted.get() )
+					return false;
+				if ( numInvalidPixels.get() == 0 )
+					// if this pass was all valid
+					numInvalidLevels = resolutionLevel;
 			}
-			catch ( final InterruptedException e )
-			{
-				Thread.currentThread().interrupt();
-			}
-			if ( interrupted.get() )
-			{
-				if ( createExecutor )
-					ex.shutdown();
-				return false;
-			}
-			if ( numInvalidPixels.get() == 0 )
-				// if this pass was all valid
-				numInvalidLevels = resolutionLevel;
 		}
-
-		if ( createExecutor )
-			ex.shutdown();
+		finally
+		{
+			if ( createExecutor )
+				ex.shutdown();
+		}
 
 		if ( clearUntouchedTargetPixels && !interrupted.get() )
 			clearUntouchedTargetPixels();
