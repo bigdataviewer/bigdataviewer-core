@@ -30,9 +30,7 @@ package bdv.viewer.render;
 
 import bdv.viewer.SourceAndConverter;
 import java.awt.image.BufferedImage;
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -62,7 +60,6 @@ import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
 import net.imglib2.ui.overlay.BufferedImageOverlayRenderer;
-import net.imglib2.ui.util.GuiUtil;
 
 /**
  * A renderer that uses a coarse-to-fine rendering scheme. First, a
@@ -137,7 +134,7 @@ public class MultiResolutionRenderer
 
 	/**
 	 * Currently active projector, used to re-paint the display. It maps the
-	 * source data to {@link #screenImages}.
+	 * source data to {@code ©screenImages}.
 	 */
 	private VolatileProjector projector;
 
@@ -178,7 +175,7 @@ public class MultiResolutionRenderer
 
 	/**
 	 * Scale factors from the {@link #display viewer canvas} to the
-	 * {@link #screenImages}.
+	 * {@code screenImages}.
 	 *
 	 * A scale factor of 1 means 1 pixel in the screen image is displayed as 1
 	 * pixel on the canvas, a scale factor of 0.5 means 1 pixel in the screen
@@ -187,8 +184,8 @@ public class MultiResolutionRenderer
 	private final double[] screenScales;
 
 	/**
-	 * The scale transformation from viewer to {@link #screenImages screen
-	 * image}. Each transformations corresponds to a {@link #screenScales screen
+	 * The scale transformation from viewer to screen image.
+	 * Each transformations corresponds to a {@link #screenScales screen
 	 * scale}.
 	 */
 	private AffineTransform3D[] screenScaleTransforms;
@@ -258,7 +255,7 @@ public class MultiResolutionRenderer
 
 	/**
 	 * The timepoint for which last a projector was
-	 * {@link #createProjector(ViewerState, ARGBScreenImage) created}.
+	 * {@link #createProjector(ViewerState, RandomAccessibleInterval) created}.
 	 */
 	private int previousTimepoint;
 
@@ -341,7 +338,7 @@ public class MultiResolutionRenderer
 
 	/**
 	 * Check whether the size of the display component was changed and
-	 * recreate {@link #screenImages} and {@link #screenScaleTransforms} accordingly.
+	 * recreate {@code screenImages} and {@link #screenScaleTransforms} accordingly.
 	 *
 	 * @return whether the size was changed.
 	 */
@@ -424,10 +421,7 @@ public class MultiResolutionRenderer
 
 		final boolean resized = checkResize();
 
-		// the BufferedImage that is rendered to (to paint to the canvas)
-		final BufferedImage bufferedImage;
-
-		final ARGBScreenImage screenImage;
+		final RenderResult renderResult;
 
 		final boolean clearQueue;
 
@@ -449,18 +443,12 @@ public class MultiResolutionRenderer
 			{
 				currentScreenScaleIndex = requestedScreenScaleIndex;
 
-				// TODO
-				//  reuse storage arrays of level 0 (highest resolution)
-//				screenImages[ i ][ b ] = ( i == 0 ) ?
-//						new ARGBScreenImage( screenW[ i ], screenH[ i ] ) :
-//						new ARGBScreenImage( screenW[ i ], screenH[ i ], screenImages[ 0 ][ b ].getData() );
-				screenImage = new ARGBScreenImage( screenW[ currentScreenScaleIndex ], screenH[ currentScreenScaleIndex ] );
-				bufferedImage = GuiUtil.getBufferedImage( screenImage );;
+				renderResult = new RenderResult();
+				renderResult.init( screenW[ currentScreenScaleIndex ], screenH[ currentScreenScaleIndex ] );
 			}
 			else
 			{
-				bufferedImage = null;
-				screenImage = null;
+				renderResult = null;
 			}
 
 			requestedScreenScaleIndex = 0;
@@ -476,7 +464,7 @@ public class MultiResolutionRenderer
 				final int numVisibleSources = state.getVisibleSourceIndices().size();
 				checkRenewRenderImages( numVisibleSources );
 				checkRenewMaskArrays( numVisibleSources );
-				p = createProjector( state, screenImage );
+				p = createProjector( state, renderResult.getScreenImage() );
 			}
 			synchronized ( this )
 			{
@@ -503,7 +491,7 @@ public class MultiResolutionRenderer
 			{
 				if ( createProjector )
 				{
-					final BufferedImage bi = display.setBufferedImageAndTransform( bufferedImage, currentProjectorTransform );
+					final BufferedImage bi = display.setBufferedImageAndTransform( renderResult.getBufferedImage(), currentProjectorTransform );
 
 					if ( currentScreenScaleIndex == maxScreenScaleIndex )
 					{
@@ -590,7 +578,7 @@ public class MultiResolutionRenderer
 
 	private VolatileProjector createProjector(
 			final ViewerState viewerState,
-			final ARGBScreenImage screenImage )
+			final RandomAccessibleInterval< ARGBType > screenImage )
 	{
 		/*
 		 * This shouldn't be necessary, with
@@ -638,7 +626,7 @@ public class MultiResolutionRenderer
 			final SourceState< T > source,
 			final int sourceIndex,
 			final int screenScaleIndex,
-			final ARGBScreenImage screenImage,
+			final RandomAccessibleInterval< ARGBType > screenImage,
 			final byte[] maskArray )
 	{
 		if ( useVolatileIfAvailable )
@@ -665,7 +653,7 @@ public class MultiResolutionRenderer
 			final SourceState< T > source,
 			final int sourceIndex,
 			final int screenScaleIndex,
-			final ARGBScreenImage screenImage,
+			final RandomAccessibleInterval< ARGBType > screenImage,
 			final byte[] maskArray )
 	{
 		final AffineTransform3D screenScaleTransform = screenScaleTransforms[ currentScreenScaleIndex ];
