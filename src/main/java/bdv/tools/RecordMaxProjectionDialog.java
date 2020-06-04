@@ -38,6 +38,7 @@ import bdv.viewer.ViewerPanel;
 import bdv.viewer.ViewerState;
 import bdv.viewer.overlay.ScaleBarOverlayRenderer;
 import bdv.viewer.render.MultiResolutionRenderer;
+import bdv.viewer.render.RenderResult;
 import java.awt.BorderLayout;
 import java.awt.Frame;
 import java.awt.Graphics;
@@ -330,6 +331,13 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 			}
 
 			@Override
+			public RenderResult getReusableRenderResult()
+			{
+				// TODO
+				throw new UnsupportedOperationException();
+			}
+
+			@Override
 			public BufferedImage setBufferedImage( final BufferedImage bufferedImage )
 			{
 				final Img< ARGBType > argbs = ArrayImgs.argbs( ( ( DataBufferInt ) bufferedImage.getData().getDataBuffer() ).getData(), width, height );
@@ -345,6 +353,13 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 							Math.max( ARGBType.alpha( in ), ARGBType.alpha( current ) )	) );
 				}
 				return null;
+			}
+
+			@Override
+			public void setRenderResult( final RenderResult renderResult )
+			{
+				// TODO
+				throw new UnsupportedOperationException();
 			}
 
 			@Override

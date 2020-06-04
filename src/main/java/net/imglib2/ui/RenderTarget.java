@@ -33,6 +33,7 @@
  */
 package net.imglib2.ui;
 
+import bdv.viewer.render.RenderResult;
 import java.awt.image.BufferedImage;
 import net.imglib2.realtransform.AffineTransform3D;
 
@@ -57,7 +58,19 @@ public interface RenderTarget
 	 * @return a previously set {@link BufferedImage} that is currently not
 	 *         being painted or null. Used for double-buffering.
 	 */
-	BufferedImage setBufferedImage( BufferedImage bufferedImage );
+	default BufferedImage setBufferedImage( BufferedImage bufferedImage )
+	{
+		throw new UnsupportedOperationException();
+	}
+
+	/**
+	 * Returns a {@code RenderResult} for rendering to.
+	 * This may be a new {@code RenderResult} or a previously {@link #setRenderResult set RenderResult}
+	 * that is no longer needed for display
+	 */
+	RenderResult getReusableRenderResult();
+
+	void setRenderResult( RenderResult renderResult );
 
 	/**
 	 * Get the current canvas width.
