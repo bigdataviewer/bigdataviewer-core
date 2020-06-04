@@ -174,13 +174,6 @@ public class MultiResolutionRenderer
 	private int currentScreenScaleIndex;
 
 	/**
-	 * Whether double buffering is used.
-	 */
-	// TODO
-	private final boolean doubleBuffered; // TODO
-	// TODO
-
-	/**
 	 * Used to render an individual source. One image per screen resolution and
 	 * visible source. First index is screen scale, second index is index in
 	 * list of visible sources.
@@ -326,7 +319,7 @@ public class MultiResolutionRenderer
 			final PainterThread painterThread,
 			final double[] screenScales,
 			final long targetRenderNanos,
-			final boolean doubleBuffered,
+			final boolean doubleBuffered, // TODO: remove
 			final int numRenderingThreads,
 			final ExecutorService renderingExecutorService,
 			final boolean useVolatileIfAvailable,
@@ -338,7 +331,6 @@ public class MultiResolutionRenderer
 		projector = null;
 		currentScreenScaleIndex = -1;
 		this.screenScales = screenScales.clone();
-		this.doubleBuffered = doubleBuffered;
 		renderImages = new RenderImage[ screenScales.length ][ 0 ];
 		renderMaskArrays = new byte[ 0 ][];
 		screenW = new int[ screenScales.length ];
@@ -588,10 +580,8 @@ public class MultiResolutionRenderer
 		if ( display instanceof BufferedImageOverlayRenderer )
 			( ( BufferedImageOverlayRenderer ) display ).kill();
 		projector = null;
-		for ( int i = 0; i < renderImages.length; ++i )
-			renderImages[ i ] = null;
-		for ( int i = 0; i < renderMaskArrays.length; ++i )
-			renderMaskArrays[ i ] = null;
+		Arrays.fill( renderImages, null );
+		Arrays.fill( renderMaskArrays, null );
 	}
 
 	private VolatileProjector createProjector(
@@ -679,7 +669,7 @@ public class MultiResolutionRenderer
 		final Source< T > spimSource = source.getSpimSource();
 		final int t = viewerState.getCurrentTimepoint();
 
-		final MipmapOrdering ordering = MipmapOrdering.class.isInstance( spimSource ) ?
+		final MipmapOrdering ordering = spimSource instanceof MipmapOrdering ?
 			( MipmapOrdering ) spimSource : new DefaultMipmapOrdering( spimSource );
 
 		final AffineTransform3D screenTransform = new AffineTransform3D();
@@ -719,7 +709,7 @@ public class MultiResolutionRenderer
 		final int timepoint = viewerState.getCurrentTimepoint();
 
 		final RandomAccessibleInterval< T > img = source.getSource( timepoint, mipmapIndex );
-		if ( VolatileCachedCellImg.class.isInstance( img ) )
+		if ( img instanceof VolatileCachedCellImg )
 			( ( VolatileCachedCellImg< ?, ? > ) img ).setCacheHints( cacheHints );
 
 		final Interpolation interpolation = viewerState.getInterpolation();
@@ -745,7 +735,7 @@ public class MultiResolutionRenderer
 	{
 		final int timepoint = viewerState.getCurrentTimepoint();
 		final RandomAccessibleInterval< T > img = source.getSource( timepoint, mipmapIndex );
-		if ( VolatileCachedCellImg.class.isInstance( img ) )
+		if ( img instanceof VolatileCachedCellImg )
 		{
 			final VolatileCachedCellImg< ?, ? > cellImg = ( VolatileCachedCellImg< ?, ? > ) img;
 
