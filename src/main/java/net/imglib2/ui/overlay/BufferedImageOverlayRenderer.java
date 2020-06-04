@@ -163,7 +163,6 @@ public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarg
 	 * @param listener
 	 *            the transform listener to add.
 	 */
-	@Override
 	public void addTransformListener( final TransformListener< AffineTransform3D > listener )
 	{
 		addTransformListener( listener, Integer.MAX_VALUE );
@@ -180,7 +179,6 @@ public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarg
 	 * @param index
 	 *            position in the list of listeners at which to insert this one.
 	 */
-	@Override
 	public void addTransformListener( final TransformListener< AffineTransform3D > listener, final int index )
 	{
 		synchronized ( paintedTransformListeners )
@@ -202,7 +200,6 @@ public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarg
 	 * @param listener
 	 *            the transform listener to remove.
 	 */
-	@Override
 	public void removeTransformListener( final TransformListener< AffineTransform3D > listener )
 	{
 		synchronized ( paintedTransformListeners )
