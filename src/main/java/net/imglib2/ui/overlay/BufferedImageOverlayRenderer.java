@@ -40,11 +40,11 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
-import java.util.concurrent.CopyOnWriteArrayList;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.RenderTarget;
 import net.imglib2.ui.TransformListener;
+import org.scijava.listeners.Listeners;
 
 /**
  * {@link OverlayRenderer} drawing a {@link BufferedImage}, scaled to fill the
@@ -65,7 +65,7 @@ public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarg
 	 * {@link OverlayRenderer}s that need to exactly match the transform of
 	 * their overlaid content to the transform of the image.
 	 */
-	private final CopyOnWriteArrayList< TransformListener< AffineTransform3D > > paintedTransformListeners;
+	private final Listeners.List< TransformListener< AffineTransform3D > > paintedTransformListeners;
 
 	private AffineTransform3D paintedTransform;
 
@@ -85,7 +85,7 @@ public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarg
 		width = 0;
 		height = 0;
 		paintedTransform = new AffineTransform3D();
-		paintedTransformListeners = new CopyOnWriteArrayList<>();
+		paintedTransformListeners = new Listeners.SynchronizedList<>( l -> l.transformChanged( paintedTransform ) );
 	}
 
 	@Override
@@ -141,8 +141,7 @@ public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarg
 			if ( rb.isUpdated() )
 			{
 				paintedTransform.set( result.getViewerTransform() );
-				for ( final TransformListener< AffineTransform3D > listener : paintedTransformListeners )
-					listener.transformChanged( paintedTransform );
+				paintedTransformListeners.list.forEach( listener -> listener.transformChanged( paintedTransform ) );
 			}
 		}
 	}
@@ -155,57 +154,14 @@ public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarg
 	}
 
 	/**
-	 * Add a {@link TransformListener} to notify about viewer transformation
+	 * Add/remove {@code TransformListener}s to notify about viewer transformation
 	 * changes. Listeners will be notified when a new image has been rendered
 	 * (immediately before that image is displayed) with the viewer transform
 	 * used to render that image.
-	 *
-	 * @param listener
-	 *            the transform listener to add.
 	 */
-	public void addTransformListener( final TransformListener< AffineTransform3D > listener )
+	public Listeners< TransformListener< AffineTransform3D > > transformListeners()
 	{
-		addTransformListener( listener, Integer.MAX_VALUE );
-	}
-
-	/**
-	 * Add a {@link TransformListener} to notify about viewer transformation
-	 * changes. Listeners will be notified when a new image has been rendered
-	 * (immediately before that image is displayed) with the viewer transform
-	 * used to render that image.
-	 *
-	 * @param listener
-	 *            the transform listener to add.
-	 * @param index
-	 *            position in the list of listeners at which to insert this one.
-	 */
-	public void addTransformListener( final TransformListener< AffineTransform3D > listener, final int index )
-	{
-		synchronized ( paintedTransformListeners )
-		{
-			final int s = paintedTransformListeners.size();
-			paintedTransformListeners.add( clamp( index, 0, s ), listener );
-			listener.transformChanged( paintedTransform );
-		}
-	}
-
-	private static int clamp( int value, int min, int max )
-	{
-		return Math.min( max, Math.max( min, value ) );
-	}
-
-	/**
-	 * Remove a {@link TransformListener}.
-	 *
-	 * @param listener
-	 *            the transform listener to remove.
-	 */
-	public void removeTransformListener( final TransformListener< AffineTransform3D > listener )
-	{
-		synchronized ( paintedTransformListeners )
-		{
-			paintedTransformListeners.remove( listener );
-		}
+		return transformListeners();
 	}
 
 	/**
@@ -216,7 +172,7 @@ public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarg
 	 * ViewerPanel not being garbage-collected when ViewerFrame is closed. So
 	 * instead we need to manually let go of resources...
 	 */
-	public /*TODO don't make public, move to render package instead */ void kill()
+	public void kill()
 	{
 		tripleBuffer.clear();
 	}

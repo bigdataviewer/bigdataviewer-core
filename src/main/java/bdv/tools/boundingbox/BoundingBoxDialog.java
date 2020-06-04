@@ -203,7 +203,7 @@ public class BoundingBoxDialog extends JDialog
 				if ( showBoxOverlay )
 				{
 					viewer.getDisplay().overlays().add( boxOverlay );
-					viewer.addRenderTransformListener( boxOverlay );
+					viewer.renderTransformListeners().add( boxOverlay );
 				}
 			}
 
