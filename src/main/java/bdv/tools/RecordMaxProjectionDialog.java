@@ -317,12 +317,9 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 
 		class MyTarget implements RenderTarget
 		{
-			final ARGBScreenImage accumulated;
+			final ARGBScreenImage accumulated = new ARGBScreenImage( width, height );
 
-			public MyTarget()
-			{
-				accumulated = new ARGBScreenImage( width, height );
-			}
+			final RenderResult renderResult = new RenderResult();
 
 			public void clear()
 			{
@@ -333,13 +330,13 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 			@Override
 			public RenderResult getReusableRenderResult()
 			{
-				// TODO
-				throw new UnsupportedOperationException();
+				return renderResult;
 			}
 
 			@Override
-			public BufferedImage setBufferedImage( final BufferedImage bufferedImage )
+			public void setRenderResult( final RenderResult renderResult )
 			{
+				final BufferedImage bufferedImage = renderResult.getBufferedImage();
 				final Img< ARGBType > argbs = ArrayImgs.argbs( ( ( DataBufferInt ) bufferedImage.getData().getDataBuffer() ).getData(), width, height );
 				final Cursor< ARGBType > c = argbs.cursor();
 				for ( final ARGBType acc : accumulated )
@@ -352,14 +349,6 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 							Math.max( ARGBType.blue( in ), ARGBType.blue( current ) ),
 							Math.max( ARGBType.alpha( in ), ARGBType.alpha( current ) )	) );
 				}
-				return null;
-			}
-
-			@Override
-			public void setRenderResult( final RenderResult renderResult )
-			{
-				// TODO
-				throw new UnsupportedOperationException();
 			}
 
 			@Override

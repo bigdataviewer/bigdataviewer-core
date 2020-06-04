@@ -273,27 +273,17 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 
 		class MyTarget implements RenderTarget
 		{
-			BufferedImage bi;
-
-			@Override
-			public BufferedImage setBufferedImage( final BufferedImage bufferedImage )
-			{
-				bi = bufferedImage;
-				return null;
-			}
+			final RenderResult renderResult = new RenderResult();
 
 			@Override
 			public RenderResult getReusableRenderResult()
 			{
-				// TODO
-				throw new UnsupportedOperationException();
+				return renderResult;
 			}
 
 			@Override
 			public void setRenderResult( final RenderResult renderResult )
 			{
-				// TODO
-				throw new UnsupportedOperationException();
 			}
 
 			@Override
@@ -319,15 +309,16 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 			renderer.requestRepaint();
 			renderer.paint( new bdv.viewer.state.ViewerState( new SynchronizedViewerState( renderState ) ) );
 
+			final BufferedImage bi = target.renderResult.getBufferedImage();
 			if ( Prefs.showScaleBarInMovie() )
 			{
-				final Graphics2D g2 = target.bi.createGraphics();
+				final Graphics2D g2 = bi.createGraphics();
 				g2.setClip( 0, 0, width, height );
 				scalebar.setViewerState( renderState );
 				scalebar.paint( g2 );
 			}
 
-			ImageIO.write( target.bi, "png", new File( String.format( "%s/img-%03d.png", dir, timepoint ) ) );
+			ImageIO.write( bi, "png", new File( String.format( "%s/img-%03d.png", dir, timepoint ) ) );
 			progressWriter.setProgress( ( double ) (timepoint - minTimepointIndex + 1) / (maxTimepointIndex - minTimepointIndex + 1) );
 		}
 	}
