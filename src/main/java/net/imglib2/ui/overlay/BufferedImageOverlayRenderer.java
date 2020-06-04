@@ -33,6 +33,9 @@
  */
 package net.imglib2.ui.overlay;
 
+import bdv.util.TripleBuffer;
+import bdv.util.TripleBuffer.ReadableBuffer;
+import bdv.viewer.render.RenderResult;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
@@ -54,28 +57,7 @@ import net.imglib2.ui.TransformListener;
  */
 public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarget
 {
-
-	/**
-	 * The {@link BufferedImage} that is actually drawn on the canvas. Depending
-	 * on {@link Defaults#discardAlpha} this is either the {@link BufferedImage}
-	 * obtained from screen image, or screen image's buffer re-wrapped using a RGB
-	 * color model.
-	 */
-	private BufferedImage bufferedImage;
-
-	/**
-	 * A {@link BufferedImage} that has been previously
-	 * {@link #setBufferedImage(BufferedImage) set} for painting. Whenever a new
-	 * image is set, this is stored here and marked {@link #pending}. Whenever
-	 * an image is painted and a new image is pending, the new image is painted
-	 * to the screen. Before doing this, the image previously used for painting
-	 * is swapped into {@link #pendingImage}. This is used for double-buffering.
-	 */
-	private BufferedImage pendingImage;
-
-	private AffineTransform3D pendingTransform;
-
-	private AffineTransform3D paintedTransform;
+	private final TripleBuffer< RenderResult > tripleBuffer;
 
 	/**
 	 * These listeners will be notified about the transform that is associated
@@ -85,10 +67,7 @@ public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarg
 	 */
 	private final CopyOnWriteArrayList< TransformListener< AffineTransform3D > > paintedTransformListeners;
 
-	/**
-	 * Whether an image is pending.
-	 */
-	private boolean pending;
+	private AffineTransform3D paintedTransform;
 
 	/**
 	 * The current canvas width.
@@ -102,37 +81,29 @@ public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarg
 
 	public BufferedImageOverlayRenderer()
 	{
-		bufferedImage = null;
-		pendingImage = null;
-		pending = false;
+		tripleBuffer = new TripleBuffer<>( RenderResult::new );
 		width = 0;
 		height = 0;
-		pendingTransform = new AffineTransform3D();
 		paintedTransform = new AffineTransform3D();
 		paintedTransformListeners = new CopyOnWriteArrayList<>();
 	}
 
-	/**
-	 * Set the {@link BufferedImage} that is to be drawn on the canvas.
-	 *
-	 * @param img
-	 *            image to draw (may be null).
-	 */
-	// TODO REMOVE?
 	@Override
-	public synchronized BufferedImage setBufferedImage( final BufferedImage img )
+	public RenderResult getReusableRenderResult()
 	{
-		final BufferedImage tmp = pendingImage;
-		pendingImage = img;
-		pending = true;
-		return tmp;
+		return tripleBuffer.getWritableBuffer();
 	}
 
+	/**
+	 * Set the {@link RenderResult} that is to be drawn on the canvas.
+	 *
+	 * @param result
+	 *            image to draw (may be null).
+	 */
 	@Override
-	public synchronized BufferedImage setBufferedImageAndTransform( final BufferedImage img, final AffineTransform3D transform )
+	public synchronized void setRenderResult( final RenderResult result )
 	{
-		pendingTransform.set( transform );
-		return setBufferedImage( img );
+		tripleBuffer.doneWriting( result );
 	}
 
 	@Override
@@ -150,23 +121,11 @@ public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarg
 	@Override
 	public void drawOverlays( final Graphics g )
 	{
-		boolean notifyTransformListeners = false;
-		synchronized ( this )
-		{
-			if ( pending )
-			{
-				final BufferedImage tmp = bufferedImage;
-				bufferedImage = pendingImage;
-				paintedTransform.set( pendingTransform );
-				pendingImage = tmp;
-				pending = false;
-				notifyTransformListeners = true;
-			}
-		}
+		final ReadableBuffer< RenderResult > rb = tripleBuffer.getReadableBuffer();
+		final RenderResult result = rb.getBuffer();
+		final BufferedImage bufferedImage = result != null ? result.getBufferedImage() : null;
 		if ( bufferedImage != null )
 		{
-//			final StopWatch watch = new StopWatch();
-//			watch.start();
 //			( ( Graphics2D ) g ).setRenderingHint( RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR );
 			( ( Graphics2D ) g ).setRenderingHint( RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR );
 			( ( Graphics2D ) g ).setRenderingHint( RenderingHints.KEY_ALPHA_INTERPOLATION, RenderingHints.VALUE_ALPHA_INTERPOLATION_SPEED );
@@ -174,10 +133,12 @@ public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarg
 			( ( Graphics2D ) g ).setRenderingHint( RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_SPEED );
 			( ( Graphics2D ) g ).setRenderingHint( RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED );
 			g.drawImage( bufferedImage, 0, 0, getWidth(), getHeight(), null );
-			if ( notifyTransformListeners )
+			if ( rb.isUpdated() )
+			{
+				paintedTransform.set( result.getViewerTransform() );
 				for ( final TransformListener< AffineTransform3D > listener : paintedTransformListeners )
 					listener.transformChanged( paintedTransform );
-//			System.out.println( String.format( "g.drawImage() :%4d ms", watch.nanoTime() / 1000000 ) );
+			}
 		}
 	}
 
@@ -255,7 +216,6 @@ public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarg
 	 */
 	public /*TODO don't make public, move to render package instead */ void kill()
 	{
-		bufferedImage = null;
-		pendingImage = null;
+		tripleBuffer.clear();
 	}
 }

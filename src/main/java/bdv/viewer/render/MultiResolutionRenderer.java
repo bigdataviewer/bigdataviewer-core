@@ -423,8 +423,6 @@ public class MultiResolutionRenderer
 
 		final RenderResult renderResult;
 
-		final boolean clearQueue;
-
 		final boolean createProjector;
 
 		synchronized ( this )
@@ -433,8 +431,7 @@ public class MultiResolutionRenderer
 			// screen scale and coarsest mipmap level.
 			renderingMayBeCancelled = ( requestedScreenScaleIndex < maxScreenScaleIndex );
 
-			clearQueue = newFrameRequest;
-			if ( clearQueue )
+			if ( newFrameRequest )
 				cacheControl.prepareNextFrame();
 			createProjector = newFrameRequest || resized || ( requestedScreenScaleIndex != currentScreenScaleIndex );
 			newFrameRequest = false;
@@ -443,7 +440,7 @@ public class MultiResolutionRenderer
 			{
 				currentScreenScaleIndex = requestedScreenScaleIndex;
 
-				renderResult = new RenderResult();
+				renderResult = display.getReusableRenderResult();
 				renderResult.init( screenW[ currentScreenScaleIndex ], screenH[ currentScreenScaleIndex ] );
 			}
 			else
@@ -491,7 +488,8 @@ public class MultiResolutionRenderer
 			{
 				if ( createProjector )
 				{
-					final BufferedImage bi = display.setBufferedImageAndTransform( renderResult.getBufferedImage(), currentProjectorTransform );
+					renderResult.getViewerTransform().set( currentProjectorTransform );
+					display.setRenderResult( renderResult );
 
 					if ( currentScreenScaleIndex == maxScreenScaleIndex )
 					{
