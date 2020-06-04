@@ -87,7 +87,7 @@ import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.TransformEventHandler;
 import net.imglib2.ui.TransformListener;
 import net.imglib2.util.LinAlgHelpers;
-
+import org.scijava.listeners.Listeners;
 
 /**
  * A JPanel for viewing multiple of {@link Source}s. The panel contains a
@@ -895,37 +895,34 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 	}
 
 	/**
-	 * Add a {@link TransformListener} to notify about viewer transformation
+	 * Add/remove {@code TransformListener}s to notify about viewer transformation
 	 * changes. Listeners will be notified when a new image has been painted
 	 * with the viewer transform used to render that image.
-	 *
+	 * <p>
 	 * This happens immediately after that image is painted onto the screen,
 	 * before any overlays are painted.
-	 *
-	 * @param listener
-	 *            the transform listener to add.
 	 */
-	public void addRenderTransformListener( final TransformListener< AffineTransform3D > listener )
+	public Listeners< TransformListener< AffineTransform3D > > renderTransformListeners()
 	{
-		renderTarget.addTransformListener( listener );
+		return renderTarget.transformListeners();
 	}
 
 	/**
-	 * Add a {@link TransformListener} to notify about viewer transformation
-	 * changes. Listeners will be notified when a new image has been painted
-	 * with the viewer transform used to render that image.
-	 *
-	 * This happens immediately after that image is painted onto the screen,
-	 * before any overlays are painted.
-	 *
-	 * @param listener
-	 *            the transform listener to add.
-	 * @param index
-	 *            position in the list of listeners at which to insert this one.
+	 * @deprecated Use {@code renderTransformListeners().add( listener )}.
 	 */
+	@Deprecated
+	public void addRenderTransformListener( final TransformListener< AffineTransform3D > listener )
+	{
+		renderTransformListeners().add( listener );
+	}
+
+	/**
+	 * @deprecated Use {@code renderTransformListeners().add( index, listener )}.
+	 */
+	@Deprecated
 	public void addRenderTransformListener( final TransformListener< AffineTransform3D > listener, final int index )
 	{
-		renderTarget.addTransformListener( listener, index );
+		renderTransformListeners().add( index, listener );
 	}
 
 	/**
@@ -973,7 +970,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 		{
 			transformListeners.remove( listener );
 		}
-		renderTarget.removeTransformListener( listener );
+		renderTarget.transformListeners().remove( listener );
 	}
 
 	/**
