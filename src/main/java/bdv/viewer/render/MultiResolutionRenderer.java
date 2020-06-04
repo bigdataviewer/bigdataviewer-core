@@ -30,10 +30,9 @@
 package bdv.viewer.render;
 
 import bdv.viewer.SourceAndConverter;
-import java.awt.image.BufferedImage;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
@@ -54,13 +53,15 @@ import net.imglib2.Volatile;
 import net.imglib2.cache.iotiming.CacheIoTiming;
 import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.cache.volatiles.LoadingStrategy;
-import net.imglib2.display.screenimage.awt.ARGBScreenImage;
+import net.imglib2.img.array.ArrayImg;
+import net.imglib2.img.basictypeaccess.array.IntArray;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
 import net.imglib2.ui.overlay.BufferedImageOverlayRenderer;
+import net.imglib2.util.Fraction;
 
 /**
  * A renderer that uses a coarse-to-fine rendering scheme. First, a
@@ -75,7 +76,7 @@ import net.imglib2.ui.overlay.BufferedImageOverlayRenderer;
  * transformation for example. When the transformation remains fixed for a
  * longer period, higher-resolution details are filled in successively.
  * <p>
- * The renderer allocates a {@link BufferedImage} for each of a predefined set
+ * The renderer allocates a {@code BufferedImage} for each of a predefined set
  * of <em>screen scales</em> (a screen scale of 1 means that 1 pixel in the
  * screen image is displayed as 1 pixel on the canvas, a screen scale of 0.5
  * means 1 pixel in the screen image is displayed as 2 pixel on the canvas,
@@ -99,7 +100,7 @@ import net.imglib2.ui.overlay.BufferedImageOverlayRenderer;
  * The renderer uses multiple threads (if desired) and double-buffering (if
  * desired).
  * <p>
- * Double buffering means that three {@link BufferedImage BufferedImages} are
+ * Double buffering means that three {@code BufferedImage BufferedImages} are
  * created for every screen scale. After rendering the first one of them and
  * setting it to the {@link RenderTarget}, next time, rendering goes to the
  * second one, then to the third. The {@link RenderTarget} will always have a
@@ -107,7 +108,7 @@ import net.imglib2.ui.overlay.BufferedImageOverlayRenderer;
  * screen. When setting an image to the {@link RenderTarget}, the
  * {@link RenderTarget} will release one of the previously set images to be
  * rendered again. Thus, rendering will not interfere with painting the
- * {@link BufferedImage} to the canvas.
+ * {@code BufferedImage} to the canvas.
  * <p>
  * The renderer supports rendering of {@link Volatile} sources. In each
  * rendering pass, all currently valid data for the best fitting mipmap level
@@ -122,8 +123,37 @@ import net.imglib2.ui.overlay.BufferedImageOverlayRenderer;
  */
 public class MultiResolutionRenderer
 {
+	static class RenderImage extends ArrayImg< ARGBType, IntArray >
+	{
+		final private int[] data;
+
+		public RenderImage( final int width, final int height )
+		{
+			this( width, height, new int[ width * height ] );
+		}
+
+		/**
+		 * Create an image with {@code data}. Writing to the {@code data}
+		 * array will update the image.
+		 */
+		public RenderImage( final int width, final int height, final int[] data )
+		{
+			super( new IntArray( data ), new long[]{ width, height }, new Fraction() );
+			setLinkedType( new ARGBType( this ) );
+			this.data = data;
+		}
+
+		/**
+		 * The underlying array holding the data.
+		 */
+		public int[] getData()
+		{
+			return data;
+		}
+	}
+
 	/**
-	 * Receiver for the {@link BufferedImage BufferedImages} that we render.
+	 * Receiver for the {@code BufferedImage BufferedImages} that we render.
 	 */
 	private final RenderTarget display;
 
@@ -152,17 +182,11 @@ public class MultiResolutionRenderer
 	// TODO
 
 	/**
-	 * Maps from {@link BufferedImage} to double-buffer index.
-	 * Needed for double-buffering.
-	 */
-	private final HashMap< BufferedImage, Integer > bufferedImageToRenderId;
-
-	/**
 	 * Used to render an individual source. One image per screen resolution and
 	 * visible source. First index is screen scale, second index is index in
 	 * list of visible sources.
 	 */
-	private ARGBScreenImage[][] renderImages;
+	private RenderImage[][] renderImages;
 
 	/**
 	 * Storage for mask images of {@link VolatileHierarchyProjector}.
@@ -316,8 +340,7 @@ public class MultiResolutionRenderer
 		currentScreenScaleIndex = -1;
 		this.screenScales = screenScales.clone();
 		this.doubleBuffered = doubleBuffered;
-		bufferedImageToRenderId = new HashMap<>();
-		renderImages = new ARGBScreenImage[ screenScales.length ][ 0 ];
+		renderImages = new RenderImage[ screenScales.length ][ 0 ];
 		renderMaskArrays = new byte[ 0 ][];
 		screenW = new int[ screenScales.length ];
 		screenH = new int[ screenScales.length ];
@@ -351,7 +374,6 @@ public class MultiResolutionRenderer
 		final int newTargetH = ( int ) Math.ceil( componentH * screenScales[ 0 ] );
 		if ( newTargetW != screenW[ 0 ] || newTargetH != screenH[ 0 ] )
 		{
-			bufferedImageToRenderId.clear();
 			for ( int i = 0; i < screenScales.length; ++i )
 			{
 				final double screenToViewerScale = screenScales[ i ];
@@ -378,14 +400,14 @@ public class MultiResolutionRenderer
 					( renderImages[ 0 ][ 0 ].dimension( 0 ) != screenW[ 0 ] ||
 					  renderImages[ 0 ][ 0 ].dimension( 1 ) != screenH[ 0 ] ) ) )
 		{
-			renderImages = new ARGBScreenImage[ screenScales.length ][ n ];
+			renderImages = new RenderImage[ screenScales.length ][ n ];
 			for ( int i = 0; i < screenScales.length; ++i )
 			{
 				for ( int j = 0; j < n; ++j )
 				{
 					renderImages[ i ][ j ] = ( i == 0 ) ?
-						new ARGBScreenImage( screenW[ i ], screenH[ i ] ) :
-						new ARGBScreenImage( screenW[ i ], screenH[ i ], renderImages[ 0 ][ j ].getData() );
+						new RenderImage( screenW[ i ], screenH[ i ] ) :
+						new RenderImage( screenW[ i ], screenH[ i ], renderImages[ 0 ][ j ].getData() );
 				}
 			}
 			return true;
@@ -567,7 +589,6 @@ public class MultiResolutionRenderer
 		if ( display instanceof BufferedImageOverlayRenderer )
 			( ( BufferedImageOverlayRenderer ) display ).kill();
 		projector = null;
-		bufferedImageToRenderId.clear();
 		for ( int i = 0; i < renderImages.length; ++i )
 			renderImages[ i ] = null;
 		for ( int i = 0; i < renderMaskArrays.length; ++i )
@@ -596,12 +617,12 @@ public class MultiResolutionRenderer
 		else
 		{
 			final ArrayList< VolatileProjector > sourceProjectors = new ArrayList<>();
-			final ArrayList< ARGBScreenImage > sourceImages = new ArrayList<>();
+			final ArrayList< RenderImage > sourceImages = new ArrayList<>();
 			final ArrayList< SourceAndConverter< ? > > sources = new ArrayList<>();
 			int j = 0;
 			for ( final int i : visibleSourceIndices )
 			{
-				final ARGBScreenImage renderImage = renderImages[ currentScreenScaleIndex ][ j ];
+				final RenderImage renderImage = renderImages[ currentScreenScaleIndex ][ j ];
 				final byte[] maskArray = renderMaskArrays[ j ];
 				++j;
 				final VolatileProjector p = createSingleSourceProjector(
