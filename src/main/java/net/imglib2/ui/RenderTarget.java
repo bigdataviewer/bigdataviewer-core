@@ -36,33 +36,21 @@ package net.imglib2.ui;
 import bdv.viewer.render.RenderResult;
 import java.awt.image.BufferedImage;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.ui.overlay.BufferedImageOverlayRenderer;
 
 /**
  * Receiver for a {@link BufferedImage} (to be drawn onto a canvas later).
  * <p>
- * A {@link Renderer} will render source data into a {@link BufferedImage} and
+ * A renderer will render source data into a {@link RenderResult} and
  * provide this to a {@link RenderTarget}.
  * <p>
- * See {@link BufferedImageOverlayRenderer}, which is a {@link RenderTarget} and
- * also an {@link OverlayRenderer} that draws the {@link BufferedImage}.
+ * See {@link BufferedImageOverlayRenderer}, which is both a {@code RenderTarget} and
+ * an {@link OverlayRenderer} that draws the {@code RenderResult}.
  *
  * @author Tobias Pietzsch
  */
 public interface RenderTarget
 {
-	/**
-	 * Set the {@link BufferedImage} that is to be drawn on the canvas.
-	 *
-	 * @param bufferedImage
-	 *            image to draw (may be null).
-	 * @return a previously set {@link BufferedImage} that is currently not
-	 *         being painted or null. Used for double-buffering.
-	 */
-	default BufferedImage setBufferedImage( BufferedImage bufferedImage )
-	{
-		throw new UnsupportedOperationException();
-	}
-
 	/**
 	 * Returns a {@code RenderResult} for rendering to.
 	 * This may be a new {@code RenderResult} or a previously {@link #setRenderResult set RenderResult}
@@ -70,6 +58,9 @@ public interface RenderTarget
 	 */
 	RenderResult getReusableRenderResult();
 
+	/**
+	 * Set the {@link RenderResult} that is to be drawn on the canvas.
+	 */
 	void setRenderResult( RenderResult renderResult );
 
 	/**
@@ -85,21 +76,4 @@ public interface RenderTarget
 	 * @return canvas height.
 	 */
 	int getHeight();
-
-	default BufferedImage setBufferedImageAndTransform( BufferedImage img, AffineTransform3D transform )
-	{
-		return setBufferedImage( img );
-	}
-
-	default void addTransformListener( TransformListener< AffineTransform3D > listener )
-	{
-	}
-
-	default void addTransformListener( TransformListener< AffineTransform3D > listener, int index )
-	{
-	}
-
-	default void removeTransformListener( TransformListener< AffineTransform3D > listener )
-	{
-	}
 }
