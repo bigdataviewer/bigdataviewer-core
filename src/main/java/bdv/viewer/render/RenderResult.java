@@ -24,6 +24,8 @@ public class RenderResult
 
 	private BufferedImage bufferedImage;
 
+	private double scaleFactor;
+
 	public void init( final int width, final int height )
 	{
 		if ( this.width == width && this.height == height )
@@ -61,5 +63,15 @@ public class RenderResult
 	public AffineTransform3D getViewerTransform()
 	{
 		return viewerTransform;
+	}
+
+	public double getScaleFactor()
+	{
+		return scaleFactor;
+	}
+
+	public void setScaleFactor( final double scaleFactor )
+	{
+		this.scaleFactor = scaleFactor;
 	}
 }

@@ -347,23 +347,21 @@ public class MultiResolutionRenderer
 	{
 		final int componentW = display.getWidth();
 		final int componentH = display.getHeight();
-		final int newTargetW = ( int ) ( componentW * screenScales[ 0 ] );
-		final int newTargetH = ( int ) ( componentH * screenScales[ 0 ] );
+		final int newTargetW = ( int ) Math.ceil( componentW * screenScales[ 0 ] );
+		final int newTargetH = ( int ) Math.ceil( componentH * screenScales[ 0 ] );
 		if ( newTargetW != screenW[ 0 ] || newTargetH != screenH[ 0 ] )
 		{
 			bufferedImageToRenderId.clear();
 			for ( int i = 0; i < screenScales.length; ++i )
 			{
 				final double screenToViewerScale = screenScales[ i ];
-				screenW[ i ] = ( int ) ( screenToViewerScale * componentW );
-				screenH[ i ] = ( int ) ( screenToViewerScale * componentH );
+				screenW[ i ] = ( int ) Math.ceil( screenToViewerScale * componentW );
+				screenH[ i ] = ( int ) Math.ceil( screenToViewerScale * componentH );
 				final AffineTransform3D scale = new AffineTransform3D();
-				final double xScale = ( double ) screenW[ i ] / componentW;
-				final double yScale = ( double ) screenH[ i ] / componentH;
-				scale.set( xScale, 0, 0 );
-				scale.set( yScale, 1, 1 );
-				scale.set( 0.5 * xScale - 0.5, 0, 3 );
-				scale.set( 0.5 * yScale - 0.5, 1, 3 );
+				scale.set( screenToViewerScale, 0, 0 );
+				scale.set( screenToViewerScale, 1, 1 );
+				scale.set( 0.5 * screenToViewerScale - 0.5, 0, 3 );
+				scale.set( 0.5 * screenToViewerScale - 0.5, 1, 3 );
 				screenScaleTransforms[ i ] = scale;
 			}
 
@@ -490,6 +488,7 @@ public class MultiResolutionRenderer
 				if ( createProjector )
 				{
 					renderResult.getViewerTransform().set( currentProjectorTransform );
+					renderResult.setScaleFactor( screenScales[ currentScreenScaleIndex ] );
 					display.setRenderResult( renderResult );
 
 					if ( currentScreenScaleIndex == maxScreenScaleIndex )

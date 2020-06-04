@@ -123,8 +123,8 @@ public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarg
 	{
 		final ReadableBuffer< RenderResult > rb = tripleBuffer.getReadableBuffer();
 		final RenderResult result = rb.getBuffer();
-		final BufferedImage bufferedImage = result != null ? result.getBufferedImage() : null;
-		if ( bufferedImage != null )
+		final BufferedImage image = result != null ? result.getBufferedImage() : null;
+		if ( image != null )
 		{
 //			( ( Graphics2D ) g ).setRenderingHint( RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR );
 			( ( Graphics2D ) g ).setRenderingHint( RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_NEAREST_NEIGHBOR );
@@ -132,7 +132,12 @@ public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarg
 			( ( Graphics2D ) g ).setRenderingHint( RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_OFF );
 			( ( Graphics2D ) g ).setRenderingHint( RenderingHints.KEY_COLOR_RENDERING, RenderingHints.VALUE_COLOR_RENDER_SPEED );
 			( ( Graphics2D ) g ).setRenderingHint( RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_SPEED );
-			g.drawImage( bufferedImage, 0, 0, getWidth(), getHeight(), null );
+
+			final double scaleFactor = result.getScaleFactor();
+			final int w = Math.max( width, ( int ) ( image.getWidth() / scaleFactor + 0.5 ) );
+			final int h = Math.max( height, ( int ) ( image.getHeight() / scaleFactor + 0.5 ) );
+			g.drawImage( image, 0, 0, w, h, null );
+
 			if ( rb.isUpdated() )
 			{
 				paintedTransform.set( result.getViewerTransform() );
