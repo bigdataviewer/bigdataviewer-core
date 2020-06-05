@@ -473,7 +473,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 	@Override
 	public void paint()
 	{
-		imageRenderer.paint( state );
+		imageRenderer.paint( state.getState() );
 
 		display.repaint();
 
