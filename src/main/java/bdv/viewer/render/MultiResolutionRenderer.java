@@ -356,7 +356,7 @@ public class MultiResolutionRenderer
 	 *
 	 * @return whether the size was changed.
 	 */
-	private synchronized boolean checkResize()
+	private boolean checkResize()
 	{
 		final int componentW = display.getWidth();
 		final int componentH = display.getHeight();
@@ -480,12 +480,7 @@ public class MultiResolutionRenderer
 			}
 		}
 		else
-		{
-			synchronized ( this )
-			{
-				p = projector;
-			}
-		}
+			p = projector;
 
 
 		// try rendering
