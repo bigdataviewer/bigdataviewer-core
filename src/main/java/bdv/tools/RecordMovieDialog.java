@@ -33,7 +33,6 @@ import bdv.cache.CacheControl;
 import bdv.export.ProgressWriter;
 import bdv.util.Prefs;
 import bdv.viewer.BasicViewerState;
-import bdv.viewer.SynchronizedViewerState;
 import bdv.viewer.ViewerPanel;
 import bdv.viewer.ViewerState;
 import bdv.viewer.overlay.ScaleBarOverlayRenderer;
@@ -307,7 +306,7 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 		{
 			renderState.setCurrentTimepoint( timepoint );
 			renderer.requestRepaint();
-			renderer.paint( new bdv.viewer.state.ViewerState( new SynchronizedViewerState( renderState ) ) );
+			renderer.paint( renderState );
 
 			final BufferedImage bi = target.renderResult.getBufferedImage();
 			if ( Prefs.showScaleBarInMovie() )

@@ -29,21 +29,20 @@
  */
 package bdv.viewer.render;
 
+import bdv.cache.CacheControl;
+import bdv.img.cache.VolatileCachedCellImg;
+import bdv.util.MipmapTransforms;
+import bdv.viewer.Interpolation;
+import bdv.viewer.Source;
 import bdv.viewer.SourceAndConverter;
+import bdv.viewer.ViewerState;
+import bdv.viewer.render.MipmapOrdering.Level;
+import bdv.viewer.render.MipmapOrdering.MipmapHints;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-
-import bdv.cache.CacheControl;
-import bdv.img.cache.VolatileCachedCellImg;
-import bdv.viewer.Interpolation;
-import bdv.viewer.Source;
-import bdv.viewer.render.MipmapOrdering.Level;
-import bdv.viewer.render.MipmapOrdering.MipmapHints;
-import bdv.viewer.state.SourceState;
-import bdv.viewer.state.ViewerState;
 import net.imglib2.Dimensions;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
@@ -427,7 +426,7 @@ public class MultiResolutionRenderer
 	 * Render image at the {@link #requestedScreenScaleIndex requested screen
 	 * scale}.
 	 */
-	public boolean paint( final ViewerState state )
+	public boolean paint( final ViewerState viewerState )
 	{
 		if ( display.getWidth() <= 0 || display.getHeight() <= 0 )
 			return false;
@@ -469,12 +468,12 @@ public class MultiResolutionRenderer
 
 		if ( createProjector )
 		{
-			synchronized ( state.getState() )
+			synchronized ( viewerState )
 			{
-				final int numVisibleSources = state.getVisibleSourceIndices().size();
+				final int numVisibleSources = viewerState.getVisibleAndPresentSources().size();
 				checkRenewRenderImages( numVisibleSources );
 				checkRenewMaskArrays( numVisibleSources );
-				p = createProjector( state, renderResult.getScreenImage() );
+				p = createProjector( viewerState, renderResult.getScreenImage() );
 			}
 			synchronized ( this )
 			{
@@ -555,8 +554,8 @@ public class MultiResolutionRenderer
 
 	/**
 	 * Request a repaint of the display from the painter thread. The painter
-	 * thread will trigger a {@link #paint(ViewerState)} as soon as possible (that is,
-	 * immediately or after the currently running {@link #paint(ViewerState)} has
+	 * thread will trigger a {@link #paint} as soon as possible (that is,
+	 * immediately or after the currently running {@link #paint} has
 	 * completed).
 	 */
 	public synchronized void requestRepaint( final int screenScaleIndex )
@@ -594,35 +593,32 @@ public class MultiResolutionRenderer
 		 * CacheHints.LoadingStrategy==VOLATILE
 		 */
 //		CacheIoTiming.getIoTimeBudget().clear(); // clear time budget such that prefetching doesn't wait for loading blocks.
-		final List< SourceState< ? > > sourceStates = viewerState.getSources();
-		final List< Integer > visibleSourceIndices = viewerState.getVisibleSourceIndices();
+		final ArrayList< SourceAndConverter< ? > > visibleSources = new ArrayList<>( viewerState.getVisibleAndPresentSources() );
+		visibleSources.sort( viewerState.sourceOrder() );
 		VolatileProjector projector;
-		if ( visibleSourceIndices.isEmpty() )
+		if ( visibleSources.isEmpty() )
 			projector = new EmptyProjector<>( screenImage );
-		else if ( visibleSourceIndices.size() == 1 )
+		else if ( visibleSources.size() == 1 )
 		{
-			final int i = visibleSourceIndices.get( 0 );
-			projector = createSingleSourceProjector( viewerState, sourceStates.get( i ), i, currentScreenScaleIndex, screenImage, renderMaskArrays[ 0 ] );
+			projector = createSingleSourceProjector( viewerState, visibleSources.get( 0 ), screenImage, renderMaskArrays[ 0 ] );
 		}
 		else
 		{
 			final ArrayList< VolatileProjector > sourceProjectors = new ArrayList<>();
 			final ArrayList< RenderImage > sourceImages = new ArrayList<>();
-			final ArrayList< SourceAndConverter< ? > > sources = new ArrayList<>();
 			int j = 0;
-			for ( final int i : visibleSourceIndices )
+			for ( SourceAndConverter< ? > source : visibleSources )
 			{
 				final RenderImage renderImage = renderImages[ currentScreenScaleIndex ][ j ];
 				final byte[] maskArray = renderMaskArrays[ j ];
 				++j;
 				final VolatileProjector p = createSingleSourceProjector(
-						viewerState, sourceStates.get( i ), i, currentScreenScaleIndex,
+						viewerState, source,
 						renderImage, maskArray );
 				sourceProjectors.add( p );
-				sources.add( sourceStates.get( i ).getHandle() );
 				sourceImages.add( renderImage );
 			}
-			projector = accumulateProjectorFactory.createProjector( sourceProjectors, sources, sourceImages, screenImage, numRenderingThreads, renderingExecutorService );
+			projector = accumulateProjectorFactory.createProjector( sourceProjectors, visibleSources, sourceImages, screenImage, numRenderingThreads, renderingExecutorService );
 		}
 		previousTimepoint = viewerState.getCurrentTimepoint();
 		viewerState.getViewerTransform( currentProjectorTransform );
@@ -632,36 +628,50 @@ public class MultiResolutionRenderer
 
 	private < T > VolatileProjector createSingleSourceProjector(
 			final ViewerState viewerState,
-			final SourceState< T > source,
-			final int sourceIndex,
-			final int screenScaleIndex,
+			final SourceAndConverter< T > source,
 			final RandomAccessibleInterval< ARGBType > screenImage,
 			final byte[] maskArray )
 	{
 		if ( useVolatileIfAvailable )
 		{
 			if ( source.asVolatile() != null )
-				return createSingleSourceVolatileProjector( viewerState, source.asVolatile(), sourceIndex, screenScaleIndex, screenImage, maskArray );
+				return createSingleSourceVolatileProjector( viewerState, source.asVolatile(), screenImage, maskArray );
 			else if ( source.getSpimSource().getType() instanceof Volatile )
 			{
 				@SuppressWarnings( "unchecked" )
-				final SourceState< ? extends Volatile< ? > > vsource = ( SourceState< ? extends Volatile< ? > > ) source;
-				return createSingleSourceVolatileProjector( viewerState, vsource, sourceIndex, screenScaleIndex, screenImage, maskArray );
+				final SourceAndConverter< ? extends Volatile< ? > > vsource = ( SourceAndConverter< ? extends Volatile< ? > > ) source;
+				return createSingleSourceVolatileProjector( viewerState, vsource, screenImage, maskArray );
 			}
 		}
 
 		final AffineTransform3D screenScaleTransform = screenScaleTransforms[ currentScreenScaleIndex ];
-		final int bestLevel = viewerState.getBestMipMapLevel( screenScaleTransform, sourceIndex );
+		final int bestLevel = getBestMipMapLevel( viewerState, source, screenScaleTransform );
 		return new SimpleVolatileProjector<>(
 				getTransformedSource( viewerState, source.getSpimSource(), screenScaleTransform, bestLevel, null ),
 				source.getConverter(), screenImage, numRenderingThreads, renderingExecutorService );
 	}
 
+	/**
+	 * Get the mipmap level that best matches the given screen scale for the given source.
+	 *
+	 * @param screenScaleTransform
+	 * 		screen scale, transforms screen coordinates to viewer coordinates.
+	 *
+	 * @return mipmap level
+	 */
+	private int getBestMipMapLevel(
+			final ViewerState viewerState,
+			final SourceAndConverter< ? > source,
+			final AffineTransform3D screenScaleTransform )
+	{
+			final AffineTransform3D screenTransform = viewerState.getViewerTransform();
+			screenTransform.preConcatenate( screenScaleTransform ); // TODO: REUSE? screenTransform is the same for every source...
+			return MipmapTransforms.getBestMipMapLevel( screenTransform, source.getSpimSource(), viewerState.getCurrentTimepoint() );
+	}
+
 	private < T extends Volatile< ? > > VolatileProjector createSingleSourceVolatileProjector(
 			final ViewerState viewerState,
-			final SourceState< T > source,
-			final int sourceIndex,
-			final int screenScaleIndex,
+			final SourceAndConverter< T > source,
 			final RandomAccessibleInterval< ARGBType > screenImage,
 			final byte[] maskArray )
 	{
@@ -673,9 +683,8 @@ public class MultiResolutionRenderer
 		final MipmapOrdering ordering = spimSource instanceof MipmapOrdering ?
 			( MipmapOrdering ) spimSource : new DefaultMipmapOrdering( spimSource );
 
-		final AffineTransform3D screenTransform = new AffineTransform3D();
-		viewerState.getViewerTransform( screenTransform );
-		screenTransform.preConcatenate( screenScaleTransform );
+		final AffineTransform3D screenTransform = viewerState.getViewerTransform();
+		screenTransform.preConcatenate( screenScaleTransform ); // TODO: REUSE? screenTransform is the same for every source...
 		final MipmapHints hints = ordering.getMipmapHints( screenTransform, t, previousTimepoint );
 		final List< Level > levels = hints.getLevels();
 
