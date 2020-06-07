@@ -79,7 +79,7 @@ class ProjectorFactory
 	 * The timepoint for which last a projector was {@link #createProjector
 	 * created}.
 	 */
-	private int previousTimepoint;
+	private int previousTimepoint = -1;
 
 	// TODO: should be settable
 	private final boolean prefetchCells = true;
