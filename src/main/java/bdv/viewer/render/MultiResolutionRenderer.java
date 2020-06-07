@@ -225,29 +225,9 @@ public class MultiResolutionRenderer
 	private final ProjectorFactory projectorFactory;
 
 	/**
-	 * How many threads to use for rendering.
-	 */
-	private final int numRenderingThreads;
-
-	/**
-	 * {@link ExecutorService} used for rendering.
-	 */
-	private final ExecutorService renderingExecutorService;
-
-	/**
-	 * TODO
-	 */
-	private final AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory;
-
-	/**
 	 * Controls IO budgeting and fetcher queue.
 	 */
 	private final CacheControl cacheControl;
-
-	/**
-	 * Whether volatile versions of sources should be used if available.
-	 */
-	private final boolean useVolatileIfAvailable;
 
 	/**
 	 * Whether a repaint was {@link #requestRepaint() requested}. This will
@@ -255,17 +235,8 @@ public class MultiResolutionRenderer
 	 */
 	private boolean newFrameRequest;
 
-	/**
-	 * The timepoint for which last a projector was
-	 * {@link #createProjector(ViewerState, RandomAccessibleInterval) created}.
-	 */
-	private int previousTimepoint;
-
 	// TODO: should be settable
 	private long[] iobudget = new long[] { 100l * 1000000l,  10l * 1000000l };
-
-	// TODO: should be settable
-	private boolean prefetchCells = true;
 
 	/**
 	 * @param display
@@ -327,13 +298,8 @@ public class MultiResolutionRenderer
 		maxScreenScaleIndex = screenScales.length - 1;
 		requestedScreenScaleIndex = maxScreenScaleIndex;
 		renderingMayBeCancelled = true;
-		this.numRenderingThreads = numRenderingThreads;
-		this.renderingExecutorService = renderingExecutorService;
-		this.useVolatileIfAvailable = useVolatileIfAvailable;
-		this.accumulateProjectorFactory = accumulateProjectorFactory;
 		this.cacheControl = cacheControl;
 		newFrameRequest = false;
-		previousTimepoint = -1;
 
 		projectorFactory = new ProjectorFactory(
 				numRenderingThreads,
@@ -591,7 +557,7 @@ public class MultiResolutionRenderer
 				renderImages[ currentScreenScaleIndex ],
 				renderMaskArrays );
 		newFrameRequest |= projectorFactory.newFrameRequest();
-		System.out.println( "newFrameRequest = " + newFrameRequest );
+//		System.out.println( "newFrameRequest = " + newFrameRequest );
 		viewerState.getViewerTransform( currentProjectorTransform );
 		CacheIoTiming.getIoTimeBudget().reset( iobudget );
 		return projector;
