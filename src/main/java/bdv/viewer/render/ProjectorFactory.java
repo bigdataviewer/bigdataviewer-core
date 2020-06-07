@@ -1,15 +1,9 @@
 package bdv.viewer.render;
 
-import bdv.cache.CacheControl;
-import bdv.img.cache.VolatileCachedCellImg;
-import bdv.util.MipmapTransforms;
-import bdv.viewer.Interpolation;
-import bdv.viewer.Source;
-import bdv.viewer.SourceAndConverter;
-import bdv.viewer.ViewerState;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
+
 import net.imglib2.Dimensions;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
@@ -22,6 +16,19 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.numeric.ARGBType;
 
+import bdv.img.cache.VolatileCachedCellImg;
+import bdv.util.MipmapTransforms;
+import bdv.viewer.Interpolation;
+import bdv.viewer.Source;
+import bdv.viewer.SourceAndConverter;
+import bdv.viewer.ViewerState;
+
+/**
+ * Creates projectors for rendering a given {@code ViewerState} to a given
+ * {@code screenImage}, with the current visible sources and timepoint of the
+ * {@code ViewerState}, and a given {@code screenTransform} from global
+ * coordinates to coordinates in the {@code screenImage}.
+ */
 class ProjectorFactory
 {
 	/**
@@ -40,30 +47,56 @@ class ProjectorFactory
 	private final boolean useVolatileIfAvailable;
 
 	/**
-	 * TODO javadoc
+	 * Constructs projector that combines rendere ARGB images for individual
+	 * sources to the final screen image. This can be used to customize how
+	 * sources are combined.
 	 */
 	private final AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory;
 
-
 	/**
-	 * TODO revise javadoc
-	 * Whether a repaint was {@link #requestRepaint() requested}. This will
-	 * cause {@link CacheControl#prepareNextFrame()}.
+	 * Whether repainting should be triggered after the previously
+	 * {@link #createProjector constructed} projector returns an incomplete
+	 * result.
+	 * <p>
+	 * The use case for this is the following:
+	 * <p>
+	 * When scrolling through time, we often get frames for which no data was
+	 * loaded yet. To speed up rendering in these cases, use only two mipmap
+	 * levels: the optimal and the coarsest. By doing this, we require at most
+	 * two passes over the image at the expense of ignoring data present in
+	 * intermediate mipmap levels. The assumption is, that we will either be
+	 * moving back and forth between images that have all data present already
+	 * or that we move to a new image with no data present at all.
+	 * <p>
+	 * However, we only want this two-pass rendering to happen once, then switch
+	 * to normal multi-pass rendering if we remain longer on the same frame.
+	 * <p>
+	 * (This method is implemented by {@link DefaultMipmapOrdering}.)
 	 */
 	private boolean newFrameRequest;
 
 	/**
-	 * The timepoint for which last a projector was
-	 * {@link #createProjector created}.
+	 * The timepoint for which last a projector was {@link #createProjector
+	 * created}.
 	 */
 	private int previousTimepoint;
-
-
 
 	// TODO: should be settable
 	private final boolean prefetchCells = true;
 
-	ProjectorFactory(
+	/**
+	 * @param numRenderingThreads
+	 *     How many threads to use for rendering.
+	 * @param renderingExecutorService
+	 *     if non-null, this is used for rendering. Note, that it is still
+	 *     important to supply the numRenderingThreads parameter, because that
+	 *     is used to determine into how many sub-tasks rendering is split.
+	 * @param useVolatileIfAvailable
+	 *     whether volatile versions of sources should be used if available.
+	 * @param accumulateProjectorFactory
+	 *     can be used to customize how sources are combined.
+	 */
+	public ProjectorFactory(
 			final int numRenderingThreads,
 			final ExecutorService renderingExecutorService,
 			final boolean useVolatileIfAvailable,
@@ -75,6 +108,13 @@ class ProjectorFactory
 		this.accumulateProjectorFactory = accumulateProjectorFactory;
 	}
 
+	/**
+	 * Create a projector for rendering the specified {@code ViewerState} to the
+	 * specified {@code screenImage}, with the current visible sources and
+	 * timepoint of the {@code ViewerState}, and the specified
+	 * {@code screenTransform} from global coordinates to coordinates in the
+	 * {@code screenImage}.
+	 */
 	public VolatileProjector createProjector(
 			final ViewerState viewerState,
 			final RandomAccessibleInterval< ARGBType > screenImage,
@@ -86,7 +126,7 @@ class ProjectorFactory
 		 * This shouldn't be necessary, with
 		 * CacheHints.LoadingStrategy==VOLATILE
 		 */
-//			CacheIoTiming.getIoTimeBudget().clear(); // clear time budget such that prefetching doesn't wait for loading blocks.
+//		CacheIoTiming.getIoTimeBudget().clear(); // clear time budget such that prefetching doesn't wait for loading blocks.
 		newFrameRequest = false;
 
 		final ArrayList< SourceAndConverter< ? > > visibleSources = new ArrayList<>( viewerState.getVisibleAndPresentSources() );
@@ -182,10 +222,11 @@ class ProjectorFactory
 	}
 
 	/**
-	 * Get the mipmap level that best matches the given screen scale for the given source.
+	 * Get the mipmap level that best matches the given screen scale for the
+	 * given source.
 	 *
 	 * @param screenTransform
-	 * 		transforms screen image coordinates to global coordinates.
+	 *     transforms screen image coordinates to global coordinates.
 	 *
 	 * @return mipmap level
 	 */
