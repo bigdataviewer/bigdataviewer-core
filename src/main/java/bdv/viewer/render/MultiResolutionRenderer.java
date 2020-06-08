@@ -421,6 +421,7 @@ public class MultiResolutionRenderer
 
 		// the projector that paints to the screenImage.
 		final VolatileProjector p;
+		final boolean requestNewFrameIfIncomplete;
 
 		if ( createProjector )
 		{
@@ -430,6 +431,7 @@ public class MultiResolutionRenderer
 				checkRenewRenderImages( numVisibleSources );
 				checkRenewMaskArrays( numVisibleSources );
 				p = createProjector( viewerState, renderResult.getScreenImage() );
+				requestNewFrameIfIncomplete = projectorFactory.requestNewFrameIfIncomplete();
 			}
 			synchronized ( this )
 			{
@@ -437,7 +439,10 @@ public class MultiResolutionRenderer
 			}
 		}
 		else
+		{
 			p = projector;
+			requestNewFrameIfIncomplete = false;
+		}
 
 
 		// try rendering
@@ -485,6 +490,8 @@ public class MultiResolutionRenderer
 						// restore interrupted state
 						Thread.currentThread().interrupt();
 					}
+					if( requestNewFrameIfIncomplete )
+						newFrameRequest = true;
 					requestRepaint( currentScreenScaleIndex );
 				}
 			}
@@ -555,8 +562,6 @@ public class MultiResolutionRenderer
 				screenTransform,
 				renderImages[ currentScreenScaleIndex ],
 				renderMaskArrays );
-		newFrameRequest |= projectorFactory.newFrameRequest();
-//		System.out.println( "newFrameRequest = " + newFrameRequest );
 		viewerState.getViewerTransform( currentProjectorTransform );
 		CacheIoTiming.getIoTimeBudget().reset( iobudget );
 		return projector;
