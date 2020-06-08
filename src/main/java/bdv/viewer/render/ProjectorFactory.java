@@ -298,9 +298,7 @@ class ProjectorFactory
 		}
 	}
 
-	// TODO: naming
-	// TODO: only needs to trigger new frame if projector.map() is not complete
-	public boolean newFrameRequest()
+	public boolean requestNewFrameIfIncomplete()
 	{
 		return newFrameRequest;
 	}
