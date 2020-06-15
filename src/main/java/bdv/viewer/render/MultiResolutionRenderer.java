@@ -30,7 +30,9 @@ package bdv.viewer.render;
 
 import bdv.cache.CacheControl;
 import bdv.viewer.ViewerState;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
@@ -120,6 +122,58 @@ public class MultiResolutionRenderer
 		}
 	}
 
+	static class RenderStorage
+	{
+		/**
+		 * Storage for mask images of {@link VolatileHierarchyProjector}. One array
+		 * per visible source.
+		 */
+		private List< byte[] > renderMaskArrays = new ArrayList<>();
+
+		/**
+		 * Storage for render images of {@link VolatileHierarchyProjector}.
+		 * Used to render an individual source before combining to final target image.
+		 * One array per visible source, if more than one source is visible.
+		 * (If exactly one source is visible, it is rendered directly to the target image.)
+		 */
+		private List< int[] > renderImageArrays = new ArrayList<>();
+
+		public void checkRenewData( final int screenW, final int screenH, final int numVisibleSources )
+		{
+			final int size = screenW * screenH;
+			final int currentSize = renderMaskArrays.isEmpty() ? 0 : renderMaskArrays.get( 0 ).length;
+			if  ( size != currentSize )
+				clear();
+
+			while ( renderMaskArrays.size() > numVisibleSources )
+				renderMaskArrays.remove( renderMaskArrays.size() - 1 );
+			while ( renderMaskArrays.size() < numVisibleSources )
+				renderMaskArrays.add( new byte[ size ] );
+
+			final int numRenderImages = numVisibleSources > 1 ? numVisibleSources : 0;
+			while ( renderImageArrays.size() > numRenderImages )
+				renderImageArrays.remove( renderImageArrays.size() - 1 );
+			while ( renderImageArrays.size() < numRenderImages )
+				renderImageArrays.add( new int[ size ] );
+		}
+
+		public byte[] getMaskArray( final int index )
+		{
+			return renderMaskArrays.get( index );
+		}
+
+		public RenderImage getRenderImage( final int width, final int height, final int index )
+		{
+			return new RenderImage( width, height, renderImageArrays.get( index ) );
+		}
+
+		public void clear()
+		{
+			renderMaskArrays.clear();
+			renderImageArrays.clear();
+		}
+	}
+
 	/**
 	 * Receiver for the {@code BufferedImage BufferedImages} that we render.
 	 */
@@ -144,23 +198,6 @@ public class MultiResolutionRenderer
 	private int currentScreenScaleIndex;
 
 	/**
-	 * Used to render an individual source. One image per screen resolution and
-	 * visible source. First index is screen scale, second index is index in
-	 * list of visible sources.
-	 */
-	private RenderImage[][] renderImages;
-
-	/**
-	 * Storage for mask images of {@link VolatileHierarchyProjector}. One array
-	 * per visible source. (First) index is index in list of visible sources.
-	 */
-	private byte[][] renderMaskArrays;
-
-	private final int[] screenW;
-
-	private final int[] screenH;
-
-	/**
 	 * Scale factors from the {@link #display viewer canvas} to the
 	 * {@code screenImages}.
 	 *
@@ -170,11 +207,17 @@ public class MultiResolutionRenderer
 	 */
 	private final double[] screenScales;
 
+	private final int[] screenW;
+
+	private final int[] screenH;
+
 	/**
 	 * The scale transformation from viewer to screen image. Each
 	 * transformations corresponds to a {@link #screenScales screen scale}.
 	 */
 	private final AffineTransform3D[] screenScaleTransforms;
+
+	private final RenderStorage renderStorage;
 
 	/**
 	 * If the rendering time (in nanoseconds) for the (currently) highest scaled
@@ -277,11 +320,10 @@ public class MultiResolutionRenderer
 		projector = null;
 		currentScreenScaleIndex = -1;
 		this.screenScales = screenScales.clone();
-		renderImages = new RenderImage[ screenScales.length ][ 0 ];
-		renderMaskArrays = new byte[ 0 ][];
 		screenW = new int[ screenScales.length ];
 		screenH = new int[ screenScales.length ];
 		screenScaleTransforms = new AffineTransform3D[ screenScales.length ];
+		renderStorage = new RenderStorage();
 
 		this.targetRenderNanos = targetRenderNanos;
 
@@ -300,7 +342,7 @@ public class MultiResolutionRenderer
 
 	/**
 	 * Check whether the size of the display component was changed and
-	 * recreate {@code screenImages} and {@link #screenScaleTransforms} accordingly.
+	 * recreate {@link #screenScaleTransforms} accordingly.
 	 *
 	 * @return whether the size was changed.
 	 */
@@ -325,43 +367,6 @@ public class MultiResolutionRenderer
 				screenScaleTransforms[ i ] = scale;
 			}
 
-			return true;
-		}
-		return false;
-	}
-
-	private boolean checkRenewRenderImages( final int numVisibleSources )
-	{
-		final int n = numVisibleSources > 1 ? numVisibleSources : 0;
-		if ( n != renderImages[ 0 ].length ||
-				( n != 0 &&
-					( renderImages[ 0 ][ 0 ].dimension( 0 ) != screenW[ 0 ] ||
-					  renderImages[ 0 ][ 0 ].dimension( 1 ) != screenH[ 0 ] ) ) )
-		{
-			renderImages = new RenderImage[ screenScales.length ][ n ];
-			for ( int i = 0; i < screenScales.length; ++i )
-			{
-				for ( int j = 0; j < n; ++j )
-				{
-					renderImages[ i ][ j ] = ( i == 0 ) ?
-						new RenderImage( screenW[ i ], screenH[ i ] ) :
-						new RenderImage( screenW[ i ], screenH[ i ], renderImages[ 0 ][ j ].getData() );
-				}
-			}
-			return true;
-		}
-		return false;
-	}
-
-	private boolean checkRenewMaskArrays( final int numVisibleSources )
-	{
-		final int size = screenW[ 0 ] * screenH[ 0 ];
-		if ( numVisibleSources != renderMaskArrays.length ||
-				( numVisibleSources != 0 &&	( renderMaskArrays[ 0 ].length < size ) ) )
-		{
-			renderMaskArrays = new byte[ numVisibleSources ][];
-			for ( int j = 0; j < numVisibleSources; ++j )
-				renderMaskArrays[ j ] = new byte[ size ];
 			return true;
 		}
 		return false;
@@ -419,8 +424,7 @@ public class MultiResolutionRenderer
 			synchronized ( viewerState )
 			{
 				final int numVisibleSources = viewerState.getVisibleAndPresentSources().size();
-				checkRenewRenderImages( numVisibleSources );
-				checkRenewMaskArrays( numVisibleSources );
+				renderStorage.checkRenewData( screenW[ 0 ], screenH[ 0 ], numVisibleSources );
 				p = createProjector( viewerState, renderResult.getScreenImage() );
 				requestNewFrameIfIncomplete = projectorFactory.requestNewFrameIfIncomplete();
 			}
@@ -529,8 +533,7 @@ public class MultiResolutionRenderer
 		if ( display instanceof BufferedImageOverlayRenderer )
 			( ( BufferedImageOverlayRenderer ) display ).kill();
 		projector = null;
-		Arrays.fill( renderImages, null );
-		Arrays.fill( renderMaskArrays, null );
+		renderStorage.clear();
 	}
 
 	private VolatileProjector createProjector(
@@ -551,8 +554,7 @@ public class MultiResolutionRenderer
 				viewerState,
 				screenImage,
 				screenTransform,
-				renderImages[ currentScreenScaleIndex ],
-				renderMaskArrays );
+				renderStorage );
 		viewerState.getViewerTransform( currentProjectorTransform );
 		CacheIoTiming.getIoTimeBudget().reset( iobudget );
 		return projector;

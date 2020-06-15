@@ -119,8 +119,7 @@ class ProjectorFactory
 			final ViewerState viewerState,
 			final RandomAccessibleInterval< ARGBType > screenImage,
 			final AffineTransform3D screenTransform,
-			final MultiResolutionRenderer.RenderImage[] renderImages,
-			final byte[][] renderMaskArrays )
+			final MultiResolutionRenderer.RenderStorage renderStorage )
 	{
 		/*
 		 * This shouldn't be necessary, with
@@ -129,6 +128,9 @@ class ProjectorFactory
 //		CacheIoTiming.getIoTimeBudget().clear(); // clear time budget such that prefetching doesn't wait for loading blocks.
 		newFrameRequest = false;
 
+		final int width = ( int ) screenImage.dimension( 0 );
+		final int height = ( int ) screenImage.dimension( 1 );
+
 		final ArrayList< SourceAndConverter< ? > > visibleSources = new ArrayList<>( viewerState.getVisibleAndPresentSources() );
 		visibleSources.sort( viewerState.sourceOrder() );
 		VolatileProjector projector;
@@ -136,7 +138,8 @@ class ProjectorFactory
 			projector = new EmptyProjector<>( screenImage );
 		else if ( visibleSources.size() == 1 )
 		{
-			projector = createSingleSourceProjector( viewerState, visibleSources.get( 0 ), screenImage, screenTransform, renderMaskArrays[ 0 ] );
+			final byte[] maskArray = renderStorage.getMaskArray( 0 );
+			projector = createSingleSourceProjector( viewerState, visibleSources.get( 0 ), screenImage, screenTransform, maskArray );
 		}
 		else
 		{
@@ -145,8 +148,8 @@ class ProjectorFactory
 			int j = 0;
 			for ( final SourceAndConverter< ? > source : visibleSources )
 			{
-				final MultiResolutionRenderer.RenderImage renderImage = renderImages[ j ];
-				final byte[] maskArray = renderMaskArrays[ j ];
+				final MultiResolutionRenderer.RenderImage renderImage = renderStorage.getRenderImage( width, height, j );
+				final byte[] maskArray = renderStorage.getMaskArray( j );
 				++j;
 				final VolatileProjector p = createSingleSourceProjector( viewerState, source, renderImage, screenTransform, maskArray );
 				sourceProjectors.add( p );
