@@ -30,21 +30,15 @@ package bdv.viewer.render;
 
 import bdv.cache.CacheControl;
 import bdv.viewer.ViewerState;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.ExecutorService;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
 import net.imglib2.cache.iotiming.CacheIoTiming;
-import net.imglib2.img.array.ArrayImg;
-import net.imglib2.img.basictypeaccess.array.IntArray;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
 import net.imglib2.ui.overlay.BufferedImageOverlayRenderer;
-import net.imglib2.util.Fraction;
 
 /**
  * A renderer that uses a coarse-to-fine rendering scheme. First, a small target
@@ -93,87 +87,6 @@ import net.imglib2.util.Fraction;
  */
 public class MultiResolutionRenderer
 {
-	static class RenderImage extends ArrayImg< ARGBType, IntArray >
-	{
-		final private int[] data;
-
-		public RenderImage( final int width, final int height )
-		{
-			this( width, height, new int[ width * height ] );
-		}
-
-		/**
-		 * Create an image with {@code data}. Writing to the {@code data}
-		 * array will update the image.
-		 */
-		public RenderImage( final int width, final int height, final int[] data )
-		{
-			super( new IntArray( data ), new long[]{ width, height }, new Fraction() );
-			setLinkedType( new ARGBType( this ) );
-			this.data = data;
-		}
-
-		/**
-		 * The underlying array holding the data.
-		 */
-		public int[] getData()
-		{
-			return data;
-		}
-	}
-
-	static class RenderStorage
-	{
-		/**
-		 * Storage for mask images of {@link VolatileHierarchyProjector}. One array
-		 * per visible source.
-		 */
-		private List< byte[] > renderMaskArrays = new ArrayList<>();
-
-		/**
-		 * Storage for render images of {@link VolatileHierarchyProjector}.
-		 * Used to render an individual source before combining to final target image.
-		 * One array per visible source, if more than one source is visible.
-		 * (If exactly one source is visible, it is rendered directly to the target image.)
-		 */
-		private List< int[] > renderImageArrays = new ArrayList<>();
-
-		public void checkRenewData( final int screenW, final int screenH, final int numVisibleSources )
-		{
-			final int size = screenW * screenH;
-			final int currentSize = renderMaskArrays.isEmpty() ? 0 : renderMaskArrays.get( 0 ).length;
-			if  ( size != currentSize )
-				clear();
-
-			while ( renderMaskArrays.size() > numVisibleSources )
-				renderMaskArrays.remove( renderMaskArrays.size() - 1 );
-			while ( renderMaskArrays.size() < numVisibleSources )
-				renderMaskArrays.add( new byte[ size ] );
-
-			final int numRenderImages = numVisibleSources > 1 ? numVisibleSources : 0;
-			while ( renderImageArrays.size() > numRenderImages )
-				renderImageArrays.remove( renderImageArrays.size() - 1 );
-			while ( renderImageArrays.size() < numRenderImages )
-				renderImageArrays.add( new int[ size ] );
-		}
-
-		public byte[] getMaskArray( final int index )
-		{
-			return renderMaskArrays.get( index );
-		}
-
-		public RenderImage getRenderImage( final int width, final int height, final int index )
-		{
-			return new RenderImage( width, height, renderImageArrays.get( index ) );
-		}
-
-		public void clear()
-		{
-			renderMaskArrays.clear();
-			renderImageArrays.clear();
-		}
-	}
-
 	/**
 	 * Receiver for the {@code BufferedImage BufferedImages} that we render.
 	 */
