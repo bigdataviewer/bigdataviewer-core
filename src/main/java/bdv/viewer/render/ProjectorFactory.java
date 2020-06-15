@@ -144,11 +144,11 @@ class ProjectorFactory
 		else
 		{
 			final ArrayList< VolatileProjector > sourceProjectors = new ArrayList<>();
-			final ArrayList< RenderImage > sourceImages = new ArrayList<>();
+			final ArrayList< RandomAccessibleInterval< ARGBType > > sourceImages = new ArrayList<>();
 			int j = 0;
 			for ( final SourceAndConverter< ? > source : visibleSources )
 			{
-				final RenderImage renderImage = renderStorage.getRenderImage( width, height, j );
+				final RandomAccessibleInterval< ARGBType > renderImage = renderStorage.getRenderImage( width, height, j );
 				final byte[] maskArray = renderStorage.getMaskArray( j );
 				++j;
 				final VolatileProjector p = createSingleSourceProjector( viewerState, source, renderImage, screenTransform, maskArray );

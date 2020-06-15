@@ -2,6 +2,9 @@ package bdv.viewer.render;
 
 import java.util.ArrayList;
 import java.util.List;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.type.numeric.ARGBType;
 
 /**
  * Maintains {@code byte[]} and {@code int[]} arrays for mask and intermediate images needed for rendering.
@@ -48,9 +51,9 @@ public class RenderStorage
 		return renderMaskArrays.get( index );
 	}
 
-	public RenderImage getRenderImage( final int width, final int height, final int index )
+	public RandomAccessibleInterval< ARGBType > getRenderImage( final int width, final int height, final int index )
 	{
-		return new RenderImage( width, height, renderImageArrays.get( index ) );
+		return ArrayImgs.argbs( renderImageArrays.get( index ), width, height );
 	}
 
 	public void clear()
