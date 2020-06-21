@@ -267,7 +267,6 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 				renderTarget, painterThread,
 				options.getScreenScales(),
 				options.getTargetRenderNanos(),
-				options.isDoubleBuffered(),
 				options.getNumRenderingThreads(),
 				renderingExecutorService,
 				options.isUseVolatileIfAvailable(),

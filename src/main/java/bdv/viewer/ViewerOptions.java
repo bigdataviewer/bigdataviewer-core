@@ -111,19 +111,6 @@ public class ViewerOptions
 	}
 
 	/**
-	 * Set whether to used double buffered rendering.
-	 *
-	 * @param d
-	 *            Whether to use double buffered rendering.
-	 * @see MultiResolutionRenderer
-	 */
-	public ViewerOptions doubleBuffered( final boolean d )
-	{
-		values.doubleBuffered = d;
-		return this;
-	}
-
-	/**
 	 * Set how many threads to use for rendering.
 	 *
 	 * @param n
@@ -231,8 +218,6 @@ public class ViewerOptions
 
 		private long targetRenderNanos = 30 * 1000000l;
 
-		private boolean doubleBuffered = true;
-
 		private int numRenderingThreads = 3;
 
 		private int numSourceGroups = 10;
@@ -256,7 +241,6 @@ public class ViewerOptions
 				height( height ).
 				screenScales( screenScales ).
 				targetRenderNanos( targetRenderNanos ).
-				doubleBuffered( doubleBuffered ).
 				numRenderingThreads( numRenderingThreads ).
 				numSourceGroups( numSourceGroups ).
 				useVolatileIfAvailable( useVolatileIfAvailable ).
@@ -284,11 +268,6 @@ public class ViewerOptions
 		public long getTargetRenderNanos()
 		{
 			return targetRenderNanos;
-		}
-
-		public boolean isDoubleBuffered()
-		{
-			return doubleBuffered;
 		}
 
 		public int getNumRenderingThreads()

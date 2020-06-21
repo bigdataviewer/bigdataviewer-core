@@ -224,8 +224,6 @@ public class MultiResolutionRenderer
 	 * @param targetRenderNanos
 	 *            Target rendering time in nanoseconds. The rendering time for
 	 *            the coarsest rendered scale should be below this threshold.
-	 * @param doubleBuffered
-	 *            Whether to use double buffered rendering.
 	 * @param numRenderingThreads
 	 *            How many threads to use for rendering.
 	 * @param renderingExecutorService
@@ -246,7 +244,6 @@ public class MultiResolutionRenderer
 			final PainterThread painterThread,
 			final double[] screenScaleFactors,
 			final long targetRenderNanos,
-			final boolean doubleBuffered, // TODO: remove
 			final int numRenderingThreads,
 			final ExecutorService renderingExecutorService,
 			final boolean useVolatileIfAvailable,
