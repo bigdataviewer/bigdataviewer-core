@@ -118,17 +118,42 @@ public class MultiResolutionRenderer
 	 * pixel on the canvas, a scale factor of 0.5 means 1 pixel in the screen
 	 * image is displayed as 2 pixel on the canvas, etc.
 	 */
-	private final double[] screenScales;
+	private final double[] screenScaleFactors;
 
-	private final int[] screenW;
+	static class ScreenScale
+	{
+		/**
+		 * The width of the target image at this ScreenScale.
+		 */
+		final int w;
 
-	private final int[] screenH;
+		/**
+		 * The height of the target image at this ScreenScale.
+		 */
+		final int h;
 
-	/**
-	 * The scale transformation from viewer to screen image. Each
-	 * transformations corresponds to a {@link #screenScales screen scale}.
-	 */
-	private final AffineTransform3D[] screenScaleTransforms;
+		/**
+		 * The transformation from viewer to target image coordinates at this ScreenScale.
+		 */
+		final AffineTransform3D scale;
+
+		public ScreenScale( final int screenW, final int screenH, final double screenToViewerScale )
+		{
+			w = ( int ) Math.ceil( screenToViewerScale * screenW );
+			h = ( int ) Math.ceil( screenToViewerScale * screenH );
+			scale = new AffineTransform3D();
+			scale.set( screenToViewerScale, 0, 0 );
+			scale.set( screenToViewerScale, 1, 1 );
+			scale.set( 0.5 * screenToViewerScale - 0.5, 0, 3 );
+			scale.set( 0.5 * screenToViewerScale - 0.5, 1, 3 );
+		}
+	}
+
+	private final ScreenScale[] screenScales;
+
+	private int screenW;
+
+	private int screenH;
 
 	private final RenderStorage renderStorage;
 
@@ -190,7 +215,7 @@ public class MultiResolutionRenderer
 	 * @param painterThread
 	 *            Thread that triggers repainting of the display. Requests for
 	 *            repainting are send there.
-	 * @param screenScales
+	 * @param screenScaleFactors
 	 *            Scale factors from the viewer canvas to screen images of
 	 *            different resolutions. A scale factor of 1 means 1 pixel in
 	 *            the screen image is displayed as 1 pixel on the canvas, a
@@ -219,7 +244,7 @@ public class MultiResolutionRenderer
 	public MultiResolutionRenderer(
 			final RenderTarget display,
 			final PainterThread painterThread,
-			final double[] screenScales,
+			final double[] screenScaleFactors,
 			final long targetRenderNanos,
 			final boolean doubleBuffered, // TODO: remove
 			final int numRenderingThreads,
@@ -232,10 +257,8 @@ public class MultiResolutionRenderer
 		this.painterThread = painterThread;
 		projector = null;
 		currentScreenScaleIndex = -1;
-		this.screenScales = screenScales.clone();
-		screenW = new int[ screenScales.length ];
-		screenH = new int[ screenScales.length ];
-		screenScaleTransforms = new AffineTransform3D[ screenScales.length ];
+		this.screenScaleFactors = screenScaleFactors.clone();
+		this.screenScales = new ScreenScale[ screenScaleFactors.length ];
 		renderStorage = new RenderStorage();
 
 		this.targetRenderNanos = targetRenderNanos;
@@ -255,31 +278,20 @@ public class MultiResolutionRenderer
 
 	/**
 	 * Check whether the size of the display component was changed and
-	 * recreate {@link #screenScaleTransforms} accordingly.
+	 * recreate {@link #screenScales} accordingly.
 	 *
 	 * @return whether the size was changed.
 	 */
 	private boolean checkResize()
 	{
-		final int componentW = display.getWidth();
-		final int componentH = display.getHeight();
-		final int newTargetW = ( int ) Math.ceil( componentW * screenScales[ 0 ] );
-		final int newTargetH = ( int ) Math.ceil( componentH * screenScales[ 0 ] );
-		if ( newTargetW != screenW[ 0 ] || newTargetH != screenH[ 0 ] )
+		final int newScreenW = display.getWidth();
+		final int newScreenH = display.getHeight();
+		if ( newScreenW != screenW || newScreenH != screenH )
 		{
+			screenW = newScreenW;
+			screenH = newScreenH;
 			for ( int i = 0; i < screenScales.length; ++i )
-			{
-				final double screenToViewerScale = screenScales[ i ];
-				screenW[ i ] = ( int ) Math.ceil( screenToViewerScale * componentW );
-				screenH[ i ] = ( int ) Math.ceil( screenToViewerScale * componentH );
-				final AffineTransform3D scale = new AffineTransform3D();
-				scale.set( screenToViewerScale, 0, 0 );
-				scale.set( screenToViewerScale, 1, 1 );
-				scale.set( 0.5 * screenToViewerScale - 0.5, 0, 3 );
-				scale.set( 0.5 * screenToViewerScale - 0.5, 1, 3 );
-				screenScaleTransforms[ i ] = scale;
-			}
-
+				screenScales[ i ] = new ScreenScale( screenW, screenH, screenScaleFactors[ i ] );
 			return true;
 		}
 		return false;
@@ -316,9 +328,10 @@ public class MultiResolutionRenderer
 			if ( createProjector )
 			{
 				currentScreenScaleIndex = requestedScreenScaleIndex;
+				final ScreenScale screenScale = screenScales[ currentScreenScaleIndex ];
 
 				renderResult = display.getReusableRenderResult();
-				renderResult.init( screenW[ currentScreenScaleIndex ], screenH[ currentScreenScaleIndex ] );
+				renderResult.init( screenScale.w, screenScale.h );
 			}
 			else
 			{
@@ -337,7 +350,7 @@ public class MultiResolutionRenderer
 			synchronized ( viewerState )
 			{
 				final int numVisibleSources = viewerState.getVisibleAndPresentSources().size();
-				renderStorage.checkRenewData( screenW[ 0 ], screenH[ 0 ], numVisibleSources );
+				renderStorage.checkRenewData( screenScales[ 0 ].w, screenScales[ 0 ].h, numVisibleSources );
 				p = createProjector( viewerState, renderResult.getScreenImage() );
 				requestNewFrameIfIncomplete = projectorFactory.requestNewFrameIfIncomplete();
 			}
@@ -365,7 +378,7 @@ public class MultiResolutionRenderer
 				if ( createProjector )
 				{
 					renderResult.getViewerTransform().set( currentProjectorTransform );
-					renderResult.setScaleFactor( screenScales[ currentScreenScaleIndex ] );
+					renderResult.setScaleFactor( screenScaleFactors[ currentScreenScaleIndex ] );
 					display.setRenderResult( renderResult );
 
 					if ( currentScreenScaleIndex == maxScreenScaleIndex )
@@ -459,7 +472,7 @@ public class MultiResolutionRenderer
 		 */
 //		CacheIoTiming.getIoTimeBudget().clear(); // clear time budget such that prefetching doesn't wait for loading blocks.
 
-		final AffineTransform3D screenScaleTransform = screenScaleTransforms[ currentScreenScaleIndex ];
+		final AffineTransform3D screenScaleTransform = screenScales[ currentScreenScaleIndex ].scale;
 		final AffineTransform3D screenTransform = viewerState.getViewerTransform();
 		screenTransform.preConcatenate( screenScaleTransform );
 
