@@ -35,8 +35,8 @@ import bdv.viewer.BasicViewerState;
 import bdv.viewer.ViewerPanel;
 import bdv.viewer.ViewerState;
 import bdv.viewer.overlay.ScaleBarOverlayRenderer;
+import bdv.viewer.render.BufferedImageRenderResult;
 import bdv.viewer.render.MultiResolutionRenderer;
-import bdv.viewer.render.RenderResult;
 import java.awt.BorderLayout;
 import java.awt.Frame;
 import java.awt.Graphics;
@@ -269,20 +269,19 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 
 		final ScaleBarOverlayRenderer scalebar = Prefs.showScaleBarInMovie() ? new ScaleBarOverlayRenderer() : null;
 
-		class MyTarget implements RenderTarget
+		class MyTarget implements RenderTarget< BufferedImageRenderResult >
 		{
-			final RenderResult renderResult = new RenderResult();
+			final BufferedImageRenderResult renderResult = new BufferedImageRenderResult();
 
 			@Override
-			public RenderResult getReusableRenderResult()
+			public BufferedImageRenderResult getReusableRenderResult()
 			{
 				return renderResult;
 			}
 
 			@Override
-			public void setRenderResult( final RenderResult renderResult )
-			{
-			}
+			public void setRenderResult( final BufferedImageRenderResult renderResult )
+			{}
 
 			@Override
 			public int getWidth()

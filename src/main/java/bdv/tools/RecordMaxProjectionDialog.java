@@ -35,8 +35,8 @@ import bdv.viewer.BasicViewerState;
 import bdv.viewer.ViewerPanel;
 import bdv.viewer.ViewerState;
 import bdv.viewer.overlay.ScaleBarOverlayRenderer;
+import bdv.viewer.render.BufferedImageRenderResult;
 import bdv.viewer.render.MultiResolutionRenderer;
-import bdv.viewer.render.RenderResult;
 import java.awt.BorderLayout;
 import java.awt.Frame;
 import java.awt.Graphics;
@@ -313,11 +313,11 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 
 		final ScaleBarOverlayRenderer scalebar = Prefs.showScaleBarInMovie() ? new ScaleBarOverlayRenderer() : null;
 
-		class MyTarget implements RenderTarget
+		class MyTarget implements RenderTarget< BufferedImageRenderResult >
 		{
 			final ARGBScreenImage accumulated = new ARGBScreenImage( width, height );
 
-			final RenderResult renderResult = new RenderResult();
+			final BufferedImageRenderResult renderResult = new BufferedImageRenderResult();
 
 			public void clear()
 			{
@@ -326,13 +326,13 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 			}
 
 			@Override
-			public RenderResult getReusableRenderResult()
+			public BufferedImageRenderResult getReusableRenderResult()
 			{
 				return renderResult;
 			}
 
 			@Override
-			public void setRenderResult( final RenderResult renderResult )
+			public void setRenderResult( final BufferedImageRenderResult renderResult )
 			{
 				final BufferedImage bufferedImage = renderResult.getBufferedImage();
 				final Img< ARGBType > argbs = ArrayImgs.argbs( ( ( DataBufferInt ) bufferedImage.getData().getDataBuffer() ).getData(), width, height );

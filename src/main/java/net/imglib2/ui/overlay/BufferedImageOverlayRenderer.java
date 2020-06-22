@@ -35,7 +35,7 @@ package net.imglib2.ui.overlay;
 
 import bdv.util.TripleBuffer;
 import bdv.util.TripleBuffer.ReadableBuffer;
-import bdv.viewer.render.RenderResult;
+import bdv.viewer.render.BufferedImageRenderResult;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
@@ -55,9 +55,9 @@ import org.scijava.listeners.Listeners;
  *
  * TODO: REVISE JAVADOC
  */
-public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarget
+public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarget< BufferedImageRenderResult >
 {
-	private final TripleBuffer< RenderResult > tripleBuffer;
+	private final TripleBuffer< BufferedImageRenderResult > tripleBuffer;
 
 	/**
 	 * These listeners will be notified about the transform that is associated
@@ -67,7 +67,7 @@ public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarg
 	 */
 	private final Listeners.List< TransformListener< AffineTransform3D > > paintedTransformListeners;
 
-	private AffineTransform3D paintedTransform;
+	private final AffineTransform3D paintedTransform;
 
 	/**
 	 * The current canvas width.
@@ -81,7 +81,7 @@ public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarg
 
 	public BufferedImageOverlayRenderer()
 	{
-		tripleBuffer = new TripleBuffer<>( RenderResult::new );
+		tripleBuffer = new TripleBuffer<>( BufferedImageRenderResult::new );
 		width = 0;
 		height = 0;
 		paintedTransform = new AffineTransform3D();
@@ -89,19 +89,19 @@ public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarg
 	}
 
 	@Override
-	public RenderResult getReusableRenderResult()
+	public BufferedImageRenderResult getReusableRenderResult()
 	{
 		return tripleBuffer.getWritableBuffer();
 	}
 
 	/**
-	 * Set the {@link RenderResult} that is to be drawn on the canvas.
+	 * Set the {@code RenderResult} that is to be drawn on the canvas.
 	 *
 	 * @param result
 	 *            image to draw (may be null).
 	 */
 	@Override
-	public synchronized void setRenderResult( final RenderResult result )
+	public synchronized void setRenderResult( final BufferedImageRenderResult result )
 	{
 		tripleBuffer.doneWriting( result );
 	}
@@ -121,8 +121,8 @@ public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarg
 	@Override
 	public void drawOverlays( final Graphics g )
 	{
-		final ReadableBuffer< RenderResult > rb = tripleBuffer.getReadableBuffer();
-		final RenderResult result = rb.getBuffer();
+		final ReadableBuffer< BufferedImageRenderResult > rb = tripleBuffer.getReadableBuffer();
+		final BufferedImageRenderResult result = rb.getBuffer();
 		final BufferedImage image = result != null ? result.getBufferedImage() : null;
 		if ( image != null )
 		{

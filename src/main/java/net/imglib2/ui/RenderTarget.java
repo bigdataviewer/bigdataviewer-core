@@ -35,7 +35,6 @@ package net.imglib2.ui;
 
 import bdv.viewer.render.RenderResult;
 import java.awt.image.BufferedImage;
-import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.ui.overlay.BufferedImageOverlayRenderer;
 
 /**
@@ -49,19 +48,19 @@ import net.imglib2.ui.overlay.BufferedImageOverlayRenderer;
  *
  * @author Tobias Pietzsch
  */
-public interface RenderTarget
+public interface RenderTarget< R extends RenderResult >
 {
 	/**
 	 * Returns a {@code RenderResult} for rendering to.
 	 * This may be a new {@code RenderResult} or a previously {@link #setRenderResult set RenderResult}
 	 * that is no longer needed for display
 	 */
-	RenderResult getReusableRenderResult();
+	R getReusableRenderResult();
 
 	/**
 	 * Set the {@link RenderResult} that is to be drawn on the canvas.
 	 */
-	void setRenderResult( RenderResult renderResult );
+	void setRenderResult( R renderResult );
 
 	/**
 	 * Get the current canvas width.

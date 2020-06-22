@@ -38,7 +38,6 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
-import net.imglib2.ui.overlay.BufferedImageOverlayRenderer;
 
 /**
  * A renderer that uses a coarse-to-fine rendering scheme. First, a small target
@@ -90,7 +89,7 @@ public class MultiResolutionRenderer
 	/**
 	 * Receiver for the {@code BufferedImage BufferedImages} that we render.
 	 */
-	private final RenderTarget display;
+	private final RenderTarget< ? > display;
 
 	/**
 	 * Thread that triggers repainting of the display.
@@ -376,7 +375,7 @@ public class MultiResolutionRenderer
 				{
 					renderResult.getViewerTransform().set( currentProjectorTransform );
 					renderResult.setScaleFactor( screenScaleFactors[ currentScreenScaleIndex ] );
-					display.setRenderResult( renderResult );
+					( ( RenderTarget ) display ).setRenderResult( renderResult );
 
 					if ( currentScreenScaleIndex == maxScreenScaleIndex )
 					{
