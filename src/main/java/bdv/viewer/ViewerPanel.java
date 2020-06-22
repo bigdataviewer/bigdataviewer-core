@@ -1145,6 +1145,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 		renderingExecutorService.shutdown();
 		state.kill();
 		imageRenderer.kill();
+		renderTarget.kill();
 	}
 
 	protected static final AtomicInteger panelNumber = new AtomicInteger( 1 );

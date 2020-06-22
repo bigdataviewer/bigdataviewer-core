@@ -453,8 +453,6 @@ public class MultiResolutionRenderer
 	 */
 	public void kill()
 	{
-		if ( display instanceof BufferedImageOverlayRenderer )
-			( ( BufferedImageOverlayRenderer ) display ).kill();
 		projector = null;
 		renderStorage.clear();
 	}
