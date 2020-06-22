@@ -29,7 +29,6 @@
  */
 package bdv.viewer;
 
-import bdv.TransformState;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
@@ -57,9 +56,10 @@ import javax.swing.JSlider;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
-import net.imglib2.ui.overlay.BufferedImageOverlayRenderer;
 import org.jdom2.Element;
+import org.scijava.listeners.Listeners;
 
+import bdv.TransformState;
 import bdv.cache.CacheControl;
 import bdv.util.Affine3DHelpers;
 import bdv.util.Prefs;
@@ -86,8 +86,8 @@ import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.TransformEventHandler;
 import net.imglib2.ui.TransformListener;
+import net.imglib2.ui.overlay.BufferedImageOverlayRenderer;
 import net.imglib2.util.LinAlgHelpers;
-import org.scijava.listeners.Listeners;
 
 /**
  * A JPanel for viewing multiple of {@link Source}s. The panel contains a
@@ -1177,5 +1177,13 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 	public boolean requestFocusInWindow()
 	{
 		return display.requestFocusInWindow();
+	}
+
+	/**
+	 * FIXME TO TEST JAVA FX.
+	 */
+	public BufferedImageOverlayRenderer getRenderTarget()
+	{
+		return renderTarget;
 	}
 }
