@@ -43,6 +43,7 @@ import org.scijava.listeners.Listeners;
 import bdv.util.TripleBuffer;
 import bdv.util.TripleBuffer.ReadableBuffer;
 import bdv.viewer.render.RenderResult;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.ui.OverlayRenderer;
@@ -109,13 +110,17 @@ public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarg
 	public synchronized void setRenderResult( final RenderResult result )
 	{
 		tripleBuffer.doneWriting( result );
+		Image img = result.getJavaFXImage();
 
-		if ( imageView != null )
+		if ( imageView != null && img != null )
 		{
-			imageView.setFitWidth( width );
-			imageView.setFitHeight( height );
-			imageView.setImage( result.getJavaFXImage() );
-
+			final double scaleFactor = result.getScaleFactor();
+			final int w = Math.max( width, ( int ) ( img.getWidth() / scaleFactor + 0.5 ) );
+			final int h = Math.max( height, ( int ) ( img.getHeight() / scaleFactor + 0.5 ) );
+			result.setPixelsDirty();
+			imageView.setFitWidth( w );
+			imageView.setFitHeight( h );
+			imageView.setImage( img );
 		}
 	}
 
