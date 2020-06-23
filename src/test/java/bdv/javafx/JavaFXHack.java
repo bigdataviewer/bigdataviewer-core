@@ -10,6 +10,7 @@ import bdv.viewer.ViewerOptions;
 import bdv.viewer.ViewerPanel;
 import javafx.application.Platform;
 import javafx.embed.swing.JFXPanel;
+import javafx.scene.CacheHint;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.image.ImageView;
@@ -62,6 +63,8 @@ public class JavaFXHack
 		Group root = new Group();
 		Scene scene = new Scene( root );
 		ImageView imageView = new ImageView();
+		imageView.setCache( true );
+		imageView.setCacheHint( CacheHint.SPEED );
 		root.getChildren().add( imageView );
 
 		ViewerPanel viewer = bdv.getViewer();
