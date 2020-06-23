@@ -111,7 +111,12 @@ public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarg
 		tripleBuffer.doneWriting( result );
 
 		if ( imageView != null )
+		{
+			imageView.setFitWidth( width );
+			imageView.setFitHeight( height );
 			imageView.setImage( result.getJavaFXImage() );
+
+		}
 	}
 
 	@Override
