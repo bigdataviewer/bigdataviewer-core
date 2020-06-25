@@ -31,6 +31,7 @@ package bdv.tools.bookmarks;
 
 import java.util.HashMap;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import mpicbg.spim.data.XmlHelpers;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -86,6 +87,11 @@ public class Bookmarks
 	public AffineTransform3D get( final String key )
 	{
 		return bookmarks.get( key );
+	}
+
+	public Set< String > keySet()
+	{
+		return bookmarks.keySet();
 	}
 }
 
