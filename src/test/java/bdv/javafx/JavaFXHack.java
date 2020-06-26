@@ -15,7 +15,9 @@ import org.scijava.ui.behaviour.javafx.JfxMouseAndKeyHandler;
 import org.scijava.ui.behaviour.util.Behaviours;
 
 import bdv.BigDataViewer;
+import bdv.TransformState;
 import bdv.export.ProgressWriterConsole;
+import bdv.viewer.SynchronizedViewerState;
 import bdv.viewer.ViewerOptions;
 import bdv.viewer.ViewerPanel;
 import javafx.application.Platform;
@@ -25,6 +27,7 @@ import javafx.scene.CacheHint;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.image.ImageView;
+import net.imglib2.ui.TransformEventHandler;
 import net.imglib2.ui.overlay.BufferedImageOverlayRenderer;
 
 @SuppressWarnings( "restriction" )
@@ -109,7 +112,15 @@ public class JavaFXHack
 		 * Create behaviours and input mappings.
 		 */
 		Behaviours behaviours = new Behaviours( inputMap, behaviourMap, config, "all" );
-		BdvJfxBehaviours.install( behaviours );
+
+		/*
+		 * Transform Handler
+		 */
+		
+		SynchronizedViewerState state = bdv.getViewer().state();
+		TransformEventHandler transformEventHandler = bdv.getViewer().getOptionValues().getTransformEventHandlerFactory()
+				.create( TransformState.from( state::getViewerTransform, state::setViewerTransform ) );
+		transformEventHandler.install( behaviours );
 
 		/*
 		 * Create the scene.
