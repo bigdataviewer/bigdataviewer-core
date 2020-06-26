@@ -114,12 +114,7 @@ public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarg
 
 		if ( imageView != null && img != null )
 		{
-			final double scaleFactor = result.getScaleFactor();
-			final int w = Math.max( width, ( int ) ( img.getWidth() / scaleFactor + 0.5 ) );
-			final int h = Math.max( height, ( int ) ( img.getHeight() / scaleFactor + 0.5 ) );
 			result.setPixelsDirty();
-			imageView.setFitWidth( w );
-			imageView.setFitHeight( h );
 			imageView.setImage( img );
 		}
 	}

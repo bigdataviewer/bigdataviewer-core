@@ -21,6 +21,7 @@ import bdv.viewer.SynchronizedViewerState;
 import bdv.viewer.ViewerOptions;
 import bdv.viewer.ViewerPanel;
 import javafx.application.Platform;
+import javafx.beans.value.ChangeListener;
 import javafx.embed.swing.JFXPanel;
 import javafx.event.Event;
 import javafx.scene.CacheHint;
@@ -133,6 +134,37 @@ public class JavaFXHack
 		ImageView imageView = new ImageView();
 		imageView.setCache( true );
 		imageView.setCacheHint( CacheHint.SPEED );
+		imageView.setSmooth( false );
+		imageView.setPreserveRatio( true );
+		
+		/*
+		 * Resize the display image on the fly to match the window size. Another
+		 * better solution would be made within the true GUI.
+		 */
+		imageView.fitWidthProperty().bind( scene.widthProperty() );
+		imageView.fitHeightProperty().bind( scene.heightProperty() );
+
+		/*
+		 * Should be true, but conflicts with the other display. If set to true
+		 * the panning events cancel each others.
+		 */
+		boolean updateTransform = false;
+
+		/*
+		 * Only used to inform the transform handler that the canvas size
+		 * changed. Should impact how the mouse clicks are considered. But now
+		 * it does not for some reason. Related to the updateTrasnform flag
+		 * above?
+		 */
+		ChangeListener< Number > canvasSizeListener = ( obs, oldValue,
+				newValue ) -> transformEventHandler
+						.setCanvasSize(
+								( int ) imageView.getFitWidth(),
+								( int ) imageView.getFitHeight(),
+								updateTransform );
+		scene.widthProperty().addListener( canvasSizeListener );
+		scene.heightProperty().addListener( canvasSizeListener );
+
 		root.getChildren().add( imageView );
 
 		ViewerPanel viewer = bdv.getViewer();
