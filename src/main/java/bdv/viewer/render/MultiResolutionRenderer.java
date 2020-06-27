@@ -28,9 +28,10 @@
  */
 package bdv.viewer.render;
 
-import bdv.cache.CacheControl;
-import bdv.viewer.ViewerState;
 import java.util.concurrent.ExecutorService;
+
+import net.imglib2.Dimensions;
+import net.imglib2.FinalDimensions;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
 import net.imglib2.cache.iotiming.CacheIoTiming;
@@ -38,6 +39,11 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
+import net.imglib2.util.Intervals;
+
+import bdv.cache.CacheControl;
+import bdv.util.MovingAverage;
+import bdv.viewer.ViewerState;
 
 /**
  * A renderer that uses a coarse-to-fine rendering scheme. First, a small target
@@ -104,12 +110,6 @@ public class MultiResolutionRenderer
 	private VolatileProjector projector;
 
 	/**
-	 * The index of the screen scale of the {@link #projector current
-	 * projector}.
-	 */
-	private int currentScreenScaleIndex;
-
-	/**
 	 * Scale factors from the {@link #display viewer canvas} to the
 	 * {@code screenImages}.
 	 *
@@ -157,24 +157,24 @@ public class MultiResolutionRenderer
 	private final RenderStorage renderStorage;
 
 	/**
-	 * If the rendering time (in nanoseconds) for the (currently) highest scaled
-	 * screen image is above this threshold, increase the
-	 * {@link #maxScreenScaleIndex index} of the highest screen scale to use.
-	 * Similarly, if the rendering time for the (currently) second-highest
-	 * scaled screen image is below this threshold, decrease the
-	 * {@link #maxScreenScaleIndex index} of the highest screen scale to use.
+	 * Target rendering time in nanoseconds. The rendering time for the coarsest
+	 * rendered scale should be below this threshold. After the coarsest scale,
+	 * increasingly finer scales are rendered, but these render passes may be
+	 * canceled (while the coarsest may not).
 	 */
 	private final long targetRenderNanos;
 
 	/**
-	 * The index of the (coarsest) screen scale with which to start rendering.
-	 * Once this level is painted, rendering proceeds to lower screen scales
-	 * until index 0 (full resolution) has been reached. While rendering, the
-	 * maxScreenScaleIndex is adapted such that it is the highest index for
-	 * which rendering in {@link #targetRenderNanos} nanoseconds is still
-	 * possible.
+	 * Estimate of the time it takes to render one screen pixel from one source,
+	 * in nanoseconds.
 	 */
-	private int maxScreenScaleIndex;
+	private final MovingAverage renderNanosPerPixelAndSource;
+
+	/**
+	 * The index of the screen scale of the {@link #projector current
+	 * projector}.
+	 */
+	private int currentScreenScaleIndex;
 
 	/**
 	 * The index of the screen scale which should be rendered next.
@@ -182,11 +182,27 @@ public class MultiResolutionRenderer
 	private int requestedScreenScaleIndex;
 
 	/**
+	 * The index of the coarsest screen scale currently used.
+	 * Rendering at finer screen scales may be cancelled.
+	 */
+	private int maxScreenScaleIndex;
+
+	/**
 	 * Whether the current rendering operation may be cancelled (to start a new
-	 * one). Rendering may be cancelled unless we are rendering at coarsest
-	 * screen scale and coarsest mipmap level.
+	 * one). Rendering may be cancelled unless we are rendering at the
+	 * {@link #maxScreenScaleIndex coarsest screen scale}.
 	 */
 	private volatile boolean renderingMayBeCancelled;
+
+	/**
+	 * Snapshot of the ViewerState that is currently being rendered.
+	 */
+	private ViewerState currentViewerState;
+
+	/**
+	 * How many sources are visible in {@link #currentViewerState}.
+	 */
+	private int currentNumVisibleSources;
 
 	/**
 	 * Creates projectors for rendering current {@code ViewerState} to a
@@ -239,7 +255,7 @@ public class MultiResolutionRenderer
 	 *            the cache controls IO budgeting and fetcher queue.
 	 */
 	public MultiResolutionRenderer(
-			final RenderTarget display,
+			final RenderTarget< ? > display,
 			final PainterThread painterThread,
 			final double[] screenScaleFactors,
 			final long targetRenderNanos,
@@ -258,10 +274,12 @@ public class MultiResolutionRenderer
 		renderStorage = new RenderStorage();
 
 		this.targetRenderNanos = targetRenderNanos;
+		renderNanosPerPixelAndSource = new MovingAverage( 3 );
+		renderNanosPerPixelAndSource.init( 500 );
 
 		maxScreenScaleIndex = screenScales.length - 1;
 		requestedScreenScaleIndex = maxScreenScaleIndex;
-		renderingMayBeCancelled = true;
+		renderingMayBeCancelled = false;
 		this.cacheControl = cacheControl;
 		newFrameRequest = false;
 
@@ -293,8 +311,6 @@ public class MultiResolutionRenderer
 		return false;
 	}
 
-	private final AffineTransform3D currentProjectorTransform = new AffineTransform3D();
-
 	/**
 	 * Render image at the {@link #requestedScreenScaleIndex requested screen
 	 * scale}.
@@ -305,22 +321,35 @@ public class MultiResolutionRenderer
 			return false;
 
 		final boolean resized = checkResize();
+		final boolean newFrame;
+		synchronized ( this )
+		{
+			newFrame = newFrameRequest || resized;
+			newFrameRequest = false;
+		}
 
-		final RenderResult renderResult;
+		if ( newFrame )
+		{
+			cacheControl.prepareNextFrame();
+			currentViewerState = viewerState.snapshot();
+			currentNumVisibleSources = currentViewerState.getVisibleAndPresentSources().size();
+			maxScreenScaleIndex = suggestScreenScale( new FinalDimensions( screenW, screenH ), currentNumVisibleSources );
+			requestedScreenScaleIndex = maxScreenScaleIndex;
+		}
 
-		final boolean createProjector;
+		final boolean createProjector = newFrame || ( requestedScreenScaleIndex != currentScreenScaleIndex );
+
+		// the projector that paints to the screenImage.
+		final VolatileProjector p;
+
+		// TODO make field (for notifying of updates) ???
+		RenderResult renderResult = null;
+
+		// if creating a projector
+		boolean requestNewFrameIfIncomplete = false;
 
 		synchronized ( this )
 		{
-			// Rendering may be cancelled unless we are rendering at coarsest
-			// screen scale and coarsest mipmap level.
-			renderingMayBeCancelled = ( requestedScreenScaleIndex < maxScreenScaleIndex );
-
-			if ( newFrameRequest )
-				cacheControl.prepareNextFrame();
-			createProjector = newFrameRequest || resized || ( requestedScreenScaleIndex != currentScreenScaleIndex );
-			newFrameRequest = false;
-
 			if ( createProjector )
 			{
 				currentScreenScaleIndex = requestedScreenScaleIndex;
@@ -328,39 +357,14 @@ public class MultiResolutionRenderer
 
 				renderResult = display.getReusableRenderResult();
 				renderResult.init( screenScale.w, screenScale.h );
-			}
-			else
-			{
-				renderResult = null;
-			}
 
-			requestedScreenScaleIndex = 0;
-		}
-
-		// the projector that paints to the screenImage.
-		final VolatileProjector p;
-		final boolean requestNewFrameIfIncomplete;
-
-		if ( createProjector )
-		{
-			synchronized ( viewerState )
-			{
-				final int numVisibleSources = viewerState.getVisibleAndPresentSources().size();
-				renderStorage.checkRenewData( screenScales[ 0 ].w, screenScales[ 0 ].h, numVisibleSources );
-				p = createProjector( viewerState, renderResult.getScreenImage() );
+				renderStorage.checkRenewData( screenScales[ 0 ].w, screenScales[ 0 ].h, currentNumVisibleSources );
+				projector = createProjector( currentViewerState, renderResult.getScreenImage() );
 				requestNewFrameIfIncomplete = projectorFactory.requestNewFrameIfIncomplete();
+				renderingMayBeCancelled = ( requestedScreenScaleIndex < maxScreenScaleIndex );
 			}
-			synchronized ( this )
-			{
-				projector = p;
-			}
-		}
-		else
-		{
 			p = projector;
-			requestNewFrameIfIncomplete = false;
 		}
-
 
 		// try rendering
 		final boolean success = p.map( createProjector );
@@ -373,26 +377,18 @@ public class MultiResolutionRenderer
 			{
 				if ( createProjector )
 				{
-					renderResult.getViewerTransform().set( currentProjectorTransform );
+					currentViewerState.getViewerTransform( renderResult.getViewerTransform() );
 					renderResult.setScaleFactor( screenScaleFactors[ currentScreenScaleIndex ] );
+					// TODO renderResult.setUpdated();
 					( ( RenderTarget ) display ).setRenderResult( renderResult );
 
-					if ( currentScreenScaleIndex == maxScreenScaleIndex )
+					if ( currentNumVisibleSources > 0 )
 					{
-						if ( rendertime > targetRenderNanos && maxScreenScaleIndex < screenScales.length - 1 )
-							maxScreenScaleIndex++;
-						else if ( rendertime < targetRenderNanos / 3 && maxScreenScaleIndex > 0 )
-							maxScreenScaleIndex--;
+						final int numRenderPixels = ( int ) Intervals.numElements( renderResult.getScreenImage() ) * currentNumVisibleSources;
+						renderNanosPerPixelAndSource.add( rendertime / ( double ) numRenderPixels );
 					}
-					else if ( currentScreenScaleIndex == maxScreenScaleIndex - 1 )
-					{
-						if ( rendertime < targetRenderNanos && maxScreenScaleIndex > 0 )
-							maxScreenScaleIndex--;
-					}
-//					System.out.println( String.format( "rendering:%4d ms", rendertime / 1000000 ) );
-//					System.out.println( "scale = " + currentScreenScaleIndex );
-//					System.out.println( "maxScreenScaleIndex = " + maxScreenScaleIndex + "  (" + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 0 ) + " x " + screenImages[ maxScreenScaleIndex ][ 0 ].dimension( 1 ) + ")" );
 				}
+				// TODO else renderResult.setUpdated();
 
 				if ( currentScreenScaleIndex > 0 )
 					requestRepaint( currentScreenScaleIndex - 1 );
@@ -408,8 +404,9 @@ public class MultiResolutionRenderer
 						Thread.currentThread().interrupt();
 					}
 					if( requestNewFrameIfIncomplete )
-						newFrameRequest = true;
-					requestRepaint( currentScreenScaleIndex );
+						requestRepaint();
+					else
+						requestRepaint( currentScreenScaleIndex );
 				}
 			}
 		}
@@ -418,29 +415,45 @@ public class MultiResolutionRenderer
 	}
 
 	/**
-	 * Request a repaint of the display from the painter thread, with maximum
-	 * screen scale index and mipmap level.
+	 * Request a repaint of the display from the painter thread. The painter
+	 * thread will trigger a {@link #paint} as soon as possible (that is,
+	 * immediately or after the currently running {@link #paint} has completed).
 	 */
 	public synchronized void requestRepaint()
 	{
+		if ( renderingMayBeCancelled && projector != null )
+			projector.cancel();
 		newFrameRequest = true;
-		requestRepaint( maxScreenScaleIndex );
+		painterThread.requestRepaint();
 	}
 
 	/**
-	 * Request a repaint of the display from the painter thread. The painter
-	 * thread will trigger a {@link #paint} as soon as possible (that is,
-	 * immediately or after the currently running {@link #paint} has
-	 * completed).
+	 * Request a repaint of the display from the painter thread, setting
+	 * {@code requestedScreenScaleIndex} to the specified
+	 * {@code screenScaleIndex}. This is used to repaint the
+	 * {@code currentViewerState} in a loop, until everything is painted at
+	 * highest resolution from valid data (or painting is interrupted by a new
+	 * "real" {@link #requestRepaint()}.
 	 */
-	public synchronized void requestRepaint( final int screenScaleIndex )
+	private void requestRepaint( final int screenScaleIndex )
 	{
-		if ( renderingMayBeCancelled && projector != null )
-			projector.cancel();
-		if ( screenScaleIndex > requestedScreenScaleIndex )
-			requestedScreenScaleIndex = screenScaleIndex;
+		requestedScreenScaleIndex = screenScaleIndex;
 		painterThread.requestRepaint();
 	}
+
+	private int suggestScreenScale( final Dimensions screenSize, final int numSources )
+	{
+		final double intervalRenderNanos = renderNanosPerPixelAndSource.getAverage() * Intervals.numElements( screenSize ) * numSources;
+		for ( int i = 0; i < screenScaleFactors.length - 1; i++ )
+		{
+			final double s = screenScaleFactors[ i ];
+			final double renderTime = intervalRenderNanos * s * s;
+			if ( renderTime <= targetRenderNanos )
+				return i;
+		}
+		return screenScaleFactors.length - 1;
+	}
+
 
 	/**
 	 * DON'T USE THIS.
@@ -475,7 +488,6 @@ public class MultiResolutionRenderer
 				screenImage,
 				screenTransform,
 				renderStorage );
-		viewerState.getViewerTransform( currentProjectorTransform );
 		CacheIoTiming.getIoTimeBudget().reset( iobudget );
 		return projector;
 	}

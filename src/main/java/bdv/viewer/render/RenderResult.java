@@ -20,6 +20,7 @@ public interface RenderResult
 	 *
 	 * @return
 	 */
+	// TODO: rename getTargetImage() ???
 	RandomAccessibleInterval< ARGBType > getScreenImage();
 
 	/**
