@@ -139,7 +139,7 @@ public class AccumulateProjectorARGB implements VolatileProjector
      */
     private long lastFrameRenderNanoTime;
 
-	private final AtomicBoolean interrupted = new AtomicBoolean();
+	private final AtomicBoolean canceled = new AtomicBoolean();
 
 	private volatile boolean valid = false;
 
@@ -179,7 +179,8 @@ public class AccumulateProjectorARGB implements VolatileProjector
 	@Override
 	public boolean map( final boolean clearUntouchedTargetPixels )
 	{
-		interrupted.set( false );
+		if ( canceled.get() )
+			return false;
 
 		final StopWatch stopWatch = StopWatch.createAndStart();
 
@@ -219,13 +220,13 @@ public class AccumulateProjectorARGB implements VolatileProjector
 
 		lastFrameRenderNanoTime = stopWatch.nanoTime();
 
-		return !interrupted.get();
+		return !canceled.get();
 	}
 
 	@Override
 	public void cancel()
 	{
-		interrupted.set( true );
+		canceled.set( true );
 		for ( final VolatileProjector p : sourceProjectors )
 			p.cancel();
 	}
@@ -262,7 +263,7 @@ public class AccumulateProjectorARGB implements VolatileProjector
 	 */
 	private void map( final int startOffset, final int endOffset )
 	{
-		if ( interrupted.get() )
+		if ( canceled.get() )
 			return;
 
 		final int numSources = sources.size();

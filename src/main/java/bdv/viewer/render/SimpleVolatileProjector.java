@@ -66,7 +66,7 @@ public class SimpleVolatileProjector< A, B > implements VolatileProjector
 	 */
 	private long lastFrameRenderNanoTime;
 
-	private AtomicBoolean interrupted = new AtomicBoolean();
+	private AtomicBoolean canceled = new AtomicBoolean();
 
 	private boolean valid = false;
 
@@ -112,7 +112,7 @@ public class SimpleVolatileProjector< A, B > implements VolatileProjector
 	@Override
 	public void cancel()
 	{
-		interrupted.set( true );
+		canceled.set( true );
 	}
 
 	@Override
@@ -138,7 +138,8 @@ public class SimpleVolatileProjector< A, B > implements VolatileProjector
 	@Override
 	public boolean map( final boolean clearUntouchedTargetPixels )
 	{
-		interrupted.set( false );
+		if ( canceled.get() )
+			return false;
 
 		final StopWatch stopWatch = StopWatch.createAndStart();
 
@@ -170,7 +171,7 @@ public class SimpleVolatileProjector< A, B > implements VolatileProjector
 
 		lastFrameRenderNanoTime = stopWatch.nanoTime();
 
-		final boolean success = !interrupted.get();
+		final boolean success = !canceled.get();
 		valid |= success;
 		return success;
 	}
@@ -196,7 +197,7 @@ public class SimpleVolatileProjector< A, B > implements VolatileProjector
 	 */
 	private void map( final int startHeight, final int endHeight )
 	{
-		if ( interrupted.get() )
+		if ( canceled.get() )
 			return;
 
 		final RandomAccess< B > targetRandomAccess = target.randomAccess( target );
@@ -206,7 +207,7 @@ public class SimpleVolatileProjector< A, B > implements VolatileProjector
 
 		for ( int y = startHeight; y < endHeight; ++y )
 		{
-			if ( interrupted.get() )
+			if ( canceled.get() )
 				return;
 			smin[ 1 ] = y;
 			sourceRandomAccess.setPosition( smin );
