@@ -1,6 +1,9 @@
 package bdv.viewer.render;
 
+import java.awt.geom.AffineTransform;
+import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
+import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.display.screenimage.awt.ARGBScreenImage;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -70,4 +73,30 @@ public class BufferedImageRenderResult implements RenderResult
 	{
 		this.scaleFactor = scaleFactor;
 	}
+
+
+
+	// interval
+
+	public void compose( final BufferedImageRenderResult intervalResult, final Interval targetInterval, final double tx, final double ty, final double s )
+	{
+		try
+		{
+			final AffineTransform transform = new AffineTransform( s, 0, 0, s, tx, ty );
+			final AffineTransformOp op = new AffineTransformOp( transform, AffineTransformOp.TYPE_NEAREST_NEIGHBOR );
+			op.filter( intervalResult.bufferedImage, subImage( targetInterval ) );
+//			op.filter( intervalResult.bufferedImage, bufferedImage );
+		}
+		catch( Throwable e )
+		{
+			System.out.println( "e = " + e );
+		}
+	}
+
+	private BufferedImage subImage( final Interval interval )
+	{
+		return bufferedImage.getSubimage( ( int ) interval.min( 0 ), ( int ) interval.min( 1 ), ( int ) interval.dimension( 0 ), ( int ) interval.dimension( 1 ) );
+	}
+
+
 }

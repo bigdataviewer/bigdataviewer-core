@@ -84,6 +84,9 @@ public class IntervalPaintingExample
 		else
 			repaintInterval = Intervals.createMinMax( x - halfw, y - halfh, x + halfw, y + halfh );
 
+		if ( repaintInterval != null )
+			viewer.requestRepaint( repaintInterval );
+
 		viewer.getDisplay().repaint();
 	}
 

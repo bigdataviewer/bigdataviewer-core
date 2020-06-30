@@ -28,10 +28,13 @@
  */
 package bdv.viewer.render;
 
+import bdv.cache.CacheControl;
+import bdv.util.MovingAverage;
+import bdv.viewer.ViewerState;
 import java.util.concurrent.ExecutorService;
-
 import net.imglib2.Dimensions;
 import net.imglib2.FinalDimensions;
+import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
 import net.imglib2.cache.iotiming.CacheIoTiming;
@@ -40,10 +43,6 @@ import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
 import net.imglib2.util.Intervals;
-
-import bdv.cache.CacheControl;
-import bdv.util.MovingAverage;
-import bdv.viewer.ViewerState;
 
 /**
  * A renderer that uses a coarse-to-fine rendering scheme. First, a small target
@@ -324,6 +323,12 @@ public class MultiResolutionRenderer
 		final boolean newFrame;
 		synchronized ( this )
 		{
+			if ( intervalMode )
+			{
+				paintInterval();
+//				return true;
+			}
+
 			newFrame = newFrameRequest || resized;
 			newFrameRequest = false;
 		}
@@ -352,14 +357,13 @@ public class MultiResolutionRenderer
 		{
 			if ( createProjector )
 			{
-				currentScreenScaleIndex = requestedScreenScaleIndex;
-				final ScreenScale screenScale = screenScales[ currentScreenScaleIndex ];
+				final ScreenScale screenScale = screenScales[ requestedScreenScaleIndex ];
 
 				renderResult = display.getReusableRenderResult();
 				renderResult.init( screenScale.w, screenScale.h );
 
 				renderStorage.checkRenewData( screenScales[ 0 ].w, screenScales[ 0 ].h, currentNumVisibleSources );
-				projector = createProjector( currentViewerState, renderResult.getScreenImage() );
+				projector = createProjector( currentViewerState, requestedScreenScaleIndex, renderResult.getScreenImage() );
 				requestNewFrameIfIncomplete = projectorFactory.requestNewFrameIfIncomplete();
 				renderingMayBeCancelled = ( requestedScreenScaleIndex < maxScreenScaleIndex );
 			}
@@ -377,10 +381,12 @@ public class MultiResolutionRenderer
 			{
 				if ( createProjector )
 				{
+					currentScreenScaleIndex = requestedScreenScaleIndex;
 					currentViewerState.getViewerTransform( renderResult.getViewerTransform() );
 					renderResult.setScaleFactor( screenScaleFactors[ currentScreenScaleIndex ] );
 					// TODO renderResult.setUpdated();
 					( ( RenderTarget ) display ).setRenderResult( renderResult );
+					currentRenderResult = renderResult;
 
 					if ( currentNumVisibleSources > 0 )
 					{
@@ -424,6 +430,8 @@ public class MultiResolutionRenderer
 		if ( renderingMayBeCancelled && projector != null )
 			projector.cancel();
 		newFrameRequest = true;
+				requestedScreenInterval = null;
+				intervalMode = false;
 		painterThread.requestRepaint();
 	}
 
@@ -471,6 +479,7 @@ public class MultiResolutionRenderer
 
 	private VolatileProjector createProjector(
 			final ViewerState viewerState,
+			final int screenScaleIndex,
 			final RandomAccessibleInterval< ARGBType > screenImage )
 	{
 		/*
@@ -479,7 +488,7 @@ public class MultiResolutionRenderer
 		 */
 //		CacheIoTiming.getIoTimeBudget().clear(); // clear time budget such that prefetching doesn't wait for loading blocks.
 
-		final AffineTransform3D screenScaleTransform = screenScales[ currentScreenScaleIndex ].scale;
+		final AffineTransform3D screenScaleTransform = screenScales[ screenScaleIndex ].scale;
 		final AffineTransform3D screenTransform = viewerState.getViewerTransform();
 		screenTransform.preConcatenate( screenScaleTransform );
 
@@ -490,5 +499,117 @@ public class MultiResolutionRenderer
 				renderStorage );
 		CacheIoTiming.getIoTimeBudget().reset( iobudget );
 		return projector;
+	}
+
+
+
+
+
+	// =========== intervals =============
+
+	private Interval requestedScreenInterval;
+	private boolean intervalMode;
+	private RenderResult currentRenderResult;
+
+	private void paintInterval()
+	{
+		final double targetScale = screenScaleFactors[ currentScreenScaleIndex ];
+
+		final int intervalScaleIndex = screenScales.length - 1;
+		final double intervalScale = screenScaleFactors[ intervalScaleIndex ];
+//		Intervals.intersect( new FinalInterval( clipW, clipH ), Intervals.smallestContainingInterval( Intervals.scale( requestedScreenInterval, scale ) ) );
+
+		final Interval interval = scaleScreenInterval( requestedScreenInterval, intervalScaleIndex );
+		final Interval targetInterval = scaleScreenInterval( requestedScreenInterval, currentScreenScaleIndex );
+
+		final BufferedImageRenderResult intervalResult = ( BufferedImageRenderResult ) display.getReusableRenderResult();
+		intervalResult.init(
+				( int ) interval.dimension( 0 ),
+				( int ) interval.dimension( 1 ) );
+		final double offsetX = interval.min( 0 );
+		final double offsetY = interval.min( 1 );
+		final VolatileProjector p = createProjector( currentViewerState, intervalScaleIndex, intervalResult.getScreenImage(), offsetX, offsetY );
+		final boolean success = p.map();
+
+		// NEXT: blend screenImage into currentRenderResult
+		final double relativeScale = targetScale / intervalScale;
+		final double tx = offsetX * relativeScale - targetInterval.min( 0 );
+		final double ty = offsetY * relativeScale - targetInterval.min( 1 );
+		( ( BufferedImageRenderResult ) currentRenderResult ).compose( intervalResult, targetInterval, tx, ty, relativeScale );
+
+
+//		final RandomAccessibleInterval< ARGBType > screenImage = Views.translate( intervalResult.getScreenImage(), 0, 0 ); // TODO
+//		projector = createProjector( currentViewerState, screenImage );
+
+//		currentRenderResult
+//		currentScreenScaleIndex
+//		currentViewerState
+//		currentNumVisibleSources
+//		maxScreenScaleIndex
+
+
+	}
+
+	private Interval scaleScreenInterval( final Interval requestedScreenInterval, final int intervalScaleIndex )
+	{
+		final int clipW = screenScales[ intervalScaleIndex ].w;
+		final int clipH = screenScales[ intervalScaleIndex ].h;
+		final double scale = screenScaleFactors[ intervalScaleIndex ];
+		return Intervals.createMinMax(
+				Math.max( 0, ( int ) Math.floor( requestedScreenInterval.min( 0 ) * scale ) ),
+				Math.max( 0, ( int ) Math.floor( requestedScreenInterval.min( 1 ) * scale ) ),
+				Math.min( clipW - 1, ( int ) Math.ceil( requestedScreenInterval.max( 0 ) * scale ) ),
+				Math.min( clipH - 1, ( int ) Math.ceil( requestedScreenInterval.max( 1 ) * scale ) )
+		);
+	}
+
+
+
+	private VolatileProjector createProjector(
+			final ViewerState viewerState,
+			final int screenScaleIndex,
+			final RandomAccessibleInterval< ARGBType > screenImage,
+			final double offsetX,
+			final double offsetY )
+	{
+		/*
+		 * This shouldn't be necessary, with
+		 * CacheHints.LoadingStrategy==VOLATILE
+		 */
+//		CacheIoTiming.getIoTimeBudget().clear(); // clear time budget such that prefetching doesn't wait for loading blocks.
+
+		final AffineTransform3D screenScaleTransform = screenScales[ screenScaleIndex ].scale;
+		final AffineTransform3D screenTransform = viewerState.getViewerTransform();
+		screenTransform.preConcatenate( screenScaleTransform );
+		screenTransform.translate( -offsetX, -offsetY, 0 );
+
+		final VolatileProjector projector = projectorFactory.createProjector(
+				viewerState,
+				screenImage,
+				screenTransform,
+				renderStorage );
+		CacheIoTiming.getIoTimeBudget().reset( iobudget );
+		return projector;
+	}
+
+	public synchronized void requestRepaint( final Interval screenInterval )
+	{
+		if ( renderingMayBeCancelled )
+		{
+			if ( projector != null )
+				projector.cancel();
+//			requestedScreenInterval = screenInterval;
+//			intervalMode = true;
+//			painterThread.requestRepaint();
+//		}
+//		else
+//		{
+//			requestRepaint();
+		}
+
+		requestedScreenInterval = screenInterval;
+		intervalMode = true;
+		painterThread.requestRepaint();
+
 	}
 }

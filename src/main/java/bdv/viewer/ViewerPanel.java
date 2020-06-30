@@ -56,6 +56,7 @@ import javax.swing.JSlider;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
+import net.imglib2.Interval;
 import net.imglib2.ui.overlay.BufferedImageOverlayRenderer;
 import org.jdom2.Element;
 
@@ -497,6 +498,11 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 	public void requestRepaint()
 	{
 		imageRenderer.requestRepaint();
+	}
+
+	public void requestRepaint( final Interval screenInterval )
+	{
+		imageRenderer.requestRepaint( screenInterval );
 	}
 
 	@Override
