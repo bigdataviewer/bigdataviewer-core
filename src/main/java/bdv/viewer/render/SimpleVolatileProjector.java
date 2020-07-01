@@ -205,11 +205,12 @@ public class SimpleVolatileProjector< A, B > implements VolatileProjector
 		final int width = ( int ) target.dimension( 0 );
 		final long[] smin = Intervals.minAsLongArray( sourceInterval );
 
+		final int targetMin = ( int ) target.min( 1 );
 		for ( int y = startHeight; y < endHeight; ++y )
 		{
 			if ( canceled.get() )
 				return;
-			smin[ 1 ] = y;
+			smin[ 1 ] = y + targetMin;
 			sourceRandomAccess.setPosition( smin );
 			targetRandomAccess.setPosition( smin );
 			for ( int x = 0; x < width; ++x )

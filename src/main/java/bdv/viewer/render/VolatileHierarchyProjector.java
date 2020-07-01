@@ -345,12 +345,13 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends SetZ
 		final long[] smin = Intervals.minAsLongArray( sourceInterval );
 		int myNumInvalidPixels = 0;
 
+		final int targetMin = ( int ) target.min( 1 );
 		for ( int y = startHeight; y < endHeight; ++y )
 		{
 			if ( canceled.get() )
 				return;
 
-			smin[ 1 ] = y;
+			smin[ 1 ] = y + targetMin;
 			sourceRandomAccess.setPosition( smin );
 			targetRandomAccess.setPosition( smin );
 			final int mi = y * width;
