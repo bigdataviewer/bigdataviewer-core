@@ -332,6 +332,12 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 			}
 
 			@Override
+			public BufferedImageRenderResult createRenderResult()
+			{
+				return new BufferedImageRenderResult();
+			}
+
+			@Override
 			public void setRenderResult( final BufferedImageRenderResult renderResult )
 			{
 				final BufferedImage bufferedImage = renderResult.getBufferedImage();

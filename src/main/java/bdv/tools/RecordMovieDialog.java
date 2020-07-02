@@ -280,6 +280,12 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 			}
 
 			@Override
+			public BufferedImageRenderResult createRenderResult()
+			{
+				return new BufferedImageRenderResult();
+			}
+
+			@Override
 			public void setRenderResult( final BufferedImageRenderResult renderResult )
 			{}
 

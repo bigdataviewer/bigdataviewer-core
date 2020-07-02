@@ -53,9 +53,16 @@ public interface RenderTarget< R extends RenderResult >
 	/**
 	 * Returns a {@code RenderResult} for rendering to.
 	 * This may be a new {@code RenderResult} or a previously {@link #setRenderResult set RenderResult}
-	 * that is no longer needed for display
+	 * that is no longer needed for display.
+	 * Note that consecutive {@code getReusableRenderResult()} calls without intermediate
+	 * {@code setRenderResult()} may return the same {@code RenderResult}.
 	 */
 	R getReusableRenderResult();
+
+	/**
+	 * Returns a new {@code RenderResult}.
+	 */
+	R createRenderResult();
 
 	/**
 	 * Set the {@link RenderResult} that is to be drawn on the canvas.

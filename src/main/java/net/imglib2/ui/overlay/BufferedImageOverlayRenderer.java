@@ -94,6 +94,12 @@ public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarg
 		return tripleBuffer.getWritableBuffer();
 	}
 
+	@Override
+	public BufferedImageRenderResult createRenderResult()
+	{
+		return new BufferedImageRenderResult();
+	}
+
 	/**
 	 * Set the {@code RenderResult} that is to be drawn on the canvas.
 	 *

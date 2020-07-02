@@ -74,29 +74,25 @@ public class BufferedImageRenderResult implements RenderResult
 		this.scaleFactor = scaleFactor;
 	}
 
-
-
-	// interval
-
-	public void compose( final BufferedImageRenderResult intervalResult, final Interval targetInterval, final double tx, final double ty, final double s )
+	@Override
+	public void patch( final RenderResult patch, final Interval interval, final double ox, final double oy )
 	{
-		try
-		{
-			final AffineTransform transform = new AffineTransform( s, 0, 0, s, tx, ty );
-			final AffineTransformOp op = new AffineTransformOp( transform, AffineTransformOp.TYPE_NEAREST_NEIGHBOR );
-			op.filter( intervalResult.bufferedImage, subImage( targetInterval ) );
-//			op.filter( intervalResult.bufferedImage, bufferedImage );
-		}
-		catch( Throwable e )
-		{
-			System.out.println( "e = " + e );
-		}
+		final BufferedImageRenderResult biresult = ( BufferedImageRenderResult ) patch;
+
+		final double s = scaleFactor / patch.getScaleFactor();
+		final double tx = ox - interval.min( 0 );
+		final double ty = oy - interval.min( 1 );
+		final AffineTransform transform = new AffineTransform( s, 0, 0, s, tx, ty );
+		final AffineTransformOp op = new AffineTransformOp( transform, AffineTransformOp.TYPE_NEAREST_NEIGHBOR );
+		op.filter( biresult.getBufferedImage(), subImage( interval ) );
 	}
 
 	private BufferedImage subImage( final Interval interval )
 	{
-		return bufferedImage.getSubimage( ( int ) interval.min( 0 ), ( int ) interval.min( 1 ), ( int ) interval.dimension( 0 ), ( int ) interval.dimension( 1 ) );
+		final int x = ( int ) interval.min( 0 );
+		final int y = ( int ) interval.min( 1 );
+		final int w = ( int ) interval.dimension( 0 );
+		final int h = ( int ) interval.dimension( 1 );
+		return bufferedImage.getSubimage( x, y, w, h );
 	}
-
-
 }
