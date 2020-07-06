@@ -263,125 +263,185 @@ public class MultiResolutionRenderer
 	 */
 	public boolean paint( final ViewerState viewerState )
 	{
-		int screenW = display.getWidth();
-		int screenH = display.getHeight();
+		final int screenW = display.getWidth();
+		final int screenH = display.getHeight();
 		if ( screenW <= 0 || screenH <= 0 )
 			return false;
 
-		final boolean resized = screenScales.checkResize( screenW, screenH );
-
+		final boolean resized;
 		final boolean newFrame;
 		final boolean newInterval;
 		final boolean paintInterval;
+		final boolean prepareNextFrame;
+		boolean createProjector = false;
 		synchronized ( this )
 		{
+			resized = screenScales.checkResize( screenW, screenH );
+
 			newFrame = newFrameRequest || resized;
 			if ( newFrame )
 			{
-				newFrameRequest = false;
 				intervalMode = false;
-				// TODO: clear interval requests
+				screenScales.clearRequestedIntervals();
 			}
 
-			newInterval = newIntervalRequest;
+			newInterval = newIntervalRequest && !newFrame;
 			if ( newInterval )
 			{
-				newIntervalRequest = false;
 				intervalMode = true;
+				final double renderNanosPerPixel = renderNanosPerPixelAndSource.getAverage() * currentNumVisibleSources;
+				requestedIntervalScaleIndex = screenScales.suggestIntervalScreenScale( renderNanosPerPixel, currentScreenScaleIndex );
 			}
 
+			prepareNextFrame = newFrame || newInterval;
 			paintInterval = intervalMode;
+
+			if ( paintInterval )
+			{
+				createProjector = newInterval || ( requestedIntervalScaleIndex != currentIntervalScaleIndex );
+				if ( createProjector )
+					intervalRenderData = screenScales.pullIntervalRenderData( requestedIntervalScaleIndex, currentScreenScaleIndex );
+			}
+
+			newFrameRequest = false;
+			newIntervalRequest = false;
 		}
 
-		if ( paintInterval )
-			return paintInterval( newInterval );
+		if ( prepareNextFrame )
+			cacheControl.prepareNextFrame();
 
 		if ( newFrame )
 		{
-			cacheControl.prepareNextFrame();
 			currentViewerState = viewerState.snapshot();
 			currentNumVisibleSources = currentViewerState.getVisibleAndPresentSources().size();
 			final double renderNanosPerPixel = renderNanosPerPixelAndSource.getAverage() * currentNumVisibleSources;
 			requestedScreenScaleIndex = screenScales.suggestScreenScale( renderNanosPerPixel );
 		}
 
-		final boolean createProjector = newFrame || ( requestedScreenScaleIndex != currentScreenScaleIndex );
-
 		// the projector that paints to the screenImage.
 		final VolatileProjector p;
 
-		// TODO make field (for notifying of updates) ???
+		// holds new RenderResult, in case that a new projector is created in full frame mode
 		RenderResult renderResult = null;
 
-		// if creating a projector
+		// whether to request a newFrame, in case that a new projector is created in full frame mode
 		boolean requestNewFrameIfIncomplete = false;
 
-		synchronized ( this )
+		if ( paintInterval )
 		{
-			if ( createProjector )
+			intervalResult.init( intervalRenderData.width(), intervalRenderData.height() );
+			intervalResult.setScaleFactor( intervalRenderData.scale() );
+			synchronized ( this )
 			{
-				final ScreenScale screenScale = screenScales.get( requestedScreenScaleIndex );
-
-				renderResult = display.getReusableRenderResult();
-				renderResult.init( screenScale.width(), screenScale.height() );
-				renderResult.setScaleFactor( screenScale.scale() );
-
-				renderStorage.checkRenewData( screenScales.get( 0 ).width(), screenScales.get( 0 ).height(), currentNumVisibleSources );
-				projector = createProjector( currentViewerState, requestedScreenScaleIndex, renderResult.getScreenImage(), 0, 0 );
-				requestNewFrameIfIncomplete = projectorFactory.requestNewFrameIfIncomplete();
-				renderingMayBeCancelled = !newFrame;
+				if ( createProjector )
+				{
+					projector = createProjector( currentViewerState, requestedIntervalScaleIndex, intervalResult.getScreenImage(), intervalRenderData.offsetX(), intervalRenderData.offsetY() );
+					renderingMayBeCancelled = !newInterval;
+				}
+				p = projector;
 			}
-			p = projector;
 		}
+		else
+		{
+			createProjector = newFrame || ( requestedScreenScaleIndex != currentScreenScaleIndex );
+			synchronized ( this )
+			{
+				if ( createProjector )
+				{
+					final ScreenScale screenScale = screenScales.get( requestedScreenScaleIndex );
+
+					renderResult = display.getReusableRenderResult();
+					renderResult.init( screenScale.width(), screenScale.height() );
+					renderResult.setScaleFactor( screenScale.scale() );
+					currentViewerState.getViewerTransform( renderResult.getViewerTransform() );
+
+					renderStorage.checkRenewData( screenScales.get( 0 ).width(), screenScales.get( 0 ).height(), currentNumVisibleSources );
+					projector = createProjector( currentViewerState, requestedScreenScaleIndex, renderResult.getScreenImage(), 0, 0 );
+					requestNewFrameIfIncomplete = projectorFactory.requestNewFrameIfIncomplete();
+					renderingMayBeCancelled = !newFrame;
+				}
+				p = projector;
+			}
+		}
+
 
 		// try rendering
 		final boolean success = p.map( createProjector );
 		final long rendertime = p.getLastFrameRenderNanoTime();
+
 
 		synchronized ( this )
 		{
 			// if rendering was not cancelled...
 			if ( success )
 			{
-				if ( createProjector )
+				if ( paintInterval )
 				{
-					currentScreenScaleIndex = requestedScreenScaleIndex;
-					currentViewerState.getViewerTransform( renderResult.getViewerTransform() );
-					// TODO renderResult.setUpdated();
-					( ( RenderTarget ) display ).setRenderResult( renderResult );
-					currentRenderResult = renderResult;
+					if ( createProjector )
+						currentIntervalScaleIndex = requestedIntervalScaleIndex;
 
-					if ( currentNumVisibleSources > 0 )
+					currentRenderResult.patch( intervalResult, intervalRenderData.targetInterval(), intervalRenderData.tx(), intervalRenderData.ty() );
+
+					if ( currentIntervalScaleIndex > currentScreenScaleIndex )
+						iterateRepaintInterval( currentIntervalScaleIndex - 1 );
+					else if ( p.isValid() )
 					{
-						final int numRenderPixels = ( int ) Intervals.numElements( renderResult.getScreenImage() ) * currentNumVisibleSources;
-						renderNanosPerPixelAndSource.add( rendertime / ( double ) numRenderPixels );
+						if ( requestedScreenScaleIndex >= 0 )
+						{
+							// go back to "normal" rendering
+							intervalMode = false;
+							renderingMayBeCancelled = false;
+							if ( requestedScreenScaleIndex == currentScreenScaleIndex )
+								++currentScreenScaleIndex;
+							painterThread.requestRepaint();
+						}
 					}
-				}
-				// TODO else renderResult.setUpdated();
-
-				if ( currentScreenScaleIndex > 0 )
-					iterateRepaint( currentScreenScaleIndex - 1 );
-				else if ( p.isValid() )
-				{
-					// indicate that rendering is complete
-					requestedScreenScaleIndex = -1;
+					else
+					{
+						usleep();
+						intervalRenderData.reRequest();
+						iterateRepaintInterval( currentIntervalScaleIndex );
+					}
 				}
 				else
 				{
-					try
+					if ( createProjector )
 					{
-						Thread.sleep( 1 );
+						currentScreenScaleIndex = requestedScreenScaleIndex;
+						renderResult.setUpdated();
+						( ( RenderTarget ) display ).setRenderResult( renderResult );
+						currentRenderResult = renderResult;
+
+						if ( currentNumVisibleSources > 0 )
+						{
+							final int numRenderPixels = ( int ) Intervals.numElements( renderResult.getScreenImage() ) * currentNumVisibleSources;
+							renderNanosPerPixelAndSource.add( rendertime / ( double ) numRenderPixels );
+						}
 					}
-					catch ( final InterruptedException e )
-					{
-						// restore interrupted state
-						Thread.currentThread().interrupt();
-					}
-					if( requestNewFrameIfIncomplete )
-						requestRepaint();
 					else
+						currentRenderResult.setUpdated();
+
+					if ( !p.isValid() && requestNewFrameIfIncomplete )
+						requestRepaint();
+					else if ( currentScreenScaleIndex > 0 )
+						iterateRepaint( currentScreenScaleIndex - 1 );
+					else if ( p.isValid() )
+					{
+						// indicate that rendering is complete
+						requestedScreenScaleIndex = -1;
+					}
+					else
+					{
+						usleep();
 						iterateRepaint( currentScreenScaleIndex );
+					}
 				}
+			}
+			// if rendering was cancelled...
+			else
+			{
+				if ( paintInterval )
+					intervalRenderData.reRequest();
 			}
 		}
 
@@ -411,8 +471,6 @@ public class MultiResolutionRenderer
 	{
 		if ( renderingMayBeCancelled && projector != null )
 			projector.cancel();
-		screenScales.clearRequestedIntervals();
-		intervalMode = false;
 		newFrameRequest = true;
 		painterThread.requestRepaint();
 	}
@@ -424,12 +482,11 @@ public class MultiResolutionRenderer
 			if ( projector != null )
 				projector.cancel();
 			screenScales.requestInterval( screenInterval );
-			intervalMode = true;
 			newIntervalRequest = true;
-			painterThread.requestRepaint();
 		}
 		else
-			requestRepaint();
+			newFrameRequest = true;
+		painterThread.requestRepaint();
 	}
 
 	/**
@@ -480,90 +537,22 @@ public class MultiResolutionRenderer
 	private final RenderResult intervalResult;
 	private IntervalRenderData intervalRenderData;
 
-	private boolean paintInterval( final boolean newInterval )
-	{
-		final boolean createProjector;
-		final VolatileProjector p;
-
-		synchronized ( this )
-		{
-			if ( newInterval )
-			{
-				cacheControl.prepareNextFrame();
-				final double renderNanosPerPixel = renderNanosPerPixelAndSource.getAverage() * currentNumVisibleSources;
-				requestedIntervalScaleIndex = screenScales.suggestIntervalScreenScale( renderNanosPerPixel, currentScreenScaleIndex );
-				newIntervalRequest = false; // TODO: done again here because of remaining synchronization issues...
-			}
-
-			createProjector = newInterval || ( requestedIntervalScaleIndex != currentIntervalScaleIndex );
-
-			if ( createProjector )
-			{
-				intervalRenderData = screenScales.pullIntervalRenderData( requestedIntervalScaleIndex, currentScreenScaleIndex );
-
-				intervalResult.init( intervalRenderData.width(), intervalRenderData.height() );
-				intervalResult.setScaleFactor( intervalRenderData.scale() );
-
-				projector = createProjector( currentViewerState, requestedIntervalScaleIndex, intervalResult.getScreenImage(), intervalRenderData.offsetX(), intervalRenderData.offsetY() );
-
-				renderingMayBeCancelled = !newInterval;
-			}
-			p = projector;
-		}
-
-		final boolean success = p.map();
-
-		synchronized ( this )
-		{
-			// if rendering was not cancelled...
-			if ( success )
-			{
-				if ( createProjector )
-					currentIntervalScaleIndex = requestedIntervalScaleIndex;
-
-				currentRenderResult.patch( intervalResult, intervalRenderData.targetInterval(), intervalRenderData.tx(), intervalRenderData.ty() );
-
-				if ( currentIntervalScaleIndex > currentScreenScaleIndex )
-					iterateRepaintInterval( currentIntervalScaleIndex - 1 );
-				else if ( p.isValid() )
-				{
-					if ( requestedScreenScaleIndex >= 0 )
-					{
-						// go back to "normal" rendering
-						intervalMode = false;
-						renderingMayBeCancelled = false;
-						if ( requestedScreenScaleIndex == currentScreenScaleIndex )
-							++currentScreenScaleIndex;
-						painterThread.requestRepaint();
-					}
-				}
-				else
-				{
-					try
-					{
-						Thread.sleep( 1 );
-					}
-					catch ( final InterruptedException e )
-					{
-						// restore interrupted state
-						Thread.currentThread().interrupt();
-					}
-					intervalRenderData.reRequest();
-					iterateRepaintInterval( currentIntervalScaleIndex );
-				}
-			}
-			else
-			{
-				intervalRenderData.reRequest();
-			}
-		}
-
-		return success;
-	}
-
 	private void iterateRepaintInterval( final int intervalScaleIndex )
 	{
 		requestedIntervalScaleIndex = intervalScaleIndex;
 		painterThread.requestRepaint();
+	}
+
+	private void usleep()
+	{
+		try
+		{
+			Thread.sleep( 1 );
+		}
+		catch ( final InterruptedException e )
+		{
+			// restore interrupted state
+			Thread.currentThread().interrupt();
+		}
 	}
 }
