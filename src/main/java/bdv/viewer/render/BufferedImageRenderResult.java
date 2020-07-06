@@ -75,6 +75,12 @@ public class BufferedImageRenderResult implements RenderResult
 	}
 
 	@Override
+	public void setUpdated()
+	{
+		// ignored. BufferedImage is always up-to-date
+	}
+
+	@Override
 	public void patch( final RenderResult patch, final Interval interval, final double ox, final double oy )
 	{
 		final BufferedImageRenderResult biresult = ( BufferedImageRenderResult ) patch;

@@ -49,4 +49,6 @@ public interface RenderResult
 	 * Note that only data in {@code interval} will be modified, although the scaled and shifted {@code patch} might fall partially outside.
 	 */
 	void patch( final RenderResult patch, final Interval interval, final double ox, final double oy );
+
+	void setUpdated();
 }
