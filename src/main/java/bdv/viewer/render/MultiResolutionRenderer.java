@@ -31,9 +31,8 @@ package bdv.viewer.render;
 import bdv.cache.CacheControl;
 import bdv.util.MovingAverage;
 import bdv.viewer.ViewerState;
+import bdv.viewer.render.ScreenScales.ScreenScale;
 import java.util.concurrent.ExecutorService;
-import net.imglib2.Dimensions;
-import net.imglib2.FinalDimensions;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
@@ -43,7 +42,6 @@ import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
 import net.imglib2.util.Intervals;
-
 
 /**
  * A renderer that uses a coarse-to-fine rendering scheme. First, a small target
@@ -115,84 +113,9 @@ public class MultiResolutionRenderer
 	private final long[] iobudget = new long[] { 100l * 1000000l,  10l * 1000000l };
 
 	/**
-	 * Scale factors from the {@link #display viewer canvas} to the
-	 * {@code screenImages}.
-	 *
-	 * A scale factor of 1 means 1 pixel in the screen image is displayed as 1
-	 * pixel on the canvas, a scale factor of 0.5 means 1 pixel in the screen
-	 * image is displayed as 2 pixel on the canvas, etc.
+	 * TODO javadoc
 	 */
-	private final double[] screenScaleFactors;
-
-	static class ScreenScale
-	{
-		/**
-		 * The width of the target image at this ScreenScale.
-		 */
-		final int w;
-
-		/**
-		 * The height of the target image at this ScreenScale.
-		 */
-		final int h;
-
-		/**
-		 * The transformation from viewer to target image coordinates at this ScreenScale.
-		 */
-		final AffineTransform3D scale;
-
-		private final double screenToViewerScale;
-
-		public ScreenScale( final int screenW, final int screenH, final double screenToViewerScale )
-		{
-			this.screenToViewerScale = screenToViewerScale;
-
-			w = ( int ) Math.ceil( screenToViewerScale * screenW );
-			h = ( int ) Math.ceil( screenToViewerScale * screenH );
-			scale = new AffineTransform3D();
-			scale.set( screenToViewerScale, 0, 0 );
-			scale.set( screenToViewerScale, 1, 1 );
-			scale.set( 0.5 * screenToViewerScale - 0.5, 0, 3 );
-			scale.set( 0.5 * screenToViewerScale - 0.5, 1, 3 );
-		}
-
-		Interval requestedScreenInterval = null;
-
-		public void requestInterval( final Interval screenInterval )
-		{
-			requestedScreenInterval = requestedScreenInterval == null ? screenInterval : Intervals.union( requestedScreenInterval, screenInterval );
-		}
-
-		public Interval pullScreenInterval()
-		{
-			final Interval interval = requestedScreenInterval;
-			requestedScreenInterval = null;
-			return interval;
-		}
-
-		public double estimateIntervalRenderNanos( final double renderNanosPerPixel )
-		{
-			return renderNanosPerPixel * Intervals.numElements( scaleScreenInterval( requestedScreenInterval ) );
-		}
-
-		public Interval scaleScreenInterval( final Interval requestedScreenInterval )
-		{
-			// This is equivalent to
-			// Intervals.intersect( new FinalInterval( w, h ), Intervals.smallestContainingInterval( Intervals.scale( requestedScreenInterval, screenToViewerScale ) ) );
-			return Intervals.createMinMax(
-					Math.max( 0, ( int ) Math.floor( requestedScreenInterval.min( 0 ) * screenToViewerScale ) ),
-					Math.max( 0, ( int ) Math.floor( requestedScreenInterval.min( 1 ) * screenToViewerScale ) ),
-					Math.min( w - 1, ( int ) Math.ceil( requestedScreenInterval.max( 0 ) * screenToViewerScale ) ),
-					Math.min( h - 1, ( int ) Math.ceil( requestedScreenInterval.max( 1 ) * screenToViewerScale ) )
-			);
-		}
-	}
-
-	private final ScreenScale[] screenScales;
-
-	private int screenW;
-
-	private int screenH;
+	private final ScreenScales screenScales;
 
 	/**
 	 * Maintains arrays for intermediate per-source render images and masks.
@@ -321,15 +244,14 @@ public class MultiResolutionRenderer
 		this.painterThread = painterThread;
 		projector = null;
 		currentScreenScaleIndex = -1;
-		this.screenScaleFactors = screenScaleFactors.clone();
-		this.screenScales = new ScreenScale[ screenScaleFactors.length ];
+		screenScales = new ScreenScales( screenScaleFactors );
 		renderStorage = new RenderStorage();
 
 		this.targetRenderNanos = targetRenderNanos;
 		renderNanosPerPixelAndSource = new MovingAverage( 3 );
 		renderNanosPerPixelAndSource.init( 500 );
 
-		requestedScreenScaleIndex = screenScales.length - 1;
+		requestedScreenScaleIndex = screenScales.size() - 1;
 		renderingMayBeCancelled = false;
 		this.cacheControl = cacheControl;
 		newFrameRequest = false;
@@ -343,26 +265,6 @@ public class MultiResolutionRenderer
 				accumulateProjectorFactory );
 	}
 
-	/**
-	 * Check whether the size of the display component was changed and
-	 * recreate {@link #screenScales} accordingly.
-	 *
-	 * @return whether the size was changed.
-	 */
-	private boolean checkResize()
-	{
-		final int newScreenW = display.getWidth();
-		final int newScreenH = display.getHeight();
-		if ( newScreenW != screenW || newScreenH != screenH )
-		{
-			screenW = newScreenW;
-			screenH = newScreenH;
-			for ( int i = 0; i < screenScales.length; ++i )
-				screenScales[ i ] = new ScreenScale( screenW, screenH, screenScaleFactors[ i ] );
-			return true;
-		}
-		return false;
-	}
 
 	/**
 	 * Render image at the {@link #requestedScreenScaleIndex requested screen
@@ -370,10 +272,12 @@ public class MultiResolutionRenderer
 	 */
 	public boolean paint( final ViewerState viewerState )
 	{
-		if ( display.getWidth() <= 0 || display.getHeight() <= 0 )
+		int screenW = display.getWidth();
+		int screenH = display.getHeight();
+		if ( screenW <= 0 || screenH <= 0 )
 			return false;
 
-		final boolean resized = checkResize();
+		final boolean resized = screenScales.checkResize( screenW, screenH );
 
 		final boolean newFrame;
 		final boolean newInterval;
@@ -405,7 +309,8 @@ public class MultiResolutionRenderer
 			cacheControl.prepareNextFrame();
 			currentViewerState = viewerState.snapshot();
 			currentNumVisibleSources = currentViewerState.getVisibleAndPresentSources().size();
-			requestedScreenScaleIndex = suggestScreenScale( new FinalDimensions( screenW, screenH ), currentNumVisibleSources );
+			final double renderNanosPerPixel = renderNanosPerPixelAndSource.getAverage() * currentNumVisibleSources;
+			requestedScreenScaleIndex = screenScales.suggestScreenScale( renderNanosPerPixel, targetRenderNanos );
 		}
 
 		final boolean createProjector = newFrame || ( requestedScreenScaleIndex != currentScreenScaleIndex );
@@ -423,13 +328,13 @@ public class MultiResolutionRenderer
 		{
 			if ( createProjector )
 			{
-				final ScreenScale screenScale = screenScales[ requestedScreenScaleIndex ];
+				final ScreenScale screenScale = screenScales.get( requestedScreenScaleIndex );
 
 				renderResult = display.getReusableRenderResult();
-				renderResult.init( screenScale.w, screenScale.h );
-				renderResult.setScaleFactor( screenScaleFactors[ requestedScreenScaleIndex ] );
+				renderResult.init( screenScale.width(), screenScale.height() );
+				renderResult.setScaleFactor( screenScale.scale() );
 
-				renderStorage.checkRenewData( screenScales[ 0 ].w, screenScales[ 0 ].h, currentNumVisibleSources );
+				renderStorage.checkRenewData( screenScales.get( 0 ).width(), screenScales.get( 0 ).height(), currentNumVisibleSources );
 				projector = createProjector( currentViewerState, requestedScreenScaleIndex, renderResult.getScreenImage(), 0, 0 );
 				requestNewFrameIfIncomplete = projectorFactory.requestNewFrameIfIncomplete();
 				renderingMayBeCancelled = !newFrame;
@@ -514,9 +419,7 @@ public class MultiResolutionRenderer
 	{
 		if ( renderingMayBeCancelled && projector != null )
 			projector.cancel();
-		for ( ScreenScale screenScale : screenScales )
-			if ( screenScale != null )
-				screenScale.pullScreenInterval();
+		screenScales.clearRequestedIntervals();
 		intervalMode = false;
 		newFrameRequest = true;
 		painterThread.requestRepaint();
@@ -528,8 +431,7 @@ public class MultiResolutionRenderer
 		{
 			if ( projector != null )
 				projector.cancel();
-			for ( final ScreenScale screenScale : screenScales )
-				screenScale.requestInterval( screenInterval );
+			screenScales.requestInterval( screenInterval );
 			intervalMode = true;
 			newIntervalRequest = true;
 			painterThread.requestRepaint();
@@ -537,20 +439,6 @@ public class MultiResolutionRenderer
 		else
 			requestRepaint();
 	}
-
-	private int suggestScreenScale( final Dimensions screenSize, final int numSources )
-	{
-		final double intervalRenderNanos = renderNanosPerPixelAndSource.getAverage() * Intervals.numElements( screenSize ) * numSources;
-		for ( int i = 0; i < screenScaleFactors.length - 1; i++ )
-		{
-			final double s = screenScaleFactors[ i ];
-			final double renderTime = intervalRenderNanos * s * s;
-			if ( renderTime <= targetRenderNanos )
-				return i;
-		}
-		return screenScaleFactors.length - 1;
-	}
-
 
 	/**
 	 * DON'T USE THIS.
@@ -579,7 +467,7 @@ public class MultiResolutionRenderer
 		 */
 //		CacheIoTiming.getIoTimeBudget().clear(); // clear time budget such that prefetching doesn't wait for loading blocks.
 
-		final AffineTransform3D screenScaleTransform = screenScales[ screenScaleIndex ].scale;
+		final AffineTransform3D screenScaleTransform = screenScales.get( screenScaleIndex ).scaleTransform();
 		final AffineTransform3D screenTransform = viewerState.getViewerTransform();
 		screenTransform.preConcatenate( screenScaleTransform );
 		screenTransform.translate( -offsetX, -offsetY, 0 );
@@ -593,12 +481,7 @@ public class MultiResolutionRenderer
 		return projector;
 	}
 
-
-
-
-
-
-	// =========== intervals =============
+	// =========== intervals ==========================================================================================
 
 	private RenderResult currentRenderResult;
 
@@ -636,20 +519,12 @@ public class MultiResolutionRenderer
 			if ( newInterval )
 			{
 				cacheControl.prepareNextFrame();
-				final double renderNanosPerPixel = currentNumVisibleSources * renderNanosPerPixelAndSource.getAverage();
-				for ( int i = currentScreenScaleIndex; i < screenScales.length; i++ )
-				{
-					final double renderTime = screenScales[ i ].estimateIntervalRenderNanos( renderNanosPerPixel );
-					if ( renderTime <= targetRenderNanos )
-					{
-						requestedIntervalScaleIndex = i;
-						break;
-					}
-				}
+				final double renderNanosPerPixel = renderNanosPerPixelAndSource.getAverage() * currentNumVisibleSources;
+				requestedIntervalScaleIndex = screenScales.suggestIntervalScreenScale( renderNanosPerPixel, targetRenderNanos, currentScreenScaleIndex );
 			}
 
 			createProjector = newInterval || ( requestedIntervalScaleIndex != currentIntervalScaleIndex );
-			screenScale = screenScales[ requestedIntervalScaleIndex ];
+			screenScale = screenScales.get( requestedIntervalScaleIndex );
 			requestedScreenInterval = screenScale.pullScreenInterval();
 
 			if ( createProjector )
@@ -658,14 +533,14 @@ public class MultiResolutionRenderer
 				intervalResult.init(
 						( int ) interval.dimension( 0 ),
 						( int ) interval.dimension( 1 ) );
-				final double intervalScale = screenScale.screenToViewerScale;
+				final double intervalScale = screenScale.scale();
 				intervalResult.setScaleFactor( intervalScale );
 				final double offsetX = interval.min( 0 );
 				final double offsetY = interval.min( 1 );
 				projector = createProjector( currentViewerState, requestedIntervalScaleIndex, intervalResult.getScreenImage(), offsetX, offsetY );
 
-				final Interval targetInterval = screenScales[ currentScreenScaleIndex ].scaleScreenInterval( requestedScreenInterval );
-				final double relativeScale = screenScaleFactors[ currentScreenScaleIndex ] / intervalScale;
+				final Interval targetInterval = screenScales.get( currentScreenScaleIndex ).scaleScreenInterval( requestedScreenInterval );
+				final double relativeScale = screenScales.get( currentScreenScaleIndex ).scale() / intervalScale;
 				final double tx = interval.min( 0 ) * relativeScale;
 				final double ty = interval.min( 1 ) * relativeScale;
 				intervalRenderData = new IntervalRenderData( targetInterval, tx, ty );
@@ -679,6 +554,7 @@ public class MultiResolutionRenderer
 
 		synchronized ( this )
 		{
+			// if rendering was not cancelled...
 			if ( success )
 			{
 				if ( createProjector )
@@ -728,20 +604,5 @@ public class MultiResolutionRenderer
 	{
 		requestedIntervalScaleIndex = intervalScaleIndex;
 		painterThread.requestRepaint();
-	}
-
-	private Interval scaleScreenInterval( final Interval requestedScreenInterval, final int intervalScaleIndex )
-	{
-		final int clipW = screenScales[ intervalScaleIndex ].w;
-		final int clipH = screenScales[ intervalScaleIndex ].h;
-		final double scale = screenScaleFactors[ intervalScaleIndex ];
-		// This is equivalent to
-		// Intervals.intersect( new FinalInterval( clipW, clipH ), Intervals.smallestContainingInterval( Intervals.scale( requestedScreenInterval, scale ) ) );
-		return Intervals.createMinMax(
-				Math.max( 0, ( int ) Math.floor( requestedScreenInterval.min( 0 ) * scale ) ),
-				Math.max( 0, ( int ) Math.floor( requestedScreenInterval.min( 1 ) * scale ) ),
-				Math.min( clipW - 1, ( int ) Math.ceil( requestedScreenInterval.max( 0 ) * scale ) ),
-				Math.min( clipH - 1, ( int ) Math.ceil( requestedScreenInterval.max( 1 ) * scale ) )
-		);
 	}
 }
