@@ -31,6 +31,7 @@ package bdv.viewer.render;
 import bdv.cache.CacheControl;
 import bdv.util.MovingAverage;
 import bdv.viewer.ViewerState;
+import bdv.viewer.render.ScreenScales.IntervalRenderData;
 import bdv.viewer.render.ScreenScales.ScreenScale;
 import java.util.concurrent.ExecutorService;
 import net.imglib2.Interval;
@@ -279,6 +280,7 @@ public class MultiResolutionRenderer
 			{
 				newFrameRequest = false;
 				intervalMode = false;
+				// TODO: clear interval requests
 			}
 
 			newInterval = newIntervalRequest;
@@ -448,8 +450,8 @@ public class MultiResolutionRenderer
 			final ViewerState viewerState,
 			final int screenScaleIndex,
 			final RandomAccessibleInterval< ARGBType > screenImage,
-			final double offsetX,
-			final double offsetY )
+			final int offsetX,
+			final int offsetY )
 	{
 		/*
 		 * This shouldn't be necessary, with
@@ -475,33 +477,12 @@ public class MultiResolutionRenderer
 
 	private RenderResult currentRenderResult;
 
-	public static class IntervalRenderData
-	{
-		private final Interval targetInterval;
-
-		private final double tx;
-
-		private final double ty;
-
-		public IntervalRenderData(
-				final Interval targetInterval,
-				final double tx,
-				final double ty )
-		{
-			this.targetInterval = targetInterval;
-			this.tx = tx;
-			this.ty = ty;
-		}
-	}
-
 	private final RenderResult intervalResult;
 	private IntervalRenderData intervalRenderData;
 
 	private boolean paintInterval( final boolean newInterval )
 	{
 		final boolean createProjector;
-		final ScreenScale screenScale;
-		final Interval requestedScreenInterval;
 		final VolatileProjector p;
 
 		synchronized ( this )
@@ -511,29 +492,19 @@ public class MultiResolutionRenderer
 				cacheControl.prepareNextFrame();
 				final double renderNanosPerPixel = renderNanosPerPixelAndSource.getAverage() * currentNumVisibleSources;
 				requestedIntervalScaleIndex = screenScales.suggestIntervalScreenScale( renderNanosPerPixel, currentScreenScaleIndex );
+				newIntervalRequest = false; // TODO: done again here because of remaining synchronization issues...
 			}
 
 			createProjector = newInterval || ( requestedIntervalScaleIndex != currentIntervalScaleIndex );
-			screenScale = screenScales.get( requestedIntervalScaleIndex );
-			requestedScreenInterval = screenScale.pullScreenInterval();
 
 			if ( createProjector )
 			{
-				final Interval interval = screenScale.scaleScreenInterval( requestedScreenInterval );
-				intervalResult.init(
-						( int ) interval.dimension( 0 ),
-						( int ) interval.dimension( 1 ) );
-				final double intervalScale = screenScale.scale();
-				intervalResult.setScaleFactor( intervalScale );
-				final double offsetX = interval.min( 0 );
-				final double offsetY = interval.min( 1 );
-				projector = createProjector( currentViewerState, requestedIntervalScaleIndex, intervalResult.getScreenImage(), offsetX, offsetY );
+				intervalRenderData = screenScales.pullIntervalRenderData( requestedIntervalScaleIndex, currentScreenScaleIndex );
 
-				final Interval targetInterval = screenScales.get( currentScreenScaleIndex ).scaleScreenInterval( requestedScreenInterval );
-				final double relativeScale = screenScales.get( currentScreenScaleIndex ).scale() / intervalScale;
-				final double tx = interval.min( 0 ) * relativeScale;
-				final double ty = interval.min( 1 ) * relativeScale;
-				intervalRenderData = new IntervalRenderData( targetInterval, tx, ty );
+				intervalResult.init( intervalRenderData.width(), intervalRenderData.height() );
+				intervalResult.setScaleFactor( intervalRenderData.scale() );
+
+				projector = createProjector( currentViewerState, requestedIntervalScaleIndex, intervalResult.getScreenImage(), intervalRenderData.offsetX(), intervalRenderData.offsetY() );
 
 				renderingMayBeCancelled = !newInterval;
 			}
@@ -550,7 +521,7 @@ public class MultiResolutionRenderer
 				if ( createProjector )
 					currentIntervalScaleIndex = requestedIntervalScaleIndex;
 
-				currentRenderResult.patch( intervalResult, intervalRenderData.targetInterval, intervalRenderData.tx, intervalRenderData.ty );
+				currentRenderResult.patch( intervalResult, intervalRenderData.targetInterval(), intervalRenderData.tx(), intervalRenderData.ty() );
 
 				if ( currentIntervalScaleIndex > currentScreenScaleIndex )
 					iterateRepaintInterval( currentIntervalScaleIndex - 1 );
@@ -577,13 +548,13 @@ public class MultiResolutionRenderer
 						// restore interrupted state
 						Thread.currentThread().interrupt();
 					}
-					screenScale.requestInterval( requestedScreenInterval );
+					intervalRenderData.reRequest();
 					iterateRepaintInterval( currentIntervalScaleIndex );
 				}
 			}
 			else
 			{
-				screenScale.requestInterval( requestedScreenInterval );
+				intervalRenderData.reRequest();
 			}
 		}
 

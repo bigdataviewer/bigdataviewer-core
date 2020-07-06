@@ -176,7 +176,7 @@ public class ScreenScales
 			return interval;
 		}
 
-		public double estimateIntervalRenderNanos( final double renderNanosPerPixel )
+		double estimateIntervalRenderNanos( final double renderNanosPerPixel )
 		{
 			return renderNanosPerPixel * Intervals.numElements( scaleScreenInterval( requestedScreenInterval ) );
 		}
@@ -213,4 +213,86 @@ public class ScreenScales
 			return scaleTransform;
 		}
 	}
+
+
+	public IntervalRenderData pullIntervalRenderData( final int intervalScaleIndex, final int targetScaleIndex )
+	{
+		return new IntervalRenderData( intervalScaleIndex, targetScaleIndex );
+	}
+
+	public class IntervalRenderData
+	{
+		private final int renderScaleIndex;
+
+		private final Interval screenInterval;
+
+		private final Interval renderInterval;
+
+		private final Interval targetInterval;
+
+		private final double tx;
+
+		private final double ty;
+
+		public IntervalRenderData( final int renderScaleIndex, final int targetScaleIndex )
+		{
+			this.renderScaleIndex = renderScaleIndex;
+			final ScreenScale screenScale = get( renderScaleIndex );
+			screenInterval = screenScale.pullScreenInterval();
+			renderInterval = screenScale.scaleScreenInterval( screenInterval );
+
+			final ScreenScale targetScale = get( targetScaleIndex );
+			targetInterval = targetScale.scaleScreenInterval( screenInterval );
+
+			final double relativeScale = targetScale.scale() / screenScale.scale();
+			tx = renderInterval.min( 0 ) * relativeScale;
+			ty = renderInterval.min( 1 ) * relativeScale;
+		}
+
+		public void reRequest()
+		{
+			get( renderScaleIndex ).requestInterval( screenInterval );
+		}
+
+		public int width()
+		{
+			return ( int ) renderInterval.dimension( 0 );
+		}
+
+		public int height()
+		{
+			return ( int ) renderInterval.dimension( 1 );
+		}
+
+		public int offsetX()
+		{
+			return ( int ) renderInterval.min( 0 );
+		}
+		public int offsetY()
+		{
+			return ( int ) renderInterval.min( 1 );
+		}
+
+		public double scale()
+		{
+			return get( renderScaleIndex ).scale();
+		}
+
+		public Interval targetInterval()
+		{
+			return targetInterval;
+		}
+
+		public double tx()
+		{
+			return tx;
+		}
+
+		public double ty()
+		{
+			return ty;
+		}
+	}
+
+
 }
