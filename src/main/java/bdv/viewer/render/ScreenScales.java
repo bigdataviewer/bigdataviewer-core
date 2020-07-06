@@ -2,12 +2,21 @@ package bdv.viewer.render;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import net.imglib2.Interval;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.Intervals;
 
 public class ScreenScales
 {
+	/**
+	 * Target rendering time in nanoseconds. The rendering time for the coarsest
+	 * rendered scale should be below this threshold. After the coarsest scale,
+	 * increasingly finer scales are rendered, but these render passes may be
+	 * canceled (while the coarsest may not).
+	 */
+	private final double targetRenderNanos;
+
 	private final List< ScreenScale > screenScales;
 
 	private int screenW = 0;
@@ -16,16 +25,19 @@ public class ScreenScales
 
 	/**
 	 * @param screenScaleFactors
-	 * 		Scale factors from the viewer canvas to screen images of
-	 * 		different resolutions. A scale factor of 1 means 1 pixel in
-	 * 		the screen image is displayed as 1 pixel on the canvas, a
-	 * 		scale factor of 0.5 means 1 pixel in the screen image is
-	 * 		displayed as 2 pixel on the canvas, etc.
+	 *     Scale factors from the viewer canvas to screen images of different
+	 *     resolutions. A scale factor of 1 means 1 pixel in the screen image is
+	 *     displayed as 1 pixel on the canvas, a scale factor of 0.5 means 1
+	 *     pixel in the screen image is displayed as 2 pixel on the canvas, etc.
+	 * @param targetRenderNanos
+	 *     Target rendering time in nanoseconds. The rendering time for the
+	 *     coarsest rendered scale should be below this threshold.
 	 */
-	public ScreenScales( final double[] screenScaleFactors )
+	public ScreenScales( final double[] screenScaleFactors, final double targetRenderNanos )
 	{
+		this.targetRenderNanos = targetRenderNanos;
 		screenScales = new ArrayList<>();
-		for ( double scale : screenScaleFactors )
+		for ( final double scale : screenScaleFactors )
 			screenScales.add( new ScreenScale( scale ) );
 	}
 
@@ -46,17 +58,23 @@ public class ScreenScales
 		return false;
 	}
 
+	/**
+	 * @return the screen scale at {@code index}
+	 */
 	public ScreenScale get( final int index )
 	{
 		return screenScales.get( index );
 	}
 
+	/**
+	 * @return number of screen scales.
+	 */
 	public int size()
 	{
 		return screenScales.size();
 	}
 
-	public int suggestScreenScale( final double renderNanosPerPixel, final double targetRenderNanos )
+	public int suggestScreenScale( final double renderNanosPerPixel )
 	{
 		for ( int i = 0; i < screenScales.size() - 1; i++ )
 		{
@@ -67,7 +85,7 @@ public class ScreenScales
 		return screenScales.size() - 1;
 	}
 
-	public int suggestIntervalScreenScale( final double renderNanosPerPixel, final double targetRenderNanos, final int minScreenScaleIndex )
+	public int suggestIntervalScreenScale( final double renderNanosPerPixel, final int minScreenScaleIndex )
 	{
 		for ( int i = minScreenScaleIndex; i < screenScales.size() - 1; i++ )
 		{
