@@ -31,7 +31,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package net.imglib2.ui;
+package bdv.viewer.render;
 
 import bdv.viewer.RequestRepaint;
 import java.util.concurrent.RejectedExecutionException;
