@@ -28,12 +28,8 @@
  */
 package bdv.viewer.render;
 
-import bdv.cache.CacheControl;
-import bdv.util.MovingAverage;
-import bdv.viewer.ViewerState;
-import bdv.viewer.render.ScreenScales.IntervalRenderData;
-import bdv.viewer.render.ScreenScales.ScreenScale;
 import java.util.concurrent.ExecutorService;
+
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
@@ -43,6 +39,12 @@ import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.RenderTarget;
 import net.imglib2.util.Intervals;
+
+import bdv.cache.CacheControl;
+import bdv.util.MovingAverage;
+import bdv.viewer.ViewerState;
+import bdv.viewer.render.ScreenScales.IntervalRenderData;
+import bdv.viewer.render.ScreenScales.ScreenScale;
 
 /**
  * A renderer that uses a coarse-to-fine rendering scheme. First, a small target
@@ -191,6 +193,12 @@ public class MultiResolutionRenderer
 	 */
 	private boolean newIntervalRequest;
 
+	// =========== intervals ==========================================================================================
+	private RenderResult currentRenderResult;
+	private final RenderResult intervalResult;
+	private IntervalRenderData intervalRenderData;
+	// =========== intervals ==========================================================================================
+
 	/**
 	 * @param display
 	 *            The canvas that will display the images we render.
@@ -256,6 +264,59 @@ public class MultiResolutionRenderer
 				accumulateProjectorFactory );
 	}
 
+	/**
+	 * Request a repaint of the display from the painter thread. The painter
+	 * thread will trigger a {@link #paint} as soon as possible (that is,
+	 * immediately or after the currently running {@link #paint} has completed).
+	 */
+	public synchronized void requestRepaint()
+	{
+		if ( renderingMayBeCancelled && projector != null )
+			projector.cancel();
+		newFrameRequest = true;
+		painterThread.requestRepaint();
+	}
+
+	/**
+	 * Request a repaint of the given {@code interval} of the display from the
+	 * painter thread. The painter thread will trigger a {@link #paint} as soon
+	 * as possible (that is, immediately or after the currently running
+	 * {@link #paint} has completed).
+	 */
+	public synchronized void requestRepaint( final Interval interval )
+	{
+		if ( !intervalMode && !renderingMayBeCancelled )
+		{
+			/*
+			 * We are currently rendering a full frame at the coarsest
+			 * resolution. There is no point in painting an interval now. Just
+			 * request a new full frame.
+			 */
+			newFrameRequest = true;
+		}
+		else
+		{
+			if ( renderingMayBeCancelled && projector != null )
+				projector.cancel();
+			screenScales.requestInterval( interval );
+			newIntervalRequest = true;
+		}
+		painterThread.requestRepaint();
+	}
+
+	/**
+	 * DON'T USE THIS.
+	 * <p>
+	 * This is a work around for JDK bug
+	 * https://bugs.openjdk.java.net/browse/JDK-8029147 which leads to
+	 * ViewerPanel not being garbage-collected when ViewerFrame is closed. So
+	 * instead we need to manually let go of resources...
+	 */
+	public void kill()
+	{
+		projector = null;
+		renderStorage.clear();
+	}
 
 	/**
 	 * Render image at the {@link #requestedScreenScaleIndex requested screen
@@ -268,15 +329,14 @@ public class MultiResolutionRenderer
 		if ( screenW <= 0 || screenH <= 0 )
 			return false;
 
-		final boolean resized;
 		final boolean newFrame;
 		final boolean newInterval;
 		final boolean paintInterval;
 		final boolean prepareNextFrame;
-		boolean createProjector = false;
+		final boolean createProjector;
 		synchronized ( this )
 		{
-			resized = screenScales.checkResize( screenW, screenH );
+			final boolean resized = screenScales.checkResize( screenW, screenH );
 
 			newFrame = newFrameRequest || resized;
 			if ( newFrame )
@@ -302,6 +362,11 @@ public class MultiResolutionRenderer
 				if ( createProjector )
 					intervalRenderData = screenScales.pullIntervalRenderData( requestedIntervalScaleIndex, currentScreenScaleIndex );
 			}
+			else
+			{
+				createProjector = newFrame || ( requestedScreenScaleIndex != currentScreenScaleIndex );
+			}
+
 
 			newFrameRequest = false;
 			newIntervalRequest = false;
@@ -327,26 +392,18 @@ public class MultiResolutionRenderer
 		// whether to request a newFrame, in case that a new projector is created in full frame mode
 		boolean requestNewFrameIfIncomplete = false;
 
-		if ( paintInterval )
+		synchronized ( this )
 		{
-			intervalResult.init( intervalRenderData.width(), intervalRenderData.height() );
-			intervalResult.setScaleFactor( intervalRenderData.scale() );
-			synchronized ( this )
+			if ( createProjector )
 			{
-				if ( createProjector )
+				if ( paintInterval )
 				{
+					intervalResult.init( intervalRenderData.width(), intervalRenderData.height() );
+					intervalResult.setScaleFactor( intervalRenderData.scale() );
 					projector = createProjector( currentViewerState, requestedIntervalScaleIndex, intervalResult.getScreenImage(), intervalRenderData.offsetX(), intervalRenderData.offsetY() );
 					renderingMayBeCancelled = !newInterval;
 				}
-				p = projector;
-			}
-		}
-		else
-		{
-			createProjector = newFrame || ( requestedScreenScaleIndex != currentScreenScaleIndex );
-			synchronized ( this )
-			{
-				if ( createProjector )
+				else
 				{
 					final ScreenScale screenScale = screenScales.get( requestedScreenScaleIndex );
 
@@ -360,8 +417,8 @@ public class MultiResolutionRenderer
 					requestNewFrameIfIncomplete = projectorFactory.requestNewFrameIfIncomplete();
 					renderingMayBeCancelled = !newFrame;
 				}
-				p = projector;
 			}
+			p = projector;
 		}
 
 
@@ -377,37 +434,31 @@ public class MultiResolutionRenderer
 			{
 				if ( paintInterval )
 				{
-					if ( createProjector )
-						currentIntervalScaleIndex = requestedIntervalScaleIndex;
-
+					currentIntervalScaleIndex = requestedIntervalScaleIndex;
 					currentRenderResult.patch( intervalResult, intervalRenderData.targetInterval(), intervalRenderData.tx(), intervalRenderData.ty() );
 
 					if ( currentIntervalScaleIndex > currentScreenScaleIndex )
 						iterateRepaintInterval( currentIntervalScaleIndex - 1 );
 					else if ( p.isValid() )
 					{
+						// if full frame rendering was not yet complete
 						if ( requestedScreenScaleIndex >= 0 )
 						{
-							// go back to "normal" rendering
+							// go back to full frame rendering
 							intervalMode = false;
-							renderingMayBeCancelled = false;
 							if ( requestedScreenScaleIndex == currentScreenScaleIndex )
 								++currentScreenScaleIndex;
 							painterThread.requestRepaint();
 						}
 					}
 					else
-					{
-						usleep();
-						intervalRenderData.reRequest();
 						iterateRepaintInterval( currentIntervalScaleIndex );
-					}
 				}
 				else
 				{
+					currentScreenScaleIndex = requestedScreenScaleIndex;
 					if ( createProjector )
 					{
-						currentScreenScaleIndex = requestedScreenScaleIndex;
 						renderResult.setUpdated();
 						( ( RenderTarget ) display ).setRenderResult( renderResult );
 						currentRenderResult = renderResult;
@@ -423,18 +474,11 @@ public class MultiResolutionRenderer
 
 					if ( !p.isValid() && requestNewFrameIfIncomplete )
 						requestRepaint();
-					else if ( currentScreenScaleIndex > 0 )
-						iterateRepaint( currentScreenScaleIndex - 1 );
-					else if ( p.isValid() )
-					{
+					else if ( p.isValid() && currentScreenScaleIndex == 0 )
 						// indicate that rendering is complete
 						requestedScreenScaleIndex = -1;
-					}
 					else
-					{
-						usleep();
-						iterateRepaint( currentScreenScaleIndex );
-					}
+						iterateRepaint( Math.max( 0, currentScreenScaleIndex - 1 ) );
 				}
 			}
 			// if rendering was cancelled...
@@ -458,49 +502,37 @@ public class MultiResolutionRenderer
 	 */
 	private void iterateRepaint( final int screenScaleIndex )
 	{
+		if ( screenScaleIndex == currentScreenScaleIndex )
+			usleep();
 		requestedScreenScaleIndex = screenScaleIndex;
 		painterThread.requestRepaint();
 	}
 
-	/**
-	 * Request a repaint of the display from the painter thread. The painter
-	 * thread will trigger a {@link #paint} as soon as possible (that is,
-	 * immediately or after the currently running {@link #paint} has completed).
-	 */
-	public synchronized void requestRepaint()
+	private void iterateRepaintInterval( final int intervalScaleIndex )
 	{
-		if ( renderingMayBeCancelled && projector != null )
-			projector.cancel();
-		newFrameRequest = true;
-		painterThread.requestRepaint();
-	}
-
-	public synchronized void requestRepaint( final Interval screenInterval )
-	{
-		if ( renderingMayBeCancelled || intervalMode )
+		if ( intervalScaleIndex == currentIntervalScaleIndex )
 		{
-			if ( projector != null )
-				projector.cancel();
-			screenScales.requestInterval( screenInterval );
-			newIntervalRequest = true;
+			intervalRenderData.reRequest();
+			usleep();
 		}
-		else
-			newFrameRequest = true;
+		requestedIntervalScaleIndex = intervalScaleIndex;
 		painterThread.requestRepaint();
 	}
 
 	/**
-	 * DON'T USE THIS.
-	 * <p>
-	 * This is a work around for JDK bug
-	 * https://bugs.openjdk.java.net/browse/JDK-8029147 which leads to
-	 * ViewerPanel not being garbage-collected when ViewerFrame is closed. So
-	 * instead we need to manually let go of resources...
+	 * Wait for 1ms so that fetcher threads get a chance to do work.
 	 */
-	public void kill()
+	private void usleep()
 	{
-		projector = null;
-		renderStorage.clear();
+		try
+		{
+			Thread.sleep( 1 );
+		}
+		catch ( final InterruptedException e )
+		{
+			// restore interrupted state
+			Thread.currentThread().interrupt();
+		}
 	}
 
 	private VolatileProjector createProjector(
@@ -528,31 +560,5 @@ public class MultiResolutionRenderer
 				renderStorage );
 		CacheIoTiming.getIoTimeBudget().reset( iobudget );
 		return projector;
-	}
-
-	// =========== intervals ==========================================================================================
-
-	private RenderResult currentRenderResult;
-
-	private final RenderResult intervalResult;
-	private IntervalRenderData intervalRenderData;
-
-	private void iterateRepaintInterval( final int intervalScaleIndex )
-	{
-		requestedIntervalScaleIndex = intervalScaleIndex;
-		painterThread.requestRepaint();
-	}
-
-	private void usleep()
-	{
-		try
-		{
-			Thread.sleep( 1 );
-		}
-		catch ( final InterruptedException e )
-		{
-			// restore interrupted state
-			Thread.currentThread().interrupt();
-		}
 	}
 }
