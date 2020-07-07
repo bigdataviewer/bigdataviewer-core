@@ -167,7 +167,7 @@ public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarg
 	 */
 	public Listeners< TransformListener< AffineTransform3D > > transformListeners()
 	{
-		return transformListeners();
+		return paintedTransformListeners;
 	}
 
 	/**
