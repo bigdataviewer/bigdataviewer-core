@@ -42,7 +42,7 @@ public class ScreenScales
 	}
 
 	/**
-	 * Check whether the screen size was changed and revise {@link #screenScales} accordingly.
+	 * Check whether the screen size was changed and resize {@link #screenScales} accordingly.
 	 *
 	 * @return whether the size was changed.
 	 */
@@ -106,6 +106,11 @@ public class ScreenScales
 		screenScales.forEach( ScreenScale::pullScreenInterval );
 	}
 
+	public IntervalRenderData pullIntervalRenderData( final int intervalScaleIndex, final int targetScaleIndex )
+	{
+		return new IntervalRenderData( intervalScaleIndex, targetScaleIndex );
+	}
+
 	public static class ScreenScale
 	{
 		/**
@@ -144,6 +149,28 @@ public class ScreenScales
 			this.scale = scale;
 		}
 
+		/**
+		 * Add {@code screenInterval} to requested interval (union).
+		 * Note that the requested interval is maintained in screen coordinates!
+		 */
+		public void requestInterval( final Interval screenInterval )
+		{
+			requestedScreenInterval = requestedScreenInterval == null
+					? screenInterval
+					: Intervals.union( requestedScreenInterval, screenInterval );
+		}
+
+		/**
+		 * Return and clear requested interval.
+		 * Note that the requested interval is maintained in screen coordinates!
+		 */
+		public Interval pullScreenInterval()
+		{
+			final Interval interval = requestedScreenInterval;
+			requestedScreenInterval = null;
+			return interval;
+		}
+
 		void resize( final int screenW, final int screenH )
 		{
 			w = ( int ) Math.ceil( scale * screenW );
@@ -162,26 +189,12 @@ public class ScreenScales
 			return renderNanosPerPixel * w * h;
 		}
 
-		public void requestInterval( final Interval screenInterval )
-		{
-			requestedScreenInterval = requestedScreenInterval == null
-					? screenInterval
-					: Intervals.union( requestedScreenInterval, screenInterval );
-		}
-
-		public Interval pullScreenInterval()
-		{
-			final Interval interval = requestedScreenInterval;
-			requestedScreenInterval = null;
-			return interval;
-		}
-
 		double estimateIntervalRenderNanos( final double renderNanosPerPixel )
 		{
 			return renderNanosPerPixel * Intervals.numElements( scaleScreenInterval( requestedScreenInterval ) );
 		}
 
-		public Interval scaleScreenInterval( final Interval requestedScreenInterval )
+		Interval scaleScreenInterval( final Interval requestedScreenInterval )
 		{
 			// This is equivalent to
 			// Intervals.intersect( new FinalInterval( w, h ), Intervals.smallestContainingInterval( Intervals.scale( requestedScreenInterval, screenToViewerScale ) ) );
@@ -214,17 +227,9 @@ public class ScreenScales
 		}
 	}
 
-
-	public IntervalRenderData pullIntervalRenderData( final int intervalScaleIndex, final int targetScaleIndex )
-	{
-		return new IntervalRenderData( intervalScaleIndex, targetScaleIndex );
-	}
-
 	public class IntervalRenderData
 	{
 		private final int renderScaleIndex;
-
-		private final Interval screenInterval;
 
 		private final Interval renderInterval;
 
@@ -234,24 +239,36 @@ public class ScreenScales
 
 		private final double ty;
 
+		private final Interval[] screenIntervals;
+
 		public IntervalRenderData( final int renderScaleIndex, final int targetScaleIndex )
 		{
 			this.renderScaleIndex = renderScaleIndex;
-			final ScreenScale screenScale = get( renderScaleIndex );
-			screenInterval = screenScale.pullScreenInterval();
-			renderInterval = screenScale.scaleScreenInterval( screenInterval );
+
+			screenIntervals = new Interval[ size() ];
+			for ( int i = renderScaleIndex; i < screenIntervals.length; ++i )
+				screenIntervals[ i ] = get( i ).pullScreenInterval();
+			final Interval screenInterval = screenIntervals[ renderScaleIndex ];
+
+			final ScreenScale renderScale = get( renderScaleIndex );
+			renderInterval = renderScale.scaleScreenInterval( screenInterval );
 
 			final ScreenScale targetScale = get( targetScaleIndex );
 			targetInterval = targetScale.scaleScreenInterval( screenInterval );
 
-			final double relativeScale = targetScale.scale() / screenScale.scale();
+			final double relativeScale = targetScale.scale() / renderScale.scale();
 			tx = renderInterval.min( 0 ) * relativeScale;
 			ty = renderInterval.min( 1 ) * relativeScale;
 		}
 
 		public void reRequest()
 		{
-			get( renderScaleIndex ).requestInterval( screenInterval );
+			for ( int i = renderScaleIndex; i < screenIntervals.length; ++i )
+			{
+				final Interval interval = screenIntervals[ i ];
+				if ( interval != null )
+					get( i ).requestInterval( interval );
+			}
 		}
 
 		public int width()
