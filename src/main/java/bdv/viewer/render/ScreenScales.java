@@ -7,7 +7,7 @@ import net.imglib2.Interval;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.Intervals;
 
-public class ScreenScales
+class ScreenScales
 {
 	/**
 	 * Target rendering time in nanoseconds. The rendering time for the coarsest
@@ -111,7 +111,7 @@ public class ScreenScales
 		return new IntervalRenderData( intervalScaleIndex, targetScaleIndex );
 	}
 
-	public static class ScreenScale
+	static class ScreenScale
 	{
 		/**
 		 * Scale factor from the viewer coordinates to target image of this screen scale.
@@ -227,7 +227,7 @@ public class ScreenScales
 		}
 	}
 
-	public class IntervalRenderData
+	class IntervalRenderData
 	{
 		private final int renderScaleIndex;
 
@@ -310,6 +310,4 @@ public class ScreenScales
 			return ty;
 		}
 	}
-
-
 }
