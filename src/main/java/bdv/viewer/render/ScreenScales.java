@@ -7,6 +7,11 @@ import net.imglib2.Interval;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.Intervals;
 
+/**
+ * Maintains current sizes and transforms at every screen scale level. Records
+ * interval rendering requests. Suggests full frame or interval scale to render
+ * in order to meet a specified target rendering time in nanoseconds.
+ */
 class ScreenScales
 {
 	/**
