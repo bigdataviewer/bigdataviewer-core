@@ -58,7 +58,7 @@ import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
 import net.imglib2.Interval;
-import net.imglib2.ui.overlay.BufferedImageOverlayRenderer;
+import bdv.viewer.render.awt.BufferedImageOverlayRenderer;
 import org.jdom2.Element;
 
 import bdv.cache.CacheControl;

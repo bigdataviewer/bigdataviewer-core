@@ -48,7 +48,7 @@ import org.scijava.ui.behaviour.util.InputActionBindings;
 import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
 
 import bdv.cache.CacheControl;
-import net.imglib2.ui.util.GuiUtil;
+import bdv.util.AWTUtils;
 
 /**
  * A {@link JFrame} containing a {@link ViewerPanel} and associated
@@ -98,7 +98,7 @@ public class ViewerFrame extends JFrame
 			final ViewerOptions optional )
 	{
 //		super( "BigDataViewer", GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.ARGB_COLOR_MODEL ) );
-		super( "BigDataViewer", GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.RGB_COLOR_MODEL ) );
+		super( "BigDataViewer", AWTUtils.getSuitableGraphicsConfiguration( AWTUtils.RGB_COLOR_MODEL ) );
 		viewer = new ViewerPanel( sources, numTimepoints, cacheControl, optional );
 		setups = new ConverterSetups( viewer.state() );
 		setups.listeners().add( s -> viewer.requestRepaint() );

@@ -35,7 +35,7 @@ import bdv.viewer.BasicViewerState;
 import bdv.viewer.ViewerPanel;
 import bdv.viewer.ViewerState;
 import bdv.viewer.overlay.ScaleBarOverlayRenderer;
-import bdv.viewer.render.BufferedImageRenderResult;
+import bdv.viewer.render.awt.BufferedImageRenderResult;
 import bdv.viewer.render.MultiResolutionRenderer;
 import java.awt.BorderLayout;
 import java.awt.Frame;

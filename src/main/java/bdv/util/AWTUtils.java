@@ -31,7 +31,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package net.imglib2.ui.util;
+package bdv.util;
 
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsDevice;
@@ -52,7 +52,7 @@ import net.imglib2.display.screenimage.awt.ARGBScreenImage;
  *
  * @author Tobias Pietzsch
  */
-public class GuiUtil
+public class AWTUtils
 {
 	/**
 	 * Get a {@link GraphicsConfiguration} from the default screen

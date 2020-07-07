@@ -31,11 +31,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package net.imglib2.ui.overlay;
+package bdv.viewer.render.awt;
 
 import bdv.util.TripleBuffer;
 import bdv.util.TripleBuffer.ReadableBuffer;
-import bdv.viewer.render.BufferedImageRenderResult;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
@@ -49,11 +48,9 @@ import org.scijava.listeners.Listeners;
 /**
  * {@link OverlayRenderer} drawing a {@link BufferedImage}, scaled to fill the
  * canvas. It can be used as a {@link RenderTarget}, such that the
- * {@link BufferedImage} to draw is set by a renderer.
+ * {@link BufferedImageRenderResult} to draw is set by a renderer.
  *
  * @author Tobias Pietzsch
- *
- * TODO: REVISE JAVADOC
  */
 public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarget< BufferedImageRenderResult >
 {
