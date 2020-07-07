@@ -7,6 +7,14 @@ import net.imglib2.type.numeric.ARGBType;
 
 public class ProjectorUtils
 {
+	/**
+	 * Extracts the underlying {@code int[]} array in case {@code img} is a
+	 * standard {@code ArrayImg<ARGBType>}. This supports certain (optional)
+	 * optimizations in projector implementations.
+	 *
+	 * @return the underlying {@code int[]} array of {@code img}, if it is a
+	 * standard {@code ArrayImg<ARGBType>}. Otherwise {@code null}.
+	 */
 	public static int[] getARGBArrayImgData( final RandomAccessible< ? > img )
 	{
 		if ( ! ( img instanceof ArrayImg ) )
