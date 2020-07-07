@@ -68,7 +68,6 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import net.imglib2.realtransform.AffineTransform3D;
 import bdv.viewer.OverlayRenderer;
-import net.imglib2.ui.PainterThread;
 import bdv.viewer.render.RenderTarget;
 
 public class RecordMovieDialog extends JDialog implements OverlayRenderer
@@ -303,7 +302,7 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 		}
 		final MyTarget target = new MyTarget();
 		final MultiResolutionRenderer renderer = new MultiResolutionRenderer(
-				target, new PainterThread( null ), new double[] { 1 }, 0, 1, null, false,
+				target, () -> {}, new double[] { 1 }, 0, 1, null, false,
 				viewer.getOptionValues().getAccumulateProjectorFactory(), new CacheControl.Dummy() );
 		progressWriter.setProgress( 0 );
 		for ( int timepoint = minTimepointIndex; timepoint <= maxTimepointIndex; ++timepoint )

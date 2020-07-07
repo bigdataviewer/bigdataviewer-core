@@ -33,12 +33,13 @@
  */
 package net.imglib2.ui;
 
+import bdv.viewer.RequestRepaint;
 import java.util.concurrent.RejectedExecutionException;
 
 /**
  * Thread to repaint display.
  */
-final public class PainterThread extends Thread
+public class PainterThread extends Thread implements RequestRepaint
 {
 	public interface Paintable
 	{
@@ -109,6 +110,7 @@ final public class PainterThread extends Thread
 	 * Request repaint. This will trigger a call to {@link Paintable#paint()}
 	 * from the {@link PainterThread}.
 	 */
+	@Override
 	public void requestRepaint()
 	{
 		synchronized ( this )

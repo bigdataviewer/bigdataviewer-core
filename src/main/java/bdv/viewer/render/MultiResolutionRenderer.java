@@ -28,6 +28,7 @@
  */
 package bdv.viewer.render;
 
+import bdv.viewer.RequestRepaint;
 import java.util.concurrent.ExecutorService;
 
 import net.imglib2.Interval;
@@ -36,7 +37,6 @@ import net.imglib2.Volatile;
 import net.imglib2.cache.iotiming.CacheIoTiming;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.ui.PainterThread;
 import net.imglib2.util.Intervals;
 
 import bdv.cache.CacheControl;
@@ -98,7 +98,7 @@ public class MultiResolutionRenderer
 	 * Thread that triggers repainting of the display.
 	 * Requests for repainting are send there.
 	 */
-	private final PainterThread painterThread;
+	private final RequestRepaint painterThread;
 
 	/**
 	 * Creates projectors for rendering current {@code ViewerState} to a
@@ -265,7 +265,7 @@ public class MultiResolutionRenderer
 	 */
 	public MultiResolutionRenderer(
 			final RenderTarget< ? > display,
-			final PainterThread painterThread,
+			final RequestRepaint painterThread,
 			final double[] screenScaleFactors,
 			final long targetRenderNanos,
 			final int numRenderingThreads,
