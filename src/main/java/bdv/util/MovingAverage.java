@@ -2,6 +2,11 @@ package bdv.util;
 
 import java.util.Arrays;
 
+/**
+ * Maintains a moving average over the last {@code width} values {@link #add
+ * added}. The average can be {@link #init initialized} to some value (or starts
+ * as 0, i.e., as if {@code width} 0 values had been added)
+ */
 public class MovingAverage
 {
 	private final double[] values;
