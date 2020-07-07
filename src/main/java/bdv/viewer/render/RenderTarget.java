@@ -31,9 +31,53 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package net.imglib2.ui;
+package bdv.viewer.render;
 
-public interface TransformListener< A >
+import bdv.viewer.render.RenderResult;
+
+/**
+ * Receiver for a rendered image (to be drawn onto a canvas later).
+ * <p>
+ * A renderer will render source data into a {@link RenderResult} and
+ * provide this to the {@code RenderTarget}.
+ * <p>
+ * See {@code BufferedImageOverlayRenderer}, which is both a {@code RenderTarget} and
+ * an {@code OverlayRenderer} that draws the {@code RenderResult}.
+ *
+ * @author Tobias Pietzsch
+ */
+public interface RenderTarget< R extends RenderResult >
 {
-	void transformChanged( A transform );
+	/**
+	 * Returns a {@code RenderResult} for rendering to.
+	 * This may be a new {@code RenderResult} or a previously {@link #setRenderResult set RenderResult}
+	 * that is no longer needed for display.
+	 * Note that consecutive {@code getReusableRenderResult()} calls without intermediate
+	 * {@code setRenderResult()} may return the same {@code RenderResult}.
+	 */
+	R getReusableRenderResult();
+
+	/**
+	 * Returns a new {@code RenderResult}.
+	 */
+	R createRenderResult();
+
+	/**
+	 * Set the {@link RenderResult} that is to be drawn on the canvas.
+	 */
+	void setRenderResult( R renderResult );
+
+	/**
+	 * Get the current canvas width.
+	 *
+	 * @return canvas width.
+	 */
+	int getWidth();
+
+	/**
+	 * Get the current canvas height.
+	 *
+	 * @return canvas height.
+	 */
+	int getHeight();
 }

@@ -75,7 +75,7 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.PainterThread;
-import net.imglib2.ui.RenderTarget;
+import bdv.viewer.render.RenderTarget;
 import net.imglib2.util.LinAlgHelpers;
 
 public class RecordMaxProjectionDialog extends JDialog implements OverlayRenderer

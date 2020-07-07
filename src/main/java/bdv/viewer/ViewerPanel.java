@@ -85,7 +85,6 @@ import net.imglib2.ui.InteractiveDisplayCanvas;
 import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.PainterThread;
 import net.imglib2.ui.TransformEventHandler;
-import net.imglib2.ui.TransformListener;
 import net.imglib2.util.LinAlgHelpers;
 import org.scijava.listeners.Listeners;
 

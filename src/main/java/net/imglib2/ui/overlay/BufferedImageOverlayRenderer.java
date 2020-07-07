@@ -42,8 +42,8 @@ import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.ui.OverlayRenderer;
-import net.imglib2.ui.RenderTarget;
-import net.imglib2.ui.TransformListener;
+import bdv.viewer.render.RenderTarget;
+import bdv.viewer.TransformListener;
 import org.scijava.listeners.Listeners;
 
 /**

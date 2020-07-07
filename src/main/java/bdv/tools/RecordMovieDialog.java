@@ -69,7 +69,7 @@ import javax.swing.event.ChangeListener;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.PainterThread;
-import net.imglib2.ui.RenderTarget;
+import bdv.viewer.render.RenderTarget;
 
 public class RecordMovieDialog extends JDialog implements OverlayRenderer
 {
