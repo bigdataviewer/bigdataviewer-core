@@ -48,12 +48,12 @@ public abstract class AccumulateProjector< A, B > implements VolatileProjector
 	 * Projectors that render the source images to accumulate.
 	 * For every rendering pass, ({@link VolatileProjector#map(boolean)}) is run on each source projector that is not yet {@link VolatileProjector#isValid() valid}.
 	 */
-	private final ArrayList< VolatileProjector > sourceProjectors;
+	private final List< VolatileProjector > sourceProjectors;
 
 	/**
 	 * The source images to accumulate
 	 */
-	private final ArrayList< IterableInterval< ? extends A > > sources;
+	private final List< IterableInterval< ? extends A > > sources;
 
 	/**
 	 * The target interval. Pixels of the target interval should be set by
@@ -84,8 +84,8 @@ public abstract class AccumulateProjector< A, B > implements VolatileProjector
 	private volatile boolean valid = false;
 
 	public AccumulateProjector(
-			final ArrayList< VolatileProjector > sourceProjectors,
-			final ArrayList< ? extends RandomAccessible< ? extends A > > sources,
+			final List< VolatileProjector > sourceProjectors,
+			final List< ? extends RandomAccessible< ? extends A > > sources,
 			final RandomAccessibleInterval< B > target,
 			final int numThreads,
 			final ExecutorService executorService )

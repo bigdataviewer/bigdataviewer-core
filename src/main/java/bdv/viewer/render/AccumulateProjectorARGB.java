@@ -49,9 +49,9 @@ public class AccumulateProjectorARGB implements VolatileProjector
 	{
 		@Override
 		public VolatileProjector createProjector(
-				final ArrayList< VolatileProjector > sourceProjectors,
-				final ArrayList< SourceAndConverter< ? > > sources,
-				final ArrayList< ? extends RandomAccessible< ? extends ARGBType > > sourceScreenImages,
+				final List< VolatileProjector > sourceProjectors,
+				final List< SourceAndConverter< ? > > sources,
+				final List< ? extends RandomAccessible< ? extends ARGBType > > sourceScreenImages,
 				final RandomAccessibleInterval< ARGBType > targetScreenImage,
 				final int numThreads,
 				final ExecutorService executorService )
@@ -69,8 +69,8 @@ public class AccumulateProjectorARGB implements VolatileProjector
 	public static class AccumulateProjectorARGBGeneric extends AccumulateProjector< ARGBType, ARGBType >
 	{
 		public AccumulateProjectorARGBGeneric(
-				final ArrayList< VolatileProjector > sourceProjectors,
-				final ArrayList< ? extends RandomAccessible< ? extends ARGBType > > sources,
+				final List< VolatileProjector > sourceProjectors,
+				final List< ? extends RandomAccessible< ? extends ARGBType > > sources,
 				final RandomAccessibleInterval< ARGBType > target,
 				final int numThreads,
 				final ExecutorService executorService )
@@ -110,12 +110,12 @@ public class AccumulateProjectorARGB implements VolatileProjector
 	 * Projectors that render the source images to accumulate.
 	 * For every rendering pass, ({@link VolatileProjector#map(boolean)}) is run on each source projector that is not yet {@link VolatileProjector#isValid() valid}.
 	 */
-	private final ArrayList< VolatileProjector > sourceProjectors;
+	private final List< VolatileProjector > sourceProjectors;
 
 	/**
 	 * The source images to accumulate
 	 */
-	private final ArrayList< ? extends RandomAccessible< ? extends ARGBType > > sources;
+	private final List< ? extends RandomAccessible< ? extends ARGBType > > sources;
 
 	private final int[][] sourceData;
 
@@ -144,8 +144,8 @@ public class AccumulateProjectorARGB implements VolatileProjector
 	private volatile boolean valid = false;
 
 	public AccumulateProjectorARGB(
-			final ArrayList< VolatileProjector > sourceProjectors,
-			final ArrayList< ? extends RandomAccessible< ? extends ARGBType > > sources,
+			final List< VolatileProjector > sourceProjectors,
+			final List< ? extends RandomAccessible< ? extends ARGBType > > sources,
 			final RandomAccessibleInterval< ARGBType > target,
 			final int numThreads,
 			final ExecutorService executorService )
