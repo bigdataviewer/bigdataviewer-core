@@ -39,7 +39,7 @@ import java.awt.Graphics2D;
 import java.io.File;
 import mpicbg.spim.data.SpimDataException;
 import net.imglib2.Interval;
-import net.imglib2.ui.OverlayRenderer;
+import bdv.viewer.OverlayRenderer;
 import net.imglib2.util.Intervals;
 import org.scijava.ui.behaviour.DragBehaviour;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;

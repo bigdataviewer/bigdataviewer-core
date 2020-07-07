@@ -31,7 +31,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package net.imglib2.ui;
+package bdv.viewer;
 
 import bdv.TransformEventHandler;
 import java.awt.Component;
@@ -134,7 +134,6 @@ public class InteractiveDisplayCanvas extends JComponent
 	 *
 	 * @param h handler to remove
 	 */
-//	@Override
 	public void addHandler( final Object h )
 	{
 		if ( h instanceof KeyListener )
@@ -163,7 +162,6 @@ public class InteractiveDisplayCanvas extends JComponent
 	 *
 	 * @param h handler to remove
 	 */
-//	@Override
 	public void removeHandler( final Object h )
 	{
 		if ( h instanceof KeyListener )

@@ -67,7 +67,7 @@ import javax.swing.WindowConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.ui.OverlayRenderer;
+import bdv.viewer.OverlayRenderer;
 import net.imglib2.ui.PainterThread;
 import bdv.viewer.render.RenderTarget;
 

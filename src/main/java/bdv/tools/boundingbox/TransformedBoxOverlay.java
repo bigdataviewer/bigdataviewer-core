@@ -45,7 +45,7 @@ import java.awt.geom.GeneralPath;
 import net.imglib2.Interval;
 import net.imglib2.RealInterval;
 import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.ui.OverlayRenderer;
+import bdv.viewer.OverlayRenderer;
 import bdv.viewer.TransformListener;
 
 import org.scijava.listeners.ChangeListener;

@@ -73,7 +73,7 @@ import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.ui.OverlayRenderer;
+import bdv.viewer.OverlayRenderer;
 import net.imglib2.ui.PainterThread;
 import bdv.viewer.render.RenderTarget;
 import net.imglib2.util.LinAlgHelpers;
