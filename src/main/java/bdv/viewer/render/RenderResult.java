@@ -14,7 +14,7 @@ import net.imglib2.type.numeric.ARGBType;
 public interface RenderResult
 {
 	/**
-	 * Allocate storage such that {@link #getScreenImage()} holds an image of
+	 * Allocate storage such that {@link #getTargetImage()} holds an image of
 	 * {@code width * height}.
 	 * <p>
 	 * (Called by the {@link MultiResolutionRenderer renderer}.)
@@ -29,7 +29,7 @@ public interface RenderResult
 	 * @return the image to render to
 	 */
 	// TODO: rename getTargetImage() ???
-	RandomAccessibleInterval< ARGBType > getScreenImage();
+	RandomAccessibleInterval< ARGBType > getTargetImage();
 
 	/**
 	 * Get the viewer transform used to render image. This is with respect to
@@ -62,7 +62,7 @@ public interface RenderResult
 	void patch( final RenderResult patch, final Interval interval, final double ox, final double oy );
 
 	/**
-	 * Notify that the {@link #getScreenImage() target image} data was changed.
+	 * Notify that the {@link #getTargetImage() target image} data was changed.
 	 * <p>
 	 * (Called by the {@link MultiResolutionRenderer renderer}.)
 	 */

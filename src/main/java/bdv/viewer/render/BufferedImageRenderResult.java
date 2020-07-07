@@ -46,7 +46,7 @@ public class BufferedImageRenderResult implements RenderResult
 	}
 
 	@Override
-	public RandomAccessibleInterval< ARGBType > getScreenImage()
+	public RandomAccessibleInterval< ARGBType > getTargetImage()
 	{
 		return screenImage;
 	}

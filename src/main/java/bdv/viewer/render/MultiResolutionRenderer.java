@@ -442,7 +442,7 @@ public class MultiResolutionRenderer
 				currentViewerState.getViewerTransform( renderResult.getViewerTransform() );
 
 				renderStorage.checkRenewData( screenScales.get( 0 ).width(), screenScales.get( 0 ).height(), currentNumVisibleSources );
-				projector = createProjector( currentViewerState, requestedScreenScaleIndex, renderResult.getScreenImage(), 0, 0 );
+				projector = createProjector( currentViewerState, requestedScreenScaleIndex, renderResult.getTargetImage(), 0, 0 );
 				requestNewFrameIfIncomplete = projectorFactory.requestNewFrameIfIncomplete();
 			}
 			p = projector;
@@ -492,7 +492,7 @@ public class MultiResolutionRenderer
 			{
 				intervalResult.init( intervalRenderData.width(), intervalRenderData.height() );
 				intervalResult.setScaleFactor( intervalRenderData.scale() );
-				projector = createProjector( currentViewerState, requestedIntervalScaleIndex, intervalResult.getScreenImage(), intervalRenderData.offsetX(), intervalRenderData.offsetY() );
+				projector = createProjector( currentViewerState, requestedIntervalScaleIndex, intervalResult.getTargetImage(), intervalRenderData.offsetX(), intervalRenderData.offsetY() );
 			}
 			p = projector;
 		}
@@ -539,7 +539,7 @@ public class MultiResolutionRenderer
 
 	private void recordRenderTime( final RenderResult result, final long renderNanos )
 	{
-		final int numRenderPixels = ( int ) Intervals.numElements( result.getScreenImage() ) * currentNumVisibleSources;
+		final int numRenderPixels = ( int ) Intervals.numElements( result.getTargetImage() ) * currentNumVisibleSources;
 		if ( numRenderPixels >= 4096 )
 			renderNanosPerPixelAndSource.add( renderNanos / ( double ) numRenderPixels );
 	}
