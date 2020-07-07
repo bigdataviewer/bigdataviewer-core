@@ -33,8 +33,6 @@
  */
 package bdv;
 
-import net.imglib2.ui.TransformEventHandler;
-
 /**
  * Factory for {@code TransformEventHandler}.
  *

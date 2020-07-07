@@ -28,6 +28,7 @@
  */
 package bdv.viewer;
 
+import bdv.TransformEventHandler;
 import bdv.TransformState;
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -84,7 +85,6 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.ui.InteractiveDisplayCanvas;
 import net.imglib2.ui.OverlayRenderer;
 import net.imglib2.ui.PainterThread;
-import net.imglib2.ui.TransformEventHandler;
 import net.imglib2.util.LinAlgHelpers;
 import org.scijava.listeners.Listeners;
 

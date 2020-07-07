@@ -30,7 +30,6 @@
 package bdv;
 
 import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.ui.TransformEventHandler;
 import org.scijava.ui.behaviour.Behaviour;
 import org.scijava.ui.behaviour.ClickBehaviour;
 import org.scijava.ui.behaviour.DragBehaviour;

@@ -31,7 +31,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package net.imglib2.ui;
+package bdv;
 
 import org.scijava.ui.behaviour.util.Behaviours;
 

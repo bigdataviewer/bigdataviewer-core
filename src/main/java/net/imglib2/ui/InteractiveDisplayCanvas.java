@@ -33,6 +33,7 @@
  */
 package net.imglib2.ui;
 
+import bdv.TransformEventHandler;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
