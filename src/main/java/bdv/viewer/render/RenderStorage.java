@@ -11,7 +11,7 @@ import net.imglib2.type.numeric.ARGBType;
  * <p>
  * Call {@link #checkRenewData} to update number and size of arrays when number of visible sources or screen size changes.
  */
-public class RenderStorage
+class RenderStorage
 {
 	/**
 	 * Storage for mask images of {@link VolatileHierarchyProjector}. One array
