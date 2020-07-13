@@ -349,6 +349,7 @@ public class MultiResolutionRenderer
 	public void kill()
 	{
 		projector = null;
+		currentViewerState = null;
 		currentRenderResult = null;
 		renderStorage.clear();
 	}
