@@ -104,7 +104,7 @@ public class WriteSequenceToN5
 	 *            {@link ExportMipmapInfo} contains for each mipmap level, the
 	 *            subsampling factors and subdivision block sizes.
 	 * @param compression
-	 *            whether to compress the data with the HDF5 DEFLATE filter.
+	 *            n5 compression scheme.
 	 * @param n5File
 	 *            n5 root.
 	 * @param loopbackHeuristic
