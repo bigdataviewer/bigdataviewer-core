@@ -36,6 +36,31 @@ import bdv.img.cache.SimpleCacheArrayLoader;
 import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.util.ConstantRandomAccessible;
 import bdv.util.MipmapTransforms;
+import com.amazonaws.SdkClientException;
+import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
+import mpicbg.spim.data.generic.sequence.BasicViewSetup;
+import mpicbg.spim.data.generic.sequence.ImgLoaderHint;
+import mpicbg.spim.data.sequence.MultiResolutionImgLoader;
+import mpicbg.spim.data.sequence.MultiResolutionSetupImgLoader;
+import mpicbg.spim.data.sequence.VoxelDimensions;
+import net.imglib2.*;
+import net.imglib2.cache.queue.BlockingFetchQueues;
+import net.imglib2.cache.queue.FetcherThreads;
+import net.imglib2.cache.volatiles.CacheHints;
+import net.imglib2.cache.volatiles.LoadingStrategy;
+import net.imglib2.img.basictypeaccess.volatiles.array.*;
+import net.imglib2.img.cell.CellGrid;
+import net.imglib2.img.cell.CellImg;
+import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.integer.*;
+import net.imglib2.type.numeric.real.DoubleType;
+import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.type.volatiles.*;
+import net.imglib2.util.Cast;
+import net.imglib2.view.Views;
+import org.janelia.saalfeldlab.n5.*;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
@@ -43,91 +68,31 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
-import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
-import mpicbg.spim.data.generic.sequence.BasicViewSetup;
-import mpicbg.spim.data.generic.sequence.ImgLoaderHint;
-import mpicbg.spim.data.sequence.MultiResolutionImgLoader;
-import mpicbg.spim.data.sequence.MultiResolutionSetupImgLoader;
-import mpicbg.spim.data.sequence.VoxelDimensions;
-import net.imglib2.Dimensions;
-import net.imglib2.FinalDimensions;
-import net.imglib2.FinalInterval;
-import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.Volatile;
-import net.imglib2.cache.queue.BlockingFetchQueues;
-import net.imglib2.cache.queue.FetcherThreads;
-import net.imglib2.cache.volatiles.CacheHints;
-import net.imglib2.cache.volatiles.LoadingStrategy;
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileByteArray;
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileDoubleArray;
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileFloatArray;
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileLongArray;
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
-import net.imglib2.img.cell.CellGrid;
-import net.imglib2.img.cell.CellImg;
-import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.integer.ByteType;
-import net.imglib2.type.numeric.integer.IntType;
-import net.imglib2.type.numeric.integer.LongType;
-import net.imglib2.type.numeric.integer.ShortType;
-import net.imglib2.type.numeric.integer.UnsignedByteType;
-import net.imglib2.type.numeric.integer.UnsignedIntType;
-import net.imglib2.type.numeric.integer.UnsignedLongType;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.type.numeric.real.DoubleType;
-import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.type.volatiles.VolatileByteType;
-import net.imglib2.type.volatiles.VolatileDoubleType;
-import net.imglib2.type.volatiles.VolatileFloatType;
-import net.imglib2.type.volatiles.VolatileIntType;
-import net.imglib2.type.volatiles.VolatileLongType;
-import net.imglib2.type.volatiles.VolatileShortType;
-import net.imglib2.type.volatiles.VolatileUnsignedByteType;
-import net.imglib2.type.volatiles.VolatileUnsignedIntType;
-import net.imglib2.type.volatiles.VolatileUnsignedLongType;
-import net.imglib2.type.volatiles.VolatileUnsignedShortType;
-import net.imglib2.util.Cast;
-import net.imglib2.view.Views;
-import org.janelia.saalfeldlab.n5.DataBlock;
-import org.janelia.saalfeldlab.n5.DataType;
-import org.janelia.saalfeldlab.n5.DatasetAttributes;
-import org.janelia.saalfeldlab.n5.N5FSReader;
-import org.janelia.saalfeldlab.n5.N5Reader;
 
-import static bdv.img.n5.BdvN5Format.DATA_TYPE_KEY;
-import static bdv.img.n5.BdvN5Format.DOWNSAMPLING_FACTORS_KEY;
-import static bdv.img.n5.BdvN5Format.getPathName;
+import static bdv.img.n5.BdvN5Format.*;
 
 public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 {
-	private final File n5File;
+	protected final N5Reader n5;
 
 	// TODO: it would be good if this would not be needed
 	//       find available setups from the n5
-	private final AbstractSequenceDescription< ?, ?, ? > seq;
+	protected final AbstractSequenceDescription< ?, ?, ? > seq;
 
 	/**
 	 * Maps setup id to {@link SetupImgLoader}.
 	 */
 	private final Map< Integer, SetupImgLoader > setupImgLoaders = new HashMap<>();
 
-	public N5ImageLoader( final File n5File, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
-	{
-		this.n5File = n5File;
-		this.seq = sequenceDescription;
-	}
-
-	public File getN5File()
-	{
-		return n5File;
-	}
-
 	private volatile boolean isOpen = false;
 	private FetcherThreads fetchers;
 	private VolatileGlobalCellCache cache;
-	private N5Reader n5;
+
+	public N5ImageLoader( N5Reader n5Reader, AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
+	{
+		this.n5 = n5Reader;
+		this.seq = sequenceDescription;
+	}
 
 	private void open()
 	{
@@ -140,8 +105,6 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 
 				try
 				{
-					this.n5 = new N5FSReader( n5File.getAbsolutePath() );
-
 					int maxNumLevels = 0;
 					final List< ? extends BasicViewSetup > setups = seq.getViewSetupsOrdered();
 					for ( final BasicViewSetup setup : setups )
@@ -353,7 +316,46 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 		@Override
 		public A loadArray( final long[] gridPosition ) throws IOException
 		{
-			return createArray.apply( n5.readBlock( pathName, attributes, gridPosition ) );
+			DataBlock< ? > block = null;
+
+			try {
+				block = n5.readBlock( pathName, attributes, gridPosition );
+			}
+			catch ( SdkClientException e )
+			{
+				System.err.println( e ); // this happens sometimes, not sure yet why...
+			}
+
+			if ( block == null )
+			{
+				final int[] blockSize = attributes.getBlockSize();
+				final int n = blockSize[ 0 ] * blockSize[ 1 ] * blockSize[ 2 ];
+				switch ( attributes.getDataType() )
+				{
+					case UINT8:
+					case INT8:
+						return createArray.apply( new ByteArrayDataBlock( blockSize, gridPosition, new byte[ n ] ) );
+					case UINT16:
+					case INT16:
+						return createArray.apply( new ShortArrayDataBlock( blockSize, gridPosition, new short[ n ] ) );
+					case UINT32:
+					case INT32:
+						return createArray.apply( new IntArrayDataBlock( blockSize, gridPosition, new int[ n ] ) );
+					case UINT64:
+					case INT64:
+						return createArray.apply( new LongArrayDataBlock( blockSize, gridPosition, new long[ n ] ) );
+					case FLOAT32:
+						return createArray.apply( new FloatArrayDataBlock( blockSize, gridPosition, new float[ n ] ) );
+					case FLOAT64:
+						return createArray.apply( new DoubleArrayDataBlock( blockSize, gridPosition, new double[ n ] ) );
+					default:
+						throw new IllegalArgumentException();
+				}
+			}
+			else
+			{
+				return createArray.apply( block );
+			}
 		}
 	}
 
