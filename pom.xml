@@ -5,13 +5,13 @@
 	<parent>
 		<groupId>org.scijava</groupId>
 		<artifactId>pom-scijava</artifactId>
-		<version>29.1.0</version>
+		<version>29.2.0</version>
 		<relativePath />
 	</parent>
 
 	<groupId>sc.fiji</groupId>
 	<artifactId>bigdataviewer-core</artifactId>
-	<version>9.0.6-SNAPSHOT</version>
+	<version>9.0.7-SNAPSHOT</version>
 
 	<name>BigDataViewer Core</name>
 	<description>BigDataViewer core classes with minimal dependencies.</description>
@@ -134,14 +134,6 @@
 		<package-name>bdv</package-name>
 		<license.licenseName>bsd_2</license.licenseName>
 		<license.copyrightOwners>BigDataViewer developers.</license.copyrightOwners>
-		<enforcer.skip>true</enforcer.skip>
-
-<!--		<imglib2.version>5.9.0</imglib2.version>-->
-<!--		<imglib2-cache.version>1.0.0-beta-13</imglib2-cache.version>-->
-<!--		<spim_data.version>2.2.3</spim_data.version>-->
-<!--		<ui-behaviour.version>2.0.1</ui-behaviour.version>-->
-		<miglayout-swing.version>5.2</miglayout-swing.version>
-
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>deploy-to-scijava</releaseProfiles>
 	</properties>
@@ -197,22 +189,18 @@
 		<dependency>
 			<groupId>org.scijava</groupId>
 			<artifactId>scijava-listeners</artifactId>
-<!--			<version>1.0.0-beta-2</version>-->
 		</dependency>
 		<dependency>
 			<groupId>org.janelia.saalfeldlab</groupId>
 			<artifactId>n5-imglib2</artifactId>
-<!--			<version>3.4.1</version>-->
 		</dependency>
 		<dependency>
 			<groupId>org.janelia.saalfeldlab</groupId>
 			<artifactId>n5</artifactId>
-<!--			<version>2.1.6</version>-->
 		</dependency>
 		<dependency>
 			<groupId>com.miglayout</groupId>
 			<artifactId>miglayout-swing</artifactId>
-			<version>${miglayout-swing.version}</version>
 		</dependency>
 
 		<!-- test dependencies -->

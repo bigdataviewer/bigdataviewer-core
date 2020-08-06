@@ -1,19 +1,18 @@
 /*
  * #%L
- * BigDataViewer core classes with minimal dependencies
+ * BigDataViewer core classes with minimal dependencies.
  * %%
- * Copyright (C) 2012 - 2016 Tobias Pietzsch, Stephan Saalfeld, Stephan Preibisch,
- * Jean-Yves Tinevez, HongKee Moon, Johannes Schindelin, Curtis Rueden, John Bogovic
+ * Copyright (C) 2012 - 2020 BigDataViewer developers.
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- *
+ * 
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- *
+ * 
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -90,11 +89,7 @@ import net.imglib2.type.volatiles.VolatileUnsignedLongType;
 import net.imglib2.type.volatiles.VolatileUnsignedShortType;
 import net.imglib2.util.Cast;
 import net.imglib2.view.Views;
-import org.janelia.saalfeldlab.n5.DataBlock;
-import org.janelia.saalfeldlab.n5.DataType;
-import org.janelia.saalfeldlab.n5.DatasetAttributes;
-import org.janelia.saalfeldlab.n5.N5FSReader;
-import org.janelia.saalfeldlab.n5.N5Reader;
+import org.janelia.saalfeldlab.n5.*;
 
 import static bdv.img.n5.BdvN5Format.DATA_TYPE_KEY;
 import static bdv.img.n5.BdvN5Format.DOWNSAMPLING_FACTORS_KEY;
@@ -353,7 +348,39 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 		@Override
 		public A loadArray( final long[] gridPosition ) throws IOException
 		{
-			return createArray.apply( n5.readBlock( pathName, attributes, gridPosition ) );
+			final DataBlock< ? > dataBlock = n5.readBlock( pathName, attributes, gridPosition );
+
+			if ( dataBlock == null )
+				return createEmptyArray( gridPosition );
+			else
+				return createArray.apply( dataBlock );
+		}
+
+		private A createEmptyArray( long[] gridPosition )
+		{
+			final int[] blockSize = attributes.getBlockSize();
+			final int n = blockSize[ 0 ] * blockSize[ 1 ] * blockSize[ 2 ];
+			switch ( attributes.getDataType() )
+			{
+				case UINT8:
+				case INT8:
+					return createArray.apply( new ByteArrayDataBlock( blockSize, gridPosition, new byte[ n ] ) );
+				case UINT16:
+				case INT16:
+					return createArray.apply( new ShortArrayDataBlock( blockSize, gridPosition, new short[ n ] ) );
+				case UINT32:
+				case INT32:
+					return createArray.apply( new IntArrayDataBlock( blockSize, gridPosition, new int[ n ] ) );
+				case UINT64:
+				case INT64:
+					return createArray.apply( new LongArrayDataBlock( blockSize, gridPosition, new long[ n ] ) );
+				case FLOAT32:
+					return createArray.apply( new FloatArrayDataBlock( blockSize, gridPosition, new float[ n ] ) );
+				case FLOAT64:
+					return createArray.apply( new DoubleArrayDataBlock( blockSize, gridPosition, new double[ n ] ) );
+				default:
+					throw new UnsupportedOperationException("Data type not supported: " + attributes.getDataType());
+			}
 		}
 	}
 
