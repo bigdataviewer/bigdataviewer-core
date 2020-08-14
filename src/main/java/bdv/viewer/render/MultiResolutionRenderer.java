@@ -415,6 +415,9 @@ public class MultiResolutionRenderer
 			requestedScreenScaleIndex = screenScales.suggestScreenScale( renderNanosPerPixel );
 		}
 
+		if ( !intervalMode && requestedScreenScaleIndex < 0 )
+			return true;
+
 		return intervalMode
 				? paintInterval( createProjector )
 				: paintFullFrame( createProjector );
