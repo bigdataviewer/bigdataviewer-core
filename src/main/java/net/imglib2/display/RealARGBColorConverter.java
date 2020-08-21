@@ -57,7 +57,7 @@ class Instances
 					provider = new ClassCopyProvider<>( Imp.class, RealARGBColorConverter.class, double.class, double.class );
 			}
 		}
-		return provider.newInstanceForKey( type, min, max );
+		return provider.newInstanceForKey( type.getClass(), min, max );
 	}
 
 	public static class Imp< R extends RealType< ? > > implements RealARGBColorConverter< R >
