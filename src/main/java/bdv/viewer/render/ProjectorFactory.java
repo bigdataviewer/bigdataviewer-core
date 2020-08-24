@@ -110,13 +110,15 @@ class ProjectorFactory
 
 	/**
 	 * Create a projector for rendering the specified {@code ViewerState} to the
-	 * specified {@code screenImage}, with the current visible sources and
+	 * specified {@code screenImage}, with the current visible sources (visible
+	 * in {@code ViewerState} and actually currently visible on screen) and
 	 * timepoint of the {@code ViewerState}, and the specified
 	 * {@code screenTransform} from global coordinates to coordinates in the
 	 * {@code screenImage}.
 	 */
 	public VolatileProjector createProjector(
 			final ViewerState viewerState,
+			final List< SourceAndConverter< ? > > visibleSourcesOnScreen,
 			final RandomAccessibleInterval< ARGBType > screenImage,
 			final AffineTransform3D screenTransform,
 			final RenderStorage renderStorage )
@@ -131,22 +133,20 @@ class ProjectorFactory
 		final int width = ( int ) screenImage.dimension( 0 );
 		final int height = ( int ) screenImage.dimension( 1 );
 
-		final ArrayList< SourceAndConverter< ? > > visibleSources = new ArrayList<>( viewerState.getVisibleAndPresentSources() );
-		visibleSources.sort( viewerState.sourceOrder() );
 		VolatileProjector projector;
-		if ( visibleSources.isEmpty() )
+		if ( visibleSourcesOnScreen.isEmpty() )
 			projector = new EmptyProjector<>( screenImage );
-		else if ( visibleSources.size() == 1 )
+		else if ( visibleSourcesOnScreen.size() == 1 )
 		{
 			final byte[] maskArray = renderStorage.getMaskArray( 0 );
-			projector = createSingleSourceProjector( viewerState, visibleSources.get( 0 ), screenImage, screenTransform, maskArray );
+			projector = createSingleSourceProjector( viewerState, visibleSourcesOnScreen.get( 0 ), screenImage, screenTransform, maskArray );
 		}
 		else
 		{
 			final ArrayList< VolatileProjector > sourceProjectors = new ArrayList<>();
 			final ArrayList< RandomAccessibleInterval< ARGBType > > sourceImages = new ArrayList<>();
 			int j = 0;
-			for ( final SourceAndConverter< ? > source : visibleSources )
+			for ( final SourceAndConverter< ? > source : visibleSourcesOnScreen )
 			{
 				final RandomAccessibleInterval< ARGBType > renderImage = renderStorage.getRenderImage( width, height, j );
 				final byte[] maskArray = renderStorage.getMaskArray( j );
@@ -155,7 +155,7 @@ class ProjectorFactory
 				sourceProjectors.add( p );
 				sourceImages.add( renderImage );
 			}
-			projector = accumulateProjectorFactory.createProjector( sourceProjectors, visibleSources, sourceImages, screenImage, numRenderingThreads, renderingExecutorService );
+			projector = accumulateProjectorFactory.createProjector( sourceProjectors, visibleSourcesOnScreen, sourceImages, screenImage, numRenderingThreads, renderingExecutorService );
 		}
 		previousTimepoint = viewerState.getCurrentTimepoint();
 		return projector;

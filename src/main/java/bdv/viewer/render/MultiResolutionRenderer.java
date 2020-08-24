@@ -28,7 +28,8 @@
  */
 package bdv.viewer.render;
 
-import bdv.viewer.RequestRepaint;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 import net.imglib2.Interval;
@@ -41,6 +42,8 @@ import net.imglib2.util.Intervals;
 
 import bdv.cache.CacheControl;
 import bdv.util.MovingAverage;
+import bdv.viewer.RequestRepaint;
+import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerState;
 import bdv.viewer.render.ScreenScales.IntervalRenderData;
 import bdv.viewer.render.ScreenScales.ScreenScale;
@@ -152,9 +155,14 @@ public class MultiResolutionRenderer
 	private ViewerState currentViewerState;
 
 	/**
-	 * How many sources are visible in {@link #currentViewerState}.
+	 * The sources that are actually visible on screen currently. This means
+	 * that the sources both are visible in the {@link #currentViewerState} (via
+	 * {@link ViewerState#getVisibleAndPresentSources()
+	 * getVisibleAndPresentSources}) and, when transformed to viewer
+	 * coordinates, overlap the screen area ({@link #display}).
 	 */
-	private int currentNumVisibleSources;
+	private final List< SourceAndConverter< ? > > currentVisibleSourcesOnScreen;
+
 
 	/**
 	 * The last successfully rendered (not cancelled) full frame result.
@@ -278,6 +286,7 @@ public class MultiResolutionRenderer
 		this.painterThread = painterThread;
 		projector = null;
 		currentScreenScaleIndex = -1;
+		currentVisibleSourcesOnScreen = new ArrayList<>();
 		screenScales = new ScreenScales( screenScaleFactors, targetRenderNanos );
 		renderStorage = new RenderStorage();
 
@@ -351,6 +360,7 @@ public class MultiResolutionRenderer
 		projector = null;
 		currentViewerState = null;
 		currentRenderResult = null;
+		currentVisibleSourcesOnScreen.clear();
 		renderStorage.clear();
 	}
 
@@ -384,7 +394,8 @@ public class MultiResolutionRenderer
 			if ( newInterval )
 			{
 				intervalMode = true;
-				final double renderNanosPerPixel = renderNanosPerPixelAndSource.getAverage() * currentNumVisibleSources;
+				final int numSources = currentVisibleSourcesOnScreen.size();
+				final double renderNanosPerPixel = renderNanosPerPixelAndSource.getAverage() * numSources;
 				requestedIntervalScaleIndex = screenScales.suggestIntervalScreenScale( renderNanosPerPixel, currentScreenScaleIndex );
 			}
 
@@ -410,8 +421,9 @@ public class MultiResolutionRenderer
 		if ( newFrame )
 		{
 			currentViewerState = viewerState.snapshot();
-			currentNumVisibleSources = currentViewerState.getVisibleAndPresentSources().size();
-			final double renderNanosPerPixel = renderNanosPerPixelAndSource.getAverage() * currentNumVisibleSources;
+			VisibilityUtils.computeVisibleSourcesOnScreen( currentViewerState, screenScales.get( 0 ), currentVisibleSourcesOnScreen );
+			final int numSources = currentVisibleSourcesOnScreen.size();
+			final double renderNanosPerPixel = renderNanosPerPixelAndSource.getAverage() * numSources;
 			requestedScreenScaleIndex = screenScales.suggestScreenScale( renderNanosPerPixel );
 		}
 
@@ -445,8 +457,8 @@ public class MultiResolutionRenderer
 				renderResult.setScaleFactor( screenScale.scale() );
 				currentViewerState.getViewerTransform( renderResult.getViewerTransform() );
 
-				renderStorage.checkRenewData( screenScales.get( 0 ).width(), screenScales.get( 0 ).height(), currentNumVisibleSources );
-				projector = createProjector( currentViewerState, requestedScreenScaleIndex, renderResult.getTargetImage(), 0, 0 );
+				renderStorage.checkRenewData( screenScales.get( 0 ).width(), screenScales.get( 0 ).height(), currentVisibleSourcesOnScreen.size() );
+				projector = createProjector( currentViewerState, currentVisibleSourcesOnScreen, requestedScreenScaleIndex, renderResult.getTargetImage(), 0, 0 );
 				requestNewFrameIfIncomplete = projectorFactory.requestNewFrameIfIncomplete();
 			}
 			p = projector;
@@ -496,7 +508,7 @@ public class MultiResolutionRenderer
 			{
 				intervalResult.init( intervalRenderData.width(), intervalRenderData.height() );
 				intervalResult.setScaleFactor( intervalRenderData.scale() );
-				projector = createProjector( currentViewerState, requestedIntervalScaleIndex, intervalResult.getTargetImage(), intervalRenderData.offsetX(), intervalRenderData.offsetY() );
+				projector = createProjector( currentViewerState, currentVisibleSourcesOnScreen, requestedIntervalScaleIndex, intervalResult.getTargetImage(), intervalRenderData.offsetX(), intervalRenderData.offsetY() );
 			}
 			p = projector;
 		}
@@ -543,7 +555,8 @@ public class MultiResolutionRenderer
 
 	private void recordRenderTime( final RenderResult result, final long renderNanos )
 	{
-		final int numRenderPixels = ( int ) Intervals.numElements( result.getTargetImage() ) * currentNumVisibleSources;
+		final int numSources = currentVisibleSourcesOnScreen.size();
+		final int numRenderPixels = ( int ) Intervals.numElements( result.getTargetImage() ) * numSources;
 		if ( numRenderPixels >= 4096 )
 			renderNanosPerPixelAndSource.add( renderNanos / ( double ) numRenderPixels );
 	}
@@ -597,6 +610,7 @@ public class MultiResolutionRenderer
 
 	private VolatileProjector createProjector(
 			final ViewerState viewerState,
+			final List< SourceAndConverter< ? > > visibleSourcesOnScreen,
 			final int screenScaleIndex,
 			final RandomAccessibleInterval< ARGBType > screenImage,
 			final int offsetX,
@@ -609,6 +623,7 @@ public class MultiResolutionRenderer
 
 		final VolatileProjector projector = projectorFactory.createProjector(
 				viewerState,
+				visibleSourcesOnScreen,
 				screenImage,
 				screenTransform,
 				renderStorage );
