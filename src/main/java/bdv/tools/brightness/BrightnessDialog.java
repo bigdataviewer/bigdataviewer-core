@@ -42,6 +42,7 @@ import java.awt.event.KeyEvent;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 
+import java.util.concurrent.atomic.AtomicBoolean;
 import javax.swing.AbstractAction;
 import javax.swing.Action;
 import javax.swing.ActionMap;
@@ -103,6 +104,8 @@ public class BrightnessDialog extends JDialog
 		im.put( KeyStroke.getKeyStroke( KeyEvent.VK_ESCAPE, 0 ), hideKey );
 		am.put( hideKey, hideAction );
 
+		final AtomicBoolean recreateContentPending = new AtomicBoolean();
+
 		setupAssignments.setUpdateListener( new SetupAssignments.UpdateListener()
 		{
 			@Override
@@ -111,13 +114,35 @@ public class BrightnessDialog extends JDialog
 				try
 				{
 					InvokeOnEDT.invokeAndWait( () -> {
-						colorsPanel.recreateContent();
-						minMaxPanels.recreateContent();
+						if ( isVisible() )
+						{
+							System.out.println( "colorsPanel.recreateContent()" );
+							colorsPanel.recreateContent();
+							minMaxPanels.recreateContent();
+							recreateContentPending.set( false );
+						}
+						else
+						{
+							recreateContentPending.set( true );
+						}
 					} );
 				}
 				catch ( InvocationTargetException | InterruptedException e )
 				{
 					e.printStackTrace();
+				}
+			}
+		} );
+
+		addComponentListener( new ComponentAdapter()
+		{
+			@Override
+			public void componentShown( final ComponentEvent e )
+			{
+				if ( recreateContentPending.getAndSet( false ) )
+				{
+					colorsPanel.recreateContent();
+					minMaxPanels.recreateContent();
 				}
 			}
 		} );
