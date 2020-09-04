@@ -198,8 +198,8 @@ public class BehaviourTransformEventHandler3D implements BehaviourTransformEvent
 				affine.scale( ( double ) width / canvasW );
 				affine.set( affine.get( 0, 3 ) + width / 2, 0, 3 );
 				affine.set( affine.get( 1, 3 ) + height / 2, 1, 3 );
-				notifyListener();
 			}
+			notifyListener();
 		}
 		canvasW = width;
 		canvasH = height;
