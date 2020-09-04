@@ -65,6 +65,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import bdv.util.InvokeOnEDT;
+import bdv.util.MemoryFixedDialog;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import net.imglib2.type.numeric.ARGBType;
 
@@ -75,7 +76,7 @@ import net.imglib2.type.numeric.ARGBType;
  * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
  */
 @Deprecated
-public class BrightnessDialog extends JDialog
+public class BrightnessDialog extends MemoryFixedDialog
 {
 	public BrightnessDialog( final Frame owner, final SetupAssignments setupAssignments )
 	{
@@ -148,7 +149,6 @@ public class BrightnessDialog extends JDialog
 		} );
 
 		pack();
-		setDefaultCloseOperation( WindowConstants.HIDE_ON_CLOSE );
 	}
 
 	public static class ColorsPanel extends JPanel

@@ -30,6 +30,7 @@ package bdv.tools;
 
 import bdv.cache.CacheControl;
 import bdv.export.ProgressWriter;
+import bdv.util.MemoryFixedDialog;
 import bdv.util.Prefs;
 import bdv.viewer.BasicViewerState;
 import bdv.viewer.ViewerPanel;
@@ -56,7 +57,6 @@ import javax.swing.BoxLayout;
 import javax.swing.InputMap;
 import javax.swing.JButton;
 import javax.swing.JComponent;
-import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -77,7 +77,7 @@ import bdv.viewer.OverlayRenderer;
 import bdv.viewer.render.RenderTarget;
 import net.imglib2.util.LinAlgHelpers;
 
-public class RecordMaxProjectionDialog extends JDialog implements OverlayRenderer
+public class RecordMaxProjectionDialog extends MemoryFixedDialog implements OverlayRenderer
 {
 	private static final long serialVersionUID = 1L;
 
@@ -275,7 +275,6 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 		am.put( hideKey, hideAction );
 
 		pack();
-		setDefaultCloseOperation( WindowConstants.HIDE_ON_CLOSE );
 	}
 
 	/**

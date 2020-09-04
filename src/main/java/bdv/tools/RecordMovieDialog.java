@@ -30,6 +30,7 @@ package bdv.tools;
 
 import bdv.cache.CacheControl;
 import bdv.export.ProgressWriter;
+import bdv.util.MemoryFixedDialog;
 import bdv.util.Prefs;
 import bdv.viewer.BasicViewerState;
 import bdv.viewer.ViewerPanel;
@@ -55,7 +56,6 @@ import javax.swing.BoxLayout;
 import javax.swing.InputMap;
 import javax.swing.JButton;
 import javax.swing.JComponent;
-import javax.swing.JDialog;
 import javax.swing.JFileChooser;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -70,7 +70,7 @@ import net.imglib2.realtransform.AffineTransform3D;
 import bdv.viewer.OverlayRenderer;
 import bdv.viewer.render.RenderTarget;
 
-public class RecordMovieDialog extends JDialog implements OverlayRenderer
+public class RecordMovieDialog extends MemoryFixedDialog implements OverlayRenderer
 {
 	private static final long serialVersionUID = 1L;
 
@@ -248,7 +248,6 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 		am.put( hideKey, hideAction );
 
 		pack();
-		setDefaultCloseOperation( WindowConstants.HIDE_ON_CLOSE );
 	}
 
 	public void recordMovie( final int width, final int height, final int minTimepointIndex, final int maxTimepointIndex, final File dir ) throws IOException
