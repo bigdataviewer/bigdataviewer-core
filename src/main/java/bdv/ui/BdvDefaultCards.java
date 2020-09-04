@@ -42,6 +42,7 @@ import java.awt.Insets;
 import java.awt.KeyboardFocusManager;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.lang.ref.WeakReference;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -104,64 +105,98 @@ public class BdvDefaultCards
 		treePanel.setPreferredSize( new Dimension( 300, 225 ) );
 
 		// -- handle focus --
-		KeyboardFocusManager.getCurrentKeyboardFocusManager().addPropertyChangeListener( "focusOwner", new PropertyChangeListener()
-		{
-			static final int MAX_DEPTH = 8;
-			boolean tableFocused;
-			boolean treeFocused;
-
-			void focusTable( boolean focus )
-			{
-				if ( focus != tableFocused )
-				{
-					tableFocused = focus;
-					table.setSelectionBackground( focus );
-				}
-			}
-
-			void focusTree( boolean focus )
-			{
-				if ( focus != treeFocused )
-				{
-					treeFocused = focus;
-					tree.setSelectionBackground( focus );
-				}
-			}
-
-			@Override
-			public void propertyChange( final PropertyChangeEvent evt )
-			{
-				if ( evt.getNewValue() instanceof JComponent )
-				{
-					JComponent component = ( JComponent ) evt.getNewValue();
-					for ( int i = 0; i < MAX_DEPTH; ++i )
-					{
-						Container parent = component.getParent();
-						if ( ! ( parent instanceof JComponent ) )
-							break;
-
-						component = ( JComponent ) parent;
-						if ( component == treePanel )
-						{
-							focusTable( false );
-							focusTree( true );
-							return;
-						}
-						else if ( component == tablePanel )
-						{
-							focusTable( true );
-							focusTree( false );
-							return;
-						}
-					}
-					focusTable( false );
-					focusTree( false );
-				}
-			}
-		} );
+		new FocusListener( tablePanel, table, treePanel, tree );
 
 		cards.addCard( DEFAULT_VIEWERMODES_CARD, "Display Modes", new DisplaySettingsPanel( viewer.state() ), true, new Insets( 0, 4, 4, 0 ) );
 		cards.addCard( DEFAULT_SOURCES_CARD, "Sources", tablePanel, true, new Insets( 0, 4, 0, 0 ) );
 		cards.addCard( DEFAULT_SOURCEGROUPS_CARD, "Groups", treePanel, true, new Insets( 0, 4, 0, 0 ) );
+	}
+
+	private static class FocusListener implements PropertyChangeListener
+	{
+
+		private final KeyboardFocusManager currentKeyboardFocusManager;
+
+		private final WeakReference< JPanel > tablePanel;
+
+		private final WeakReference< SourceTable > table;
+
+		private final WeakReference< JPanel > treePanel;
+
+		private final WeakReference< SourceGroupTree > tree;
+
+		static final int MAX_DEPTH = 8;
+
+		boolean tableFocused;
+
+		boolean treeFocused;
+
+		FocusListener( JPanel tablePanel, SourceTable table, JPanel treePanel, SourceGroupTree tree )
+		{
+			this.tablePanel = new WeakReference<>( tablePanel );
+			this.table = new WeakReference<>( table );
+			this.treePanel = new WeakReference<>( treePanel );
+			this.tree = new WeakReference<>( tree );
+			currentKeyboardFocusManager = KeyboardFocusManager.getCurrentKeyboardFocusManager();
+			currentKeyboardFocusManager.addPropertyChangeListener( "focusOwner", this );
+		}
+
+		void focusTable( final boolean focus )
+		{
+			if ( focus != tableFocused )
+			{
+				tableFocused = focus;
+				SourceTable table = this.table.get();
+				if ( table != null )
+					table.setSelectionBackground( focus );
+			}
+		}
+
+		void focusTree( final boolean focus )
+		{
+			if ( focus != treeFocused )
+			{
+				treeFocused = focus;
+				SourceGroupTree tree = this.tree.get();
+				if ( tree != null )
+					tree.setSelectionBackground( focus );
+			}
+		}
+
+		@Override
+		public void propertyChange( final PropertyChangeEvent evt )
+		{
+			if ( tablePanel.get() == null && treePanel.get() == null )
+			{
+				currentKeyboardFocusManager.removePropertyChangeListener( "focusOwner", this );
+				return;
+			}
+
+			if ( evt.getNewValue() instanceof JComponent )
+			{
+				JComponent component = ( JComponent ) evt.getNewValue();
+				for ( int i = 0; i < MAX_DEPTH; ++i )
+				{
+					Container parent = component.getParent();
+					if ( !( parent instanceof JComponent ) )
+						break;
+
+					if ( component == treePanel.get() )
+					{
+						focusTable( false );
+						focusTree( true );
+						return;
+					}
+					else if ( component == tablePanel.get() )
+					{
+						focusTable( true );
+						focusTree( false );
+						return;
+					}
+				}
+				focusTable( false );
+				focusTree( false );
+			}
+		}
 	}
 }
