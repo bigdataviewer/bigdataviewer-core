@@ -28,6 +28,7 @@
  */
 package bdv.tools;
 
+import bdv.util.DelayedPackDialog;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerState;
 import bdv.viewer.VisibilityAndGrouping;
@@ -61,19 +62,17 @@ import javax.swing.ButtonGroup;
 import javax.swing.InputMap;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
-import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
-import javax.swing.WindowConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 @Deprecated
-public class VisibilityAndGroupingDialog extends JDialog
+public class VisibilityAndGroupingDialog extends DelayedPackDialog
 {
 	private static final long serialVersionUID = 1L;
 
@@ -117,7 +116,7 @@ public class VisibilityAndGroupingDialog extends JDialog
 		content.add( visibilityPanel );
 		content.add( groupingPanel );
 		content.add( modePanel );
-		getContentPane().add( content, BorderLayout.NORTH );
+		add( content, BorderLayout.NORTH );
 
 		final ActionMap am = getRootPane().getActionMap();
 		final InputMap im = getRootPane().getInputMap( JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT );
@@ -147,7 +146,6 @@ public class VisibilityAndGroupingDialog extends JDialog
 		} );
 
 		pack();
-		setDefaultCloseOperation( WindowConstants.HIDE_ON_CLOSE );
 	}
 
 	public void update()

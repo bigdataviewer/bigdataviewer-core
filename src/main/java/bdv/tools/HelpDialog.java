@@ -28,6 +28,8 @@
  */
 package bdv.tools;
 
+import bdv.util.DelayedPackDialog;
+
 import java.awt.BorderLayout;
 import java.awt.Dimension;
 import java.awt.Frame;
@@ -42,14 +44,12 @@ import javax.swing.ActionMap;
 import javax.swing.BorderFactory;
 import javax.swing.InputMap;
 import javax.swing.JComponent;
-import javax.swing.JDialog;
 import javax.swing.JEditorPane;
 import javax.swing.JScrollPane;
 import javax.swing.KeyStroke;
 import javax.swing.ScrollPaneConstants;
-import javax.swing.WindowConstants;
 
-public class HelpDialog extends JDialog
+public class HelpDialog extends DelayedPackDialog
 {
 	private static final long serialVersionUID = 1L;
 
@@ -100,7 +100,6 @@ public class HelpDialog extends JDialog
 			am.put( hideKey, hideAction );
 
 			pack();
-			setDefaultCloseOperation( WindowConstants.HIDE_ON_CLOSE );
 		}
 		catch ( final IOException e )
 		{
