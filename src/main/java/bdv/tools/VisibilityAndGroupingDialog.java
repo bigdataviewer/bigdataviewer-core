@@ -28,7 +28,7 @@
  */
 package bdv.tools;
 
-import bdv.util.MemoryFixedDialog;
+import bdv.util.DelayedPackDialog;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerState;
 import bdv.viewer.VisibilityAndGrouping;
@@ -68,12 +68,11 @@ import javax.swing.JRadioButton;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
-import javax.swing.WindowConstants;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 
 @Deprecated
-public class VisibilityAndGroupingDialog extends MemoryFixedDialog
+public class VisibilityAndGroupingDialog extends DelayedPackDialog
 {
 	private static final long serialVersionUID = 1L;
 

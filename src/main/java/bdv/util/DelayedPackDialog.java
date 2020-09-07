@@ -3,17 +3,14 @@ package bdv.util;
 import javax.swing.*;
 import java.awt.*;
 
-public class MemoryFixedDialog extends JDialog
+/**
+ * A {@code JDialog} that delays {@code pack()} calls until the dialog is made visible.
+ */
+public class DelayedPackDialog extends JDialog
 {
-	private boolean packIsPending = false;
+	private volatile boolean packIsPending = false;
 
-	public MemoryFixedDialog()
-	{
-		super();
-		super.setDefaultCloseOperation( WindowConstants.DISPOSE_ON_CLOSE );
-	}
-
-	public MemoryFixedDialog( Frame owner, String title, boolean modal )
+	public DelayedPackDialog( Frame owner, String title, boolean modal )
 	{
 		super( owner, title, modal );
 	}
@@ -39,11 +36,5 @@ public class MemoryFixedDialog extends JDialog
 			super.pack();
 		}
 		super.setVisible( visible );
-	}
-
-	@Override
-	public void setDefaultCloseOperation( int operation )
-	{
-		// do nothing
 	}
 }

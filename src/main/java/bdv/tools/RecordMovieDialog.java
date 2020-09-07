@@ -30,7 +30,7 @@ package bdv.tools;
 
 import bdv.cache.CacheControl;
 import bdv.export.ProgressWriter;
-import bdv.util.MemoryFixedDialog;
+import bdv.util.DelayedPackDialog;
 import bdv.util.Prefs;
 import bdv.viewer.BasicViewerState;
 import bdv.viewer.ViewerPanel;
@@ -63,14 +63,13 @@ import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.KeyStroke;
 import javax.swing.SpinnerNumberModel;
-import javax.swing.WindowConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import net.imglib2.realtransform.AffineTransform3D;
 import bdv.viewer.OverlayRenderer;
 import bdv.viewer.render.RenderTarget;
 
-public class RecordMovieDialog extends MemoryFixedDialog implements OverlayRenderer
+public class RecordMovieDialog extends DelayedPackDialog implements OverlayRenderer
 {
 	private static final long serialVersionUID = 1L;
 
