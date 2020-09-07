@@ -202,8 +202,8 @@ public class BoundingBoxDialog extends JDialog
 				}
 				if ( showBoxOverlay )
 				{
-					viewer.getDisplay().addOverlayRenderer( boxOverlay );
-					viewer.addRenderTransformListener( boxOverlay );
+					viewer.getDisplay().overlays().add( boxOverlay );
+					viewer.renderTransformListeners().add( boxOverlay );
 				}
 			}
 
@@ -218,7 +218,7 @@ public class BoundingBoxDialog extends JDialog
 				}
 				if ( showBoxOverlay )
 				{
-					viewer.getDisplay().removeOverlayRenderer( boxOverlay );
+					viewer.getDisplay().overlays().remove( boxOverlay );
 					viewer.removeTransformListener( boxOverlay );
 				}
 			}

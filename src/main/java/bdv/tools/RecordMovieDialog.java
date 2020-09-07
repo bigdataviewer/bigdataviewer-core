@@ -32,10 +32,10 @@ import bdv.cache.CacheControl;
 import bdv.export.ProgressWriter;
 import bdv.util.Prefs;
 import bdv.viewer.BasicViewerState;
-import bdv.viewer.SynchronizedViewerState;
 import bdv.viewer.ViewerPanel;
 import bdv.viewer.ViewerState;
 import bdv.viewer.overlay.ScaleBarOverlayRenderer;
+import bdv.viewer.render.awt.BufferedImageRenderResult;
 import bdv.viewer.render.MultiResolutionRenderer;
 import java.awt.BorderLayout;
 import java.awt.Frame;
@@ -67,9 +67,8 @@ import javax.swing.WindowConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.ui.OverlayRenderer;
-import net.imglib2.ui.PainterThread;
-import net.imglib2.ui.RenderTarget;
+import bdv.viewer.OverlayRenderer;
+import bdv.viewer.render.RenderTarget;
 
 public class RecordMovieDialog extends JDialog implements OverlayRenderer
 {
@@ -269,16 +268,25 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 
 		final ScaleBarOverlayRenderer scalebar = Prefs.showScaleBarInMovie() ? new ScaleBarOverlayRenderer() : null;
 
-		class MyTarget implements RenderTarget
+		class MyTarget implements RenderTarget< BufferedImageRenderResult >
 		{
-			BufferedImage bi;
+			final BufferedImageRenderResult renderResult = new BufferedImageRenderResult();
 
 			@Override
-			public BufferedImage setBufferedImage( final BufferedImage bufferedImage )
+			public BufferedImageRenderResult getReusableRenderResult()
 			{
-				bi = bufferedImage;
-				return null;
+				return renderResult;
 			}
+
+			@Override
+			public BufferedImageRenderResult createRenderResult()
+			{
+				return new BufferedImageRenderResult();
+			}
+
+			@Override
+			public void setRenderResult( final BufferedImageRenderResult renderResult )
+			{}
 
 			@Override
 			public int getWidth()
@@ -294,24 +302,25 @@ public class RecordMovieDialog extends JDialog implements OverlayRenderer
 		}
 		final MyTarget target = new MyTarget();
 		final MultiResolutionRenderer renderer = new MultiResolutionRenderer(
-				target, new PainterThread( null ), new double[] { 1 }, 0, false, 1, null, false,
+				target, () -> {}, new double[] { 1 }, 0, 1, null, false,
 				viewer.getOptionValues().getAccumulateProjectorFactory(), new CacheControl.Dummy() );
 		progressWriter.setProgress( 0 );
 		for ( int timepoint = minTimepointIndex; timepoint <= maxTimepointIndex; ++timepoint )
 		{
 			renderState.setCurrentTimepoint( timepoint );
 			renderer.requestRepaint();
-			renderer.paint( new bdv.viewer.state.ViewerState( new SynchronizedViewerState( renderState ) ) );
+			renderer.paint( renderState );
 
+			final BufferedImage bi = target.renderResult.getBufferedImage();
 			if ( Prefs.showScaleBarInMovie() )
 			{
-				final Graphics2D g2 = target.bi.createGraphics();
+				final Graphics2D g2 = bi.createGraphics();
 				g2.setClip( 0, 0, width, height );
 				scalebar.setViewerState( renderState );
 				scalebar.paint( g2 );
 			}
 
-			ImageIO.write( target.bi, "png", new File( String.format( "%s/img-%03d.png", dir, timepoint ) ) );
+			ImageIO.write( bi, "png", new File( String.format( "%s/img-%03d.png", dir, timepoint ) ) );
 			progressWriter.setProgress( ( double ) (timepoint - minTimepointIndex + 1) / (maxTimepointIndex - minTimepointIndex + 1) );
 		}
 	}

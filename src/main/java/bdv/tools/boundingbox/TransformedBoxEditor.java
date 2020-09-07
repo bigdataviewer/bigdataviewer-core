@@ -155,8 +155,8 @@ public class TransformedBoxEditor
 
 	public void install()
 	{
-		viewer.getDisplay().addOverlayRenderer( boxOverlay );
-		viewer.addRenderTransformListener( boxOverlay );
+		viewer.getDisplay().overlays().add( boxOverlay );
+		viewer.renderTransformListeners().add( boxOverlay );
 		viewer.getDisplay().addHandler( boxOverlay.getCornerHighlighter() );
 
 		refreshBlockMap();
@@ -168,7 +168,7 @@ public class TransformedBoxEditor
 
 	public void uninstall()
 	{
-		viewer.getDisplay().removeOverlayRenderer( boxOverlay );
+		viewer.getDisplay().overlays().remove( boxOverlay );
 		viewer.removeTransformListener( boxOverlay );
 		viewer.getDisplay().removeHandler( boxOverlay.getCornerHighlighter() );
 

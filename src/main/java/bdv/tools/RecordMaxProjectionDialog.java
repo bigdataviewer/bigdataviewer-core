@@ -32,10 +32,10 @@ import bdv.cache.CacheControl;
 import bdv.export.ProgressWriter;
 import bdv.util.Prefs;
 import bdv.viewer.BasicViewerState;
-import bdv.viewer.SynchronizedViewerState;
 import bdv.viewer.ViewerPanel;
 import bdv.viewer.ViewerState;
 import bdv.viewer.overlay.ScaleBarOverlayRenderer;
+import bdv.viewer.render.awt.BufferedImageRenderResult;
 import bdv.viewer.render.MultiResolutionRenderer;
 import java.awt.BorderLayout;
 import java.awt.Frame;
@@ -73,9 +73,8 @@ import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.ui.OverlayRenderer;
-import net.imglib2.ui.PainterThread;
-import net.imglib2.ui.RenderTarget;
+import bdv.viewer.OverlayRenderer;
+import bdv.viewer.render.RenderTarget;
 import net.imglib2.util.LinAlgHelpers;
 
 public class RecordMaxProjectionDialog extends JDialog implements OverlayRenderer
@@ -313,14 +312,11 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 
 		final ScaleBarOverlayRenderer scalebar = Prefs.showScaleBarInMovie() ? new ScaleBarOverlayRenderer() : null;
 
-		class MyTarget implements RenderTarget
+		class MyTarget implements RenderTarget< BufferedImageRenderResult >
 		{
-			final ARGBScreenImage accumulated;
+			final ARGBScreenImage accumulated = new ARGBScreenImage( width, height );
 
-			public MyTarget()
-			{
-				accumulated = new ARGBScreenImage( width, height );
-			}
+			final BufferedImageRenderResult renderResult = new BufferedImageRenderResult();
 
 			public void clear()
 			{
@@ -329,8 +325,21 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 			}
 
 			@Override
-			public BufferedImage setBufferedImage( final BufferedImage bufferedImage )
+			public BufferedImageRenderResult getReusableRenderResult()
 			{
+				return renderResult;
+			}
+
+			@Override
+			public BufferedImageRenderResult createRenderResult()
+			{
+				return new BufferedImageRenderResult();
+			}
+
+			@Override
+			public void setRenderResult( final BufferedImageRenderResult renderResult )
+			{
+				final BufferedImage bufferedImage = renderResult.getBufferedImage();
 				final Img< ARGBType > argbs = ArrayImgs.argbs( ( ( DataBufferInt ) bufferedImage.getData().getDataBuffer() ).getData(), width, height );
 				final Cursor< ARGBType > c = argbs.cursor();
 				for ( final ARGBType acc : accumulated )
@@ -343,7 +352,6 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 							Math.max( ARGBType.blue( in ), ARGBType.blue( current ) ),
 							Math.max( ARGBType.alpha( in ), ARGBType.alpha( current ) )	) );
 				}
-				return null;
 			}
 
 			@Override
@@ -360,7 +368,7 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 		}
 		final MyTarget target = new MyTarget();
 		final MultiResolutionRenderer renderer = new MultiResolutionRenderer(
-				target, new PainterThread( null ), new double[] { 1 }, 0, false, 1, null, false,
+				target, () -> {}, new double[] { 1 }, 0, 1, null, false,
 				viewer.getOptionValues().getAccumulateProjectorFactory(), new CacheControl.Dummy() );
 		progressWriter.setProgress( 0 );
 		for ( int timepoint = minTimepointIndex; timepoint <= maxTimepointIndex; ++timepoint )
@@ -377,7 +385,7 @@ public class RecordMaxProjectionDialog extends JDialog implements OverlayRendere
 				affine.concatenate( tGV );
 				renderState.setViewerTransform( affine );
 				renderer.requestRepaint();
-				renderer.paint( new bdv.viewer.state.ViewerState( new SynchronizedViewerState( renderState ) ) );
+				renderer.paint( renderState );
 			}
 
 			final BufferedImage bi = target.accumulated.image();

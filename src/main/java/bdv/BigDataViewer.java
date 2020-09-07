@@ -328,8 +328,6 @@ public class BigDataViewer
 			final ViewerOptions options )
 	{
 		final InputTriggerConfig inputTriggerConfig = getInputTriggerConfig( options );
-		if ( options.values.getTransformEventHandlerFactory() instanceof BehaviourTransformEventHandlerFactory )
-			( ( BehaviourTransformEventHandlerFactory< ? > ) options.values.getTransformEventHandlerFactory() ).setConfig( inputTriggerConfig );
 
 		viewerFrame = new ViewerFrame( sources, numTimepoints, cache, options.inputTriggerConfig( inputTriggerConfig ) );
 		if ( windowTitle != null )
@@ -375,11 +373,11 @@ public class BigDataViewer
 
 		movieDialog = new RecordMovieDialog( viewerFrame, viewer, progressWriter );
 		// this is just to get updates of window size:
-		viewer.getDisplay().addOverlayRenderer( movieDialog );
+		viewer.getDisplay().overlays().add( movieDialog );
 
 		movieMaxProjectDialog = new RecordMaxProjectionDialog( viewerFrame, viewer, progressWriter );
 		// this is just to get updates of window size:
-		viewer.getDisplay().addOverlayRenderer( movieMaxProjectDialog );
+		viewer.getDisplay().overlays().add( movieMaxProjectDialog );
 
 		activeSourcesDialog = new VisibilityAndGroupingDialog( viewerFrame, viewer.state() );
 

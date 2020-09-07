@@ -30,6 +30,7 @@ package bdv.viewer.render;
 
 import bdv.viewer.SourceAndConverter;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 import bdv.viewer.Source;
@@ -54,9 +55,9 @@ public interface AccumulateProjectorFactory< A >
 	 *            {@link ExecutorService} to use for rendering. may be null.
 	 */
 	default VolatileProjector createProjector(
-			final ArrayList< VolatileProjector > sourceProjectors,
-			final ArrayList< SourceAndConverter< ? > > sources,
-			final ArrayList< ? extends RandomAccessible< ? extends A > > sourceScreenImages,
+			final List< VolatileProjector > sourceProjectors,
+			final List< SourceAndConverter< ? > > sources,
+			final List< ? extends RandomAccessible< ? extends A > > sourceScreenImages,
 			final RandomAccessibleInterval< A > targetScreenImage,
 			final int numThreads,
 			final ExecutorService executorService )
@@ -64,11 +65,17 @@ public interface AccumulateProjectorFactory< A >
 		final ArrayList< Source< ? > > spimSources = new ArrayList<>();
 		for ( SourceAndConverter< ? > source : sources )
 			spimSources.add( source.getSpimSource() );
-		return createAccumulateProjector( sourceProjectors, spimSources, sourceScreenImages, targetScreenImage, numThreads, executorService );
+		final ArrayList< VolatileProjector > sp = sourceProjectors instanceof ArrayList
+				? ( ArrayList ) sourceProjectors
+				: new ArrayList<>( sourceProjectors );
+		final ArrayList< ? extends RandomAccessible< ? extends A > > si = sourceScreenImages instanceof ArrayList
+				? ( ArrayList ) sourceScreenImages
+				: new ArrayList<>( sourceScreenImages );
+		return createAccumulateProjector( sp, spimSources, si, targetScreenImage, numThreads, executorService );
 	}
 
 	/**
-	 * @deprecated Use {@link #createProjector(ArrayList, ArrayList, ArrayList, RandomAccessibleInterval, int, ExecutorService)} instead.
+	 * @deprecated Use {@link #createProjector(List, List, List, RandomAccessibleInterval, int, ExecutorService)} instead.
 	 *
 	 * @param sourceProjectors
 	 *            projectors that will be used to render {@code sources}.

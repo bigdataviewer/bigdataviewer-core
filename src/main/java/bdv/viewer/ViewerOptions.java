@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -28,12 +28,12 @@
  */
 package bdv.viewer;
 
+import bdv.TransformEventHandler3D;
 import java.awt.event.KeyListener;
 
 import org.scijava.ui.behaviour.KeyPressedManager;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 
-import bdv.BehaviourTransformEventHandler3D;
 import bdv.viewer.animate.MessageOverlayAnimator;
 import bdv.viewer.render.AccumulateProjector;
 import bdv.viewer.render.AccumulateProjectorARGB;
@@ -41,7 +41,7 @@ import bdv.viewer.render.AccumulateProjectorFactory;
 import bdv.viewer.render.MultiResolutionRenderer;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.ui.TransformEventHandlerFactory;
+import bdv.TransformEventHandlerFactory;
 
 /**
  * Optional parameters for {@link ViewerPanel}.
@@ -111,19 +111,6 @@ public class ViewerOptions
 	}
 
 	/**
-	 * Set whether to used double buffered rendering.
-	 *
-	 * @param d
-	 *            Whether to use double buffered rendering.
-	 * @see MultiResolutionRenderer
-	 */
-	public ViewerOptions doubleBuffered( final boolean d )
-	{
-		values.doubleBuffered = d;
-		return this;
-	}
-
-	/**
 	 * Set how many threads to use for rendering.
 	 *
 	 * @param n
@@ -168,7 +155,7 @@ public class ViewerOptions
 		return this;
 	}
 
-	public ViewerOptions transformEventHandlerFactory( final TransformEventHandlerFactory< AffineTransform3D > f )
+	public ViewerOptions transformEventHandlerFactory( final TransformEventHandlerFactory f )
 	{
 		values.transformEventHandlerFactory = f;
 		return this;
@@ -231,8 +218,6 @@ public class ViewerOptions
 
 		private long targetRenderNanos = 30 * 1000000l;
 
-		private boolean doubleBuffered = true;
-
 		private int numRenderingThreads = 3;
 
 		private int numSourceGroups = 10;
@@ -241,7 +226,7 @@ public class ViewerOptions
 
 		private MessageOverlayAnimator msgOverlay = new MessageOverlayAnimator( 800 );
 
-		private TransformEventHandlerFactory< AffineTransform3D > transformEventHandlerFactory = BehaviourTransformEventHandler3D.factory();
+		private TransformEventHandlerFactory transformEventHandlerFactory = TransformEventHandler3D::new;
 
 		private AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory = AccumulateProjectorARGB.factory;
 
@@ -256,7 +241,6 @@ public class ViewerOptions
 				height( height ).
 				screenScales( screenScales ).
 				targetRenderNanos( targetRenderNanos ).
-				doubleBuffered( doubleBuffered ).
 				numRenderingThreads( numRenderingThreads ).
 				numSourceGroups( numSourceGroups ).
 				useVolatileIfAvailable( useVolatileIfAvailable ).
@@ -286,11 +270,6 @@ public class ViewerOptions
 			return targetRenderNanos;
 		}
 
-		public boolean isDoubleBuffered()
-		{
-			return doubleBuffered;
-		}
-
 		public int getNumRenderingThreads()
 		{
 			return numRenderingThreads;
@@ -311,7 +290,7 @@ public class ViewerOptions
 			return msgOverlay;
 		}
 
-		public TransformEventHandlerFactory< AffineTransform3D > getTransformEventHandlerFactory()
+		public TransformEventHandlerFactory getTransformEventHandlerFactory()
 		{
 			return transformEventHandlerFactory;
 		}

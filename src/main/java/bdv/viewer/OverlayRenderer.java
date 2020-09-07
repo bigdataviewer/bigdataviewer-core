@@ -1,18 +1,23 @@
 /*
  * #%L
- * BigDataViewer core classes with minimal dependencies.
+ * ImgLib2: a general-purpose, multidimensional image processing library.
  * %%
- * Copyright (C) 2012 - 2020 BigDataViewer developers.
+ * Copyright (C) 2009 - 2016 Tobias Pietzsch, Stephan Preibisch, Stephan Saalfeld,
+ * John Bogovic, Albert Cardona, Barry DeZonia, Christian Dietz, Jan Funke,
+ * Aivar Grislis, Jonathan Hale, Grant Harris, Stefan Helfrich, Mark Hiner,
+ * Martin Horn, Steffen Jaensch, Lee Kamentsky, Larry Lindsey, Melissa Linkert,
+ * Mark Longair, Brian Northan, Nick Perry, Curtis Rueden, Johannes Schindelin,
+ * Jean-Yves Tinevez and Michael Zinsmaier.
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -26,28 +31,33 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package bdv.viewer.render;
+package bdv.viewer;
 
-import java.awt.image.BufferedImage;
+import java.awt.Graphics;
 
-import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.ui.RenderTarget;
-import net.imglib2.ui.TransformListener;
-
-public interface TransformAwareRenderTarget extends RenderTarget
+/**
+ * Draw something to a {@link Graphics} canvas and receive notifications about
+ * changes of the canvas size.
+ *
+ * @author Tobias Pietzsch
+ */
+public interface OverlayRenderer
 {
 	/**
-	 * Set the {@link BufferedImage} that is to be drawn on the canvas, and the
-	 * transform with which this image was created.
-	 *
-	 * @param img
-	 *            image to draw (may be null).
+	 * Render overlays.
 	 */
-	public BufferedImage setBufferedImageAndTransform( final BufferedImage img, final AffineTransform3D transform );
+	void drawOverlays( Graphics g );
 
-	public void addTransformListener( final TransformListener< AffineTransform3D > listener );
-
-	public void addTransformListener( final TransformListener< AffineTransform3D > listener, final int index );
-
-	public void removeTransformListener( final TransformListener< AffineTransform3D > listener );
+	/**
+	 * This is called, when the screen size of the canvas (the component
+	 * displaying the image and generating mouse events) changes. This can be
+	 * used to determine scale of overlay or screen coordinates relative to the
+	 * border.
+	 *
+	 * @param width
+	 *            the new canvas width.
+	 * @param height
+	 *            the new canvas height.
+	 */
+	void setCanvasSize( int width, int height );
 }

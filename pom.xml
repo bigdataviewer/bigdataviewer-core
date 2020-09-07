@@ -11,7 +11,7 @@
 
 	<groupId>sc.fiji</groupId>
 	<artifactId>bigdataviewer-core</artifactId>
-	<version>9.0.7-SNAPSHOT</version>
+	<version>10.0.0-SNAPSHOT</version>
 
 	<name>BigDataViewer Core</name>
 	<description>BigDataViewer core classes with minimal dependencies.</description>
@@ -158,10 +158,6 @@
 		<dependency>
 			<groupId>net.imglib2</groupId>
 			<artifactId>imglib2-cache</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>net.imglib2</groupId>
-			<artifactId>imglib2-ui</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>net.imglib2</groupId>
