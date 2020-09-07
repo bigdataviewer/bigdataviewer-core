@@ -260,7 +260,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 
 		renderingExecutorService = Executors.newFixedThreadPool(
 				options.getNumRenderingThreads(),
-				new RenderThreadFactory(threadGroup) );
+				new RenderThreadFactory( threadGroup ) );
 		imageRenderer = new MultiResolutionRenderer(
 				renderTarget, painterThread,
 				options.getScreenScales(),
@@ -1155,7 +1155,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 
 	protected static class RenderThreadFactory implements ThreadFactory
 	{
-		private ThreadGroup threadGroup;
+		private final ThreadGroup threadGroup;
 
 		private final String threadNameFormat = String.format(
 				"bdv-panel-%d-thread-%%d",
