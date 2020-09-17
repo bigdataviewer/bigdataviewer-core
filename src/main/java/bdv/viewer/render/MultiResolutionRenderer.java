@@ -328,6 +328,10 @@ public class MultiResolutionRenderer
 	 */
 	public synchronized void requestRepaint( final Interval interval )
 	{
+		// if interval doesn't overlap the screen, do nothing
+		if ( Intervals.isEmpty( screenScales.clipToScreen( interval ) ) )
+			return;
+
 		if ( !intervalMode && !renderingMayBeCancelled )
 		{
 			/*

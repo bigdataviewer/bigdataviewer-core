@@ -129,6 +129,25 @@ class ScreenScales
 		return screenScales.size() - 1;
 	}
 
+	/**
+	 * Compute the intersection of {@code interval} and the screen area.
+	 *
+	 * @param interval
+	 * 		a 2D interval in screen coordinates
+	 *
+	 * @return intersection of {@code interval} and the screen area
+	 */
+	public Interval clipToScreen( final Interval interval )
+	{
+		// This is equivalent to
+		// Intervals.intersect( interval, new FinalInterval( screenW, screenH ) );
+		return Intervals.createMinMax(
+				Math.max( 0, interval.min( 0 ) ),
+				Math.max( 0, interval.min( 1 ) ),
+				Math.min( screenW - 1, interval.max( 0 ) ),
+				Math.min( screenH - 1, interval.max( 1 ) ) );
+	}
+
 	public void requestInterval( final Interval screenInterval )
 	{
 		screenScales.forEach( s -> s.requestInterval( screenInterval ) );
