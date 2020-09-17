@@ -45,32 +45,32 @@ public class TransformEventHandler2D implements TransformEventHandler
 {
 	// -- behaviour names --
 
-	private static final String DRAG_TRANSLATE = "2d drag translate";
-	private static final String DRAG_ROTATE = "2d drag rotate";
+	public static final String DRAG_TRANSLATE = "2d drag translate";
+	public static final String DRAG_ROTATE = "2d drag rotate";
 
-	private static final String ZOOM_NORMAL = "2d scroll zoom";
-	private static final String SCROLL_TRANSLATE = "2d scroll translate";
-	private static final String SCROLL_ROTATE = "2d scroll rotate";
-	private static final String ROTATE_LEFT = "2d rotate left";
-	private static final String ROTATE_RIGHT = "2d rotate right";
-	private static final String KEY_ZOOM_IN = "2d zoom in";
-	private static final String KEY_ZOOM_OUT = "2d zoom out";
+	public static final String ZOOM_NORMAL = "2d scroll zoom";
+	public static final String SCROLL_TRANSLATE = "2d scroll translate";
+	public static final String SCROLL_ROTATE = "2d scroll rotate";
+	public static final String ROTATE_LEFT = "2d rotate left";
+	public static final String ROTATE_RIGHT = "2d rotate right";
+	public static final String KEY_ZOOM_IN = "2d zoom in";
+	public static final String KEY_ZOOM_OUT = "2d zoom out";
 
-	private static final String ZOOM_FAST = "2d scroll zoom fast";
-	private static final String SCROLL_TRANSLATE_FAST = "2d scroll translate fast";
-	private static final String SCROLL_ROTATE_FAST = "2d scroll rotate fast";
-	private static final String ROTATE_LEFT_FAST = "2d rotate left fast";
-	private static final String ROTATE_RIGHT_FAST = "2d rotate right fast";
-	private static final String KEY_ZOOM_IN_FAST = "2d zoom in fast";
-	private static final String KEY_ZOOM_OUT_FAST = "2d zoom out fast";
+	public static final String ZOOM_FAST = "2d scroll zoom fast";
+	public static final String SCROLL_TRANSLATE_FAST = "2d scroll translate fast";
+	public static final String SCROLL_ROTATE_FAST = "2d scroll rotate fast";
+	public static final String ROTATE_LEFT_FAST = "2d rotate left fast";
+	public static final String ROTATE_RIGHT_FAST = "2d rotate right fast";
+	public static final String KEY_ZOOM_IN_FAST = "2d zoom in fast";
+	public static final String KEY_ZOOM_OUT_FAST = "2d zoom out fast";
 
-	private static final String ZOOM_SLOW = "2d scroll zoom slow";
-	private static final String SCROLL_TRANSLATE_SLOW = "2d scroll translate slow";
-	private static final String SCROLL_ROTATE_SLOW = "2d scroll rotate slow";
-	private static final String ROTATE_LEFT_SLOW = "2d rotate left slow";
-	private static final String ROTATE_RIGHT_SLOW = "2d rotate right slow";
-	private static final String KEY_ZOOM_IN_SLOW = "2d zoom in slow";
-	private static final String KEY_ZOOM_OUT_SLOW = "2d zoom out slow";
+	public static final String ZOOM_SLOW = "2d scroll zoom slow";
+	public static final String SCROLL_TRANSLATE_SLOW = "2d scroll translate slow";
+	public static final String SCROLL_ROTATE_SLOW = "2d scroll rotate slow";
+	public static final String ROTATE_LEFT_SLOW = "2d rotate left slow";
+	public static final String ROTATE_RIGHT_SLOW = "2d rotate right slow";
+	public static final String KEY_ZOOM_IN_SLOW = "2d zoom in slow";
+	public static final String KEY_ZOOM_OUT_SLOW = "2d zoom out slow";
 
 	// -- default shortcuts --
 
