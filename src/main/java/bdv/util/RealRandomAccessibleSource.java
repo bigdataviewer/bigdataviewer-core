@@ -133,4 +133,10 @@ public abstract class RealRandomAccessibleSource< T extends Type< T > > implemen
 	{
 		return 1;
 	}
+
+	@Override
+	public boolean doBoundingBoxIntersectionCheck()
+	{
+		return doBoundingBoxIntersectionCheck;
+	}
 }
