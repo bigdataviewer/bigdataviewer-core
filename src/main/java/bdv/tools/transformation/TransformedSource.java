@@ -121,6 +121,12 @@ public class TransformedSource< T > implements Source< T >, MipmapOrdering
 		this.composed = new AffineTransform3D();
 	}
 
+	@Override
+	public boolean doBoundingBoxIntersectionCheck()
+	{
+		return source.doBoundingBoxIntersectionCheck();
+	}
+
 	/*
 	 * EXTRA TRANSFORMATION methods
 	 */

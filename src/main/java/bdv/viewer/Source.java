@@ -68,6 +68,15 @@ public interface Source< T >
 	 */
 	public RandomAccessibleInterval< T > getSource( int t, int level );
 
+	/**
+	 * Should rendering skip the bounding
+	 * 
+	 * @return
+	 */
+	public default boolean doBoundingBoxIntersectionCheck()
+	{
+		return true;
+	}
 
 	/**
 	 * Get the 3D stack at timepoint index t, extended to infinity and interpolated.
