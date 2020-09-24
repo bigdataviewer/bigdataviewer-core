@@ -83,6 +83,12 @@ class VisibilityUtils
 
 		for ( final SourceAndConverter< ? > source : sources )
 		{
+			if( !source.getSpimSource().doBoundingBoxCulling() )
+			{
+				result.add( source );
+				continue;
+			}
+
 			final Source< ? > spimSource = source.getSpimSource();
 			final int level = MipmapTransforms.getBestMipMapLevel( screenTransform, spimSource, t );
 			spimSource.getSourceTransform( t, level, sourceToScreen );

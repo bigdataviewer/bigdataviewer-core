@@ -68,6 +68,22 @@ public interface Source< T >
 	 */
 	public RandomAccessibleInterval< T > getSource( int t, int level );
 
+	/**
+	 * Whether this source participates in bounding box culling.
+	 * <p>
+	 * If {@code true}, then this source will only be rendered if its bounding
+	 * box, i.e., the interval of {@link #getSource}, intersects the
+	 * current screen area (when transformed to viewer coordinates).
+	 * <p>
+	 * If {@code false}, then this source will be always rendered (if it is
+	 * set to be visible.)
+	 *
+	 * @return {@code true}, if this source participates in bounding box culling.
+	 */
+	public default boolean doBoundingBoxCulling()
+	{
+		return true;
+	}
 
 	/**
 	 * Get the 3D stack at timepoint index t, extended to infinity and interpolated.

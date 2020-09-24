@@ -57,17 +57,25 @@ public abstract class RealRandomAccessibleSource< T extends Type< T > > implemen
 
 	protected final VoxelDimensions voxelDimensions;
 
+	protected final boolean doBoundingBoxIntersectionCheck;
+
 	public RealRandomAccessibleSource( final RealRandomAccessible< T > accessible, final T type, final String name )
 	{
-		this( accessible, type, name, null );
+		this( accessible, type, name, null, false );
 	}
 
 	public RealRandomAccessibleSource( final RealRandomAccessible< T > accessible, final T type, final String name, final VoxelDimensions voxelDimensions )
+	{
+		this( accessible, type, name, voxelDimensions, false );
+	}
+
+	public RealRandomAccessibleSource( final RealRandomAccessible< T > accessible, final T type, final String name, final VoxelDimensions voxelDimensions, final boolean doBoundingBoxIntersectionCheck )
 	{
 		this.accessible = accessible;
 		this.type = type.createVariable();
 		this.name = name;
 		this.voxelDimensions = voxelDimensions;
+		this.doBoundingBoxIntersectionCheck = doBoundingBoxIntersectionCheck;
 	}
 
 	@Override
@@ -124,5 +132,11 @@ public abstract class RealRandomAccessibleSource< T extends Type< T > > implemen
 	public int getNumMipmapLevels()
 	{
 		return 1;
+	}
+
+	@Override
+	public boolean doBoundingBoxCulling()
+	{
+		return doBoundingBoxIntersectionCheck;
 	}
 }
