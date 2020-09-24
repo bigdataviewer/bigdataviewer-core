@@ -53,7 +53,7 @@ import net.imglib2.realtransform.AffineTransform3D;
  * between images that have all data present already or that we move to a new
  * image with no data present at all.
  *
- * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+ * @author Tobias Pietzsch
  */
 public class DefaultMipmapOrdering implements MipmapOrdering
 {

@@ -54,7 +54,7 @@ import bdv.util.AWTUtils;
  * A {@link JFrame} containing a {@link ViewerPanel} and associated
  * {@link InputActionBindings}.
  *
- * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+ * @author Tobias Pietzsch
  */
 public class ViewerFrame extends JFrame
 {

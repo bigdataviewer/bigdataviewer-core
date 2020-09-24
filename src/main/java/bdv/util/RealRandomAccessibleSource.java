@@ -45,7 +45,7 @@ import net.imglib2.view.Views;
  *
  * @param <T>
  *
- * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+ * @author Tobias Pietzsch
  */
 public abstract class RealRandomAccessibleSource< T extends Type< T > > implements Source< T >
 {

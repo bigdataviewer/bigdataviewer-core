@@ -46,7 +46,7 @@ import static bdv.viewer.DisplayMode.SINGLE;
  * Manage visibility and currentness of sources and groups, as well as grouping
  * of sources, and display mode.
  *
- * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+ * @author Tobias Pietzsch
  */
 @Deprecated
 public class VisibilityAndGrouping

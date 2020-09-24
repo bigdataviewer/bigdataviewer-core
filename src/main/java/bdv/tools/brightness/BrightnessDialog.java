@@ -72,7 +72,7 @@ import net.imglib2.type.numeric.ARGBType;
 /**
  * Adjust brightness and colors for individual (or groups of) {@link BasicViewSetup setups}.
  *
- * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+ * @author Tobias Pietzsch
  */
 @Deprecated
 public class BrightnessDialog extends DelayedPackDialog

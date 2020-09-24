@@ -91,7 +91,7 @@ import net.imglib2.util.Intervals;
  * A data-set can be stored in a single hdf5 file or split across several hdf5
  * "partitions" with one master hdf5 linking into the partitions.
  *
- * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+ * @author Tobias Pietzsch
  */
 public class WriteSequenceToHdf5
 {

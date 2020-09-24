@@ -54,7 +54,7 @@ import mpicbg.spim.data.sequence.TimePoints;
 import mpicbg.spim.data.sequence.ViewId;
 
 /**
- * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+ * @author Tobias Pietzsch
  */
 public class MergeExample
 {

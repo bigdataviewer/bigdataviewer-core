@@ -35,7 +35,7 @@ package bdv.util;
  * {@link BoundedValueDouble#setUpdateListener(UpdateListener) minimum and maximum}
  * values and/or overriding the {@link #updateInterval(double, double)} method.
  *
- * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+ * @author Tobias Pietzsch
  */
 public class BoundedIntervalDouble
 {

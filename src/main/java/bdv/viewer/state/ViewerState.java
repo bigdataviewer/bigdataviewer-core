@@ -51,7 +51,7 @@ import static bdv.viewer.Interpolation.NEARESTNEIGHBOR;
  * current timepoint, the visible and current sources and groups respectively,
  * the viewer transformation, etc.
  *
- * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+ * @author Tobias Pietzsch
  */
 @Deprecated
 public class ViewerState

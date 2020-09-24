@@ -35,7 +35,7 @@ import java.io.Serializable;
  *
  * {@linkplain }
  *
- * @author Stephan Saalfeld &lt;saalfelds@janelia.hhmi.org&gt;
+ * @author Stephan Saalfeld
  */
 public class OpenConnectomeProject implements Serializable
 {

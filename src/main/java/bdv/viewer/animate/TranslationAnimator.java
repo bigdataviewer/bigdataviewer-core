@@ -34,7 +34,7 @@ import net.imglib2.realtransform.AffineTransform3D;
  * An animator that just executes a constant speed translation of the current
  * viewpoint to a target location, keeping all other view parameters constant.
  *
- * @author Jean-Yves Tinevez &lt;jeanyves.tinevez@gmail.com&gt;
+ * @author Jean-Yves Tinevez
  */
 public class TranslationAnimator extends AbstractTransformAnimator
 {

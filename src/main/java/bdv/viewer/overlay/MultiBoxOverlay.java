@@ -52,7 +52,7 @@ import net.imglib2.util.LinAlgHelpers;
  * colors depending whether the sources are visible.
  *
  * @author Stephan Saalfeld
- * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+ * @author Tobias Pietzsch
  */
 public class MultiBoxOverlay
 {

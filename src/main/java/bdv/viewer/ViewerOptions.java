@@ -46,7 +46,7 @@ import bdv.TransformEventHandlerFactory;
 /**
  * Optional parameters for {@link ViewerPanel}.
  *
- * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+ * @author Tobias Pietzsch
  */
 public class ViewerOptions
 {

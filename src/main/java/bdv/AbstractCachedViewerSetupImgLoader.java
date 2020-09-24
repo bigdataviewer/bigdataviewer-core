@@ -44,7 +44,7 @@ import net.imglib2.type.NativeType;
 /**
  * Abstract {@link ViewerSetupImgLoader} with a VolatileGlobalCellCache.
  *
- * @author Stephan Saalfeld &lt;saalfelds@janelia.hhmi.org&gt;
+ * @author Stephan Saalfeld
  */
 abstract public class AbstractCachedViewerSetupImgLoader< T extends NativeType< T > , V extends Volatile< T > & NativeType< V >, A extends VolatileAccess >
 	extends AbstractViewerSetupImgLoader< T, V >

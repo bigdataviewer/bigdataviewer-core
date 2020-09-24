@@ -37,7 +37,7 @@ import java.util.HashMap;
  *
  * <a href="http://openconnecto.me/ocp/ca/bock11/info/">http://openconnecto.me/ocp/ca/bock11/info/</a>
  *
- * @author Stephan Saalfeld &lt;saalfelds@janelia.hhmi.org&gt;
+ * @author Stephan Saalfeld
  */
 public class OpenConnectomeDataset implements Serializable
 {

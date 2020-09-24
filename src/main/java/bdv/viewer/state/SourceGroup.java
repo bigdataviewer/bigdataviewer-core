@@ -38,7 +38,7 @@ import bdv.viewer.DisplayMode;
 /**
  * TODO
  *
- * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+ * @author Tobias Pietzsch
  */
 @Deprecated
 public class SourceGroup

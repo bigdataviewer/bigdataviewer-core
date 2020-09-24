@@ -33,7 +33,7 @@ package bdv.util;
  * {@link #setUpdateListener(UpdateListener) listener} is notified when the
  * value or its allowed range is changed.
  *
- * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+ * @author Tobias Pietzsch
  */
 public class BoundedValueDouble
 {

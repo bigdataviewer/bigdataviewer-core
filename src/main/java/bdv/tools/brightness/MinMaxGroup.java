@@ -49,7 +49,7 @@ import bdv.util.BoundedValueDouble;
  * An {@link UpdateListener} (usually a GUI component) can be notified about
  * changes.
  *
- * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+ * @author Tobias Pietzsch
  */
 public class MinMaxGroup extends BoundedIntervalDouble
 {

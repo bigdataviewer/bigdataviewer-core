@@ -49,7 +49,7 @@ import mpicbg.spim.data.XmlHelpers;
  * <li>No group is empty.</li>
  * </ol>
  *
- * @author Tobias Pietzsch &lt;tobias.pietzsch@gmail.com&gt;
+ * @author Tobias Pietzsch
  */
 @Deprecated
 public class SetupAssignments
