@@ -122,9 +122,9 @@ public class TransformedSource< T > implements Source< T >, MipmapOrdering
 	}
 
 	@Override
-	public boolean doBoundingBoxIntersectionCheck()
+	public boolean doBoundingBoxCulling()
 	{
-		return source.doBoundingBoxIntersectionCheck();
+		return source.doBoundingBoxCulling();
 	}
 
 	/*

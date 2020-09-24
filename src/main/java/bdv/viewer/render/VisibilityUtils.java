@@ -83,7 +83,7 @@ class VisibilityUtils
 
 		for ( final SourceAndConverter< ? > source : sources )
 		{
-			if( !source.getSpimSource().doBoundingBoxIntersectionCheck() )
+			if( !source.getSpimSource().doBoundingBoxCulling() )
 			{
 				result.add( source );
 				continue;
