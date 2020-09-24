@@ -83,7 +83,7 @@ public class SetupAssignments
 
 	public interface UpdateListener
 	{
-		public void update();
+		void update();
 	}
 
 	private UpdateListener updateListener;

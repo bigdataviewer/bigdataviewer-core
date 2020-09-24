@@ -34,7 +34,7 @@ import mpicbg.spim.data.generic.sequence.BasicMultiResolutionImgLoader;
 public interface ViewerImgLoader extends BasicMultiResolutionImgLoader
 {
 	@Override
-	public ViewerSetupImgLoader< ?, ? > getSetupImgLoader( final int setupId );
+	ViewerSetupImgLoader< ?, ? > getSetupImgLoader( final int setupId );
 
-	public CacheControl getCacheControl();
+	CacheControl getCacheControl();
 }

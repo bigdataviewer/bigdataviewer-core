@@ -61,7 +61,7 @@ public class MinMaxGroup extends BoundedIntervalDouble
 
 	public interface UpdateListener
 	{
-		public void update();
+		void update();
 	}
 
 	private UpdateListener updateListener;

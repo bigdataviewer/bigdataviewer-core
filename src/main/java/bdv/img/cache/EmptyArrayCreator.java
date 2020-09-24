@@ -49,9 +49,9 @@ import net.imglib2.type.PrimitiveType;
  */
 public interface EmptyArrayCreator< A >
 {
-	public A getEmptyArray( final long numEntities );
+	A getEmptyArray( final long numEntities );
 
-	public static < A extends VolatileArrayDataAccess< A > > EmptyArrayCreator< A > get(
+	static < A extends VolatileArrayDataAccess< A > > EmptyArrayCreator< A > get(
 			final PrimitiveType primitiveType,
 			final boolean dirty )
 	{

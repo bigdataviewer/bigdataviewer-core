@@ -35,7 +35,7 @@ import net.imglib2.Volatile;
 
 public interface ViewerSetupImgLoader< T, V extends Volatile< T > > extends BasicMultiResolutionSetupImgLoader< T >
 {
-	public RandomAccessibleInterval< V > getVolatileImage( final int timepointId, final int level, ImgLoaderHint... hints );
+	RandomAccessibleInterval< V > getVolatileImage( final int timepointId, final int level, ImgLoaderHint... hints );
 
-	public V getVolatileImageType();
+	V getVolatileImageType();
 }

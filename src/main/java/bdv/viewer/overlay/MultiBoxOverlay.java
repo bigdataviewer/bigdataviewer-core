@@ -70,21 +70,21 @@ public class MultiBoxOverlay
 
 	public interface IntervalAndTransform
 	{
-		public boolean isVisible();
+		boolean isVisible();
 
 		/**
 		 * Get interval of the source (stack) in source-local coordinates.
 		 *
 		 * @return extents of the source.
 		 */
-		public Interval getSourceInterval();
+		Interval getSourceInterval();
 
 		/**
 		 * Current transformation from {@link #getSourceInterval() source} to
 		 * viewer. This is a concatenation of source-local-to-global transform
 		 * and the interactive viewer transform.
 		 */
-		public AffineTransform3D getSourceToViewer();
+		AffineTransform3D getSourceToViewer();
 	}
 
 	/**

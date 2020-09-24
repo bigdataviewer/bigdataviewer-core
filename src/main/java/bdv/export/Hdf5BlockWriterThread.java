@@ -41,9 +41,9 @@ class Hdf5BlockWriterThread extends Thread implements IHDF5Access
 {
 	private final IHDF5Access hdf5Access;
 
-	private static interface Hdf5Task
+	private interface Hdf5Task
 	{
-		public void run( final IHDF5Access hdf5Access );
+		void run( final IHDF5Access hdf5Access );
 	}
 
 	private final BlockingQueue< Hdf5BlockWriterThread.Hdf5Task > queue;

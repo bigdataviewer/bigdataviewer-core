@@ -45,7 +45,7 @@ public class BoundedValue
 
 	public interface UpdateListener
 	{
-		public void update();
+		void update();
 	}
 
 	private UpdateListener updateListener;

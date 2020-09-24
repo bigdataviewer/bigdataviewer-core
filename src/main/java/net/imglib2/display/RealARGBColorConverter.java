@@ -35,7 +35,7 @@ import net.imglib2.type.numeric.RealType;
 
 public interface RealARGBColorConverter< R extends RealType< ? > > extends ColorConverter, Converter< R, ARGBType >
 {
-	public static < R extends RealType< ? > > RealARGBColorConverter< R > create( final R type, final double min, final double max )
+	static < R extends RealType< ? > > RealARGBColorConverter< R > create( final R type, final double min, final double max )
 	{
 		return Instances.create( type, min, max );
 	}
