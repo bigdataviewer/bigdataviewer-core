@@ -30,9 +30,15 @@ package bdv.viewer.render.awt;
 
 import bdv.util.AWTUtils;
 import bdv.viewer.render.RenderResult;
+import com.sun.javafx.tk.PlatformImage;
 import java.awt.geom.AffineTransform;
 import java.awt.image.AffineTransformOp;
 import java.awt.image.BufferedImage;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import javafx.scene.image.Image;
+import javafx.scene.image.WritableImage;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.display.screenimage.awt.ARGBScreenImage;
@@ -54,6 +60,8 @@ public class BufferedImageRenderResult implements RenderResult
 
 	private double scaleFactor;
 
+	private MyJavaFXImage javaFXImage;
+
 	@Override
 	public void init( final int width, final int height )
 	{
@@ -68,6 +76,25 @@ public class BufferedImageRenderResult implements RenderResult
 
 		screenImage = new ARGBScreenImage( width, height, data );
 		bufferedImage = AWTUtils.getBufferedImage( screenImage );;
+
+		try
+		{
+			javaFXImage = new MyJavaFXImage( width, height, data );
+		}
+		catch ( NoSuchMethodException
+				| SecurityException
+				| NoSuchFieldException
+				| IllegalArgumentException
+				| IllegalAccessException
+				| InvocationTargetException e )
+		{
+			e.printStackTrace();
+		}
+	}
+
+	public Image getJavaFXImage()
+	{
+		return javaFXImage;
 	}
 
 	@Override
@@ -125,5 +152,71 @@ public class BufferedImageRenderResult implements RenderResult
 		final int w = ( int ) interval.dimension( 0 );
 		final int h = ( int ) interval.dimension( 1 );
 		return bufferedImage.getSubimage( x, y, w, h );
+	}
+
+	/**
+	 * FIXME TO TEST JAVA FX.
+	 */
+	public void setPixelsDirty()
+	{
+		this.javaFXImage.callPixelsDirty.run();
+	}
+
+	/**
+	 * Taken from
+	 * https://github.com/saalfeldlab/paintera/blob/master/src/main/java/bdv/fx/viewer/render/BufferExposingWritableImage.java
+	 */
+	public static class MyJavaFXImage extends WritableImage
+	{
+
+		private final Method setWritablePlatformImage;
+
+		private final Method pixelsDirty;
+
+		private final Field serial;
+
+		private final Runnable callPixelsDirty;
+
+		private final com.sun.prism.Image prismImage;
+
+		public MyJavaFXImage( int width, int height, int[] data ) throws NoSuchMethodException,
+				SecurityException,
+				NoSuchFieldException,
+				IllegalArgumentException,
+				IllegalAccessException,
+				InvocationTargetException
+		{
+			super( width, height );
+
+			this.setWritablePlatformImage = Image.class.getDeclaredMethod( "setPlatformImage", PlatformImage.class );
+			this.setWritablePlatformImage.setAccessible( true );
+
+			this.prismImage = com.sun.prism.Image.fromIntArgbPreData( data, width, height );
+			this.setWritablePlatformImage.invoke( this, prismImage );
+
+			this.pixelsDirty = Image.class.getDeclaredMethod( "pixelsDirty" );
+			this.pixelsDirty.setAccessible( true );
+
+			this.serial = com.sun.prism.Image.class.getDeclaredField( "serial" );
+			this.serial.setAccessible( true );
+
+			this.callPixelsDirty = () -> {
+				try
+				{
+					final int[] serial = ( int[] ) this.serial.get( prismImage );
+					serial[ 0 ]++;
+					this.pixelsDirty.invoke( this );
+				}
+				catch ( ReflectiveOperationException e )
+				{
+					throw new RuntimeException( e );
+				}
+			};
+		}
+
+		public void setPixelsDirty()
+		{
+			this.callPixelsDirty.run();
+		}
 	}
 }

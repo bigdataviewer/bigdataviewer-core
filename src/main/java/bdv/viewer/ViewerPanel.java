@@ -1187,4 +1187,12 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 	{
 		return display.requestFocusInWindow();
 	}
+
+	/**
+	 * FIXME TO TEST JAVA FX.
+	 */
+	public BufferedImageOverlayRenderer getRenderTarget()
+	{
+		return renderTarget;
+	}
 }

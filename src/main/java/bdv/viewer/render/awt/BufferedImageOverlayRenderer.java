@@ -34,6 +34,8 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import net.imglib2.realtransform.AffineTransform3D;
 import bdv.viewer.OverlayRenderer;
 import bdv.viewer.render.RenderTarget;
@@ -71,6 +73,8 @@ public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarg
 	 */
 	private volatile int height;
 
+	private ImageView imageView;
+
 	public BufferedImageOverlayRenderer()
 	{
 		tripleBuffer = new TripleBuffer<>( BufferedImageRenderResult::new );
@@ -102,6 +106,14 @@ public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarg
 	public synchronized void setRenderResult( final BufferedImageRenderResult result )
 	{
 		tripleBuffer.doneWriting( result );
+
+		Image img = result.getJavaFXImage();
+
+		if ( imageView != null && img != null )
+		{
+			result.setPixelsDirty();
+			imageView.setImage( img );
+		}
 	}
 
 	@Override
@@ -173,5 +185,13 @@ public class BufferedImageOverlayRenderer implements OverlayRenderer, RenderTarg
 	public void kill()
 	{
 		tripleBuffer.clear();
+	}
+
+	/**
+	 * FIXME TO TEST JAVA FX.
+	 */
+	public void setImageView( ImageView imageView )
+	{
+		this.imageView = imageView;
 	}
 }
