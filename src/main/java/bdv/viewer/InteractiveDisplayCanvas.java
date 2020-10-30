@@ -50,10 +50,7 @@ import org.scijava.listeners.Listeners;
  * <p>
  * {@code InteractiveDisplayCanvas} has a {@code TransformEventHandler} that is notified when the component size is changed.
  * <p>
- * {@link #addHandler}/{@link #removeHandler} provide simplified that implement {@code MouseListener}, {@code KeyListener}, etc can be
- *
- * @param <A>
- *            transform type
+ * {@link #addHandler}/{@link #removeHandler} provide simplified adding/removing of handlers that implement {@code MouseListener}, {@code KeyListener}, etc.
  *
  * @author Tobias Pietzsch
  */
