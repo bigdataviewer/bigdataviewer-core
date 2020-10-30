@@ -247,7 +247,8 @@ public class ViewerOptions
 				msgOverlay( msgOverlay ).
 				transformEventHandlerFactory( transformEventHandlerFactory ).
 				accumulateProjectorFactory( accumulateProjectorFactory ).
-				inputTriggerConfig( inputTriggerConfig );
+				inputTriggerConfig( inputTriggerConfig ).
+				shareKeyPressedEvents( keyPressedManager );
 		}
 
 		public int getWidth()
