@@ -81,38 +81,38 @@ public class TransformEventHandler3D implements TransformEventHandler
 
 	// -- default shortcuts --
 
-	private static final String[] DRAG_TRANSLATE_KEYS = new String[] { "button2", "button3" };
-	private static final String[] ZOOM_NORMAL_KEYS = new String[] { "meta scroll", "ctrl shift scroll" };
-	private static final String[] SELECT_AXIS_X_KEYS = new String[] { "X" };
-	private static final String[] SELECT_AXIS_Y_KEYS = new String[] { "Y" };
-	private static final String[] SELECT_AXIS_Z_KEYS = new String[] { "Z" };
+	public static final String[] DRAG_TRANSLATE_KEYS = new String[] { "button2", "button3" };
+	public static final String[] ZOOM_NORMAL_KEYS = new String[] { "meta scroll", "ctrl shift scroll" };
+	public static final String[] SELECT_AXIS_X_KEYS = new String[] { "X" };
+	public static final String[] SELECT_AXIS_Y_KEYS = new String[] { "Y" };
+	public static final String[] SELECT_AXIS_Z_KEYS = new String[] { "Z" };
 
-	private static final String[] DRAG_ROTATE_KEYS = new String[] { "button1" };
-	private static final String[] SCROLL_Z_KEYS = new String[] { "scroll" };
-	private static final String[] ROTATE_LEFT_KEYS = new String[] { "LEFT" };
-	private static final String[] ROTATE_RIGHT_KEYS = new String[] { "RIGHT" };
-	private static final String[] KEY_ZOOM_IN_KEYS = new String[] { "UP" };
-	private static final String[] KEY_ZOOM_OUT_KEYS = new String[] { "DOWN" };
-	private static final String[] KEY_FORWARD_Z_KEYS = new String[] { "COMMA" };
-	private static final String[] KEY_BACKWARD_Z_KEYS = new String[] { "PERIOD" };
+	public static final String[] DRAG_ROTATE_KEYS = new String[] { "button1" };
+	public static final String[] SCROLL_Z_KEYS = new String[] { "scroll" };
+	public static final String[] ROTATE_LEFT_KEYS = new String[] { "LEFT" };
+	public static final String[] ROTATE_RIGHT_KEYS = new String[] { "RIGHT" };
+	public static final String[] KEY_ZOOM_IN_KEYS = new String[] { "UP" };
+	public static final String[] KEY_ZOOM_OUT_KEYS = new String[] { "DOWN" };
+	public static final String[] KEY_FORWARD_Z_KEYS = new String[] { "COMMA" };
+	public static final String[] KEY_BACKWARD_Z_KEYS = new String[] { "PERIOD" };
 
-	private static final String[] DRAG_ROTATE_FAST_KEYS = new String[] { "shift button1" };
-	private static final String[] SCROLL_Z_FAST_KEYS = new String[] { "shift scroll" };
-	private static final String[] ROTATE_LEFT_FAST_KEYS = new String[] { "shift LEFT" };
-	private static final String[] ROTATE_RIGHT_FAST_KEYS = new String[] { "shift RIGHT" };
-	private static final String[] KEY_ZOOM_IN_FAST_KEYS = new String[] { "shift UP" };
-	private static final String[] KEY_ZOOM_OUT_FAST_KEYS = new String[] { "shift DOWN" };
-	private static final String[] KEY_FORWARD_Z_FAST_KEYS = new String[] { "shift COMMA" };
-	private static final String[] KEY_BACKWARD_Z_FAST_KEYS = new String[] { "shift PERIOD" };
+	public static final String[] DRAG_ROTATE_FAST_KEYS = new String[] { "shift button1" };
+	public static final String[] SCROLL_Z_FAST_KEYS = new String[] { "shift scroll" };
+	public static final String[] ROTATE_LEFT_FAST_KEYS = new String[] { "shift LEFT" };
+	public static final String[] ROTATE_RIGHT_FAST_KEYS = new String[] { "shift RIGHT" };
+	public static final String[] KEY_ZOOM_IN_FAST_KEYS = new String[] { "shift UP" };
+	public static final String[] KEY_ZOOM_OUT_FAST_KEYS = new String[] { "shift DOWN" };
+	public static final String[] KEY_FORWARD_Z_FAST_KEYS = new String[] { "shift COMMA" };
+	public static final String[] KEY_BACKWARD_Z_FAST_KEYS = new String[] { "shift PERIOD" };
 
-	private static final String[] DRAG_ROTATE_SLOW_KEYS = new String[] { "ctrl button1" };
-	private static final String[] SCROLL_Z_SLOW_KEYS = new String[] { "ctrl scroll" };
-	private static final String[] ROTATE_LEFT_SLOW_KEYS = new String[] { "ctrl LEFT" };
-	private static final String[] ROTATE_RIGHT_SLOW_KEYS = new String[] { "ctrl RIGHT" };
-	private static final String[] KEY_ZOOM_IN_SLOW_KEYS = new String[] { "ctrl UP" };
-	private static final String[] KEY_ZOOM_OUT_SLOW_KEYS = new String[] { "ctrl DOWN" };
-	private static final String[] KEY_FORWARD_Z_SLOW_KEYS = new String[] { "ctrl COMMA" };
-	private static final String[] KEY_BACKWARD_Z_SLOW_KEYS = new String[] { "ctrl PERIOD" };
+	public static final String[] DRAG_ROTATE_SLOW_KEYS = new String[] { "ctrl button1" };
+	public static final String[] SCROLL_Z_SLOW_KEYS = new String[] { "ctrl scroll" };
+	public static final String[] ROTATE_LEFT_SLOW_KEYS = new String[] { "ctrl LEFT" };
+	public static final String[] ROTATE_RIGHT_SLOW_KEYS = new String[] { "ctrl RIGHT" };
+	public static final String[] KEY_ZOOM_IN_SLOW_KEYS = new String[] { "ctrl UP" };
+	public static final String[] KEY_ZOOM_OUT_SLOW_KEYS = new String[] { "ctrl DOWN" };
+	public static final String[] KEY_FORWARD_Z_SLOW_KEYS = new String[] { "ctrl COMMA" };
+	public static final String[] KEY_BACKWARD_Z_SLOW_KEYS = new String[] { "ctrl PERIOD" };
 
 	// -- behaviours --
 
@@ -269,7 +269,7 @@ public class TransformEventHandler3D implements TransformEventHandler
 		if ( width == 0 || height == 0 ) {
 			// NB: We are probably in some intermediate layout scenario.
 			// Attempting to trigger a transform update with 0 size will result
-			// in the exception "Matrix is singular" from imglib2-realtrasform.
+			// in the exception "Matrix is singular" from imglib2-realtransform.
 			return;
 		}
 		if ( updateTransform )
