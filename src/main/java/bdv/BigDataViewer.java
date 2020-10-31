@@ -96,6 +96,7 @@ import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.sequence.Angle;
 import mpicbg.spim.data.sequence.Channel;
+import org.scijava.ui.behaviour.util.Actions;
 
 public class BigDataViewer
 {
@@ -411,7 +412,10 @@ public class BigDataViewer
 			}
 		} );
 
-		NavigationActions.installActionBindings( viewerFrame.getKeybindings(), viewer, inputTriggerConfig );
+		final Actions navigationActions = new Actions( inputTriggerConfig, "bdv", "navigation" );
+		navigationActions.install( viewerFrame.getKeybindings(), "navigation" );
+		NavigationActions.install( navigationActions, viewer, false ); // TODO: expose is2D through ViewerOptions
+
 		BigDataViewerActions.installActionBindings( viewerFrame.getKeybindings(), this, inputTriggerConfig );
 
 		final JMenuBar menubar = new JMenuBar();

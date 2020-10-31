@@ -719,7 +719,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 	// TODO: Deprecate or leave as convenience?
 	public synchronized void toggleInterpolation()
 	{
-		state().setInterpolation( state().getInterpolation().next() );
+		NavigationActions.toggleInterpolation( state() );
 	}
 
 	/**
@@ -767,13 +767,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 	// TODO: Deprecate or leave as convenience?
 	public synchronized void nextTimePoint()
 	{
-		final SynchronizedViewerState state = state();
-		synchronized ( state )
-		{
-			final int t = state.getCurrentTimepoint() + 1;
-			if ( t < state.getNumTimepoints() )
-				state.setCurrentTimepoint( t );
-		}
+		NavigationActions.nextTimePoint( state() );
 	}
 
 	/**
@@ -782,13 +776,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 	// TODO: Deprecate or leave as convenience?
 	public synchronized void previousTimePoint()
 	{
-		final SynchronizedViewerState state = state();
-		synchronized ( state )
-		{
-			final int t = state.getCurrentTimepoint() - 1;
-			if ( t >= 0 )
-				state.setCurrentTimepoint( t );
-		}
+		NavigationActions.previousTimePoint( state() );
 	}
 
 	/**
