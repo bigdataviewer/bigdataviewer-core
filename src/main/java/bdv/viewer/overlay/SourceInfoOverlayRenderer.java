@@ -52,24 +52,27 @@ public class SourceInfoOverlayRenderer
 
 	protected String timepointString;
 
-	protected boolean paintSourceAndGroupNamesLeftAligned;
+	protected boolean drawSourceAndGroupNameBelowCoordinates;
 
 	public synchronized void paint( final Graphics2D g )
 	{
-		g.setFont( new Font( "Monospaced", Font.PLAIN, 12 ) );
+		final int fontSize = 12;
+		final int spacing = fontSize + 1;
 
-		if ( paintSourceAndGroupNamesLeftAligned )
+		g.setFont( new Font( "Monospaced", Font.PLAIN, fontSize ) );
+
+		g.drawString( timepointString, ( int ) g.getClipBounds().getWidth() - 170, spacing );
+
+		if ( drawSourceAndGroupNameBelowCoordinates )
 		{
-			g.drawString( sourceName, 12, 12 );
-			g.drawString( groupName, 12, 25 );
+			g.drawString( sourceName, ( int ) g.getClipBounds().getWidth() - Math.max( g.getFontMetrics().stringWidth( sourceName ) + 17, 170 ) , 3 * spacing );
+			g.drawString( groupName, ( int ) g.getClipBounds().getWidth() - Math.max( g.getFontMetrics().stringWidth( groupName ) + 17, 170 ) , 4 * spacing );
 		}
 		else
 		{
-			g.drawString( sourceName, ( int ) g.getClipBounds().getWidth() / 2, 12 );
-			g.drawString( groupName, ( int ) g.getClipBounds().getWidth() / 2, 25 );
+			g.drawString( sourceName, ( int ) g.getClipBounds().getWidth() / 2, spacing );
+			g.drawString( groupName, ( int ) g.getClipBounds().getWidth() / 2, 2 * spacing );
 		}
-
-		g.drawString( timepointString, ( int ) g.getClipBounds().getWidth() - 170, 12 );
 	}
 
 	public synchronized void setTimePointsOrdered( final List< TimePoint > timePointsOrdered )
@@ -112,8 +115,8 @@ public class SourceInfoOverlayRenderer
 		}
 	}
 
-	public void paintSourceAndGroupNamesLeftAligned( boolean leftAligned )
+	public void drawSourceAndGroupNameBelowCoordinates( boolean drawBelowCoordinates )
 	{
-		this.paintSourceAndGroupNamesLeftAligned = leftAligned;
+		this.drawSourceAndGroupNameBelowCoordinates = drawBelowCoordinates;
 	}
 }
