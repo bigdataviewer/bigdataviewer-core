@@ -51,6 +51,8 @@ public class Prefs
 		return getInstance().showTextOverlay;
 	}
 
+	public static boolean leftAlignedTextOverlay() { return getInstance().leftAlignedTextOverlay; }
+
 	public static boolean showScaleBarInMovie()
 	{
 		return getInstance().showScaleBarInMovie;
@@ -81,6 +83,8 @@ public class Prefs
 		getInstance().showTextOverlay = show;
 	}
 
+	public static void leftAlignedTextOverlay( final boolean leftAligned ) { getInstance().leftAlignedTextOverlay = leftAligned; }
+
 	public static void showScaleBarInMovie( final boolean show )
 	{
 		getInstance().showScaleBarInMovie = show;
@@ -110,6 +114,7 @@ public class Prefs
 	private static final String SHOW_SCALE_BAR = "show-scale-bar";
 	private static final String SHOW_MULTIBOX_OVERLAY = "show-multibox-overlay";
 	private static final String SHOW_TEXT_OVERLAY = "show-text-overlay";
+	private static final String LEFT_ALIGNED_TEXT_OVERLAY = "left-aligned-text-overlay";
 	private static final String SHOW_SCALE_BAR_IN_MOVIE = "show-scale-bar-in-movie";
 	private static final String SCALE_BAR_COLOR = "scale-bar-color";
 	private static final String SCALE_BAR_BG_COLOR = "scale-bar-bg-color";
@@ -117,6 +122,7 @@ public class Prefs
 	private boolean showScaleBar;
 	private boolean showMultibox;
 	private boolean showTextOverlay;
+	private boolean leftAlignedTextOverlay;
 	private boolean showScaleBarInMovie;
 	private int scaleBarColor;
 	private int scaleBarBgColor;
@@ -126,6 +132,7 @@ public class Prefs
 		showScaleBar = getBoolean( p, SHOW_SCALE_BAR, false );
 		showMultibox = getBoolean( p, SHOW_MULTIBOX_OVERLAY, true );
 		showTextOverlay = getBoolean( p, SHOW_TEXT_OVERLAY, true );
+		leftAlignedTextOverlay = getBoolean( p, LEFT_ALIGNED_TEXT_OVERLAY, false );
 		showScaleBarInMovie = getBoolean( p, SHOW_SCALE_BAR_IN_MOVIE, false );
 		scaleBarColor = getInt( p, SCALE_BAR_COLOR, 0xffffffff );
 		scaleBarBgColor = getInt( p, SCALE_BAR_BG_COLOR, 0x88000000 );
@@ -205,6 +212,7 @@ public class Prefs
 		properties.put( SHOW_SCALE_BAR, "" + prefs.showScaleBar );
 		properties.put( SHOW_MULTIBOX_OVERLAY, "" + prefs.showMultibox );
 		properties.put( SHOW_TEXT_OVERLAY, "" + prefs.showTextOverlay );
+		properties.put( LEFT_ALIGNED_TEXT_OVERLAY, "" + prefs.leftAlignedTextOverlay );
 		properties.put( SHOW_SCALE_BAR_IN_MOVIE, "" + prefs.showScaleBarInMovie );
 		properties.put( SCALE_BAR_COLOR, "" + prefs.scaleBarColor );
 		properties.put( SCALE_BAR_BG_COLOR, "" + prefs.scaleBarBgColor );

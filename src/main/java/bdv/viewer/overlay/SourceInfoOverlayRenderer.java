@@ -52,11 +52,23 @@ public class SourceInfoOverlayRenderer
 
 	protected String timepointString;
 
+	protected boolean paintSourceAndGroupNamesLeftAligned;
+
 	public synchronized void paint( final Graphics2D g )
 	{
 		g.setFont( new Font( "Monospaced", Font.PLAIN, 12 ) );
-		g.drawString( sourceName, ( int ) g.getClipBounds().getWidth() / 2, 12 );
-		g.drawString( groupName, ( int ) g.getClipBounds().getWidth() / 2, 25 );
+
+		if ( paintSourceAndGroupNamesLeftAligned )
+		{
+			g.drawString( sourceName, 12, 12 );
+			g.drawString( groupName, 12, 25 );
+		}
+		else
+		{
+			g.drawString( sourceName, ( int ) g.getClipBounds().getWidth() / 2, 12 );
+			g.drawString( groupName, ( int ) g.getClipBounds().getWidth() / 2, 25 );
+		}
+
 		g.drawString( timepointString, ( int ) g.getClipBounds().getWidth() - 170, 12 );
 	}
 
@@ -98,5 +110,10 @@ public class SourceInfoOverlayRenderer
 			else
 				timepointString = String.format( "t = %d", t );
 		}
+	}
+
+	public void paintSourceAndGroupNamesLeftAligned( boolean leftAligned )
+	{
+		this.paintSourceAndGroupNamesLeftAligned = leftAligned;
 	}
 }

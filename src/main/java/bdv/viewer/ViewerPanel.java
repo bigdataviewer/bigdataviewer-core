@@ -517,6 +517,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 		if ( Prefs.showTextOverlay() )
 		{
 			sourceInfoOverlayRenderer.setViewerState( state() );
+			sourceInfoOverlayRenderer.paintSourceAndGroupNamesLeftAligned( Prefs.leftAlignedTextOverlay() );
 			sourceInfoOverlayRenderer.paint( ( Graphics2D ) g );
 
 			final RealPoint gPos = new RealPoint( 3 );
