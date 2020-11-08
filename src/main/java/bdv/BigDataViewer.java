@@ -416,7 +416,9 @@ public class BigDataViewer
 		navigationActions.install( viewerFrame.getKeybindings(), "navigation" );
 		NavigationActions.install( navigationActions, viewer, false ); // TODO: expose is2D through ViewerOptions
 
-		BigDataViewerActions.installActionBindings( viewerFrame.getKeybindings(), this, inputTriggerConfig );
+		final Actions bdvActions = new Actions( inputTriggerConfig, "bdv" );
+		bdvActions.install( viewerFrame.getKeybindings(), "bdv" );
+		BigDataViewerActions.install( bdvActions, this );
 
 		final JMenuBar menubar = new JMenuBar();
 		JMenu menu = new JMenu( "File" );

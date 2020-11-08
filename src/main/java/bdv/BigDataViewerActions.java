@@ -81,6 +81,80 @@ public class BigDataViewerActions extends Actions
 
 	/**
 	 * Create BigDataViewer actions and install them in the specified
+	 * {@link Actions}.
+	 *
+	 * @param actions
+	 *            navigation actions are installed here.
+	 * @param bdv
+	 *            Actions are targeted at this {@link BigDataViewer}.
+	 */
+	public static void install( final Actions actions, final BigDataViewer bdv )
+	{
+		toggleDialogAction( actions, bdv.brightnessDialog, BRIGHTNESS_SETTINGS, BRIGHTNESS_SETTINGS_KEYS );
+		toggleDialogAction( actions, bdv.activeSourcesDialog, VISIBILITY_AND_GROUPING, VISIBILITY_AND_GROUPING_KEYS );
+		toggleDialogAction( actions, bdv.helpDialog, SHOW_HELP, SHOW_HELP_KEYS );
+		toggleDialogAction( actions, bdv.cropDialog, CROP, CROP_KEYS );
+		toggleDialogAction( actions, bdv.movieDialog, RECORD_MOVIE, RECORD_MOVIE_KEYS );
+		toggleDialogAction( actions, bdv.movieMaxProjectDialog, RECORD_MAX_PROJECTION_MOVIE, RECORD_MAX_PROJECTION_MOVIE_KEYS );
+		bookmarks( actions, bdv.bookmarkEditor );
+		actions.runnableAction( bdv.manualTransformationEditor::toggle, MANUAL_TRANSFORM, MANUAL_TRANSFORM_KEYS );
+		actions.runnableAction( bdv::loadSettings, LOAD_SETTINGS, LOAD_SETTINGS_KEYS );
+		actions.runnableAction( bdv::saveSettings, SAVE_SETTINGS, SAVE_SETTINGS_KEYS );
+		actions.runnableAction( bdv::expandAndFocusCardPanel, EXPAND_CARDS, EXPAND_CARDS_KEYS );
+		actions.runnableAction( bdv::collapseCardPanel, COLLAPSE_CARDS, COLLAPSE_CARDS_KEYS );
+	}
+
+	public static void toggleDialogAction( final Actions actions, final Dialog dialog, final String name, final String... defaultKeyStrokes )
+	{
+		actions.namedAction( new ToggleDialogAction( name, dialog ), defaultKeyStrokes );
+	}
+
+	@Deprecated
+	public static void dialog( final Actions actions, final BrightnessDialog brightnessDialog )
+	{
+		toggleDialogAction( actions, brightnessDialog, BRIGHTNESS_SETTINGS, BRIGHTNESS_SETTINGS_KEYS );
+	}
+
+	@Deprecated
+	public static void dialog( final Actions actions, final VisibilityAndGroupingDialog visibilityAndGroupingDialog )
+	{
+		toggleDialogAction( actions, visibilityAndGroupingDialog, VISIBILITY_AND_GROUPING, VISIBILITY_AND_GROUPING_KEYS );
+	}
+
+	public static void dialog( final Actions actions, final CropDialog cropDialog )
+	{
+		toggleDialogAction( actions, cropDialog, CROP, CROP_KEYS );
+	}
+
+	public static void dialog( final Actions actions, final HelpDialog helpDialog )
+	{
+		toggleDialogAction( actions, helpDialog, SHOW_HELP, SHOW_HELP_KEYS );
+	}
+
+	public static void dialog( final Actions actions, final RecordMovieDialog recordMovieDialog )
+	{
+		toggleDialogAction( actions, recordMovieDialog, RECORD_MOVIE, RECORD_MOVIE_KEYS );
+	}
+
+	public static void dialog( final Actions actions, final RecordMaxProjectionDialog recordMaxProjectionDialog )
+	{
+		toggleDialogAction( actions, recordMaxProjectionDialog, RECORD_MAX_PROJECTION_MOVIE, RECORD_MAX_PROJECTION_MOVIE_KEYS );
+	}
+
+	public static void bookmarks( final Actions actions, final BookmarksEditor bookmarksEditor )
+	{
+		actions.runnableAction( bookmarksEditor::initGoToBookmark, GO_TO_BOOKMARK, GO_TO_BOOKMARK_KEYS );
+		actions.runnableAction( bookmarksEditor::initGoToBookmarkRotation, GO_TO_BOOKMARK_ROTATION, GO_TO_BOOKMARK_ROTATION_KEYS );
+		actions.runnableAction( bookmarksEditor::initSetBookmark, SET_BOOKMARK, SET_BOOKMARK_KEYS );
+	}
+
+	public static void manualTransform( final Actions actions, final ManualTransformationEditor manualTransformationEditor )
+	{
+		actions.runnableAction( manualTransformationEditor::toggle, MANUAL_TRANSFORM, MANUAL_TRANSFORM_KEYS );
+	}
+
+	/**
+	 * Create BigDataViewer actions and install them in the specified
 	 * {@link InputActionBindings}.
 	 *
 	 * @param inputActionBindings
