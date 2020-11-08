@@ -64,20 +64,20 @@ public class BigDataViewerActions extends Actions
 	public static final String GO_TO_BOOKMARK = "go to bookmark";
 	public static final String GO_TO_BOOKMARK_ROTATION = "go to bookmark rotation";
 
-	static final String[] BRIGHTNESS_SETTINGS_KEYS         = new String[] { "S" };
-	static final String[] VISIBILITY_AND_GROUPING_KEYS     = new String[] { "F6" };
-	static final String[] MANUAL_TRANSFORM_KEYS            = new String[] { "T" };
-	static final String[] SHOW_HELP_KEYS                   = new String[] { "F1", "H" };
-	static final String[] RECORD_MAX_PROJECTION_MOVIE_KEYS = new String[] { "F8" };
-	static final String[] CROP_KEYS                        = new String[] { "F9" };
-	static final String[] RECORD_MOVIE_KEYS                = new String[] { "F10" };
-	static final String[] SAVE_SETTINGS_KEYS               = new String[] { "F11" };
-	static final String[] LOAD_SETTINGS_KEYS               = new String[] { "F12" };
-	public static final String[] EXPAND_CARDS_KEYS         = new String[] { "P" };
-	public static final String[] COLLAPSE_CARDS_KEYS       = new String[] { "shift P", "shift ESCAPE" };
-	static final String[] GO_TO_BOOKMARK_KEYS              = new String[] { "B" };
-	static final String[] GO_TO_BOOKMARK_ROTATION_KEYS     = new String[] { "O" };
-	static final String[] SET_BOOKMARK_KEYS                = new String[] { "shift B" };
+	public static final String[] BRIGHTNESS_SETTINGS_KEYS         = new String[] { "S" };
+	public static final String[] VISIBILITY_AND_GROUPING_KEYS     = new String[] { "F6" };
+	public static final String[] MANUAL_TRANSFORM_KEYS            = new String[] { "T" };
+	public static final String[] SHOW_HELP_KEYS                   = new String[] { "F1", "H" };
+	public static final String[] RECORD_MAX_PROJECTION_MOVIE_KEYS = new String[] { "F8" };
+	public static final String[] CROP_KEYS                        = new String[] { "F9" };
+	public static final String[] RECORD_MOVIE_KEYS                = new String[] { "F10" };
+	public static final String[] SAVE_SETTINGS_KEYS               = new String[] { "F11" };
+	public static final String[] LOAD_SETTINGS_KEYS               = new String[] { "F12" };
+	public static final String[] EXPAND_CARDS_KEYS                = new String[] { "P" };
+	public static final String[] COLLAPSE_CARDS_KEYS              = new String[] { "shift P", "shift ESCAPE" };
+	public static final String[] GO_TO_BOOKMARK_KEYS              = new String[] { "B" };
+	public static final String[] GO_TO_BOOKMARK_ROTATION_KEYS     = new String[] { "O" };
+	public static final String[] SET_BOOKMARK_KEYS                = new String[] { "shift B" };
 
 	/**
 	 * Create BigDataViewer actions and install them in the specified
