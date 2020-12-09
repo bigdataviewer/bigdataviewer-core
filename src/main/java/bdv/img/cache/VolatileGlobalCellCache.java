@@ -62,8 +62,7 @@ public class VolatileGlobalCellCache implements CacheControl
 		private final long index;
 
 		/**
-		 * Create a Key for the specified cell. Note that {@code cellDims} and
-		 * {@code cellMin} are not used for {@code hashcode()/equals()}.
+		 * Create a Key for the specified cell.
 		 *
 		 * @param timepoint
 		 *            timepoint coordinate of the cell
@@ -163,21 +162,6 @@ public class VolatileGlobalCellCache implements CacheControl
 		queue.clear();
 		backingCache.invalidateAll();
 	}
-
-	/**
-	 * <em>For internal use.</em>
-	 * <p>
-	 * Get the {@link LoadingVolatileCache} that handles cell loading. This is
-	 * used by bigdataviewer-server to directly issue Cell requests without
-	 * having {@link CellImg}s and associated {@link VolatileCellCache}s.
-	 *
-	 * @return the cache that handles cell loading
-	 */
-	// TODO
-//	public LoadingVolatileCache< Key, Cell< ? > > getLoadingVolatileCache()
-//	{
-//		return volatileCache;
-//	}
 
 	/**
 	 * Create a {@link VolatileCachedCellImg} backed by this {@link VolatileGlobalCellCache},
