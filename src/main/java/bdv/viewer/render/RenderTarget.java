@@ -28,8 +28,6 @@
  */
 package bdv.viewer.render;
 
-import bdv.viewer.render.RenderResult;
-
 /**
  * Receiver for a rendered image (to be drawn onto a canvas later).
  * <p>
