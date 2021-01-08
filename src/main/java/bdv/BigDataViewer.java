@@ -28,7 +28,6 @@
  */
 package bdv;
 
-import bdv.util.Prefs;
 import bdv.viewer.ConverterSetups;
 import bdv.viewer.ViewerState;
 import java.io.File;
@@ -739,14 +738,12 @@ public class BigDataViewer
 //		final String fn = "/Users/pietzsch/Desktop/data/fibsem-remote.xml";
 //		final String fn = "/Users/pietzsch/Desktop/url-valia.xml";
 //		final String fn = "/Users/pietzsch/Desktop/data/clusterValia/140219-1/valia-140219-1.xml";
-//		final String fn = "/Users/pietzsch/workspace/data/111010_weber_full.xml";
+		final String fn = "/Users/pietzsch/workspace/data/111010_weber_full.xml";
 //		final String fn = "/Volumes/projects/tomancak_lightsheet/Mette/ZeissZ1SPIM/Maritigrella/021013_McH2BsGFP_CAAX-mCherry/11-use/hdf5/021013_McH2BsGFP_CAAX-mCherry-11-use.xml";
-		final String fn = "/Users/tischer/Documents/bigdataviewer-playground/src/test/resources/mri-stack.xml";
 		try
 		{
 			System.setProperty( "apple.laf.useScreenMenuBar", "true" );
 
-			Prefs.positionTextOverlayBelowCoordinates( true );
 			final BigDataViewer bdv = open( fn, new File( fn ).getName(), new ProgressWriterConsole(), ViewerOptions.options() );
 
 //			DumpInputConfig.writeToYaml( System.getProperty( "user.home" ) + "/.bdv/bdvkeyconfig.yaml", bdv.getViewerFrame() );

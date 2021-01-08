@@ -28,6 +28,7 @@
  */
 package bdv.viewer.overlay;
 
+import bdv.util.Prefs.OverlayPosition;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.util.List;
@@ -35,6 +36,8 @@ import java.util.List;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerState;
 import mpicbg.spim.data.sequence.TimePoint;
+
+import static bdv.util.Prefs.OverlayPosition.TOP_CENTER;
 
 /**
  * Render current source name and current timepoint of a {@link ViewerState}
@@ -52,7 +55,7 @@ public class SourceInfoOverlayRenderer
 
 	protected String timepointString;
 
-	protected boolean drawSourceAndGroupNameBelowCoordinates;
+	protected OverlayPosition sourceNameOverlayPosition = TOP_CENTER;
 
 	public synchronized void paint( final Graphics2D g )
 	{
@@ -61,17 +64,19 @@ public class SourceInfoOverlayRenderer
 
 		g.setFont( new Font( "Monospaced", Font.PLAIN, fontSize ) );
 
-		g.drawString( timepointString, ( int ) g.getClipBounds().getWidth() - 170, spacing );
+		g.drawString( timepointString, ( int ) g.getClipBounds().getWidth() - 170, spacing - 1 );
 
-		if ( drawSourceAndGroupNameBelowCoordinates )
+		switch ( sourceNameOverlayPosition )
 		{
-			g.drawString( sourceName, ( int ) g.getClipBounds().getWidth() - Math.max( g.getFontMetrics().stringWidth( sourceName ) + 17, 170 ) , 3 * spacing );
-			g.drawString( groupName, ( int ) g.getClipBounds().getWidth() - Math.max( g.getFontMetrics().stringWidth( groupName ) + 17, 170 ) , 4 * spacing );
-		}
-		else
-		{
-			g.drawString( sourceName, ( int ) g.getClipBounds().getWidth() / 2, spacing );
-			g.drawString( groupName, ( int ) g.getClipBounds().getWidth() / 2, 2 * spacing );
+		default:
+		case TOP_CENTER:
+			g.drawString( sourceName, ( int ) g.getClipBounds().getWidth() / 2, spacing - 1 );
+			g.drawString( groupName, ( int ) g.getClipBounds().getWidth() / 2, 2 * spacing - 1 );
+			break;
+		case TOP_RIGHT:
+			g.drawString( sourceName, ( int ) g.getClipBounds().getWidth() - Math.max( g.getFontMetrics().stringWidth( sourceName ) + 17, 170 ) , 3 * spacing - 1 );
+			g.drawString( groupName, ( int ) g.getClipBounds().getWidth() - Math.max( g.getFontMetrics().stringWidth( groupName ) + 17, 170 ) , 4 * spacing - 1 );
+			break;
 		}
 	}
 
@@ -115,8 +120,8 @@ public class SourceInfoOverlayRenderer
 		}
 	}
 
-	public void drawSourceAndGroupNameBelowCoordinates( boolean drawBelowCoordinates )
+	public void setSourceNameOverlayPosition( final OverlayPosition position )
 	{
-		this.drawSourceAndGroupNameBelowCoordinates = drawBelowCoordinates;
+		this.sourceNameOverlayPosition = position;
 	}
 }
