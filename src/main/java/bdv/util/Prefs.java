@@ -34,6 +34,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
 
+import static bdv.util.Prefs.OverlayPosition.TOP_CENTER;
+
 public class Prefs
 {
 	public static boolean showScaleBar()
@@ -49,6 +51,11 @@ public class Prefs
 	public static boolean showTextOverlay()
 	{
 		return getInstance().showTextOverlay;
+	}
+
+	public static OverlayPosition sourceNameOverlayPosition()
+	{
+		return getInstance().sourceNameOverlayPosition;
 	}
 
 	public static boolean showScaleBarInMovie()
@@ -81,6 +88,11 @@ public class Prefs
 		getInstance().showTextOverlay = show;
 	}
 
+	public static void sourceNameOverlayPosition( final OverlayPosition position )
+	{
+		getInstance().sourceNameOverlayPosition = position;
+	}
+
 	public static void showScaleBarInMovie( final boolean show )
 	{
 		getInstance().showScaleBarInMovie = show;
@@ -107,9 +119,16 @@ public class Prefs
 		return instance;
 	}
 
+	public enum OverlayPosition
+	{
+		TOP_CENTER, // centered at the top. default
+		TOP_RIGHT   // aligned with the position and time point overlays
+	}
+
 	private static final String SHOW_SCALE_BAR = "show-scale-bar";
 	private static final String SHOW_MULTIBOX_OVERLAY = "show-multibox-overlay";
 	private static final String SHOW_TEXT_OVERLAY = "show-text-overlay";
+	private static final String SOURCE_NAME_OVERLAY_POSITION = "source-name-overlay-position";
 	private static final String SHOW_SCALE_BAR_IN_MOVIE = "show-scale-bar-in-movie";
 	private static final String SCALE_BAR_COLOR = "scale-bar-color";
 	private static final String SCALE_BAR_BG_COLOR = "scale-bar-bg-color";
@@ -117,6 +136,7 @@ public class Prefs
 	private boolean showScaleBar;
 	private boolean showMultibox;
 	private boolean showTextOverlay;
+	private OverlayPosition sourceNameOverlayPosition;
 	private boolean showScaleBarInMovie;
 	private int scaleBarColor;
 	private int scaleBarBgColor;
@@ -126,6 +146,7 @@ public class Prefs
 		showScaleBar = getBoolean( p, SHOW_SCALE_BAR, false );
 		showMultibox = getBoolean( p, SHOW_MULTIBOX_OVERLAY, true );
 		showTextOverlay = getBoolean( p, SHOW_TEXT_OVERLAY, true );
+		sourceNameOverlayPosition = getOverlayPosition( p, SOURCE_NAME_OVERLAY_POSITION, TOP_CENTER );
 		showScaleBarInMovie = getBoolean( p, SHOW_SCALE_BAR_IN_MOVIE, false );
 		scaleBarColor = getInt( p, SCALE_BAR_COLOR, 0xffffffff );
 		scaleBarBgColor = getInt( p, SCALE_BAR_BG_COLOR, 0x88000000 );
@@ -159,6 +180,20 @@ public class Prefs
 			return ( property != null ) ? Double.parseDouble( property ) : defaultValue;
 		}
 		catch ( final NumberFormatException e )
+		{
+			e.printStackTrace();
+			return defaultValue;
+		}
+	}
+
+	private OverlayPosition getOverlayPosition( final Properties p, final String key, final OverlayPosition defaultValue )
+	{
+		try
+		{
+			final String property = ( p != null ) ? p.getProperty( key ) : null;
+			return ( property != null ) ? OverlayPosition.valueOf( property ) : defaultValue;
+		}
+		catch ( final IllegalArgumentException e )
 		{
 			e.printStackTrace();
 			return defaultValue;
@@ -205,6 +240,7 @@ public class Prefs
 		properties.put( SHOW_SCALE_BAR, "" + prefs.showScaleBar );
 		properties.put( SHOW_MULTIBOX_OVERLAY, "" + prefs.showMultibox );
 		properties.put( SHOW_TEXT_OVERLAY, "" + prefs.showTextOverlay );
+		properties.put( SOURCE_NAME_OVERLAY_POSITION, "" + prefs.sourceNameOverlayPosition );
 		properties.put( SHOW_SCALE_BAR_IN_MOVIE, "" + prefs.showScaleBarInMovie );
 		properties.put( SCALE_BAR_COLOR, "" + prefs.scaleBarColor );
 		properties.put( SCALE_BAR_BG_COLOR, "" + prefs.scaleBarBgColor );
