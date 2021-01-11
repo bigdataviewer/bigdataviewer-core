@@ -28,7 +28,13 @@
  */
 package bdv.img.imaris;
 
+import bdv.img.hdf5.Util;
+import bdv.util.MipmapTransforms;
+import ch.systemsx.cisd.hdf5.HDF5DataClass;
+import ch.systemsx.cisd.hdf5.HDF5DataSetInformation;
+import ch.systemsx.cisd.hdf5.HDF5DataTypeInformation;
 import java.io.File;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 
@@ -61,17 +67,17 @@ import net.imglib2.type.volatiles.VolatileUnsignedShortType;
 
 public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T > & NativeType< V > , A extends VolatileAccess > implements ViewerImgLoader
 {
-	private final DataType< T, V, A > dataType;
-
 	private IHDF5Access hdf5Access;
-
-	private final MipmapInfo mipmapInfo;
-
-	private final long[][] mipmapDimensions;
 
 	private final File hdf5File;
 
 	private final AbstractSequenceDescription< ?, ?, ? > sequenceDescription;
+
+	private DataType< T, V, A > dataType;
+
+	private MipmapInfo mipmapInfo;
+
+	private long[][] mipmapDimensions;
 
 	private VolatileGlobalCellCache cache;
 
@@ -80,23 +86,17 @@ public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T
 	private final HashMap< Integer, SetupImgLoader > setupImgLoaders;
 
 	public ImarisImageLoader(
-			final DataType< T, V, A > dataType,
 			final File hdf5File,
-			final MipmapInfo mipmapInfo,
-			final long[][] mipmapDimensions,
 			final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
 	{
-		this.dataType = dataType;
 		this.hdf5File = hdf5File;
-		this.mipmapInfo = mipmapInfo;
-		this.mipmapDimensions = mipmapDimensions;
 		this.sequenceDescription = sequenceDescription;
 		this.setupImgLoaders = new HashMap<>();
 	}
 
 	private boolean isOpen = false;
 
-	private void open()
+	private synchronized void open()
 	{
 		if ( !isOpen )
 		{
@@ -107,19 +107,19 @@ public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T
 				isOpen = true;
 
 				final IHDF5Reader hdf5Reader = HDF5Factory.openForReading( hdf5File );
-
-				final List< ? extends BasicViewSetup > setups = sequenceDescription.getViewSetupsOrdered();
-
-				final int maxNumLevels = mipmapInfo.getNumLevels();
-
 				try
 				{
 					hdf5Access = new HDF5AccessHack( hdf5Reader );
+					openDimensions( hdf5Reader );
 				}
 				catch ( final Exception e )
 				{
 					throw new RuntimeException( e );
 				}
+
+				final List< ? extends BasicViewSetup > setups = sequenceDescription.getViewSetupsOrdered();
+				final int maxNumLevels = mipmapInfo.getNumLevels();
+
 				loader = dataType.createArrayLoader( hdf5Access );
 				cache = new VolatileGlobalCellCache( maxNumLevels, 1 );
 
@@ -130,6 +130,126 @@ public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T
 				}
 			}
 		}
+	}
+
+	private void openDimensions( final IHDF5Reader reader ) throws IOException
+	{
+		final String fn = hdf5File.getAbsolutePath();
+
+		final HashMap< Integer, double[] > levelToResolution = new HashMap<>();
+		final HashMap< Integer, int[] > levelToSubdivision = new HashMap<>();
+		final HashMap< Integer, long[] > levelToDimensions = new HashMap<>();
+
+		String path = "DataSetInfo/Image";
+		final int[] imageSize = new int[] {
+				Integer.parseInt( hdf5Access.readImarisAttributeString( path, "X" ) ),
+				Integer.parseInt( hdf5Access.readImarisAttributeString( path, "Y" ) ),
+				Integer.parseInt( hdf5Access.readImarisAttributeString( path, "Z" ) ),
+		};
+
+		dataType = null;
+		final List< String > resolutionNames = reader.getGroupMembers( "DataSet" );
+		for ( final String resolutionName : resolutionNames )
+		{
+			if ( !resolutionName.startsWith( "ResolutionLevel " ) )
+			{
+				throw new IOException( "unexpected content '" + resolutionName + "' while reading " + fn );
+			}
+			else
+			{
+				final int level = Integer.parseInt( resolutionName.substring( "ResolutionLevel ".length() ) );
+
+				final List< String > timepointNames = reader.getGroupMembers( "DataSet/" + resolutionName );
+				if ( timepointNames.isEmpty() )
+					throw new IOException( "could not find any TimePoint in " + fn );
+				final String timepointName = timepointNames.get( 0 );
+
+				final List< String > channelNames = reader.getGroupMembers( "DataSet/" + resolutionName + "/" + timepointName );
+				if ( channelNames.isEmpty() )
+					throw new IOException( "could not find any Channel in " + fn );
+				final String channelName = channelNames.get( 0 );
+
+				final HDF5DataSetInformation info = reader.getDataSetInformation( "DataSet/" + resolutionName + "/" + timepointName + "/" + channelName + "/Data" );
+				if ( dataType == null )
+				{
+					final HDF5DataTypeInformation ti = info.getTypeInformation();
+					if ( ti.getDataClass().equals( HDF5DataClass.INTEGER ) )
+					{
+						switch ( ti.getElementSize() )
+						{
+						case 1:
+							dataType = ( DataType ) DataTypes.UnsignedByte;
+							break;
+						case 2:
+							dataType = ( DataType ) DataTypes.UnsignedShort;
+							break;
+						default:
+							throw new IOException( "expected datatype" + ti );
+						}
+					}
+					else if ( ti.getDataClass().equals( HDF5DataClass.FLOAT ) )
+					{
+						if ( ti.getElementSize() == 4 )
+							dataType = ( DataType ) DataTypes.Float;
+						else
+							throw new IOException( "expected datatype" + ti );
+					}
+				}
+
+				double[] resolution = levelToResolution.get( level );
+				if ( resolution == null )
+				{
+					path = "DataSet/" + resolutionName + "/" + timepointName + "/" + channelName;
+
+					final long[] dims = new long[] {
+							Integer.parseInt( hdf5Access.readImarisAttributeString( path, "ImageSizeX" ) ),
+							Integer.parseInt( hdf5Access.readImarisAttributeString( path, "ImageSizeY" ) ),
+							Integer.parseInt( hdf5Access.readImarisAttributeString( path, "ImageSizeZ" ) ),
+					};
+
+					final int[] blockDims = new int[] { 16, 16, 16 };
+					try
+					{
+						blockDims[ 0 ] = Integer.parseInt( hdf5Access.readImarisAttributeString( path, "ImageBlockSizeX" ) );
+						blockDims[ 1 ] = Integer.parseInt( hdf5Access.readImarisAttributeString( path, "ImageBlockSizeY" ) );
+						blockDims[ 2 ] = Integer.parseInt( hdf5Access.readImarisAttributeString( path, "ImageBlockSizeZ" ) );
+					}
+					catch ( final NumberFormatException e )
+					{
+						int[] chunkSizes = info.tryGetChunkSizes();
+						if ( chunkSizes != null )
+						{
+							chunkSizes = Util.reorder( chunkSizes );
+							System.arraycopy( chunkSizes, 0, blockDims, 0, 3 );
+						}
+					}
+
+					resolution = new double[] {
+							imageSize[ 0 ] / dims[ 0 ],
+							imageSize[ 1 ] / dims[ 1 ],
+							imageSize[ 2 ] / dims[ 2 ],
+					};
+
+					levelToDimensions.put( level, dims );
+					levelToResolution.put( level, resolution );
+					levelToSubdivision.put( level, blockDims );
+				}
+			}
+		}
+
+		final int numLevels = levelToResolution.size();
+		mipmapDimensions = new long[ numLevels ][];
+		final double[][] resolutions = new double[ numLevels ][];
+		final int[][] subdivisions = new int[ numLevels ][];
+		final AffineTransform3D[] transforms = new AffineTransform3D[ numLevels ];
+		for ( int level = 0; level < numLevels; ++level )
+		{
+			mipmapDimensions[ level ] = levelToDimensions.get( level );
+			resolutions[ level ] = levelToResolution.get( level );
+			subdivisions[ level ] = levelToSubdivision.get( level );
+			transforms[ level ] = MipmapTransforms.getMipmapTransformDefault( resolutions[ level ] );
+		}
+		mipmapInfo = new MipmapInfo( resolutions, transforms, subdivisions );
 	}
 
 	/**
@@ -151,6 +271,11 @@ public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T
 		final int priority = mipmapInfo.getMaxLevel() - level;
 		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
 		return cache.createImg( grid, timepointId, setupId, level, cacheHints, loader, type );
+	}
+
+	public File getImsFile()
+	{
+		return hdf5File;
 	}
 
 	@Override

@@ -33,14 +33,9 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 
-import bdv.img.hdf5.MipmapInfo;
-import bdv.img.hdf5.Util;
 import bdv.spimdata.SequenceDescriptionMinimal;
 import bdv.spimdata.SpimDataMinimal;
-import bdv.util.MipmapTransforms;
-import ch.systemsx.cisd.hdf5.HDF5DataClass;
 import ch.systemsx.cisd.hdf5.HDF5DataSetInformation;
-import ch.systemsx.cisd.hdf5.HDF5DataTypeInformation;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
@@ -69,9 +64,6 @@ public class Imaris
 			throw new RuntimeException( e );
 		}
 
-		final HashMap< Integer, double[] > levelToResolution = new HashMap<>();
-		final HashMap< Integer, int[] > levelToSubdivision = new HashMap<>();
-		final HashMap< Integer, long[] > levelToDimensions = new HashMap<>();
 		final HashMap< Integer, TimePoint > timepointMap = new HashMap<>();
 		final HashMap< Integer, BasicViewSetup > setupMap = new HashMap<>();
 
@@ -91,14 +83,17 @@ public class Imaris
 				Integer.parseInt( access.readImarisAttributeString( path, "Y" ) ),
 				Integer.parseInt( access.readImarisAttributeString( path, "Z" ) ),
 		};
-		final String unit = access.readImarisAttributeString( path, "Unit" );
-		final VoxelDimensions voxelSize = new FinalVoxelDimensions( unit, new double[] {
+		String unit = access.readImarisAttributeString( path, "Unit" );
+		if ( unit == null )
+			unit = "um";
+		byte[] bytes = unit.getBytes();
+		if ( bytes.length == 1 && bytes[ 0 ] == 0 )
+			unit = "um";
+		final VoxelDimensions voxelSize = new FinalVoxelDimensions( unit,
 				( extMax[ 0 ] - extMin[ 0 ] ) / imageSize[ 0 ],
 				( extMax[ 1 ] - extMin[ 1 ] ) / imageSize[ 1 ],
-				( extMax[ 2 ] - extMin[ 2 ] ) / imageSize[ 2 ]
-		} );
+				( extMax[ 2 ] - extMin[ 2 ] ) / imageSize[ 2 ] );
 
-		DataTypes.DataType< ?, ?, ? > dataType = null;
 		final List< String > resolutionNames = reader.getGroupMembers( "DataSet" );
 		for ( final String resolutionName : resolutionNames )
 		{
@@ -132,35 +127,6 @@ public class Imaris
 							else
 							{
 								final HDF5DataSetInformation info = reader.getDataSetInformation( "DataSet/" + resolutionName + "/" + timepointName + "/" + channelName + "/Data" );
-								if (  dataType == null )
-								{
-									final HDF5DataTypeInformation ti = info.getTypeInformation();
-									if ( ti.getDataClass().equals( HDF5DataClass.INTEGER ) )
-									{
-										switch ( ti.getElementSize() )
-										{
-										case 1:
-											dataType = DataTypes.UnsignedByte;
-											break;
-										case 2:
-											dataType = DataTypes.UnsignedShort;
-											break;
-										default:
-											throw new IOException( "expected datatype" + ti );
-										}
-									}
-									else if ( ti.getDataClass().equals( HDF5DataClass.FLOAT ) )
-									{
-										switch ( ti.getElementSize() )
-										{
-										case 4:
-											dataType = DataTypes.Float;
-											break;
-										default:
-											throw new IOException( "expected datatype" + ti );
-										}
-									}
-								}
 
 								final int channel = Integer.parseInt( channelName.substring( "Channel ".length() ) );
 								if ( !setupMap.containsKey( channel ) )
@@ -170,44 +136,6 @@ public class Imaris
 									final BasicViewSetup setup = new BasicViewSetup( channel, name, new FinalDimensions( imageSize ), voxelSize );
 									setupMap.put( channel, setup );
 								}
-
-								double[] resolution = levelToResolution.get( level );
-								if ( resolution == null ) {
-									path = "DataSet/" + resolutionName + "/" + timepointName + "/" + channelName;
-
-									final long[] dims = new long[] {
-											Integer.parseInt( access.readImarisAttributeString( path, "ImageSizeX" ) ),
-											Integer.parseInt( access.readImarisAttributeString( path, "ImageSizeY" ) ),
-											Integer.parseInt( access.readImarisAttributeString( path, "ImageSizeZ" ) ),
-									};
-
-									final int[] blockDims = new int[] { 16, 16, 16 };
-									try
-									{
-										blockDims[ 0 ] = Integer.parseInt( access.readImarisAttributeString( path, "ImageBlockSizeX" ) );
-										blockDims[ 1 ] = Integer.parseInt( access.readImarisAttributeString( path, "ImageBlockSizeY" ) );
-										blockDims[ 2 ] = Integer.parseInt( access.readImarisAttributeString( path, "ImageBlockSizeZ" ) );
-									} catch( final NumberFormatException e )
-									{
-										int[] chunkSizes = info.tryGetChunkSizes();
-										if ( chunkSizes != null )
-										{
-											chunkSizes = Util.reorder( chunkSizes );
-											for ( int d = 0; d < 3; ++d )
-												blockDims[ d ] = chunkSizes[ d ];
-										}
-									}
-
-									resolution = new double[] {
-											imageSize[ 0 ] / dims[ 0 ],
-											imageSize[ 1 ] / dims[ 1 ],
-											imageSize[ 2 ] / dims[ 2 ],
-									};
-
-									levelToDimensions.put( level, dims );
-									levelToResolution.put( level, resolution );
-									levelToSubdivision.put( level, blockDims );
-								}
 							}
 						}
 					}
@@ -215,23 +143,8 @@ public class Imaris
 			}
 		}
 
-		final int numLevels = levelToResolution.size();
-		final long[][] dimensions = new long[ numLevels ][];
-		final double[][] resolutions = new double[ numLevels ][];
-		final int[][] subdivisions = new int[ numLevels ][];
-		final AffineTransform3D[] transforms = new AffineTransform3D[ numLevels ];
-		for ( int level = 0; level < numLevels; ++level )
-		{
-			dimensions[ level ] = levelToDimensions.get( level );
-			resolutions[ level ] = levelToResolution.get( level );
-			subdivisions[ level ] = levelToSubdivision.get( level );
-			transforms[ level ] = MipmapTransforms.getMipmapTransformDefault( resolutions[ level ] );
-		}
-		final MipmapInfo mipmapInfo = new MipmapInfo( resolutions, transforms, subdivisions );
-
 		final SequenceDescriptionMinimal seq = new SequenceDescriptionMinimal( new TimePoints( timepointMap ), setupMap, null, null );
-		@SuppressWarnings( { "rawtypes", "unchecked" } ) // TODO: when ij2 supports java 7, replace SuppressWarnings by new ImarisImageLoader<>(...)
-		final ImarisImageLoader<?,?,?> imgLoader = new ImarisImageLoader( dataType, new File( fn ), mipmapInfo, dimensions, seq );
+		final ImarisImageLoader< ?, ?, ? > imgLoader = new ImarisImageLoader<>( new File( fn ), seq );
 		seq.setImgLoader( imgLoader );
 
 		final File basePath = new File( fn ).getParentFile();
