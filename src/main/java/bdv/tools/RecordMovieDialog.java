@@ -42,6 +42,7 @@ import java.awt.BorderLayout;
 import java.awt.Frame;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.RenderingHints;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -313,6 +314,7 @@ public class RecordMovieDialog extends DelayedPackDialog implements OverlayRende
 			if ( Prefs.showScaleBarInMovie() )
 			{
 				final Graphics2D g2 = bi.createGraphics();
+				g2.setRenderingHint( RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON );
 				g2.setClip( 0, 0, width, height );
 				scalebar.setViewerState( renderState );
 				scalebar.paint( g2 );
