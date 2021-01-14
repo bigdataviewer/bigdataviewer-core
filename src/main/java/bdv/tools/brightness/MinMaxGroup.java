@@ -110,7 +110,7 @@ public class MinMaxGroup extends BoundedIntervalDouble
 	public void addSetup( final ConverterSetup setup )
 	{
 		setups.add( setup );
-		setup.setDisplayRange( getMinBoundedValue().getCurrentValue(), getMaxBoundedValue().getCurrentValue() );
+//		setup.setDisplayRange( getMinBoundedValue().getCurrentValue(), getMaxBoundedValue().getCurrentValue() );
 
 		if ( updateListener != null )
 			updateListener.update();

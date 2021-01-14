@@ -35,8 +35,8 @@ import static bdv.viewer.DisplayMode.SINGLE;
 import static bdv.viewer.Interpolation.NEARESTNEIGHBOR;
 import static bdv.viewer.Interpolation.NLINEAR;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.SortedSet;
 
 import mpicbg.spim.data.XmlHelpers;
 
@@ -44,7 +44,6 @@ import org.jdom2.Element;
 
 import bdv.viewer.DisplayMode;
 import bdv.viewer.Interpolation;
-
 
 public class XmlIoViewerState
 {
@@ -99,7 +98,7 @@ public class XmlIoViewerState
 	public void restoreFromXml( final Element elem, final ViewerState state )
 	{
 		restoreSourcesFromXml( elem.getChild( VIEWERSTATE_SOURCES_TAG ), state.getSources() );
-		restoreSourceGroupsFromXml( elem.getChild( VIEWERSTATE_GROUPS_TAG ), state.getSourceGroups() );
+		restoreSourceGroupsFromXml( elem.getChild( VIEWERSTATE_GROUPS_TAG ), state );
 		state.setDisplayMode( displayModeFromXml( elem.getChild( VIEWERSTATE_DISPLAYMODE_TAG ) ) );
 		state.setInterpolation( interpolationModeFromXml( elem.getChild( VIEWERSTATE_INTERPOLATION_TAG ) ) );
 		state.setCurrentSource( XmlHelpers.getInt( elem, VIEWERSTATE_CURRENTSOURCE_TAG ) );
@@ -149,23 +148,27 @@ public class XmlIoViewerState
 
 	/**
 	 * @param elem &lt;SourceGroups&gt; element.
-	 * @param groups is restored from the <code>elem</code>.
 	 */
-	public void restoreSourceGroupsFromXml( final Element elem, final List< SourceGroup > groups )
+	public void restoreSourceGroupsFromXml( final Element elem, final ViewerState state )
 	{
 		final List< Element > groupElems = elem.getChildren( VIEWERSTATE_GROUP_TAG );
-		if ( groups.size() != groupElems.size() )
-			throw new IllegalArgumentException();
-		for ( int i = 0; i < groups.size(); ++i )
+
+		int ng = state.numSourceGroups();
+		while ( ng < groupElems.size() )
+			state.addGroup( new SourceGroup( String.format( "tmp %d", ng++ ) ) );
+		while ( ng > groupElems.size() )
+			state.removeGroup( --ng );
+
+		final bdv.viewer.ViewerState nstate = state.getState();
+		for ( int i = 0; i < groupElems.size(); ++i )
 		{
-			final SourceGroup group = groups.get( i );
+			final bdv.viewer.SourceGroup group = nstate.getGroups().get( i );
 			final Element groupElem = groupElems.get( i );
-			group.setActive( XmlHelpers.getBoolean( groupElem, VIEWERSTATE_GROUP_ACTIVE_TAG ) );
-			group.setName( groupElem.getChildText( VIEWERSTATE_GROUP_NAME_TAG ) );
-			final SortedSet< Integer > ids = group.getSourceIds();
-			ids.clear();
+			nstate.setGroupActive( group, XmlHelpers.getBoolean( groupElem, VIEWERSTATE_GROUP_ACTIVE_TAG ) );
+			nstate.setGroupName( group, groupElem.getChildText( VIEWERSTATE_GROUP_NAME_TAG ) );
+			nstate.removeSourcesFromGroup( new ArrayList<>( nstate.getSourcesInGroup( group ) ), group );
 			for ( final Element idElem : groupElem.getChildren( VIEWERSTATE_GROUP_SOURCEID_TAG ) )
-				ids.add( Integer.parseInt( idElem.getText() ) );
+				nstate.addSourceToGroup( nstate.getSources().get( Integer.parseInt( idElem.getText() ) ), group );
 		}
 	}
 
