@@ -132,7 +132,10 @@ public class Imaris
 								if ( !setupMap.containsKey( channel ) )
 								{
 									final String defaultSetupName = "channel " + channel;
-									final String name = access.readImarisAttributeString( "DataSetInfo/Channel " + channel, "Description", defaultSetupName );
+									String name = access.readImarisAttributeString( "DataSetInfo/Channel " + channel, "Description", defaultSetupName );
+									if ((name == null)||(name.equals(""))||(name.trim().isEmpty())) {
+										name = defaultSetupName;
+									}
 									final BasicViewSetup setup = new BasicViewSetup( channel, name, new FinalDimensions( imageSize ), voxelSize );
 									setupMap.put( channel, setup );
 								}
