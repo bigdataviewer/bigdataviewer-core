@@ -414,7 +414,7 @@ public class BigDataViewer
 
 		final Actions navigationActions = new Actions( inputTriggerConfig, "bdv", "navigation" );
 		navigationActions.install( viewerFrame.getKeybindings(), "navigation" );
-		NavigationActions.install( navigationActions, viewer, false ); // TODO: expose is2D through ViewerOptions
+		NavigationActions.install( navigationActions, viewer, options.values.is2D() );
 
 		final Actions bdvActions = new Actions( inputTriggerConfig, "bdv" );
 		bdvActions.install( viewerFrame.getKeybindings(), "bdv" );

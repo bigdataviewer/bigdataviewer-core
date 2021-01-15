@@ -28,6 +28,7 @@
  */
 package bdv.viewer;
 
+import bdv.TransformEventHandler2D;
 import bdv.TransformEventHandler3D;
 import java.awt.event.KeyListener;
 
@@ -162,6 +163,20 @@ public class ViewerOptions
 	}
 
 	/**
+	 * Set up the BigDataViewer for 2D navigation.
+	 * Note, that Sources still need to provide 3D stacks, etc.
+	 * This option only prevents out-of-plane movement.
+	 *
+	 * @param is2D whether to restrict navigation to 2D (default is {@code false}).
+	 */
+	public ViewerOptions is2D( final boolean is2D )
+	{
+		values.is2D = is2D;
+		transformEventHandlerFactory( is2D ? TransformEventHandler2D::new : TransformEventHandler3D::new );
+		return this;
+	}
+
+	/**
 	 * Set the factory for creating {@link AccumulateProjector}. This can be
 	 * used to customize how sources are combined.
 	 *
@@ -228,6 +243,8 @@ public class ViewerOptions
 
 		private TransformEventHandlerFactory transformEventHandlerFactory = TransformEventHandler3D::new;
 
+		private boolean is2D = false;
+
 		private AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory = AccumulateProjectorARGB.factory;
 
 		private InputTriggerConfig inputTriggerConfig = null;
@@ -245,6 +262,7 @@ public class ViewerOptions
 				numSourceGroups( numSourceGroups ).
 				useVolatileIfAvailable( useVolatileIfAvailable ).
 				msgOverlay( msgOverlay ).
+				is2D( is2D ).
 				transformEventHandlerFactory( transformEventHandlerFactory ).
 				accumulateProjectorFactory( accumulateProjectorFactory ).
 				inputTriggerConfig( inputTriggerConfig ).
@@ -294,6 +312,11 @@ public class ViewerOptions
 		public TransformEventHandlerFactory getTransformEventHandlerFactory()
 		{
 			return transformEventHandlerFactory;
+		}
+
+		public boolean is2D()
+		{
+			return is2D;
 		}
 
 		public AccumulateProjectorFactory< ARGBType > getAccumulateProjectorFactory()
