@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -48,13 +48,16 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 import javax.swing.Scrollable;
+import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
+
 import net.miginfocom.swing.MigLayout;
 
 /**
@@ -68,11 +71,11 @@ public class CardPanel
 	/**
 	 * Color scheme.
 	 */
-	private final static Color DEFAULT_CARD_BACKGROUND = Color.white;
+	private final static Color DEFAULT_CARD_BACKGROUND = UIManager.getColor( "Panel.background" ); // Color.white;
 
-	private final static Color DEFAULT_HEADER_BACKGROUND = new Color( 0xcccccc );
+	private final static Color DEFAULT_HEADER_BACKGROUND = UIManager.getColor( "InternalFrame.inactiveTitleBackground" ); // Color( 0xcccccc );
 
-	private final static Color DEFAULT_HEADER_FOREGROUND = new Color( 0x202020 );
+	private final static Color DEFAULT_HEADER_FOREGROUND = UIManager.getColor( "InternalFrame.inactiveTitleForeground" ); // new Color( 0x202020 );
 
 	private Color headerBackground = DEFAULT_HEADER_BACKGROUND;
 
@@ -234,7 +237,7 @@ public class CardPanel
 	public void setCardBackground( final Color bg )
 	{
 		container.setBackground( bg );
-		for ( Card card : cardList )
+		for ( final Card card : cardList )
 		{
 			card.setBackground( bg );
 			card.componentPanel.setBackground( bg );
@@ -252,7 +255,7 @@ public class CardPanel
 	public void setHeaderBackground( final Color bg )
 	{
 		headerBackground = bg;
-		for ( Card card : cardList )
+		for ( final Card card : cardList )
 		{
 			card.headerPanel.setBackground( bg );
 			card.terminalResizePanel.setBackground( bg );
@@ -270,7 +273,7 @@ public class CardPanel
 	public void setHeaderForeground( final Color fg )
 	{
 		headerForeground = fg;
-		for ( Card card : cardList )
+		for ( final Card card : cardList )
 			card.headerPanel.setForeground( fg );
 	}
 
