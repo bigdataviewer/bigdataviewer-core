@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -28,24 +28,29 @@
  */
 package bdv.ui.splitpanel;
 
-import bdv.ui.CardPanel;
-import bdv.viewer.ViewerPanel;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+
 import javax.swing.InputMap;
 import javax.swing.JComponent;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.KeyStroke;
+import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.basic.BasicSplitPaneDivider;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
+
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.util.Actions;
+
+import bdv.ui.CardPanel;
+import bdv.ui.UIUtils;
+import bdv.viewer.ViewerPanel;
 
 /**
  * A {@code JSplitPane} with a {@code ViewerPanel} on the left and a
@@ -59,7 +64,9 @@ import org.scijava.ui.behaviour.util.Actions;
  */
 public class SplitPanel extends JSplitPane
 {
-	private static final int DEFAULT_DIVIDER_SIZE = 3;
+	private static final double uiScale = UIUtils.getUIScaleFactor();
+
+	private static final int DEFAULT_DIVIDER_SIZE = ( int )Math.round( 3 * uiScale );
 
 	private static final String FOCUS_VIEWER_PANEL = "focus viewer panel";
 	private static final String HIDE_CARD_PANEL = "hide card panel";
@@ -80,7 +87,10 @@ public class SplitPanel extends JSplitPane
 		scrollPane = new JScrollPane( cardPanelComponent );
 		scrollPane.setBorder( new EmptyBorder( 0, 0, 0, 0 ) );
 		scrollPane.setHorizontalScrollBarPolicy( JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
-		scrollPane.setPreferredSize( new Dimension( 800, 200 ) );
+		scrollPane.setPreferredSize(
+				new Dimension(
+						( int )Math.floor( 800 * uiScale ),
+						( int )Math.floor( 200 * uiScale ) ) );
 
 		final InputMap inputMap = scrollPane.getInputMap( JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT );
 		inputMap.put( KeyStroke.getKeyStroke( "F6" ), "none" );
@@ -124,7 +134,7 @@ public class SplitPanel extends JSplitPane
 				{
 					// When the component is first made visible, set LastDividerLocation to a reasonable value
 					setDividerLocation( w );
-					setLastDividerLocation( Math.max( w / 2, w - Math.max( 200, cardPanelComponent.getPreferredSize().width ) ) );
+					setLastDividerLocation( Math.max( w / 2, w - Math.max( ( int )Math.floor( 200 * uiScale ), cardPanelComponent.getPreferredSize().width ) ) );
 				}
 				width = w;
 			}
@@ -145,7 +155,7 @@ public class SplitPanel extends JSplitPane
 					@Override
 					public void paint( final Graphics g )
 					{
-						g.setColor( Color.white );
+						g.setColor( UIManager.getColor( "SplitPane.background" ) );
 						g.fillRect( 0, 0, getSize().width, getSize().height );
 						super.paint( g );
 					}
@@ -194,7 +204,7 @@ public class SplitPanel extends JSplitPane
 			super.setDividerSize( dividerSizeWhenVisible );
 			final int dl = getLastDividerLocation();
 			final int w = getWidth();
-			setDividerLocation( Math.max( Math.min ( w / 2, 50 ), Math.min( w - 50, dl ) ) );
+			setDividerLocation( Math.max( Math.min ( w / 2, ( int )Math.floor( 50 * uiScale ) ), Math.min( w - ( int )Math.floor( 50 * uiScale ), dl ) ) );
 		}
 	}
 
