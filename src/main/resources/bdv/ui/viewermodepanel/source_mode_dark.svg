@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="40"
+   height="40"
+   viewBox="0 0 10.583333 10.583334"
+   version="1.1"
+   id="svg8"
+   inkscape:version="1.0.1 (0767f8302a, 2020-10-17)"
+   sodipodi:docname="source_mode_dark.svg"
+   inkscape:export-filename="/home/saalfeld/workspace/big/bigdataviewer-core/src/main/resources/bdv/ui/viewermodepanel/source_mode_200.png"
+   inkscape:export-xdpi="192"
+   inkscape:export-ydpi="192">
+  <defs
+     id="defs2" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#4a4a4a"
+     borderopacity="1"
+     inkscape:pageopacity="0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="9.0909466"
+     inkscape:cx="11.163088"
+     inkscape:cy="13.068008"
+     inkscape:document-units="mm"
+     inkscape:current-layer="g824"
+     showgrid="false"
+     units="px"
+     inkscape:pagecheckerboard="true"
+     inkscape:window-width="1848"
+     inkscape:window-height="1016"
+     inkscape:window-x="72"
+     inkscape:window-y="27"
+     inkscape:window-maximized="1"
+     fit-margin-top="0"
+     fit-margin-left="0"
+     fit-margin-right="0"
+     fit-margin-bottom="0"
+     inkscape:document-rotation="0" />
+  <metadata
+     id="metadata5">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1"
+     transform="translate(1.9123157e-7,-282.97707)">
+    <g
+       id="g824"
+       transform="translate(-1.9123157e-7,-3.4395876)">
+      <path
+         inkscape:connector-curvature="0"
+         id="rect4773"
+         d="m 6.3179602,287.28534 c -0.096824,-0.0121 -0.1955218,0.0334 -0.2475301,0.12351 l -0.6888467,1.19269 H 1.3322181 c -0.150904,0 -0.2723347,0.12144 -0.2723347,0.27233 v 4.08761 c 0,0.15089 0.1214307,0.27233 0.2723347,0.27233 h 2.4835694 l 0.7363891,2.74867 c 0.038849,0.14499 0.1867611,0.23058 0.3317626,0.19172 l 3.9279258,-1.05264 c 0.1450015,-0.0389 0.2305688,-0.18678 0.1917195,-0.33177 l -0.7219199,-2.69492 1.4763956,-2.55695 c 0.069344,-0.12011 0.028652,-0.27275 -0.091467,-0.3421 l -3.2540649,-1.87896 c -0.03003,-0.0173 -0.062293,-0.0275 -0.094568,-0.0315 z"
+         style="opacity:1;fill:#bbbbbb;fill-opacity:0.2;fill-rule:nonzero;stroke:none;stroke-width:0.141111;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+      <rect
+         transform="rotate(30)"
+         ry="0.25034022"
+         rx="0.25036374"
+         y="245.61761"
+         x="148.9614"
+         height="4.2577553"
+         width="4.2581553"
+         id="rect815-35"
+         style="opacity:1;fill:#bbbbbb;fill-opacity:0.44999999;fill-rule:nonzero;stroke:#bbbbbb;stroke-width:0.141;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+      <rect
+         ry="0.27094325"
+         rx="0.27096879"
+         y="282.73801"
+         x="-72.2089"
+         height="4.6081691"
+         width="4.6086035"
+         id="rect815-3"
+         style="opacity:1;fill:none;fill-opacity:0.10894943;fill-rule:nonzero;stroke:#bbbbbb;stroke-width:0.14111109;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1"
+         transform="rotate(-15.000005)" />
+      <rect
+         ry="0.27236438"
+         rx="0.27238995"
+         y="288.60168"
+         x="1.059764"
+         height="4.6323395"
+         width="4.6327744"
+         id="rect839"
+         style="opacity:1;fill:#bbbbbb;fill-opacity:0.2;fill-rule:nonzero;stroke:#bbbbbb;stroke-width:0.141;stroke-miterlimit:4;stroke-dasharray:none;stroke-dashoffset:0;stroke-opacity:1" />
+    </g>
+  </g>
+</svg>
