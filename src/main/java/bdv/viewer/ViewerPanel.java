@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -28,8 +28,6 @@
  */
 package bdv.viewer;
 
-import bdv.TransformEventHandler;
-import bdv.TransformState;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Font;
@@ -56,12 +54,15 @@ import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 
-import net.imglib2.Interval;
-import bdv.viewer.render.awt.BufferedImageOverlayRenderer;
 import org.jdom2.Element;
+import org.scijava.listeners.Listeners;
 
+import bdv.TransformEventHandler;
+import bdv.TransformState;
 import bdv.cache.CacheControl;
+import bdv.ui.UIUtils;
 import bdv.util.Affine3DHelpers;
 import bdv.util.Prefs;
 import bdv.viewer.animate.AbstractTransformAnimator;
@@ -74,17 +75,18 @@ import bdv.viewer.overlay.MultiBoxOverlayRenderer;
 import bdv.viewer.overlay.ScaleBarOverlayRenderer;
 import bdv.viewer.overlay.SourceInfoOverlayRenderer;
 import bdv.viewer.render.MultiResolutionRenderer;
+import bdv.viewer.render.PainterThread;
+import bdv.viewer.render.awt.BufferedImageOverlayRenderer;
 import bdv.viewer.state.SourceGroup;
 import bdv.viewer.state.ViewerState;
 import bdv.viewer.state.XmlIoViewerState;
+import net.imglib2.Interval;
 import net.imglib2.Positionable;
 import net.imglib2.RealLocalizable;
 import net.imglib2.RealPoint;
 import net.imglib2.RealPositionable;
 import net.imglib2.realtransform.AffineTransform3D;
-import bdv.viewer.render.PainterThread;
 import net.imglib2.util.LinAlgHelpers;
-import org.scijava.listeners.Listeners;
 
 /**
  * A JPanel for viewing multiple of {@link Source}s. The panel contains a
@@ -211,6 +213,10 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 	protected final MessageOverlayAnimator msgOverlay;
 
 	protected final ViewerOptions.Values options;
+
+	protected final double uiScale = UIUtils.getUIScaleFactor();
+
+	protected final int fontSize = UIManager.getFont( "Panel.font" ).getSize();
 
 	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimePoints, final CacheControl cacheControl )
 	{
@@ -524,9 +530,9 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 			getGlobalMouseCoordinates( gPos );
 			final String mousePosGlobalString = String.format( "(%6.1f,%6.1f,%6.1f)", gPos.getDoublePosition( 0 ), gPos.getDoublePosition( 1 ), gPos.getDoublePosition( 2 ) );
 
-			g.setFont( new Font( "Monospaced", Font.PLAIN, 12 ) );
+			g.setFont( new Font( "Monospaced", Font.PLAIN, fontSize ) );
 			g.setColor( Color.white );
-			g.drawString( mousePosGlobalString, ( int ) g.getClipBounds().getWidth() - 170, 25 );
+			g.drawString( mousePosGlobalString, ( int )( g.getClipBounds().getWidth() - uiScale * 170 ), ( int )( uiScale * 25 ) );
 		}
 
 		if ( Prefs.showScaleBar() )
