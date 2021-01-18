@@ -102,4 +102,20 @@ public class UIUtils
 	{
 		return UIManager.getFont( "Panel.font" ).getSize() / 12.0;
 	}
+
+	/**
+	 * Tell if the LAF color specified for the provided key is darker than 50%
+	 * gray.  If the property is undefined, it is considered not dark.
+	 *
+	 * E.g. isDark( "Panel.background" ) is often a good indicator that an LAF
+	 * is dark/ inverse.
+	 *
+	 * @return true for dark colors
+	 */
+	public static boolean isDark( final String key )
+	{
+		final Color bg = UIManager.getColor( key );
+		if ( bg == null ) return false;
+		else return ( bg.getRed() + bg.getGreen() + bg.getBlue() ) / 3.0 < 127;
+	}
 }
