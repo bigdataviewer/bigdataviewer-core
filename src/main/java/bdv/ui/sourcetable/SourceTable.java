@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -28,13 +28,10 @@
  */
 package bdv.ui.sourcetable;
 
-import bdv.tools.brightness.ConverterSetup;
-import bdv.ui.SourcesTransferable;
-import bdv.ui.UIUtils;
-import bdv.viewer.ConverterSetups;
-import bdv.viewer.SourceAndConverter;
-import bdv.viewer.SourceToConverterSetupBimap;
-import bdv.viewer.ViewerState;
+import static bdv.ui.sourcetable.SourceTableModel.COLOR_COLUMN;
+import static bdv.ui.sourcetable.SourceTableModel.IS_ACTIVE_COLUMN;
+import static bdv.ui.sourcetable.SourceTableModel.IS_CURRENT_COLUMN;
+
 import java.awt.Color;
 import java.awt.Point;
 import java.awt.datatransfer.Transferable;
@@ -42,18 +39,25 @@ import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.swing.JColorChooser;
 import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.TransferHandler;
-import net.imglib2.type.numeric.ARGBType;
+import javax.swing.UIManager;
+
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.util.Actions;
 import org.scijava.ui.behaviour.util.InputActionBindings;
 
-import static bdv.ui.sourcetable.SourceTableModel.COLOR_COLUMN;
-import static bdv.ui.sourcetable.SourceTableModel.IS_ACTIVE_COLUMN;
-import static bdv.ui.sourcetable.SourceTableModel.IS_CURRENT_COLUMN;
+import bdv.tools.brightness.ConverterSetup;
+import bdv.ui.SourcesTransferable;
+import bdv.ui.UIUtils;
+import bdv.viewer.ConverterSetups;
+import bdv.viewer.SourceAndConverter;
+import bdv.viewer.SourceToConverterSetupBimap;
+import bdv.viewer.ViewerState;
+import net.imglib2.type.numeric.ARGBType;
 
 /**
  * A {@code JTable} that shows the sources of a {@link ViewerState} and allows
@@ -90,7 +94,7 @@ public class SourceTable extends JTable
 
 		getColumnModel().getColumn( IS_CURRENT_COLUMN ).setCellRenderer( new RadioButtonRenderer() );
 		getColumnModel().getColumn( COLOR_COLUMN ).setCellRenderer( new ColorRenderer() );
-		setRowHeight( 18 );
+		setRowHeight( ( int )Math.round( UIManager.getDefaults().getFont( "Table.font" ).getSize() * 1.5 ) );
 
 		setShowGrid( false );
 
