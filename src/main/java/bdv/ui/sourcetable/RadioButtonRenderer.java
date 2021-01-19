@@ -47,6 +47,7 @@ class RadioButtonRenderer extends JRadioButton implements TableCellRenderer
 	public RadioButtonRenderer() {
 		setHorizontalAlignment( JLabel.CENTER);
 		setBorderPainted( true );
+		setOpaque( true );
 	}
 
 	@Override
