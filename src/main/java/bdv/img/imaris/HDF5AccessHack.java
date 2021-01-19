@@ -302,12 +302,16 @@ public class HDF5AccessHack implements IHDF5Access
 			final byte[] data = new byte[ ( int ) dims[ 0 ] ];
 			H5Aread( attributeId, dataTypeId, data );
 
-			try
+			final boolean isEmptyString = data.length == 1 && data[ 0 ] == 0;
+			if ( !isEmptyString )
 			{
-				attrString = new String( data, cset );
+				try
+				{
+					attrString = new String( data, cset );
+				}
+				catch ( final UnsupportedEncodingException e )
+				{}
 			}
-			catch ( final UnsupportedEncodingException e )
-			{}
 
 			H5Sclose( attrSpaceId );
 			H5Tclose( dataTypeId );

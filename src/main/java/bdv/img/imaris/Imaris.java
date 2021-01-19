@@ -83,12 +83,7 @@ public class Imaris
 				Integer.parseInt( access.readImarisAttributeString( path, "Y" ) ),
 				Integer.parseInt( access.readImarisAttributeString( path, "Z" ) ),
 		};
-		String unit = access.readImarisAttributeString( path, "Unit" );
-		if ( unit == null )
-			unit = "um";
-		byte[] bytes = unit.getBytes();
-		if ( bytes.length == 1 && bytes[ 0 ] == 0 )
-			unit = "um";
+		final String unit = access.readImarisAttributeString( path, "Unit", "um" );
 		final VoxelDimensions voxelSize = new FinalVoxelDimensions( unit,
 				( extMax[ 0 ] - extMin[ 0 ] ) / imageSize[ 0 ],
 				( extMax[ 1 ] - extMin[ 1 ] ) / imageSize[ 1 ],
@@ -132,10 +127,7 @@ public class Imaris
 								if ( !setupMap.containsKey( channel ) )
 								{
 									final String defaultSetupName = "channel " + channel;
-									String name = access.readImarisAttributeString( "DataSetInfo/Channel " + channel, "Description", defaultSetupName );
-									if ((name == null)||(name.equals(""))||(name.trim().isEmpty())) {
-										name = defaultSetupName;
-									}
+									final String name = access.readImarisAttributeString( "DataSetInfo/Channel " + channel, "Description", defaultSetupName );
 									final BasicViewSetup setup = new BasicViewSetup( channel, name, new FinalDimensions( imageSize ), voxelSize );
 									setupMap.put( channel, setup );
 								}
