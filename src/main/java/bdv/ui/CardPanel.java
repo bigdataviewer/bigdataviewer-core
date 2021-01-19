@@ -48,7 +48,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import javax.swing.Icon;
 import javax.swing.JComponent;
 import javax.swing.JLabel;
@@ -57,7 +56,6 @@ import javax.swing.JToggleButton;
 import javax.swing.Scrollable;
 import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
-
 import net.miginfocom.swing.MigLayout;
 
 /**
@@ -71,15 +69,8 @@ public class CardPanel
 	/**
 	 * Color scheme.
 	 */
-	private final static Color DEFAULT_CARD_BACKGROUND = UIManager.getColor( "Panel.background" ); // Color.white;
-
-	private final static Color DEFAULT_HEADER_BACKGROUND = UIManager.getColor( "InternalFrame.inactiveTitleBackground" ); // Color( 0xcccccc );
-
-	private final static Color DEFAULT_HEADER_FOREGROUND = UIManager.getColor( "InternalFrame.inactiveTitleForeground" ); // new Color( 0x202020 );
-
-	private Color headerBackground = DEFAULT_HEADER_BACKGROUND;
-
-	private Color headerForeground = DEFAULT_HEADER_FOREGROUND;
+	private final static String HEADER_BACKGROUND = "CheckBox.background";
+	private final static String HEADER_FOREGROUND = "CheckBox.foreground";
 
 	private final Map< Object, Card > cards = new HashMap<>();
 
@@ -93,7 +84,7 @@ public class CardPanel
 	public CardPanel()
 	{
 		container = new Container( new MigLayout( "fillx, ins 0", "[grow]", "[]0[]" ) );
-		container.setBackground( DEFAULT_CARD_BACKGROUND );
+//		container.setBackground( DEFAULT_CARD_BACKGROUND );
 	}
 
 	public JComponent getComponent()
@@ -231,57 +222,6 @@ public class CardPanel
 			card.setExpanded( expanded );
 	}
 
-	/**
-	 * Set the card background color
-	 */
-	public void setCardBackground( final Color bg )
-	{
-		container.setBackground( bg );
-		for ( final Card card : cardList )
-		{
-			card.setBackground( bg );
-			card.componentPanel.setBackground( bg );
-		}
-	}
-
-	public Color getCardBackground()
-	{
-		return container.getBackground();
-	}
-
-	/**
-	 * Set the header background color
-	 */
-	public void setHeaderBackground( final Color bg )
-	{
-		headerBackground = bg;
-		for ( final Card card : cardList )
-		{
-			card.headerPanel.setBackground( bg );
-			card.terminalResizePanel.setBackground( bg );
-		}
-	}
-
-	public Color getHeaderBackground()
-	{
-		return headerBackground;
-	}
-
-	/**
-	 * Set the header foreground color
-	 */
-	public void setHeaderForeground( final Color fg )
-	{
-		headerForeground = fg;
-		for ( final Card card : cardList )
-			card.headerPanel.setForeground( fg );
-	}
-
-	public Color getHeaderForeground()
-	{
-		return headerForeground;
-	}
-
 	// =================================================================
 
 	private static final Icon collapsedIcon = new CardCollapseIcon( 10, 10, true, false );
@@ -290,32 +230,6 @@ public class CardPanel
 	private static final Icon expandedMouseOverIcon = new CardCollapseIcon( 10, 10, false, true );
 
 	private static final int RESIZE_HANDLE_HEIGHT = 10;
-
-	private static class TerminalResizePanel extends JPanel
-	{
-		public TerminalResizePanel( final JComponent component )
-		{
-			UIUtils.setMinimumHeight( this, 5 );
-			UIUtils.setPreferredHeight( this, 5 );
-
-			final ResizeMouseHandler resizeHandler = new ResizeMouseHandler( this, new Resizable()
-			{
-				@Override
-				public boolean showResizeHandle()
-				{
-					return true;
-				}
-
-				@Override
-				public JComponent getComponent()
-				{
-					return component;
-				}
-			} );
-			addMouseListener( resizeHandler );
-			addMouseMotionListener( resizeHandler );
-		}
-	}
 
 	private class Card extends JPanel
 	{
@@ -337,24 +251,36 @@ public class CardPanel
 			this.key = key;
 
 			this.setLayout( new MigLayout( "fillx, ins 0, hidemode 3", "[grow]", "[]0lp![]" ) );
-			this.setBackground( getCardBackground() );
 
 			final String ins = insets == null ? "ins 4 4 4 0" : String.format( "ins %d %d %d %d", insets.top, insets.left, insets.bottom, insets.right );
 			componentPanel = new JPanel( new MigLayout( "fillx, hidemode 3, " + ins, "[grow]", "[grow]0lp![]" ) );
-			componentPanel.setBackground( getCardBackground() );
 			componentPanel.add( component, "grow, wrap" );
 
-			terminalResizePanel = new TerminalResizePanel( componentPanel );
-			terminalResizePanel.setBackground( getHeaderBackground() );
-
 			headerPanel = new HeaderPanel( title );
-			headerPanel.setBackground( getHeaderBackground() );
-			headerPanel.setForeground( getHeaderForeground() );
+			terminalResizePanel = new TerminalResizePanel();
 
 			this.add( headerPanel, "growx, wrap" );
 			this.add( componentPanel, "growx, wrap" );
 			this.add( terminalResizePanel, "growx" );
 			this.setExpanded( open );
+		}
+
+		private Color borderColor;
+
+		@Override
+		public void updateUI()
+		{
+			super.updateUI();
+
+			final Color bg = UIManager.getColor( HEADER_BACKGROUND );
+			final Color fg = UIManager.getColor( HEADER_FOREGROUND );
+			borderColor = UIUtils.mix( bg, fg, 0.8 );
+
+			if ( headerPanel != null )
+			{
+				headerPanel.setBackground( bg );
+				headerPanel.label.setForeground( fg );
+			}
 		}
 
 		private class HeaderPanel extends JPanel
@@ -363,29 +289,16 @@ public class CardPanel
 
 			private final JLabel label;
 
-			@Override
-			public void setBackground( final Color bg )
-			{
-				super.setBackground( bg );
-				if ( labelPanel != null )
-					labelPanel.setBackground( bg );
-			}
-
-			@Override
-			public void setForeground( final Color fg )
-			{
-				super.setForeground( fg );
-				if ( label != null )
-					label.setForeground( fg );
-			}
-
 			public HeaderPanel( final String title )
 			{
-				super( new MigLayout( "fillx, aligny center, ins 0 0 0 0", "[][grow]", "" ) );
+				super( new MigLayout( "fillx, aligny center, ins 0 0 0 0, gapx 0", "[][grow]", "" ) );
 				UIUtils.setPreferredWidth( this, 100 );
+				setOpaque( false );
+				setBorder( new EmptyBorder( 1, 0, 1, 0 ) );
 
 				// Holds the name with insets.
-				labelPanel = new JPanel( new MigLayout( "fillx, ins 0 4 0 4", "[grow]", "" ) );
+				labelPanel = new JPanel( new MigLayout( "fillx, ins 0 0 0 4", "[grow]", "" ) );
+				labelPanel.setOpaque( false );
 				label = new JLabel( title );
 				labelPanel.add( label );
 
@@ -436,6 +349,61 @@ public class CardPanel
 
 				add( collapseButton );
 				add( labelPanel, "growx" );
+			}
+
+			@Override
+			public void paint( final Graphics g )
+			{
+				super.paint( g );
+			}
+
+			@Override
+			protected void paintComponent( final Graphics g )
+			{
+				g.setColor( getBackground() );
+				g.fillRect( 0, 0, getWidth(), getHeight() );
+
+				g.setColor( borderColor );
+				if ( isCardAboveExpanded() )
+					g.fillRect( 0, 0, getWidth(), 1 );
+				if ( isExpanded() )
+					g.fillRect( 0, getHeight() - 1, getWidth(), 1 );
+				g.setColor( getForeground() );
+				super.paintComponent( g );
+			}
+		}
+
+		private class TerminalResizePanel extends JPanel
+		{
+			public TerminalResizePanel()
+			{
+				UIUtils.setMinimumHeight( this, 5 );
+				UIUtils.setPreferredHeight( this, 5 );
+				setOpaque( false );
+
+				final ResizeMouseHandler resizeHandler = new ResizeMouseHandler( this, new Resizable()
+				{
+					@Override
+					public boolean showResizeHandle()
+					{
+						return true;
+					}
+
+					@Override
+					public JComponent getComponent()
+					{
+						return componentPanel;
+					}
+				} );
+				addMouseListener( resizeHandler );
+				addMouseMotionListener( resizeHandler );
+			}
+
+			@Override
+			protected void paintComponent( final Graphics g )
+			{
+				g.setColor( borderColor );
+				g.fillRect( 0, 0, getWidth(), 1 );
 			}
 		}
 

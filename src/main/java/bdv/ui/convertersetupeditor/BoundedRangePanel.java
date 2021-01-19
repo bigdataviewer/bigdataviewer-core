@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -48,6 +48,7 @@ import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.text.DefaultFormatterFactory;
 import javax.swing.text.NumberFormatter;
@@ -178,6 +179,8 @@ class BoundedRangePanel extends JPanel
 			if ( menu != null )
 				SwingUtilities.updateComponentTreeUI( menu );
 		}
+		if ( upperBoundLabel != null )
+			updateBoundLabelFonts();
 	}
 
 	private void updateColors()
@@ -270,11 +273,17 @@ class BoundedRangePanel extends JPanel
 
 	private void setupBoundLabels()
 	{
-		final Font font = upperBoundLabel.getFont().deriveFont( 10f );
+		upperBoundLabel.setBorder( new EmptyBorder( 0, 0, 0, 0 ) );
+		lowerBoundLabel.setBorder( new EmptyBorder( 0, 0, 0, 0 ) );
+		updateBoundLabelFonts();
+	}
+
+	private void updateBoundLabelFonts()
+	{
+		final Font labelFont = UIManager.getFont( "Label.font" );
+		final Font font = new Font( labelFont.getName(), labelFont.getStyle(), 10 );
 		upperBoundLabel.setFont( font );
 		lowerBoundLabel.setFont( font );
-		upperBoundLabel.setBorder( null );
-		lowerBoundLabel.setBorder( null );
 	}
 
 	private void setupPopupMenu()
