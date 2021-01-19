@@ -92,7 +92,7 @@ public class UIUtils
 	 *   to get a consistent scaling factor that works on all platforms.
 	 *   However, some LAFs have implemented their own strategy to estimate
 	 *   this scaling factor and adjust font sizes and element heights
-	 *   accordingly.  The best one I know of is available in th.  We therefore use the default font size compared to a
+	 *   accordingly.  We therefore use the default font size compared to a
 	 *   hypothesized 'normal' font size of 12 as a surrogate for the UI
 	 *   scaling factor.  This is not great.
 	 *
