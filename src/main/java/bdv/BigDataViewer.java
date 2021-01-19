@@ -29,8 +29,13 @@
 package bdv;
 
 import bdv.tools.PreferencesDialog;
+import bdv.LafSelection.LafDialog;
 import bdv.viewer.ConverterSetups;
 import bdv.viewer.ViewerState;
+import com.formdev.flatlaf.FlatDarculaLaf;
+import com.formdev.flatlaf.FlatDarkLaf;
+import com.formdev.flatlaf.FlatIntelliJLaf;
+import com.formdev.flatlaf.FlatLightLaf;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
@@ -762,7 +767,18 @@ public class BigDataViewer
 		{
 			System.setProperty( "apple.laf.useScreenMenuBar", "true" );
 
+			FlatLightLaf.installLafInfo();
+			FlatDarkLaf.installLafInfo();
+			FlatDarculaLaf.installLafInfo();
+			FlatIntelliJLaf.installLafInfo();
+//			FlatDarculaLaf.install();
+//			FlatIntelliJLaf.install();
+
 			final BigDataViewer bdv = open( fn, new File( fn ).getName(), new ProgressWriterConsole(), ViewerOptions.options() );
+
+			final LafDialog lafDialog = new LafDialog();
+			lafDialog.addComponent( bdv.getViewerFrame() );
+			lafDialog.setVisible( true );
 
 //			DumpInputConfig.writeToYaml( System.getProperty( "user.home" ) + "/.bdv/bdvkeyconfig.yaml", bdv.getViewerFrame() );
 		}
