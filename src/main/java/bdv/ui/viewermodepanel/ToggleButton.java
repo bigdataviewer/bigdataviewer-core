@@ -58,7 +58,6 @@ class ToggleButton extends JPanel
 		button.setSelectedIcon( selectedIcon );
 		setLook( button );
 
-//		this.setBackground( Color.white );
 		this.add( button, "growx, center, wrap" );
 	}
 
@@ -93,7 +92,6 @@ class ToggleButton extends JPanel
 	private void setLook( final JToggleButton button )
 	{
 		button.setMaximumSize( new Dimension( button.getIcon().getIconWidth(), button.getIcon().getIconHeight() ) );
-//		button.setBackground( Color.white );
 		button.setBorderPainted( false );
 		button.setFocusPainted( false );
 		button.setContentAreaFilled( false );

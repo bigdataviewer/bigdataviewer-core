@@ -29,12 +29,14 @@
 package bdv.ui;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Insets;
 
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
-import javax.swing.border.EmptyBorder;
+import javax.swing.UIManager;
+import javax.swing.border.MatteBorder;
 import javax.swing.tree.TreeSelectionModel;
 
 import bdv.ui.convertersetupeditor.ConverterSetupEditPanel;
@@ -74,9 +76,8 @@ public class BdvDefaultCards
 		table.setDragEnabled( true );
 		final ConverterSetupEditPanel editPanelTable = new ConverterSetupEditPanel( table, converterSetups );
 		final JPanel tablePanel = new JPanel( new BorderLayout() );
-		final JScrollPane scrollPaneTable = new JScrollPane( table );
+		final JScrollPane scrollPaneTable = new MyScrollPane( table, "Table.background" );
 		scrollPaneTable.addMouseWheelListener( new MouseWheelScrollListener( scrollPaneTable ) );
-		scrollPaneTable.setBorder( new EmptyBorder( 0, 0, 0, 0 ) );
 		tablePanel.add( scrollPaneTable, BorderLayout.CENTER );
 		tablePanel.add( editPanelTable, BorderLayout.SOUTH );
 		tablePanel.setPreferredSize( new Dimension( 300, 245 ) );
@@ -93,15 +94,39 @@ public class BdvDefaultCards
 		tree.getSelectionModel().setSelectionMode( TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION );
 		final ConverterSetupEditPanel editPanelTree = new ConverterSetupEditPanel( tree, converterSetups );
 		final JPanel treePanel = new JPanel( new BorderLayout() );
-		final JScrollPane scrollPaneTree = new JScrollPane( tree );
+		final JScrollPane scrollPaneTree = new MyScrollPane( tree, "Tree.background" );
 		scrollPaneTree.addMouseWheelListener( new MouseWheelScrollListener( scrollPaneTree ) );
-		scrollPaneTree.setBorder( new EmptyBorder( 0, 0, 0, 0 ) );
 		treePanel.add( scrollPaneTree, BorderLayout.CENTER );
 		treePanel.add( editPanelTree, BorderLayout.SOUTH );
 		treePanel.setPreferredSize( new Dimension( 300, 225 ) );
 
 		cards.addCard( DEFAULT_VIEWERMODES_CARD, "Display Modes", new DisplaySettingsPanel( viewer.state() ), true, new Insets( 0, 4, 4, 0 ) );
-		cards.addCard( DEFAULT_SOURCES_CARD, "Sources", tablePanel, true, new Insets( 0, 4, 0, 0 ) );
-		cards.addCard( DEFAULT_SOURCEGROUPS_CARD, "Groups", treePanel, true, new Insets( 0, 4, 0, 0 ) );
+		cards.addCard( DEFAULT_SOURCES_CARD, "Sources", tablePanel, true, new Insets( 0, 0, 0, 0 ) );
+		cards.addCard( DEFAULT_SOURCEGROUPS_CARD, "Groups", treePanel, true, new Insets( 0, 0, 0, 0 ) );
+	}
+
+	static class MyScrollPane extends JScrollPane
+	{
+		private final String bgColorName;
+
+		public MyScrollPane( final Component view, final String bgColorName )
+		{
+			super( view );
+			this.bgColorName = bgColorName;
+			updateBorder();
+		}
+
+		@Override
+		public void updateUI()
+		{
+			super.updateUI();
+			if ( bgColorName != null )
+				updateBorder();
+		}
+
+		private void updateBorder()
+		{
+			setBorder( new MatteBorder( 0, 4, 0, 0, UIManager.getColor( bgColorName ) ) );
+		}
 	}
 }

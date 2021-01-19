@@ -66,8 +66,7 @@ public class DisplaySettingsPanel extends JPanel
 
 	public DisplaySettingsPanel( final ViewerState state )
 	{
-		super( new MigLayout( "ins 0, fillx, filly", "[][][]", "top" ) );
-		this.setBackground( UIManager.getColor( "Panel.background" ) );
+		super( new MigLayout( "ins 2 0 0 0, fillx, filly", "[][][]", "top" ) );
 
 		final String isDark = UIUtils.isDark( "Panel.background" ) ? "_dark" : "";
 		final String isLarge = UIUtils.getUIScaleFactor() > 1.5 ? "_200" : "";
@@ -135,7 +134,7 @@ public class DisplaySettingsPanel extends JPanel
 	public void updateUI()
 	{
 		super.updateUI();
-
+		this.setBackground( UIManager.getColor( "Panel.background" ) );
 		if ( fusion != null )
 		{
 			final String isDark = UIUtils.isDark( "Panel.background" ) ? "_dark" : "";
