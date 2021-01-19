@@ -72,10 +72,16 @@ public class CardPanel
 	 * Color scheme.
 	 */
 	private final static Color DEFAULT_CARD_BACKGROUND = UIManager.getColor( "Panel.background" ); // Color.white;
-
 	private final static Color DEFAULT_HEADER_BACKGROUND = UIManager.getColor( "InternalFrame.inactiveTitleBackground" ); // Color( 0xcccccc );
-
 	private final static Color DEFAULT_HEADER_FOREGROUND = UIManager.getColor( "InternalFrame.inactiveTitleForeground" ); // new Color( 0x202020 );
+
+//	private final static Color DEFAULT_CARD_BACKGROUND = UIManager.getColor( "Panel.background" ); // Color.white;
+//	private final static Color DEFAULT_HEADER_BACKGROUND = UIManager.getColor( "Label.background" ); // Color( 0xcccccc );
+//	private final static Color DEFAULT_HEADER_FOREGROUND = UIManager.getColor( "Label.foreground" ); // new Color( 0x202020 );
+
+//	private final static Color DEFAULT_CARD_BACKGROUND = Color.white;
+//	private final static Color DEFAULT_HEADER_BACKGROUND = new Color( 0xcccccc );
+//	private final static Color DEFAULT_HEADER_FOREGROUND = new Color( 0x202020 );
 
 	private Color headerBackground = DEFAULT_HEADER_BACKGROUND;
 
