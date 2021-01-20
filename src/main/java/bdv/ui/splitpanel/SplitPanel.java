@@ -105,7 +105,7 @@ public class SplitPanel extends JSplitPane
 
 		setLeftComponent( viewerPanel );
 		setRightComponent( null );
-		setBorder( null );
+		setBorder( new EmptyBorder( 0, 0, 0, 0 ) );
 		setPreferredSize( viewerPanel.getPreferredSize() );
 
 		super.setDividerSize( 0 );
