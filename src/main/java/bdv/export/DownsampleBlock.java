@@ -29,6 +29,8 @@
 package bdv.export;
 
 import java.util.Arrays;
+import java.util.HashSet;
+
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
 import net.imglib2.img.array.ArrayImgs;
@@ -382,6 +384,7 @@ class DownsampleLabelBlockInstances
 				final int asx, // size of output (resp accumulator) image
 				final RandomAccess< T > in )
 		{
+
 			final int bsx = downsamplingFactors[ 0 ];
 			final int sx = asx * bsx;
 			for ( int x = 0, bx = 0; x < sx; ++x )
