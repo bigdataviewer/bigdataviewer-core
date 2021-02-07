@@ -28,6 +28,7 @@
  */
 package bdv.tools.crop;
 
+import bdv.export.DownsampleBlock;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerState;
 import java.awt.BorderLayout;
@@ -389,7 +390,7 @@ public class CropDialog extends JDialog
 		}
 
 		final int numThreads = Math.max( 1, Runtime.getRuntime().availableProcessors() - 2 );
-		WriteSequenceToHdf5.writeHdf5File( seq, perSetupMipmapInfo, true, hdf5File, null, null, numThreads, null );
+		WriteSequenceToHdf5.writeHdf5File( seq, perSetupMipmapInfo, DownsampleBlock.DownsamplingMethod.Average, true, hdf5File, null, null, numThreads, null );
 
 		// Build ViewRegistrations with adjusted transforms.
 		final ArrayList< ViewRegistration > registrations = new ArrayList<>();
