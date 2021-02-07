@@ -271,11 +271,9 @@ class DownsampleBlockInstances
 
 		private final int[] downsamplingFactors;
 
-		private final double scale;
+		private final double[] accumulator;
 
-		private final double[] outImgArray;
-
-		private final RandomAccess< DoubleType > outImg;
+		private final RandomAccess< DoubleType > acc;
 
 		public CentralPixelDownsampler(
 				final int[] blockDimensions,
@@ -286,13 +284,12 @@ class DownsampleBlockInstances
 				throw new IllegalArgumentException();
 
 			this.downsamplingFactors = downsamplingFactors;
-			scale = 1.0 / Intervals.numElements( downsamplingFactors );
 
-			outImgArray = new double[ ( int ) Intervals.numElements( blockDimensions ) ];
+			accumulator = new double[ ( int ) Intervals.numElements( blockDimensions ) ];
 
 			final long[] dims = new long[ n ];
 			Arrays.setAll( dims, d -> blockDimensions[ d ] );
-			outImg = ArrayImgs.doubles( outImgArray, dims ).randomAccess();
+			acc = ArrayImgs.doubles( accumulator, dims ).randomAccess();
 		}
 
 		@Override
@@ -305,79 +302,83 @@ class DownsampleBlockInstances
 
 			if ( n == 3 )
 			{
-				downsampleBlock3D( outImg, dimensions[ 0 ], dimensions[ 1 ], dimensions[ 2 ], in );
-				writeOutput3D( out, dimensions[ 0 ], dimensions[ 1 ], dimensions[ 2 ], outImg );
+				downsampleBlock3D( acc, dimensions[ 0 ], dimensions[ 1 ], dimensions[ 2 ], in );
+				writeOutput3D( out, dimensions[ 0 ], dimensions[ 1 ], dimensions[ 2 ], acc );
 			} else if ( n == 2 )
 			{
-				downsampleBlock2D( outImg, dimensions[ 0 ], dimensions[ 1 ], in );
-				writeOutput2D( out, dimensions[ 0 ], dimensions[ 1 ], outImg );
+				downsampleBlock2D( acc, dimensions[ 0 ], dimensions[ 1 ], in );
+				writeOutput2D( out, dimensions[ 0 ], dimensions[ 1 ], acc );
 			} else
 			{
-				downsampleBlock1D( outImg, dimensions[ 0 ], in );
-				writeOutput1D( out, dimensions[ 0 ], outImg );
+				downsampleBlock1D( acc, dimensions[ 0 ], in );
+				writeOutput1D( out, dimensions[ 0 ], acc );
 			}
 		}
 
 		private void clearAccumulator()
 		{
-			Arrays.fill( outImgArray, 0, outImgArray.length, 0 );
+			Arrays.fill( accumulator, 0, accumulator.length, 0 );
 		}
 
 		private void downsampleBlock3D(
-				final RandomAccess< DoubleType > out,
-				final int osx, // size of output image
-				final int osy,
-				final int osz,
+				final RandomAccess< DoubleType > acc,
+				final int asx, // size of accumulator image
+				final int asy,
+				final int asz,
 				final RandomAccess< T > in )
 		{
 			final int bsz = downsamplingFactors[ 2 ];
 			in.move( bsz / 2, 2 );
-			for ( int oz = 0; oz < osz; ++oz )
+			for ( int oz = 0; oz < asz; ++oz )
 			{
-				downsampleBlock2D( out, osx, osy, in );
+				downsampleBlock2D( acc, asx, asy, in );
 				in.move( bsz, 2 );
-				out.fwd( 2 );
+				acc.fwd( 2 );
 			}
-			in.move( - bsz * osz - bsz / 2, 2 );
-			out.move( -osz, 2 );
+			in.move( - bsz * asz - bsz / 2, 2 );
+			acc.move( -asz, 2 );
 		}
 
 		private void downsampleBlock2D(
-				final RandomAccess< DoubleType > out,
-				final int osx, // size of output image
-				final int osy,
+				final RandomAccess< DoubleType > acc,
+				final int asx, // size of accumulator image
+				final int asy,
 				final RandomAccess< T > in )
 		{
-			final int bsy = downsamplingFactors[ 1 ];
-			in.move( bsy / 2, 1 );
-			for ( int oy = 0; oy < osy; ++oy )
+			final int d = 1;
+			final int bsy = downsamplingFactors[ d ];
+			in.move( bsy / 2, d );
+			for ( int oy = 0; oy < asy; ++oy )
 			{
-				downsampleBlock1D( out, osx, in );
-				in.move( bsy, 2 );
-				out.fwd( 2 );
+				downsampleBlock1D( acc, asx, in );
+				in.move( bsy, d  );
+				acc.fwd( d  );
 			}
-			in.move( - bsy * osy - bsy / 2, 2 );
-			out.move( -osy, 2 );
+			in.move( - bsy * asy - bsy / 2, d );
+			acc.move( -asy, d );
 		}
 
 		private void downsampleBlock1D(
-				final RandomAccess< DoubleType > out,
-				final int osx, // size of output image
+				final RandomAccess< DoubleType > acc,
+				final int asx, // size of output image
 				final RandomAccess< T > in )
 		{
-			final int bsx = downsamplingFactors[ 0 ];
-			in.move( bsx / 2, 0 );
-			for ( int ox = 0; ox < osx; ++ox )
+			final int d = 0;
+			final int bsx = downsamplingFactors[ d ];
+			in.move( bsx / 2, d );
+			for ( int ox = 0; ox < asx; ++ox )
 			{
-				out.get().set( in.get().getRealDouble() );
+				acc.get().set( in.get().getRealDouble() );
+				in.move( bsx, d  );
+				acc.fwd( d  );
 			}
-			in.move( - bsx * osx - bsx / 2, 2 );
-			out.move( -osx, 2 );
+			in.move( - bsx * asx - bsx / 2, d );
+			acc.move( -asx, d );
 		}
 
 		private void writeOutput3D(
 				final Cursor< T > out, // must be flat iteration order
-				final int asx, // size of output (resp accumulator) image
+				final int asx, // size of accumulator image
 				final int asy,
 				final int asz,
 				final RandomAccess< DoubleType > acc )
@@ -392,7 +393,7 @@ class DownsampleBlockInstances
 
 		private void writeOutput2D(
 				final Cursor< T > out, // must be flat iteration order
-				final int asx, // size of output (resp accumulator) image
+				final int asx, // size of output image
 				final int asy,
 				final RandomAccess< DoubleType > acc )
 		{
@@ -409,10 +410,9 @@ class DownsampleBlockInstances
 				final int asx, // size of output (resp accumulator) image
 				final RandomAccess< DoubleType > acc )
 		{
-			final double scale = this.scale;
 			for ( int x = 0; x < asx; ++x )
 			{
-				out.next().setReal( acc.get().get() * scale );
+				out.next().setReal( acc.get().get() );
 				acc.fwd( 0 );
 			}
 			acc.move( -asx, 0 );
