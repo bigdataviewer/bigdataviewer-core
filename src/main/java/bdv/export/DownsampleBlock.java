@@ -327,16 +327,17 @@ class DownsampleBlockInstances
 				final int asz,
 				final RandomAccess< T > in )
 		{
-			final int bsz = downsamplingFactors[ 2 ];
-			in.move( bsz / 2, 2 );
-			for ( int oz = 0; oz < asz; ++oz )
+			final int d = 2;
+			final int bsz = downsamplingFactors[ d ];
+			in.move( bsz / 2, d );
+			for ( int az = 0; az < asz; ++az )
 			{
 				downsampleBlock2D( acc, asx, asy, in );
-				in.move( bsz, 2 );
-				acc.fwd( 2 );
+				in.move( bsz, d );
+				acc.fwd( d );
 			}
-			in.move( - bsz * asz - bsz / 2, 2 );
-			acc.move( -asz, 2 );
+			in.move( - bsz * asz - bsz / 2, d );
+			acc.move( -asz, d );
 		}
 
 		private void downsampleBlock2D(
@@ -348,7 +349,7 @@ class DownsampleBlockInstances
 			final int d = 1;
 			final int bsy = downsamplingFactors[ d ];
 			in.move( bsy / 2, d );
-			for ( int oy = 0; oy < asy; ++oy )
+			for ( int ay = 0; ay < asy; ++ay )
 			{
 				downsampleBlock1D( acc, asx, in );
 				in.move( bsy, d  );
@@ -366,7 +367,7 @@ class DownsampleBlockInstances
 			final int d = 0;
 			final int bsx = downsamplingFactors[ d ];
 			in.move( bsx / 2, d );
-			for ( int ox = 0; ox < asx; ++ox )
+			for ( int ax = 0; ax < asx; ++ax )
 			{
 				acc.get().set( in.get().getRealDouble() );
 				in.move( bsx, d  );
