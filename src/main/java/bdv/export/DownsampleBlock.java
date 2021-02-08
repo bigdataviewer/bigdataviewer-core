@@ -598,16 +598,15 @@ class DownsampleBlockInstances
 			long label = 0;
 			while ( iterator.hasNext() )
 			{
+				iterator.advance();
 				if ( iterator.value() > maxCount )
 				{
 					maxCount = iterator.value();
 					label = iterator.key();
 				}
-				iterator.advance();
 			}
 			return label;
 		}
-
 	}
 
 	public static class TLongLongHashMapRandomAccess extends AbstractLocalizableInt implements RandomAccess< TLongLongHashMap >
