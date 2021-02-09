@@ -116,7 +116,7 @@ public class ProposeMipmaps
 			long maxSize = 0;
 			for ( int d = 0; d < 3; ++d )
 			{
-				size[ d ] /= res[ d ];
+				size[ d ] = Math.max( 1, size[ d ] / res[ d ] );
 				maxSize = Math.max( maxSize, size[ d ] );
 			}
 
@@ -132,13 +132,20 @@ public class ProposeMipmaps
 			if ( maxSize <= 256 )
 				break;
 
+			boolean anyDimensionChanged = false;
 			for ( int d = 0; d < 3; ++d )
 			{
-				if ( voxelScale[ d ] <= 2.0 )
+				if ( voxelScale[ d ] <= 2.0 && size[ d ] > 1 )
 				{
 					res[ d ] *= 2;
 					voxelScale[ d ] *= 2;
+					anyDimensionChanged = true;
 				}
+			}
+			if ( !anyDimensionChanged )
+			{
+				for ( int d = 0; d < 3; ++d )
+					res[ d ] *= 2;
 			}
 			normalizeVoxelSize( voxelScale );
 		}
