@@ -110,16 +110,6 @@ public class ProposeMipmaps
 		{
 			resolutions.add( res.clone() );
 
-			double vmax = 0;
-			int dmax = 0;
-			for ( int d = 0; d < 3; ++d )
-			{
-				if ( voxelScale[ d ] > vmax )
-				{
-					vmax = voxelScale[ d ];
-					dmax = d;
-				}
-			}
 			subdivisions.add( suggestPoTBlockSize( voxelScale, maxNumElements ) );
 
 			setup.getSize().dimensions( size );
