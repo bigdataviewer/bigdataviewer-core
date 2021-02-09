@@ -28,6 +28,7 @@
  */
 package bdv.img.hdf5;
 
+import java.util.Arrays;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import net.imglib2.realtransform.AffineTransform3D;
 
@@ -113,5 +114,17 @@ public class MipmapInfo
 	public int getNumLevels()
 	{
 		return maxLevel + 1;
+	}
+
+	@Override
+	public String toString()
+	{
+		final StringBuffer sb = new StringBuffer( "MipmapInfo{" );
+		sb.append( "resolutions=" ).append( Arrays.deepToString( resolutions ) );
+		sb.append( ", subdivisions=" ).append( Arrays.deepToString( subdivisions ) );
+		sb.append( ", transforms=" ).append( transforms == null ? "null" : Arrays.asList( transforms ).toString() );
+		sb.append( ", maxLevel=" ).append( maxLevel );
+		sb.append( '}' );
+		return sb.toString();
 	}
 }
