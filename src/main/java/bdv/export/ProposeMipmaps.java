@@ -110,8 +110,6 @@ public class ProposeMipmaps
 		{
 			resolutions.add( res.clone() );
 
-			subdivisions.add( suggestPoTBlockSize( voxelScale, maxNumElements ) );
-
 			setup.getSize().dimensions( size );
 			long maxSize = 0;
 			for ( int d = 0; d < 3; ++d )
@@ -119,6 +117,8 @@ public class ProposeMipmaps
 				size[ d ] = Math.max( 1, size[ d ] / res[ d ] );
 				maxSize = Math.max( maxSize, size[ d ] );
 			}
+
+			subdivisions.add( suggestPoTBlockSize( voxelScale, size, maxNumElements ) );
 
 //			System.out.println( "  level " + level );
 //			System.out.println( "    res:        " + net.imglib2.util.Util.printCoordinates( res ) );
@@ -199,10 +199,28 @@ public class ProposeMipmaps
 	 */
 	public static int[] suggestPoTBlockSize( final double[] voxelSize, final int maxNumElements )
 	{
+		return suggestPoTBlockSize( voxelSize, null, maxNumElements );
+	}
+
+	/**
+	 * Propose block size such that
+	 * <ol>
+	 * <li>each dimension is power-of-two,</li>
+	 * <li>number of elements is as big as possible, but not larger than
+	 * {@code maxNumElements}</li>
+	 * <li>and the block (scaled by the {@code voxelSize}) is as close to square
+	 * as possible given constraints 1 and 2.</li>
+	 * </ol>
+	 * Additionally, the full {@code size[]} of the image limits the number of bits
+	 * spent in a particular dimension. For example, if {@code size[2] = 3},
+	 * then resulting block size will not exceed 4 in the Z dimension.
+	 */
+	public static int[] suggestPoTBlockSize( final double[] voxelSize, final long[] size, final int maxNumElements )
+	{
 		final int n = voxelSize.length;
 		final double[] bias = new double[ n ];
 		Arrays.setAll( bias, d -> 0.01 * ( n - d ) );
-		return suggestPoTBlockSize( voxelSize, maxNumElements, bias );
+		return suggestPoTBlockSize( voxelSize, size, maxNumElements, bias );
 	}
 
 	/**
@@ -220,10 +238,16 @@ public class ProposeMipmaps
 	 * maxNumElements. Dimensions are ordered by decreasing fractional remainder
 	 * of real PoT plus some per-dimension bias (usually set such that X is
 	 * enlarged before Y before Z...)
+	 *
+	 * Optionally, if the full {@code size[]} of the image can be provided (
+	 * {@code size != null}), this will limit the number of bits spent in a particular
+	 * dimension. For example, if {@code size[2] = 3}, then resulting block size will
+	 * not exceed 4 in the Z dimension.
 	 */
-	private static int[] suggestPoTBlockSize( final double[] voxelSize, final int maxNumElements, final double[] bias )
+	private static int[] suggestPoTBlockSize( final double[] voxelSize, final long[] size, final int maxNumElements, final double[] bias )
 	{
 		final int n = voxelSize.length;
+
 		final double[] shape = new double[ n ];
 		double shapeVol = 1;
 		for ( int d = 0; d < n; ++d )
@@ -237,12 +261,31 @@ public class ProposeMipmaps
 		Arrays.setAll( numBits, d -> Math.log( m * shape[ d ] ) / Math.log( 2 ) );
 		final int[] intNumBits = new int[ n ];
 		Arrays.setAll( intNumBits, d -> Math.max( 0, ( int ) numBits[ d ] ) );
+
+		final int[] fullSizeBits = new int[ n ];
+		if ( size != null )
+		{
+			// fullSizeBits[d] contains the number of bits needed to fit the full size in dimension d
+			// (rounded up to next full bit)
+			Arrays.setAll( fullSizeBits, d -> Math.max( 0, ( int ) ( Math.log( size[ d ] - 1 ) / Math.log( 2 ) ) + 1 ) );
+
+			// if this is more than the (rounded down) number of bits allocated to block size in d,
+			// use the fullSizeBits[d] instead.
+			Arrays.setAll( intNumBits, d -> Math.min( intNumBits[ d ], fullSizeBits[ d ] ) );
+		}
+
 		for ( int sumIntNumBits = Arrays.stream( intNumBits ).sum(); sumIntNumBits + 1 <= sumNumBits; ++sumIntNumBits )
 		{
-			double maxDiff = 0;
+			double maxDiff = Double.NEGATIVE_INFINITY;
 			int maxDiffDim = 0;
 			for ( int d = 0; d < n; ++d )
 			{
+				// if full image size was specified and we already fit the full image
+				// in dimension d, skip to the next dimension.
+				// Note that if we skip all dimensions in this way (because the block already fits the full image),
+				// we have maxDiffDim==0 and just keep increasing the X block size until we hit the limit.
+				if ( size != null && intNumBits[ d ] >= fullSizeBits[ d ] )
+					continue;
 				final double diff = numBits[ d ] - intNumBits[ d ] + bias[ d ];
 				if ( diff > maxDiff )
 				{
