@@ -44,7 +44,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
@@ -179,7 +178,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 	 * viewer-transform. This is done <em>before</em> calling
 	 * {@link #requestRepaint()} so listeners have the chance to interfere.
 	 */
-	protected final CopyOnWriteArrayList< TransformListener< AffineTransform3D > > transformListeners;
+	private final Listeners.List< TransformListener< AffineTransform3D > > transformListeners;
 
 	/**
 	 * These listeners will be notified about changes to the current timepoint
@@ -187,9 +186,9 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 	 * calling {@link #requestRepaint()} so listeners have the chance to
 	 * interfere.
 	 */
-	protected final CopyOnWriteArrayList< TimePointListener > timePointListeners;
+	private final Listeners.List< TimePointListener > timePointListeners;
 
-	protected final CopyOnWriteArrayList< InterpolationModeListener > interpolationModeListeners;
+	private final Listeners.List< InterpolationModeListener > interpolationModeListeners;
 
 	/**
 	 * Current animator for viewer transform, or null. This is for example used
@@ -287,9 +286,9 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 
 		visibilityAndGrouping = new VisibilityAndGrouping( state );
 
-		transformListeners = new CopyOnWriteArrayList<>();
-		timePointListeners = new CopyOnWriteArrayList<>();
-		interpolationModeListeners = new CopyOnWriteArrayList<>();
+		transformListeners = new Listeners.SynchronizedList<>( l -> l.transformChanged( state().getViewerTransform() ) );
+		timePointListeners = new Listeners.SynchronizedList<>( l -> l.timePointChanged( state().getCurrentTimepoint() ) );
+		interpolationModeListeners = new Listeners.SynchronizedList<>();
 
 		msgOverlay = options.getMsgOverlay();
 
@@ -584,8 +583,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 		case INTERPOLATION_CHANGED:
 			final Interpolation interpolation = state().getInterpolation();
 			showMessage( interpolation.getName() );
-			for ( final InterpolationModeListener l : interpolationModeListeners )
-				l.interpolationModeChanged( interpolation );
+			interpolationModeListeners.list.forEach( l -> l.interpolationModeChanged( interpolation ) );
 			requestRepaint();
 			break;
 		case NUM_TIMEPOINTS_CHANGED:
@@ -612,15 +610,13 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 					sliderTime.setValue( timepoint );
 				blockSliderTimeEvents = false;
 			} );
-			for ( final TimePointListener l : timePointListeners )
-				l.timePointChanged( timepoint );
+			timePointListeners.list.forEach( l -> l.timePointChanged( timepoint ) );
 			requestRepaint();
 			break;
 		}
 		case VIEWER_TRANSFORM_CHANGED:
 			final AffineTransform3D transform = state().getViewerTransform();
-			for ( final TransformListener< AffineTransform3D > l : transformListeners )
-				l.transformChanged( transform );
+			transformListeners.list.forEach( l -> l.transformChanged( transform ) );
 			requestRepaint();
 		}
 	}
@@ -861,27 +857,31 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 	}
 
 	/**
-	 * Add a {@link InterpolationModeListener} to notify when the interpolation
-	 * mode is changed. Listeners will be notified <em>before</em> calling
+	 * Add/remove {@link InterpolationModeListener} to notify when the interpolation
+	 * mode is changed.. Listeners will be notified <em>before</em> calling
 	 * {@link #requestRepaint()} so they have the chance to interfere.
-	 *
-	 * @param listener
-	 *            the interpolation mode listener to add.
 	 */
-	public void addInterpolationModeListener( final InterpolationModeListener listener )
+	public Listeners< InterpolationModeListener > interpolationModeListeners()
 	{
-		interpolationModeListeners.add( listener );
+		return interpolationModeListeners;
 	}
 
 	/**
-	 * Remove a {@link InterpolationModeListener}.
-	 *
-	 * @param listener
-	 *            the interpolation mode listener to remove.
+	 * @deprecated Use {@code interpolationModeListeners().add( listener )}.
 	 */
+	@Deprecated
+	public void addInterpolationModeListener( final InterpolationModeListener listener )
+	{
+		interpolationModeListeners().add( listener );
+	}
+
+	/**
+	 * @deprecated Use {@code interpolationModeListeners().remove( listener )}.
+	 */
+	@Deprecated
 	public void removeInterpolationModeListener( final InterpolationModeListener listener )
 	{
-		interpolationModeListeners.remove( listener );
+		interpolationModeListeners().remove( listener );
 	}
 
 	/**
@@ -916,98 +916,79 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 	}
 
 	/**
-	 * Add a {@link TransformListener} to notify about viewer transformation
+	 * Add/remove {@code TransformListener}s to notify about viewer transformation
 	 * changes. Listeners will be notified <em>before</em> calling
 	 * {@link #requestRepaint()} so they have the chance to interfere.
-	 *
-	 * @param listener
-	 *            the transform listener to add.
 	 */
+	public Listeners< TransformListener< AffineTransform3D > > transformListeners()
+	{
+		return transformListeners;
+	}
+
+	/**
+	 * @deprecated Use {@code transformListeners().add( listener )}.
+	 */
+	@Deprecated
 	public void addTransformListener( final TransformListener< AffineTransform3D > listener )
 	{
-		addTransformListener( listener, Integer.MAX_VALUE );
+		transformListeners().add( listener );
 	}
 
 	/**
-	 * Add a {@link TransformListener} to notify about viewer transformation
-	 * changes. Listeners will be notified <em>before</em> calling
-	 * {@link #requestRepaint()} so they have the chance to interfere.
-	 *
-	 * @param listener
-	 *            the transform listener to add.
-	 * @param index
-	 *            position in the list of listeners at which to insert this one.
+	 * @deprecated Use {@code transformListeners().add( index, listener )}.
 	 */
+	@Deprecated
 	public void addTransformListener( final TransformListener< AffineTransform3D > listener, final int index )
 	{
-		synchronized ( transformListeners )
-		{
-			final int s = transformListeners.size();
-			transformListeners.add( index < 0 ? 0 : index > s ? s : index, listener );
-			listener.transformChanged( state().getViewerTransform() );
-		}
+		transformListeners().add( index, listener );
 	}
 
 	/**
-	 * Remove a {@link TransformListener}.
-	 *
-	 * @param listener
-	 *            the transform listener to remove.
+	 * @deprecated Use {@code transformListeners().remove( listener )} or
+	 * {@code renderTransformListeners().remove( listener )} (whichever the listener was added to).
 	 */
+	@Deprecated
 	public void removeTransformListener( final TransformListener< AffineTransform3D > listener )
 	{
-		synchronized ( transformListeners )
-		{
-			transformListeners.remove( listener );
-		}
-		renderTarget.transformListeners().remove( listener );
+		transformListeners().remove( listener );
+		renderTransformListeners().remove( listener );
 	}
 
 	/**
-	 * Add a {@link TimePointListener} to notify about time-point
+	 * Add/remove {@link TimePointListener} to notify about time-point
 	 * changes. Listeners will be notified <em>before</em> calling
 	 * {@link #requestRepaint()} so they have the chance to interfere.
-	 *
-	 * @param listener
-	 *            the listener to add.
 	 */
+	public Listeners< TimePointListener > timePointListeners()
+	{
+		return timePointListeners;
+	}
+
+	/**
+	 * @deprecated Use {@code timePointListeners().add( listener )}.
+	 */
+	@Deprecated
 	public void addTimePointListener( final TimePointListener listener )
 	{
-		addTimePointListener( listener, Integer.MAX_VALUE );
+		timePointListeners().add( listener );
 	}
 
 	/**
-	 * Add a {@link TimePointListener} to notify about time-point
-	 * changes. Listeners will be notified <em>before</em> calling
-	 * {@link #requestRepaint()} so they have the chance to interfere.
-	 *
-	 * @param listener
-	 *            the listener to add.
-	 * @param index
-	 *            position in the list of listeners at which to insert this one.
+	 * @deprecated Use {@code timePointListeners().add( index, listener )}.
 	 */
+	@Deprecated
 	public void addTimePointListener( final TimePointListener listener, final int index )
 	{
-		synchronized ( timePointListeners )
-		{
-			final int s = timePointListeners.size();
-			timePointListeners.add( index < 0 ? 0 : index > s ? s : index, listener );
-			listener.timePointChanged( state.getCurrentTimepoint() );
-		}
+		timePointListeners().add( index, listener );
 	}
 
 	/**
-	 * Remove a {@link TimePointListener}.
-	 *
-	 * @param listener
-	 *            the listener to remove.
+	 * @deprecated Use {@code timePointListeners().remove( listener )}.
 	 */
+	@Deprecated
 	public void removeTimePointListener( final TimePointListener listener )
 	{
-		synchronized ( timePointListeners )
-		{
-			timePointListeners.remove( listener );
-		}
+		timePointListeners().remove( listener );
 	}
 
 	protected class MouseCoordinateListener implements MouseMotionListener, MouseListener
