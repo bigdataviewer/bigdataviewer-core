@@ -55,8 +55,8 @@ public class LafSelection
 				for ( Component component : components )
 				{
 					SwingUtilities.updateComponentTreeUI( component );
-					if ( component instanceof Window )
-						( ( Window ) component ).pack();
+//					if ( component instanceof Window )
+//						( ( Window ) component ).pack();
 				}
 			}
 			catch ( Exception ex )
