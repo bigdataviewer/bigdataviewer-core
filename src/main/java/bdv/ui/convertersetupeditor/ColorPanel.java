@@ -28,6 +28,7 @@
  */
 package bdv.ui.convertersetupeditor;
 
+import bdv.ui.UIUtils;
 import java.awt.Color;
 
 import java.awt.Dimension;
@@ -35,6 +36,7 @@ import javax.swing.JButton;
 import javax.swing.JColorChooser;
 import javax.swing.JPanel;
 
+import javax.swing.UIManager;
 import net.imglib2.type.numeric.ARGBType;
 import net.miginfocom.swing.MigLayout;
 
@@ -61,9 +63,26 @@ class ColorPanel extends JPanel
 
 	private final Listeners.List< ChangeListener > listeners = new Listeners.SynchronizedList<>();
 
+	/**
+	 * Whether the color reflects a set of sources all having the same color
+	 */
+	private boolean isConsistent = true;
+
+	/**
+	 * Panel background if color reflects a set of sources all having the same color
+	 */
+	private Color consistentBg = Color.WHITE;
+
+	/**
+	 * Panel background if color reflects a set of sources with different colors
+	 */
+	private Color inConsistentBg = Color.WHITE;
+
 	public ColorPanel()
 	{
 		setLayout( new MigLayout( "ins 0, fillx, filly, hidemode 3", "[grow]", "" ) );
+		updateColors();
+
 		colorButton = new JButton();
 		this.add( colorButton, "center" );
 
@@ -83,6 +102,27 @@ class ColorPanel extends JPanel
 		super.setEnabled( enabled );
 		if ( colorButton != null )
 			colorButton.setEnabled( enabled );
+	}
+
+	@Override
+	public void updateUI()
+	{
+		super.updateUI();
+		updateColors();
+		if ( !isConsistent )
+			setBackground( inConsistentBg );
+	}
+
+	private void updateColors()
+	{
+		consistentBg = UIManager.getColor( "Panel.background" );
+		inConsistentBg = UIUtils.mix( consistentBg, Color.red, 0.9 );
+	}
+
+	public void setConsistent( final boolean isConsistent )
+	{
+		this.isConsistent = isConsistent;
+		setBackground( isConsistent ? consistentBg : inConsistentBg );
 	}
 
 	private void chooseColor()
