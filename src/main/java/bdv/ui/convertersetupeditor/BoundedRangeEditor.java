@@ -35,8 +35,6 @@ import bdv.ui.sourcetable.SourceTable;
 import bdv.util.BoundedRange;
 import bdv.util.Bounds;
 import bdv.ui.sourcegrouptree.SourceGroupTree;
-import bdv.ui.UIUtils;
-import java.awt.Color;
 import java.util.List;
 import java.util.function.Supplier;
 import javax.swing.JMenuItem;
@@ -52,10 +50,6 @@ class BoundedRangeEditor
 	private final BoundedRangePanel rangePanel;
 
 	private final ConverterSetupBounds converterSetupBounds;
-
-	private final Color equalColor;
-
-	private final Color notEqualColor;
 
 	public BoundedRangeEditor(
 			final SourceTable table,
@@ -117,9 +111,6 @@ class BoundedRangeEditor
 		rangePanel.changeListeners().add( this::updateConverterSetupRanges );
 
 		converterSetups.listeners().add( s -> updateRangePanel() );
-
-		equalColor = rangePanel.getBackground();
-		notEqualColor = UIUtils.mix( equalColor, Color.red, 0.9 );
 
 		final JPopupMenu menu = new JPopupMenu();
 		menu.add( runnableItem(  "set bounds ...", rangePanel::setBoundsDialog ) );
@@ -191,7 +182,7 @@ class BoundedRangeEditor
 		{
 			SwingUtilities.invokeLater( () -> {
 				rangePanel.setEnabled( false );
-				rangePanel.setBackground( equalColor );
+				rangePanel.setConsistent( true );
 			} );
 		}
 		else
@@ -216,14 +207,14 @@ class BoundedRangeEditor
 				}
 			}
 			final BoundedRange finalRange = range;
-			final Color bg = allRangesEqual ? equalColor : notEqualColor;
+			final boolean isConsistent = allRangesEqual;
 			SwingUtilities.invokeLater( () -> {
 				synchronized ( BoundedRangeEditor.this )
 				{
 					blockUpdates = true;
 					rangePanel.setEnabled( true );
 					rangePanel.setRange( finalRange );
-					rangePanel.setBackground( bg );
+					rangePanel.setConsistent( isConsistent );
 					blockUpdates = false;
 				}
 			} );
