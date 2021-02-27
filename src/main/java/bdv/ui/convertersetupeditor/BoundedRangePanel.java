@@ -46,6 +46,8 @@ import javax.swing.JPanel;
 import javax.swing.JPopupMenu;
 import javax.swing.JSpinner;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
 import javax.swing.event.ChangeEvent;
 import javax.swing.text.DefaultFormatterFactory;
 import javax.swing.text.NumberFormatter;
@@ -101,6 +103,21 @@ class BoundedRangePanel extends JPanel
 
 	private final Listeners.List< ChangeListener > listeners = new Listeners.SynchronizedList<>();
 
+	/**
+	 * Whether the range reflects a set of sources all having the same range
+	 */
+	private boolean isConsistent = true;
+
+	/**
+	 * Panel background if range reflects a set of sources all having the same range
+	 */
+	private Color consistentBg = Color.WHITE;
+
+	/**
+	 * Panel background if range reflects a set of sources with different ranges
+	 */
+	private Color inConsistentBg = Color.WHITE;
+
 	public BoundedRangePanel()
 	{
 		this( new BoundedRange( 0, 1, 0, 0.5 ) );
@@ -109,6 +126,7 @@ class BoundedRangePanel extends JPanel
 	public BoundedRangePanel( final BoundedRange range )
 	{
 		setLayout( new MigLayout( "ins 5 5 5 10, fillx, filly, hidemode 3", "[][grow][][]", "[]0[]" ) );
+		updateColors();
 
 		minSpinner = new JSpinner( new SpinnerNumberModel( 0.0, 0.0, 1.0, 1.0 ) );
 		maxSpinner = new JSpinner( new SpinnerNumberModel( 1.0, 0.0, 1.0, 1.0 ) );
@@ -145,6 +163,33 @@ class BoundedRangePanel extends JPanel
 			upperBoundLabel.setEnabled( enabled );
 		if ( lowerBoundLabel != null )
 			lowerBoundLabel.setEnabled( enabled );
+	}
+
+	@Override
+	public void updateUI()
+	{
+		super.updateUI();
+		updateColors();
+		if ( !isConsistent )
+			setBackground( inConsistentBg );
+		if ( popup != null )
+		{
+			final JPopupMenu menu = popup.get();
+			if ( menu != null )
+				SwingUtilities.updateComponentTreeUI( menu );
+		}
+	}
+
+	private void updateColors()
+	{
+		consistentBg = UIManager.getColor( "Panel.background" );
+		inConsistentBg = UIUtils.mix( consistentBg, Color.red, 0.9 );
+	}
+
+	public void setConsistent( final boolean isConsistent )
+	{
+		this.isConsistent = isConsistent;
+		setBackground( isConsistent ? consistentBg : inConsistentBg );
 	}
 
 	@Override
