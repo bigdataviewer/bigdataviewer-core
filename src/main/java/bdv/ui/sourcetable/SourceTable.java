@@ -74,10 +74,10 @@ public class SourceTable extends JTable
 
 	private final SourceToConverterSetupBimap converters;
 
-	private final Color focusedSelectionBg;
-	private final Color unfocusedSelectionBg;
+	private Color focusedSelectionBg;
+	private Color unfocusedSelectionBg;
 
-	private final Color focusedSelectionFg;
+	private boolean tableHasFocus;
 
 	public SourceTable( final ViewerState state, final ConverterSetups converterSetups )
 	{
@@ -104,14 +104,26 @@ public class SourceTable extends JTable
 
 		this.installActions( inputTriggerConfig );
 
-		focusedSelectionBg = getSelectionBackground();
-		focusedSelectionFg = getSelectionForeground();
-		unfocusedSelectionBg = UIUtils.mix( focusedSelectionBg, getBackground(), 0.8 );
+		updateColors();
+	}
+
+	@Override
+	public void updateUI()
+	{
+		super.updateUI();
+		updateColors();
+	}
+
+	private void updateColors()
+	{
+		focusedSelectionBg = UIManager.getColor( "Table.selectionBackground" );
+		unfocusedSelectionBg = UIUtils.mix( focusedSelectionBg, UIManager.getColor( "Table.background" ), 0.8 );
+		setSelectionBackground( tableHasFocus ? focusedSelectionBg : unfocusedSelectionBg );
 	}
 
 	public void setSelectionBackground( final boolean hasFocus )
 	{
-		setSelectionForeground( focusedSelectionFg );
+		tableHasFocus = hasFocus;
 		setSelectionBackground( hasFocus ? focusedSelectionBg : unfocusedSelectionBg );
 	}
 
