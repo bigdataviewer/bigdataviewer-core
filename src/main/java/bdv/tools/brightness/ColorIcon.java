@@ -52,6 +52,8 @@ public class ColorIcon implements Icon
 
 	private final boolean drawOutline;
 
+	private final Color outlineColor;
+
 	private final Color color;
 
 	private final int size; // == min(width, height)
@@ -67,20 +69,25 @@ public class ColorIcon implements Icon
 
 	public ColorIcon( final Color color, final int width, final int height, final boolean drawAsCircle )
 	{
-		this( color, width, height, drawAsCircle, 3, 3, false );
+		this( color, width, height, drawAsCircle, 3, 3, false, null );
 	}
 
 	public ColorIcon( final Color color, final int width, final int height, final int arcWidth, final int arcHeight )
 	{
-		this( color, width, height, false, arcWidth, arcHeight, false );
+		this( color, width, height, false, arcWidth, arcHeight, false, null );
 	}
 
 	public ColorIcon( final Color color, final int width, final int height, final int arcWidth, final int arcHeight, final boolean drawOutline )
 	{
-		this( color, width, height, false, arcWidth, arcHeight, drawOutline );
+		this( color, width, height, false, arcWidth, arcHeight, drawOutline, null );
 	}
 
-	private ColorIcon( final Color color, final int width, final int height, final boolean drawAsCircle, final int arcWidth, final int arcHeight, final boolean drawOutline )
+	public ColorIcon( final Color color, final int width, final int height, final int arcWidth, final int arcHeight, final boolean drawOutline, final Color outlineColor )
+	{
+		this( color, width, height, false, arcWidth, arcHeight, drawOutline, outlineColor );
+	}
+
+	private ColorIcon( final Color color, final int width, final int height, final boolean drawAsCircle, final int arcWidth, final int arcHeight, final boolean drawOutline, final Color outlineColor )
 	{
 		this.color = color;
 		this.width = width;
@@ -89,6 +96,7 @@ public class ColorIcon implements Icon
 		this.arcWidth = arcWidth;
 		this.arcHeight = arcHeight;
 		this.drawOutline = drawOutline;
+		this.outlineColor = outlineColor;
 
 		size = Math.min( width, height );
 		ox = ( width - size ) / 2;
@@ -121,7 +129,12 @@ public class ColorIcon implements Icon
 
 			if ( drawOutline )
 			{
-				g2d.setColor( c.isFocusOwner() ? new Color( 0x8FC4F9 ) : Color.gray );
+				final Color oc;
+				if ( outlineColor == null )
+					oc = c.isFocusOwner() ? new Color( 0x8FC4F9 ) : Color.gray;
+				else
+					oc = outlineColor;
+				g2d.setColor( oc );
 				if ( drawAsCircle )
 					g2d.drawOval( x0, y0, size, size );
 				else
