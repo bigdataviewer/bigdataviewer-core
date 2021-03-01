@@ -130,4 +130,29 @@ public class DisplaySettingsPanel extends JPanel
 		this.add( grouping );
 		this.add( interpolation );
 	}
+
+	@Override
+	public void updateUI()
+	{
+		super.updateUI();
+
+		if ( fusion != null )
+		{
+			final String isDark = UIUtils.isDark( "Panel.background" ) ? "_dark" : "";
+			final String isLarge = UIUtils.getUIScaleFactor() > 1.5 ? "_200" : "";
+
+			fusion.setIcons(
+					new ImageIcon( this.getClass().getResource( "single_mode" + isDark + isLarge + ".png" ) ),
+					new ImageIcon( this.getClass().getResource( "fusion_mode" + isDark + isLarge + ".png" ) )
+			);
+			grouping.setIcons(
+					new ImageIcon( this.getClass().getResource( "source_mode" + isDark + isLarge + ".png" ) ),
+					new ImageIcon( this.getClass().getResource( "grouping_mode" + isDark + isLarge + ".png" ) )
+			);
+			interpolation.setIcons(
+					new ImageIcon( this.getClass().getResource( "nearest" + isDark + isLarge + ".png" ) ),
+					new ImageIcon( this.getClass().getResource( "linear" + isDark + isLarge + ".png" ) )
+			);
+		}
+	}
 }
