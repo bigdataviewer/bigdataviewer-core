@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -28,6 +28,8 @@
  */
 package bdv.ui.sourcetable;
 
+import bdv.tools.brightness.ColorIcon;
+import bdv.ui.UIUtils;
 import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Component;
@@ -41,6 +43,8 @@ import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.TableCellRenderer;
 import net.imglib2.type.numeric.ARGBType;
+
+import static bdv.ui.sourcetable.SourceTableModel.COLOR_COLUMN;
 
 /**
  * @author Tobias Pietzsch
@@ -60,15 +64,20 @@ class ColorRenderer extends JLabel implements TableCellRenderer
 	@Override
 	public Component getTableCellRendererComponent( final JTable table, final Object value, final boolean isSelected, final boolean hasFocus, final int row, final int column )
 	{
+		setBackground( isSelected ? table.getSelectionBackground() : table.getBackground() );
 		if ( value == null )
 		{
-			setBackground( isSelected ? table.getSelectionBackground() : table.getBackground() );
 			setIcon( noColorIcon );
 		}
 		else
 		{
-			setBackground( new Color( ( ( ARGBType ) value ).get() ) );
-			setIcon( null );
+//			setBackground( new Color( ( ( ARGBType ) value ).get() ) );
+			final Color c = new Color( ( ( ARGBType ) value ).get() );
+			final int w = table.getColumnModel().getColumn( COLOR_COLUMN ).getWidth() - 6;
+			final int h = table.getRowHeight() - 6;
+			final Color outlineColor = UIUtils.mix(
+					c, isSelected ? table.getSelectionForeground() : table.getForeground(), 0.5 );
+			setIcon( new ColorIcon( c, w, h, 5, 5, true, outlineColor ) );
 		}
 		return this;
 	}
