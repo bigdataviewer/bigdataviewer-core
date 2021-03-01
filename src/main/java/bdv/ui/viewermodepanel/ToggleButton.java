@@ -62,6 +62,13 @@ class ToggleButton extends JPanel
 		this.add( button, "growx, center, wrap" );
 	}
 
+	public void setIcons( final Icon defaultIcon, final Icon selectedIcon )
+	{
+		button.setIcon( defaultIcon );
+		button.setSelectedIcon( selectedIcon );
+		setLook( button );
+	}
+
 	public void setSelected( final boolean selected )
 	{
 		button.setSelected( selected );
