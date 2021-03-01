@@ -39,6 +39,7 @@ import javax.swing.JComponent;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
@@ -206,6 +207,14 @@ public class SplitPanel extends JSplitPane
 			final int w = getWidth();
 			setDividerLocation( Math.max( Math.min ( w / 2, ( int )Math.floor( 50 * uiScale ) ), Math.min( w - ( int )Math.floor( 50 * uiScale ), dl ) ) );
 		}
+	}
+
+	@Override
+	public void updateUI()
+	{
+		if ( getRightComponent() == null && scrollPane != null )
+			// scrollPane is currently not a child component, therefore update it "manually"
+			SwingUtilities.updateComponentTreeUI( scrollPane );
 	}
 
 	public boolean isCollapsed()
