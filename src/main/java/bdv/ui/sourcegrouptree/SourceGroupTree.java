@@ -29,13 +29,11 @@
 package bdv.ui.sourcegrouptree;
 
 import bdv.ui.SourcesTransferable;
-import bdv.ui.UIUtils;
 import bdv.ui.sourcegrouptree.SourceGroupTreeModel.GroupModel;
 import bdv.ui.sourcegrouptree.SourceGroupTreeModel.SourceModel;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.SourceGroup;
 import bdv.viewer.ViewerState;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Point;
@@ -73,9 +71,6 @@ public class SourceGroupTree extends JTree
 
 	private final SourceGroupEditor editor;
 
-	private final Color focusedSelectionBg;
-	private final Color unfocusedSelectionBg;
-
 	public SourceGroupTree( final ViewerState state )
 	{
 		this( state, new InputTriggerConfig() );
@@ -98,15 +93,20 @@ public class SourceGroupTree extends JTree
 		setTransferHandler( new SourceGroupTreeTransferHandler( this, state ) );
 
 		this.installActions( inputTriggerConfig );
-
-		focusedSelectionBg = renderer.getBackgroundSelectionColor();
-		unfocusedSelectionBg = UIUtils.mix( focusedSelectionBg, getBackground(), 0.8 );
 	}
 
 	public void setSelectionBackground( final boolean hasFocus )
 	{
-		renderer.setBackgroundSelectionColor( hasFocus ? focusedSelectionBg : unfocusedSelectionBg );
+		renderer.setBackgroundSelectionColor( hasFocus );
 		this.repaint();
+	}
+
+	@Override
+	public void updateUI()
+	{
+		if ( renderer != null )
+			renderer.updateUI();
+		super.updateUI();
 	}
 
 	/**
