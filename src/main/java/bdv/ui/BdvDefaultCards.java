@@ -29,15 +29,9 @@
 package bdv.ui;
 
 import java.awt.BorderLayout;
-import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Insets;
-import java.awt.KeyboardFocusManager;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-import java.lang.ref.WeakReference;
 
-import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.border.EmptyBorder;
@@ -106,95 +100,8 @@ public class BdvDefaultCards
 		treePanel.add( editPanelTree, BorderLayout.SOUTH );
 		treePanel.setPreferredSize( new Dimension( 300, 225 ) );
 
-		new FocusListener( tablePanel, table, treePanel, tree );
-
 		cards.addCard( DEFAULT_VIEWERMODES_CARD, "Display Modes", new DisplaySettingsPanel( viewer.state() ), true, new Insets( 0, 4, 4, 0 ) );
 		cards.addCard( DEFAULT_SOURCES_CARD, "Sources", tablePanel, true, new Insets( 0, 4, 0, 0 ) );
 		cards.addCard( DEFAULT_SOURCEGROUPS_CARD, "Groups", treePanel, true, new Insets( 0, 4, 0, 0 ) );
-	}
-
-	private static class FocusListener implements PropertyChangeListener
-	{
-		private final KeyboardFocusManager keyboardFocusManager;
-
-		private final WeakReference< JPanel > tablePanel;
-		private final WeakReference< SourceTable > table;
-		private final WeakReference< JPanel > treePanel;
-		private final WeakReference< SourceGroupTree > tree;
-
-		static final int MAX_DEPTH = 8;
-		boolean tableFocused;
-		boolean treeFocused;
-
-		FocusListener( final JPanel tablePanel, final SourceTable table, final JPanel treePanel, final SourceGroupTree tree )
-		{
-			this.tablePanel = new WeakReference<>( tablePanel );
-			this.table = new WeakReference<>( table );
-			this.treePanel = new WeakReference<>( treePanel );
-			this.tree = new WeakReference<>( tree );
-
-			keyboardFocusManager = KeyboardFocusManager.getCurrentKeyboardFocusManager();
-			keyboardFocusManager.addPropertyChangeListener( "focusOwner", this );
-		}
-
-		void focusTable( final boolean focus )
-		{
-			if ( focus != tableFocused )
-			{
-				tableFocused = focus;
-				final SourceTable table = this.table.get();
-				if ( table != null )
-					table.setSelectionBackground( focus );
-			}
-		}
-
-		void focusTree( final boolean focus )
-		{
-			if ( focus != treeFocused )
-			{
-				treeFocused = focus;
-				final SourceGroupTree tree = this.tree.get();
-				if ( tree != null )
-					tree.setSelectionBackground( focus );
-			}
-		}
-
-		@Override
-		public void propertyChange( final PropertyChangeEvent evt )
-		{
-			final JPanel tablePanel = this.tablePanel.get();
-			final JPanel treePanel = this.treePanel.get();
-			if ( tablePanel == null && treePanel == null )
-			{
-				keyboardFocusManager.removePropertyChangeListener( "focusOwner", this );
-				return;
-			}
-
-			if ( evt.getNewValue() instanceof JComponent )
-			{
-				final JComponent component = ( JComponent ) evt.getNewValue();
-				for ( int i = 0; i < MAX_DEPTH; ++i )
-				{
-					final Container parent = component.getParent();
-					if ( !( parent instanceof JComponent ) )
-						break;
-
-					if ( component == treePanel )
-					{
-						focusTable( false );
-						focusTree( true );
-						return;
-					}
-					else if ( component == tablePanel )
-					{
-						focusTable( true );
-						focusTree( false );
-						return;
-					}
-				}
-				focusTable( false );
-				focusTree( false );
-			}
-		}
 	}
 }
