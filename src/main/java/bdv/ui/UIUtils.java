@@ -131,14 +131,4 @@ public class UIUtils
 		else
 			return defaultValue;
 	}
-
-	/**
-	 * Get color property with the specified {@code key} from the swing {@link UIManager}.
-	 * If the property is not set, return {@code defaultColor} instead.
-	 */
-	public static Color getUIColor( final String key, final Color defaultColor )
-	{
-		final Color c = UIManager.getColor( key );
-		return c != null ? c : defaultColor;
-	}
 }

@@ -34,11 +34,14 @@ import bdv.ui.sourcegrouptree.SourceGroupTreeModel.SourceModel;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.SourceGroup;
 import bdv.viewer.ViewerState;
+import com.formdev.flatlaf.ui.FlatUIUtils;
 import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.datatransfer.Transferable;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
@@ -93,12 +96,21 @@ public class SourceGroupTree extends JTree
 		setTransferHandler( new SourceGroupTreeTransferHandler( this, state ) );
 
 		this.installActions( inputTriggerConfig );
-	}
 
-	public void setSelectionBackground( final boolean hasFocus )
-	{
-		renderer.setBackgroundSelectionColor( hasFocus );
-		this.repaint();
+		this.addFocusListener( new FocusListener()
+		{
+			@Override
+			public void focusGained( final FocusEvent e )
+			{
+				repaint();
+			}
+
+			@Override
+			public void focusLost( final FocusEvent e )
+			{
+				repaint();
+			}
+		} );
 	}
 
 	@Override
@@ -359,6 +371,7 @@ public class SourceGroupTree extends JTree
 	@Override
 	public void paintComponent( final Graphics g )
 	{
+		renderer.setTreeHasFocus( FlatUIUtils.isPermanentFocusOwner( this ) );
 		g.setColor( getBackground() );
 		g.fillRect( 0, 0, getWidth(), getHeight() );
 		final int[] rows = getSelectionRows();
