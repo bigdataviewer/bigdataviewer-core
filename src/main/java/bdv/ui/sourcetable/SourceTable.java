@@ -28,28 +28,6 @@
  */
 package bdv.ui.sourcetable;
 
-import static bdv.ui.sourcetable.SourceTableModel.COLOR_COLUMN;
-import static bdv.ui.sourcetable.SourceTableModel.IS_ACTIVE_COLUMN;
-import static bdv.ui.sourcetable.SourceTableModel.IS_CURRENT_COLUMN;
-
-import java.awt.Color;
-import java.awt.Point;
-import java.awt.datatransfer.Transferable;
-import java.awt.event.InputEvent;
-import java.awt.event.MouseEvent;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.swing.JColorChooser;
-import javax.swing.JComponent;
-import javax.swing.JTable;
-import javax.swing.TransferHandler;
-import javax.swing.UIManager;
-
-import org.scijava.ui.behaviour.io.InputTriggerConfig;
-import org.scijava.ui.behaviour.util.Actions;
-import org.scijava.ui.behaviour.util.InputActionBindings;
-
 import bdv.tools.brightness.ConverterSetup;
 import bdv.ui.SourcesTransferable;
 import bdv.ui.UIUtils;
@@ -57,7 +35,30 @@ import bdv.viewer.ConverterSetups;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.SourceToConverterSetupBimap;
 import bdv.viewer.ViewerState;
+import com.formdev.flatlaf.ui.FlatUIUtils;
+import java.awt.Color;
+import java.awt.Graphics;
+import java.awt.Point;
+import java.awt.datatransfer.Transferable;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
+import java.awt.event.InputEvent;
+import java.awt.event.MouseEvent;
+import java.util.ArrayList;
+import java.util.List;
+import javax.swing.JColorChooser;
+import javax.swing.JComponent;
+import javax.swing.JTable;
+import javax.swing.TransferHandler;
+import javax.swing.UIManager;
 import net.imglib2.type.numeric.ARGBType;
+import org.scijava.ui.behaviour.io.InputTriggerConfig;
+import org.scijava.ui.behaviour.util.Actions;
+import org.scijava.ui.behaviour.util.InputActionBindings;
+
+import static bdv.ui.sourcetable.SourceTableModel.COLOR_COLUMN;
+import static bdv.ui.sourcetable.SourceTableModel.IS_ACTIVE_COLUMN;
+import static bdv.ui.sourcetable.SourceTableModel.IS_CURRENT_COLUMN;
 
 /**
  * A {@code JTable} that shows the sources of a {@link ViewerState} and allows
@@ -74,10 +75,10 @@ public class SourceTable extends JTable
 
 	private final SourceToConverterSetupBimap converters;
 
-	private Color focusedSelectionBg;
-	private Color unfocusedSelectionBg;
-
-	private boolean tableHasFocus;
+	private Color selectionActiveBackground;
+	private Color selectionInactiveBackground;
+	private Color selectionActiveForeground;
+	private Color selectionInactiveForeground;
 
 	public SourceTable( final ViewerState state, final ConverterSetups converterSetups )
 	{
@@ -104,7 +105,20 @@ public class SourceTable extends JTable
 
 		this.installActions( inputTriggerConfig );
 
-		updateColors();
+		this.addFocusListener( new FocusListener()
+		{
+			@Override
+			public void focusGained( final FocusEvent e )
+			{
+				repaint();
+			}
+
+			@Override
+			public void focusLost( final FocusEvent e )
+			{
+				repaint();
+			}
+		} );
 	}
 
 	@Override
@@ -116,15 +130,25 @@ public class SourceTable extends JTable
 
 	private void updateColors()
 	{
-		focusedSelectionBg = UIManager.getColor( "Table.selectionBackground" );
-		unfocusedSelectionBg = UIUtils.mix( focusedSelectionBg, UIManager.getColor( "Table.background" ), 0.8 );
-		setSelectionBackground( tableHasFocus ? focusedSelectionBg : unfocusedSelectionBg );
+		selectionActiveBackground = UIManager.getColor( "Table.selectionBackground" );
+		selectionInactiveBackground = FlatUIUtils.getUIColor(
+				"Table.selectionInactiveBackground",
+				UIUtils.mix( selectionActiveBackground, UIManager.getColor( "Table.background" ), 0.5)
+		);
+		selectionActiveForeground = UIManager.getColor( "Table.selectionForeground" );
+		selectionInactiveForeground = FlatUIUtils.getUIColor(
+				"Table.selectionInactiveForeground",
+				UIUtils.mix( selectionActiveForeground, UIManager.getColor( "Table.foreground" ), 0.0 )
+		);
 	}
 
-	public void setSelectionBackground( final boolean hasFocus )
+	@Override
+	protected void paintComponent( final Graphics g )
 	{
-		tableHasFocus = hasFocus;
-		setSelectionBackground( hasFocus ? focusedSelectionBg : unfocusedSelectionBg );
+		final boolean hasFocus = FlatUIUtils.isPermanentFocusOwner( this );
+		selectionBackground = hasFocus ? selectionActiveBackground : selectionInactiveBackground;
+		selectionForeground = hasFocus ? selectionActiveForeground : selectionInactiveForeground;
+		super.paintComponent( g );
 	}
 
 	public List< SourceAndConverter< ? > > getSelectedSources()
