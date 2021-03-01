@@ -118,4 +118,27 @@ public class UIUtils
 		if ( bg == null ) return false;
 		else return ( bg.getRed() + bg.getGreen() + bg.getBlue() ) / 3.0 < 127;
 	}
+
+	/**
+	 * Get boolean property with the specified {@code key} from the swing {@link UIManager}.
+	 * If the property is not set, return {@code defaultValue} instead.
+	 */
+	public static boolean getUIBoolean( final String key, final boolean defaultValue )
+	{
+		final Object value = UIManager.get( key );
+		if ( value instanceof Boolean )
+			return ( Boolean ) value;
+		else
+			return defaultValue;
+	}
+
+	/**
+	 * Get color property with the specified {@code key} from the swing {@link UIManager}.
+	 * If the property is not set, return {@code defaultColor} instead.
+	 */
+	public static Color getUIColor( final String key, final Color defaultColor )
+	{
+		final Color c = UIManager.getColor( key );
+		return c != null ? c : defaultColor;
+	}
 }
