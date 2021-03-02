@@ -169,8 +169,8 @@ public class SplitPanel extends JSplitPane
 				};
 			}
 		} );
-		this.setForeground( Color.white );
-		this.setBackground( Color.white );
+//		this.setForeground( Color.white );
+//		this.setBackground( Color.white );
 		this.setResizeWeight( 1.0 );
 		this.setContinuousLayout( true );
 	}
