@@ -143,18 +143,6 @@ public class BigDataViewerActions extends Actions
 		actions.namedAction( new ToggleDialogAction( name, dialog ), defaultKeyStrokes );
 	}
 
-	@Deprecated
-	public static void dialog( final Actions actions, final BrightnessDialog brightnessDialog )
-	{
-		toggleDialogAction( actions, brightnessDialog, BRIGHTNESS_SETTINGS, BRIGHTNESS_SETTINGS_KEYS );
-	}
-
-	@Deprecated
-	public static void dialog( final Actions actions, final VisibilityAndGroupingDialog visibilityAndGroupingDialog )
-	{
-		toggleDialogAction( actions, visibilityAndGroupingDialog, VISIBILITY_AND_GROUPING, VISIBILITY_AND_GROUPING_KEYS );
-	}
-
 	public static void dialog( final Actions actions, final CropDialog cropDialog )
 	{
 		toggleDialogAction( actions, cropDialog, CROP, CROP_KEYS );
@@ -187,6 +175,20 @@ public class BigDataViewerActions extends Actions
 		actions.runnableAction( manualTransformationEditor::toggle, MANUAL_TRANSFORM, MANUAL_TRANSFORM_KEYS );
 	}
 
+	// -- deprecated API --
+
+	@Deprecated
+	public static void dialog( final Actions actions, final BrightnessDialog brightnessDialog )
+	{
+		toggleDialogAction( actions, brightnessDialog, BRIGHTNESS_SETTINGS, BRIGHTNESS_SETTINGS_KEYS );
+	}
+
+	@Deprecated
+	public static void dialog( final Actions actions, final VisibilityAndGroupingDialog visibilityAndGroupingDialog )
+	{
+		toggleDialogAction( actions, visibilityAndGroupingDialog, VISIBILITY_AND_GROUPING, VISIBILITY_AND_GROUPING_KEYS );
+	}
+
 	/**
 	 * Create BigDataViewer actions and install them in the specified
 	 * {@link InputActionBindings}.
@@ -198,6 +200,7 @@ public class BigDataViewerActions extends Actions
 	 * @param keyProperties
 	 *            user-defined key-bindings.
 	 */
+	@Deprecated
 	public static void installActionBindings(
 			final InputActionBindings inputActionBindings,
 			final BigDataViewer bdv,
@@ -221,15 +224,10 @@ public class BigDataViewerActions extends Actions
 		actions.install( inputActionBindings, "bdv" );
 	}
 
+	@Deprecated
 	public BigDataViewerActions( final KeyStrokeAdder.Factory keyConfig )
 	{
 		super( keyConfig, new String[] { "bdv" } );
-	}
-
-	public void toggleDialogAction( final Dialog dialog, final String name, final String... defaultKeyStrokes )
-	{
-		keyStrokeAdder.put( name, defaultKeyStrokes );
-		new ToggleDialogAction( name, dialog ).put( getActionMap() );
 	}
 
 	@Deprecated
@@ -244,26 +242,38 @@ public class BigDataViewerActions extends Actions
 		toggleDialogAction( visibilityAndGroupingDialog, VISIBILITY_AND_GROUPING, VISIBILITY_AND_GROUPING_KEYS );
 	}
 
+	@Deprecated
+	public void toggleDialogAction( final Dialog dialog, final String name, final String... defaultKeyStrokes )
+	{
+		keyStrokeAdder.put( name, defaultKeyStrokes );
+		new ToggleDialogAction( name, dialog ).put( getActionMap() );
+	}
+
+	@Deprecated
 	public void dialog( final CropDialog cropDialog )
 	{
 		toggleDialogAction( cropDialog, CROP, CROP_KEYS );
 	}
 
+	@Deprecated
 	public void dialog( final HelpDialog helpDialog )
 	{
 		toggleDialogAction( helpDialog, SHOW_HELP, SHOW_HELP_KEYS );
 	}
 
+	@Deprecated
 	public void dialog( final RecordMovieDialog recordMovieDialog )
 	{
 		toggleDialogAction( recordMovieDialog, RECORD_MOVIE, RECORD_MOVIE_KEYS );
 	}
 
+	@Deprecated
 	public void dialog( final RecordMaxProjectionDialog recordMaxProjectionDialog )
 	{
 		toggleDialogAction( recordMaxProjectionDialog, RECORD_MAX_PROJECTION_MOVIE, RECORD_MAX_PROJECTION_MOVIE_KEYS );
 	}
 
+	@Deprecated
 	public void bookmarks( final BookmarksEditor bookmarksEditor )
 	{
 		runnableAction( bookmarksEditor::initGoToBookmark, GO_TO_BOOKMARK, GO_TO_BOOKMARK_KEYS );
@@ -271,6 +281,7 @@ public class BigDataViewerActions extends Actions
 		runnableAction( bookmarksEditor::initSetBookmark, SET_BOOKMARK, SET_BOOKMARK_KEYS );
 	}
 
+	@Deprecated
 	public void manualTransform( final ManualTransformationEditor manualTransformationEditor )
 	{
 		runnableAction( manualTransformationEditor::toggle, MANUAL_TRANSFORM, MANUAL_TRANSFORM_KEYS );
