@@ -33,7 +33,10 @@ import java.awt.Dialog;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
 
+import org.scijava.plugin.Plugin;
 import org.scijava.ui.behaviour.KeyStrokeAdder;
+import org.scijava.ui.behaviour.io.gui.CommandDescriptionProvider;
+import org.scijava.ui.behaviour.io.gui.CommandDescriptions;
 import org.scijava.ui.behaviour.util.Actions;
 import org.scijava.ui.behaviour.util.InputActionBindings;
 
@@ -66,18 +69,49 @@ public class BigDataViewerActions extends Actions
 
 	public static final String[] BRIGHTNESS_SETTINGS_KEYS         = new String[] { "S" };
 	public static final String[] VISIBILITY_AND_GROUPING_KEYS     = new String[] { "F6" };
-	public static final String[] MANUAL_TRANSFORM_KEYS            = new String[] { "T" };
 	public static final String[] SHOW_HELP_KEYS                   = new String[] { "F1", "H" };
-	public static final String[] RECORD_MAX_PROJECTION_MOVIE_KEYS = new String[] { "F8" };
 	public static final String[] CROP_KEYS                        = new String[] { "F9" };
-	public static final String[] RECORD_MOVIE_KEYS                = new String[] { "F10" };
+	public static final String[] MANUAL_TRANSFORM_KEYS            = new String[] { "T" };
 	public static final String[] SAVE_SETTINGS_KEYS               = new String[] { "F11" };
 	public static final String[] LOAD_SETTINGS_KEYS               = new String[] { "F12" };
 	public static final String[] EXPAND_CARDS_KEYS                = new String[] { "P" };
 	public static final String[] COLLAPSE_CARDS_KEYS              = new String[] { "shift P", "shift ESCAPE" };
+	public static final String[] RECORD_MOVIE_KEYS                = new String[] { "F10" };
+	public static final String[] RECORD_MAX_PROJECTION_MOVIE_KEYS = new String[] { "F8" };
+	public static final String[] SET_BOOKMARK_KEYS                = new String[] { "shift B" };
 	public static final String[] GO_TO_BOOKMARK_KEYS              = new String[] { "B" };
 	public static final String[] GO_TO_BOOKMARK_ROTATION_KEYS     = new String[] { "O" };
-	public static final String[] SET_BOOKMARK_KEYS                = new String[] { "shift B" };
+
+	/*
+	 * Command descriptions for all provided commands
+	 */
+	@Plugin( type = CommandDescriptionProvider.class )
+	public static class Descriptions extends CommandDescriptionProvider
+	{
+		public Descriptions()
+		{
+			super( KeyConfigScopes.BIGDATAVIEWER, KeyConfigContexts.BIGDATAVIEWER );
+		}
+
+		@Override
+		public void getCommandDescriptions( final CommandDescriptions descriptions )
+		{
+			descriptions.add( BRIGHTNESS_SETTINGS,BRIGHTNESS_SETTINGS_KEYS, "Show the Brightness&Colors dialog." );
+			descriptions.add( VISIBILITY_AND_GROUPING, VISIBILITY_AND_GROUPING_KEYS, "Show the Visibility&Grouping dialog." );
+			descriptions.add( SHOW_HELP, SHOW_HELP_KEYS, "Show the Help dialog." );
+			descriptions.add( CROP, CROP_KEYS, "Show the Crop dialog." );
+			descriptions.add( MANUAL_TRANSFORM, MANUAL_TRANSFORM_KEYS, "Toggle manual transformation mode." );
+			descriptions.add( SAVE_SETTINGS, SAVE_SETTINGS_KEYS, "Save the BigDataViewer settings to a settings.xml file." );
+			descriptions.add( LOAD_SETTINGS, LOAD_SETTINGS_KEYS, "Load the BigDataViewer settings from a settings.xml file." );
+			descriptions.add( EXPAND_CARDS, EXPAND_CARDS_KEYS, "Expand and focus the BigDataViewer card panel" );
+			descriptions.add( COLLAPSE_CARDS, COLLAPSE_CARDS_KEYS, "Collapse the BigDataViewer card panel" );
+			descriptions.add( RECORD_MOVIE, RECORD_MOVIE_KEYS, "Show the Record Movie dialog." );
+			descriptions.add( RECORD_MAX_PROJECTION_MOVIE, RECORD_MAX_PROJECTION_MOVIE_KEYS, "Show the Record Max Projection Movie dialog." );
+			descriptions.add( SET_BOOKMARK, SET_BOOKMARK_KEYS, "Set a labeled bookmark at the current location." );
+			descriptions.add( GO_TO_BOOKMARK, GO_TO_BOOKMARK_KEYS, "Retrieve a labeled bookmark location." );
+			descriptions.add( GO_TO_BOOKMARK_ROTATION, GO_TO_BOOKMARK_ROTATION_KEYS, "Retrieve a labeled bookmark, set only the orientation." );
+		}
+	}
 
 	/**
 	 * Create BigDataViewer actions and install them in the specified
