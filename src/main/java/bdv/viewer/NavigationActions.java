@@ -35,10 +35,15 @@ import java.util.stream.IntStream;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
 
+import org.scijava.plugin.Plugin;
 import org.scijava.ui.behaviour.KeyStrokeAdder;
+import org.scijava.ui.behaviour.io.gui.CommandDescriptionProvider;
+import org.scijava.ui.behaviour.io.gui.CommandDescriptions;
 import org.scijava.ui.behaviour.util.Actions;
 import org.scijava.ui.behaviour.util.InputActionBindings;
 
+import bdv.KeyConfigContexts;
+import bdv.KeyConfigScopes;
 import bdv.viewer.AbstractViewerPanel.AlignPlane;
 
 public class NavigationActions extends Actions
@@ -64,6 +69,38 @@ public class NavigationActions extends Actions
 	public static final String[] ALIGN_XZ_PLANE_KEYS = new String[] { "shift Y", "shift A" };
 	public static final String[] NEXT_TIMEPOINT_KEYS = new String[] { "CLOSE_BRACKET", "M" };
 	public static final String[] PREVIOUS_TIMEPOINT_KEYS = new String[] { "OPEN_BRACKET", "N" };
+
+	/*
+	 * Command descriptions for all provided commands
+	 */
+	@Plugin( type = CommandDescriptionProvider.class )
+	public static class Descriptions extends CommandDescriptionProvider
+	{
+		public Descriptions()
+		{
+			super( KeyConfigScopes.BIGDATAVIEWER, KeyConfigContexts.BIGDATAVIEWER );
+		}
+
+		@Override
+		public void getCommandDescriptions( final CommandDescriptions descriptions )
+		{
+			descriptions.add( TOGGLE_INTERPOLATION, TOGGLE_INTERPOLATION_KEYS, "Switch between nearest-neighbor and n-linear interpolation mode in BigDataViewer." );
+			descriptions.add( TOGGLE_FUSED_MODE, TOGGLE_FUSED_MODE_KEYS, "TODO" );
+			descriptions.add( TOGGLE_GROUPING, TOGGLE_GROUPING_KEYS, "TODO" );
+
+			final String[] numkeys = new String[] { "1", "2", "3", "4", "5", "6", "7", "8", "9", "0" };
+			IntStream.range( 0, numkeys.length ).forEach( i -> {
+				descriptions.add( String.format( SET_CURRENT_SOURCE, i ), new String[] { String.format( SET_CURRENT_SOURCE_KEYS_FORMAT, numkeys[ i ] ) }, "TODO" );
+				descriptions.add( String.format( TOGGLE_SOURCE_VISIBILITY, i ), new String[] { String.format( TOGGLE_SOURCE_VISIBILITY_KEYS_FORMAT, numkeys[ i ] ) }, "TODO" );
+			} );
+
+			descriptions.add( NEXT_TIMEPOINT, NEXT_TIMEPOINT_KEYS, "TODO" );
+			descriptions.add( PREVIOUS_TIMEPOINT, PREVIOUS_TIMEPOINT_KEYS, "TODO" );
+			descriptions.add( ALIGN_XY_PLANE, ALIGN_XY_PLANE_KEYS, "TODO" );
+			descriptions.add( ALIGN_ZY_PLANE, ALIGN_ZY_PLANE_KEYS, "TODO" );
+			descriptions.add( ALIGN_XZ_PLANE, ALIGN_XZ_PLANE_KEYS, "TODO" );
+		}
+	}
 
 	/**
 	 * Create navigation actions and install them in the specified
