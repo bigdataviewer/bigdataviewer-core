@@ -30,6 +30,9 @@ package bdv;
 
 import bdv.tools.PreferencesDialog;
 import bdv.LafSelection.LafDialog;
+import bdv.ui.keymap.Keymap;
+import bdv.ui.keymap.KeymapManager;
+import bdv.ui.keymap.KeymapSettingsPage;
 import bdv.viewer.ConverterSetups;
 import bdv.viewer.ViewerState;
 import com.formdev.flatlaf.FlatDarculaLaf;
@@ -43,6 +46,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
+import java.util.function.Consumer;
 import javax.swing.ActionMap;
 import javax.swing.JFileChooser;
 import javax.swing.JMenu;
@@ -66,7 +70,11 @@ import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
+import org.scijava.Context;
+import org.scijava.plugin.PluginService;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
+import org.scijava.ui.behaviour.io.gui.CommandDescriptions;
+import org.scijava.ui.behaviour.io.gui.CommandDescriptionsBuilder;
 import org.scijava.ui.behaviour.io.yaml.YamlConfigIO;
 
 import bdv.cache.CacheControl;
@@ -127,6 +135,8 @@ public class BigDataViewer
 	protected final VisibilityAndGroupingDialog activeSourcesDialog;
 
 	protected final HelpDialog helpDialog;
+
+	private final KeymapManager keymapManager;
 
 	protected final PreferencesDialog preferencesDialog;
 
@@ -302,6 +312,15 @@ public class BigDataViewer
 			initSetupNumericType( spimData, setup, converterSetups, sources );
 	}
 
+	private CommandDescriptions buildCommandDescriptions()
+	{
+		final Context context = new Context( PluginService.class );
+		final CommandDescriptionsBuilder builder = new CommandDescriptionsBuilder();
+		context.inject( builder );
+		builder.discoverProviders();
+		return builder.build();
+	}
+
 	/**
 	 *
 	 * @param converterSetups
@@ -336,7 +355,18 @@ public class BigDataViewer
 			final ProgressWriter progressWriter,
 			final ViewerOptions options )
 	{
-		final InputTriggerConfig inputTriggerConfig = getInputTriggerConfig( options );
+
+		keymapManager = new KeymapManager();
+		final CommandDescriptions descriptions = buildCommandDescriptions();
+		final Consumer< Keymap > augmentInputTriggerConfig = k -> descriptions.augmentInputTriggerConfig( k.getConfig() );
+		keymapManager.getUserStyles().forEach( augmentInputTriggerConfig );
+		keymapManager.getBuiltinStyles().forEach( augmentInputTriggerConfig );
+
+//		final InputTriggerConfig inputTriggerConfig = getInputTriggerConfig( options );
+		InputTriggerConfig inputTriggerConfig = options.values.getInputTriggerConfig();
+		final Keymap keymap = keymapManager.getForwardSelectedKeymap();
+		if ( inputTriggerConfig == null )
+			inputTriggerConfig = keymap.getConfig();
 
 		viewerFrame = new ViewerFrame( sources, numTimepoints, cache, options.inputTriggerConfig( inputTriggerConfig ) );
 		if ( windowTitle != null )
@@ -421,7 +451,7 @@ public class BigDataViewer
 		} );
 
 		preferencesDialog = new PreferencesDialog( null /*keymap, new String[] { KeyConfigContexts.BIGDATAVIEWER }*/ );
-//		preferencesDialog.addPage( new KeymapSettingsPage( "Keymap", keymapManager, descriptions ) );
+		preferencesDialog.addPage( new KeymapSettingsPage( "Keymap", keymapManager, descriptions ) );
 
 		final Actions navigationActions = new Actions( inputTriggerConfig, "bdv", "navigation" );
 		navigationActions.install( viewerFrame.getKeybindings(), "navigation" );
@@ -430,6 +460,12 @@ public class BigDataViewer
 		final Actions bdvActions = new Actions( inputTriggerConfig, "bdv" );
 		bdvActions.install( viewerFrame.getKeybindings(), "bdv" );
 		BigDataViewerActions.install( bdvActions, this );
+
+		keymap.updateListeners().add( () -> {
+			navigationActions.updateKeyConfig( keymap.getConfig() );
+			bdvActions.updateKeyConfig( keymap.getConfig() );
+			viewerFrame.getTransformBehaviours().updateKeyConfig( keymap.getConfig() );
+		} );
 
 		final JMenuBar menubar = new JMenuBar();
 		JMenu menu = new JMenu( "File" );
@@ -654,6 +690,7 @@ public class BigDataViewer
 	 * @param options
 	 * @return
 	 */
+	@Deprecated
 	public static InputTriggerConfig getInputTriggerConfig( final ViewerOptions options )
 	{
 		InputTriggerConfig conf = options.values.getInputTriggerConfig();
@@ -778,6 +815,7 @@ public class BigDataViewer
 
 			final LafDialog lafDialog = new LafDialog();
 			lafDialog.addComponent( bdv.getViewerFrame() );
+			lafDialog.addComponent( bdv.preferencesDialog );
 			lafDialog.setVisible( true );
 
 //			DumpInputConfig.writeToYaml( System.getProperty( "user.home" ) + "/.bdv/bdvkeyconfig.yaml", bdv.getViewerFrame() );

@@ -70,6 +70,8 @@ public class ViewerFrame extends JFrame
 
 	private final TriggerBehaviourBindings triggerbindings;
 
+	private final Behaviours transformBehaviours;
+
 	private final ConverterSetups setups;
 
 	public ViewerFrame(
@@ -133,8 +135,7 @@ public class ViewerFrame extends JFrame
 		mouseAndKeyHandler.setKeypressManager( optional.values.getKeyPressedManager(), viewer.getDisplayComponent() );
 		viewer.getDisplay().addHandler( mouseAndKeyHandler );
 
-		// TODO: should be a field?
-		final Behaviours transformBehaviours = new Behaviours( optional.values.getInputTriggerConfig(), "bdv" );
+		transformBehaviours = new Behaviours( optional.values.getInputTriggerConfig(), "bdv" );
 		transformBehaviours.install( triggerbindings, "transform" );
 
 		final TransformEventHandler tfHandler = viewer.getTransformEventHandler();
@@ -164,6 +165,16 @@ public class ViewerFrame extends JFrame
 	public TriggerBehaviourBindings getTriggerbindings()
 	{
 		return triggerbindings;
+	}
+
+	/**
+	 * Get {@code Behaviours} hook where TransformEventHandler behaviours are installed.
+	 * This is installed in {@link #getTriggerbindings} with the id "transform".
+	 * The hook can be used to update the keymap and install additional behaviours.
+	 */
+	public Behaviours getTransformBehaviours()
+	{
+		return transformBehaviours;
 	}
 
 	public ConverterSetups getConverterSetups()
