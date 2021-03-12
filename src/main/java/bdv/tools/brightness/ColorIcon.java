@@ -52,9 +52,9 @@ public class ColorIcon implements Icon
 
 	private final boolean drawOutline;
 
-	private final Color outlineColor;
+	private Color outlineColor;
 
-	private final Color color;
+	private Color color;
 
 	private final int size; // == min(width, height)
 
@@ -153,5 +153,15 @@ public class ColorIcon implements Icon
 	public int getIconHeight()
 	{
 		return height;
+	}
+
+	public void setColor( final Color color )
+	{
+		this.color = color;
+	}
+
+	public void setOutlineColor( final Color color )
+	{
+		this.outlineColor = color;
 	}
 }
