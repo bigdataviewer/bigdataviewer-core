@@ -28,6 +28,8 @@
  */
 package bdv.viewer;
 
+import bdv.ui.appearance.AppearanceManager;
+import bdv.ui.keymap.KeymapManager;
 import java.awt.event.KeyListener;
 
 import org.scijava.ui.behaviour.KeyPressedManager;
@@ -224,6 +226,35 @@ public class ViewerOptions
 	}
 
 	/**
+	 * Set the {@link KeymapManager} to share keymap settings with other
+	 * BigDataViewer windows.
+	 * <p>
+	 * This can be used to link multiple BigDataViewer windows such that they
+	 * use (and modify) the same {@code Keymap}, shortcuts and mouse gestures.
+	 * </p>
+	 */
+	public ViewerOptions keymapManager( final KeymapManager keymapManager )
+	{
+		values.keymapManager = keymapManager;
+		return this;
+	}
+
+	/**
+	 * Set the {@link AppearanceManager} to share appearance settings with other
+	 * BigDataViewer windows.
+	 * <p>
+	 * This can be used to link multiple BigDataViewer windows such that they
+	 * use (and modify) the same {@code Appearance} settings, e.g., LookAndFeel,
+	 * scalebar overlay settings, etc.
+	 * </p>
+	 */
+	public ViewerOptions appearanceManager( final AppearanceManager appearanceManager )
+	{
+		values.appearanceManager = appearanceManager;
+		return this;
+	}
+
+	/**
 	 * Read-only {@link ViewerOptions} values.
 	 */
 	public static class Values
@@ -254,6 +285,10 @@ public class ViewerOptions
 
 		private KeyPressedManager keyPressedManager = null;
 
+		private KeymapManager keymapManager = null;
+
+		private AppearanceManager appearanceManager = null;
+
 		public ViewerOptions optionsFromValues()
 		{
 			return new ViewerOptions().
@@ -269,7 +304,9 @@ public class ViewerOptions
 				transformEventHandlerFactory( transformEventHandlerFactory ).
 				accumulateProjectorFactory( accumulateProjectorFactory ).
 				inputTriggerConfig( inputTriggerConfig ).
-				shareKeyPressedEvents( keyPressedManager );
+				shareKeyPressedEvents( keyPressedManager ).
+				keymapManager( keymapManager ).
+				appearanceManager( appearanceManager );
 		}
 
 		public int getWidth()
@@ -335,6 +372,16 @@ public class ViewerOptions
 		public KeyPressedManager getKeyPressedManager()
 		{
 			return keyPressedManager;
+		}
+
+		public KeymapManager getKeymapManager()
+		{
+			return keymapManager;
+		}
+
+		public AppearanceManager getAppearanceManager()
+		{
+			return appearanceManager;
 		}
 	}
 }

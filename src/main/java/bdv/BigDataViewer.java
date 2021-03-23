@@ -359,16 +359,18 @@ public class BigDataViewer
 			final ProgressWriter progressWriter,
 			final ViewerOptions options )
 	{
-		keymapManager = new KeymapManager(); // TODO: share via ViewerOptions
-		appearanceManager = new AppearanceManager(); // TODO: share via ViewerOptions
+		final KeymapManager optionsKeymapManager = options.values.getKeymapManager();
+		final AppearanceManager optionsAppearanceManager = options.values.getAppearanceManager();
+		keymapManager = optionsKeymapManager != null ? optionsKeymapManager : new KeymapManager();
+		appearanceManager = optionsAppearanceManager != null ? optionsAppearanceManager : new AppearanceManager();
 
 		final CommandDescriptions descriptions = buildCommandDescriptions();
 		final Consumer< Keymap > augmentInputTriggerConfig = k -> descriptions.augmentInputTriggerConfig( k.getConfig() );
-		keymapManager.getUserStyles().forEach( augmentInputTriggerConfig );
-		keymapManager.getBuiltinStyles().forEach( augmentInputTriggerConfig );
+		this.keymapManager.getUserStyles().forEach( augmentInputTriggerConfig );
+		this.keymapManager.getBuiltinStyles().forEach( augmentInputTriggerConfig );
 
 		InputTriggerConfig inputTriggerConfig = options.values.getInputTriggerConfig();
-		final Keymap keymap = keymapManager.getForwardSelectedKeymap();
+		final Keymap keymap = this.keymapManager.getForwardSelectedKeymap();
 		if ( inputTriggerConfig == null )
 			inputTriggerConfig = keymap.getConfig();
 
@@ -456,7 +458,7 @@ public class BigDataViewer
 
 		preferencesDialog = new PreferencesDialog( null, keymap, new String[] { KeyConfigContexts.BIGDATAVIEWER } );
 		preferencesDialog.addPage( new AppearanceSettingsPage( "Appearance", appearanceManager ) );
-		preferencesDialog.addPage( new KeymapSettingsPage( "Keymap", keymapManager, descriptions ) );
+		preferencesDialog.addPage( new KeymapSettingsPage( "Keymap", this.keymapManager, descriptions ) );
 		appearanceManager.appearance().updateListeners().add( viewerFrame::repaint );
 		appearanceManager.addLafComponent( viewerFrame );
 		appearanceManager.addLafComponent( preferencesDialog );
@@ -613,6 +615,16 @@ public class BigDataViewer
 	public ManualTransformationEditor getManualTransformEditor()
 	{
 		return manualTransformationEditor;
+	}
+
+	public KeymapManager getKeymapManager()
+	{
+		return keymapManager;
+	}
+
+	public AppearanceManager getAppearanceManager()
+	{
+		return appearanceManager;
 	}
 
 	public boolean tryLoadSettings( final String xmlFilename )
