@@ -29,7 +29,6 @@
 package bdv;
 
 import bdv.tools.PreferencesDialog;
-import bdv.LafSelection.LafDialog;
 import bdv.ui.keymap.Keymap;
 import bdv.ui.keymap.KeymapManager;
 import bdv.ui.keymap.KeymapSettingsPage;
@@ -807,16 +806,9 @@ public class BigDataViewer
 			FlatDarkLaf.installLafInfo();
 			FlatDarculaLaf.installLafInfo();
 			FlatIntelliJLaf.installLafInfo();
-//			FlatDarculaLaf.install();
-//			FlatIntelliJLaf.install();
 
 			System.out.println( "reading config files from \"" + configDir + "\"" );
 			final BigDataViewer bdv = open( fn, new File( fn ).getName(), new ProgressWriterConsole(), ViewerOptions.options() );
-
-			final LafDialog lafDialog = new LafDialog();
-			lafDialog.addComponent( bdv.getViewerFrame() );
-			lafDialog.addComponent( bdv.preferencesDialog );
-			lafDialog.setVisible( true );
 
 //			DumpInputConfig.writeToYaml( System.getProperty( "user.home" ) + "/.bdv/bdvkeyconfig.yaml", bdv.getViewerFrame() );
 		}
