@@ -1,6 +1,7 @@
 package bdv.ui.appearance;
 
 import bdv.util.Prefs.OverlayPosition;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -39,6 +40,7 @@ public class AppearanceIO
 
 	public static void save( final Appearance appearance, final String filename ) throws IOException
 	{
+		new File( filename ).getParentFile().mkdirs();
 		final FileWriter output = new FileWriter( filename );
 		final DumperOptions dumperOptions = new DumperOptions();
 		dumperOptions.setDefaultFlowStyle( DumperOptions.FlowStyle.BLOCK );
