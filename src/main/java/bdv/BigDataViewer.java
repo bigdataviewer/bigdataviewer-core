@@ -454,7 +454,7 @@ public class BigDataViewer
 			}
 		} );
 
-		preferencesDialog = new PreferencesDialog( null /*keymap, new String[] { KeyConfigContexts.BIGDATAVIEWER }*/ );
+		preferencesDialog = new PreferencesDialog( null, keymap, new String[] { KeyConfigContexts.BIGDATAVIEWER } );
 		preferencesDialog.addPage( new AppearanceSettingsPage( "Appearance", appearanceManager ) );
 		preferencesDialog.addPage( new KeymapSettingsPage( "Keymap", keymapManager, descriptions ) );
 		appearanceManager.appearance().updateListeners().add( viewerFrame::repaint );
