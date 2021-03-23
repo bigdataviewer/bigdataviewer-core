@@ -47,6 +47,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTree;
+import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
 import javax.swing.event.TreeSelectionEvent;
@@ -78,6 +79,10 @@ public class SettingsPanel extends JPanel
 	private final DefaultTreeModel model;
 
 	private final FullWidthSelectionJTree tree;
+
+	private final JScrollPane treeScrollPane;
+
+	private final JSplitPane splitPane;
 
 	private final JPanel pages;
 
@@ -238,20 +243,18 @@ public class SettingsPanel extends JPanel
 		content.add( pages, BorderLayout.CENTER );
 		content.setBorder( new EmptyBorder( 10, 0, 10, 10 ) );
 
-		final JScrollPane treeScrollPane = new JScrollPane( tree );
+		treeScrollPane = new JScrollPane( tree );
 		treeScrollPane.setPreferredSize( new Dimension( 200, 500 ) );
 		treeScrollPane.setMinimumSize( new Dimension( 150, 200 ) );
-		treeScrollPane.setBorder( new MatteBorder( 0, 0, 0, 1, Color.LIGHT_GRAY ) );
-//		treeScrollPane.setBorder( new EmptyBorder( 0, 0, 0, 0 ) );
+		treeScrollPane.setBorder( new MatteBorder( 0, 0, 0, 1, UIManager.getColor( "Separator.foreground" ) ) );
 		renderer.setBackgroundNonSelectionColor( treeScrollPane.getBackground() );
 
-		final JSplitPane splitPane = new JSplitPane( JSplitPane.HORIZONTAL_SPLIT, treeScrollPane, content );
+		splitPane = new JSplitPane( JSplitPane.HORIZONTAL_SPLIT, treeScrollPane, content );
 		splitPane.setResizeWeight( 0 );
 		splitPane.setContinuousLayout( true );
 		splitPane.setDividerSize( 10 );
 		splitPane.setDividerLocation( treeScrollPane.getPreferredSize().width );
-		splitPane.setBorder( new MatteBorder( 0, 0, 1, 0, Color.LIGHT_GRAY ) );
-//		splitPane.setBorder( new EmptyBorder( 0, 0, 0, 0 ) );
+		splitPane.setBorder( new MatteBorder( 0, 0, 1, 0, UIManager.getColor( "Separator.foreground" ) ) );
 
 		this.setLayout( new BorderLayout() );
 		this.add( splitPane, BorderLayout.CENTER );
@@ -276,6 +279,18 @@ public class SettingsPanel extends JPanel
 			runOnOk.forEach( Runnable::run );
 			apply.setEnabled( false );
 		} );
+	}
+
+	@Override
+	public void updateUI()
+	{
+		super.updateUI();
+		if ( treeScrollPane != null )
+		{
+			final Color c = UIManager.getColor( "Separator.foreground" );
+			treeScrollPane.setBorder( new MatteBorder( 0, 0, 0, 1, c ) );
+			splitPane.setBorder( new MatteBorder( 0, 0, 1, 0, c ) );
+		}
 	}
 
 	public void cancel()
