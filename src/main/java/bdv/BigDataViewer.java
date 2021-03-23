@@ -35,6 +35,8 @@ import bdv.ui.keymap.KeymapManager;
 import bdv.ui.keymap.KeymapSettingsPage;
 import bdv.viewer.ConverterSetups;
 import bdv.viewer.ViewerState;
+import bdv.ui.appearance.AppearanceManager;
+import bdv.ui.appearance.AppearanceSettingsPage;
 import com.formdev.flatlaf.FlatDarculaLaf;
 import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.FlatIntelliJLaf;
@@ -137,6 +139,8 @@ public class BigDataViewer
 	protected final HelpDialog helpDialog;
 
 	private final KeymapManager keymapManager;
+
+	private final AppearanceManager appearanceManager;
 
 	protected final PreferencesDialog preferencesDialog;
 
@@ -355,14 +359,14 @@ public class BigDataViewer
 			final ProgressWriter progressWriter,
 			final ViewerOptions options )
 	{
+		keymapManager = new KeymapManager(); // TODO: share via ViewerOptions
+		appearanceManager = new AppearanceManager(); // TODO: share via ViewerOptions
 
-		keymapManager = new KeymapManager();
 		final CommandDescriptions descriptions = buildCommandDescriptions();
 		final Consumer< Keymap > augmentInputTriggerConfig = k -> descriptions.augmentInputTriggerConfig( k.getConfig() );
 		keymapManager.getUserStyles().forEach( augmentInputTriggerConfig );
 		keymapManager.getBuiltinStyles().forEach( augmentInputTriggerConfig );
 
-//		final InputTriggerConfig inputTriggerConfig = getInputTriggerConfig( options );
 		InputTriggerConfig inputTriggerConfig = options.values.getInputTriggerConfig();
 		final Keymap keymap = keymapManager.getForwardSelectedKeymap();
 		if ( inputTriggerConfig == null )
@@ -451,7 +455,12 @@ public class BigDataViewer
 		} );
 
 		preferencesDialog = new PreferencesDialog( null /*keymap, new String[] { KeyConfigContexts.BIGDATAVIEWER }*/ );
+		preferencesDialog.addPage( new AppearanceSettingsPage( "Appearance", appearanceManager ) );
 		preferencesDialog.addPage( new KeymapSettingsPage( "Keymap", keymapManager, descriptions ) );
+		appearanceManager.appearance().updateListeners().add( viewerFrame::repaint );
+		appearanceManager.addLafComponent( viewerFrame );
+		appearanceManager.addLafComponent( preferencesDialog );
+		appearanceManager.updateLookAndFeel();
 
 		final Actions navigationActions = new Actions( inputTriggerConfig, "bdv", "navigation" );
 		navigationActions.install( viewerFrame.getKeybindings(), "navigation" );
@@ -687,8 +696,8 @@ public class BigDataViewer
 	 * also written to "bdvkeyconfig.yaml").
 	 * </ol>
 	 *
-	 * @param options
-	 * @return
+	 * @deprecated This method is no longer used internally.
+	 * {@code InputTriggerConfig}s are now managed through {@link KeymapManager}.
 	 */
 	@Deprecated
 	public static InputTriggerConfig getInputTriggerConfig( final ViewerOptions options )
