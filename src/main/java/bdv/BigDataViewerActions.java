@@ -66,6 +66,7 @@ public class BigDataViewerActions extends Actions
 	public static final String SET_BOOKMARK = "set bookmark";
 	public static final String GO_TO_BOOKMARK = "go to bookmark";
 	public static final String GO_TO_BOOKMARK_ROTATION = "go to bookmark rotation";
+	public static final String PREFERENCES_DIALOG = "Preferences";
 
 	public static final String[] BRIGHTNESS_SETTINGS_KEYS         = new String[] { "S" };
 	public static final String[] VISIBILITY_AND_GROUPING_KEYS     = new String[] { "F6" };
@@ -81,6 +82,7 @@ public class BigDataViewerActions extends Actions
 	public static final String[] SET_BOOKMARK_KEYS                = new String[] { "shift B" };
 	public static final String[] GO_TO_BOOKMARK_KEYS              = new String[] { "B" };
 	public static final String[] GO_TO_BOOKMARK_ROTATION_KEYS     = new String[] { "O" };
+	public static final String[] PREFERENCES_DIALOG_KEYS          = new String[] { "meta COMMA", "ctrl COMMA" };
 
 	/*
 	 * Command descriptions for all provided commands
@@ -110,6 +112,7 @@ public class BigDataViewerActions extends Actions
 			descriptions.add( SET_BOOKMARK, SET_BOOKMARK_KEYS, "Set a labeled bookmark at the current location." );
 			descriptions.add( GO_TO_BOOKMARK, GO_TO_BOOKMARK_KEYS, "Retrieve a labeled bookmark location." );
 			descriptions.add( GO_TO_BOOKMARK_ROTATION, GO_TO_BOOKMARK_ROTATION_KEYS, "Retrieve a labeled bookmark, set only the orientation." );
+			descriptions.add( PREFERENCES_DIALOG, PREFERENCES_DIALOG_KEYS, "Show the Preferences dialog." );
 		}
 	}
 
@@ -130,8 +133,9 @@ public class BigDataViewerActions extends Actions
 		toggleDialogAction( actions, bdv.cropDialog, CROP, CROP_KEYS );
 		toggleDialogAction( actions, bdv.movieDialog, RECORD_MOVIE, RECORD_MOVIE_KEYS );
 		toggleDialogAction( actions, bdv.movieMaxProjectDialog, RECORD_MAX_PROJECTION_MOVIE, RECORD_MAX_PROJECTION_MOVIE_KEYS );
+		toggleDialogAction( actions, bdv.preferencesDialog, PREFERENCES_DIALOG, PREFERENCES_DIALOG_KEYS );
 		bookmarks( actions, bdv.bookmarkEditor );
-		actions.runnableAction( bdv.manualTransformationEditor::toggle, MANUAL_TRANSFORM, MANUAL_TRANSFORM_KEYS );
+		manualTransform( actions, bdv.manualTransformationEditor );
 		actions.runnableAction( bdv::loadSettings, LOAD_SETTINGS, LOAD_SETTINGS_KEYS );
 		actions.runnableAction( bdv::saveSettings, SAVE_SETTINGS, SAVE_SETTINGS_KEYS );
 		actions.runnableAction( bdv::expandAndFocusCardPanel, EXPAND_CARDS, EXPAND_CARDS_KEYS );

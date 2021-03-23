@@ -28,6 +28,7 @@
  */
 package bdv;
 
+import bdv.tools.PreferencesDialog;
 import bdv.viewer.ConverterSetups;
 import bdv.viewer.ViewerState;
 import java.io.File;
@@ -121,6 +122,8 @@ public class BigDataViewer
 	protected final VisibilityAndGroupingDialog activeSourcesDialog;
 
 	protected final HelpDialog helpDialog;
+
+	protected final PreferencesDialog preferencesDialog;
 
 	protected final ManualTransformationEditor manualTransformationEditor;
 
@@ -412,6 +415,9 @@ public class BigDataViewer
 			}
 		} );
 
+		preferencesDialog = new PreferencesDialog( null /*keymap, new String[] { KeyConfigContexts.BIGDATAVIEWER }*/ );
+//		preferencesDialog.addPage( new KeymapSettingsPage( "Keymap", keymapManager, descriptions ) );
+
 		final Actions navigationActions = new Actions( inputTriggerConfig, "bdv", "navigation" );
 		navigationActions.install( viewerFrame.getKeybindings(), "navigation" );
 		NavigationActions.install( navigationActions, viewer, options.values.is2D() );
@@ -432,6 +438,12 @@ public class BigDataViewer
 		final JMenuItem miSaveSettings = new JMenuItem( actionMap.get( BigDataViewerActions.SAVE_SETTINGS ) );
 		miSaveSettings.setText( "Save settings" );
 		menu.add( miSaveSettings );
+
+		menu.addSeparator();
+
+		final JMenuItem miPreferences = new JMenuItem( actionMap.get( BigDataViewerActions.PREFERENCES_DIALOG ) );
+		miPreferences.setText( "Preferences..." );
+		menu.add( miPreferences );
 
 		menu = new JMenu( "Settings" );
 		menubar.add( menu );
