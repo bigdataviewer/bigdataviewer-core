@@ -172,6 +172,14 @@
   contexts: [bdv]
   triggers: [shift Y, shift A]
 - !mapping
+  action: close window
+  contexts: [bdv]
+  triggers: [ctrl W, meta W]
+- !mapping
+  action: close dialog window
+  contexts: [bdv]
+  triggers: [ctrl W, meta W, ESCAPE]
+- !mapping
   action: drag translate
   contexts: [bdv]
   triggers: [button2, button3]

@@ -32,6 +32,7 @@ import bdv.BigDataViewerActions;
 import bdv.KeyConfigContexts;
 import bdv.TransformEventHandler2D;
 import bdv.TransformEventHandler3D;
+import bdv.tools.CloseWindowActions;
 import bdv.viewer.NavigationActions;
 import java.io.File;
 import java.io.IOException;
@@ -74,6 +75,7 @@ class DumpInputConfig
 
 		builder.addManually( new BigDataViewerActions.Descriptions(), KeyConfigContexts.BIGDATAVIEWER );
 		builder.addManually( new NavigationActions.Descriptions(), KeyConfigContexts.BIGDATAVIEWER );
+		builder.addManually( new CloseWindowActions.Descriptions(), KeyConfigContexts.BIGDATAVIEWER );
 		builder.addManually( new TransformEventHandler3D.Descriptions(), KeyConfigContexts.BIGDATAVIEWER );
 		builder.addManually( new TransformEventHandler2D.Descriptions(), KeyConfigContexts.BIGDATAVIEWER );
 
