@@ -54,7 +54,7 @@ public class KeymapSettingsPage extends SelectAndEditProfileSettingsPage< StyleP
 	{
 		super(
 				treePath,
-				new StyleProfileManager<>( styleManager, new KeymapManager( false ) ),
+				new StyleProfileManager<>( styleManager, new KeymapManager() ),
 				new KeymapProfileEditPanel( styleManager.getSelectedStyle(), commandDescriptions ) );
 	}
 

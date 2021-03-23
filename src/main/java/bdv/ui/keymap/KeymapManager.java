@@ -32,13 +32,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import org.scijava.Context;
 import org.scijava.plugin.PluginService;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
-import org.scijava.ui.behaviour.io.gui.CommandDescriptionsBuilder;
 import org.scijava.ui.behaviour.io.yaml.YamlConfigIO;
 
 /**
@@ -50,15 +48,23 @@ import org.scijava.ui.behaviour.io.yaml.YamlConfigIO;
  */
 public class KeymapManager extends AbstractKeymapManager< KeymapManager >
 {
-	private static final String KEYMAPS_PATH = System.getProperty( "user.home" ) + "/.config/bigdataviewer/keymaps/";
+	private static final String CONFIG_FILE_NAME = "keymaps/";
+
+	private final String configFile;
+
+	public KeymapManager( final String configDir )
+	{
+		this( true, configDir );
+	}
 
 	public KeymapManager()
 	{
-		this( true );
+		this( false, null );
 	}
 
-	public KeymapManager( final boolean loadStyles )
+	private KeymapManager( final boolean loadStyles, final String configDir )
 	{
+		configFile = configDir == null ? null : configDir + "/" + CONFIG_FILE_NAME;
 		if ( loadStyles )
 			loadStyles();
 	}
@@ -104,7 +110,7 @@ public class KeymapManager extends AbstractKeymapManager< KeymapManager >
 	{
 		try
 		{
-			loadStyles( new File( KEYMAPS_PATH ) );
+			loadStyles( new File( configFile ) );
 		}
 		catch ( IOException e )
 		{
@@ -117,7 +123,7 @@ public class KeymapManager extends AbstractKeymapManager< KeymapManager >
 	{
 		try
 		{
-			saveStyles( new File( KEYMAPS_PATH ) );
+			saveStyles( new File( configFile ) );
 		}
 		catch ( IOException e )
 		{

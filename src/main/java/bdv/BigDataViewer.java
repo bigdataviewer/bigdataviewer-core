@@ -41,6 +41,7 @@ import com.formdev.flatlaf.FlatDarculaLaf;
 import com.formdev.flatlaf.FlatDarkLaf;
 import com.formdev.flatlaf.FlatIntelliJLaf;
 import com.formdev.flatlaf.FlatLightLaf;
+import dev.dirs.ProjectDirectories;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
@@ -116,6 +117,8 @@ import org.scijava.ui.behaviour.util.Actions;
 
 public class BigDataViewer
 {
+	public static String configDir = ProjectDirectories.from( "sc", "fiji", "bigdataviewer" ).configDir;
+
 	protected final ViewerFrame viewerFrame;
 
 	protected final ViewerPanel viewer;
@@ -361,8 +364,8 @@ public class BigDataViewer
 	{
 		final KeymapManager optionsKeymapManager = options.values.getKeymapManager();
 		final AppearanceManager optionsAppearanceManager = options.values.getAppearanceManager();
-		keymapManager = optionsKeymapManager != null ? optionsKeymapManager : new KeymapManager();
-		appearanceManager = optionsAppearanceManager != null ? optionsAppearanceManager : new AppearanceManager();
+		keymapManager = optionsKeymapManager != null ? optionsKeymapManager : new KeymapManager( configDir );
+		appearanceManager = optionsAppearanceManager != null ? optionsAppearanceManager : new AppearanceManager( configDir );
 
 		final CommandDescriptions descriptions = buildCommandDescriptions();
 		final Consumer< Keymap > augmentInputTriggerConfig = k -> descriptions.augmentInputTriggerConfig( k.getConfig() );
@@ -807,6 +810,7 @@ public class BigDataViewer
 //			FlatDarculaLaf.install();
 //			FlatIntelliJLaf.install();
 
+			System.out.println( "reading config files from \"" + configDir + "\"" );
 			final BigDataViewer bdv = open( fn, new File( fn ).getName(), new ProgressWriterConsole(), ViewerOptions.options() );
 
 			final LafDialog lafDialog = new LafDialog();

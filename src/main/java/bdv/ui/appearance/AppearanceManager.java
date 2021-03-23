@@ -16,7 +16,9 @@ import javax.swing.UIManager;
  */
 public class AppearanceManager
 {
-	private static final String STYLE_FILE = System.getProperty( "user.home" ) + "/.bdv/appearance.yaml";
+	private static final String CONFIG_FILE_NAME = "appearance.yaml";
+
+	private final String configFile;
 
 	private final List< WeakReference< Component > > components = new CopyOnWriteArrayList<>();
 
@@ -28,6 +30,12 @@ public class AppearanceManager
 
 	public AppearanceManager()
 	{
+		this( null );
+	}
+
+	public AppearanceManager( final String configDir )
+	{
+		configFile = configDir == null ? null : configDir + "/" + CONFIG_FILE_NAME;
 		appearance = new Appearance();
 		fromPrefs();
 		load();
@@ -79,7 +87,7 @@ public class AppearanceManager
 
 	void load()
 	{
-		load( STYLE_FILE );
+		load( configFile );
 	}
 
 	void load( final String filename )
@@ -101,7 +109,7 @@ public class AppearanceManager
 
 	void save()
 	{
-		save( STYLE_FILE );
+		save( configFile );
 	}
 
 	void save( final String filename )
