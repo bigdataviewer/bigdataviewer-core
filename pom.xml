@@ -200,6 +200,11 @@
 			<artifactId>flatlaf</artifactId>
 			<version>1.0</version>
 		</dependency>
+		<dependency>
+			<groupId>dev.dirs</groupId>
+			<artifactId>directories</artifactId>
+			<version>24</version>
+		</dependency>
 
 		<!-- test dependencies -->
 		<dependency>
