@@ -1,13 +1,18 @@
 package bdv.tools;
 
+import bdv.ui.keymap.Keymap;
 import bdv.ui.settings.SettingsPage;
 import bdv.ui.settings.SettingsPanel;
 import java.awt.BorderLayout;
 import java.awt.Frame;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import javax.swing.ActionMap;
+import javax.swing.InputMap;
+import javax.swing.JComponent;
 import javax.swing.JDialog;
 import javax.swing.WindowConstants;
+import org.scijava.ui.behaviour.util.Actions;
 
 public class PreferencesDialog extends JDialog
 {
@@ -16,10 +21,9 @@ public class PreferencesDialog extends JDialog
 	private final SettingsPanel settingsPanel;
 
 	public PreferencesDialog(
-			final Frame owner )
-			// TODO
-//			final Keymap keymap,
-//			final String[] keyConfigContexts )
+			final Frame owner,
+			final Keymap keymap,
+			final String[] keyConfigContexts )
 	{
 		super( owner, "Preferences", false );
 		settingsPanel = new SettingsPanel();
@@ -36,13 +40,12 @@ public class PreferencesDialog extends JDialog
 			}
 		} );
 
-		// TODO
-//		final ActionMap am = getRootPane().getActionMap();
-//		final InputMap im = getRootPane().getInputMap( JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT );
-//		final Actions actions = new Actions( im, am, keymap.getConfig(), keyConfigContexts );
-//		CloseWindowActions.install( actions, this );
-//
-//		keymap.updateListeners().add( () -> actions.updateKeyConfig( keymap.getConfig() ) );
+		final ActionMap am = getRootPane().getActionMap();
+		final InputMap im = getRootPane().getInputMap( JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT );
+		final Actions actions = new Actions( im, am, keymap.getConfig(), keyConfigContexts );
+		CloseWindowActions.install( actions, this );
+
+		keymap.updateListeners().add( () -> actions.updateKeyConfig( keymap.getConfig() ) );
 
 		getContentPane().add( settingsPanel, BorderLayout.CENTER );
 		pack();
