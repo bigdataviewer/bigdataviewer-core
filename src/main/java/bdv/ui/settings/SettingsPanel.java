@@ -89,6 +89,8 @@ public class SettingsPanel extends JPanel
 
 	private final ArrayList< Runnable > runOnCancel;
 
+	private final JButton apply;
+
 	public void addPage( final SettingsPage page )
 	{
 		final String path = page.getTreePath();
@@ -222,7 +224,7 @@ public class SettingsPanel extends JPanel
 				} );
 
 		final JButton cancel = new JButton("Cancel");
-		final JButton apply = new JButton("Apply");
+		apply = new JButton("Apply");
 		final JButton ok = new JButton("OK");
 		final JPanel buttons = new JPanel();
 		buttons.setLayout( new BoxLayout( buttons, BoxLayout.LINE_AXIS ) );
@@ -261,16 +263,18 @@ public class SettingsPanel extends JPanel
 		runOnOk = new ArrayList<>();
 
 		cancel.addActionListener( e -> cancel() );
-		ok.addActionListener( e -> {
-			getPages().forEach( SettingsPage::apply );
-			runOnOk.forEach( Runnable::run );
-		} );
 
 		apply.setEnabled( false );
 		modificationListener = () -> apply.setEnabled( true );
 		apply.addActionListener( e -> {
-			apply.setEnabled( false );
 			getPages().forEach( SettingsPage::apply );
+			apply.setEnabled( false );
+		} );
+
+		ok.addActionListener( e -> {
+			getPages().forEach( SettingsPage::apply );
+			runOnOk.forEach( Runnable::run );
+			apply.setEnabled( false );
 		} );
 	}
 
@@ -278,6 +282,7 @@ public class SettingsPanel extends JPanel
 	{
 		getPages().forEach( SettingsPage::cancel );
 		runOnCancel.forEach( Runnable::run );
+		apply.setEnabled( false );
 	}
 
 	public synchronized void onOk( final Runnable runnable )
