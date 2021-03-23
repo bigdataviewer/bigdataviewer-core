@@ -239,7 +239,7 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 
 		multiBoxOverlayRenderer = new MultiBoxOverlayRenderer();
 		sourceInfoOverlayRenderer = new SourceInfoOverlayRenderer();
-		scaleBarOverlayRenderer = Prefs.showScaleBar() ? new ScaleBarOverlayRenderer() : null;
+		scaleBarOverlayRenderer = new ScaleBarOverlayRenderer();
 
 		threadGroup = new ThreadGroup( this.toString() );
 		painterThread = new PainterThread( threadGroup, this );
@@ -523,6 +523,7 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 		{
 			sourceInfoOverlayRenderer.setViewerState( state );
 			sourceInfoOverlayRenderer.setSourceNameOverlayPosition( Prefs.sourceNameOverlayPosition() );
+			g.setColor( Color.white );
 			sourceInfoOverlayRenderer.paint( ( Graphics2D ) g );
 
 			final RealPoint gPos = new RealPoint( 3 );
@@ -530,7 +531,6 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 			final String mousePosGlobalString = String.format( "(%6.1f,%6.1f,%6.1f)", gPos.getDoublePosition( 0 ), gPos.getDoublePosition( 1 ), gPos.getDoublePosition( 2 ) );
 
 			g.setFont( new Font( "Monospaced", Font.PLAIN, fontSize ) );
-			g.setColor( Color.white );
 			g.drawString( mousePosGlobalString, ( int )( g.getClipBounds().getWidth() - uiScale * 170 ), ( int )( uiScale * 25 ) );
 		}
 

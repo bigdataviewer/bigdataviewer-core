@@ -51,10 +51,6 @@ public class ScaleBarOverlayRenderer
 
 	private final DecimalFormat format = new DecimalFormat("0.####");
 
-	private final Color color = new Color( Prefs.scaleBarColor(), true );
-
-	private final Color bgcolor = new Color( Prefs.scaleBarBgColor(), true );
-
 	private final AffineTransform3D transform = new AffineTransform3D();
 
 	private final AffineTransform3D sourceTransform = new AffineTransform3D();
@@ -85,6 +81,8 @@ public class ScaleBarOverlayRenderer
 		if ( drawScaleBar )
 		{
 			final String scaleBarText = format.format( scale ) + " " + unit;
+			final Color color = new Color( Prefs.scaleBarColor(), true );
+			final Color bgcolor = new Color( Prefs.scaleBarBgColor(), true );
 
 			// scalebar position
 			final int x = 20;
