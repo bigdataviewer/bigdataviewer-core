@@ -192,6 +192,9 @@ public class ViewerOptions
 
 	/**
 	 * Set the {@link InputTriggerConfig} from which keyboard and mouse action mapping is loaded.
+	 * <p>
+	 * Note that this will override the managed {@code InputTriggerConfig}, that is,
+	 * modifying the keymap through the preferences dialog will have no effect.
 	 *
 	 * @param c the {@link InputTriggerConfig} from which keyboard and mouse action mapping is loaded
 	 */
