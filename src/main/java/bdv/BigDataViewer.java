@@ -445,6 +445,13 @@ public class BigDataViewer
 		appearanceManager.appearance().updateListeners().add( viewerFrame::repaint );
 		appearanceManager.addLafComponent( viewerFrame );
 		appearanceManager.addLafComponent( preferencesDialog );
+		appearanceManager.addLafComponent( brightnessDialog );
+		appearanceManager.addLafComponent( activeSourcesDialog );
+		appearanceManager.addLafComponent( movieDialog );
+		appearanceManager.addLafComponent( movieMaxProjectDialog );
+		appearanceManager.addLafComponent( cropDialog );
+		appearanceManager.addLafComponent( helpDialog );
+		appearanceManager.addLafComponent( fileChooser );
 		appearanceManager.updateLookAndFeel();
 
 		final Actions navigationActions = new Actions( inputTriggerConfig, "bdv", "navigation" );
