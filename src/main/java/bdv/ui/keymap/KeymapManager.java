@@ -28,15 +28,19 @@
  */
 package bdv.ui.keymap;
 
+import bdv.KeyConfigScopes;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 import org.scijava.Context;
 import org.scijava.plugin.PluginService;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
+import org.scijava.ui.behaviour.io.gui.CommandDescriptions;
+import org.scijava.ui.behaviour.io.gui.CommandDescriptionsBuilder;
 import org.scijava.ui.behaviour.io.yaml.YamlConfigIO;
 
 /**
@@ -52,9 +56,12 @@ public class KeymapManager extends AbstractKeymapManager< KeymapManager >
 
 	private final String configFile;
 
+	private CommandDescriptions descriptions;
+
 	public KeymapManager( final String configDir )
 	{
 		this( true, configDir );
+		discoverCommandDescriptions();
 	}
 
 	public KeymapManager()
@@ -67,6 +74,37 @@ public class KeymapManager extends AbstractKeymapManager< KeymapManager >
 		configFile = configDir == null ? null : configDir + "/" + CONFIG_FILE_NAME;
 		if ( loadStyles )
 			loadStyles();
+	}
+
+	/**
+	 * Discover all {@code CommandDescriptionProvider}s with scope {@link KeyConfigScopes#BIGDATAVIEWER},
+	 * build {@code CommandDescriptions}, and set it.
+	 */
+	public synchronized void setCommandDescriptions( final CommandDescriptions descriptions )
+	{
+		this.descriptions = descriptions;
+		final Consumer< Keymap > augmentInputTriggerConfig = k -> descriptions.augmentInputTriggerConfig( k.getConfig() );
+		builtinStyles.forEach( augmentInputTriggerConfig );
+		userStyles.forEach( augmentInputTriggerConfig );
+	}
+
+	public CommandDescriptions getCommandDescriptions()
+	{
+		return descriptions;
+	}
+
+	/**
+	 * Discover all {@code CommandDescriptionProvider}s with scope {@link KeyConfigScopes#BIGDATAVIEWER},
+	 * build {@code CommandDescriptions}, and set it.
+	 */
+	public synchronized void discoverCommandDescriptions()
+	{
+		final CommandDescriptionsBuilder builder = new CommandDescriptionsBuilder();
+		final Context context = new Context( PluginService.class );
+		context.inject( builder );
+		builder.discoverProviders( KeyConfigScopes.BIGDATAVIEWER );
+		context.dispose();
+		setCommandDescriptions( builder.build() );
 	}
 
 	@Override

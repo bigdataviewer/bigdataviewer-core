@@ -48,7 +48,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
-import java.util.function.Consumer;
 import javax.swing.ActionMap;
 import javax.swing.JFileChooser;
 import javax.swing.JMenu;
@@ -72,11 +71,7 @@ import org.jdom2.JDOMException;
 import org.jdom2.input.SAXBuilder;
 import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
-import org.scijava.Context;
-import org.scijava.plugin.PluginService;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
-import org.scijava.ui.behaviour.io.gui.CommandDescriptions;
-import org.scijava.ui.behaviour.io.gui.CommandDescriptionsBuilder;
 import org.scijava.ui.behaviour.io.yaml.YamlConfigIO;
 
 import bdv.cache.CacheControl;
@@ -318,15 +313,6 @@ public class BigDataViewer
 			initSetupNumericType( spimData, setup, converterSetups, sources );
 	}
 
-	private CommandDescriptions buildCommandDescriptions()
-	{
-		final Context context = new Context( PluginService.class );
-		final CommandDescriptionsBuilder builder = new CommandDescriptionsBuilder();
-		context.inject( builder );
-		builder.discoverProviders();
-		return builder.build();
-	}
-
 	/**
 	 *
 	 * @param converterSetups
@@ -365,11 +351,6 @@ public class BigDataViewer
 		final AppearanceManager optionsAppearanceManager = options.values.getAppearanceManager();
 		keymapManager = optionsKeymapManager != null ? optionsKeymapManager : new KeymapManager( configDir );
 		appearanceManager = optionsAppearanceManager != null ? optionsAppearanceManager : new AppearanceManager( configDir );
-
-		final CommandDescriptions descriptions = buildCommandDescriptions();
-		final Consumer< Keymap > augmentInputTriggerConfig = k -> descriptions.augmentInputTriggerConfig( k.getConfig() );
-		this.keymapManager.getUserStyles().forEach( augmentInputTriggerConfig );
-		this.keymapManager.getBuiltinStyles().forEach( augmentInputTriggerConfig );
 
 		InputTriggerConfig inputTriggerConfig = options.values.getInputTriggerConfig();
 		final Keymap keymap = this.keymapManager.getForwardSelectedKeymap();
@@ -458,9 +439,9 @@ public class BigDataViewer
 			}
 		} );
 
-		preferencesDialog = new PreferencesDialog( null, keymap, new String[] { KeyConfigContexts.BIGDATAVIEWER } );
+		preferencesDialog = new PreferencesDialog( viewerFrame, keymap, new String[] { KeyConfigContexts.BIGDATAVIEWER } );
 		preferencesDialog.addPage( new AppearanceSettingsPage( "Appearance", appearanceManager ) );
-		preferencesDialog.addPage( new KeymapSettingsPage( "Keymap", this.keymapManager, descriptions ) );
+		preferencesDialog.addPage( new KeymapSettingsPage( "Keymap", this.keymapManager, this.keymapManager.getCommandDescriptions() ) );
 		appearanceManager.appearance().updateListeners().add( viewerFrame::repaint );
 		appearanceManager.addLafComponent( viewerFrame );
 		appearanceManager.addLafComponent( preferencesDialog );
