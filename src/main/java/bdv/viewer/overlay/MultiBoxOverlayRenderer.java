@@ -90,6 +90,11 @@ public class MultiBoxOverlayRenderer
 
 	public void setUIScaleFactor( final double scale )
 	{
+		boxInterval = Intervals.createMinSize(
+				( int )Math.round( 10 * scale ),
+				( int )Math.round( 10 * scale ),
+				( int )Math.round( 160 * scale ),
+				( int )Math.round( 120 * scale ) );
 		box.setUIScaleFactor( scale );
 	}
 
