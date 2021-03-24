@@ -47,8 +47,6 @@ import mpicbg.spim.data.sequence.VoxelDimensions;
 
 public class ScaleBarOverlayRenderer
 {
-	private final Font font = new Font( "SansSerif", Font.PLAIN, 12 );
-
 	private final DecimalFormat format = new DecimalFormat("0.####");
 
 	private final AffineTransform3D transform = new AffineTransform3D();
@@ -75,6 +73,17 @@ public class ScaleBarOverlayRenderer
 	private String unit;
 
 	private boolean drawScaleBar;
+
+	private double uiScale;
+
+	private Font font;
+
+	public void setUIScaleFactor( final double scale )
+	{
+		uiScale = scale;
+		final int fontSize = ( int ) Math.round( 12 * scale );
+		font = new Font( "SansSerif", Font.PLAIN, fontSize );
+	}
 
 	public synchronized void paint( final Graphics2D g )
 	{

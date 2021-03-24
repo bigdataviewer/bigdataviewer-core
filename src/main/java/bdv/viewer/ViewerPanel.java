@@ -70,7 +70,6 @@ import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import bdv.TransformEventHandler;
 import bdv.TransformState;
 import bdv.cache.CacheControl;
-import bdv.ui.UIUtils;
 import bdv.util.Prefs;
 import bdv.viewer.animate.AbstractTransformAnimator;
 import bdv.viewer.animate.MessageOverlayAnimator;
@@ -132,7 +131,7 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 	private final SourceInfoOverlayRenderer sourceInfoOverlayRenderer;
 
 	/**
-	 * TODO
+	 * Overlay scalebar for current source.
 	 */
 	private final ScaleBarOverlayRenderer scaleBarOverlayRenderer;
 
@@ -208,10 +207,6 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 	private final MessageOverlayAnimator msgOverlay;
 
 	private final ViewerOptions.Values options;
-
-	private final double uiScale = UIUtils.getUIScaleFactor();
-
-	private final int fontSize = UIManager.getFont( "Panel.font" ).getSize();
 
 	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimePoints, final CacheControl cacheControl )
 	{
@@ -505,6 +500,19 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 		if ( Prefs.showTextOverlay() )
 			// trigger repaint for showing updated mouse coordinates
 			getDisplayComponent().repaint();
+	}
+
+	private double uiScale;
+	private int fontSize;
+
+	@Override
+	public void setUIScaleFactor( final double scale )
+	{
+		uiScale = scale;
+		fontSize = UIManager.getFont( "Panel.font" ).getSize();
+		multiBoxOverlayRenderer.setUIScaleFactor( scale );
+		sourceInfoOverlayRenderer.setUIScaleFactor( scale );
+		scaleBarOverlayRenderer.setUIScaleFactor( scale );
 	}
 
 	@Override

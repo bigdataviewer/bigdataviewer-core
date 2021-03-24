@@ -39,7 +39,6 @@ import java.awt.geom.GeneralPath;
 import java.util.ArrayList;
 import java.util.List;
 
-import bdv.ui.UIUtils;
 import bdv.util.Affine3DHelpers;
 import bdv.util.IntervalBoundingBox;
 import net.imglib2.Interval;
@@ -71,12 +70,6 @@ public class MultiBoxOverlay
 
 	private final RenderBoxHelper renderBoxHelper = new RenderBoxHelper();
 
-	protected final double uiScale = UIUtils.getUIScaleFactor();
-
-	protected final Stroke stroke = new BasicStroke((float)uiScale);
-
-	private final int fontSize = ( int )Math.round( 8 * uiScale );
-
 	public interface IntervalAndTransform
 	{
 		boolean isVisible();
@@ -94,6 +87,17 @@ public class MultiBoxOverlay
 		 * and the interactive viewer transform.
 		 */
 		AffineTransform3D getSourceToViewer();
+	}
+
+	private double uiScale;
+	private Stroke stroke;
+	private int fontSize;
+
+	public void setUIScaleFactor( final double scale )
+	{
+		uiScale = scale;
+		stroke = new BasicStroke( ( float ) scale );
+		fontSize = ( int ) Math.round( 8 * scale );
 	}
 
 	/**

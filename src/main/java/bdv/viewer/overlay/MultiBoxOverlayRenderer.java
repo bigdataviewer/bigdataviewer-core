@@ -88,6 +88,11 @@ public class MultiBoxOverlayRenderer
 		box.paint( g, boxSources, virtualScreenInterval, boxInterval );
 	}
 
+	public void setUIScaleFactor( final double scale )
+	{
+		box.setUIScaleFactor( scale );
+	}
+
 	// TODO
 	public boolean isHighlightInProgress()
 	{
