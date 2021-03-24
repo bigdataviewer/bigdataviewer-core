@@ -71,4 +71,13 @@ class LabeledToggleButton extends ToggleButton
 	{
 		label.setFont( new Font( Font.MONOSPACED, Font.BOLD, ( int )Math.round(9 * UIUtils.getUIScaleFactor() ) ) );
 	}
+
+	@Override
+	public void updateUI()
+	{
+		super.updateUI();
+
+		if ( label != null )
+			setFont( label );
+	}
 }
