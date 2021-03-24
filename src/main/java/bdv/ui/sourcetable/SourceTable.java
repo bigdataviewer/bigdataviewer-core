@@ -95,7 +95,7 @@ public class SourceTable extends JTable
 
 		getColumnModel().getColumn( IS_CURRENT_COLUMN ).setCellRenderer( new RadioButtonRenderer() );
 		getColumnModel().getColumn( COLOR_COLUMN ).setCellRenderer( new ColorRenderer() );
-		setRowHeight( ( int )Math.round( UIManager.getDefaults().getFont( "Table.font" ).getSize() * 1.5 ) );
+		setRowHeight( ( int ) Math.round( UIManager.getDefaults().getFont( "Table.font" ).getSize() * 1.5 ) );
 
 		setShowGrid( false );
 
@@ -125,6 +125,7 @@ public class SourceTable extends JTable
 	public void updateUI()
 	{
 		super.updateUI();
+		setRowHeight( ( int ) Math.round( UIManager.getDefaults().getFont( "Table.font" ).getSize() * 1.5 ) );
 		updateColors();
 	}
 
