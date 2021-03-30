@@ -256,8 +256,8 @@ public class TransformEventHandler3D implements TransformEventHandler
 		behaviours.behaviour( keyZoomOutSlow, KEY_ZOOM_OUT_SLOW, KEY_ZOOM_OUT_SLOW_KEYS );
 
 		behaviours.behaviour( keyForwardZ, KEY_FORWARD_Z, KEY_FORWARD_Z_KEYS );
-		behaviours.behaviour( keyForwardZFast, KEY_FORWARD_Z_SLOW, KEY_FORWARD_Z_SLOW_KEYS );
-		behaviours.behaviour( keyForwardZSlow, KEY_FORWARD_Z_FAST, KEY_FORWARD_Z_FAST_KEYS );
+		behaviours.behaviour( keyForwardZFast, KEY_FORWARD_Z_FAST, KEY_FORWARD_Z_FAST_KEYS );
+		behaviours.behaviour( keyForwardZSlow, KEY_FORWARD_Z_SLOW, KEY_FORWARD_Z_SLOW_KEYS );
 		behaviours.behaviour( keyBackwardZ, KEY_BACKWARD_Z, KEY_BACKWARD_Z_KEYS );
 		behaviours.behaviour( keyBackwardZFast, KEY_BACKWARD_Z_FAST, KEY_BACKWARD_Z_FAST_KEYS );
 		behaviours.behaviour( keyBackwardZSlow, KEY_BACKWARD_Z_SLOW, KEY_BACKWARD_Z_SLOW_KEYS );
