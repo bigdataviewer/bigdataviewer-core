@@ -227,6 +227,7 @@ public class ExportScalePyramid
 			final RandomAccessibleInterval< T > img,
 			final T type,
 			final ExportMipmapInfo mipmapInfo,
+			final DownsampleBlock.DownsamplingMethod downsamplingMethod,
 			final DatasetIO< D, T > io,
 			final ExecutorService executorService,
 			final int numThreads,
@@ -362,7 +363,7 @@ public class ExportScalePyramid
 						final Class< ? extends RealType > kl1 = type.getClass();
 						final Class< ? extends RandomAccess > kl2 = in.getClass();
 						final CopyBlock< T > copyBlock = fullResolution ? CopyBlock.create( n, kl1, kl2 ) : null;
-						final DownsampleBlock< T > downsampleBlock = fullResolution ? null : DownsampleBlock.create( cellDimensions, factor, kl1, kl2 );
+						final DownsampleBlock< T > downsampleBlock = fullResolution ? null : DownsampleBlock.create( cellDimensions, factor, downsamplingMethod, kl1, kl2 );
 
 						for ( int i = nextCellInPlane.getAndIncrement(); i < numBlocksPerPlane; i = nextCellInPlane.getAndIncrement() )
 						{

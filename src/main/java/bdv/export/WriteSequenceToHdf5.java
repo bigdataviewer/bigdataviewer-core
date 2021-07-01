@@ -133,6 +133,7 @@ public class WriteSequenceToHdf5
 	public static void writeHdf5File(
 			final AbstractSequenceDescription< ?, ?, ? > seq,
 			final Map< Integer, ExportMipmapInfo > perSetupMipmapInfo,
+			final DownsampleBlock.DownsamplingMethod downsamplingMethod,
 			final boolean deflate,
 			final File hdf5File,
 			final LoopbackHeuristic loopbackHeuristic,
@@ -149,13 +150,13 @@ public class WriteSequenceToHdf5
 			setupIdSequenceToPartition.put( setup.getId(), setup.getId() );
 
 		final Partition partition = new Partition( hdf5File.getPath(), timepointIdSequenceToPartition, setupIdSequenceToPartition );
-		writeHdf5PartitionFile( seq, perSetupMipmapInfo, deflate, partition, loopbackHeuristic, afterEachPlane, numCellCreatorThreads, progressWriter );
+		writeHdf5PartitionFile( seq, perSetupMipmapInfo, downsamplingMethod, deflate, partition, loopbackHeuristic, afterEachPlane, numCellCreatorThreads, progressWriter );
 	}
 
 	/**
 	 * Create a hdf5 file containing image data from all views and all
 	 * timepoints in a chunked, mipmaped representation. This is the same as
-	 * {@link WriteSequenceToHdf5#writeHdf5File(AbstractSequenceDescription, Map, boolean, File, LoopbackHeuristic, AfterEachPlane, int, ProgressWriter)}
+	 * {@link WriteSequenceToHdf5#writeHdf5File(AbstractSequenceDescription, Map, DownsampleBlock.DownsamplingMethod, boolean, File, LoopbackHeuristic, AfterEachPlane, int, ProgressWriter)}
 	 * except that only one set of supsampling factors and and subdivision
 	 * blocksizes is given, which is used for all {@link BasicViewSetup views}.
 	 *
@@ -195,6 +196,7 @@ public class WriteSequenceToHdf5
 			final AbstractSequenceDescription< ?, ?, ? > seq,
 			final int[][] resolutions,
 			final int[][] subdivisions,
+			final DownsampleBlock.DownsamplingMethod downsamplingMethod,
 			final boolean deflate,
 			final File hdf5File,
 			final LoopbackHeuristic loopbackHeuristic,
@@ -206,7 +208,7 @@ public class WriteSequenceToHdf5
 		final ExportMipmapInfo mipmapInfo = new ExportMipmapInfo( resolutions, subdivisions );
 		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
 			perSetupMipmapInfo.put( setup.getId(), mipmapInfo );
-		writeHdf5File( seq, perSetupMipmapInfo, deflate, hdf5File, loopbackHeuristic, afterEachPlane, numCellCreatorThreads, progressWriter );
+		writeHdf5File( seq, perSetupMipmapInfo, downsamplingMethod, deflate, hdf5File, loopbackHeuristic, afterEachPlane, numCellCreatorThreads, progressWriter );
 	}
 
 	/**
@@ -245,7 +247,7 @@ public class WriteSequenceToHdf5
 	 *
 	 * Note that this method only writes the master file containing links. The
 	 * individual partitions need to be written with
-	 * {@link #writeHdf5PartitionFile(AbstractSequenceDescription, Map, boolean, Partition, LoopbackHeuristic, AfterEachPlane, int, ProgressWriter)}.
+	 * {@link #writeHdf5PartitionFile(AbstractSequenceDescription, Map, bdv.export.DownsampleBlock.DownsamplingMethod, boolean, Partition, LoopbackHeuristic, AfterEachPlane, int, ProgressWriter)}.
 	 *
 	 * @param seq
 	 *            description of the sequence to be stored as hdf5. (The
@@ -354,6 +356,7 @@ public class WriteSequenceToHdf5
 	public static void writeHdf5PartitionFile(
 			final AbstractSequenceDescription< ?, ?, ? > seq,
 			final Map< Integer, ExportMipmapInfo > perSetupMipmapInfo,
+			final DownsampleBlock.DownsamplingMethod downsamplingMethod,
 			final boolean deflate,
 			final Partition partition,
 			final LoopbackHeuristic loopbackHeuristic,
@@ -449,7 +452,7 @@ public class WriteSequenceToHdf5
 						final ProgressWriter subProgressWriter = new SubTaskProgressWriter( progressWriter, startCompletionRatio, endCompletionRatio );
 
 						writeViewToHdf5PartitionFile(
-								img, timepointIdPartition, setupIdPartition, mipmapInfo, false,
+								img, timepointIdPartition, setupIdPartition, mipmapInfo, false, downsamplingMethod,
 								deflate, writerQueue, executorService, numCellCreatorThreads, loopbackHeuristic, afterEachPlane, subProgressWriter );
 					}
 				}
@@ -515,6 +518,7 @@ public class WriteSequenceToHdf5
 			final int setupIdPartition,
 			final ExportMipmapInfo mipmapInfo,
 			final boolean writeMipmapInfo,
+			final DownsampleBlock.DownsamplingMethod downsamplingMethod,
 			final boolean deflate,
 			final LoopbackHeuristic loopbackHeuristic,
 			final AfterEachPlane afterEachPlane,
@@ -532,7 +536,7 @@ public class WriteSequenceToHdf5
 			try
 			{
 				// write the image
-				writeViewToHdf5PartitionFile( img, timepointIdPartition, setupIdPartition, mipmapInfo, writeMipmapInfo, deflate, writerQueue, executorService, numCellCreatorThreads, loopbackHeuristic, afterEachPlane, progressWriter );
+				writeViewToHdf5PartitionFile( img, timepointIdPartition, setupIdPartition, mipmapInfo, writeMipmapInfo, downsamplingMethod, deflate, writerQueue, executorService, numCellCreatorThreads, loopbackHeuristic, afterEachPlane, progressWriter );
 			}
 			finally
 			{
@@ -661,6 +665,7 @@ public class WriteSequenceToHdf5
 			final int setupIdPartition,
 			final ExportMipmapInfo mipmapInfo,
 			final boolean writeMipmapInfo,
+			final DownsampleBlock.DownsamplingMethod downsamplingMethod,
 			final boolean deflate,
 			final IHDF5Access writerQueue,
 			final ExecutorService executorService, // TODO
@@ -689,6 +694,7 @@ public class WriteSequenceToHdf5
 					img,
 					new UnsignedShortType(),
 					mipmapInfo,
+					downsamplingMethod,
 					io,
 					executorService,
 					numThreads,
