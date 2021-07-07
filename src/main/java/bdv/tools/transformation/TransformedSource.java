@@ -272,6 +272,9 @@ public class TransformedSource< T > implements Source< T >, MipmapOrdering
 	}
 
 	@Override
+	public void setName(String name) { source.setName(name); } // or throw unsupportedoperationexception () ?
+
+	@Override
 	public VoxelDimensions getVoxelDimensions()
 	{
 		return source.getVoxelDimensions();

@@ -31,11 +31,12 @@ package bdv.viewer;
 import net.imglib2.Volatile;
 import net.imglib2.converter.Converter;
 import net.imglib2.type.numeric.ARGBType;
+import org.scijava.Named;
 
 /**
  * Data source (for one view setup) and a converter to ARGBType.
  */
-public class SourceAndConverter< T >
+public class SourceAndConverter< T > implements Named
 {
 	/**
 	 * provides image data for all timepoints of one view.
@@ -49,11 +50,17 @@ public class SourceAndConverter< T >
 
 	protected final SourceAndConverter< ? extends Volatile< T > > volatileSourceAndConverter;
 
+	/**
+	 * Name of the SourceAndConverter
+	 */
+	protected String name;
+
 	public SourceAndConverter( final Source< T > spimSource, final Converter< T, ARGBType > converter )
 	{
 		this.spimSource = spimSource;
 		this.converter = converter;
 		this.volatileSourceAndConverter = null;
+		this.name = spimSource.getName();
 	}
 
 	public SourceAndConverter( final Source< T > spimSource, final Converter< T, ARGBType > converter, final SourceAndConverter< ? extends Volatile< T > > volatileSourceAndConverter )
@@ -61,6 +68,7 @@ public class SourceAndConverter< T >
 		this.spimSource = spimSource;
 		this.converter = converter;
 		this.volatileSourceAndConverter = volatileSourceAndConverter;
+		this.name = spimSource.getName();
 	}
 
 	/**
@@ -72,6 +80,7 @@ public class SourceAndConverter< T >
 		this.spimSource = soc.spimSource;
 		this.converter = soc.converter;
 		this.volatileSourceAndConverter = soc.volatileSourceAndConverter;
+		this.name = soc.getName();
 	}
 
 	/**
@@ -95,5 +104,22 @@ public class SourceAndConverter< T >
 	public SourceAndConverter< ? extends Volatile< T > > asVolatile()
 	{
 		return volatileSourceAndConverter;
+	}
+
+	/**
+	 * @return the name of the {@link SourceAndConverter}
+	 */
+	@Override
+	public String getName() {
+		return this.name;
+	}
+
+	/**
+	 * Sets the new name of the {@link SourceAndConverter}
+	 * @param name
+	 */
+	@Override
+	public void setName(String name) {
+		this.name = name;
 	}
 }
