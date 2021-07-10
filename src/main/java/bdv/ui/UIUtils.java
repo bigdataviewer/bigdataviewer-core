@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -31,6 +31,8 @@ package bdv.ui;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+
+import javax.swing.UIManager;
 
 /**
  * AWT/Swing helpers.
@@ -81,5 +83,39 @@ public class UIUtils
 	public static void setMinimumHeight( final Component component, final int minimumHeight )
 	{
 		component.setMinimumSize( new Dimension( component.getMinimumSize().width, minimumHeight ) );
+	}
+
+	/**
+	 * Get an approximate UI scaling factor.
+	 *
+	 * TODO UI scaling depends on the LAF and there is no straight forward way
+	 *   to get a consistent scaling factor that works on all platforms.
+	 *   However, some LAFs have implemented their own strategy to estimate
+	 *   this scaling factor and adjust font sizes and element heights
+	 *   accordingly.  The best one I know of is available in th.  We therefore use the default font size compared to a
+	 *   hypothesized 'normal' font size of 12 as a surrogate for the UI
+	 *   scaling factor.  This is not great.
+	 *
+	 * @return approximate UI scaling factor
+	 */
+	public static double getUIScaleFactor()
+	{
+		return UIManager.getFont( "Panel.font" ).getSize() / 12.0;
+	}
+
+	/**
+	 * Tell if the LAF color specified for the provided key is darker than 50%
+	 * gray.  If the property is undefined, it is considered not dark.
+	 *
+	 * E.g. isDark( "Panel.background" ) is often a good indicator that an LAF
+	 * is dark/ inverse.
+	 *
+	 * @return true for dark colors
+	 */
+	public static boolean isDark( final String key )
+	{
+		final Color bg = UIManager.getColor( key );
+		if ( bg == null ) return false;
+		else return ( bg.getRed() + bg.getGreen() + bg.getBlue() ) / 3.0 < 127;
 	}
 }

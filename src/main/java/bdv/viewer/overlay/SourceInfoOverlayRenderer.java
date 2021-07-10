@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -28,16 +28,19 @@
  */
 package bdv.viewer.overlay;
 
-import bdv.util.Prefs.OverlayPosition;
+import static bdv.util.Prefs.OverlayPosition.TOP_CENTER;
+
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.util.List;
 
+import javax.swing.UIManager;
+
+import bdv.ui.UIUtils;
+import bdv.util.Prefs.OverlayPosition;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerState;
 import mpicbg.spim.data.sequence.TimePoint;
-
-import static bdv.util.Prefs.OverlayPosition.TOP_CENTER;
 
 /**
  * Render current source name and current timepoint of a {@link ViewerState}
@@ -57,25 +60,28 @@ public class SourceInfoOverlayRenderer
 
 	protected OverlayPosition sourceNameOverlayPosition = TOP_CENTER;
 
+	protected int fontSize = UIManager.getFont( "Panel.font" ).getSize();
+
+	protected double uiScale = UIUtils.getUIScaleFactor();
+
 	public synchronized void paint( final Graphics2D g )
 	{
-		final int fontSize = 12;
 		final int spacing = fontSize + 1;
 
 		g.setFont( new Font( "Monospaced", Font.PLAIN, fontSize ) );
 
-		g.drawString( timepointString, ( int ) g.getClipBounds().getWidth() - 170, spacing - 1 );
+		g.drawString( timepointString, ( int )( g.getClipBounds().getWidth() - uiScale * 170 ), spacing - 1 );
 
 		switch ( sourceNameOverlayPosition )
 		{
 		default:
 		case TOP_CENTER:
-			g.drawString( sourceName, ( int ) g.getClipBounds().getWidth() / 2, spacing - 1 );
-			g.drawString( groupName, ( int ) g.getClipBounds().getWidth() / 2, 2 * spacing - 1 );
+			g.drawString( sourceName, ( int )( ( g.getClipBounds().getWidth() - g.getFontMetrics().stringWidth( sourceName ) ) / 2 ), spacing - 1 );
+			g.drawString( groupName, ( int )( ( g.getClipBounds().getWidth() - g.getFontMetrics().stringWidth( groupName ) ) / 2 ), 2 * spacing - 1 );
 			break;
 		case TOP_RIGHT:
-			g.drawString( sourceName, ( int ) g.getClipBounds().getWidth() - Math.max( g.getFontMetrics().stringWidth( sourceName ) + 17, 170 ) , 3 * spacing - 1 );
-			g.drawString( groupName, ( int ) g.getClipBounds().getWidth() - Math.max( g.getFontMetrics().stringWidth( groupName ) + 17, 170 ) , 4 * spacing - 1 );
+			g.drawString( sourceName, ( int )( g.getClipBounds().getWidth() - Math.max( g.getFontMetrics().stringWidth( sourceName ) + uiScale * 17, uiScale * 170 ) ), 3 * spacing - 1 );
+			g.drawString( groupName, ( int )( g.getClipBounds().getWidth() - Math.max( g.getFontMetrics().stringWidth( groupName ) + uiScale * 17, uiScale * 170 ) ), 4 * spacing - 1 );
 			break;
 		}
 	}

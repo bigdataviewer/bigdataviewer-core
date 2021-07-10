@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -28,21 +28,21 @@
  */
 package bdv.viewer;
 
-import bdv.TransformEventHandler2D;
-import bdv.TransformEventHandler3D;
 import java.awt.event.KeyListener;
 
 import org.scijava.ui.behaviour.KeyPressedManager;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 
+import bdv.TransformEventHandler2D;
+import bdv.TransformEventHandler3D;
+import bdv.TransformEventHandlerFactory;
+import bdv.ui.UIUtils;
 import bdv.viewer.animate.MessageOverlayAnimator;
 import bdv.viewer.render.AccumulateProjector;
 import bdv.viewer.render.AccumulateProjectorARGB;
 import bdv.viewer.render.AccumulateProjectorFactory;
 import bdv.viewer.render.MultiResolutionRenderer;
-import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
-import bdv.TransformEventHandlerFactory;
 
 /**
  * Optional parameters for {@link ViewerPanel}.
@@ -225,9 +225,9 @@ public class ViewerOptions
 	 */
 	public static class Values
 	{
-		private int width = 800;
+		private int width = ( int )Math.round( 800 * UIUtils.getUIScaleFactor() );
 
-		private int height = 600;
+		private int height = ( int )Math.round( 600 * UIUtils.getUIScaleFactor() );
 
 		private double[] screenScales = new double[] { 1, 0.75, 0.5, 0.25, 0.125 };
 
@@ -239,7 +239,7 @@ public class ViewerOptions
 
 		private boolean useVolatileIfAvailable = true;
 
-		private MessageOverlayAnimator msgOverlay = new MessageOverlayAnimator( 800 );
+		private MessageOverlayAnimator msgOverlay = new MessageOverlayAnimator( width );
 
 		private TransformEventHandlerFactory transformEventHandlerFactory = TransformEventHandler3D::new;
 

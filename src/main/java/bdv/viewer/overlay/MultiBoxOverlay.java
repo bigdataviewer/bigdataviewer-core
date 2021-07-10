@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -28,15 +28,18 @@
  */
 package bdv.viewer.overlay;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.Stroke;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.util.ArrayList;
 import java.util.List;
 
+import bdv.ui.UIUtils;
 import bdv.util.Affine3DHelpers;
 import bdv.util.IntervalBoundingBox;
 import net.imglib2.Interval;
@@ -67,6 +70,12 @@ public class MultiBoxOverlay
 	private final Color canvasColor = new Color( 0xb0bbbbbb, true );
 
 	private final RenderBoxHelper renderBoxHelper = new RenderBoxHelper();
+
+	protected final double uiScale = UIUtils.getUIScaleFactor();
+
+	protected final Stroke stroke = new BasicStroke((float)uiScale);
+
+	private final int fontSize = ( int )Math.round( 8 * uiScale );
 
 	public interface IntervalAndTransform
 	{
@@ -270,6 +279,7 @@ public class MultiBoxOverlay
 		}
 
 		graphics.setRenderingHint( RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON );
+		graphics.setStroke( stroke );
 		graphics.setPaint( inactiveBackColor );
 		graphics.draw( inactiveBack );
 		graphics.setPaint( activeBackColor );
@@ -309,9 +319,9 @@ public class MultiBoxOverlay
 		source.getSourceToViewer().apply( pz, qz );
 
 		graphics.setPaint( Color.WHITE );
-		graphics.setFont( new Font( "SansSerif", Font.PLAIN, 8 ) );
-		graphics.drawString( "x", ( float ) renderBoxHelper.perspectiveX( qx ), ( float ) renderBoxHelper.perspectiveY( qx ) - 2 );
-		graphics.drawString( "y", ( float ) renderBoxHelper.perspectiveX( qy ), ( float ) renderBoxHelper.perspectiveY( qy ) - 2 );
-		graphics.drawString( "z", ( float ) renderBoxHelper.perspectiveX( qz ), ( float ) renderBoxHelper.perspectiveY( qz ) - 2 );
+		graphics.setFont( new Font( "SansSerif", Font.PLAIN, fontSize ) );
+		graphics.drawString( "x", ( float ) renderBoxHelper.perspectiveX( qx ), ( float )( renderBoxHelper.perspectiveY( qx ) - uiScale * 2 ) );
+		graphics.drawString( "y", ( float ) renderBoxHelper.perspectiveX( qy ), ( float )( renderBoxHelper.perspectiveY( qy ) - uiScale * 2 ) );
+		graphics.drawString( "z", ( float ) renderBoxHelper.perspectiveX( qz ), ( float )( renderBoxHelper.perspectiveY( qz ) - uiScale * 2 ) );
 	}
 }
