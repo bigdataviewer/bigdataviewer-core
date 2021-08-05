@@ -82,6 +82,11 @@ public class TransformedSource< T > implements Source< T >, MipmapOrdering
 	protected final AffineTransform3D composed;
 
 	/**
+	 * optional new name. if null, the name of the original source will be used.
+	 */
+	protected final String name;
+
+	/**
 	 * Instantiates a new {@link TransformedSource} wrapping the specified
 	 * source with the identity transform.
 	 *
@@ -93,7 +98,17 @@ public class TransformedSource< T > implements Source< T >, MipmapOrdering
 		this( source,
 				new AffineTransform3D(),
 				new AffineTransform3D(),
-				new AffineTransform3D() );
+				new AffineTransform3D(),
+				null );
+	}
+
+	public TransformedSource( final Source< T > source, final String name )
+	{
+		this( source,
+				new AffineTransform3D(),
+				new AffineTransform3D(),
+				new AffineTransform3D(),
+				name );
 	}
 
 	public TransformedSource( final Source< T > source, final TransformedSource< ? > shareTransform )
@@ -101,16 +116,28 @@ public class TransformedSource< T > implements Source< T >, MipmapOrdering
 		this( source,
 				shareTransform.incrementalTransform,
 				shareTransform.fixedTransform,
-				shareTransform.sourceTransform );
+				shareTransform.sourceTransform,
+				null );
+	}
+
+	public TransformedSource( final Source< T > source, final TransformedSource< ? > shareTransform, final String name )
+	{
+		this( source,
+				shareTransform.incrementalTransform,
+				shareTransform.fixedTransform,
+				shareTransform.sourceTransform,
+				name );
 	}
 
 	private TransformedSource(
 			final Source< T > source,
 			final AffineTransform3D incrementalTransform,
 			final AffineTransform3D fixedTransform,
-			final AffineTransform3D sourceTransform )
+			final AffineTransform3D sourceTransform,
+			final String name )
 	{
 		this.source = source;
+		this.name = name;
 
 		sourceMipmapOrdering = MipmapOrdering.class.isInstance( source ) ?
 				( MipmapOrdering ) source : new DefaultMipmapOrdering( source );
@@ -186,6 +213,7 @@ public class TransformedSource< T > implements Source< T >, MipmapOrdering
 		sourceTransform.concatenate( fixedTransform );
 	}
 
+
 	/**
 	 * Get the incremental part of the extra transformation.
 	 * <p>
@@ -239,7 +267,8 @@ public class TransformedSource< T > implements Source< T >, MipmapOrdering
 	@Override
 	public String getName()
 	{
-		return source.getName();
+		if ( name != null ) return name;
+		else return source.getName();
 	}
 
 	@Override
