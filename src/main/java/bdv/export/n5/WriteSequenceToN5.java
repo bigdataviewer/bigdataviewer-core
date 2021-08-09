@@ -28,11 +28,7 @@
  */
 package bdv.export.n5;
 
-import bdv.export.ExportMipmapInfo;
-import bdv.export.ExportScalePyramid;
-import bdv.export.ProgressWriter;
-import bdv.export.ProgressWriterNull;
-import bdv.export.SubTaskProgressWriter;
+import bdv.export.*;
 import bdv.export.ExportScalePyramid.AfterEachPlane;
 import bdv.export.ExportScalePyramid.LoopbackHeuristic;
 import bdv.img.cache.SimpleCacheArrayLoader;
@@ -253,7 +249,7 @@ public class WriteSequenceToN5
 		final T type = setupImgLoader.getImageType();
 		final N5DatasetIO< T > io = new N5DatasetIO<>( n5, compression, setupId, timepointId, type );
 		ExportScalePyramid.writeScalePyramid(
-				img, type, mipmapInfo, io,
+				img, type, mipmapInfo, DownsampleBlock.DownsamplingMethod.Average, io,
 				executorService, numThreads,
 				loopbackHeuristic, afterEachPlane, progressWriter );
 	}
