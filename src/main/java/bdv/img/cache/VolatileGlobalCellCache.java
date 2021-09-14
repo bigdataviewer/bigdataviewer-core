@@ -40,7 +40,7 @@ import net.imglib2.cache.ref.SoftRefLoaderCache;
 import net.imglib2.cache.ref.WeakRefVolatileCache;
 import net.imglib2.cache.util.KeyBimap;
 import net.imglib2.cache.volatiles.CacheHints;
-import net.imglib2.cache.volatiles.UncheckedVolatileCache;
+import net.imglib2.cache.volatiles.VolatileCache;
 import net.imglib2.img.cell.Cell;
 import net.imglib2.img.cell.CellGrid;
 import net.imglib2.type.NativeType;
@@ -256,13 +256,10 @@ public class VolatileGlobalCellCache implements CacheControl
 				? CreateInvalidVolatileCell.get( grid, type, false )
 				: new CreateInvalidVolatileCell<>( grid, type.getEntitiesPerPixel(), emptyArrayCreator );
 
-		final UncheckedVolatileCache< Long, Cell< ? > > vcache = new WeakRefVolatileCache<>(
-				cache, queue, createInvalid )
-				.unchecked();
+		final VolatileCache< Long, Cell< ? > > vcache = new WeakRefVolatileCache<>( cache, queue, createInvalid );
 
 		@SuppressWarnings( "unchecked" )
-		final VolatileCachedCellImg< T, A > img = new VolatileCachedCellImg<>( grid, type, cacheHints,
-				( i, h ) -> ( Cell< A > ) vcache.get( i, h ) );
+		final VolatileCachedCellImg< T, A > img = new VolatileCachedCellImg<>( grid, type, cacheHints, ( VolatileCache ) vcache );
 
 		return img;
 	}

@@ -37,6 +37,7 @@ import net.imglib2.cache.iotiming.IoTimeBudget;
 import net.imglib2.cache.queue.BlockingFetchQueues;
 import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.cache.volatiles.LoadingStrategy;
+import net.imglib2.cache.volatiles.VolatileCache;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.NativeImg;
@@ -65,30 +66,26 @@ import net.imglib2.util.Fraction;
 public class VolatileCachedCellImg< T extends NativeType< T >, A >
 		extends AbstractCellImg< T, A, Cell< A >, VolatileCachedCells< Cell< A > > >
 {
-	@FunctionalInterface
-	public interface Get< T >
-	{
-		T get( long index, CacheHints cacheHints );
-	}
+	private final VolatileCache< Long, Cell< A > > cache;
 
 	public VolatileCachedCellImg(
 			final CellGrid grid,
-			final Fraction entitiesPerPixel,
-			Function< NativeImg< T, ? super A >, T > typeFactory,
+			final T type,
 			final CacheHints cacheHints,
-			final Get< Cell< A > > get )
+			final VolatileCache< Long, Cell< A > > cache )
 	{
-		super( grid, new VolatileCachedCells<>( grid.getGridDimensions(), get, cacheHints ), entitiesPerPixel );
-		setLinkedType( typeFactory.apply( this ) );
-	}
+		super( grid, new VolatileCachedCells<>( grid.getGridDimensions(), cache.unchecked()::get, cacheHints ), type.getEntitiesPerPixel() );
 
-	public VolatileCachedCellImg( final CellGrid grid, final T type, final CacheHints cacheHints, final Get< Cell< A > > get )
-	{
-		super( grid, new VolatileCachedCells<>( grid.getGridDimensions(), get, cacheHints ), type.getEntitiesPerPixel() );
+		this.cache = cache;
 
 		@SuppressWarnings( "unchecked" )
 		final NativeTypeFactory< T, ? super A > typeFactory = ( NativeTypeFactory< T, ? super A > ) type.getNativeTypeFactory();
 		setLinkedType( typeFactory.createLinkedType( this ) );
+	}
+
+	public VolatileCache< Long, Cell< A > > getCache()
+	{
+		return cache;
 	}
 
 	/**
@@ -151,6 +148,12 @@ public class VolatileCachedCellImg< T extends NativeType< T >, A >
 		throw new UnsupportedOperationException( "not implemented yet" );
 	}
 
+	@FunctionalInterface
+	public interface Get< T >
+	{
+		T get( long index, CacheHints cacheHints );
+	}
+
 	public static final class VolatileCachedCells< T > extends AbstractLongListImg< T >
 	{
 		private final Get< T > get;
@@ -190,5 +193,38 @@ public class VolatileCachedCellImg< T extends NativeType< T >, A >
 		{
 			throw new UnsupportedOperationException();
 		}
+	}
+
+	/**
+	 * @deprecated Construct with a {@code VolatileCache} using {@link #VolatileCachedCellImg(CellGrid, NativeType, CacheHints, VolatileCache)}.
+	 */
+	@Deprecated
+	public VolatileCachedCellImg(
+			final CellGrid grid,
+			final Fraction entitiesPerPixel,
+			final Function< NativeImg< T, ? super A >, T > typeFactory,
+			final CacheHints cacheHints,
+			final Get< Cell< A > > get )
+	{
+		super( grid, new VolatileCachedCells<>( grid.getGridDimensions(), get, cacheHints ), entitiesPerPixel );
+		this.cache = null;
+		setLinkedType( typeFactory.apply( this ) );
+	}
+
+	/**
+	 * @deprecated Construct with a {@code VolatileCache} using {@link #VolatileCachedCellImg(CellGrid, NativeType, CacheHints, VolatileCache)}.
+	 */
+	@Deprecated
+	public VolatileCachedCellImg(
+			final CellGrid grid,
+			final T type,
+			final CacheHints cacheHints,
+			final Get< Cell< A > > get )
+	{
+		super( grid, new VolatileCachedCells<>( grid.getGridDimensions(), get, cacheHints ), type.getEntitiesPerPixel() );
+		this.cache = null;
+		@SuppressWarnings( "unchecked" )
+		final NativeTypeFactory< T, ? super A > typeFactory = ( NativeTypeFactory< T, ? super A > ) type.getNativeTypeFactory();
+		setLinkedType( typeFactory.createLinkedType( this ) );
 	}
 }
