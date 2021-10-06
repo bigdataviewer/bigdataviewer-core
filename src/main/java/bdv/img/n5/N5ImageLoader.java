@@ -42,6 +42,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.generic.sequence.ImgLoaderHint;
@@ -88,6 +89,7 @@ import net.imglib2.type.volatiles.VolatileUnsignedIntType;
 import net.imglib2.type.volatiles.VolatileUnsignedLongType;
 import net.imglib2.type.volatiles.VolatileUnsignedShortType;
 import net.imglib2.util.Cast;
+import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
 import org.janelia.saalfeldlab.n5.*;
 
@@ -336,81 +338,64 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 		private final String pathName;
 		private final DatasetAttributes attributes;
 		private final Function< DataBlock< ? >, A > createArray;
+		private final Supplier< A > emptyArray;
 
-		N5CacheArrayLoader( final N5Reader n5, final String pathName, final DatasetAttributes attributes, final Function< DataBlock< ? >, A > createArray )
+		N5CacheArrayLoader( final N5Reader n5, final String pathName, final DatasetAttributes attributes,
+				final Function< DataBlock< ? >, A > createArray,
+				final Supplier< A > emptyArray )
 		{
 			this.n5 = n5;
 			this.pathName = pathName;
 			this.attributes = attributes;
 			this.createArray = createArray;
+			this.emptyArray = emptyArray;
 		}
 
 		@Override
 		public A loadArray( final long[] gridPosition ) throws IOException
 		{
 			final DataBlock< ? > dataBlock = n5.readBlock( pathName, attributes, gridPosition );
-
 			if ( dataBlock == null )
-				return createEmptyArray( gridPosition );
+				return emptyArray.get();
 			else
 				return createArray.apply( dataBlock );
-		}
-
-		private A createEmptyArray( long[] gridPosition )
-		{
-			final int[] blockSize = attributes.getBlockSize();
-			final int n = blockSize[ 0 ] * blockSize[ 1 ] * blockSize[ 2 ];
-			switch ( attributes.getDataType() )
-			{
-				case UINT8:
-				case INT8:
-					return createArray.apply( new ByteArrayDataBlock( blockSize, gridPosition, new byte[ n ] ) );
-				case UINT16:
-				case INT16:
-					return createArray.apply( new ShortArrayDataBlock( blockSize, gridPosition, new short[ n ] ) );
-				case UINT32:
-				case INT32:
-					return createArray.apply( new IntArrayDataBlock( blockSize, gridPosition, new int[ n ] ) );
-				case UINT64:
-				case INT64:
-					return createArray.apply( new LongArrayDataBlock( blockSize, gridPosition, new long[ n ] ) );
-				case FLOAT32:
-					return createArray.apply( new FloatArrayDataBlock( blockSize, gridPosition, new float[ n ] ) );
-				case FLOAT64:
-					return createArray.apply( new DoubleArrayDataBlock( blockSize, gridPosition, new double[ n ] ) );
-				default:
-					throw new UnsupportedOperationException("Data type not supported: " + attributes.getDataType());
-			}
 		}
 	}
 
 	public static SimpleCacheArrayLoader< ? > createCacheArrayLoader( final N5Reader n5, final String pathName ) throws IOException
 	{
 		final DatasetAttributes attributes = n5.getDatasetAttributes( pathName );
+		final int numElements = ( int ) Intervals.numElements( attributes.getBlockSize() );
 		switch ( attributes.getDataType() )
 		{
 		case UINT8:
 		case INT8:
 			return new N5CacheArrayLoader<>( n5, pathName, attributes,
-					dataBlock -> new VolatileByteArray( Cast.unchecked( dataBlock.getData() ), true ) );
+					dataBlock -> new VolatileByteArray( Cast.unchecked( dataBlock.getData() ), true ),
+					() -> new VolatileByteArray( numElements, true ) );
 		case UINT16:
 		case INT16:
 			return new N5CacheArrayLoader<>( n5, pathName, attributes,
-					dataBlock -> new VolatileShortArray( Cast.unchecked( dataBlock.getData() ), true ) );
+					dataBlock -> new VolatileShortArray( Cast.unchecked( dataBlock.getData() ), true ),
+					() -> new VolatileShortArray( numElements, true ) );
 		case UINT32:
 		case INT32:
 			return new N5CacheArrayLoader<>( n5, pathName, attributes,
-					dataBlock -> new VolatileIntArray( Cast.unchecked( dataBlock.getData() ), true ) );
+					dataBlock -> new VolatileIntArray( Cast.unchecked( dataBlock.getData() ), true ),
+					() -> new VolatileIntArray( numElements, true ) );
 		case UINT64:
 		case INT64:
 			return new N5CacheArrayLoader<>( n5, pathName, attributes,
-					dataBlock -> new VolatileLongArray( Cast.unchecked( dataBlock.getData() ), true ) );
+					dataBlock -> new VolatileLongArray( Cast.unchecked( dataBlock.getData() ), true ),
+					() -> new VolatileLongArray( numElements, true ) );
 		case FLOAT32:
 			return new N5CacheArrayLoader<>( n5, pathName, attributes,
-					dataBlock -> new VolatileFloatArray( Cast.unchecked( dataBlock.getData() ), true ) );
+					dataBlock -> new VolatileFloatArray( Cast.unchecked( dataBlock.getData() ), true ),
+					() -> new VolatileFloatArray( numElements, true ) );
 		case FLOAT64:
 			return new N5CacheArrayLoader<>( n5, pathName, attributes,
-					dataBlock -> new VolatileDoubleArray( Cast.unchecked( dataBlock.getData() ), true ) );
+					dataBlock -> new VolatileDoubleArray( Cast.unchecked( dataBlock.getData() ), true ),
+					() -> new VolatileDoubleArray( numElements, true ) );
 		default:
 			throw new IllegalArgumentException();
 		}
