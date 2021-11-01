@@ -31,7 +31,7 @@ package bdv.util;
 /**
  * A bounded range with {@code minBound <= min <= max <= maxBound}.
  * <p>
- * {@code BoundedRang} is immutable.
+ * {@code BoundedRange} is immutable.
  * <p>
  * {@link #withMin(double)}, {@link #withMinBound(double)} etc derive a new
  * {@code BoundedRange} with the given {@code min}, {@code minBound} etc, while
