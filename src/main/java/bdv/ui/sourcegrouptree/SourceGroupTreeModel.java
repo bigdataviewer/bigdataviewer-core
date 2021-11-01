@@ -178,6 +178,7 @@ public class SourceGroupTreeModel implements TreeModel
 	 *
 	 * @see #removeTreeModelListener
 	 */
+	@Override
 	public void addTreeModelListener( TreeModelListener l )
 	{
 		listenerList.add( TreeModelListener.class, l );
@@ -191,6 +192,7 @@ public class SourceGroupTreeModel implements TreeModel
 	 *
 	 * @see #addTreeModelListener
 	 */
+	@Override
 	public void removeTreeModelListener( TreeModelListener l )
 	{
 		listenerList.remove( TreeModelListener.class, l );
