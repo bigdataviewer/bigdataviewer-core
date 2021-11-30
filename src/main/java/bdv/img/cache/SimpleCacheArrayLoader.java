@@ -55,8 +55,7 @@ import net.imglib2.type.NativeType;
  * <p>
  * {@code SimpleCacheArrayLoader} is supposed to load data one specific image.
  * {@code loadArray()} will not get information about which timepoint,
- * resolution level, etc a requested block belongs to, and also the appropriate
- * block size is supposed to be known.
+ * resolution level, etc a requested block belongs to.
  * <p>
  * This is in contrast to {@link CacheArrayLoader}, where all information to
  * identify a particular block in a whole dataset is provided. Whether it makes
@@ -112,9 +111,7 @@ public interface SimpleCacheArrayLoader< A >
 	 * <p>
 	 * {@code SimpleCacheArrayLoader} is supposed to load data one specific
 	 * image. {@code loadArray()} will not get information about which
-	 * timepoint, resolution level, etc a requested block belongs to. Also the
-	 * appropriate block size is supposed to be known to the
-	 * {@code SimpleCacheArrayLoader}.
+	 * timepoint, resolution level, etc a requested block belongs to.
 	 * <p>
 	 * This is in contrast to
 	 * {@link CacheArrayLoader#loadArray(int, int, int, int[], long[])}, where
@@ -123,8 +120,10 @@ public interface SimpleCacheArrayLoader< A >
 	 *
 	 * @param gridPosition
 	 *            the coordinate of the cell in the cell grid.
+	 * @param cellDimensions
+	 *            the dimensions of the cell.
 	 *
 	 * @return loaded cell data.
 	 */
-	A loadArray( long[] gridPosition ) throws IOException;
+	A loadArray( long[] gridPosition, int[] cellDimensions ) throws IOException;
 }

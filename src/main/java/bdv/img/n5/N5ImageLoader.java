@@ -37,12 +37,13 @@ import bdv.util.ConstantRandomAccessible;
 import bdv.util.MipmapTransforms;
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.function.IntFunction;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.generic.sequence.ImgLoaderHint;
@@ -91,7 +92,11 @@ import net.imglib2.type.volatiles.VolatileUnsignedShortType;
 import net.imglib2.util.Cast;
 import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
-import org.janelia.saalfeldlab.n5.*;
+import org.janelia.saalfeldlab.n5.DataBlock;
+import org.janelia.saalfeldlab.n5.DataType;
+import org.janelia.saalfeldlab.n5.DatasetAttributes;
+import org.janelia.saalfeldlab.n5.N5FSReader;
+import org.janelia.saalfeldlab.n5.N5Reader;
 
 import static bdv.img.n5.BdvN5Format.DATA_TYPE_KEY;
 import static bdv.img.n5.BdvN5Format.DOWNSAMPLING_FACTORS_KEY;
@@ -332,72 +337,142 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 		}
 	}
 
-	private static class N5CacheArrayLoader< A > implements SimpleCacheArrayLoader< A >
+	private static class N5CacheArrayLoader< T, A > implements SimpleCacheArrayLoader< A >
 	{
 		private final N5Reader n5;
 		private final String pathName;
 		private final DatasetAttributes attributes;
-		private final Function< DataBlock< ? >, A > createArray;
-		private final Supplier< A > emptyArray;
+		private final IntFunction< T > createPrimitiveArray;
+		private final Function< T, A > createVolatileArrayAccess;
 
 		N5CacheArrayLoader( final N5Reader n5, final String pathName, final DatasetAttributes attributes,
-				final Function< DataBlock< ? >, A > createArray,
-				final Supplier< A > emptyArray )
+				final IntFunction< T > createPrimitiveArray,
+				final Function< T, A > createVolatileArrayAccess )
 		{
 			this.n5 = n5;
 			this.pathName = pathName;
 			this.attributes = attributes;
-			this.createArray = createArray;
-			this.emptyArray = emptyArray;
+			this.createPrimitiveArray = createPrimitiveArray;
+			this.createVolatileArrayAccess = createVolatileArrayAccess;
 		}
 
 		@Override
-		public A loadArray( final long[] gridPosition ) throws IOException
+		public A loadArray( final long[] gridPosition, final int[] cellDimensions ) throws IOException
 		{
-			final DataBlock< ? > dataBlock = n5.readBlock( pathName, attributes, gridPosition );
-			if ( dataBlock == null )
-				return emptyArray.get();
+			final DataBlock< T > dataBlock = Cast.unchecked( n5.readBlock( pathName, attributes, gridPosition ) );
+			if ( dataBlock != null && Arrays.equals( dataBlock.getSize(), cellDimensions ) )
+			{
+				return createVolatileArrayAccess.apply( dataBlock.getData() );
+			}
 			else
-				return createArray.apply( dataBlock );
+			{
+				final T data = createPrimitiveArray.apply( ( int ) Intervals.numElements( cellDimensions ) );
+				if ( dataBlock != null )
+				{
+					final T src = dataBlock.getData();
+					final int[] srcDims = dataBlock.getSize();
+					final int[] pos = new int[ srcDims.length ];
+					ndArrayCopy( src, srcDims, pos, data, cellDimensions, pos, cellDimensions );
+				}
+				return createVolatileArrayAccess.apply( data );
+			}
 		}
 	}
 
 	public static SimpleCacheArrayLoader< ? > createCacheArrayLoader( final N5Reader n5, final String pathName ) throws IOException
 	{
 		final DatasetAttributes attributes = n5.getDatasetAttributes( pathName );
-		final int numElements = ( int ) Intervals.numElements( attributes.getBlockSize() );
 		switch ( attributes.getDataType() )
 		{
 		case UINT8:
 		case INT8:
-			return new N5CacheArrayLoader<>( n5, pathName, attributes,
-					dataBlock -> new VolatileByteArray( Cast.unchecked( dataBlock.getData() ), true ),
-					() -> new VolatileByteArray( numElements, true ) );
+			return new N5CacheArrayLoader<>( n5, pathName, attributes, byte[]::new, data -> new VolatileByteArray( data, true ) );
 		case UINT16:
 		case INT16:
-			return new N5CacheArrayLoader<>( n5, pathName, attributes,
-					dataBlock -> new VolatileShortArray( Cast.unchecked( dataBlock.getData() ), true ),
-					() -> new VolatileShortArray( numElements, true ) );
+			return new N5CacheArrayLoader<>( n5, pathName, attributes, short[]::new, data -> new VolatileShortArray( data, true ) );
 		case UINT32:
 		case INT32:
-			return new N5CacheArrayLoader<>( n5, pathName, attributes,
-					dataBlock -> new VolatileIntArray( Cast.unchecked( dataBlock.getData() ), true ),
-					() -> new VolatileIntArray( numElements, true ) );
+			return new N5CacheArrayLoader<>( n5, pathName, attributes, int[]::new, data -> new VolatileIntArray( data, true ) );
 		case UINT64:
 		case INT64:
-			return new N5CacheArrayLoader<>( n5, pathName, attributes,
-					dataBlock -> new VolatileLongArray( Cast.unchecked( dataBlock.getData() ), true ),
-					() -> new VolatileLongArray( numElements, true ) );
+			return new N5CacheArrayLoader<>( n5, pathName, attributes, long[]::new, data -> new VolatileLongArray( data, true ) );
 		case FLOAT32:
-			return new N5CacheArrayLoader<>( n5, pathName, attributes,
-					dataBlock -> new VolatileFloatArray( Cast.unchecked( dataBlock.getData() ), true ),
-					() -> new VolatileFloatArray( numElements, true ) );
+			return new N5CacheArrayLoader<>( n5, pathName, attributes, float[]::new, data -> new VolatileFloatArray( data, true ) );
 		case FLOAT64:
-			return new N5CacheArrayLoader<>( n5, pathName, attributes,
-					dataBlock -> new VolatileDoubleArray( Cast.unchecked( dataBlock.getData() ), true ),
-					() -> new VolatileDoubleArray( numElements, true ) );
+			return new N5CacheArrayLoader<>( n5, pathName, attributes, double[]::new, data -> new VolatileDoubleArray( data, true ) );
 		default:
 			throw new IllegalArgumentException();
 		}
 	}
+
+	/**
+	 * Like `System.arrayCopy()` but for flattened nD arrays.
+	 *
+	 * @param src
+	 * 		the (flattened) source array.
+	 * @param srcSize
+	 * 		dimensions of the source array.
+	 * @param srcPos
+	 * 		starting position in the source array.
+	 * @param dest
+	 * 		the (flattened destination array.
+	 * @param destSize
+	 * 		dimensions of the source array.
+	 * @param destPos
+	 * 		starting position in the destination data.
+	 * @param size
+	 * 		the number of array elements to be copied.
+	 */
+	// TODO: This will be moved to a new imglib2-blk artifact later. Re-use it from there when that happens.
+	private static < T > void ndArrayCopy(
+			final T src,  final int[] srcSize,  final int[] srcPos,
+			final T dest, final int[] destSize, final int[] destPos,
+			final int[] size)
+	{
+		final int n = srcSize.length;
+		int srcStride = 1;
+		int destStride = 1;
+		int srcOffset = 0;
+		int destOffset = 0;
+		for ( int d = 0; d < n; ++d )
+		{
+			srcOffset += srcStride * srcPos[ d ];
+			srcStride *= srcSize[ d ];
+			destOffset += destStride * destPos[ d ];
+			destStride *= destSize[ d ];
+		}
+		ndArrayCopy( n - 1, src, srcSize, srcOffset, dest, destSize, destOffset, size );
+	}
+
+	private static <T> void ndArrayCopy(
+			final int d,
+			final T src,  final int[] srcSize,  final int srcPos,
+			final T dest, final int[] destSize, final int destPos,
+			final int[] size)
+	{
+		if ( d == 0 )
+			System.arraycopy( src, srcPos, dest, destPos, size[ d ] );
+		else
+		{
+			int srcStride = 1;
+			int destStride = 1;
+			for ( int dd = 0; dd < d; ++dd )
+			{
+				srcStride *= srcSize[ dd ];
+				destStride *= destSize[ dd ];
+			}
+
+			final int w = size[ d ];
+			for ( int x = 0; x < w; ++x )
+			{
+				ndArrayCopy( d - 1,
+						src, srcSize, srcPos + x * srcStride,
+						dest, destSize, destPos + x * destStride,
+						size );
+			}
+		}
+	}
+
+
+
 }

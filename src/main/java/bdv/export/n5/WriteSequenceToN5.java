@@ -363,7 +363,7 @@ public class WriteSequenceToN5
 						final long[] cellGridPosition = new long[ n ];
 						grid.getCellDimensions( key, cellMin, cellDims );
 						grid.getCellGridPositionFlat( key, cellGridPosition );
-						return new Cell<>( cellDims, cellMin, cacheArrayLoader.loadArray( cellGridPosition ) );
+						return new Cell<>( cellDims, cellMin, cacheArrayLoader.loadArray( cellGridPosition, cellDims ) );
 					},
 					options().cellDimensions( cellDimensions ) );
 		}
