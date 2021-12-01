@@ -59,6 +59,16 @@ import net.imglib2.img.cell.Cell;
 import net.imglib2.img.cell.CellGrid;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.integer.ByteType;
+import net.imglib2.type.numeric.integer.IntType;
+import net.imglib2.type.numeric.integer.LongType;
+import net.imglib2.type.numeric.integer.ShortType;
+import net.imglib2.type.numeric.integer.UnsignedByteType;
+import net.imglib2.type.numeric.integer.UnsignedIntType;
+import net.imglib2.type.numeric.integer.UnsignedLongType;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.type.numeric.real.DoubleType;
+import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Cast;
 import org.janelia.saalfeldlab.n5.ByteArrayDataBlock;
 import org.janelia.saalfeldlab.n5.Compression;
@@ -72,7 +82,6 @@ import org.janelia.saalfeldlab.n5.LongArrayDataBlock;
 import org.janelia.saalfeldlab.n5.N5FSWriter;
 import org.janelia.saalfeldlab.n5.N5Writer;
 import org.janelia.saalfeldlab.n5.ShortArrayDataBlock;
-import org.janelia.saalfeldlab.n5.imglib2.N5Utils;
 
 import static bdv.img.n5.BdvN5Format.DATA_TYPE_KEY;
 import static bdv.img.n5.BdvN5Format.DOWNSAMPLING_FACTORS_KEY;
@@ -144,7 +153,7 @@ public class WriteSequenceToN5
 			final Object type = imgLoader.getSetupImgLoader( setup.getId() ).getImageType();
 			if ( !( type instanceof RealType &&
 					type instanceof NativeType &&
-					N5Utils.dataType( Cast.unchecked( type ) ) != null ) )
+					n5DataType( Cast.unchecked( type ) ) != null ) )
 				throw new IllegalArgumentException( "Unsupported pixel type: " + type.getClass().getSimpleName() );
 		}
 
@@ -162,7 +171,7 @@ public class WriteSequenceToN5
 		{
 			final String pathName = getPathName( setupId );
 			final int[][] downsamplingFactors = perSetupMipmapInfo.get( setupId ).getExportResolutions();
-			final DataType dataType = N5Utils.dataType( Cast.unchecked( imgLoader.getSetupImgLoader( setupId ).getImageType() ) );
+			final DataType dataType = n5DataType( Cast.unchecked( imgLoader.getSetupImgLoader( setupId ).getImageType() ) );
 			n5.createGroup( pathName );
 			n5.setAttribute( pathName, DOWNSAMPLING_FACTORS_KEY, downsamplingFactors );
 			n5.setAttribute( pathName, DATA_TYPE_KEY, dataType );
@@ -286,7 +295,7 @@ public class WriteSequenceToN5
 			this.compression = compression;
 			this.setupId = setupId;
 			this.timepointId = timepointId;
-			this.dataType = N5Utils.dataType( type );
+			this.dataType = n5DataType( type );
 			this.type = type;
 
 			switch ( dataType )
@@ -367,5 +376,31 @@ public class WriteSequenceToN5
 					},
 					options().cellDimensions( cellDimensions ) );
 		}
+	}
+
+	private static < T extends NativeType< T > > DataType n5DataType( final T type )
+	{
+		if ( type instanceof DoubleType )
+			return DataType.FLOAT64;
+		if ( type instanceof FloatType )
+			return DataType.FLOAT32;
+		if ( type instanceof LongType )
+			return DataType.INT64;
+		if ( type instanceof UnsignedLongType )
+			return DataType.UINT64;
+		if ( type instanceof IntType )
+			return DataType.INT32;
+		if ( type instanceof UnsignedIntType )
+			return DataType.UINT32;
+		if ( type instanceof ShortType )
+			return DataType.INT16;
+		if ( type instanceof UnsignedShortType )
+			return DataType.UINT16;
+		if ( type instanceof ByteType )
+			return DataType.INT8;
+		if ( type instanceof UnsignedByteType )
+			return DataType.UINT8;
+		else
+			return null;
 	}
 }
