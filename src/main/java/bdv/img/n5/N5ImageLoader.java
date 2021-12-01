@@ -372,7 +372,9 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 					final T src = dataBlock.getData();
 					final int[] srcDims = dataBlock.getSize();
 					final int[] pos = new int[ srcDims.length ];
-					ndArrayCopy( src, srcDims, pos, data, cellDimensions, pos, cellDimensions );
+					final int[] size = new int[ srcDims.length ];
+					Arrays.setAll( size, d -> Math.min( srcDims[ d ], cellDimensions[ d ] ) );
+					ndArrayCopy( src, srcDims, pos, data, cellDimensions, pos, size );
 				}
 				return createVolatileArrayAccess.apply( data );
 			}
