@@ -45,6 +45,7 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Path2D;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -55,6 +56,7 @@ import javax.swing.JPanel;
 import javax.swing.JToggleButton;
 import javax.swing.Scrollable;
 import javax.swing.border.EmptyBorder;
+
 import net.miginfocom.swing.MigLayout;
 
 /**
@@ -72,6 +74,8 @@ public class CardPanel
 
 	private final static Color DEFAULT_HEADER_BACKGROUND = new Color( 0xcccccc );
 
+	private final static Color DEFAULT_HEADER_HIGHLIGHTED_BACKGROUND = new Color( 0xddccbb );
+
 	private final static Color DEFAULT_HEADER_FOREGROUND = new Color( 0x202020 );
 
 	private Color headerBackground = DEFAULT_HEADER_BACKGROUND;
@@ -84,6 +88,8 @@ public class CardPanel
 
 	private final Container container;
 
+	private ReorderMouseHandler reorderHandler;
+
 	/**
 	 * Empty card panel.
 	 */
@@ -91,6 +97,7 @@ public class CardPanel
 	{
 		container = new Container( new MigLayout( "fillx, ins 0", "[grow]", "[]0[]" ) );
 		container.setBackground( DEFAULT_CARD_BACKGROUND );
+		reorderHandler = new ReorderMouseHandler( this );
 	}
 
 	public JComponent getComponent()
@@ -162,6 +169,64 @@ public class CardPanel
 	public boolean addCard( final Object key, final String title, final JComponent component, final boolean expanded )
 	{
 		return addCard( key, title, component, expanded, null );
+	}
+
+	public static <T> void move( List<T> list, int from, int to )
+	{
+		final ArrayList<T> reorderedList = new ArrayList<T>();
+
+		/*
+		 *  If container and card list are allowed to store
+		 *  cards in different order, it could save a little work here,
+		 *  though the permutation between the two would probably need to be stored.
+		 */
+
+		// reorder
+		int j = 0;
+		for( int i = 0; i < list.size(); i++ ) {
+			if( i == to )
+				reorderedList.add(list.get( from ));
+			else if( j == from)
+			{
+				j++;
+				reorderedList.add(list.get( j++ ));
+			}
+			else
+				reorderedList.add(list.get( j++ ));
+		}
+
+		list.removeIf(x -> true);
+		list.addAll(reorderedList);
+	}
+
+	public synchronized void moveCard( Card src, Card dst )
+	{
+		moveCard(cardList.indexOf(src), cardList.indexOf(dst));
+	}
+
+	public synchronized void moveCard( int from, int to )
+	{
+		/*
+		 *  If container and card list are allowed to store
+		 *  cards in different order, it could save a little work here,
+		 *  though the permutation between the two would probably need to be stored.
+		 */
+		move( cardList, from, to );
+		container.removeAll();
+		for( Card card : cardList )
+			container.add( card, "growx, wrap" );
+
+		container.revalidate();
+	}
+
+	public synchronized void swapCards( int from, int to )
+	{
+		Collections.swap(cardList, from, to);
+		container.removeAll();
+		for( Card card : cardList )
+			container.add( card, "growx, wrap" );
+
+		container.revalidate();
 	}
 
 	/**
@@ -344,7 +409,7 @@ public class CardPanel
 			terminalResizePanel = new TerminalResizePanel( componentPanel );
 			terminalResizePanel.setBackground( getHeaderBackground() );
 
-			headerPanel = new HeaderPanel( title );
+			headerPanel = new HeaderPanel( title, this );
 			headerPanel.setBackground( getHeaderBackground() );
 			headerPanel.setForeground( getHeaderForeground() );
 
@@ -354,11 +419,28 @@ public class CardPanel
 			this.setExpanded( open );
 		}
 
-		private class HeaderPanel extends JPanel
+		private class HeaderPanel extends JPanel implements DraggableHeader
 		{
 			private final JPanel labelPanel;
 
 			private final JLabel label;
+
+			private final Card parentCard;
+
+			public Card getParent()
+			{
+				return parentCard;
+			}
+
+			public void enterAction()
+			{
+				labelPanel.setBackground(DEFAULT_HEADER_HIGHLIGHTED_BACKGROUND);
+			}
+
+			public void exitAction()
+			{
+				labelPanel.setBackground(DEFAULT_HEADER_BACKGROUND);
+			}
 
 			@Override
 			public void setBackground( final Color bg )
@@ -376,10 +458,11 @@ public class CardPanel
 					label.setForeground( fg );
 			}
 
-			public HeaderPanel( final String title )
+			public HeaderPanel( final String title, Card parentCard )
 			{
 				super( new MigLayout( "fillx, aligny center, ins 0 0 0 0", "[][grow]", "" ) );
 				UIUtils.setPreferredWidth( this, 100 );
+				this.parentCard = parentCard;
 
 				// Holds the name with insets.
 				labelPanel = new JPanel( new MigLayout( "fillx, ins 0 4 0 4", "[grow]", "" ) );
@@ -428,8 +511,12 @@ public class CardPanel
 						return getContentOfCardAbove();
 					}
 				} );
+
 				addMouseListener( resizeHandler );
 				addMouseMotionListener( resizeHandler );
+
+				addMouseListener( reorderHandler );
+				addMouseMotionListener( reorderHandler );
 
 				add( collapseButton );
 				add( labelPanel, "growx" );
@@ -573,6 +660,77 @@ public class CardPanel
 				final int height = oheight + e.getYOnScreen() - oy;
 				UIUtils.setPreferredHeight( resizeComponent, Math.min( maxheight, Math.max( minheight, height ) ) );
 				resizeComponent.revalidate();
+			}
+		}
+	}
+
+	private interface DraggableHeader{
+		public Card getParent();
+		public void enterAction();
+		public void exitAction();
+	}
+
+	private static class ReorderMouseHandler extends MouseAdapter
+	{
+		private CardPanel cardPanel;
+
+		private DraggableHeader srcHeader;
+
+		private Card srcCard;
+
+		private Card dstCard;
+
+		public ReorderMouseHandler( final CardPanel cardPanel )
+		{
+			this.cardPanel = cardPanel;
+		}
+
+		@Override
+		public void mousePressed( final MouseEvent e )
+		{
+			final Component comp = e.getComponent();
+			if( comp instanceof DraggableHeader )
+			{
+				DraggableHeader headerPanel = (DraggableHeader)comp;
+				srcCard = headerPanel.getParent();
+				srcHeader = headerPanel;
+			}
+		}
+
+		@Override
+		public void mouseReleased( final MouseEvent e )
+		{
+			srcCard = null;
+			dstCard = null;
+			srcHeader = null;
+		}
+
+		@Override
+		public void mouseEntered( final MouseEvent e )
+		{
+			final Component comp = e.getComponent();
+			if( comp instanceof DraggableHeader )
+			{
+				DraggableHeader headerPanel = (DraggableHeader)comp;
+				if( srcCard != null)
+				{
+					dstCard = headerPanel.getParent();
+					cardPanel.moveCard( srcCard, dstCard );
+				}
+				else
+					headerPanel.enterAction();
+			}
+		}
+
+		@Override
+		public void mouseExited( final MouseEvent e )
+		{
+			final Component comp = e.getComponent();
+			if( comp instanceof DraggableHeader )
+			{
+				DraggableHeader headerPanel = (DraggableHeader)comp;
+				if( headerPanel != srcHeader )
+					headerPanel.exitAction();
 			}
 		}
 	}
