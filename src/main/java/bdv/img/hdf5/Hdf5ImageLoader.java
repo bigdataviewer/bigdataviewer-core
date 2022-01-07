@@ -28,23 +28,19 @@
  */
 package bdv.img.hdf5;
 
-import static bdv.img.hdf5.Util.getResolutionsPath;
-import static bdv.img.hdf5.Util.getSubdivisionsPath;
-
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.concurrent.Callable;
-
 import bdv.AbstractViewerSetupImgLoader;
 import bdv.ViewerImgLoader;
+import bdv.cache.SharedQueue;
 import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.util.ConstantRandomAccessible;
 import bdv.util.MipmapTransforms;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.generic.sequence.ImgLoaderHint;
@@ -61,12 +57,9 @@ import net.imglib2.Dimensions;
 import net.imglib2.FinalDimensions;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.cache.queue.BlockingFetchQueues;
-import net.imglib2.cache.queue.FetcherThreads;
 import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.cache.volatiles.LoadingStrategy;
 import net.imglib2.img.Img;
-import net.imglib2.img.NativeImg;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.img.basictypeaccess.array.ShortArray;
 import net.imglib2.img.cell.Cell;
@@ -79,6 +72,9 @@ import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.volatiles.VolatileUnsignedShortType;
 import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
+
+import static bdv.img.hdf5.Util.getResolutionsPath;
+import static bdv.img.hdf5.Util.getSubdivisionsPath;
 
 public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 {
@@ -97,8 +93,6 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 	protected IHDF5Access hdf5Access;
 
 	protected VolatileGlobalCellCache cache;
-
-	protected FetcherThreads fetchers;
 
 	protected Hdf5VolatileShortArrayLoader shortLoader;
 
@@ -136,7 +130,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 	 */
 	public Hdf5ImageLoader( final File hdf5File, final ArrayList< Partition > hdf5Partitions, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
 	{
-		this( hdf5File, hdf5Partitions, sequenceDescription, true );
+		this( hdf5File, hdf5Partitions, sequenceDescription, false );
 	}
 
 	public Hdf5ImageLoader( final File hdf5File, final ArrayList< Partition > hdf5Partitions, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription, final boolean doOpen )
@@ -158,11 +152,27 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 			open();
 	}
 
-	private boolean isOpen = false;
+	private volatile boolean isOpen = false;
+	private SharedQueue createdSharedQueue;
+
+	private int requestedNumFetcherThreads = -1;
+	private SharedQueue requestedSharedQueue;
+
+	@Override
+	public synchronized void setNumFetcherThreads( final int n )
+	{
+		requestedNumFetcherThreads = n;
+	}
+
+	@Override
+	public void setCreatedSharedQueue( final SharedQueue createdSharedQueue )
+	{
+		requestedSharedQueue = createdSharedQueue;
+	}
 
 	private void open()
 	{
-		if ( ! isOpen )
+		if ( !isOpen )
 		{
 			synchronized ( this )
 			{
@@ -204,9 +214,12 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 				shortLoader = new Hdf5VolatileShortArrayLoader( hdf5Access );
 
 
-				final int numFetcherThreads = 1;
-				final BlockingFetchQueues< Callable< ? > > queue = new BlockingFetchQueues<>( maxNumLevels, numFetcherThreads );
-				fetchers = new FetcherThreads( queue, numFetcherThreads );
+				final int numFetcherThreads = requestedNumFetcherThreads >= 0
+						? requestedNumFetcherThreads
+						: 1;
+				final SharedQueue queue = requestedSharedQueue != null
+						? requestedSharedQueue
+						: ( createdSharedQueue = new SharedQueue( numFetcherThreads, maxNumLevels ) );
 				cache = new VolatileGlobalCellCache( queue );
 			}
 		}
@@ -226,15 +239,18 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 			{
 				if ( !isOpen )
 					return;
-				isOpen = false;
 
-				fetchers.shutdown();
+				if ( createdSharedQueue != null )
+					createdSharedQueue.shutdown();
 				cache.clearCache();
 				hdf5Access.closeAllDataSets();
 
 				// only close reader if we constructed it ourselves
 				if ( existingHdf5Reader == null )
 					hdf5Access.close();
+
+				createdSharedQueue = null;
+				isOpen = false;
 			}
 		}
 	}
@@ -314,7 +330,11 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 			// getImageDimension() because this happens when a timepoint is
 			// loaded, and all setups for the timepoint are loaded then. We
 			// don't want to interleave this with block loading operations.
-			fetchers.pauseFor( 5 );
+			// TODO:  fetchers.pauseFor( 5 );
+			//  Turned off temporarily, because FetcherThreads is now hidden inside SharedQueue.
+			//  Think about whether this still makes sense with shared queues etc.
+			//  Maybe there is a better way to do it
+
 			dims = hdf5Access.getDimsAndExistence( id );
 			cachedDimsAndExistence.put( id, dims );
 		}
