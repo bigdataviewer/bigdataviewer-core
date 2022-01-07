@@ -28,6 +28,7 @@
  */
 package bdv.img.cache;
 
+import bdv.cache.SharedQueue;
 import java.util.concurrent.Callable;
 
 import bdv.cache.CacheControl;
@@ -35,7 +36,6 @@ import net.imglib2.cache.Cache;
 import net.imglib2.cache.CacheLoader;
 import net.imglib2.cache.LoaderCache;
 import net.imglib2.cache.queue.BlockingFetchQueues;
-import net.imglib2.cache.queue.FetcherThreads;
 import net.imglib2.cache.ref.SoftRefLoaderCache;
 import net.imglib2.cache.ref.WeakRefVolatileCache;
 import net.imglib2.cache.util.KeyBimap;
@@ -123,8 +123,7 @@ public class VolatileGlobalCellCache implements CacheControl
 	 */
 	public VolatileGlobalCellCache( final int maxNumLevels, final int numFetcherThreads )
 	{
-		queue = new BlockingFetchQueues<>( maxNumLevels, numFetcherThreads );
-		new FetcherThreads( queue, numFetcherThreads );
+		queue = new SharedQueue( numFetcherThreads, maxNumLevels );
 		backingCache = new SoftRefLoaderCache<>();
 	}
 
@@ -153,13 +152,13 @@ public class VolatileGlobalCellCache implements CacheControl
 	}
 
 	/**
-	 * Remove all references to loaded data as well as all enqueued requests
-	 * from the cache.
+	 * Remove all references to loaded data.
+	 * <p>
+	 * Note that there may be pending cell requests which will re-populate the cache
+	 * unless the fetch queue is cleared as well.
 	 */
 	public void clearCache()
 	{
-		backingCache.invalidateAll();
-		queue.clear();
 		backingCache.invalidateAll();
 	}
 

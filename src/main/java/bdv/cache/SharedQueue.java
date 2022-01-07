@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -26,40 +26,41 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package bdv;
+package bdv.cache;
 
-import bdv.cache.CacheControl;
-import bdv.cache.SharedQueue;
-import mpicbg.spim.data.generic.sequence.BasicMultiResolutionImgLoader;
+import java.util.concurrent.Callable;
+import net.imglib2.cache.queue.BlockingFetchQueues;
+import net.imglib2.cache.queue.FetcherThreads;
 
-public interface ViewerImgLoader extends BasicMultiResolutionImgLoader
+/**
+ * Queue and threads for asynchronously loading data into a cache
+ *
+ * @author Tobias Pietzsch
+ */
+public class SharedQueue extends BlockingFetchQueues< Callable< ? > > implements CacheControl
 {
+	private final FetcherThreads fetcherThreads;
+
+	public SharedQueue( final int numFetcherThreads, final int numPriorities )
+	{
+		super( numPriorities, numFetcherThreads );
+		fetcherThreads = new FetcherThreads( this, numFetcherThreads );
+	}
+
+	public SharedQueue( final int numFetcherThreads )
+	{
+		this( numFetcherThreads, 1 );
+	}
+
+	public void shutdown()
+	{
+		fetcherThreads.shutdown();
+		clear();
+	}
+
 	@Override
-	ViewerSetupImgLoader< ?, ? > getSetupImgLoader( final int setupId );
-
-	CacheControl getCacheControl();
-
-	/**
-	 * Set the number of fetcher threads that will be created to asynchronously load
-	 * blocks. It is permitted to set {@code n=0}, but that means that the volatile
-	 * versions of images may not work correctly.
-	 * <p>
-	 * This is an optional operation, i.e., some ImgLoader implementations may just
-	 * ignore it.
-	 * <p>
-	 * This method should be called before using the image loader, otherwise it might
-	 * not have the desired effect.
-	 */
-	default void setNumFetcherThreads( int n ) {}
-
-	/**
-	 * Use the given {@code SharedQueue} to asynchronously load blocks.
-	 * <p>
-	 * This is an optional operation, i.e., some ImgLoader implementations may just
-	 * ignore it.
-	 * <p>
-	 * This method should be called before using the image loader, otherwise it might
-	 * not have the desired effect.
-	 */
-	default void setCreatedSharedQueue( SharedQueue createdSharedQueue ) {}
+	public void prepareNextFrame()
+	{
+		clearToPrefetch();
+	}
 }
