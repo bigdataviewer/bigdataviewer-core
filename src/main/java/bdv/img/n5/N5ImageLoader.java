@@ -31,6 +31,7 @@ package bdv.img.n5;
 import bdv.AbstractViewerSetupImgLoader;
 import bdv.ViewerImgLoader;
 import bdv.cache.CacheControl;
+import bdv.cache.SharedQueue;
 import bdv.img.cache.SimpleCacheArrayLoader;
 import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.util.ConstantRandomAccessible;
@@ -41,7 +42,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Callable;
 import java.util.function.Function;
 import java.util.function.IntFunction;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
@@ -55,8 +55,6 @@ import net.imglib2.FinalDimensions;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
-import net.imglib2.cache.queue.BlockingFetchQueues;
-import net.imglib2.cache.queue.FetcherThreads;
 import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.cache.volatiles.LoadingStrategy;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileByteArray;
@@ -127,9 +125,25 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 	}
 
 	private volatile boolean isOpen = false;
-	private FetcherThreads fetchers;
+	private SharedQueue createdSharedQueue;
 	private VolatileGlobalCellCache cache;
 	private N5Reader n5;
+
+
+	private int requestedNumFetcherThreads = -1;
+	private SharedQueue requestedSharedQueue;
+
+	@Override
+	public synchronized void setNumFetcherThreads( final int n )
+	{
+		requestedNumFetcherThreads = n;
+	}
+
+	@Override
+	public void setCreatedSharedQueue( final SharedQueue createdSharedQueue )
+	{
+		requestedSharedQueue = createdSharedQueue;
+	}
 
 	private void open()
 	{
@@ -154,9 +168,12 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 						maxNumLevels = Math.max( maxNumLevels, setupImgLoader.numMipmapLevels() );
 					}
 
-					final int numFetcherThreads = Math.max( 1, Runtime.getRuntime().availableProcessors() );
-					final BlockingFetchQueues< Callable< ? > > queue = new BlockingFetchQueues<>( maxNumLevels, numFetcherThreads );
-					fetchers = new FetcherThreads( queue, numFetcherThreads );
+					final int numFetcherThreads = requestedNumFetcherThreads >= 0
+							? requestedNumFetcherThreads
+							: Math.max( 1, Runtime.getRuntime().availableProcessors() );
+					final SharedQueue queue = requestedSharedQueue != null
+							? requestedSharedQueue
+							: ( createdSharedQueue = new SharedQueue( numFetcherThreads, maxNumLevels ) );
 					cache = new VolatileGlobalCellCache( queue );
 				}
 				catch ( IOException e )
@@ -183,8 +200,12 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 			{
 				if ( !isOpen )
 					return;
-				fetchers.shutdown();
+
+				if ( createdSharedQueue != null )
+					createdSharedQueue.shutdown();
 				cache.clearCache();
+
+				createdSharedQueue = null;
 				isOpen = false;
 			}
 		}
