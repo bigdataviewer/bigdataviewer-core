@@ -95,6 +95,8 @@ import org.janelia.saalfeldlab.n5.DataType;
 import org.janelia.saalfeldlab.n5.DatasetAttributes;
 import org.janelia.saalfeldlab.n5.N5FSReader;
 import org.janelia.saalfeldlab.n5.N5Reader;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static bdv.img.n5.BdvN5Format.DATA_TYPE_KEY;
 import static bdv.img.n5.BdvN5Format.DOWNSAMPLING_FACTORS_KEY;
@@ -102,6 +104,8 @@ import static bdv.img.n5.BdvN5Format.getPathName;
 
 public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 {
+	private static final Logger LOG = LoggerFactory.getLogger(N5ImageLoader.class);
+
 	private final File n5File;
 
 	// TODO: it would be good if this would not be needed
@@ -136,12 +140,14 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 	@Override
 	public synchronized void setNumFetcherThreads( final int n )
 	{
+		LOG.info("setNumFetcherThreads: entry, n={}", n);
 		requestedNumFetcherThreads = n;
 	}
 
 	@Override
 	public void setCreatedSharedQueue( final SharedQueue createdSharedQueue )
 	{
+		LOG.info("setCreatedSharedQueue: entry, createdSharedQueue={}", createdSharedQueue.toString());
 		requestedSharedQueue = createdSharedQueue;
 	}
 
@@ -171,10 +177,15 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 					final int numFetcherThreads = requestedNumFetcherThreads >= 0
 							? requestedNumFetcherThreads
 							: Math.max( 1, Runtime.getRuntime().availableProcessors() );
+					LOG.info("open: numFetcherThreads={}", numFetcherThreads);
+
 					final SharedQueue queue = requestedSharedQueue != null
 							? requestedSharedQueue
 							: ( createdSharedQueue = new SharedQueue( numFetcherThreads, maxNumLevels ) );
 					cache = new VolatileGlobalCellCache( queue );
+
+					LOG.info("open: queue={}, requestedSharedQueue={}, maxNumLevels={}",
+							 queue, requestedSharedQueue, maxNumLevels);
 				}
 				catch ( IOException e )
 				{
