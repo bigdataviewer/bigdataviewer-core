@@ -124,12 +124,11 @@ public class VNCMovie {
         }
     }
 
-    private static void recordMovie(
+    public static void recordMovie(
             final ViewerPanel viewer,
             final int width,
             final int height,
             final AffineTransform3D[] transforms,
-            final AffineTransform3D viewerTranslation,
             final AffineTransform3D viewerScale,
             final int[] frames,
             final int[] accel,
@@ -138,6 +137,12 @@ public class VNCMovie {
 
         viewer.setInterpolation(Interpolation.NLINEAR);
         viewer.setCanvasSize(width, height);
+
+        final AffineTransform3D viewerTranslation = new AffineTransform3D();
+        viewerTranslation.set(
+                1, 0, 0, 0.5 * width,
+                0, 1, 0, 0.5 * height,
+                0, 0, 1, 0);
 
         final ViewerState renderState = viewer.state();
         final ScaleBarOverlayRenderer scalebar = new ScaleBarOverlayRenderer();
@@ -222,18 +227,11 @@ public class VNCMovie {
 
 
         final AffineTransform3D viewerScale = new AffineTransform3D();
-       final AffineTransform3D viewerTranslation = new AffineTransform3D();
-
-        {
             viewerScale.set(
                     1.0, 0, 0, 0,
                     0, 1.0, 0, 0,
                     0, 0, 1.0, 0);
-            viewerTranslation.set(
-                    1, 0, 0, 0.5 * screenWidth,
-                    0, 1, 0, 0.5 * screenHeight,
-                    0, 0, 1, 0);
-        }
+
 
 //        final Window frame = SwingUtilities.getWindowAncestor(bdv.getViewerFrame().getViewerPanel());
 //        frame.setSize(screenWidth, screenHeight);
@@ -320,7 +318,6 @@ public class VNCMovie {
                 screenWidth,
                 screenHeight,
                 transforms,
-                viewerTranslation,
                 viewerScale,
                 frames,
                 accel,

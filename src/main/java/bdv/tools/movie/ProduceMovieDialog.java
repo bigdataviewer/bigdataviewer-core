@@ -38,6 +38,7 @@ import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -110,14 +111,44 @@ public class ProduceMovieDialog extends DelayedPackDialog {
     }
 
     private void exportVideo() {
-        List<AffineTransform3D> transformations = getTransformations();
-    }
+        int size = framesPanels.size();
+        final AffineTransform3D[] transforms = new AffineTransform3D[size];
+        final int[] frames = new int[size];
+        final int[] accel = new int[size];
 
-    private List<AffineTransform3D> getTransformations() {
-        List<AffineTransform3D> transformations = new ArrayList<>();
-        for (MovieFramePanel panel : framesPanels)
-            transformations.add(panel.getTransform());
-        return transformations;
+        for(int i =0 ; i<size;i++){
+            MovieFramePanel currentPanel = framesPanels.get(i);
+            transforms[i]= currentPanel.getTransform();
+            frames[i]= currentPanel.getFrames();
+            accel[i]= currentPanel.getAccel();
+        }
+
+        // TODO Get them from input panel
+        final int screenWidth = viewer.getWidth();
+        final int screenHeight = viewer.getHeight();
+        final String outDir = "/Users/Marwan/Desktop/Viewer/generatedvideo";
+        AffineTransform3D viewerScale = new AffineTransform3D();
+        viewerScale.set(
+                1.0, 0, 0, 0,
+                0, 1.0, 0, 0,
+                0, 0, 1.0, 0);
+
+        try {
+            VNCMovie.recordMovie(
+                    viewer,
+                    screenWidth,
+                    screenHeight,
+                    transforms,
+                    viewerScale,
+                    frames,
+                    accel,
+                    1,
+                    outDir);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+
     }
 
     private void removeFrame() {

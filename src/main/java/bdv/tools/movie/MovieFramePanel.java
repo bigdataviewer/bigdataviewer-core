@@ -31,7 +31,9 @@ public class MovieFramePanel extends JPanel {
         int framesValue = (position == 0 )? 0 : DEFAULT_FRAMES;
         int accelValue = (position == 0 )? 0 : DEFAULT_ACCEL;
         framesField = new JTextField(String.valueOf(framesValue));
+        framesField.setFont(new Font("Serif", Font.PLAIN, 9));
         accelField = new JTextField(String.valueOf(accelValue));
+        accelField.setFont(new Font("Serif", Font.PLAIN, 9));
         JLabel framesLabel = new JLabel("Frames: ");
         framesLabel.setFont(new Font("Serif", Font.PLAIN, 8));
         JLabel accelLabel = new JLabel("Accel: ");
@@ -58,5 +60,27 @@ public class MovieFramePanel extends JPanel {
 
     public int getPosition() {
         return position;
+    }
+
+    public int getAccel() {
+        try{
+            int accel = Integer.valueOf(accelField.getText());
+            return accel;
+        }catch (Exception e){
+            e.printStackTrace();
+            System.out.println("Invalid value :"+accelField.getText());
+        }
+        return (position == 0 )? 0 : DEFAULT_ACCEL ;
+    }
+
+    public int getFrames() {
+        try{
+            int frames = Integer.valueOf(framesField.getText());
+            return frames;
+        }catch (Exception e){
+            e.printStackTrace();
+            System.out.println("Invalid value :"+framesField.getText());
+        }
+        return (position == 0 )? 0 : DEFAULT_FRAMES ;
     }
 }
