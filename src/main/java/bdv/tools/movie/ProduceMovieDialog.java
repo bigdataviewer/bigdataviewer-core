@@ -34,6 +34,7 @@ import bdv.viewer.ViewerPanel;
 import net.imglib2.realtransform.AffineTransform3D;
 
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -48,31 +49,50 @@ public class ProduceMovieDialog extends DelayedPackDialog
 
     private final ProgressWriter progressWriter;
     private final JPanel mainPanel;
+    private final JButton removeButton;
 
     public ProduceMovieDialog( final Frame owner, final ViewerPanel viewer, final ProgressWriter progressWriter )
     {
         super( owner, "produce movie", false );
-        setSize(new Dimension(800,200));
+        setLayout(new FlowLayout());
+        setSize(new Dimension(820,240));
         this.viewer = viewer;
         this.progressWriter = progressWriter;
         framesPanels = new ArrayList<>();
-        final JPanel controlPanel = new JPanel();
-        controlPanel.setSize(50,200);
-        controlPanel.setBackground(Color.BLACK);
+        final JPanel controlPanel = new JPanel(new FlowLayout());
+        controlPanel.setPreferredSize(new Dimension(50,200));
+
         JButton addButton = new JButton("+");
+        addButton.setPreferredSize(new Dimension(50,30));
         addButton.addActionListener(e -> addFrame());
         controlPanel.add(addButton);
-        getContentPane().add(controlPanel);
+
+        removeButton = new JButton("-");
+        removeButton.setPreferredSize(new Dimension(50,30));
+        removeButton.addActionListener(e -> removeFrame());
+        controlPanel.add(removeButton);
+
+        add(controlPanel);
 
         this.mainPanel = new JPanel();
-        mainPanel.setSize(new Dimension(700,200));
-        mainPanel.setBackground(Color.BLUE);
-        getContentPane().add( mainPanel );
+        TitledBorder title = BorderFactory.createTitledBorder("Frames: ");
+        mainPanel.setBorder(title);
+        JScrollPane scrollMain = new JScrollPane(mainPanel);
+        scrollMain.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
+        scrollMain.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
 
-        final JPanel exportPanel = new JPanel();
-        exportPanel.setSize(new Dimension(50,200));
-        exportPanel.setBackground(Color.green);
-        getContentPane().add( exportPanel );
+        scrollMain.setPreferredSize(new Dimension(650,200));
+//        mainPanel.setPreferredSize(new Dimension(650,200));
+        add( scrollMain );
+
+        final JPanel exportPanel = new JPanel(new FlowLayout());
+        exportPanel.setPreferredSize(new Dimension(100,200));
+
+        JButton exportButton = new JButton("Export");
+        exportButton.addActionListener(e -> exportVideo());
+        exportPanel.add(exportButton);
+
+        add( exportPanel );
 
         final ActionMap am = getRootPane().getActionMap();
         final InputMap im = getRootPane().getInputMap( JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT );
@@ -89,7 +109,18 @@ public class ProduceMovieDialog extends DelayedPackDialog
         };
         im.put( KeyStroke.getKeyStroke( KeyEvent.VK_ESCAPE, 0 ), hideKey );
         am.put( hideKey, hideAction );
+        setResizable(false);
+        validateRemoveButton();
+    }
 
+    private void exportVideo() {
+    }
+
+    private void removeFrame() {
+        mainPanel.remove(framesPanels.remove(framesPanels.size()-1));
+        validateRemoveButton();
+        revalidate();
+        repaint();
     }
 
     private void addFrame() {
@@ -97,7 +128,22 @@ public class ProduceMovieDialog extends DelayedPackDialog
         MovieFramePanel movieFramePanel = new MovieFramePanel(currentTransform, new ImagePanel(PanelSnapshot.takeSnapShot(viewer)),framesPanels.size());
         framesPanels.add(movieFramePanel);
         mainPanel.add(movieFramePanel);
+        validateRemoveButton();
         revalidate();
         repaint();
+    }
+
+    private void validateRemoveButton() {
+        if (framesPanels.size()>0){
+            if (!removeButton.isEnabled())
+                removeButton.setEnabled(true);
+            removeButton.revalidate();
+            removeButton.repaint();
+        }
+        else if (removeButton.isEnabled()){
+            removeButton.setEnabled(false);
+            removeButton.revalidate();
+            removeButton.repaint();
+        }
     }
 }
