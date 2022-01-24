@@ -31,6 +31,7 @@ package bdv.tools.movie;
 import bdv.export.ProgressWriter;
 import bdv.util.DelayedPackDialog;
 import bdv.viewer.ViewerPanel;
+import net.imglib2.realtransform.AffineTransform3D;
 
 import javax.swing.*;
 import java.awt.*;
@@ -46,6 +47,7 @@ public class ProduceMovieDialog extends DelayedPackDialog
     private final ViewerPanel viewer;
 
     private final ProgressWriter progressWriter;
+    private final JPanel mainPanel;
 
     public ProduceMovieDialog( final Frame owner, final ViewerPanel viewer, final ProgressWriter progressWriter )
     {
@@ -57,9 +59,12 @@ public class ProduceMovieDialog extends DelayedPackDialog
         final JPanel controlPanel = new JPanel();
         controlPanel.setSize(50,200);
         controlPanel.setBackground(Color.BLACK);
+        JButton addButton = new JButton("+");
+        addButton.addActionListener(e -> addFrame());
+        controlPanel.add(addButton);
         getContentPane().add(controlPanel);
 
-        final JPanel mainPanel = new JPanel();
+        this.mainPanel = new JPanel();
         mainPanel.setSize(new Dimension(700,200));
         mainPanel.setBackground(Color.BLUE);
         getContentPane().add( mainPanel );
@@ -85,5 +90,14 @@ public class ProduceMovieDialog extends DelayedPackDialog
         im.put( KeyStroke.getKeyStroke( KeyEvent.VK_ESCAPE, 0 ), hideKey );
         am.put( hideKey, hideAction );
 
+    }
+
+    private void addFrame() {
+        AffineTransform3D currentTransform = viewer.state().getViewerTransform();
+        MovieFramePanel movieFramePanel = new MovieFramePanel(currentTransform, new ImagePanel(PanelSnapshot.takeSnapShot(viewer)),framesPanels.size());
+        framesPanels.add(movieFramePanel);
+        mainPanel.add(movieFramePanel);
+        revalidate();
+        repaint();
     }
 }
