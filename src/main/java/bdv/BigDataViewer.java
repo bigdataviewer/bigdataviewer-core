@@ -28,41 +28,6 @@
  */
 package bdv;
 
-import bdv.viewer.ConverterSetups;
-import bdv.viewer.ViewerState;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-
-import javax.swing.ActionMap;
-import javax.swing.JFileChooser;
-import javax.swing.JMenu;
-import javax.swing.JMenuBar;
-import javax.swing.JMenuItem;
-import javax.swing.filechooser.FileFilter;
-
-import net.imglib2.Volatile;
-import net.imglib2.converter.Converter;
-import net.imglib2.display.ColorConverter;
-import net.imglib2.display.RealARGBColorConverter;
-import net.imglib2.display.ScaledARGBConverter;
-import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.type.numeric.NumericType;
-import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.volatiles.VolatileARGBType;
-
-import org.jdom2.Document;
-import org.jdom2.Element;
-import org.jdom2.JDOMException;
-import org.jdom2.input.SAXBuilder;
-import org.jdom2.output.Format;
-import org.jdom2.output.XMLOutputter;
-import org.scijava.ui.behaviour.io.InputTriggerConfig;
-import org.scijava.ui.behaviour.io.yaml.YamlConfigIO;
-
 import bdv.cache.CacheControl;
 import bdv.export.ProgressWriter;
 import bdv.export.ProgressWriterConsole;
@@ -82,21 +47,50 @@ import bdv.tools.brightness.MinMaxGroup;
 import bdv.tools.brightness.RealARGBColorConverterSetup;
 import bdv.tools.brightness.SetupAssignments;
 import bdv.tools.crop.CropDialog;
+import bdv.tools.movie.ProduceMovieDialog;
 import bdv.tools.transformation.ManualTransformation;
 import bdv.tools.transformation.ManualTransformationEditor;
 import bdv.tools.transformation.TransformedSource;
+import bdv.viewer.ConverterSetups;
 import bdv.viewer.NavigationActions;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerFrame;
 import bdv.viewer.ViewerOptions;
 import bdv.viewer.ViewerPanel;
+import bdv.viewer.ViewerState;
 import mpicbg.spim.data.SpimDataException;
 import mpicbg.spim.data.generic.AbstractSpimData;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.sequence.Angle;
 import mpicbg.spim.data.sequence.Channel;
+import net.imglib2.Volatile;
+import net.imglib2.converter.Converter;
+import net.imglib2.display.ColorConverter;
+import net.imglib2.display.RealARGBColorConverter;
+import net.imglib2.display.ScaledARGBConverter;
+import net.imglib2.type.numeric.ARGBType;
+import net.imglib2.type.numeric.NumericType;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.volatiles.VolatileARGBType;
+import org.jdom2.Document;
+import org.jdom2.Element;
+import org.jdom2.JDOMException;
+import org.jdom2.input.SAXBuilder;
+import org.jdom2.output.Format;
+import org.jdom2.output.XMLOutputter;
+import org.scijava.ui.behaviour.io.InputTriggerConfig;
+import org.scijava.ui.behaviour.io.yaml.YamlConfigIO;
 import org.scijava.ui.behaviour.util.Actions;
+
+import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class BigDataViewer
 {
@@ -115,6 +109,8 @@ public class BigDataViewer
 	protected final CropDialog cropDialog;
 
 	protected final RecordMovieDialog movieDialog;
+
+	protected final ProduceMovieDialog produceMovieDialog;
 
 	protected final RecordMaxProjectionDialog movieMaxProjectDialog;
 
@@ -373,6 +369,8 @@ public class BigDataViewer
 		cropDialog = ( spimData == null ) ? null : new CropDialog( viewerFrame, viewer, spimData.getSequenceDescription() );
 
 		movieDialog = new RecordMovieDialog( viewerFrame, viewer, progressWriter );
+
+		produceMovieDialog = new ProduceMovieDialog( viewerFrame, viewer, progressWriter );
 		// this is just to get updates of window size:
 		viewer.getDisplay().overlays().add( movieDialog );
 
@@ -457,6 +455,10 @@ public class BigDataViewer
 		final JMenuItem miMovie = new JMenuItem( actionMap.get( BigDataViewerActions.RECORD_MOVIE ) );
 		miMovie.setText( "Record Movie" );
 		menu.add( miMovie );
+
+		final JMenuItem miMovieProducer = new JMenuItem( actionMap.get( BigDataViewerActions.PRODUCE_MOVIE ) );
+		miMovieProducer.setText( "Produce Movie" );
+		menu.add( miMovieProducer );
 
 		final JMenuItem miMaxProjectMovie = new JMenuItem( actionMap.get( BigDataViewerActions.RECORD_MAX_PROJECTION_MOVIE ) );
 		miMaxProjectMovie.setText( "Record Max-Projection Movie" );
@@ -744,14 +746,17 @@ public class BigDataViewer
 //		final String fn = "/Users/pietzsch/Desktop/data/fibsem-remote.xml";
 //		final String fn = "/Users/pietzsch/Desktop/url-valia.xml";
 //		final String fn = "/Users/pietzsch/Desktop/data/clusterValia/140219-1/valia-140219-1.xml";
-		final String fn = "/Users/pietzsch/workspace/data/111010_weber_full.xml";
+//		final String fn = "/Users/pietzsch/workspace/data/111010_weber_full.xml";
 //		final String fn = "/Volumes/projects/tomancak_lightsheet/Mette/ZeissZ1SPIM/Maritigrella/021013_McH2BsGFP_CAAX-mCherry/11-use/hdf5/021013_McH2BsGFP_CAAX-mCherry-11-use.xml";
+
+		final String fn = "/Users/Marwan/Downloads/drosophila_his-yfp/dataset.xml";
 		try
 		{
 			System.setProperty( "apple.laf.useScreenMenuBar", "true" );
 
 			final BigDataViewer bdv = open( fn, new File( fn ).getName(), new ProgressWriterConsole(), ViewerOptions.options() );
 
+//			PanelSnapshot.showPanel(bdv.getViewer());
 //			DumpInputConfig.writeToYaml( System.getProperty( "user.home" ) + "/.bdv/bdvkeyconfig.yaml", bdv.getViewerFrame() );
 		}
 		catch ( final Exception e )

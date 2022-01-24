@@ -28,15 +28,6 @@
  */
 package bdv;
 
-import java.awt.Dialog;
-
-import javax.swing.ActionMap;
-import javax.swing.InputMap;
-
-import org.scijava.ui.behaviour.KeyStrokeAdder;
-import org.scijava.ui.behaviour.util.Actions;
-import org.scijava.ui.behaviour.util.InputActionBindings;
-
 import bdv.tools.HelpDialog;
 import bdv.tools.RecordMaxProjectionDialog;
 import bdv.tools.RecordMovieDialog;
@@ -46,6 +37,12 @@ import bdv.tools.bookmarks.BookmarksEditor;
 import bdv.tools.brightness.BrightnessDialog;
 import bdv.tools.crop.CropDialog;
 import bdv.tools.transformation.ManualTransformationEditor;
+import org.scijava.ui.behaviour.KeyStrokeAdder;
+import org.scijava.ui.behaviour.util.Actions;
+import org.scijava.ui.behaviour.util.InputActionBindings;
+
+import javax.swing.*;
+import java.awt.*;
 
 public class BigDataViewerActions extends Actions
 {
@@ -59,6 +56,7 @@ public class BigDataViewerActions extends Actions
 	public static final String EXPAND_CARDS = "expand and focus cards panel";
 	public static final String COLLAPSE_CARDS = "collapse cards panel";
 	public static final String RECORD_MOVIE = "record movie";
+	public static final String PRODUCE_MOVIE = "produce movie";
 	public static final String RECORD_MAX_PROJECTION_MOVIE = "record max projection movie";
 	public static final String SET_BOOKMARK = "set bookmark";
 	public static final String GO_TO_BOOKMARK = "go to bookmark";
@@ -71,6 +69,7 @@ public class BigDataViewerActions extends Actions
 	public static final String[] RECORD_MAX_PROJECTION_MOVIE_KEYS = new String[] { "F8" };
 	public static final String[] CROP_KEYS                        = new String[] { "F9" };
 	public static final String[] RECORD_MOVIE_KEYS                = new String[] { "F10" };
+	public static final String[] PRODUCE_MOVIE_KEYS                = new String[] { "F7" };
 	public static final String[] SAVE_SETTINGS_KEYS               = new String[] { "F11" };
 	public static final String[] LOAD_SETTINGS_KEYS               = new String[] { "F12" };
 	public static final String[] EXPAND_CARDS_KEYS                = new String[] { "P" };
@@ -95,6 +94,7 @@ public class BigDataViewerActions extends Actions
 		toggleDialogAction( actions, bdv.helpDialog, SHOW_HELP, SHOW_HELP_KEYS );
 		toggleDialogAction( actions, bdv.cropDialog, CROP, CROP_KEYS );
 		toggleDialogAction( actions, bdv.movieDialog, RECORD_MOVIE, RECORD_MOVIE_KEYS );
+		toggleDialogAction( actions, bdv.produceMovieDialog, PRODUCE_MOVIE, PRODUCE_MOVIE_KEYS );
 		toggleDialogAction( actions, bdv.movieMaxProjectDialog, RECORD_MAX_PROJECTION_MOVIE, RECORD_MAX_PROJECTION_MOVIE_KEYS );
 		bookmarks( actions, bdv.bookmarkEditor );
 		actions.runnableAction( bdv.manualTransformationEditor::toggle, MANUAL_TRANSFORM, MANUAL_TRANSFORM_KEYS );
