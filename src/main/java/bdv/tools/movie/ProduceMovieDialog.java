@@ -53,7 +53,7 @@ public class ProduceMovieDialog extends DelayedPackDialog {
     public ProduceMovieDialog(final Frame owner, final ViewerPanel viewer, final ProgressWriter progressWriter) {
         super(owner, "produce movie", false);
         setLayout(new FlowLayout());
-        setSize(new Dimension(820, 240));
+        setSize(new Dimension(920, 280));
         this.viewer = viewer;
         this.progressWriter = progressWriter;
         framesPanels = new ArrayList<>();
@@ -73,13 +73,13 @@ public class ProduceMovieDialog extends DelayedPackDialog {
         add(controlPanel);
 
         this.mainPanel = new JPanel();
-        TitledBorder title = BorderFactory.createTitledBorder("Frames: ");
-        mainPanel.setBorder(title);
+
         JScrollPane scrollMain = new JScrollPane(mainPanel);
         scrollMain.setHorizontalScrollBarPolicy(JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
         scrollMain.setVerticalScrollBarPolicy(JScrollPane.VERTICAL_SCROLLBAR_NEVER);
-
-        scrollMain.setPreferredSize(new Dimension(650, 200));
+        TitledBorder title = BorderFactory.createTitledBorder("Frames: ");
+        scrollMain.setBorder(title);
+        scrollMain.setPreferredSize(new Dimension(750, 240));
 //        mainPanel.setPreferredSize(new Dimension(650,200));
         add(scrollMain);
 
@@ -105,7 +105,7 @@ public class ProduceMovieDialog extends DelayedPackDialog {
         };
         im.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), hideKey);
         am.put(hideKey, hideAction);
-        setResizable(false);
+//        setResizable(false);
         validateRemoveButton();
     }
 
