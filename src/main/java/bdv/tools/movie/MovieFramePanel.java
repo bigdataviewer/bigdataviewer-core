@@ -26,4 +26,16 @@ public class MovieFramePanel extends JPanel {
         this.image = image;
         this.position = position;
     }
+
+    public AffineTransform3D getTransform() {
+        return transform;
+    }
+
+    public ImagePanel getImage() {
+        return image;
+    }
+
+    public int getPosition() {
+        return position;
+    }
 }
