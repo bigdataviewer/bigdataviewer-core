@@ -117,10 +117,10 @@ public class ProduceMovieDialog extends DelayedPackDialog {
         final int[] accel = new int[size];
 
         for(int i =0 ; i<size;i++){
-            MovieFramePanel currentPanel = framesPanels.get(i);
-            transforms[i]= currentPanel.getTransform();
-            frames[i]= currentPanel.getFrames();
-            accel[i]= currentPanel.getAccel();
+            MovieFrame currentFrame = framesPanels.get(i).updateFields().getMovieFrame();
+            transforms[i]= currentFrame.getTransform();
+            frames[i]= currentFrame.getFrames();
+            accel[i]= currentFrame.getAccel();
         }
 
         // TODO Get them from input panel
