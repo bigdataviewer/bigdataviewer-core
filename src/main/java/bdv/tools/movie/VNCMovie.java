@@ -162,6 +162,13 @@ public class VNCMovie {
                 new CacheControl.Dummy());
 
         /* count i up to firstFrame */
+
+        int cX = 0;
+        int cY = 0;
+
+        /* Removed to fix transformation */
+        // cX = width / 2;
+        // cY = height / 2;
         int i = 0;
         for (int k = 0; k < firstTransformIndex; ++k)
             i += frames[k];
@@ -170,8 +177,8 @@ public class VNCMovie {
             final SimilarityTransformAnimator animator = new SimilarityTransformAnimator(
                     transforms[k - 1],
                     transforms[k],
-                    width / 2,
-                    height / 2,
+                    cX,
+                    cY,
                     0);
 
             for (int d = 0; d < frames[k]; ++d) {
@@ -221,16 +228,16 @@ public class VNCMovie {
 
         final BigDataViewer bdv = BigDataViewer.open(fn, new File(fn).getName(), new ProgressWriterConsole(), ViewerOptions.options());
         /* some parameters */
-       final int screenWidth = 1280;
+        final int screenWidth = 1280;
         final int screenHeight = 720;
-       final String outDir = "/Users/Marwan/Desktop/Viewer/generatedvideo";
+        final String outDir = "/Users/Marwan/Desktop/Viewer/generatedvideo";
 
 
         final AffineTransform3D viewerScale = new AffineTransform3D();
-            viewerScale.set(
-                    1.0, 0, 0, 0,
-                    0, 1.0, 0, 0,
-                    0, 0, 1.0, 0);
+        viewerScale.set(
+                1.0, 0, 0, 0,
+                0, 1.0, 0, 0,
+                0, 0, 1.0, 0);
 
 
 //        final Window frame = SwingUtilities.getWindowAncestor(bdv.getViewerFrame().getViewerPanel());
