@@ -38,6 +38,7 @@ import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -50,11 +51,15 @@ public class ProduceMovieDialog extends DelayedPackDialog {
     private final ProgressWriter progressWriter;
     private final JPanel mainPanel;
     private final JButton removeButton;
+    private final MovieSaveDialog saveDialog;
+    private final JButton exportJsonButton;
+    private final JButton exportPNGsButton;
 
     public ProduceMovieDialog(final Frame owner, final ViewerPanel viewer, final ProgressWriter progressWriter) {
         super(owner, "produce movie", false);
         setLayout(new FlowLayout());
         setSize(new Dimension(920, 280));
+        this.saveDialog = new MovieSaveDialog(owner,viewer,progressWriter,this);
         this.viewer = viewer;
         this.progressWriter = progressWriter;
         framesPanels = new ArrayList<>();
@@ -87,9 +92,18 @@ public class ProduceMovieDialog extends DelayedPackDialog {
         final JPanel exportPanel = new JPanel(new FlowLayout());
         exportPanel.setPreferredSize(new Dimension(100, 200));
 
-        JButton exportButton = new JButton("Export");
-        exportButton.addActionListener(e -> exportVideo());
-        exportPanel.add(exportButton);
+        this.exportJsonButton = new JButton("Export Json");
+        exportJsonButton.addActionListener(e -> exportJson());
+        exportPanel.add(exportJsonButton);
+
+        this.exportPNGsButton = new JButton("Generate PNGs");
+        exportPNGsButton.addActionListener(e -> showSavePNGsDialog());
+        exportPanel.add(exportPNGsButton);
+
+
+        JButton importButton = new JButton("Import");
+        importButton.addActionListener(e -> importSequence());
+        exportPanel.add(importButton);
 
         add(exportPanel);
 
@@ -106,11 +120,75 @@ public class ProduceMovieDialog extends DelayedPackDialog {
         };
         im.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), hideKey);
         am.put(hideKey, hideAction);
-//        setResizable(false);
-        validateRemoveButton();
+        // setResizable(false);
+        validateButtons();
     }
 
-    private void exportVideo() {
+//    TODO import
+    private void importSequence() {
+    }
+
+
+    private void exportJson() {
+    }
+
+    private void showSavePNGsDialog() {
+                saveDialog.setVisible(true);
+    }
+
+    private void removeFrame() {
+        mainPanel.remove(framesPanels.remove(framesPanels.size() - 1));
+        validateButtons();
+        revalidate();
+        repaint();
+    }
+
+    private void addFrame(MovieFrame movieFrame) {
+        //TODO fix image snapshot
+        MovieFramePanel movieFramePanel = new MovieFramePanel(movieFrame,null);
+        framesPanels.add(movieFramePanel);
+        mainPanel.add(movieFramePanel);
+        validateButtons();
+        revalidate();
+        repaint();
+    }
+
+    private void addFrame() {
+        AffineTransform3D currentTransform = viewer.state().getViewerTransform();
+        MovieFramePanel movieFramePanel = new MovieFramePanel(currentTransform, ImagePanel.snapshotOf(viewer), framesPanels.size());
+        framesPanels.add(movieFramePanel);
+        mainPanel.add(movieFramePanel);
+        validateButtons();
+        revalidate();
+        repaint();
+    }
+
+    private void validateButtons() {
+        if(framesPanels.size()==2 && !exportPNGsButton.isEnabled()){
+            exportJsonButton.setEnabled(true);
+            exportPNGsButton.setEnabled(true);
+            exportJsonButton.revalidate();
+            exportPNGsButton.revalidate();
+        }
+        if(framesPanels.size()<2 && exportPNGsButton.isEnabled()){
+            exportJsonButton.setEnabled(false);
+            exportPNGsButton.setEnabled(false);
+            exportJsonButton.revalidate();
+            exportPNGsButton.revalidate();
+        }
+        if (framesPanels.size() > 0) {
+            if (!removeButton.isEnabled())
+                removeButton.setEnabled(true);
+            removeButton.revalidate();
+            removeButton.repaint();
+        } else if (removeButton.isEnabled()) {
+            removeButton.setEnabled(false);
+            removeButton.revalidate();
+            removeButton.repaint();
+        }
+    }
+
+    public void exportPNGs(int width, int height, File dir) {
         int size = framesPanels.size();
         final AffineTransform3D[] transforms = new AffineTransform3D[size];
         final int[] frames = new int[size];
@@ -123,10 +201,6 @@ public class ProduceMovieDialog extends DelayedPackDialog {
             accel[i]= currentFrame.getAccel();
         }
 
-        // TODO Get them from input panel
-        final int screenWidth = viewer.getWidth();
-        final int screenHeight = viewer.getHeight();
-        final String outDir = "/Users/Marwan/Desktop/Viewer/generatedvideo";
         AffineTransform3D viewerScale = new AffineTransform3D();
         viewerScale.set(
                 1.0, 0, 0, 0,
@@ -136,48 +210,16 @@ public class ProduceMovieDialog extends DelayedPackDialog {
         try {
             VNCMovie.recordMovie(
                     viewer,
-                    screenWidth,
-                    screenHeight,
+                    width,
+                    height,
                     transforms,
                     viewerScale,
                     frames,
                     accel,
                     1,
-                    outDir);
+                    dir.getAbsolutePath());
         } catch (IOException e) {
             e.printStackTrace();
-        }
-
-
-    }
-
-    private void removeFrame() {
-        mainPanel.remove(framesPanels.remove(framesPanels.size() - 1));
-        validateRemoveButton();
-        revalidate();
-        repaint();
-    }
-
-    private void addFrame() {
-        AffineTransform3D currentTransform = viewer.state().getViewerTransform();
-        MovieFramePanel movieFramePanel = new MovieFramePanel(currentTransform, ImagePanel.snapshotOf(viewer), framesPanels.size());
-        framesPanels.add(movieFramePanel);
-        mainPanel.add(movieFramePanel);
-        validateRemoveButton();
-        revalidate();
-        repaint();
-    }
-
-    private void validateRemoveButton() {
-        if (framesPanels.size() > 0) {
-            if (!removeButton.isEnabled())
-                removeButton.setEnabled(true);
-            removeButton.revalidate();
-            removeButton.repaint();
-        } else if (removeButton.isEnabled()) {
-            removeButton.setEnabled(false);
-            removeButton.revalidate();
-            removeButton.repaint();
         }
     }
 }

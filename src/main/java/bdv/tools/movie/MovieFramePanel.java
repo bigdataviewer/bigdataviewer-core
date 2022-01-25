@@ -10,15 +10,28 @@ import java.awt.*;
 public class MovieFramePanel extends JPanel {
     final private MovieFrame movieFrame;
     final private ImagePanel image;
-    private final JTextField framesField;
-    private final JTextField accelField;
+    private JTextField framesField;
+    private JTextField accelField;
 
 
     public MovieFramePanel(AffineTransform3D transform, ImagePanel image, int position) {
         super();
         this.movieFrame = new MovieFrame(position, transform);
+        this.image = image;
+        initView();
+    }
+
+    public MovieFramePanel(MovieFrame movieFrame, ImagePanel image) {
+        super();
+        this.movieFrame = movieFrame;
+        this.image = image;
+        initView();
+    }
+
+
+    private void initView() {
         Border blackline = BorderFactory.createLineBorder(Color.lightGray);
-        TitledBorder title = BorderFactory.createTitledBorder(blackline, String.valueOf(position));
+        TitledBorder title = BorderFactory.createTitledBorder(blackline, String.valueOf(movieFrame.getPosition()));
         title.setTitleJustification(TitledBorder.CENTER);
         setBorder(title);
         setPreferredSize(new Dimension(120, 180));
@@ -37,8 +50,6 @@ public class MovieFramePanel extends JPanel {
         fieldsPanel.add(accelLabel);
         fieldsPanel.add(accelField);
         add(fieldsPanel);
-
-        this.image = image;
     }
 
     public ImagePanel getImage() {
