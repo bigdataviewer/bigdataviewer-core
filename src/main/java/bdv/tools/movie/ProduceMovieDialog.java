@@ -160,7 +160,7 @@ public class ProduceMovieDialog extends DelayedPackDialog {
 
     private void addFrame() {
         AffineTransform3D currentTransform = viewer.state().getViewerTransform();
-        MovieFramePanel movieFramePanel = new MovieFramePanel(currentTransform, new ImagePanel(PanelSnapshot.takeSnapShot(viewer)), framesPanels.size());
+        MovieFramePanel movieFramePanel = new MovieFramePanel(currentTransform, ImagePanel.snapshotOf(viewer), framesPanels.size());
         framesPanels.add(movieFramePanel);
         mainPanel.add(movieFramePanel);
         validateRemoveButton();
