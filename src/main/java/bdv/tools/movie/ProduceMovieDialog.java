@@ -86,7 +86,6 @@ public class ProduceMovieDialog extends DelayedPackDialog {
         TitledBorder title = BorderFactory.createTitledBorder("Frames: ");
         scrollMain.setBorder(title);
         scrollMain.setPreferredSize(new Dimension(750, 240));
-//        mainPanel.setPreferredSize(new Dimension(650,200));
         add(scrollMain);
 
         final JPanel exportPanel = new JPanel(new FlowLayout());
@@ -99,7 +98,6 @@ public class ProduceMovieDialog extends DelayedPackDialog {
         this.exportPNGsButton = new JButton("Generate PNGs");
         exportPNGsButton.addActionListener(e -> showSavePNGsDialog());
         exportPanel.add(exportPNGsButton);
-
 
         JButton importButton = new JButton("Import");
         importButton.addActionListener(e -> importSequence());
