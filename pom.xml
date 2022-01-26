@@ -199,6 +199,11 @@
 			<groupId>com.miglayout</groupId>
 			<artifactId>miglayout-swing</artifactId>
 		</dependency>
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>2.8.5</version>
+		</dependency>
 
 		<!-- test dependencies -->
 		<dependency>
