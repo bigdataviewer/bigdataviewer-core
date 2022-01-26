@@ -135,9 +135,7 @@ public class ProduceMovieDialog extends DelayedPackDialog {
         } catch (FileNotFoundException e) {
             e.printStackTrace();
         }
-
     }
-
 
     private void exportJson() {
         //TODO File popup select

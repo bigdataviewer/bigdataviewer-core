@@ -11,7 +11,11 @@ public class MovieFramePanel extends JPanel {
     final private MovieFrame movieFrame;
     final private ImagePanel image;
     private JTextField framesField;
-    private JTextField accelField;
+    private JComboBox<String> accelField;
+
+      private final String[] ACCELS = new String[]{"symmetric","slow start","slow end","soft symmetric","soft slow start","soft slow end"};
+
+
 
 
     public MovieFramePanel(AffineTransform3D transform, ImagePanel image, int position) {
@@ -34,21 +38,23 @@ public class MovieFramePanel extends JPanel {
         TitledBorder title = BorderFactory.createTitledBorder(blackline, String.valueOf(movieFrame.getPosition()));
         title.setTitleJustification(TitledBorder.CENTER);
         setBorder(title);
-        setPreferredSize(new Dimension(120, 180));
+        setPreferredSize(new Dimension(140, 180));
         if (image != null)
             add(image);
-        JPanel fieldsPanel = new JPanel(new GridLayout(2, 2));
+        JPanel fieldsPanel = new JPanel(new GridLayout(2, 1));
         framesField = new JTextField(String.valueOf(movieFrame.getFrames()));
         framesField.setFont(new Font("Serif", Font.PLAIN, 9));
-        accelField = new JTextField(String.valueOf(movieFrame.getAccel()));
+        accelField = new JComboBox<>(ACCELS);
+        accelField.setSelectedIndex(movieFrame.getAccel());
         accelField.setFont(new Font("Serif", Font.PLAIN, 9));
         JLabel framesLabel = new JLabel("Frames: ");
         framesLabel.setFont(new Font("Serif", Font.PLAIN, 8));
-        JLabel accelLabel = new JLabel("Accel: ");
-        accelLabel.setFont(new Font("Serif", Font.PLAIN, 8));
-        fieldsPanel.add(framesLabel);
-        fieldsPanel.add(framesField);
-        fieldsPanel.add(accelLabel);
+//        JLabel accelLabel = new JLabel("Accel: ");
+//        accelLabel.setFont(new Font("Serif", Font.PLAIN, 8));
+        JPanel framePanel = new JPanel(new GridLayout(1,2));
+        framePanel.add(framesLabel);
+        framePanel.add(framesField);
+        fieldsPanel.add(framePanel);
         fieldsPanel.add(accelField);
         add(fieldsPanel);
     }
@@ -59,11 +65,11 @@ public class MovieFramePanel extends JPanel {
 
     public MovieFramePanel updateFields() {
         try {
-            int accel = Integer.valueOf(accelField.getText());
+            int accel = accelField.getSelectedIndex();
             movieFrame.setAccel(accel);
         } catch (Exception e) {
             e.printStackTrace();
-            System.out.println("Invalid value :" + accelField.getText());
+            System.out.println("Invalid value :" + accelField.getSelectedItem());
         }
         try {
             int frames = Integer.valueOf(framesField.getText());
