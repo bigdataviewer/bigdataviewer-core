@@ -2,7 +2,9 @@ package bdv.tools.movie;
 
 import net.imglib2.realtransform.AffineTransform3D;
 
-public class MovieFrame {
+import java.io.Serializable;
+
+public class MovieFrame implements Serializable {
     private AffineTransform3D transform;
 
     private int position;

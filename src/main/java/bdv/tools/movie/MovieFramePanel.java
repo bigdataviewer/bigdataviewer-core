@@ -35,7 +35,8 @@ public class MovieFramePanel extends JPanel {
         title.setTitleJustification(TitledBorder.CENTER);
         setBorder(title);
         setPreferredSize(new Dimension(120, 180));
-        add(image);
+        if (image != null)
+            add(image);
         JPanel fieldsPanel = new JPanel(new GridLayout(2, 2));
         framesField = new JTextField(String.valueOf(movieFrame.getFrames()));
         framesField.setFont(new Font("Serif", Font.PLAIN, 9));

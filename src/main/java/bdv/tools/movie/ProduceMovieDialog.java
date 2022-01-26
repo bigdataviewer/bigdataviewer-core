@@ -29,6 +29,7 @@
 package bdv.tools.movie;
 
 import bdv.export.ProgressWriter;
+import bdv.tools.movie.serilizers.MovieFramesSerializer;
 import bdv.util.DelayedPackDialog;
 import bdv.viewer.ViewerPanel;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -39,6 +40,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -59,7 +61,7 @@ public class ProduceMovieDialog extends DelayedPackDialog {
         super(owner, "produce movie", false);
         setLayout(new FlowLayout());
         setSize(new Dimension(920, 280));
-        this.saveDialog = new MovieSaveDialog(owner,viewer,progressWriter,this);
+        this.saveDialog = new MovieSaveDialog(owner, viewer, progressWriter, this);
         this.viewer = viewer;
         this.progressWriter = progressWriter;
         framesPanels = new ArrayList<>();
@@ -122,16 +124,34 @@ public class ProduceMovieDialog extends DelayedPackDialog {
         validateButtons();
     }
 
-//    TODO import
+    //    TODO import
     private void importSequence() {
+        String path = "/Users/Marwan/Desktop/Viewer/generatedvideo/frames.json";
+        try {
+            List<MovieFrame> list = MovieFramesSerializer.getFrom(new File(path));
+            for (MovieFrame frame : list)
+                addFrame(frame);
+
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        }
+
     }
 
 
     private void exportJson() {
+        //TODO File popup select
+        String path = "/Users/Marwan/Desktop/Viewer/generatedvideo/frames.json";
+        List<MovieFrame> list = new ArrayList<>();
+
+        for (MovieFramePanel panels : framesPanels)
+            list.add(panels.getMovieFrame());
+
+        MovieFramesSerializer.save(list, new File(path));
     }
 
     private void showSavePNGsDialog() {
-                saveDialog.setVisible(true);
+        saveDialog.setVisible(true);
     }
 
     private void removeFrame() {
@@ -162,13 +182,13 @@ public class ProduceMovieDialog extends DelayedPackDialog {
     }
 
     private void validateButtons() {
-        if(framesPanels.size()==2 && !exportPNGsButton.isEnabled()){
+        if (framesPanels.size() == 2 && !exportPNGsButton.isEnabled()) {
             exportJsonButton.setEnabled(true);
             exportPNGsButton.setEnabled(true);
             exportJsonButton.revalidate();
             exportPNGsButton.revalidate();
         }
-        if(framesPanels.size()<2 && exportPNGsButton.isEnabled()){
+        if (framesPanels.size() < 2 && exportPNGsButton.isEnabled()) {
             exportJsonButton.setEnabled(false);
             exportPNGsButton.setEnabled(false);
             exportJsonButton.revalidate();
@@ -192,11 +212,11 @@ public class ProduceMovieDialog extends DelayedPackDialog {
         final int[] frames = new int[size];
         final int[] accel = new int[size];
 
-        for(int i =0 ; i<size;i++){
+        for (int i = 0; i < size; i++) {
             MovieFrame currentFrame = framesPanels.get(i).updateFields().getMovieFrame();
-            transforms[i]= currentFrame.getTransform();
-            frames[i]= currentFrame.getFrames();
-            accel[i]= currentFrame.getAccel();
+            transforms[i] = currentFrame.getTransform();
+            frames[i] = currentFrame.getFrames();
+            accel[i] = currentFrame.getAccel();
         }
 
         AffineTransform3D viewerScale = new AffineTransform3D();
