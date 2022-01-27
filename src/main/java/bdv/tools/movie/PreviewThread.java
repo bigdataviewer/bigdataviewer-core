@@ -17,6 +17,8 @@ public class PreviewThread extends VNCMovie implements Runnable {
     private final int down;
     public Thread t;
 
+    boolean suspended = false;
+
     PreviewThread(
             final ViewerPanel viewer,
             final AffineTransform3D[] transforms,
@@ -37,6 +39,10 @@ public class PreviewThread extends VNCMovie implements Runnable {
             viewer.setInterpolation(Interpolation.NLINEAR);
             for (int k = 1; k < transforms.length; ++k) {
                 synchronized (this) {
+                    if (suspended) {
+                        wait();
+                    }
+                }
                     final SimilarityTransformAnimator animator = new SimilarityTransformAnimator(
                             transforms[k - 1],
                             transforms[k],
@@ -54,7 +60,6 @@ public class PreviewThread extends VNCMovie implements Runnable {
                         });
                         Thread.sleep(sleep);
                     }
-                }
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
@@ -66,6 +71,10 @@ public class PreviewThread extends VNCMovie implements Runnable {
         return t == null;
     }
 
+    public boolean isDone(){
+        return (t.getState()==Thread.State.TERMINATED);
+    }
+
     public void start() {
         if (getStatus()) {
             t = new Thread(this);
@@ -73,6 +82,18 @@ public class PreviewThread extends VNCMovie implements Runnable {
         }
     }
 
+    public void suspend() {
+        suspended = true;
+    }
+
+    public boolean isSuspended() {
+        return suspended;
+    }
+
+    synchronized void resume() {
+        suspended = false;
+        this.notify();
+    }
 
 }
 

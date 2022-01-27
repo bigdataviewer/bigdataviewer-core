@@ -57,6 +57,11 @@ public class ProduceMovieDialog extends DelayedPackDialog {
     private final JButton exportJsonButton;
     private final JButton exportPNGsButton;
     private final static int FrameWidth = 920;
+    private final static int DEFAULT_SLEEP = 100;
+    private final static int DEFAULT_DOWN = 10;
+    private PreviewThread previewThread;
+    private final JTextField downsampleField;
+    private final JTextField sleepField;
 
     public ProduceMovieDialog(final Frame owner, final ViewerPanel viewer, final ProgressWriter progressWriter) {
         super(owner, "produce movie", false);
@@ -64,11 +69,29 @@ public class ProduceMovieDialog extends DelayedPackDialog {
         setSize(new Dimension(FrameWidth, 340));
         JPanel playerPanel = new JPanel();
 
+        downsampleField = new JTextField(String.valueOf(DEFAULT_DOWN));
+        sleepField = new JTextField(String.valueOf(DEFAULT_SLEEP));
+        playerPanel.add(downsampleField);
+        playerPanel.add(sleepField);
+
         JButton playButton = new JButton("▶");
         playButton.addActionListener(e -> {
-            preview();
+            startPreview();
         });
         playerPanel.add(playButton);
+
+        JButton pauseButton = new JButton("||");
+        pauseButton.addActionListener(e -> {
+            pausePreview();
+        });
+        playerPanel.add(pauseButton);
+
+        JButton restartButton = new JButton("restart");
+        restartButton.addActionListener(e -> {
+            restartPreview();
+        });
+        playerPanel.add(restartButton);
+
         playerPanel.setPreferredSize(new Dimension(FrameWidth, 40));
 
         JPanel makerPanel = new JPanel(new FlowLayout());
@@ -140,7 +163,14 @@ public class ProduceMovieDialog extends DelayedPackDialog {
         validateButtons();
     }
 
-    private void preview() {
+    private void pausePreview() {
+        if (previewThread != null)
+            previewThread.suspend();
+    }
+
+    private void restartPreview() {
+        int sleep = Integer.valueOf(sleepField.getText());
+        int down = Integer.valueOf(downsampleField.getText());
         int size = framesPanels.size();
         final AffineTransform3D[] transforms = new AffineTransform3D[size];
         final int[] frames = new int[size];
@@ -153,12 +183,21 @@ public class ProduceMovieDialog extends DelayedPackDialog {
             accel[i] = currentFrame.getAccel();
         }
 
-        PreviewThread timer = new PreviewThread(viewer,
+        previewThread = new PreviewThread(viewer,
                 transforms,
                 frames,
                 accel,
-                1000, 10);
-        timer.start();
+                sleep, down);
+    }
+
+    private void startPreview() {
+        if (previewThread == null || previewThread.getStatus()) {
+            restartPreview();
+            previewThread.start();
+        } else if (previewThread.isSuspended())
+            previewThread.resume();
+        else previewThread.start();
+
 
     }
 
