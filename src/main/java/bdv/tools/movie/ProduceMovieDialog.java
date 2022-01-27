@@ -56,11 +56,22 @@ public class ProduceMovieDialog extends DelayedPackDialog {
     private final MovieSaveDialog saveDialog;
     private final JButton exportJsonButton;
     private final JButton exportPNGsButton;
+    private final static  int FrameWidth = 920;
 
     public ProduceMovieDialog(final Frame owner, final ViewerPanel viewer, final ProgressWriter progressWriter) {
         super(owner, "produce movie", false);
         setLayout(new FlowLayout());
-        setSize(new Dimension(920, 280));
+        setSize(new Dimension(FrameWidth, 380));
+        JPanel playerPanel = new JPanel();
+
+        JButton playButton = new JButton("▶");
+        playButton.addActionListener(e -> preview());
+        playerPanel.add(playButton);
+        playerPanel.setPreferredSize(new Dimension(FrameWidth,100));
+
+        JPanel makerPanel = new JPanel(new FlowLayout());
+        makerPanel.setPreferredSize(new Dimension(FrameWidth, 280));
+
         this.saveDialog = new MovieSaveDialog(owner, viewer, progressWriter, this);
         this.viewer = viewer;
         this.progressWriter = progressWriter;
@@ -78,7 +89,7 @@ public class ProduceMovieDialog extends DelayedPackDialog {
         removeButton.addActionListener(e -> removeFrame());
         controlPanel.add(removeButton);
 
-        add(controlPanel);
+        makerPanel.add(controlPanel);
 
         this.mainPanel = new JPanel();
 
@@ -88,7 +99,7 @@ public class ProduceMovieDialog extends DelayedPackDialog {
         TitledBorder title = BorderFactory.createTitledBorder("Frames: ");
         scrollMain.setBorder(title);
         scrollMain.setPreferredSize(new Dimension(750, 240));
-        add(scrollMain);
+        makerPanel.add(scrollMain);
 
         final JPanel exportPanel = new JPanel(new FlowLayout());
         exportPanel.setPreferredSize(new Dimension(100, 200));
@@ -105,7 +116,10 @@ public class ProduceMovieDialog extends DelayedPackDialog {
         importButton.addActionListener(e -> importSequence());
         exportPanel.add(importButton);
 
-        add(exportPanel);
+        makerPanel.add(exportPanel);
+
+        add(playerPanel);
+        add(makerPanel);
 
         final ActionMap am = getRootPane().getActionMap();
         final InputMap im = getRootPane().getInputMap(JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
@@ -122,6 +136,39 @@ public class ProduceMovieDialog extends DelayedPackDialog {
         am.put(hideKey, hideAction);
         // setResizable(false);
         validateButtons();
+    }
+
+    private void preview() {
+        int size = framesPanels.size();
+        final AffineTransform3D[] transforms = new AffineTransform3D[size];
+        final int[] frames = new int[size];
+        final int[] accel = new int[size];
+
+        for (int i = 0; i < size; i++) {
+            MovieFrame currentFrame = framesPanels.get(i).updateFields().getMovieFrame();
+            transforms[i] = currentFrame.getTransform();
+            frames[i] = currentFrame.getFrames();
+            accel[i] = currentFrame.getAccel();
+        }
+
+        AffineTransform3D viewerScale = new AffineTransform3D();
+        viewerScale.set(
+                1.0, 0, 0, 0,
+                0, 1.0, 0, 0,
+                0, 0, 1.0, 0);
+
+        try {
+            System.out.println("Start preview");
+            VNCMovie.preview(
+                    viewer,
+                    transforms,
+                    viewerScale,
+                    frames,
+                    accel,
+                    1, 1000,10);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     //    TODO import
@@ -185,31 +232,6 @@ public class ProduceMovieDialog extends DelayedPackDialog {
         repaint();
     }
 
-    private void validateButtons() {
-        if (framesPanels.size() == 2 && !exportPNGsButton.isEnabled()) {
-            exportJsonButton.setEnabled(true);
-            exportPNGsButton.setEnabled(true);
-            exportJsonButton.revalidate();
-            exportPNGsButton.revalidate();
-        }
-        if (framesPanels.size() < 2 && exportPNGsButton.isEnabled()) {
-            exportJsonButton.setEnabled(false);
-            exportPNGsButton.setEnabled(false);
-            exportJsonButton.revalidate();
-            exportPNGsButton.revalidate();
-        }
-        if (framesPanels.size() > 0) {
-            if (!removeButton.isEnabled())
-                removeButton.setEnabled(true);
-            removeButton.revalidate();
-            removeButton.repaint();
-        } else if (removeButton.isEnabled()) {
-            removeButton.setEnabled(false);
-            removeButton.revalidate();
-            removeButton.repaint();
-        }
-    }
-
     public void exportPNGs(int width, int height, File dir) {
         int size = framesPanels.size();
         final AffineTransform3D[] transforms = new AffineTransform3D[size];
@@ -242,6 +264,31 @@ public class ProduceMovieDialog extends DelayedPackDialog {
                     dir.getAbsolutePath());
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    private void validateButtons() {
+        if (framesPanels.size() == 2 && !exportPNGsButton.isEnabled()) {
+            exportJsonButton.setEnabled(true);
+            exportPNGsButton.setEnabled(true);
+            exportJsonButton.revalidate();
+            exportPNGsButton.revalidate();
+        }
+        if (framesPanels.size() < 2 && exportPNGsButton.isEnabled()) {
+            exportJsonButton.setEnabled(false);
+            exportPNGsButton.setEnabled(false);
+            exportJsonButton.revalidate();
+            exportPNGsButton.revalidate();
+        }
+        if (framesPanels.size() > 0) {
+            if (!removeButton.isEnabled())
+                removeButton.setEnabled(true);
+            removeButton.revalidate();
+            removeButton.repaint();
+        } else if (removeButton.isEnabled()) {
+            removeButton.setEnabled(false);
+            removeButton.revalidate();
+            removeButton.repaint();
         }
     }
 }

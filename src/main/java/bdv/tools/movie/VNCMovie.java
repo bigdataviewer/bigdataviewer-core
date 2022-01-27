@@ -36,6 +36,7 @@ import mpicbg.spim.data.SpimDataException;
 import net.imglib2.realtransform.AffineTransform3D;
 
 import javax.imageio.ImageIO;
+import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -218,6 +219,64 @@ public class VNCMovie {
                 System.out.println(String.format("%s/img-%04d.png", dir, i));
             }
         }
+    }
+
+    public static void preview(
+            final ViewerPanel viewer,
+            final AffineTransform3D[] transforms,
+            final AffineTransform3D viewerScale,
+            final int[] frames,
+            final int[] accel,
+            final int firstTransformIndex,
+            final int sleep,
+            final int down) throws IOException {
+
+        viewer.setInterpolation(Interpolation.NLINEAR);
+
+        int width = viewer.getWidth();
+        int height = viewer.getHeight();
+
+        final AffineTransform3D viewerTranslation = new AffineTransform3D();
+        viewerTranslation.set(
+                1, 0, 0, 0.5 * width,
+                0, 1, 0, 0.5 * height,
+                0, 0, 1, 0);
+
+        new Thread(() -> {
+            for (int k = firstTransformIndex; k < transforms.length; ++k) {
+                final SimilarityTransformAnimator animator = new SimilarityTransformAnimator(
+                        transforms[k - 1],
+                        transforms[k],
+                        0 ,
+                        0,
+                        0);
+
+                int downFrames = frames[k]/down;
+
+                for (int d = 0; d < downFrames; ++d) {
+                    System.out.println(k+"-"+d);
+                    final AffineTransform3D tkd = animator.get(accel((double) d / (double) downFrames, accel[k]));
+                    System.out.println(tkd.toString());
+//                    tkd.preConcatenate(viewerTranslation.inverse());
+//                    tkd.preConcatenate(viewerScale);
+//                    tkd.preConcatenate(viewerTranslation);
+                    viewer.state().setViewerTransform(tkd);
+                    SwingUtilities.updateComponentTreeUI(viewer);
+                    viewer.requestFocusInWindow();
+                    viewer.invalidate();
+                    viewer.validate();
+                    viewer.repaint();
+
+                    try {
+                        Thread.sleep(sleep);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+            }
+        }).run();
+
+
     }
 
     public static final void main(final String... args) throws IOException, InterruptedException, ExecutionException, SpimDataException {
