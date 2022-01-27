@@ -56,18 +56,20 @@ public class ProduceMovieDialog extends DelayedPackDialog {
     private final MovieSaveDialog saveDialog;
     private final JButton exportJsonButton;
     private final JButton exportPNGsButton;
-    private final static  int FrameWidth = 920;
+    private final static int FrameWidth = 920;
 
     public ProduceMovieDialog(final Frame owner, final ViewerPanel viewer, final ProgressWriter progressWriter) {
         super(owner, "produce movie", false);
         setLayout(new FlowLayout());
-        setSize(new Dimension(FrameWidth, 380));
+        setSize(new Dimension(FrameWidth, 340));
         JPanel playerPanel = new JPanel();
 
         JButton playButton = new JButton("▶");
-        playButton.addActionListener(e -> preview());
+        playButton.addActionListener(e -> {
+            preview();
+        });
         playerPanel.add(playButton);
-        playerPanel.setPreferredSize(new Dimension(FrameWidth,100));
+        playerPanel.setPreferredSize(new Dimension(FrameWidth, 40));
 
         JPanel makerPanel = new JPanel(new FlowLayout());
         makerPanel.setPreferredSize(new Dimension(FrameWidth, 280));
@@ -151,24 +153,13 @@ public class ProduceMovieDialog extends DelayedPackDialog {
             accel[i] = currentFrame.getAccel();
         }
 
-        AffineTransform3D viewerScale = new AffineTransform3D();
-        viewerScale.set(
-                1.0, 0, 0, 0,
-                0, 1.0, 0, 0,
-                0, 0, 1.0, 0);
+        PreviewThread timer = new PreviewThread(viewer,
+                transforms,
+                frames,
+                accel,
+                1000, 10);
+        timer.start();
 
-        try {
-            System.out.println("Start preview");
-            VNCMovie.preview(
-                    viewer,
-                    transforms,
-                    viewerScale,
-                    frames,
-                    accel,
-                    1, 1000,10);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     //    TODO import
@@ -213,8 +204,8 @@ public class ProduceMovieDialog extends DelayedPackDialog {
         repaint();
     }
 
-    private void addFrame(MovieFrame movieFrame,ImagePanel imagePanel) {
-        MovieFramePanel movieFramePanel = new MovieFramePanel(movieFrame,imagePanel);
+    private void addFrame(MovieFrame movieFrame, ImagePanel imagePanel) {
+        MovieFramePanel movieFramePanel = new MovieFramePanel(movieFrame, imagePanel);
         framesPanels.add(movieFramePanel);
         mainPanel.add(movieFramePanel);
         validateButtons();
