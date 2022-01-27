@@ -127,14 +127,21 @@ public class ProduceMovieDialog extends DelayedPackDialog {
     //    TODO import
     private void importSequence() {
         String path = "/Users/Marwan/Desktop/Viewer/generatedvideo/frames.json";
-        try {
-            List<MovieFrame> list = MovieFramesSerializer.getFrom(new File(path));
-            for (MovieFrame frame : list)
-                addFrame(frame);
+        ((Runnable) () -> {
+            try {
+                List<MovieFrame> list = MovieFramesSerializer.getFrom(new File(path));
+                for (MovieFrame frame : list) {
+                    AffineTransform3D currentTransform = frame.getTransform().copy();
+                    viewer.state().setViewerTransform(currentTransform);
+                    Thread.sleep(100);
+                    ImagePanel imagePanel = ImagePanel.snapshotOf(viewer);
+                    addFrame(frame, imagePanel);
+                }
 
-        } catch (FileNotFoundException e) {
-            e.printStackTrace();
-        }
+            } catch (FileNotFoundException | InterruptedException e) {
+                e.printStackTrace();
+            }
+        }).run();
     }
 
     private void exportJson() {
@@ -159,9 +166,8 @@ public class ProduceMovieDialog extends DelayedPackDialog {
         repaint();
     }
 
-    private void addFrame(MovieFrame movieFrame) {
-        //TODO fix image snapshot
-        MovieFramePanel movieFramePanel = new MovieFramePanel(movieFrame,null);
+    private void addFrame(MovieFrame movieFrame,ImagePanel imagePanel) {
+        MovieFramePanel movieFramePanel = new MovieFramePanel(movieFrame,imagePanel);
         framesPanels.add(movieFramePanel);
         mainPanel.add(movieFramePanel);
         validateButtons();

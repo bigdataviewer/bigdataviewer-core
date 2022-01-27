@@ -92,6 +92,7 @@ public class MovieFramePanel extends JPanel {
     }
 
     public MovieFrame getMovieFrame() {
+        updateFields();
         return movieFrame;
     }
 }
