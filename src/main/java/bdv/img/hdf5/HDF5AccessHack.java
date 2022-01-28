@@ -29,19 +29,19 @@
 package bdv.img.hdf5;
 
 import static bdv.img.hdf5.Util.reorder;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5D.H5Dclose;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5D.H5Dget_space;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5D.H5Dopen;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5D.H5Dread;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5S.H5Sclose;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5S.H5Screate_simple;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5S.H5Sget_simple_extent_dims;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5S.H5Sselect_hyperslab;
-import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5P_DEFAULT;
-import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5S_MAX_RANK;
-import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5S_SELECT_SET;
-import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5T_NATIVE_FLOAT;
-import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5T_NATIVE_INT16;
+import static hdf.hdf5lib.H5.H5Dclose;
+import static hdf.hdf5lib.H5.H5Dget_space;
+import static hdf.hdf5lib.H5.H5Dopen;
+import static hdf.hdf5lib.H5.H5Dread;
+import static hdf.hdf5lib.H5.H5Sclose;
+import static hdf.hdf5lib.H5.H5Screate_simple;
+import static hdf.hdf5lib.H5.H5Sget_simple_extent_dims;
+import static hdf.hdf5lib.H5.H5Sselect_hyperslab;
+import static hdf.hdf5lib.HDF5Constants.H5P_DEFAULT;
+import static hdf.hdf5lib.HDF5Constants.H5S_MAX_RANK;
+import static hdf.hdf5lib.HDF5Constants.H5S_SELECT_SET;
+import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_FLOAT;
+import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_INT16;
 
 import java.lang.reflect.Field;
 import java.util.LinkedHashMap;
@@ -217,7 +217,7 @@ class HDF5AccessHack implements IHDF5Access
 		Util.reorder( min, reorderedMin );
 
 		final OpenDataSet dataset = openDataSetCache.getDataSet( new ViewLevelId( timepoint, setup, level ) );
-		final int memorySpaceId = H5Screate_simple( reorderedDimensions.length, reorderedDimensions, null );
+		final long memorySpaceId = H5Screate_simple( reorderedDimensions.length, reorderedDimensions, null );
 		H5Sselect_hyperslab( dataset.fileSpaceId, H5S_SELECT_SET, reorderedMin, null, reorderedDimensions, null );
 		H5Dread( dataset.dataSetId, H5T_NATIVE_FLOAT, memorySpaceId, dataset.fileSpaceId, numericConversionXferPropertyListID, dataBlock );
 		H5Sclose( memorySpaceId );
