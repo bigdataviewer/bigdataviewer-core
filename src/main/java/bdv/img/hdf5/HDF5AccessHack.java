@@ -75,9 +75,9 @@ class HDF5AccessHack implements IHDF5Access
 
 	private class OpenDataSet
 	{
-		final int dataSetId;
+		final long dataSetId;
 
-		final int fileSpaceId;
+		final long fileSpaceId;
 
 		public OpenDataSet( final String cellsPath )
 		{
@@ -192,7 +192,7 @@ class HDF5AccessHack implements IHDF5Access
 		Util.reorder( min, reorderedMin );
 
 		final OpenDataSet dataset = openDataSetCache.getDataSet( new ViewLevelId( timepoint, setup, level ) );
-		final int memorySpaceId = H5Screate_simple( reorderedDimensions.length, reorderedDimensions, null );
+		final long memorySpaceId = H5Screate_simple( reorderedDimensions.length, reorderedDimensions, null );
 		H5Sselect_hyperslab( dataset.fileSpaceId, H5S_SELECT_SET, reorderedMin, null, reorderedDimensions, null );
 		H5Dread( dataset.dataSetId, H5T_NATIVE_INT16, memorySpaceId, dataset.fileSpaceId, numericConversionXferPropertyListID, dataBlock );
 		H5Sclose( memorySpaceId );
