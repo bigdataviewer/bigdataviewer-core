@@ -36,6 +36,8 @@ import net.imglib2.realtransform.AffineTransform3D;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
+import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.filechooser.FileSystemView;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
@@ -194,7 +196,7 @@ public class ProduceMovieDialog extends DelayedPackDialog {
     }
 
     private void startPreview() {
-        if (previewThread!=null){
+        if (previewThread != null) {
             previewThread.suspend();
         }
         restartPreview();
@@ -203,33 +205,59 @@ public class ProduceMovieDialog extends DelayedPackDialog {
 
     //    TODO import
     private void importSequence() {
-        String path = "/Users/Marwan/Desktop/Viewer/generatedvideo/frames.json";
-        ((Runnable) () -> {
-            try {
-                List<MovieFrame> list = MovieFramesSerializer.getFrom(new File(path));
-                for (MovieFrame frame : list) {
-                    AffineTransform3D currentTransform = frame.getTransform().copy();
-                    viewer.state().setViewerTransform(currentTransform);
-                    Thread.sleep(100);
-                    ImagePanel imagePanel = ImagePanel.snapshotOf(viewer);
-                    addFrame(frame, imagePanel);
-                }
+        JFileChooser jfc = new JFileChooser(FileSystemView.getFileSystemView().getHomeDirectory());
+        jfc.setDialogTitle("Select a Json");
+        jfc.setAcceptAllFileFilterUsed(false);
+        FileNameExtensionFilter filter = new FileNameExtensionFilter("JSON File", "json");
+        jfc.addChoosableFileFilter(filter);
 
-            } catch (FileNotFoundException | InterruptedException e) {
-                e.printStackTrace();
-            }
-        }).run();
+        int returnValue = jfc.showOpenDialog(null);
+        if (returnValue == JFileChooser.APPROVE_OPTION) {
+            System.out.println(jfc.getSelectedFile().getPath());
+            String path = jfc.getSelectedFile().getPath();
+            new Thread(() -> {
+                try {
+                    removeAllFrames();
+                    List<MovieFrame> list = MovieFramesSerializer.getFrom(new File(path));
+                    for (MovieFrame frame : list) {
+                        AffineTransform3D currentTransform = frame.getTransform().copy();
+                        viewer.state().setViewerTransform(currentTransform);
+                        Thread.sleep(50);
+                        ImagePanel imagePanel = ImagePanel.snapshotOf(viewer);
+                        addFrame(frame, imagePanel);
+                    }
+                    JOptionPane.showMessageDialog(this, "File imported successfully!", "File imported", JOptionPane.INFORMATION_MESSAGE);
+
+
+                } catch (FileNotFoundException | InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }).run();
+
+
+        }
+    }
+
+
+}
+
+    private void removeAllFrames() {
+        while (!framesPanels.isEmpty())
+            removeFrame();
     }
 
     private void exportJson() {
-        //TODO File popup select
-        String path = "/Users/Marwan/Desktop/Viewer/generatedvideo/frames.json";
-        List<MovieFrame> list = new ArrayList<>();
+        JFileChooser fileChooser = new JFileChooser();
+        int returnVal = fileChooser.showSaveDialog(this);
+        if (returnVal == JFileChooser.APPROVE_OPTION) {
+            String path = fileChooser.getSelectedFile().getAbsolutePath();
+            List<MovieFrame> list = new ArrayList<>();
+            for (MovieFramePanel panels : framesPanels)
+                list.add(panels.getMovieFrame());
+            MovieFramesSerializer.save(list, new File(path));
 
-        for (MovieFramePanel panels : framesPanels)
-            list.add(panels.getMovieFrame());
-
-        MovieFramesSerializer.save(list, new File(path));
+            JOptionPane.showMessageDialog(this, "File saved successfully!", "File saved", JOptionPane.INFORMATION_MESSAGE);
+        }
     }
 
     private void showSavePNGsDialog() {
@@ -263,38 +291,45 @@ public class ProduceMovieDialog extends DelayedPackDialog {
     }
 
     public void exportPNGs(int width, int height, File dir) {
+
         int size = framesPanels.size();
-        final AffineTransform3D[] transforms = new AffineTransform3D[size];
-        final int[] frames = new int[size];
-        final int[] accel = new int[size];
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                final AffineTransform3D[] transforms = new AffineTransform3D[size];
+                final int[] frames = new int[size];
+                final int[] accel = new int[size];
 
-        for (int i = 0; i < size; i++) {
-            MovieFrame currentFrame = framesPanels.get(i).updateFields().getMovieFrame();
-            transforms[i] = currentFrame.getTransform();
-            frames[i] = currentFrame.getFrames();
-            accel[i] = currentFrame.getAccel();
-        }
+                for (int i = 0; i < size; i++) {
+                    MovieFrame currentFrame = framesPanels.get(i).updateFields().getMovieFrame();
+                    transforms[i] = currentFrame.getTransform();
+                    frames[i] = currentFrame.getFrames();
+                    accel[i] = currentFrame.getAccel();
+                }
 
-        AffineTransform3D viewerScale = new AffineTransform3D();
-        viewerScale.set(
-                1.0, 0, 0, 0,
-                0, 1.0, 0, 0,
-                0, 0, 1.0, 0);
+                AffineTransform3D viewerScale = new AffineTransform3D();
+                viewerScale.set(
+                        1.0, 0, 0, 0,
+                        0, 1.0, 0, 0,
+                        0, 0, 1.0, 0);
 
-        try {
-            VNCMovie.recordMovie(
-                    viewer,
-                    width,
-                    height,
-                    transforms,
-                    viewerScale,
-                    frames,
-                    accel,
-                    1,
-                    dir.getAbsolutePath());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+                try {
+                    VNCMovie.recordMovie(
+                            viewer,
+                            width,
+                            height,
+                            transforms,
+                            viewerScale,
+                            frames,
+                            accel,
+                            1,
+                            dir.getAbsolutePath());
+                    JOptionPane.showMessageDialog(mainPanel, "All Files saved successfully!", "Files saved", JOptionPane.INFORMATION_MESSAGE);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }).run();
     }
 
     private void validateButtons() {
