@@ -51,9 +51,9 @@ public class PreviewThread extends VNCMovie implements Runnable {
                             0);
                     int downFrames = frames[k] / down;
                     for (int d = 0; d < downFrames; ++d) {
-                        System.out.println(k + "-" + d);
+//                        System.out.println(k + "-" + d);
                         final AffineTransform3D tkd = animator.get(accel((double) d / (double) downFrames, accel[k]));
-                        System.out.println(tkd.toString());
+//                        System.out.println(tkd.toString());
                         SwingUtilities.invokeLater(() -> {
                             viewer.state().setViewerTransform(tkd);
                             viewer.repaint();
@@ -83,6 +83,7 @@ public class PreviewThread extends VNCMovie implements Runnable {
     }
 
     public void suspend() {
+        t.stop();
         suspended = true;
     }
 
@@ -92,6 +93,7 @@ public class PreviewThread extends VNCMovie implements Runnable {
 
     synchronized void resume() {
         suspended = false;
+        t.resume();
         this.notify();
     }
 

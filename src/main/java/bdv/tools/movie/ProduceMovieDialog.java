@@ -71,8 +71,11 @@ public class ProduceMovieDialog extends DelayedPackDialog {
 
         downsampleField = new JTextField(String.valueOf(DEFAULT_DOWN));
         sleepField = new JTextField(String.valueOf(DEFAULT_SLEEP));
+        playerPanel.add(new JLabel("PREVIEW:  Downsampling:   1/"));
         playerPanel.add(downsampleField);
+        playerPanel.add(new JLabel("Sleep:"));
         playerPanel.add(sleepField);
+        playerPanel.add(new JLabel("ms    "));
 
         JButton playButton = new JButton("▶");
         playButton.addActionListener(e -> {
@@ -80,17 +83,17 @@ public class ProduceMovieDialog extends DelayedPackDialog {
         });
         playerPanel.add(playButton);
 
-        JButton pauseButton = new JButton("||");
+        JButton pauseButton = new JButton("Stop");
         pauseButton.addActionListener(e -> {
             pausePreview();
         });
         playerPanel.add(pauseButton);
 
-        JButton restartButton = new JButton("restart");
-        restartButton.addActionListener(e -> {
-            restartPreview();
-        });
-        playerPanel.add(restartButton);
+//        JButton restartButton = new JButton("Refresh");
+//        restartButton.addActionListener(e -> {
+//            restartPreview();
+//        });
+//        playerPanel.add(restartButton);
 
         playerPanel.setPreferredSize(new Dimension(FrameWidth, 40));
 
@@ -191,14 +194,11 @@ public class ProduceMovieDialog extends DelayedPackDialog {
     }
 
     private void startPreview() {
-        if (previewThread == null || previewThread.getStatus()) {
-            restartPreview();
-            previewThread.start();
-        } else if (previewThread.isSuspended())
-            previewThread.resume();
-        else previewThread.start();
-
-
+        if (previewThread!=null){
+            previewThread.suspend();
+        }
+        restartPreview();
+        previewThread.start();
     }
 
     //    TODO import
