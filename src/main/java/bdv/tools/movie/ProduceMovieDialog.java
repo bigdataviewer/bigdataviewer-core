@@ -233,12 +233,7 @@ public class ProduceMovieDialog extends DelayedPackDialog {
                     e.printStackTrace();
                 }
             }).run();
-
-
         }
-    }
-
-
 }
 
     private void removeAllFrames() {
