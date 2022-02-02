@@ -209,7 +209,15 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 				catch ( final Exception e )
 				{
 					e.printStackTrace();
-					hdf5Access = new HDF5Access( hdf5Reader );
+					if ( hdf5Reader.file().isClosed() )
+					{
+						// Reopen the file if the reader was closed
+						hdf5Access = new HDF5Access( HDF5Factory.openForReading( hdf5File ) );
+					}
+					else
+					{
+						hdf5Access = new HDF5Access( hdf5Reader );
+					}
 				}
 				shortLoader = new Hdf5VolatileShortArrayLoader( hdf5Access );
 
