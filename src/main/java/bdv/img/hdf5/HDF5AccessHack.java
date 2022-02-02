@@ -150,14 +150,14 @@ class HDF5AccessHack implements IHDF5Access
 
 		// See ch.systemsx.cisd.hdf5.HDF5 constructor
 		// Make sure to close the numericConversionXferPropertyListID property list created below. See close()
-        if (performNumericConversions)
-        {
-            this.numericConversionXferPropertyListID = HDFHelper.H5Pcreate_xfer_abort_overflow();
-        } else {
-            this.numericConversionXferPropertyListID = HDFHelper.H5Pcreate_xfer_abort();
-        }
+		if (performNumericConversions)
+		{
+			this.numericConversionXferPropertyListID = HDFHelper.H5Pcreate_xfer_abort_overflow();
+		} else {
+			this.numericConversionXferPropertyListID = HDFHelper.H5Pcreate_xfer_abort();
+		}
 
-        // Make sure to close the fileID created below. See close()
+		// Make sure to close the fileID created below. See close()
 		fileId = H5Fopen(file.getAbsolutePath(), H5F_ACC_RDONLY, fileAccessPropertyListId);
 
 		openDataSetCache = new OpenDataSetCache();
