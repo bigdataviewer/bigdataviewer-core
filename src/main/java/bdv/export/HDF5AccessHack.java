@@ -54,7 +54,7 @@ class HDF5AccessHack implements IHDF5Access
 
 	private final long[] reorderedOffset = new long[ 3 ];
 
-	private final int fileId;
+	private final long fileId;
 
 	private long dataSetId;
 
@@ -72,7 +72,7 @@ class HDF5AccessHack implements IHDF5Access
 		final Class< ? > k2 = Class.forName( "ch.systemsx.cisd.hdf5.HDF5BaseReader" );
 		final Field f2 = k2.getDeclaredField( "fileId" );
 		f2.setAccessible( true );
-		fileId = ( ( Integer ) f2.get( baseWriter ) ).intValue();
+		fileId = ( ( Long ) f2.get( baseWriter ) ).longValue();
 	}
 
 	@Override
