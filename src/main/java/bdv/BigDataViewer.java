@@ -749,9 +749,11 @@ public class BigDataViewer
 //		final String fn = "/Users/pietzsch/workspace/data/111010_weber_full.xml";
 //		final String fn = "/Volumes/projects/tomancak_lightsheet/Mette/ZeissZ1SPIM/Maritigrella/021013_McH2BsGFP_CAAX-mCherry/11-use/hdf5/021013_McH2BsGFP_CAAX-mCherry-11-use.xml";
 
-		final String fn = "/Users/Marwan/Downloads/drosophila_his-yfp/dataset.xml";
+//		final String fn = "/Users/Marwan/Downloads/drosophila_his-yfp/dataset.xml";
+
 		try
 		{
+			final String fn = args[0];
 			System.setProperty( "apple.laf.useScreenMenuBar", "true" );
 
 			final BigDataViewer bdv = open( fn, new File( fn ).getName(), new ProgressWriterConsole(), ViewerOptions.options() );
@@ -761,6 +763,8 @@ public class BigDataViewer
 		}
 		catch ( final Exception e )
 		{
+			if (args.length==0)
+				System.out.println("Please specify the input");
 			e.printStackTrace();
 		}
 	}
