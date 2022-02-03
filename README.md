@@ -7,6 +7,9 @@ Feature added in this fork: **Interactive Video producing using Spline interpola
 ### Install:
 `$ ./install.sh`
 
+### Run:
+`$ ./bdv INPUT_PATH`
+
 ### How to use:
 
 1- **Video producer panel** can be opened by clicking `F7` or via `Tools -> Produce Movie`
