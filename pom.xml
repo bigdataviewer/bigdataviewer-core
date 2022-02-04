@@ -135,9 +135,10 @@
 		<license.licenseName>bsd_2</license.licenseName>
 		<license.copyrightOwners>BigDataViewer developers.</license.copyrightOwners>
 
+		<jhdf5.version>19.04.0</jhdf5.version>
+
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>
-		<cisd.jhdf5.version>19.04.0</cisd.jhdf5.version>
 	</properties>
 
 	<repositories>
@@ -171,7 +172,6 @@
 		<dependency>
 			<groupId>cisd</groupId>
 			<artifactId>jhdf5</artifactId>
-			<version>${cisd.jhdf5.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>org.jdom</groupId>
