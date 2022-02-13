@@ -148,7 +148,7 @@ public abstract class AbstractViewerPanel extends JPanel implements RequestRepai
 	 * @param plane
 	 *            to which plane to align.
 	 */
-	protected void align( final AlignPlane plane )
+	public void align( final AlignPlane plane )
 	{
 		final Source< ? > source = state().getCurrentSource().getSpimSource();
 		final AffineTransform3D sourceTransform = new AffineTransform3D();
