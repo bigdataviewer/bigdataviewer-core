@@ -50,7 +50,7 @@ import bdv.tools.boundingbox.BoxSelectionOptions.TimepointSelection;
 import bdv.tools.brightness.SliderPanel;
 import bdv.util.BoundedInterval;
 import bdv.util.BoundedValue;
-import bdv.viewer.ViewerPanel;
+import bdv.viewer.AbstractViewerPanel;
 
 /**
  * @author Tobias Pietzsch
@@ -153,7 +153,7 @@ public abstract class AbstractTransformedBoxSelectionDialog< R > extends JDialog
 
 		final TimepointSelection mode;
 
-		public TimepointSelectionPanel( final ViewerPanel viewer, final BoxSelectionOptions options )
+		public TimepointSelectionPanel( final AbstractViewerPanel viewer, final BoxSelectionOptions options )
 		{
 			setLayout( new BoxLayout( this, BoxLayout.PAGE_AXIS ) );
 

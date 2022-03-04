@@ -28,15 +28,18 @@
  */
 package bdv.viewer;
 
-import bdv.viewer.AbstractViewerPanel.AlignPlane;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
+
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
+
 import org.scijava.ui.behaviour.KeyStrokeAdder;
 import org.scijava.ui.behaviour.util.Actions;
 import org.scijava.ui.behaviour.util.InputActionBindings;
+
+import bdv.viewer.AbstractViewerPanel.AlignPlane;
 
 public class NavigationActions extends Actions
 {
@@ -69,9 +72,9 @@ public class NavigationActions extends Actions
 	 * @param actions
 	 *            navigation actions are installed here.
 	 * @param viewer
-	 *            Navigation actions are targeted at this {@link ViewerPanel}.
+	 *            Navigation actions are targeted at this {@link AbstractViewerPanel}.
 	 */
-	public static void install( final Actions actions, final ViewerPanel viewer, final boolean is2D )
+	public static void install( final Actions actions, final AbstractViewerPanel viewer, final boolean is2D )
 	{
 		installModeActions( actions, viewer.state() );
 		installSourceActions( actions, viewer.state() );
@@ -105,7 +108,7 @@ public class NavigationActions extends Actions
 		} );
 	}
 
-	public static void installAlignPlaneActions( final Actions actions, final ViewerPanel viewer, final boolean is2D )
+	public static void installAlignPlaneActions( final Actions actions, final AbstractViewerPanel viewer, final boolean is2D )
 	{
 		actions.runnableAction( () -> viewer.align( AlignPlane.XY ), ALIGN_XY_PLANE, ALIGN_XY_PLANE_KEYS );
 		if ( !is2D )
@@ -116,7 +119,7 @@ public class NavigationActions extends Actions
 	}
 
 	@Deprecated
-	public static void installAlignPlaneAction( final Actions actions, final ViewerPanel viewer, final AlignPlane plane, final String... defaultKeyStrokes )
+	public static void installAlignPlaneAction( final Actions actions, final AbstractViewerPanel viewer, final AlignPlane plane, final String... defaultKeyStrokes )
 	{
 		switch ( plane )
 		{

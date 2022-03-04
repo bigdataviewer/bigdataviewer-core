@@ -28,10 +28,6 @@
  */
 package bdv.tools;
 
-import bdv.tools.brightness.ConverterSetup;
-import bdv.util.Bounds;
-import bdv.viewer.ConverterSetups;
-import bdv.viewer.ViewerFrame;
 import java.awt.Dimension;
 
 import net.imglib2.Interval;
@@ -40,19 +36,21 @@ import net.imglib2.histogram.DiscreteFrequencyDistribution;
 import net.imglib2.histogram.Histogram1d;
 import net.imglib2.histogram.Real1dBinMapper;
 import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.util.LinAlgHelpers;
-import net.imglib2.view.IntervalView;
 import net.imglib2.view.Views;
 
+import bdv.tools.brightness.ConverterSetup;
 import bdv.tools.brightness.MinMaxGroup;
 import bdv.tools.brightness.SetupAssignments;
 import bdv.util.Affine3DHelpers;
+import bdv.util.Bounds;
+import bdv.viewer.AbstractViewerPanel;
+import bdv.viewer.ConverterSetups;
 import bdv.viewer.Source;
 import bdv.viewer.SourceAndConverter;
-import bdv.viewer.ViewerPanel;
+import bdv.viewer.ViewerFrame;
 import bdv.viewer.ViewerState;
 
 public class InitializeViewerState
@@ -73,9 +71,9 @@ public class InitializeViewerState
 	 *            the viewer (containing at least one source) to have its
 	 *            transform set.
 	 */
-	public static void initTransform( final ViewerPanel viewer )
+	public static void initTransform( final AbstractViewerPanel viewer )
 	{
-		final Dimension dim = viewer.getDisplay().getSize();
+		final Dimension dim = viewer.getDisplayComponent().getSize();
 		final AffineTransform3D viewerTransform = initTransform( dim.width, dim.height, false, viewer.state().snapshot() );
 		viewer.state().setViewerTransform( viewerTransform );
 	}
@@ -180,7 +178,7 @@ public class InitializeViewerState
 		final Source< ? > source = current.getSpimSource();
 		final int timepoint = state.getCurrentTimepoint();
 		final Bounds bounds = estimateSourceRange( source, timepoint, cumulativeMinCutoff, cumulativeMaxCutoff );
-		for ( SourceAndConverter< ? > s : state.getSources() )
+		for ( final SourceAndConverter< ? > s : state.getSources() )
 		{
 			final ConverterSetup setup = converterSetups.getConverterSetup( s );
 			setup.setDisplayRange( bounds.getMinBound(), bounds.getMaxBound() );
@@ -241,7 +239,7 @@ public class InitializeViewerState
 	}
 
 	@Deprecated
-	public static void initBrightness( final double cumulativeMinCutoff, final double cumulativeMaxCutoff, final ViewerPanel viewer, final SetupAssignments setupAssignments )
+	public static void initBrightness( final double cumulativeMinCutoff, final double cumulativeMaxCutoff, final AbstractViewerPanel viewer, final SetupAssignments setupAssignments )
 	{
 		initBrightness( cumulativeMinCutoff, cumulativeMaxCutoff, viewer.state().snapshot(), setupAssignments );
 	}
