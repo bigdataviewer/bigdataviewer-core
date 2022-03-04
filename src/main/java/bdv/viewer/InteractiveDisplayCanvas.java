@@ -54,7 +54,7 @@ import org.scijava.listeners.Listeners;
  *
  * @author Tobias Pietzsch
  */
-public class InteractiveDisplayCanvas extends JComponent
+public class InteractiveDisplayCanvas extends JComponent implements InteractiveDisplay
 {
 	/**
 	 * Mouse/Keyboard handler that manipulates the view transformation.
@@ -64,7 +64,7 @@ public class InteractiveDisplayCanvas extends JComponent
 	/**
 	 * To draw this component, {@link OverlayRenderer#drawOverlays} is invoked for each renderer.
 	 */
-	final private Listeners.List< OverlayRenderer > overlayRenderers;
+	private final Listeners.List< OverlayRenderer > overlayRenderers;
 
 	/**
 	 * Create a new {@code InteractiveDisplayCanvas}.
@@ -112,6 +112,7 @@ public class InteractiveDisplayCanvas extends JComponent
 	 * OverlayRenderers can be added/removed here.
 	 * {@link OverlayRenderer#drawOverlays} is invoked for each renderer (in the order they were added).
 	 */
+	@Override
 	public Listeners< OverlayRenderer > overlays()
 	{
 		return overlayRenderers;
@@ -126,6 +127,7 @@ public class InteractiveDisplayCanvas extends JComponent
 	 *
 	 * @param h handler to remove
 	 */
+	@Override
 	public void addHandler( final Object h )
 	{
 		if ( h instanceof KeyListener )
@@ -154,6 +156,7 @@ public class InteractiveDisplayCanvas extends JComponent
 	 *
 	 * @param h handler to remove
 	 */
+	@Override
 	public void removeHandler( final Object h )
 	{
 		if ( h instanceof KeyListener )
