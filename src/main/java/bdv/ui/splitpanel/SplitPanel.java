@@ -28,13 +28,12 @@
  */
 package bdv.ui.splitpanel;
 
-import bdv.ui.CardPanel;
-import bdv.viewer.ViewerPanel;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+
 import javax.swing.InputMap;
 import javax.swing.JComponent;
 import javax.swing.JScrollPane;
@@ -44,8 +43,12 @@ import javax.swing.border.Border;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.basic.BasicSplitPaneDivider;
 import javax.swing.plaf.basic.BasicSplitPaneUI;
+
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.util.Actions;
+
+import bdv.ui.CardPanel;
+import bdv.viewer.AbstractViewerPanel;
 
 /**
  * A {@code JSplitPane} with a {@code ViewerPanel} on the left and a
@@ -70,7 +73,7 @@ public class SplitPanel extends JSplitPane
 
 	private final SplitPaneOneTouchExpandAnimator oneTouchExpandAnimator;
 
-	public SplitPanel( final ViewerPanel viewerPanel, final CardPanel cardPanel )
+	public SplitPanel( final AbstractViewerPanel viewerPanel, final CardPanel cardPanel )
 	{
 		super( JSplitPane.HORIZONTAL_SPLIT );
 
@@ -85,7 +88,7 @@ public class SplitPanel extends JSplitPane
 		final InputMap inputMap = scrollPane.getInputMap( JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT );
 		inputMap.put( KeyStroke.getKeyStroke( "F6" ), "none" );
 
-		final InputTriggerConfig inputTriggerConfig = viewerPanel.getOptionValues().getInputTriggerConfig();
+		final InputTriggerConfig inputTriggerConfig = viewerPanel.getInputTriggerConfig();
 		final Actions actions = new Actions( inputMap, scrollPane.getActionMap(), inputTriggerConfig, "bdv" );
 		actions.runnableAction( viewerPanel::requestFocusInWindow, FOCUS_VIEWER_PANEL, "ESCAPE" );
 		actions.runnableAction( () -> {
@@ -104,8 +107,8 @@ public class SplitPanel extends JSplitPane
 		viewerPanel.addOverlayAnimator( oneTouchExpandAnimator );
 
 		final SplitPaneOneTouchExpandTrigger oneTouchExpandTrigger = new SplitPaneOneTouchExpandTrigger( oneTouchExpandAnimator, this, viewerPanel );
-		viewerPanel.getDisplay().addMouseMotionListener( oneTouchExpandTrigger );
-		viewerPanel.getDisplay().addMouseListener( oneTouchExpandTrigger );
+		viewerPanel.getDisplayComponent().addMouseMotionListener( oneTouchExpandTrigger );
+		viewerPanel.getDisplayComponent().addMouseListener( oneTouchExpandTrigger );
 
 		setDividerSize( DEFAULT_DIVIDER_SIZE );
 

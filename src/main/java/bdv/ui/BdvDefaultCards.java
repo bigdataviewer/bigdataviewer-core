@@ -28,13 +28,6 @@
  */
 package bdv.ui;
 
-import bdv.ui.convertersetupeditor.ConverterSetupEditPanel;
-import bdv.ui.sourcegrouptree.SourceGroupTree;
-import bdv.ui.sourcetable.SourceTable;
-import bdv.ui.viewermodepanel.DisplaySettingsPanel;
-import bdv.viewer.ConverterSetups;
-import bdv.viewer.SynchronizedViewerState;
-import bdv.viewer.ViewerPanel;
 import java.awt.BorderLayout;
 import java.awt.Container;
 import java.awt.Dimension;
@@ -43,11 +36,20 @@ import java.awt.KeyboardFocusManager;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.lang.ref.WeakReference;
+
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.border.EmptyBorder;
 import javax.swing.tree.TreeSelectionModel;
+
+import bdv.ui.convertersetupeditor.ConverterSetupEditPanel;
+import bdv.ui.sourcegrouptree.SourceGroupTree;
+import bdv.ui.sourcetable.SourceTable;
+import bdv.ui.viewermodepanel.DisplaySettingsPanel;
+import bdv.viewer.AbstractViewerPanel;
+import bdv.viewer.ConverterSetups;
+import bdv.viewer.ViewerState;
 
 /**
  * Default cards added to the card panel.
@@ -67,12 +69,12 @@ public class BdvDefaultCards
 
 	public static final String DEFAULT_VIEWERMODES_CARD = "default bdv viewer modes card";
 
-	public static void setup( final CardPanel cards, final ViewerPanel viewer, final ConverterSetups converterSetups )
+	public static void setup( final CardPanel cards, final AbstractViewerPanel viewer, final ConverterSetups converterSetups )
 	{
-		final SynchronizedViewerState state = viewer.state();
+		final ViewerState state = viewer.state();
 
 		// -- Sources table --
-		final SourceTable table = new SourceTable( state, converterSetups, viewer.getOptionValues().getInputTriggerConfig() );
+		final SourceTable table = new SourceTable( state, converterSetups, viewer.getInputTriggerConfig() );
 		table.setPreferredScrollableViewportSize( new Dimension( 300, 200 ) );
 		table.setFillsViewportHeight( true );
 		table.setDragEnabled( true );
@@ -86,7 +88,7 @@ public class BdvDefaultCards
 		tablePanel.setPreferredSize( new Dimension( 300, 245 ) );
 
 		// -- Groups tree --
-		final SourceGroupTree tree = new SourceGroupTree( state, viewer.getOptionValues().getInputTriggerConfig() );
+		final SourceGroupTree tree = new SourceGroupTree( state, viewer.getInputTriggerConfig() );
 //		tree.setPreferredSize( new Dimension( 300, 200 ) );
 		tree.setVisibleRowCount( 10 );
 		tree.setEditable( true );
