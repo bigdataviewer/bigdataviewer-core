@@ -28,7 +28,7 @@
  */
 package bdv.viewer;
 
-import bdv.viewer.ViewerPanel.AlignPlane;
+import bdv.viewer.AbstractViewerPanel.AlignPlane;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;

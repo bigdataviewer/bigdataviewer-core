@@ -28,18 +28,17 @@
  */
 package bdv.viewer;
 
-import bdv.TransformEventHandler;
-import bdv.TransformState;
+import static bdv.viewer.DisplayMode.SINGLE;
+import static bdv.viewer.Interpolation.NEARESTNEIGHBOR;
+
 import java.awt.BorderLayout;
 import java.awt.Color;
+import java.awt.Component;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
-import java.awt.event.MouseMotionListener;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -51,40 +50,36 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import javax.swing.DefaultBoundedRangeModel;
-import javax.swing.JPanel;
 import javax.swing.JSlider;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
 import net.imglib2.Interval;
-import bdv.viewer.render.awt.BufferedImageOverlayRenderer;
-import org.jdom2.Element;
+import net.imglib2.RealLocalizable;
+import net.imglib2.RealPoint;
+import net.imglib2.RealPositionable;
+import net.imglib2.realtransform.AffineTransform3D;
 
+import org.jdom2.Element;
+import org.scijava.listeners.Listeners;
+import org.scijava.ui.behaviour.io.InputTriggerConfig;
+
+import bdv.TransformEventHandler;
+import bdv.TransformState;
 import bdv.cache.CacheControl;
-import bdv.util.Affine3DHelpers;
 import bdv.util.Prefs;
 import bdv.viewer.animate.AbstractTransformAnimator;
 import bdv.viewer.animate.MessageOverlayAnimator;
 import bdv.viewer.animate.OverlayAnimator;
-import bdv.viewer.animate.RotationAnimator;
 import bdv.viewer.animate.TextOverlayAnimator;
 import bdv.viewer.animate.TextOverlayAnimator.TextPosition;
 import bdv.viewer.overlay.MultiBoxOverlayRenderer;
 import bdv.viewer.overlay.ScaleBarOverlayRenderer;
 import bdv.viewer.overlay.SourceInfoOverlayRenderer;
 import bdv.viewer.render.MultiResolutionRenderer;
-import bdv.viewer.state.XmlIoViewerState;
-import net.imglib2.Positionable;
-import net.imglib2.RealLocalizable;
-import net.imglib2.RealPoint;
-import net.imglib2.RealPositionable;
-import net.imglib2.realtransform.AffineTransform3D;
 import bdv.viewer.render.PainterThread;
-import net.imglib2.util.LinAlgHelpers;
-import org.scijava.listeners.Listeners;
-
-import static bdv.viewer.DisplayMode.SINGLE;
-import static bdv.viewer.Interpolation.NEARESTNEIGHBOR;
+import bdv.viewer.render.awt.BufferedImageOverlayRenderer;
+import bdv.viewer.state.XmlIoViewerState;
 
 /**
  * A JPanel for viewing multiple of {@link Source}s. The panel contains a
@@ -96,7 +91,7 @@ import static bdv.viewer.Interpolation.NEARESTNEIGHBOR;
  *
  * @author Tobias Pietzsch
  */
-public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThread.Paintable, ViewerStateChangeListener, RequestRepaint
+public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer, PainterThread.Paintable, ViewerStateChangeListener
 {
 	private static final long serialVersionUID = 1L;
 
@@ -165,12 +160,6 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 	 * The {@link ExecutorService} used for rendereing.
 	 */
 	protected final ExecutorService renderingExecutorService;
-
-	/**
-	 * Keeps track of the current mouse coordinates, which are used to provide
-	 * the current global position (see {@link #getGlobalMouseCoordinates(RealPositionable)}).
-	 */
-	protected final MouseCoordinateListener mouseCoordinates;
 
 	/**
 	 * Manages visibility and currentness of sources and groups, as well as
@@ -268,7 +257,6 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 				options.getAccumulateProjectorFactory(),
 				cacheControl );
 
-		mouseCoordinates = new MouseCoordinateListener();
 		display.addHandler( mouseCoordinates );
 
 		sliderTime = new JSlider( SwingConstants.HORIZONTAL, 0, numTimepoints - 1, 0 );
@@ -434,10 +422,9 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 	 * @param gPos
 	 *            is set to the corresponding global coordinates.
 	 */
-	public < P extends RealLocalizable & RealPositionable > void displayToGlobalCoordinates( final double[] gPos )
+	public void displayToGlobalCoordinates( final double[] gPos )
 	{
 		assert gPos.length >= 3;
-
 		state.getViewerTransform().applyInverse( gPos, gPos );
 	}
 
@@ -451,7 +438,6 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 	public < P extends RealLocalizable & RealPositionable > void displayToGlobalCoordinates( final P gPos )
 	{
 		assert gPos.numDimensions() >= 3;
-
 		state.getViewerTransform().applyInverse( gPos, gPos );
 	}
 
@@ -469,31 +455,6 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 		lPos.setPosition( x, 0 );
 		lPos.setPosition( y, 1 );
 		state.getViewerTransform().applyInverse( gPos, lPos );
-	}
-
-	/**
-	 * Set {@code gPos} to the current mouse coordinates transformed into the
-	 * global coordinate system.
-	 *
-	 * @param gPos
-	 *            is set to the current global coordinates.
-	 */
-	public void getGlobalMouseCoordinates( final RealPositionable gPos )
-	{
-		assert gPos.numDimensions() == 3;
-		final RealPoint lPos = new RealPoint( 3 );
-		mouseCoordinates.getMouseCoordinates( lPos );
-		state.getViewerTransform().applyInverse( gPos, lPos );
-	}
-
-	/**
-	 * TODO
-	 * @param p
-	 */
-	public synchronized void getMouseCoordinates( final Positionable p )
-	{
-		assert p.numDimensions() == 2;
-		mouseCoordinates.getMouseCoordinates( p );
 	}
 
 	@Override
@@ -529,6 +490,14 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 	public void requestRepaint( final Interval screenInterval )
 	{
 		imageRenderer.requestRepaint( screenInterval );
+	}
+
+	@Override
+	protected void onMouseMoved()
+	{
+		if ( Prefs.showTextOverlay() )
+			// trigger repaint for showing updated mouse coordinates
+			getDisplayComponent().repaint();
 	}
 
 	@Override
@@ -578,6 +547,10 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 		if ( requiresRepaint )
 			display.repaint();
 	}
+
+	@Override
+	public void setCanvasSize( final int width, final int height )
+	{}
 
 	@Override
 	public void viewerStateChanged( final ViewerStateChange change )
@@ -651,87 +624,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 		}
 	}
 
-	private final static double c = Math.cos( Math.PI / 4 );
-
-	/**
-	 * The planes which can be aligned with the viewer coordinate system: XY,
-	 * ZY, and XZ plane.
-	 */
-	public enum AlignPlane
-	{
-		XY( "XY", 2, new double[] { 1, 0, 0, 0 } ),
-		ZY( "ZY", 0, new double[] { c, 0, -c, 0 } ),
-		XZ( "XZ", 1, new double[] { c, c, 0, 0 } );
-
-		private final String name;
-
-		public String getName()
-		{
-			return name;
-		}
-
-		/**
-		 * rotation from the xy-plane aligned coordinate system to this plane.
-		 */
-		private final double[] qAlign;
-
-		/**
-		 * Axis index. The plane spanned by the remaining two axes will be
-		 * transformed to the same plane by the computed rotation and the
-		 * "rotation part" of the affine source transform.
-		 * @see Affine3DHelpers#extractApproximateRotationAffine(AffineTransform3D, double[], int)
-		 */
-		private final int coerceAffineDimension;
-
-		private AlignPlane( final String name, final int coerceAffineDimension, final double[] qAlign )
-		{
-			this.name = name;
-			this.coerceAffineDimension = coerceAffineDimension;
-			this.qAlign = qAlign;
-		}
-	}
-
-	/**
-	 * Align the XY, ZY, or XZ plane of the local coordinate system of the
-	 * currently active source with the viewer coordinate system.
-	 *
-	 * @param plane
-	 *            to which plane to align.
-	 */
-	protected synchronized void align( final AlignPlane plane )
-	{
-		final Source< ? > source = state().getCurrentSource().getSpimSource();
-		final AffineTransform3D sourceTransform = new AffineTransform3D();
-		source.getSourceTransform( state.getCurrentTimepoint(), 0, sourceTransform );
-
-		final double[] qSource = new double[ 4 ];
-		Affine3DHelpers.extractRotationAnisotropic( sourceTransform, qSource );
-
-		final double[] qTmpSource = new double[ 4 ];
-		Affine3DHelpers.extractApproximateRotationAffine( sourceTransform, qSource, plane.coerceAffineDimension );
-		LinAlgHelpers.quaternionMultiply( qSource, plane.qAlign, qTmpSource );
-
-		final double[] qTarget = new double[ 4 ];
-		LinAlgHelpers.quaternionInvert( qTmpSource, qTarget );
-
-		final AffineTransform3D transform = state().getViewerTransform();
-		double centerX;
-		double centerY;
-		if ( mouseCoordinates.isMouseInsidePanel() )
-		{
-			centerX = mouseCoordinates.getX();
-			centerY = mouseCoordinates.getY();
-		}
-		else
-		{
-			centerY = getHeight() / 2.0;
-			centerX = getWidth() / 2.0;
-		}
-		currentAnimator = new RotationAnimator( transform, centerX, centerY, qTarget, 300 );
-		currentAnimator.setTime( System.currentTimeMillis() );
-		requestRepaint();
-	}
-
+	@Override
 	public synchronized void setTransformAnimator( final AbstractTransformAnimator animator )
 	{
 		currentAnimator = animator;
@@ -840,6 +733,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 	 * adding/removing sources etc. See {@link SynchronizedViewerState} for
 	 * thread-safety considerations.
 	 */
+	@Override
 	public SynchronizedViewerState state()
 	{
 		return state;
@@ -850,7 +744,19 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 	 *
 	 * @return the viewer canvas.
 	 */
+	@Override
 	public InteractiveDisplayCanvas getDisplay()
+	{
+		return display;
+	}
+
+	/**
+	 * Get the AWT {@code Component} of the viewer canvas.
+	 *
+	 * @return the viewer canvas.
+	 */
+	@Override
+	public Component getDisplayComponent()
 	{
 		return display;
 	}
@@ -866,6 +772,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 	 * @param msg
 	 *            String to display. Should be just one line of text.
 	 */
+	@Override
 	public void showMessage( final String msg )
 	{
 		msgOverlay.add( msg );
@@ -880,6 +787,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 	 * @param animator
 	 *            animator to add.
 	 */
+	@Override
 	public void addOverlayAnimator( final OverlayAnimator animator )
 	{
 		overlayAnimators.add( animator );
@@ -922,6 +830,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 	 * This happens immediately after that image is painted onto the screen,
 	 * before any overlays are painted.
 	 */
+	@Override
 	public Listeners< TransformListener< AffineTransform3D > > renderTransformListeners()
 	{
 		return renderTarget.transformListeners();
@@ -950,6 +859,7 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 	 * changes. Listeners will be notified <em>before</em> calling
 	 * {@link #requestRepaint()} so they have the chance to interfere.
 	 */
+	@Override
 	public Listeners< TransformListener< AffineTransform3D > > transformListeners()
 	{
 		return transformListeners;
@@ -1021,75 +931,6 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 		timePointListeners().remove( listener );
 	}
 
-	protected class MouseCoordinateListener implements MouseMotionListener, MouseListener
-	{
-		private int x;
-
-		private int y;
-
-		private boolean isInside;
-
-		public synchronized void getMouseCoordinates( final Positionable p )
-		{
-			p.setPosition( x, 0 );
-			p.setPosition( y, 1 );
-		}
-
-		@Override
-		public synchronized void mouseDragged( final MouseEvent e )
-		{
-			x = e.getX();
-			y = e.getY();
-		}
-
-		@Override
-		public synchronized void mouseMoved( final MouseEvent e )
-		{
-			x = e.getX();
-			y = e.getY();
-			display.repaint(); // TODO: only when overlays are visible
-		}
-
-		public synchronized int getX()
-		{
-			return x;
-		}
-
-		public synchronized int getY()
-		{
-			return y;
-		}
-
-		public synchronized boolean isMouseInsidePanel()
-		{
-			return isInside;
-		}
-
-		@Override
-		public synchronized void mouseEntered( final MouseEvent e )
-		{
-			isInside = true;
-		}
-
-		@Override
-		public synchronized void mouseExited( final MouseEvent e )
-		{
-			isInside = false;
-		}
-
-		@Override
-		public void mouseClicked( final MouseEvent e )
-		{}
-
-		@Override
-		public void mousePressed( final MouseEvent e )
-		{}
-
-		@Override
-		public void mouseReleased( final MouseEvent e )
-		{}
-	}
-
 	public synchronized Element stateToXml()
 	{
 		return new XmlIoViewerState().toXml( deprecatedState );
@@ -1100,13 +941,6 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 		final XmlIoViewerState io = new XmlIoViewerState();
 		io.restoreFromXml( parent.getChild( io.getTagName() ), deprecatedState );
 	}
-
-	/**
-	 * does nothing.
-	 */
-	@Override
-	public void setCanvasSize( final int width, final int height )
-	{}
 
 	/**
 	 * @deprecated Modify {@link #state()} directly
@@ -1124,6 +958,12 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 	public ViewerOptions.Values getOptionValues()
 	{
 		return options;
+	}
+
+	@Override
+	public InputTriggerConfig getInputTriggerConfig()
+	{
+		return options.getInputTriggerConfig();
 	}
 
 	public SourceInfoOverlayRenderer getSourceInfoOverlayRenderer()
@@ -1181,11 +1021,5 @@ public class ViewerPanel extends JPanel implements OverlayRenderer, PainterThrea
 				t.setPriority( Thread.NORM_PRIORITY );
 			return t;
 		}
-	}
-
-	@Override
-	public boolean requestFocusInWindow()
-	{
-		return display.requestFocusInWindow();
 	}
 }
