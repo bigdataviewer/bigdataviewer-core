@@ -103,34 +103,34 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 	/**
 	 * Legacy wrapper around {@code state} to support deprecated API
 	 */
-	protected final bdv.viewer.state.ViewerState deprecatedState;
+	private final bdv.viewer.state.ViewerState deprecatedState;
 
 	/**
 	 * Renders the current state for the {@link #display}.
 	 */
-	protected final MultiResolutionRenderer imageRenderer;
+	private final MultiResolutionRenderer imageRenderer;
 
 	/**
 	 * TODO
 	 */
-	protected final BufferedImageOverlayRenderer renderTarget;
+	private final BufferedImageOverlayRenderer renderTarget;
 
 	/**
 	 * Overlay navigation boxes.
 	 */
 	// TODO: move to specialized class
-	protected final MultiBoxOverlayRenderer multiBoxOverlayRenderer;
+	private final MultiBoxOverlayRenderer multiBoxOverlayRenderer;
 
 	/**
 	 * Overlay current source name and current timepoint.
 	 */
 	// TODO: move to specialized class
-	protected final SourceInfoOverlayRenderer sourceInfoOverlayRenderer;
+	private final SourceInfoOverlayRenderer sourceInfoOverlayRenderer;
 
 	/**
 	 * TODO
 	 */
-	protected final ScaleBarOverlayRenderer scaleBarOverlayRenderer;
+	private final ScaleBarOverlayRenderer scaleBarOverlayRenderer;
 
 	private final TransformEventHandler transformEventHandler;
 
@@ -138,9 +138,9 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 	 * Canvas used for displaying the rendered {@link #renderTarget image} and
 	 * overlays.
 	 */
-	protected final InteractiveDisplayCanvas display;
+	private final InteractiveDisplayCanvas display;
 
-	protected final JSlider sliderTime;
+	private final JSlider sliderTime;
 
 	private boolean blockSliderTimeEvents;
 
@@ -149,23 +149,23 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 	 * {@link ViewerPanel}, that is, {@link #painterThread} and
 	 * {@link #renderingExecutorService}.
 	 */
-	protected ThreadGroup threadGroup;
+	private ThreadGroup threadGroup;
 
 	/**
 	 * Thread that triggers repainting of the display.
 	 */
-	protected final PainterThread painterThread;
+	private final PainterThread painterThread;
 
 	/**
 	 * The {@link ExecutorService} used for rendereing.
 	 */
-	protected final ExecutorService renderingExecutorService;
+	private final ExecutorService renderingExecutorService;
 
 	/**
 	 * Manages visibility and currentness of sources and groups, as well as
 	 * grouping of sources, and display mode.
 	 */
-	protected final VisibilityAndGrouping visibilityAndGrouping;
+	private final VisibilityAndGrouping visibilityAndGrouping;
 
 	/**
 	 * These listeners will be notified about changes to the
@@ -189,21 +189,21 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 	 * to make smooth transitions when {@link #align(AlignPlane) aligning to
 	 * orthogonal planes}.
 	 */
-	protected AbstractTransformAnimator currentAnimator = null;
+	private AbstractTransformAnimator currentAnimator = null;
 
 	/**
 	 * A list of currently incomplete (see {@link OverlayAnimator#isComplete()})
 	 * animators. Initially, this contains a {@link TextOverlayAnimator} showing
 	 * the "press F1 for help" message.
 	 */
-	protected final ArrayList< OverlayAnimator > overlayAnimators;
+	private final ArrayList< OverlayAnimator > overlayAnimators;
 
 	/**
 	 * Fade-out overlay of recent messages. See {@link #showMessage(String)}.
 	 */
-	protected final MessageOverlayAnimator msgOverlay;
+	private final MessageOverlayAnimator msgOverlay;
 
-	protected final ViewerOptions.Values options;
+	private final ViewerOptions.Values options;
 
 	public ViewerPanel( final List< SourceAndConverter< ? > > sources, final int numTimePoints, final CacheControl cacheControl )
 	{
