@@ -337,6 +337,7 @@ class ScreenScales
 		{
 			return ( int ) renderInterval.min( 0 );
 		}
+
 		public int offsetY()
 		{
 			return ( int ) renderInterval.min( 1 );

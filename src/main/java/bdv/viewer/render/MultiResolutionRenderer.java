@@ -569,7 +569,7 @@ public class MultiResolutionRenderer
 	 * Request iterated repaint at the specified {@code screenScaleIndex}. This
 	 * is used to repaint the {@code currentViewerState} in a loop, until
 	 * everything is painted at highest resolution from valid data (or until
-	 * painting is interrupted by a new request}.
+	 * painting is interrupted by a new request).
 	 */
 	private void iterateRepaint( final int screenScaleIndex )
 	{
@@ -583,7 +583,7 @@ public class MultiResolutionRenderer
 	 * Request iterated repaint at the specified {@code intervalScaleIndex}.
 	 * This is used to repaint the current interval in a loop, until everything
 	 * is painted at highest resolution from valid data (or until painting is
-	 * interrupted by a new request}.
+	 * interrupted by a new request).
 	 */
 	private void iterateRepaintInterval( final int intervalScaleIndex )
 	{
