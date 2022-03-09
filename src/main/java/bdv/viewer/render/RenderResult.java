@@ -56,7 +56,6 @@ public interface RenderResult
 	 *
 	 * @return the image to render to
 	 */
-	// TODO: rename getTargetImage() ???
 	RandomAccessibleInterval< ARGBType > getTargetImage();
 
 	/**

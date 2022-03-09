@@ -94,7 +94,7 @@ public class SimpleVolatileProjector< A, B > implements VolatileProjector
 	 */
 	private long lastFrameRenderNanoTime;
 
-	private AtomicBoolean canceled = new AtomicBoolean();
+	private final AtomicBoolean canceled = new AtomicBoolean();
 
 	private boolean valid = false;
 
