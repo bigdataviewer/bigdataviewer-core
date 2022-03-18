@@ -119,7 +119,7 @@ public class MipmapInfo
 	@Override
 	public String toString()
 	{
-		final StringBuffer sb = new StringBuffer( "MipmapInfo{" );
+		final StringBuilder sb = new StringBuilder( "MipmapInfo{" );
 		sb.append( "resolutions=" ).append( Arrays.deepToString( resolutions ) );
 		sb.append( ", subdivisions=" ).append( Arrays.deepToString( subdivisions ) );
 		sb.append( ", transforms=" ).append( transforms == null ? "null" : Arrays.asList( transforms ).toString() );
