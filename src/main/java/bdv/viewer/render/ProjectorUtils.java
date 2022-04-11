@@ -32,6 +32,7 @@ import net.imglib2.RandomAccessible;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.basictypeaccess.array.IntArray;
 import net.imglib2.type.numeric.ARGBType;
+import net.imglib2.view.IntervalView;
 
 public class ProjectorUtils
 {
@@ -54,5 +55,81 @@ public class ProjectorUtils
 		if ( ! ( access instanceof IntArray ) )
 			return null;
 		return ( ( IntArray ) access ).getCurrentStorageArray();
+	}
+
+	public static class ArrayData
+	{
+		private final int[] data;
+		private final int ox;
+		private final int oy;
+		private final int width;
+		private final int height;
+		private final int stride;
+
+		public ArrayData( final int[] data, final int ox, final int oy, final int width, final int height, final int stride )
+		{
+			this.data = data;
+			this.ox = ox;
+			this.oy = oy;
+			this.width = width;
+			this.height = height;
+			this.stride = stride;
+		}
+
+		public int[] data()
+		{
+			return data;
+		}
+
+		public int ox()
+		{
+			return ox;
+		}
+
+		public int oy()
+		{
+			return oy;
+		}
+
+		public int width()
+		{
+			return width;
+		}
+
+		public int height()
+		{
+			return height;
+		}
+
+		public int stride()
+		{
+			return stride;
+		}
+	}
+
+	public static ArrayData getARGBArrayData( final RandomAccessible< ? > img )
+	{
+		if ( img instanceof IntervalView )
+		{
+			final IntervalView view = ( IntervalView ) img;
+			final RandomAccessible source = view.getSource();
+			if ( ! ( source instanceof ArrayImg ) )
+				return null;
+			final ArrayImg< ?, ? > aimg = ( ArrayImg< ?, ? > ) source;
+			if( ! ( aimg.firstElement() instanceof ARGBType ) )
+				return null;
+			final Object access = aimg.update( null );
+			if ( ! ( access instanceof IntArray ) )
+				return null;
+			final int[] data = ( ( IntArray ) access ).getCurrentStorageArray();
+			final int ox = ( int ) view.min( 0 );
+			final int oy = ( int ) view.min( 1 );
+			final int width = ( int ) view.dimension( 0 );
+			final int height = ( int ) view.dimension( 1 );
+			final int stride = ( int ) aimg.dimension( 0 );
+			return new ArrayData( data, ox, oy, width, height, stride );
+		}
+		// TODO: handle (non-view) ArrayImg
+		return null;
 	}
 }
