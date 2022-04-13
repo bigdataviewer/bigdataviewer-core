@@ -186,9 +186,9 @@ class ProjectorFactory
 				renderTransform.translate( -offsetX, -offsetY, 0 );
 				final VolatileProjector p = createSingleSourceProjector( viewerState, source, renderImage, renderTransform, maskArray );
 				sourceProjectors.add( p );
-				sourceImages.add( Views.translate( renderImage, offsetX, offsetY ) );
+				sourceImages.add( renderImage );
 			}
-			projector = accumulateProjectorFactory.createProjector( sourceProjectors, visibleSourcesOnScreen, sourceImages, screenImage, numRenderingThreads, renderingExecutorService );
+			projector = accumulateProjectorFactory.createProjector( sourceProjectors, visibleSourcesOnScreen, sourceImages, Views.zeroMin( screenImage ), numRenderingThreads, renderingExecutorService );
 		}
 		previousTimepoint = viewerState.getCurrentTimepoint();
 		return projector;

@@ -33,6 +33,7 @@ import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.basictypeaccess.array.IntArray;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.view.IntervalView;
+import net.imglib2.view.MixedTransformView;
 
 public class ProjectorUtils
 {
@@ -101,9 +102,26 @@ public class ProjectorUtils
 			return height;
 		}
 
+		public int size()
+		{
+			return width * height;
+		}
+
 		public int stride()
 		{
 			return stride;
+		}
+
+		@Override
+		public String toString()
+		{
+			return "ArrayData{" +
+					"ox=" + ox +
+					", oy=" + oy +
+					", width=" + width +
+					", height=" + height +
+					", stride=" + stride +
+					'}';
 		}
 	}
 
@@ -112,22 +130,32 @@ public class ProjectorUtils
 		if ( img instanceof IntervalView )
 		{
 			final IntervalView view = ( IntervalView ) img;
-			final RandomAccessible source = view.getSource();
-			if ( ! ( source instanceof ArrayImg ) )
-				return null;
-			final ArrayImg< ?, ? > aimg = ( ArrayImg< ?, ? > ) source;
-			if( ! ( aimg.firstElement() instanceof ARGBType ) )
-				return null;
-			final Object access = aimg.update( null );
-			if ( ! ( access instanceof IntArray ) )
-				return null;
-			final int[] data = ( ( IntArray ) access ).getCurrentStorageArray();
-			final int ox = ( int ) view.min( 0 );
-			final int oy = ( int ) view.min( 1 );
-			final int width = ( int ) view.dimension( 0 );
-			final int height = ( int ) view.dimension( 1 );
-			final int stride = ( int ) aimg.dimension( 0 );
-			return new ArrayData( data, ox, oy, width, height, stride );
+			RandomAccessible source = view.getSource();
+			int tx = 0;
+			int ty = 0;
+			if ( source instanceof MixedTransformView )
+			{
+				final MixedTransformView tview = ( MixedTransformView ) source;
+				tx = ( int ) tview.getTransformToSource().getTranslation( 0 );
+				ty = ( int ) tview.getTransformToSource().getTranslation( 1 );
+				source = tview.getSource();
+			}
+			if ( source instanceof ArrayImg )
+			{
+				final ArrayImg< ?, ? > aimg = ( ArrayImg< ?, ? > ) source;
+				if ( !( aimg.firstElement() instanceof ARGBType ) )
+					return null;
+				final Object access = aimg.update( null );
+				if ( !( access instanceof IntArray ) )
+					return null;
+				final int[] data = ( ( IntArray ) access ).getCurrentStorageArray();
+				final int ox = tx + ( int ) view.min( 0 );
+				final int oy = ty + ( int ) view.min( 1 );
+				final int width = ( int ) view.dimension( 0 );
+				final int height = ( int ) view.dimension( 1 );
+				final int stride = ( int ) aimg.dimension( 0 );
+				return new ArrayData( data, ox, oy, width, height, stride );
+			}
 		}
 		// TODO: handle (non-view) ArrayImg
 		return null;
