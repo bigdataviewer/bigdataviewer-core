@@ -98,11 +98,23 @@ public class Tiling
 			return splitRecursively.apply( split( tile, bound, dimension ) );
 		}
 
-		// At this point, no further splits because of SourceBounds are needed.
-		// For concurrent rendering, further split until all tiles are below
-		// MAX_TILE_SIZE. (Approximate. Tiles may be above threshold, because we
-		// never split along X).
-		return splitForTargetSizeY( tile, MAX_TILE_SIZE );
+		return Collections.singletonList( tile );
+	}
+
+	/**
+	 * For concurrent rendering, further split tiles until all tiles are below
+	 * MAX_TILE_SIZE. (Approximate. Tiles may be above threshold, because we
+	 * never split along X).
+	 *
+	 * @param tiles list of tiles split along source bounds
+	 * @return list of tiles further split for concurrent rendering
+	 */
+	public static List< Tile > splitForRendering( List< Tile > tiles )
+	{
+		final List< Tile > result = new ArrayList<>();
+		for ( final Tile tile : tiles )
+			splitForTargetSizeY( tile, MAX_TILE_SIZE, result );
+		return result;
 	}
 
 	/**
@@ -111,13 +123,16 @@ public class Tiling
 	 * Always splits along Y, so tiles may actually be a bit larger than {@code
 	 * targetSize}, if a single line is already larger.
 	 */
-	private static List< Tile > splitForTargetSizeY( final Tile tile, final int targetSize )
+	private static void splitForTargetSizeY( final Tile tile, final int targetSize, final List< Tile > splitTiles )
 	{
 		final int tileSizeX = tile.tileSizeX();
 		final int tileSizeY = tile.tileSizeY();
 		final int size = tileSizeX * tileSizeY;
 		if ( size < targetSize )
-			return Collections.singletonList( tile );
+		{
+			splitTiles.add( tile );
+			return;
+		}
 
 		final double numTiles = Math.ceil( ( double ) size / targetSize );
 		final int h = ( int ) Math.ceil( tileSizeY / numTiles );
@@ -127,14 +142,12 @@ public class Tiling
 		final int minX = tile.tileMinX();
 		final int maxX = tile.tileMaxX();
 
-		final List< Tile > tiles = new ArrayList<>();
 		for ( int y = 0; y < tileSizeY; y += h )
 		{
 			final int minY = tile.tileMinY() + y;
 			final int maxY = Math.min( tile.tileMaxY(), minY + h - 1 );
-			tiles.add( new Tile( bounds, alwaysVisibleSources, minX, minY, maxX, maxY ) );
+			splitTiles.add( new Tile( bounds, alwaysVisibleSources, minX, minY, maxX, maxY ) );
 		}
-		return tiles;
 	}
 
 	/**
@@ -142,13 +155,16 @@ public class Tiling
 	 *
 	 * Recursively splits along
 	 */
-	private static List< Tile > splitForTargetSize( final Tile tile, final int targetSize )
+	private static void splitForTargetSize( final Tile tile, final int targetSize, final List< Tile > splitTiles )
 	{
 		final int tileSizeX = tile.tileSizeX();
 		final int tileSizeY = tile.tileSizeY();
 		final int size = tileSizeX * tileSizeY;
 		if ( size < targetSize )
-			return Collections.singletonList( tile );
+		{
+			splitTiles.add( tile );
+			return;
+		}
 
 		final int dimension;
 		final int bound;
@@ -163,9 +179,8 @@ public class Tiling
 			bound = tile.tileMinY() + tileSizeY / 2;
 		}
 		final Tile[] tiles = split( tile, bound, dimension );
-		final List< Tile > result = new ArrayList<>( splitForTargetSize( tiles[ 0 ], targetSize ) );
-		result.addAll( splitForTargetSize( tiles[ 1 ], targetSize ) );
-		return result;
+		splitForTargetSize( tiles[ 0 ], targetSize, splitTiles );
+		splitForTargetSize( tiles[ 1 ], targetSize, splitTiles );
 	}
 
 	/**

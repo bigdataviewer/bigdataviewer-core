@@ -612,6 +612,8 @@ public class MultiResolutionRenderer
 
 		final VisibleSourcesOnScreenBounds onScreenBounds = new VisibleSourcesOnScreenBounds( viewerState, screenImage, screenTransform );
 		final List< Tile > tiles = Tiling.findTiles( onScreenBounds );
+		final List< Tile > renderTiles = Tiling.splitForRendering( tiles );
+
 
 		// NB: Re-compute currentAverageNumSourcesPerPixel here, because that might still
 		// be the full-screen value, when we are rendering an interval. For better
@@ -619,11 +621,11 @@ public class MultiResolutionRenderer
 		// value for the actually rendered interval.
 		currentAverageNumSourcesPerPixel = onScreenBounds.estimateNumSourcesPerPixel();
 
-		final int numTiles = tiles.size();
+		final int numTiles = renderTiles.size();
 		final List< VolatileProjector > tileProjectors = new ArrayList<>( numTiles );
 		for ( int t = 0; t < numTiles; t++ )
 		{
-			final Tile tile = tiles.get( t );
+			final Tile tile = renderTiles.get( t );
 			final int w = tile.tileSizeX();
 			final int h = tile.tileSizeY();
 			final int ox = tile.tileMinX();
