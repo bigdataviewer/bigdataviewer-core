@@ -28,6 +28,7 @@
  */
 package bdv.viewer.render;
 
+import bdv.viewer.SourceAndConverter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -43,10 +44,10 @@ import net.imglib2.util.Intervals;
 import bdv.cache.CacheControl;
 import bdv.util.MovingAverage;
 import bdv.viewer.RequestRepaint;
-import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerState;
 import bdv.viewer.render.ScreenScales.IntervalRenderData;
 import bdv.viewer.render.ScreenScales.ScreenScale;
+import net.imglib2.view.Views;
 
 /**
  * A renderer that uses a coarse-to-fine rendering scheme. First, a small target
@@ -124,11 +125,6 @@ public class MultiResolutionRenderer
 	private final ScreenScales screenScales;
 
 	/**
-	 * Maintains arrays for intermediate per-source render images and masks.
-	 */
-	private final RenderStorage renderStorage;
-
-	/**
 	 * Estimate of the time it takes to render one screen pixel from one source,
 	 * in nanoseconds.
 	 */
@@ -136,7 +132,7 @@ public class MultiResolutionRenderer
 
 	/**
 	 * Currently active projector, used to re-paint the display. It maps the
-	 * source data to {@code ©screenImages}. {@code projector.cancel()} can be
+	 * source data to {@code screenImages}. {@code projector.cancel()} can be
 	 * used to cancel the ongoing rendering operation.
 	 */
 	private VolatileProjector projector;
@@ -155,13 +151,17 @@ public class MultiResolutionRenderer
 	private ViewerState currentViewerState;
 
 	/**
-	 * The sources that are actually visible on screen currently. This means
-	 * that the sources both are visible in the {@link #currentViewerState} (via
-	 * {@link ViewerState#getVisibleAndPresentSources()
-	 * getVisibleAndPresentSources}) and, when transformed to viewer
-	 * coordinates, overlap the screen area ({@link #display}).
+	 * Estimate of the average number of sources for one rendered pixel in the
+	 * currently rendering (or most recently rendered) screen image or interval. This
+	 * is used for measuring and predicting render times.
+	 * <p>
+	 * Assuming exhaustive tiling, for every visible sources, the number of pixels
+	 * rendered for that source is the number of pixels in its bounding box, clipped to
+	 * the rendering area. The average number of sources is then the number of rendered
+	 * pixels summed over all sources and divided by the number of pixels in the
+	 * rendering area.
 	 */
-	private final List< SourceAndConverter< ? > > currentVisibleSourcesOnScreen;
+	private double currentAverageNumSourcesPerPixel;
 
 
 	/**
@@ -258,11 +258,12 @@ public class MultiResolutionRenderer
 	 *            the coarsest rendered scale should be below this threshold.
 	 * @param numRenderingThreads
 	 *            How many threads to use for rendering.
+	 *            This is only used if no (valid) {@code
+	 *            renderingExecutorService} is provided.
 	 * @param renderingExecutorService
-	 *            if non-null, this is used for rendering. Note, that it is
-	 *            still important to supply the numRenderingThreads parameter,
-	 *            because that is used to determine into how many sub-tasks
-	 *            rendering is split.
+	 *            if this is a {@code ForkJoinPool} it is used for rendering.
+	 *            Otherwise, a new {@code ForkJoinPool} with parallelism {@code
+	 *            numRenderingThreads} is created.
 	 * @param useVolatileIfAvailable
 	 *            whether volatile versions of sources should be used if
 	 *            available.
@@ -286,9 +287,7 @@ public class MultiResolutionRenderer
 		this.painterThread = painterThread;
 		projector = null;
 		currentScreenScaleIndex = -1;
-		currentVisibleSourcesOnScreen = new ArrayList<>();
 		screenScales = new ScreenScales( screenScaleFactors, targetRenderNanos );
-		renderStorage = new RenderStorage();
 
 		renderNanosPerPixelAndSource = new MovingAverage( 3 );
 		renderNanosPerPixelAndSource.init( 500 );
@@ -332,22 +331,10 @@ public class MultiResolutionRenderer
 		if ( Intervals.isEmpty( screenScales.clipToScreen( interval ) ) )
 			return;
 
-		if ( !intervalMode && !renderingMayBeCancelled )
-		{
-			/*
-			 * We are currently rendering a full frame at the coarsest
-			 * resolution. There is no point in painting an interval now. Just
-			 * request a new full frame.
-			 */
-			newFrameRequest = true;
-		}
-		else
-		{
-			if ( renderingMayBeCancelled && projector != null )
-				projector.cancel();
-			screenScales.requestInterval( interval );
-			newIntervalRequest = true;
-		}
+		if ( renderingMayBeCancelled && projector != null )
+			projector.cancel();
+		screenScales.requestInterval( interval );
+		newIntervalRequest = true;
 		painterThread.requestRepaint();
 	}
 
@@ -364,8 +351,6 @@ public class MultiResolutionRenderer
 		projector = null;
 		currentViewerState = null;
 		currentRenderResult = null;
-		currentVisibleSourcesOnScreen.clear();
-		renderStorage.clear();
 	}
 
 	/**
@@ -398,8 +383,11 @@ public class MultiResolutionRenderer
 			if ( newInterval )
 			{
 				intervalMode = true;
-				final int numSources = currentVisibleSourcesOnScreen.size();
-				final double renderNanosPerPixel = renderNanosPerPixelAndSource.getAverage() * numSources;
+
+				// NB: The following uses currentAverageNumSourcesPerPixel which is possibly
+				// inaccurate because it still might have the value computed for the full screen
+				// (when we are actually rendering an interval).
+				final double renderNanosPerPixel = renderNanosPerPixelAndSource.getAverage() * currentAverageNumSourcesPerPixel;
 				requestedIntervalScaleIndex = screenScales.suggestIntervalScreenScale( renderNanosPerPixel, currentScreenScaleIndex );
 			}
 
@@ -425,9 +413,9 @@ public class MultiResolutionRenderer
 		if ( newFrame )
 		{
 			currentViewerState = viewerState.snapshot();
-			VisibilityUtils.computeVisibleSourcesOnScreen( currentViewerState, screenScales.get( 0 ), currentVisibleSourcesOnScreen );
-			final int numSources = currentVisibleSourcesOnScreen.size();
-			final double renderNanosPerPixel = renderNanosPerPixelAndSource.getAverage() * numSources;
+			final VisibleSourcesOnScreenBounds screenBounds = new VisibleSourcesOnScreenBounds( currentViewerState, screenScales.get( 0 ) );
+			currentAverageNumSourcesPerPixel = screenBounds.estimateNumSourcesPerPixel();
+			final double renderNanosPerPixel = renderNanosPerPixelAndSource.getAverage() * currentAverageNumSourcesPerPixel;
 			requestedScreenScaleIndex = screenScales.suggestScreenScale( renderNanosPerPixel );
 		}
 
@@ -461,8 +449,7 @@ public class MultiResolutionRenderer
 				renderResult.setScaleFactor( screenScale.scale() );
 				currentViewerState.getViewerTransform( renderResult.getViewerTransform() );
 
-				renderStorage.checkRenewData( screenScales.get( 0 ).width(), screenScales.get( 0 ).height(), currentVisibleSourcesOnScreen.size() );
-				projector = createProjector( currentViewerState, currentVisibleSourcesOnScreen, requestedScreenScaleIndex, renderResult.getTargetImage(), 0, 0 );
+				projector = createProjector( currentViewerState, requestedScreenScaleIndex, renderResult.getTargetImage(), 0, 0 );
 				requestNewFrameIfIncomplete = projectorFactory.requestNewFrameIfIncomplete();
 			}
 			p = projector;
@@ -512,7 +499,7 @@ public class MultiResolutionRenderer
 			{
 				intervalResult.init( intervalRenderData.width(), intervalRenderData.height() );
 				intervalResult.setScaleFactor( intervalRenderData.scale() );
-				projector = createProjector( currentViewerState, currentVisibleSourcesOnScreen, requestedIntervalScaleIndex, intervalResult.getTargetImage(), intervalRenderData.offsetX(), intervalRenderData.offsetY() );
+				projector = createProjector( currentViewerState, requestedIntervalScaleIndex, intervalResult.getTargetImage(), intervalRenderData.offsetX(), intervalRenderData.offsetY() );
 			}
 			p = projector;
 		}
@@ -559,8 +546,7 @@ public class MultiResolutionRenderer
 
 	private void recordRenderTime( final RenderResult result, final long renderNanos )
 	{
-		final int numSources = currentVisibleSourcesOnScreen.size();
-		final int numRenderPixels = ( int ) Intervals.numElements( result.getTargetImage() ) * numSources;
+		final int numRenderPixels = ( int ) ( Intervals.numElements( result.getTargetImage() ) * currentAverageNumSourcesPerPixel );
 		if ( numRenderPixels >= 4096 )
 			renderNanosPerPixelAndSource.add( renderNanos / ( double ) numRenderPixels );
 	}
@@ -614,24 +600,47 @@ public class MultiResolutionRenderer
 
 	private VolatileProjector createProjector(
 			final ViewerState viewerState,
-			final List< SourceAndConverter< ? > > visibleSourcesOnScreen,
 			final int screenScaleIndex,
 			final RandomAccessibleInterval< ARGBType > screenImage,
 			final int offsetX,
 			final int offsetY )
 	{
-		final AffineTransform3D screenScaleTransform = screenScales.get( screenScaleIndex ).scaleTransform();
-		final AffineTransform3D screenTransform = viewerState.getViewerTransform();
-		screenTransform.preConcatenate( screenScaleTransform );
+		final ScreenScale screenScale = screenScales.get( screenScaleIndex );
+
+		final AffineTransform3D screenTransform = viewerState.getViewerTransform().preConcatenate( screenScale.scaleTransform() );
 		screenTransform.translate( -offsetX, -offsetY, 0 );
 
-		final VolatileProjector projector = projectorFactory.createProjector(
-				viewerState,
-				visibleSourcesOnScreen,
-				screenImage,
-				screenTransform,
-				renderStorage );
+		final VisibleSourcesOnScreenBounds onScreenBounds = new VisibleSourcesOnScreenBounds( viewerState, screenImage, screenTransform );
+		final List< Tile > tiles = Tiling.findTiles( onScreenBounds );
+
+		// NB: Re-compute currentAverageNumSourcesPerPixel here, because that might still
+		// be the full-screen value, when we are rendering an interval. For better
+		// rendertime recording (and subsequent estimation) we want to use the correct
+		// value for the actually rendered interval.
+		currentAverageNumSourcesPerPixel = onScreenBounds.estimateNumSourcesPerPixel();
+
+		final int numTiles = tiles.size();
+		final List< VolatileProjector > tileProjectors = new ArrayList<>( numTiles );
+		for ( int t = 0; t < numTiles; t++ )
+		{
+			final Tile tile = tiles.get( t );
+			final int w = tile.tileSizeX();
+			final int h = tile.tileSizeY();
+			final int ox = tile.tileMinX();
+			final int oy = tile.tileMinY();
+			final List< SourceAndConverter< ? > > sources = tile.sources();
+			final RenderStorage tileRenderStorage = new RenderStorage( w, h, sources.size() );
+
+			final RandomAccessibleInterval< ARGBType > tileImage = Views.interval( screenImage, Intervals.createMinSize( ox, oy, w, h ) );
+			tileProjectors.add( projectorFactory.createProjector(
+					viewerState,
+					sources,
+					tileImage,
+					screenTransform,
+					tileRenderStorage ) );
+		}
+
 		CacheIoTiming.getIoTimeBudget().reset( iobudget );
-		return projector;
+		return new TiledProjector( tileProjectors );
 	}
 }
