@@ -29,6 +29,7 @@
 package bdv.viewer.render;
 
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.basictypeaccess.array.IntArray;
@@ -43,9 +44,16 @@ public class EmptyProjector< T extends NumericType< T> > implements VolatileProj
 {
 	private final RandomAccessibleInterval< T > target;
 
-    protected long lastFrameRenderNanoTime;
+	/**
+	 * Time needed for rendering the last frame, in nano-seconds.
+	 */
+	private long lastFrameRenderNanoTime;
 
-    public EmptyProjector( final RandomAccessibleInterval< T > screenImage )
+	private final AtomicBoolean canceled = new AtomicBoolean();
+
+	private boolean valid = false;
+
+	public EmptyProjector( final RandomAccessibleInterval< T > screenImage )
 	{
 		this.target = screenImage;
 		lastFrameRenderNanoTime = -1;
@@ -54,22 +62,15 @@ public class EmptyProjector< T extends NumericType< T> > implements VolatileProj
 	@Override
 	public boolean map( final boolean clearUntouchedTargetPixels )
 	{
+		if ( canceled.get() )
+			return false;
+
 		final StopWatch stopWatch = StopWatch.createAndStart();
 		if ( clearUntouchedTargetPixels )
-		{
-			final int[] data = ProjectorUtils.getARGBArrayImgData( target );
-			if ( data != null )
-			{
-				final int size = ( int ) Intervals.numElements( target );
-				Arrays.fill( data, 0, size, 0 );
-			}
-			else
-			{
-				for ( final T t : Views.iterable( target ) )
-					t.setZero();
-			}
-		}
+			for ( final T t : Views.iterable( target ) )
+				t.setZero();
 		lastFrameRenderNanoTime = stopWatch.nanoTime();
+		valid = true;
 		return true;
 	}
 
@@ -81,11 +82,12 @@ public class EmptyProjector< T extends NumericType< T> > implements VolatileProj
 
 	@Override
 	public void cancel()
-	{}
+	{
+	}
 
 	@Override
 	public boolean isValid()
 	{
-		return true;
+		return valid;
 	}
 }

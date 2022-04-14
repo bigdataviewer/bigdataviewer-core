@@ -29,15 +29,19 @@
 package bdv.viewer.render;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinTask;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.stream.Collectors;
 import net.imglib2.Cursor;
 import net.imglib2.IterableInterval;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.util.Intervals;
 import net.imglib2.util.StopWatch;
 import net.imglib2.view.Views;
 
@@ -48,7 +52,7 @@ public abstract class AccumulateProjector< A, B > implements VolatileProjector
 	 * Projectors that render the source images to accumulate.
 	 * For every rendering pass, ({@link VolatileProjector#map(boolean)}) is run on each source projector that is not yet {@link VolatileProjector#isValid() valid}.
 	 */
-	private final List< VolatileProjector > sourceProjectors;
+	private List< VolatileProjector > sourceProjectors;
 
 	/**
 	 * The source images to accumulate
@@ -67,22 +71,21 @@ public abstract class AccumulateProjector< A, B > implements VolatileProjector
 	 */
 	private final IterableInterval< B > iterableTarget;
 
-	/**
-     * Number of threads to use for rendering
-     */
-    private final int numThreads;
-
-	private final ExecutorService executorService;
-
     /**
      * Time needed for rendering the last frame, in nano-seconds.
      */
     private long lastFrameRenderNanoTime;
 
-	private final AtomicBoolean canceled = new AtomicBoolean();
+	private volatile boolean canceled = false;
 
 	private volatile boolean valid = false;
 
+	/**
+	 * @deprecated
+	 * Use {@link #AccumulateProjector(List, List, RandomAccessibleInterval)}.
+	 * The numThreads and executorService arguments are ignored.
+	 */
+	@Deprecated
 	public AccumulateProjector(
 			final List< VolatileProjector > sourceProjectors,
 			final List< ? extends RandomAccessible< ? extends A > > sources,
@@ -90,100 +93,73 @@ public abstract class AccumulateProjector< A, B > implements VolatileProjector
 			final int numThreads,
 			final ExecutorService executorService )
 	{
+		this( sourceProjectors, sources, target );
+	}
+
+	public AccumulateProjector(
+			final List< VolatileProjector > sourceProjectors,
+			final List< ? extends RandomAccessible< ? extends A > > sources,
+			final RandomAccessibleInterval< B > target )
+	{
 		this.sourceProjectors = sourceProjectors;
 		this.sources = new ArrayList<>();
 		for ( final RandomAccessible< ? extends A > source : sources )
 			this.sources.add( Views.flatIterable( Views.interval( source, target ) ) );
 		this.target = target;
 		this.iterableTarget = Views.flatIterable( target );
-		this.numThreads = numThreads;
-		this.executorService = executorService;
 		lastFrameRenderNanoTime = -1;
 	}
 
 	@Override
 	public boolean map( final boolean clearUntouchedTargetPixels )
 	{
-		canceled.set( false );
+		if ( canceled )
+			return false;
+
+		if ( isValid() )
+			return true;
 
 		final StopWatch stopWatch = StopWatch.createAndStart();
 
-		valid = true;
-		for ( final VolatileProjector p : sourceProjectors )
-			if ( !p.isValid() )
-				if ( !p.map( clearUntouchedTargetPixels ) )
-					return false;
-				else
-					valid &= p.isValid();
-
-		final int width = ( int ) target.dimension( 0 );
-		final int height = ( int ) target.dimension( 1 );
-		final int size = width * height;
-
-		final int numTasks = numThreads <= 1 ? 1 : Math.min( numThreads * 10, height );
-		final double taskLength = ( double ) size / numTasks;
-		final int[] taskOffsets = new int[ numTasks + 1 ];
-		for ( int i = 0; i < numTasks; ++i )
-			taskOffsets[ i ] = ( int ) ( i * taskLength );
-		taskOffsets[ numTasks ] = size;
-
-		final boolean createExecutor = ( executorService == null );
-		final ExecutorService ex = createExecutor ? Executors.newFixedThreadPool( numThreads ) : executorService;
-
-		final List< Callable< Void > > tasks = new ArrayList<>( numTasks );
-		for( int i = 0; i < numTasks; ++i )
-			tasks.add( createMapTask( taskOffsets[ i ], taskOffsets[ i + 1 ] ) );
-		try
+		if ( Intervals.numElements( target ) < Tiling.MIN_ACCUMULATE_FORK_SIZE )
 		{
-			ex.invokeAll( tasks );
+			sourceProjectors.forEach( p -> p.map( clearUntouchedTargetPixels ) );
 		}
-		catch ( final InterruptedException e )
+		else
 		{
-			Thread.currentThread().interrupt();
+			ForkJoinTask.invokeAll(
+					sourceProjectors.stream()
+							.map( p -> ForkJoinTask.adapt( () -> p.map( clearUntouchedTargetPixels ) ) )
+							.collect( Collectors.toList() ) );
 		}
-		if ( createExecutor )
-			ex.shutdown();
-
+		if ( canceled )
+			return false;
+		mapAccumulate();
+		sourceProjectors = sourceProjectors.stream()
+				.filter( p -> !p.isValid() )
+				.collect( Collectors.toList() );
 		lastFrameRenderNanoTime = stopWatch.nanoTime();
-
-		return !canceled.get();
+		valid = sourceProjectors.isEmpty();
+		return !canceled;
 	}
 
 	/**
-	 * @return a {@code Callable} that runs {@code map(startOffset, endOffset)}
-	 */
-	private Callable< Void > createMapTask( final int startOffset, final int endOffset )
-	{
-		return Executors.callable( () -> map( startOffset, endOffset ), null );
-	}
-
-	/**
-	 * Accumulate pixels from {@code startOffset} up to {@code endOffset}
-	 * (exclusive) of all sources to target. Before starting, check
+	 * Accumulate pixels of all sources to target. Before starting, check
 	 * whether rendering was {@link #cancel() canceled}.
-	 *
-	 * @param startOffset
-	 *     pixel range start (flattened index)
-	 * @param endOffset
-	 *     pixel range end (exclusive, flattened index)
 	 */
-	private void map( final int startOffset, final int endOffset )
+	private void mapAccumulate()
 	{
-		if ( canceled.get() )
+		if ( canceled )
 			return;
 
 		final int numSources = sources.size();
 		final Cursor< ? extends A >[] sourceCursors = new Cursor[ numSources ];
-		for ( int s = 0; s < numSources; ++s )
-		{
-			final Cursor< ? extends A > c = sources.get( s ).cursor();
-			c.jumpFwd( startOffset );
-			sourceCursors[ s ] = c;
-		}
+		Arrays.setAll( sourceCursors, s -> sources.get( s ).cursor() );
 		final Cursor< B > targetCursor = iterableTarget.cursor();
-		targetCursor.jumpFwd( startOffset );
 
-		final int size = endOffset - startOffset;
+		final int width = ( int ) target.dimension( 0 );
+		final int height = ( int ) target.dimension( 1 );
+		final int size = width * height;
 		for ( int i = 0; i < size; ++i )
 		{
 			for ( int s = 0; s < numSources; ++s )
@@ -197,7 +173,7 @@ public abstract class AccumulateProjector< A, B > implements VolatileProjector
 	@Override
 	public void cancel()
 	{
-		canceled.set( true );
+		canceled = true;
 		for ( final VolatileProjector p : sourceProjectors )
 			p.cancel();
 	}
