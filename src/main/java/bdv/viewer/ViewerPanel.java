@@ -46,6 +46,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -160,7 +161,7 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 	/**
 	 * The {@link ExecutorService} used for rendereing.
 	 */
-	private final ExecutorService renderingExecutorService;
+	private final ForkJoinPool renderingExecutorService;
 
 	/**
 	 * Manages visibility and currentness of sources and groups, as well as
@@ -245,9 +246,8 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 		display.overlays().add( renderTarget );
 		display.overlays().add( this );
 
-		renderingExecutorService = Executors.newFixedThreadPool(
-				options.getNumRenderingThreads(),
-				new RenderThreadFactory( threadGroup ) );
+		renderingExecutorService = new ForkJoinPool(
+				options.getNumRenderingThreads() );
 		imageRenderer = new MultiResolutionRenderer(
 				renderTarget, painterThread,
 				options.getScreenScales(),
