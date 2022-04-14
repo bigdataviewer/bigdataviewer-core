@@ -33,6 +33,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinTask;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
@@ -129,6 +131,17 @@ public class MultiResolutionRenderer
 	 * in nanoseconds.
 	 */
 	private final MovingAverage renderNanosPerPixelAndSource;
+
+	/**
+	 * The ForkJoinPool used for rendering
+	 */
+	private final ForkJoinPool renderingForkJoinPool;
+
+	/**
+	 * {@code true} if {@code renderingForkJoinPool} was created in the constructor.
+	 * {@code false} if {@code renderingForkJoinPool} was supplied as an argument.
+	 */
+	private final boolean createdForkJoinPool;
 
 	/**
 	 * Currently active projector, used to re-paint the display. It maps the
@@ -299,9 +312,19 @@ public class MultiResolutionRenderer
 
 		intervalResult = display.createRenderResult();
 
+		if ( renderingExecutorService instanceof ForkJoinPool )
+		{
+			renderingForkJoinPool = ( ForkJoinPool ) renderingExecutorService;
+			createdForkJoinPool = false;
+		}
+		else
+		{
+			renderingForkJoinPool = new ForkJoinPool( numRenderingThreads );
+			createdForkJoinPool = true;
+		}
 		projectorFactory = new ProjectorFactory(
 				numRenderingThreads,
-				renderingExecutorService,
+				renderingForkJoinPool,
 				useVolatileIfAvailable,
 				accumulateProjectorFactory );
 	}
@@ -351,6 +374,8 @@ public class MultiResolutionRenderer
 		projector = null;
 		currentViewerState = null;
 		currentRenderResult = null;
+		if ( createdForkJoinPool )
+			renderingForkJoinPool.shutdown();
 	}
 
 	/**
@@ -446,6 +471,7 @@ public class MultiResolutionRenderer
 
 				renderResult = display.getReusableRenderResult();
 				renderResult.init( screenScale.width(), screenScale.height() );
+//				System.out.println( "target = [" + screenScale.width() + ", " + screenScale.height() + "]" );
 				renderResult.setScaleFactor( screenScale.scale() );
 				currentViewerState.getViewerTransform( renderResult.getViewerTransform() );
 
@@ -456,7 +482,7 @@ public class MultiResolutionRenderer
 		}
 
 		// try rendering
-		final boolean success = p.map( createProjector );
+		final boolean success = renderingForkJoinPool.invoke( ForkJoinTask.adapt( () -> p.map( createProjector ) ) );
 		final long rendertime = p.getLastFrameRenderNanoTime();
 
 		synchronized ( this )
@@ -510,7 +536,7 @@ public class MultiResolutionRenderer
 		}
 
 		// try rendering
-		final boolean success = p.map( createProjector );
+		final boolean success = renderingForkJoinPool.invoke( ForkJoinTask.adapt( () -> p.map( createProjector ) ) );
 		final long rendertime = p.getLastFrameRenderNanoTime();
 
 		synchronized ( this )
