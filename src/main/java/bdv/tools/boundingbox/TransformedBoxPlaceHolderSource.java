@@ -54,7 +54,7 @@ final class TransformedBoxPlaceHolderSource implements Source< Void >
 {
 	private final UnsignedShortType type = new UnsignedShortType();
 
-	private final String name;
+	private String name;
 
 	private final TransformedBox bbSource;
 
@@ -75,6 +75,9 @@ final class TransformedBoxPlaceHolderSource implements Source< Void >
 	{
 		return name;
 	}
+
+	@Override
+	public void setName(String name) { this.name = name; }
 
 	@Override
 	public VoxelDimensions getVoxelDimensions()

@@ -35,6 +35,7 @@ import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.realtransform.AffineTransform3D;
+import org.scijava.Named;
 
 /**
  * Provides image data for all timepoints of one view setup.
@@ -46,7 +47,7 @@ import net.imglib2.realtransform.AffineTransform3D;
  *
  * @author Tobias Pietzsch
  */
-public interface Source< T >
+public interface Source< T > extends Named
 {
 	/**
 	 * Is there a stack at timepoint index t?
@@ -123,6 +124,11 @@ public interface Source< T >
 	 * @return the name of the source.
 	 */
 	String getName();
+
+	// TODO FOR COMPATIBILITY ? Remove or not ?
+	public default void setName(String name) {
+		throw new UnsupportedOperationException();
+	}
 
 	/**
 	 * Get voxel size and unit for this source. May return null.
