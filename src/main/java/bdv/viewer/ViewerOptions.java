@@ -233,7 +233,7 @@ public class ViewerOptions
 
 		private long targetRenderNanos = 30 * 1000000l;
 
-		private int numRenderingThreads = 3;
+		private int numRenderingThreads = Runtime.getRuntime().availableProcessors();
 
 		private int numSourceGroups = 10;
 
