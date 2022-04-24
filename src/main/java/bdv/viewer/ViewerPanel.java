@@ -31,6 +31,7 @@ package bdv.viewer;
 import static bdv.viewer.DisplayMode.SINGLE;
 import static bdv.viewer.Interpolation.NEARESTNEIGHBOR;
 
+import bdv.viewer.render.DebugTilingOverlay;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -1021,5 +1022,16 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 				t.setPriority( Thread.NORM_PRIORITY );
 			return t;
 		}
+	}
+
+	/**
+	 * Display overlay to show how the display is tiled for rendering.
+	 * (For development and debugging purposes.)
+	 */
+	public DebugTilingOverlay showDebugTileOverlay()
+	{
+		final DebugTilingOverlay overlay = new DebugTilingOverlay( imageRenderer );
+		display.overlays().add( overlay );
+		return overlay;
 	}
 }
