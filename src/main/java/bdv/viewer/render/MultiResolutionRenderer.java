@@ -471,6 +471,11 @@ public class MultiResolutionRenderer
 					( ( RenderTarget ) display ).setRenderResult( renderResult );
 					currentRenderResult = renderResult;
 					recordRenderTime( renderResult, rendertime );
+					if ( debugTileOverlay != null )
+					{
+						debugTileOverlay.setRenderTime( rendertime );
+						debugTileOverlay.setRenderTimePerPixelAndSource( renderNanosPerPixelAndSource.getAverage() );
+					}
 				}
 				else
 					currentRenderResult.setUpdated();
@@ -642,7 +647,12 @@ public class MultiResolutionRenderer
 					tileRenderStorage ) );
 		}
 
+		if ( debugTileOverlay != null )
+			debugTileOverlay.setTiling( tiles, screenScale.scale(), offsetX, offsetY );
+
 		CacheIoTiming.getIoTimeBudget().reset( iobudget );
 		return new TiledProjector( tileProjectors );
 	}
+
+	DebugTilingOverlay debugTileOverlay;
 }
