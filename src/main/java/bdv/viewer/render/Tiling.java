@@ -29,7 +29,7 @@ public class Tiling
 	 * Compute a list of {@code Tile}s that split the render area.
 	 * <p>
 	 * The algorithm for splitting is roughly as follows (but may change in the future).
-	 * <pre>
+	 * <pre>{@code
 	 * Recursively split each tile as follows:
 	 * Find a preferred splitting direction as the dimension in which the tile is larger.
 	 * Try to split along the preferred direction: (assume X)
@@ -53,7 +53,7 @@ public class Tiling
 	 *      merge the resulting TileSplit lists and return
 	 * Tf candidates is empty, try splitting along the other direction (same steps as above)
 	 * Tf candidates for the second direction are also empty, return singleton list with the unsplit tile.
-	 * </pre>
+	 * }</pre>
 	 */
 	public static List< Tile > findTiles( final VisibleSourcesOnScreenBounds onScreenBounds )
 	{
