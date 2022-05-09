@@ -76,6 +76,11 @@ public interface AccumulateProjectorFactory< A >
 
 	/**
 	 * @deprecated Use {@link #createProjector(List, List, List, RandomAccessibleInterval, int, ExecutorService)} instead.
+	 * The new variant of the method is named "createProjector" instead of
+	 * "createAccumulateProjector" because it has the same erasure. The default
+	 * implementation of "createProjector" is forwarded to the (deprecated)
+	 * "createAccumulateProjector", so existing AccumulateProjectorFactory
+	 * implementations should keep working.
 	 *
 	 * @param sourceProjectors
 	 *            projectors that will be used to render {@code sources}.

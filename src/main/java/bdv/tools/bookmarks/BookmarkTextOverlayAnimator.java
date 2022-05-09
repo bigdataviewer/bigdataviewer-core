@@ -35,7 +35,7 @@ import java.awt.font.FontRenderContext;
 import java.awt.font.TextLayout;
 import java.awt.geom.Rectangle2D;
 
-import bdv.viewer.ViewerPanel;
+import bdv.viewer.AbstractViewerPanel;
 import bdv.viewer.animate.AbstractAnimator;
 import bdv.viewer.animate.OverlayAnimator;
 
@@ -57,14 +57,14 @@ public class BookmarkTextOverlayAnimator implements OverlayAnimator
 
 	private boolean complete = false;
 
-	private final ViewerPanel viewer;
+	private final AbstractViewerPanel viewer;
 
-	public BookmarkTextOverlayAnimator( final ViewerPanel viewer )
+	public BookmarkTextOverlayAnimator( final AbstractViewerPanel viewer )
 	{
 		this( viewer, new Font( "SansSerif", Font.BOLD, 20 ) );
 	}
 
-	public BookmarkTextOverlayAnimator( final ViewerPanel viewer, final Font font )
+	public BookmarkTextOverlayAnimator( final AbstractViewerPanel viewer, final Font font )
 	{
 		this.viewer = viewer;
 		this.font = font;
@@ -75,7 +75,7 @@ public class BookmarkTextOverlayAnimator implements OverlayAnimator
 		text = message;
 		animator = ( fadeInDuration > 0 ) ? new AbstractAnimator( fadeInDuration ) : null;
 		fadeIn = true;
-		viewer.getDisplay().repaint();
+		viewer.getDisplayComponent().repaint();
 	}
 
 	public final void fadeOut( final String message, final long fadeOutDuration )
@@ -83,7 +83,7 @@ public class BookmarkTextOverlayAnimator implements OverlayAnimator
 		text = message;
 		animator = new AbstractAnimator( fadeOutDuration );
 		fadeIn = false;
-		viewer.getDisplay().repaint();
+		viewer.getDisplayComponent().repaint();
 	}
 
 	public final void clear()
@@ -91,7 +91,7 @@ public class BookmarkTextOverlayAnimator implements OverlayAnimator
 		text = null;
 		animator = null;
 		complete = true;
-		viewer.getDisplay().repaint();
+		viewer.getDisplayComponent().repaint();
 	}
 
 	@Override

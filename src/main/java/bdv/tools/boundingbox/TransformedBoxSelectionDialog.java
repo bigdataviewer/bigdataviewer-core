@@ -30,7 +30,6 @@ package bdv.tools.boundingbox;
 
 import static bdv.tools.boundingbox.BoxSelectionOptions.TimepointSelection.NONE;
 
-import bdv.viewer.ConverterSetups;
 import java.awt.BorderLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
@@ -52,7 +51,8 @@ import net.imglib2.realtransform.AffineTransform3D;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
 
-import bdv.viewer.ViewerPanel;
+import bdv.viewer.AbstractViewerPanel;
+import bdv.viewer.ConverterSetups;
 
 /**
  * @author Tobias Pietzsch
@@ -68,7 +68,7 @@ public class TransformedBoxSelectionDialog extends AbstractTransformedBoxSelecti
 
 	protected final JPanel content;
 
-	protected final ViewerPanel viewer;
+	protected final AbstractViewerPanel viewer;
 
 	protected final BoxSelectionPanel boxSelectionPanel;
 
@@ -77,7 +77,7 @@ public class TransformedBoxSelectionDialog extends AbstractTransformedBoxSelecti
 	protected final BoxSelectionOptions options;
 
 	public TransformedBoxSelectionDialog(
-			final ViewerPanel viewer,
+			final AbstractViewerPanel viewer,
 			final ConverterSetups converterSetups,
 			final int setupId,
 			final InputTriggerConfig keyConfig,
@@ -136,7 +136,7 @@ public class TransformedBoxSelectionDialog extends AbstractTransformedBoxSelecti
 		} );
 		model.intervalChangedListeners().add( () -> {
 			boxSelectionPanel.updateSliders( model.box().getInterval() );
-			viewer.getDisplay().repaint();
+			viewer.getDisplayComponent().repaint();
 		} );
 	}
 

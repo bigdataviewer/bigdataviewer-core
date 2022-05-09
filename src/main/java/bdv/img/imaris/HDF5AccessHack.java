@@ -29,29 +29,29 @@
 package bdv.img.imaris;
 
 import static bdv.img.hdf5.Util.reorder;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5A.H5Aclose;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5A.H5Aexists;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5A.H5Aget_space;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5A.H5Aget_type;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5A.H5Aopen_name;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5A.H5Aread;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5D.H5Dclose;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5D.H5Dget_space;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5D.H5Dopen;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5D.H5Dread;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5GLO.H5Oclose;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5GLO.H5Oopen;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5S.H5Sclose;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5S.H5Screate_simple;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5S.H5Sget_simple_extent_dims;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5S.H5Sget_simple_extent_ndims;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5S.H5Sselect_hyperslab;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5T.H5Tclose;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5T.H5Tget_class;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5T.H5Tget_cset;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5T.H5Tget_size;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5T.H5Tis_variable_str;
-import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.*;
+import static hdf.hdf5lib.H5.H5Aclose;
+import static hdf.hdf5lib.H5.H5Aexists;
+import static hdf.hdf5lib.H5.H5Aget_space;
+import static hdf.hdf5lib.H5.H5Aget_type;
+import static hdf.hdf5lib.H5.H5Aopen;
+import static hdf.hdf5lib.H5.H5Aread;
+import static hdf.hdf5lib.H5.H5Dclose;
+import static hdf.hdf5lib.H5.H5Dget_space;
+import static hdf.hdf5lib.H5.H5Dopen;
+import static hdf.hdf5lib.H5.H5Dread;
+import static hdf.hdf5lib.H5.H5Oclose;
+import static hdf.hdf5lib.H5.H5Oopen;
+import static hdf.hdf5lib.H5.H5Sclose;
+import static hdf.hdf5lib.H5.H5Screate_simple;
+import static hdf.hdf5lib.H5.H5Sget_simple_extent_dims;
+import static hdf.hdf5lib.H5.H5Sget_simple_extent_ndims;
+import static hdf.hdf5lib.H5.H5Sselect_hyperslab;
+import static hdf.hdf5lib.H5.H5Tclose;
+import static hdf.hdf5lib.H5.H5Tget_class;
+import static hdf.hdf5lib.H5.H5Tget_cset;
+import static hdf.hdf5lib.H5.H5Tget_size;
+import static hdf.hdf5lib.H5.H5Tis_variable_str;
+import static hdf.hdf5lib.HDF5Constants.*;
 
 import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Field;
@@ -67,9 +67,9 @@ public class HDF5AccessHack implements IHDF5Access
 {
 	private final IHDF5Reader hdf5Reader;
 
-	private final int fileId;
+	private final long fileId;
 
-	private final int numericConversionXferPropertyListID;
+	private final long numericConversionXferPropertyListID;
 
 	private final long[] reorderedDimensions = new long[ 3 ];
 
@@ -79,9 +79,9 @@ public class HDF5AccessHack implements IHDF5Access
 
 	private class OpenDataSet
 	{
-		final int dataSetId;
+		final long dataSetId;
 
-		final int fileSpaceId;
+		final long fileSpaceId;
 
 		public OpenDataSet( final String cellsPath )
 		{
@@ -143,7 +143,7 @@ public class HDF5AccessHack implements IHDF5Access
 		final Class< ? > k2 = Class.forName( "ch.systemsx.cisd.hdf5.HDF5BaseReader" );
 		final Field f2 = k2.getDeclaredField( "fileId" );
 		f2.setAccessible( true );
-		fileId = ( ( Integer ) f2.get( baseReader ) ).intValue();
+		fileId = ( ( Long ) f2.get( baseReader ) ).longValue();
 
 		final Field f3 = k2.getDeclaredField( "h5" );
 		f3.setAccessible( true );
@@ -152,7 +152,7 @@ public class HDF5AccessHack implements IHDF5Access
 		final Class< ? > k4 = Class.forName( "ch.systemsx.cisd.hdf5.HDF5" );
 		final Field f4 = k4.getDeclaredField( "numericConversionXferPropertyListID" );
 		f4.setAccessible( true );
-		numericConversionXferPropertyListID = ( ( Integer ) f4.get( h5 ) ).intValue();
+		numericConversionXferPropertyListID = ( ( Long ) f4.get( h5 ) ).longValue();
 
 		openDataSetCache = new OpenDataSetCache();
 	}
@@ -196,7 +196,7 @@ public class HDF5AccessHack implements IHDF5Access
 		Util.reorder( min, reorderedMin );
 
 		final OpenDataSet dataset = openDataSetCache.getDataSet( new ViewLevelId( timepoint, setup, level ) );
-		final int memorySpaceId = H5Screate_simple( reorderedDimensions.length, reorderedDimensions, null );
+		final long memorySpaceId = H5Screate_simple( reorderedDimensions.length, reorderedDimensions, null );
 		H5Sselect_hyperslab( dataset.fileSpaceId, H5S_SELECT_SET, reorderedMin, null, reorderedDimensions, null );
 		H5Dread( dataset.dataSetId, H5T_NATIVE_UCHAR, memorySpaceId, dataset.fileSpaceId, numericConversionXferPropertyListID, dataBlock );
 		H5Sclose( memorySpaceId );
@@ -222,7 +222,7 @@ public class HDF5AccessHack implements IHDF5Access
 		Util.reorder( min, reorderedMin );
 
 		final OpenDataSet dataset = openDataSetCache.getDataSet( new ViewLevelId( timepoint, setup, level ) );
-		final int memorySpaceId = H5Screate_simple( reorderedDimensions.length, reorderedDimensions, null );
+		final long memorySpaceId = H5Screate_simple( reorderedDimensions.length, reorderedDimensions, null );
 		H5Sselect_hyperslab( dataset.fileSpaceId, H5S_SELECT_SET, reorderedMin, null, reorderedDimensions, null );
 		H5Dread( dataset.dataSetId, H5T_NATIVE_USHORT, memorySpaceId, dataset.fileSpaceId, numericConversionXferPropertyListID, dataBlock );
 		H5Sclose( memorySpaceId );
@@ -248,7 +248,7 @@ public class HDF5AccessHack implements IHDF5Access
 		Util.reorder( min, reorderedMin );
 
 		final OpenDataSet dataset = openDataSetCache.getDataSet( new ViewLevelId( timepoint, setup, level ) );
-		final int memorySpaceId = H5Screate_simple( reorderedDimensions.length, reorderedDimensions, null );
+		final long memorySpaceId = H5Screate_simple( reorderedDimensions.length, reorderedDimensions, null );
 		H5Sselect_hyperslab( dataset.fileSpaceId, H5S_SELECT_SET, reorderedMin, null, reorderedDimensions, null );
 		H5Dread( dataset.dataSetId, H5T_NATIVE_FLOAT, memorySpaceId, dataset.fileSpaceId, numericConversionXferPropertyListID, dataBlock );
 		H5Sclose( memorySpaceId );
@@ -266,16 +266,16 @@ public class HDF5AccessHack implements IHDF5Access
 	public synchronized String readImarisAttributeString( final String objectPath, final String attributeName, final String defaultValue )
 	{
 		String attrString = defaultValue;
-		final int objectId = H5Oopen( fileId, objectPath, H5P_DEFAULT );
+		final long objectId = H5Oopen( fileId, objectPath, H5P_DEFAULT );
 		if ( H5Aexists( objectId, attributeName ) )
 		{
-			final int attributeId = H5Aopen_name( objectId, attributeName );
-			final int dataTypeId = H5Aget_type( attributeId );
+			final long attributeId = H5Aopen( objectId, attributeName, H5P_DEFAULT );
+			final long dataTypeId = H5Aget_type( attributeId );
 			final int classType = H5Tget_class( dataTypeId );
 			if ( classType != H5T_STRING )
 				throw new IllegalArgumentException( "Attribute " + attributeName + " of object " + objectPath + " needs to be a String." );
 
-			final int dataTypeSize = H5Tget_size( dataTypeId );
+			final long dataTypeSize = H5Tget_size( dataTypeId );
 			if ( dataTypeSize != 1 )
 				throw new IllegalArgumentException( "Attribute " + attributeName + " of object " + objectPath + ": unexpected data type size." );
 			final boolean isVariableStr = H5Tis_variable_str( dataTypeId );
@@ -290,7 +290,7 @@ public class HDF5AccessHack implements IHDF5Access
 			else
 				throw new IllegalArgumentException( "Attribute " + attributeName + " of object " + objectPath + ": unexpected character set." );
 
-			final int attrSpaceId = H5Aget_space( attributeId );
+			final long attrSpaceId = H5Aget_space( attributeId );
 			final int ndims = H5Sget_simple_extent_ndims( attrSpaceId );
 			if ( ndims != 1 )
 				throw new IllegalArgumentException( "Attribute " + attributeName + " of object " + objectPath + ": unexpected number of dimensions." );

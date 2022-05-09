@@ -28,19 +28,21 @@
  */
 package bdv.tools.boundingbox;
 
+import static bdv.viewer.ViewerStateChange.VISIBILITY_CHANGED;
+
+import java.awt.Color;
+
+import net.imglib2.type.numeric.ARGBType;
+
 import bdv.util.Bounds;
 import bdv.util.PlaceHolderConverterSetup;
+import bdv.viewer.AbstractViewerPanel;
 import bdv.viewer.ConverterSetups;
 import bdv.viewer.DisplayMode;
 import bdv.viewer.SourceAndConverter;
-import bdv.viewer.ViewerPanel;
 import bdv.viewer.ViewerState;
 import bdv.viewer.ViewerStateChange;
 import bdv.viewer.ViewerStateChangeListener;
-import java.awt.Color;
-import net.imglib2.type.numeric.ARGBType;
-
-import static bdv.viewer.ViewerStateChange.VISIBILITY_CHANGED;
 
 /**
  * A BDV source (and converter etc) representing a {@code TransformedBox}.
@@ -59,7 +61,7 @@ public class TransformedBoxOverlaySource
 
 	private final SourceAndConverter< Void > boxSourceAndConverter;
 
-	private final ViewerPanel viewer;
+	private final AbstractViewerPanel viewer;
 
 	private final ConverterSetups setups;
 
@@ -69,7 +71,7 @@ public class TransformedBoxOverlaySource
 			final String name,
 			final TransformedBoxOverlay boxOverlay,
 			final TransformedBox bbSource,
-			final ViewerPanel viewer,
+			final AbstractViewerPanel viewer,
 			final ConverterSetups converterSetups,
 			final int setupId )
 	{
@@ -92,7 +94,7 @@ public class TransformedBoxOverlaySource
 		{
 			if ( state.getDisplayMode() != DisplayMode.FUSED )
 			{
-				for ( SourceAndConverter< ? > source : state.getSources() )
+				for ( final SourceAndConverter< ? > source : state.getSources() )
 					state.setSourceActive( source, state.isSourceVisible( source ) );
 				state.setDisplayMode( DisplayMode.FUSED );
 			}
@@ -140,6 +142,6 @@ public class TransformedBoxOverlaySource
 			final int argb = ( boxConverterSetup.getColor().get() & 0x00ffffff ) | ( alpha << 24 );
 			boxOverlay.setIntersectionFillColor( new Color( argb, true ) );
 		}
-		viewer.getDisplay().repaint();
+		viewer.getDisplayComponent().repaint();
 	}
 }

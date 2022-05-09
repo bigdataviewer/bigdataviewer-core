@@ -41,14 +41,15 @@ import javax.swing.ActionMap;
 import javax.swing.InputMap;
 import javax.swing.KeyStroke;
 
+import net.imglib2.Point;
+import net.imglib2.realtransform.AffineTransform3D;
+
 import org.scijava.ui.behaviour.util.InputActionBindings;
 
 import bdv.util.Affine3DHelpers;
-import bdv.viewer.ViewerPanel;
+import bdv.viewer.AbstractViewerPanel;
 import bdv.viewer.animate.RotationAnimator;
 import bdv.viewer.animate.SimilarityTransformAnimator;
-import net.imglib2.Point;
-import net.imglib2.realtransform.AffineTransform3D;
 
 public class BookmarksEditor
 {
@@ -66,7 +67,7 @@ public class BookmarksEditor
 
 	private final ArrayList< String  > inputMapsToBlock;
 
-	private final ViewerPanel viewer;
+	private final AbstractViewerPanel viewer;
 
 	private final InputActionBindings bindings;
 
@@ -76,7 +77,7 @@ public class BookmarksEditor
 
 	private BookmarkTextOverlayAnimator animator;
 
-	public BookmarksEditor( final ViewerPanel viewer, final InputActionBindings inputActionBindings, final Bookmarks bookmarks )
+	public BookmarksEditor( final AbstractViewerPanel viewer, final InputActionBindings inputActionBindings, final Bookmarks bookmarks )
 	{
 		this.viewer = viewer;
 		bindings = inputActionBindings;
@@ -99,7 +100,7 @@ public class BookmarksEditor
 		inputMap.put( abortKey, "abort bookmark" );
 		bindings.addActionMap( "bookmarks", actionMap );
 
-		viewer.getDisplay().addKeyListener( new KeyAdapter()
+		viewer.getDisplayComponent().addKeyListener( new KeyAdapter()
 		{
 			@Override
 			public void keyTyped( final KeyEvent e )
@@ -117,8 +118,8 @@ public class BookmarksEditor
 						{
 							final AffineTransform3D t = new AffineTransform3D();
 							viewer.state().getViewerTransform( t );
-							final double cX = viewer.getDisplay().getWidth() / 2.0;
-							final double cY = viewer.getDisplay().getHeight() / 2.0;
+							final double cX = viewer.getDisplayComponent().getWidth() / 2.0;
+							final double cY = viewer.getDisplayComponent().getHeight() / 2.0;
 							t.set( t.get( 0, 3 ) - cX, 0, 3 );
 							t.set( t.get( 1, 3 ) - cY, 1, 3 );
 							bookmarks.put( key, t );
@@ -133,8 +134,8 @@ public class BookmarksEditor
 							{
 								final AffineTransform3D c = new AffineTransform3D();
 								viewer.state().getViewerTransform( c );
-								final double cX = viewer.getDisplay().getWidth() / 2.0;
-								final double cY = viewer.getDisplay().getHeight() / 2.0;
+								final double cX = viewer.getDisplayComponent().getWidth() / 2.0;
+								final double cY = viewer.getDisplayComponent().getHeight() / 2.0;
 								c.set( c.get( 0, 3 ) - cX, 0, 3 );
 								c.set( c.get( 1, 3 ) - cY, 1, 3 );
 								viewer.setTransformAnimator( new SimilarityTransformAnimator( c, t, cX, cY, 300 ) );

@@ -29,21 +29,28 @@
 package bdv.img.hdf5;
 
 import static bdv.img.hdf5.Util.reorder;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5D.H5Dclose;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5D.H5Dget_space;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5D.H5Dopen;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5D.H5Dread;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5S.H5Sclose;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5S.H5Screate_simple;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5S.H5Sget_simple_extent_dims;
-import static ch.systemsx.cisd.hdf5.hdf5lib.H5S.H5Sselect_hyperslab;
-import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5P_DEFAULT;
-import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5S_MAX_RANK;
-import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5S_SELECT_SET;
-import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5T_NATIVE_FLOAT;
-import static ch.systemsx.cisd.hdf5.hdf5lib.HDF5Constants.H5T_NATIVE_INT16;
+import static hdf.hdf5lib.H5.H5open;
+import static hdf.hdf5lib.H5.H5Dclose;
+import static hdf.hdf5lib.H5.H5Dget_space;
+import static hdf.hdf5lib.H5.H5Dopen;
+import static hdf.hdf5lib.H5.H5Dread;
+import static hdf.hdf5lib.H5.H5Sclose;
+import static hdf.hdf5lib.H5.H5Screate_simple;
+import static hdf.hdf5lib.H5.H5Sget_simple_extent_dims;
+import static hdf.hdf5lib.H5.H5Sselect_hyperslab;
+import static hdf.hdf5lib.H5.H5Fopen;
+import static hdf.hdf5lib.H5.H5Fclose;
+import static hdf.hdf5lib.H5.H5Pclose;
+import static hdf.hdf5lib.HDF5Constants.H5P_DEFAULT;
+import static hdf.hdf5lib.HDF5Constants.H5S_MAX_RANK;
+import static hdf.hdf5lib.HDF5Constants.H5S_SELECT_SET;
+import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_FLOAT;
+import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_INT16;
+import static hdf.hdf5lib.HDF5Constants.H5F_ACC_RDONLY;
+import ch.systemsx.cisd.hdf5.hdf5lib.HDFHelper;
+import ch.systemsx.cisd.hdf5.IHDF5FileLevelReadOnlyHandler;
 
-import java.lang.reflect.Field;
+import java.io.File;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
@@ -63,9 +70,9 @@ class HDF5AccessHack implements IHDF5Access
 {
 	private final IHDF5Reader hdf5Reader;
 
-	private final int fileId;
+	private final long fileId;
 
-	private final int numericConversionXferPropertyListID;
+	private final long numericConversionXferPropertyListID;
 
 	private final long[] reorderedDimensions = new long[ 3 ];
 
@@ -75,9 +82,9 @@ class HDF5AccessHack implements IHDF5Access
 
 	private class OpenDataSet
 	{
-		final int dataSetId;
+		final long dataSetId;
 
-		final int fileSpaceId;
+		final long fileSpaceId;
 
 		public OpenDataSet( final String cellsPath )
 		{
@@ -131,24 +138,27 @@ class HDF5AccessHack implements IHDF5Access
 	{
 		this.hdf5Reader = hdf5Reader;
 
-		final Class< ? > k = Class.forName( "ch.systemsx.cisd.hdf5.HDF5Reader" );
-		final Field f = k.getDeclaredField( "baseReader" );
-		f.setAccessible( true );
-		final Object baseReader = f.get( hdf5Reader );
+		// TODO: Do see ch.systemsx.cisd.hdf5.HDF5.createFileAccessPropertyListId for version bounds checking
+		long fileAccessPropertyListId = H5P_DEFAULT;
 
-		final Class< ? > k2 = Class.forName( "ch.systemsx.cisd.hdf5.HDF5BaseReader" );
-		final Field f2 = k2.getDeclaredField( "fileId" );
-		f2.setAccessible( true );
-		fileId = ( ( Integer ) f2.get( baseReader ) ).intValue();
+		IHDF5FileLevelReadOnlyHandler fileHandler = hdf5Reader.file();
+		boolean performNumericConversions = fileHandler.isPerformNumericConversions();
+		File file = fileHandler.getFile();
 
-		final Field f3 = k2.getDeclaredField( "h5" );
-		f3.setAccessible( true );
-		final Object h5 = f3.get( baseReader );
+		// Make sure library is initialized. This can be called multiple times.
+		H5open();
 
-		final Class< ? > k4 = Class.forName( "ch.systemsx.cisd.hdf5.HDF5" );
-		final Field f4 = k4.getDeclaredField( "numericConversionXferPropertyListID" );
-		f4.setAccessible( true );
-		numericConversionXferPropertyListID = ( ( Integer ) f4.get( h5 ) ).intValue();
+		// See ch.systemsx.cisd.hdf5.HDF5 constructor
+		// Make sure to close the numericConversionXferPropertyListID property list created below. See close()
+		if (performNumericConversions)
+		{
+			this.numericConversionXferPropertyListID = HDFHelper.H5Pcreate_xfer_abort_overflow();
+		} else {
+			this.numericConversionXferPropertyListID = HDFHelper.H5Pcreate_xfer_abort();
+		}
+
+		// Make sure to close the fileID created below. See close()
+		fileId = H5Fopen(file.getAbsolutePath(), H5F_ACC_RDONLY, fileAccessPropertyListId);
 
 		openDataSetCache = new OpenDataSetCache();
 	}
@@ -192,7 +202,7 @@ class HDF5AccessHack implements IHDF5Access
 		Util.reorder( min, reorderedMin );
 
 		final OpenDataSet dataset = openDataSetCache.getDataSet( new ViewLevelId( timepoint, setup, level ) );
-		final int memorySpaceId = H5Screate_simple( reorderedDimensions.length, reorderedDimensions, null );
+		final long memorySpaceId = H5Screate_simple( reorderedDimensions.length, reorderedDimensions, null );
 		H5Sselect_hyperslab( dataset.fileSpaceId, H5S_SELECT_SET, reorderedMin, null, reorderedDimensions, null );
 		H5Dread( dataset.dataSetId, H5T_NATIVE_INT16, memorySpaceId, dataset.fileSpaceId, numericConversionXferPropertyListID, dataBlock );
 		H5Sclose( memorySpaceId );
@@ -217,7 +227,7 @@ class HDF5AccessHack implements IHDF5Access
 		Util.reorder( min, reorderedMin );
 
 		final OpenDataSet dataset = openDataSetCache.getDataSet( new ViewLevelId( timepoint, setup, level ) );
-		final int memorySpaceId = H5Screate_simple( reorderedDimensions.length, reorderedDimensions, null );
+		final long memorySpaceId = H5Screate_simple( reorderedDimensions.length, reorderedDimensions, null );
 		H5Sselect_hyperslab( dataset.fileSpaceId, H5S_SELECT_SET, reorderedMin, null, reorderedDimensions, null );
 		H5Dread( dataset.dataSetId, H5T_NATIVE_FLOAT, memorySpaceId, dataset.fileSpaceId, numericConversionXferPropertyListID, dataBlock );
 		H5Sclose( memorySpaceId );
@@ -237,6 +247,15 @@ class HDF5AccessHack implements IHDF5Access
 	public void close()
 	{
 		closeAllDataSets();
+		int status = 0;
+		status = H5Pclose(numericConversionXferPropertyListID);
+		if (status < 0) {
+			System.err.println("HDF5AccessHack: Error closing property list");
+		}
+		status = H5Fclose(fileId);
+		if (status < 0) {
+			System.err.println("HDF5AccessHack: Error closing file");
+		}
 		hdf5Reader.close();
 	}
 

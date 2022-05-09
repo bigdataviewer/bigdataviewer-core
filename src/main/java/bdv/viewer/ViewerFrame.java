@@ -28,10 +28,6 @@
  */
 package bdv.viewer;
 
-import bdv.TransformEventHandler;
-import bdv.ui.CardPanel;
-import bdv.ui.BdvDefaultCards;
-import bdv.ui.splitpanel.SplitPanel;
 import java.awt.BorderLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -47,7 +43,11 @@ import org.scijava.ui.behaviour.util.Behaviours;
 import org.scijava.ui.behaviour.util.InputActionBindings;
 import org.scijava.ui.behaviour.util.TriggerBehaviourBindings;
 
+import bdv.TransformEventHandler;
 import bdv.cache.CacheControl;
+import bdv.ui.BdvDefaultCards;
+import bdv.ui.CardPanel;
+import bdv.ui.splitpanel.SplitPanel;
 import bdv.util.AWTUtils;
 
 /**
@@ -130,7 +130,7 @@ public class ViewerFrame extends JFrame
 		final MouseAndKeyHandler mouseAndKeyHandler = new MouseAndKeyHandler();
 		mouseAndKeyHandler.setInputMap( triggerbindings.getConcatenatedInputTriggerMap() );
 		mouseAndKeyHandler.setBehaviourMap( triggerbindings.getConcatenatedBehaviourMap() );
-		mouseAndKeyHandler.setKeypressManager( optional.values.getKeyPressedManager(), viewer.getDisplay() );
+		mouseAndKeyHandler.setKeypressManager( optional.values.getKeyPressedManager(), viewer.getDisplayComponent() );
 		viewer.getDisplay().addHandler( mouseAndKeyHandler );
 
 		// TODO: should be a field?
