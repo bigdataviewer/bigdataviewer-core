@@ -33,6 +33,7 @@ import java.io.InputStreamReader;
 import java.net.URL;
 import java.util.HashMap;
 
+import bdv.cache.CacheOverrider;
 import com.google.gson.GsonBuilder;
 
 import bdv.AbstractViewerSetupImgLoader;
@@ -56,7 +57,7 @@ import net.imglib2.type.volatiles.VolatileUnsignedShortType;
 import net.imglib2.util.IntervalIndexer;
 import net.imglib2.view.Views;
 
-public class RemoteImageLoader implements ViewerImgLoader
+public class RemoteImageLoader implements ViewerImgLoader, CacheOverrider
 {
 	protected String baseUrl;
 
@@ -137,6 +138,17 @@ public class RemoteImageLoader implements ViewerImgLoader
 	{
 		tryopen();
 		return cache;
+	}
+
+	@Override
+	public synchronized void setCache(VolatileGlobalCellCache cache) {
+		if ( isOpen )
+		{
+			if ( !isOpen )
+				return;
+			cache.clearCache();
+		}
+		this.cache = cache;
 	}
 
 	public MipmapInfo getMipmapInfo( final int setupId )
