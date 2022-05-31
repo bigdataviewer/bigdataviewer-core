@@ -56,6 +56,7 @@ import net.imglib2.Volatile;
 import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.cache.volatiles.LoadingStrategy;
 import net.imglib2.img.NativeImg;
+import net.imglib2.img.basictypeaccess.DataAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 import net.imglib2.img.cell.AbstractCellImg;
 import net.imglib2.img.cell.CellGrid;
@@ -65,7 +66,7 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.volatiles.VolatileUnsignedShortType;
 
-public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T > & NativeType< V > , A extends VolatileAccess > implements ViewerImgLoader
+public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T > & NativeType< V > , A extends DataAccess & VolatileAccess > implements ViewerImgLoader
 {
 	private IHDF5Access hdf5Access;
 

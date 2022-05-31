@@ -41,6 +41,7 @@ import net.imglib2.cache.volatiles.VolatileCache;
 import net.imglib2.img.Img;
 import net.imglib2.img.ImgFactory;
 import net.imglib2.img.NativeImg;
+import net.imglib2.img.basictypeaccess.DataAccess;
 import net.imglib2.img.cell.AbstractCellImg;
 import net.imglib2.img.cell.Cell;
 import net.imglib2.img.cell.CellGrid;
@@ -63,7 +64,7 @@ import net.imglib2.util.Fraction;
  * @author Stephan Saalfeld
  * @author Philipp Hanslovsky
  */
-public class VolatileCachedCellImg< T extends NativeType< T >, A >
+public class VolatileCachedCellImg< T extends NativeType< T >, A extends DataAccess >
 		extends AbstractCellImg< T, A, Cell< A >, VolatileCachedCells< Cell< A > > >
 {
 	private final VolatileCache< Long, Cell< A > > cache;

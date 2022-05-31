@@ -37,7 +37,6 @@ import net.imglib2.RealInterval;
 import net.imglib2.RealLocalizable;
 import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
-import net.imglib2.Sampler;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.util.Intervals;
@@ -135,12 +134,6 @@ final class TransformedBoxPlaceHolderSource implements Source< Void >
 
 	private final RealRandomAccess< Void > access = new RealRandomAccess< Void >()
 	{
-		@Override
-		public RealRandomAccess< Void > copyRealRandomAccess()
-		{
-			return this;
-		}
-
 		@Override
 		public void localize( final float[] position )
 		{}
@@ -262,7 +255,7 @@ final class TransformedBoxPlaceHolderSource implements Source< Void >
 		}
 
 		@Override
-		public Sampler< Void > copy()
+		public RealRandomAccess< Void > copy()
 		{
 			return this;
 		}
