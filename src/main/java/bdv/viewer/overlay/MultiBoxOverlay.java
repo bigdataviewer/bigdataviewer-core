@@ -33,12 +33,12 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
-import java.awt.Stroke;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.GeneralPath;
 import java.util.ArrayList;
 import java.util.List;
 
+import bdv.ui.UIUtils;
 import bdv.util.Affine3DHelpers;
 import bdv.util.IntervalBoundingBox;
 import net.imglib2.Interval;
@@ -87,17 +87,6 @@ public class MultiBoxOverlay
 		 * and the interactive viewer transform.
 		 */
 		AffineTransform3D getSourceToViewer();
-	}
-
-	private double uiScale;
-	private Stroke stroke;
-	private int fontSize;
-
-	public void setUIScaleFactor( final double scale )
-	{
-		uiScale = scale;
-		stroke = new BasicStroke( ( float ) scale );
-		fontSize = ( int ) Math.round( 8 * scale );
 	}
 
 	/**
@@ -281,6 +270,10 @@ public class MultiBoxOverlay
 			highlightIndex = -1;
 			highlighStartTime = -1;
 		}
+
+		final double uiScale = UIUtils.getUIScaleFactor( this );
+		final BasicStroke stroke = new BasicStroke( ( float ) uiScale );
+		final int fontSize = ( int ) Math.round( 8 * uiScale );
 
 		graphics.setRenderingHint( RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON );
 		graphics.setStroke( stroke );

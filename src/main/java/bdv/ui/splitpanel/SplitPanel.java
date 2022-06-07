@@ -28,7 +28,6 @@
  */
 package bdv.ui.splitpanel;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.event.ComponentAdapter;
@@ -65,10 +64,6 @@ import bdv.viewer.AbstractViewerPanel;
  */
 public class SplitPanel extends JSplitPane
 {
-	private static final double uiScale = UIUtils.getUIScaleFactor();
-
-	private static final int DEFAULT_DIVIDER_SIZE = ( int )Math.round( 3 * uiScale );
-
 	private static final String FOCUS_VIEWER_PANEL = "focus viewer panel";
 	private static final String HIDE_CARD_PANEL = "hide card panel";
 
@@ -81,6 +76,9 @@ public class SplitPanel extends JSplitPane
 	public SplitPanel( final AbstractViewerPanel viewerPanel, final CardPanel cardPanel )
 	{
 		super( JSplitPane.HORIZONTAL_SPLIT );
+
+		final double uiScale = UIUtils.getUIScaleFactor( this );
+		final int dividerSize = ( int )Math.round( 3 * uiScale );
 
 		configureSplitPane();
 
@@ -118,7 +116,7 @@ public class SplitPanel extends JSplitPane
 		viewerPanel.getDisplayComponent().addMouseMotionListener( oneTouchExpandTrigger );
 		viewerPanel.getDisplayComponent().addMouseListener( oneTouchExpandTrigger );
 
-		setDividerSize( DEFAULT_DIVIDER_SIZE );
+		setDividerSize( dividerSize );
 
 		addComponentListener( new ComponentAdapter()
 		{
@@ -176,11 +174,12 @@ public class SplitPanel extends JSplitPane
 	}
 
 	// divider size set externally
-	private int dividerSizeWhenVisible = DEFAULT_DIVIDER_SIZE;
+	private int dividerSizeWhenVisible = ( int )Math.round( 3 * UIUtils.getUIScaleFactor( this ) );
 
 	@Override
 	public void setDividerSize( final int newSize )
 	{
+		System.out.println("divider size set to " + newSize);
 		dividerSizeWhenVisible = newSize;
 	}
 
@@ -201,8 +200,11 @@ public class SplitPanel extends JSplitPane
 		}
 		else
 		{
+			final double uiScale = UIUtils.getUIScaleFactor( this );
+			final int dividerSize = ( int )Math.round( dividerSizeWhenVisible * uiScale );
+
 			setRightComponent( scrollPane );
-			super.setDividerSize( dividerSizeWhenVisible );
+			super.setDividerSize( dividerSize );
 			final int dl = getLastDividerLocation();
 			final int w = getWidth();
 			setDividerLocation( Math.max( Math.min ( w / 2, ( int )Math.floor( 50 * uiScale ) ), Math.min( w - ( int )Math.floor( 50 * uiScale ), dl ) ) );

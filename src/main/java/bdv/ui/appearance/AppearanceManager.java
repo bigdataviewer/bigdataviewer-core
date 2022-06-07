@@ -11,6 +11,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
+import bdv.ui.UIUtils;
 import bdv.util.Prefs;
 
 /**
@@ -73,6 +74,8 @@ public class AppearanceManager
 			return;
 		try
 		{
+			UIUtils.reset();
+
 			UIManager.setLookAndFeel( laf.getClassName() );
 
 			for ( final Window window : Window.getWindows() )

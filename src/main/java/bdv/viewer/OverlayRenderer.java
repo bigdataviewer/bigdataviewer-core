@@ -55,14 +55,4 @@ public interface OverlayRenderer
 	 *            the new canvas height.
 	 */
 	void setCanvasSize( int width, int height );
-
-	/**
-	 * This is called when the UI scaling factor changes.
-	 *
-	 * @param uiScale
-	 * 		approximate UI scaling factor
-	 */
-	default void setUIScaleFactor( double uiScale )
-	{
-	}
 }
