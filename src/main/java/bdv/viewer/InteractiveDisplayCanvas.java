@@ -40,11 +40,12 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelListener;
+
 import javax.swing.JComponent;
+
 import org.scijava.listeners.Listeners;
 
 import bdv.TransformEventHandler;
-import bdv.ui.UIUtils;
 
 /*
  * A {@link JComponent} that uses {@link OverlayRenderer OverlayRenderers}
@@ -69,11 +70,6 @@ public class InteractiveDisplayCanvas extends JComponent implements InteractiveD
 	private final Listeners.List< OverlayRenderer > overlayRenderers;
 
 	/**
-	 * approximate UI scaling factor
-	 */
-	private double uiScale = UIUtils.getUIScaleFactor();
-
-	/**
 	 * Create a new {@code InteractiveDisplayCanvas}.
 	 *
 	 * @param width
@@ -90,7 +86,6 @@ public class InteractiveDisplayCanvas extends JComponent implements InteractiveD
 		overlayRenderers = new Listeners.SynchronizedList<>( r ->
 		{
 			r.setCanvasSize( getWidth(), getHeight() );
-			r.setUIScaleFactor( uiScale );
 		} );
 
 		addComponentListener( new ComponentAdapter()
@@ -207,15 +202,6 @@ public class InteractiveDisplayCanvas extends JComponent implements InteractiveD
 		}
 		handler.setCanvasSize( w, h, false );
 		addHandler( handler );
-	}
-
-	@Override
-	public void updateUI()
-	{
-		super.updateUI();
-		uiScale = UIUtils.getUIScaleFactor();
-		if ( overlayRenderers != null )
-			overlayRenderers.list.forEach( r -> r.setUIScaleFactor( uiScale) );
 	}
 
 	@Override

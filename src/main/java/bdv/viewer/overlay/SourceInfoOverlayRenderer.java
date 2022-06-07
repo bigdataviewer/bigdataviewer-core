@@ -34,8 +34,7 @@ import java.awt.Font;
 import java.awt.Graphics2D;
 import java.util.List;
 
-import javax.swing.UIManager;
-
+import bdv.ui.UIUtils;
 import bdv.util.Prefs.OverlayPosition;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerState;
@@ -59,18 +58,10 @@ public class SourceInfoOverlayRenderer
 
 	protected OverlayPosition sourceNameOverlayPosition = TOP_CENTER;
 
-	private double uiScale;
-
-	private int fontSize;
-
-	public void setUIScaleFactor( final double scale )
-	{
-		uiScale = scale;
-		fontSize = UIManager.getFont( "Panel.font" ).getSize();
-	}
-
 	public synchronized void paint( final Graphics2D g )
 	{
+		final double uiScale = UIUtils.getUIScaleFactor( this );
+		final int fontSize = UIUtils.getPanelFontSize( this );
 		final int spacing = fontSize + 1;
 
 		g.setFont( new Font( "Monospaced", Font.PLAIN, fontSize ) );

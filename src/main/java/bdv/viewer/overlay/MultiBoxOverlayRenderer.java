@@ -35,6 +35,7 @@ import java.util.List;
 import bdv.ui.UIUtils;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerState;
+import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.Intervals;
@@ -71,31 +72,21 @@ public class MultiBoxOverlayRenderer
 
 	public MultiBoxOverlayRenderer( final int screenWidth, final int screenHeight )
 	{
+		boxInterval = Intervals.createMinSize( 10, 10, 160, 120 );
 		box = new MultiBoxOverlay();
-
-		final double uiScale = UIUtils.getUIScaleFactor();
-		boxInterval = Intervals.createMinSize(
-				( int )Math.round( 10 * uiScale ),
-				( int )Math.round( 10 * uiScale ),
-				( int )Math.round( 160 * uiScale ),
-				( int )Math.round( 120 * uiScale ) );
 		virtualScreenInterval = Intervals.createMinSize( 0, 0, screenWidth, screenHeight );
 		boxSources = new ArrayList<>();
 	}
 
 	public synchronized void paint( final Graphics2D g )
 	{
-		box.paint( g, boxSources, virtualScreenInterval, boxInterval );
-	}
-
-	public void setUIScaleFactor( final double scale )
-	{
-		boxInterval = Intervals.createMinSize(
-				( int )Math.round( 10 * scale ),
-				( int )Math.round( 10 * scale ),
-				( int )Math.round( 160 * scale ),
-				( int )Math.round( 120 * scale ) );
-		box.setUIScaleFactor( scale );
+		final double uiScale = UIUtils.getUIScaleFactor( this );
+		final FinalInterval paintInterval = Intervals.createMinSize(
+				( int )Math.round( boxInterval.min( 0 ) * uiScale ),
+				( int )Math.round( boxInterval.min( 1 ) * uiScale ),
+				( int )Math.round( boxInterval.dimension( 0 ) * uiScale ),
+				( int )Math.round( boxInterval.dimension( 1 ) * uiScale ) );
+		box.paint( g, boxSources, virtualScreenInterval, paintInterval );
 	}
 
 	// TODO

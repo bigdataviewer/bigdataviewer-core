@@ -28,8 +28,6 @@
  */
 package bdv.viewer;
 
-import bdv.ui.appearance.AppearanceManager;
-import bdv.ui.keymap.KeymapManager;
 import java.awt.event.KeyListener;
 
 import org.scijava.ui.behaviour.KeyPressedManager;
@@ -39,6 +37,8 @@ import bdv.TransformEventHandler2D;
 import bdv.TransformEventHandler3D;
 import bdv.TransformEventHandlerFactory;
 import bdv.ui.UIUtils;
+import bdv.ui.appearance.AppearanceManager;
+import bdv.ui.keymap.KeymapManager;
 import bdv.viewer.animate.MessageOverlayAnimator;
 import bdv.viewer.render.AccumulateProjector;
 import bdv.viewer.render.AccumulateProjectorARGB;
@@ -259,9 +259,9 @@ public class ViewerOptions
 	 */
 	public static class Values
 	{
-		private int width = ( int )Math.round( 800 * UIUtils.getUIScaleFactor() );
+		private int width = ( int )Math.round( 800 * UIUtils.getUIScaleFactor( this ) );
 
-		private int height = ( int )Math.round( 600 * UIUtils.getUIScaleFactor() );
+		private int height = ( int )Math.round( 600 * UIUtils.getUIScaleFactor( this ) );
 
 		private double[] screenScales = new double[] { 1, 0.75, 0.5, 0.25, 0.125 };
 

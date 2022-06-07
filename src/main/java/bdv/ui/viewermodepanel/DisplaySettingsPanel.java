@@ -69,7 +69,7 @@ public class DisplaySettingsPanel extends JPanel
 		super( new MigLayout( "ins 2 0 0 0, fillx, filly", "[][][]", "top" ) );
 
 		final String isDark = UIUtils.isDark( "Panel.background" ) ? "_dark" : "";
-		final String isLarge = UIUtils.getUIScaleFactor() > 1.5 ? "_200" : "";
+		final String isLarge = UIUtils.getUIScaleFactor( this ) > 1.5 ? "_200" : "";
 
 		fusion = new LabeledToggleButton(
 				new ImageIcon( this.getClass().getResource( "single_mode" + isDark + isLarge + ".png" ) ),
@@ -138,7 +138,7 @@ public class DisplaySettingsPanel extends JPanel
 		if ( fusion != null )
 		{
 			final String isDark = UIUtils.isDark( "Panel.background" ) ? "_dark" : "";
-			final String isLarge = UIUtils.getUIScaleFactor() > 1.5 ? "_200" : "";
+			final String isLarge = UIUtils.getUIScaleFactor( this ) > 1.5 ? "_200" : "";
 
 			fusion.setIcons(
 					new ImageIcon( this.getClass().getResource( "single_mode" + isDark + isLarge + ".png" ) ),

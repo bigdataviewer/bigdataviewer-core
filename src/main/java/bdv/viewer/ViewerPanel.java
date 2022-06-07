@@ -31,7 +31,6 @@ package bdv.viewer;
 import static bdv.viewer.DisplayMode.SINGLE;
 import static bdv.viewer.Interpolation.NEARESTNEIGHBOR;
 
-import bdv.viewer.render.DebugTilingOverlay;
 import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
@@ -45,7 +44,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -55,13 +53,6 @@ import javax.swing.DefaultBoundedRangeModel;
 import javax.swing.JSlider;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
-import javax.swing.UIManager;
-
-import net.imglib2.Interval;
-import net.imglib2.RealLocalizable;
-import net.imglib2.RealPoint;
-import net.imglib2.RealPositionable;
-import net.imglib2.realtransform.AffineTransform3D;
 
 import org.jdom2.Element;
 import org.scijava.listeners.Listeners;
@@ -70,6 +61,7 @@ import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import bdv.TransformEventHandler;
 import bdv.TransformState;
 import bdv.cache.CacheControl;
+import bdv.ui.UIUtils;
 import bdv.util.Prefs;
 import bdv.viewer.animate.AbstractTransformAnimator;
 import bdv.viewer.animate.MessageOverlayAnimator;
@@ -79,10 +71,16 @@ import bdv.viewer.animate.TextOverlayAnimator.TextPosition;
 import bdv.viewer.overlay.MultiBoxOverlayRenderer;
 import bdv.viewer.overlay.ScaleBarOverlayRenderer;
 import bdv.viewer.overlay.SourceInfoOverlayRenderer;
+import bdv.viewer.render.DebugTilingOverlay;
 import bdv.viewer.render.MultiResolutionRenderer;
 import bdv.viewer.render.PainterThread;
 import bdv.viewer.render.awt.BufferedImageOverlayRenderer;
 import bdv.viewer.state.XmlIoViewerState;
+import net.imglib2.Interval;
+import net.imglib2.RealLocalizable;
+import net.imglib2.RealPoint;
+import net.imglib2.RealPositionable;
+import net.imglib2.realtransform.AffineTransform3D;
 
 /**
  * A JPanel for viewing multiple of {@link Source}s. The panel contains a
@@ -502,19 +500,6 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 			getDisplayComponent().repaint();
 	}
 
-	private double uiScale;
-	private int fontSize;
-
-	@Override
-	public void setUIScaleFactor( final double scale )
-	{
-		uiScale = scale;
-		fontSize = UIManager.getFont( "Panel.font" ).getSize();
-		multiBoxOverlayRenderer.setUIScaleFactor( scale );
-		sourceInfoOverlayRenderer.setUIScaleFactor( scale );
-		scaleBarOverlayRenderer.setUIScaleFactor( scale );
-	}
-
 	@Override
 	public void drawOverlays( final Graphics g )
 	{
@@ -529,16 +514,16 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 
 		if ( Prefs.showTextOverlay() )
 		{
+			final double uiScale = UIUtils.getUIScaleFactor( g );
 			sourceInfoOverlayRenderer.setViewerState( state );
 			sourceInfoOverlayRenderer.setSourceNameOverlayPosition( Prefs.sourceNameOverlayPosition() );
-			g.setColor( Color.white );
 			sourceInfoOverlayRenderer.paint( ( Graphics2D ) g );
 
 			final RealPoint gPos = new RealPoint( 3 );
 			getGlobalMouseCoordinates( gPos );
 			final String mousePosGlobalString = String.format( "(%6.1f,%6.1f,%6.1f)", gPos.getDoublePosition( 0 ), gPos.getDoublePosition( 1 ), gPos.getDoublePosition( 2 ) );
 
-			g.setFont( new Font( "Monospaced", Font.PLAIN, fontSize ) );
+			g.setFont( new Font( "Monospaced", Font.PLAIN, UIUtils.getPanelFontSize( this ) ) );
 			g.drawString( mousePosGlobalString, ( int )( g.getClipBounds().getWidth() - uiScale * 170 ), ( int )( uiScale * 25 ) );
 		}
 

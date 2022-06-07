@@ -32,7 +32,10 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 
+import java.util.WeakHashMap;
 import javax.swing.UIManager;
+
+import com.formdev.flatlaf.util.UIScale;
 
 /**
  * AWT/Swing helpers.
@@ -86,6 +89,16 @@ public class UIUtils
 	}
 
 	/**
+	 * cache UI scale factors
+	 */
+	private static final WeakHashMap< Object, Double > uiScaleFactors = new WeakHashMap<>();
+
+	/**
+	 * cache {@code "Panel.font"} sizes
+	 */
+	private static final WeakHashMap< Object, Integer > panelFontSizes = new WeakHashMap<>();
+
+	/**
 	 * Get an approximate UI scaling factor.
 	 *
 	 * TODO UI scaling depends on the LAF and there is no straight forward way
@@ -98,9 +111,14 @@ public class UIUtils
 	 *
 	 * @return approximate UI scaling factor
 	 */
-	public static double getUIScaleFactor()
+	public static double getUIScaleFactor( final Object key )
 	{
-		return UIManager.getFont( "Panel.font" ).getSize() / 12.0;
+		return uiScaleFactors.computeIfAbsent( key, k -> ( double ) UIScale.getUserScaleFactor() );
+	}
+
+	public static int getPanelFontSize( final Object key )
+	{
+		return panelFontSizes.computeIfAbsent( key, k -> UIManager.getFont( "Panel.font" ).getSize() );
 	}
 
 	/**
@@ -130,5 +148,11 @@ public class UIUtils
 			return ( Boolean ) value;
 		else
 			return defaultValue;
+	}
+
+	public static void reset()
+	{
+		uiScaleFactors.clear();
+		panelFontSizes.clear();
 	}
 }
