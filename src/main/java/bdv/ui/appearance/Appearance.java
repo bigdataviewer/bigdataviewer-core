@@ -1,13 +1,16 @@
 package bdv.ui.appearance;
 
-import bdv.util.Prefs;
-import bdv.util.Prefs.OverlayPosition;
+import static bdv.util.Prefs.OverlayPosition.TOP_CENTER;
+
 import java.util.Objects;
+
 import javax.swing.UIManager;
 import javax.swing.UIManager.LookAndFeelInfo;
+
 import org.scijava.listeners.Listeners;
 
-import static bdv.util.Prefs.OverlayPosition.TOP_CENTER;
+import bdv.util.Prefs;
+import bdv.util.Prefs.OverlayPosition;
 
 /**
  * Appearance settings.
@@ -183,7 +186,7 @@ public class Appearance
 	public static LookAndFeelInfo lookAndFeelInfoForName( final String name )
 	{
 		if ( name != null )
-			for ( UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels() )
+			for ( final UIManager.LookAndFeelInfo info : UIManager.getInstalledLookAndFeels() )
 			{
 				if ( info.getName().equals( name ) )
 					return info;

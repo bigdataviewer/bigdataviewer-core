@@ -1,14 +1,16 @@
 package bdv.ui.appearance;
 
-import bdv.util.Prefs;
 import java.awt.Component;
 import java.io.FileNotFoundException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
+
+import bdv.util.Prefs;
 
 /**
  * Manages the {@link Appearance} (save/load config file, propagate changes to
@@ -52,7 +54,7 @@ public class AppearanceManager
 	 * SwingUtilities.updateComponentTreeUI()} when the Look-And-Feel is
 	 * changed.
 	 */
-	public void addLafComponent( Component component )
+	public void addLafComponent( final Component component )
 	{
 		components.add( new WeakReference<>( component ) );
 	}
@@ -69,7 +71,7 @@ public class AppearanceManager
 			UIManager.setLookAndFeel( laf.getClassName() );
 
 			final List< WeakReference< Component > > remove = new ArrayList<>();
-			for ( WeakReference< Component > ref : components )
+			for ( final WeakReference< Component > ref : components )
 			{
 				final Component component = ref.get();
 				if ( component == null )
@@ -79,7 +81,7 @@ public class AppearanceManager
 			}
 			components.removeAll( remove );
 		}
-		catch ( Exception e )
+		catch ( final Exception e )
 		{
 			e.printStackTrace();
 		}
