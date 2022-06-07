@@ -28,23 +28,20 @@
  */
 package bdv.viewer;
 
+import bdv.KeyConfigContexts;
+import bdv.KeyConfigScopes;
+import bdv.viewer.AbstractViewerPanel.AlignPlane;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.IntStream;
-
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
-
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.behaviour.KeyStrokeAdder;
 import org.scijava.ui.behaviour.io.gui.CommandDescriptionProvider;
 import org.scijava.ui.behaviour.io.gui.CommandDescriptions;
 import org.scijava.ui.behaviour.util.Actions;
 import org.scijava.ui.behaviour.util.InputActionBindings;
-
-import bdv.KeyConfigContexts;
-import bdv.KeyConfigScopes;
-import bdv.viewer.AbstractViewerPanel.AlignPlane;
 
 public class NavigationActions extends Actions
 {

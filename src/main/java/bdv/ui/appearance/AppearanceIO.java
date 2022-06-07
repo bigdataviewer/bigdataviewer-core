@@ -1,6 +1,5 @@
 package bdv.ui.appearance;
 
-import bdv.util.Prefs.OverlayPosition;
 import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
@@ -9,7 +8,9 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.swing.UIManager.LookAndFeelInfo;
+
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.AbstractConstruct;
@@ -20,6 +21,8 @@ import org.yaml.snakeyaml.nodes.ScalarNode;
 import org.yaml.snakeyaml.nodes.Tag;
 import org.yaml.snakeyaml.representer.Represent;
 import org.yaml.snakeyaml.representer.Representer;
+
+import bdv.util.Prefs.OverlayPosition;
 
 /**
  * De/serialize {@link Appearance} to/from YAML file
@@ -99,6 +102,7 @@ public class AppearanceIO
 
 		private class RepresentHex implements Represent
 		{
+			@Override
 			public Node representData( final Object data )
 			{
 				return representScalar( Tag.INT, String.format( "0x%08x", ( ( Hex ) data ).value ) );
@@ -107,6 +111,7 @@ public class AppearanceIO
 
 		private class RepresentLookAndFeelInfo implements Represent
 		{
+			@Override
 			public Node representData( final Object data )
 			{
 				final LookAndFeelInfo info = ( LookAndFeelInfo ) data;
@@ -151,19 +156,20 @@ public class AppearanceIO
 			}
 		}
 
-		private static int hexColor( Object rgba )
+		private static int hexColor( final Object rgba )
 		{
 			return ( ( Number ) rgba ).intValue();
 		}
 
-		private static OverlayPosition overlayPosition( Object str )
+		private static OverlayPosition overlayPosition( final Object str )
 		{
 			return OverlayPosition.valueOf( ( String ) str );
 		}
 
 		private class ConstructLookAndFeelInfo extends AbstractConstruct
 		{
-			public Object construct( Node node )
+			@Override
+			public Object construct( final Node node )
 			{
 				final String name = constructScalar( ( ScalarNode ) node );
 				return Appearance.lookAndFeelInfoForName( name );

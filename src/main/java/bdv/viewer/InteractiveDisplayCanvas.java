@@ -28,8 +28,6 @@
  */
 package bdv.viewer;
 
-import bdv.TransformEventHandler;
-import bdv.ui.UIUtils;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -44,6 +42,9 @@ import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelListener;
 import javax.swing.JComponent;
 import org.scijava.listeners.Listeners;
+
+import bdv.TransformEventHandler;
+import bdv.ui.UIUtils;
 
 /*
  * A {@link JComponent} that uses {@link OverlayRenderer OverlayRenderers}

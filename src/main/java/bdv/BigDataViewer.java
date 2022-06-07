@@ -53,6 +53,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileFilter;
 
 import net.imglib2.Volatile;
@@ -452,7 +453,7 @@ public class BigDataViewer
 		appearanceManager.addLafComponent( cropDialog );
 		appearanceManager.addLafComponent( helpDialog );
 		appearanceManager.addLafComponent( fileChooser );
-		appearanceManager.updateLookAndFeel();
+		SwingUtilities.invokeLater(() -> appearanceManager.updateLookAndFeel());
 
 		final Actions navigationActions = new Actions( inputTriggerConfig, "bdv", "navigation" );
 		navigationActions.install( viewerFrame.getKeybindings(), "navigation" );
