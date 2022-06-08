@@ -30,6 +30,7 @@ package bdv.viewer.overlay;
 
 import static bdv.util.Prefs.OverlayPosition.TOP_CENTER;
 
+import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.util.List;
@@ -64,6 +65,7 @@ public class SourceInfoOverlayRenderer
 		final int fontSize = UIUtils.getPanelFontSize( this );
 		final int spacing = fontSize + 1;
 
+		g.setColor( Color.WHITE );
 		g.setFont( new Font( "Monospaced", Font.PLAIN, fontSize ) );
 
 		g.drawString( timepointString, ( int )( g.getClipBounds().getWidth() - uiScale * 170 ), spacing - 1 );
