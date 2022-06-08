@@ -444,14 +444,6 @@ public class BigDataViewer
 		preferencesDialog.addPage( new AppearanceSettingsPage( "Appearance", appearanceManager ) );
 		preferencesDialog.addPage( new KeymapSettingsPage( "Keymap", this.keymapManager, this.keymapManager.getCommandDescriptions() ) );
 		appearanceManager.appearance().updateListeners().add( viewerFrame::repaint );
-		appearanceManager.addLafComponent( viewerFrame );
-		appearanceManager.addLafComponent( preferencesDialog );
-		appearanceManager.addLafComponent( brightnessDialog );
-		appearanceManager.addLafComponent( activeSourcesDialog );
-		appearanceManager.addLafComponent( movieDialog );
-		appearanceManager.addLafComponent( movieMaxProjectDialog );
-		appearanceManager.addLafComponent( cropDialog );
-		appearanceManager.addLafComponent( helpDialog );
 		appearanceManager.addLafComponent( fileChooser );
 		SwingUtilities.invokeLater(() -> appearanceManager.updateLookAndFeel());
 
