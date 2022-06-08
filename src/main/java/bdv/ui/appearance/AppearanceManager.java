@@ -1,6 +1,7 @@
 package bdv.ui.appearance;
 
 import java.awt.Component;
+import java.awt.Window;
 import java.io.FileNotFoundException;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -53,6 +54,10 @@ public class AppearanceManager
 	 * Add components here that should be notified via {@cpde
 	 * SwingUtilities.updateComponentTreeUI()} when the Look-And-Feel is
 	 * changed.
+	 * <p>
+	 * Note that all {@link Window#getWindows() Windows} will be notified anyway,
+	 * so most things do not need to be registered here ({@code JFileChooser} is
+	 * a notable exception.)
 	 */
 	public void addLafComponent( final Component component )
 	{
@@ -69,6 +74,9 @@ public class AppearanceManager
 		try
 		{
 			UIManager.setLookAndFeel( laf.getClassName() );
+
+			for ( final Window window : Window.getWindows() )
+				SwingUtilities.updateComponentTreeUI( window );
 
 			final List< WeakReference< Component > > remove = new ArrayList<>();
 			for ( final WeakReference< Component > ref : components )
