@@ -28,11 +28,11 @@
  */
 package bdv.viewer;
 
+import static bdv.ui.UIUtils.TextPosition.TOP_RIGHT;
 import static bdv.viewer.DisplayMode.SINGLE;
 import static bdv.viewer.Interpolation.NEARESTNEIGHBOR;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
 import java.awt.Graphics;
@@ -525,7 +525,7 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 			final String mousePosGlobalString = String.format( Locale.ROOT, "%6.1f, %6.1f, %6.1f", gPos[ 0 ], gPos[ 1 ], gPos[ 2 ] );
 
 			g.setFont( new Font( "Monospaced", Font.PLAIN, UIUtils.getPanelFontSize( this ) ) );
-			UIUtils.drawString( g, mousePosGlobalString, 1 );
+			UIUtils.drawString( g, TOP_RIGHT, 1, mousePosGlobalString );
 		}
 
 		if ( Prefs.showScaleBar() )
