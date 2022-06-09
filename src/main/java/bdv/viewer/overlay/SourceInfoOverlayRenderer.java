@@ -68,7 +68,7 @@ public class SourceInfoOverlayRenderer
 		g.setColor( Color.WHITE );
 		g.setFont( new Font( "Monospaced", Font.PLAIN, fontSize ) );
 
-		g.drawString( timepointString, ( int )( g.getClipBounds().getWidth() - uiScale * 170 ), spacing - 1 );
+		UIUtils.drawString( g, timepointString, 0 );
 
 		switch ( sourceNameOverlayPosition )
 		{
@@ -78,8 +78,8 @@ public class SourceInfoOverlayRenderer
 			g.drawString( groupName, ( int )( ( g.getClipBounds().getWidth() - g.getFontMetrics().stringWidth( groupName ) ) / 2 ), 2 * spacing - 1 );
 			break;
 		case TOP_RIGHT:
-			g.drawString( sourceName, ( int )( g.getClipBounds().getWidth() - Math.max( g.getFontMetrics().stringWidth( sourceName ) + uiScale * 17, uiScale * 170 ) ), 3 * spacing - 1 );
-			g.drawString( groupName, ( int )( g.getClipBounds().getWidth() - Math.max( g.getFontMetrics().stringWidth( groupName ) + uiScale * 17, uiScale * 170 ) ), 4 * spacing - 1 );
+			UIUtils.drawString( g, sourceName, 2 );
+			UIUtils.drawString( g, groupName, 3 );
 			break;
 		}
 	}
