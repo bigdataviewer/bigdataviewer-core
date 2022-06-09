@@ -782,6 +782,7 @@ public class BigDataViewer
 		try
 		{
 			System.setProperty( "apple.laf.useScreenMenuBar", "true" );
+//			System.setProperty( "apple.awt.application.appearance", "system" );
 
 			FlatLightLaf.installLafInfo();
 			FlatDarkLaf.installLafInfo();
