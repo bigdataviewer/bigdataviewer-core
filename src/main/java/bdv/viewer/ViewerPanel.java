@@ -43,6 +43,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ThreadFactory;
@@ -519,12 +520,12 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 			sourceInfoOverlayRenderer.setSourceNameOverlayPosition( Prefs.sourceNameOverlayPosition() );
 			sourceInfoOverlayRenderer.paint( ( Graphics2D ) g );
 
-			final RealPoint gPos = new RealPoint( 3 );
-			getGlobalMouseCoordinates( gPos );
-			final String mousePosGlobalString = String.format( "(%6.1f,%6.1f,%6.1f)", gPos.getDoublePosition( 0 ), gPos.getDoublePosition( 1 ), gPos.getDoublePosition( 2 ) );
+			final double[] gPos = new double[ 3 ];
+			getGlobalMouseCoordinates( RealPoint.wrap( gPos ) );
+			final String mousePosGlobalString = String.format( Locale.ROOT, "%6.1f, %6.1f, %6.1f", gPos[ 0 ], gPos[ 1 ], gPos[ 2 ] );
 
 			g.setFont( new Font( "Monospaced", Font.PLAIN, UIUtils.getPanelFontSize( this ) ) );
-			g.drawString( mousePosGlobalString, ( int )( g.getClipBounds().getWidth() - uiScale * 170 ), ( int )( uiScale * 25 ) );
+			UIUtils.drawString( g, mousePosGlobalString, 1 );
 		}
 
 		if ( Prefs.showScaleBar() )

@@ -32,6 +32,7 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 
+import java.awt.Graphics;
 import java.util.WeakHashMap;
 import javax.swing.UIManager;
 
@@ -42,7 +43,7 @@ import com.formdev.flatlaf.util.UIScale;
  *
  * @author Tobias Pietzsch
  */
-public class UIUtils
+public final class UIUtils
 {
 	/**
 	 * Mix colors {@code c1} and {@code c2} by ratios {@code c1Weight} and {@code (1-c1Weight)}, respectively.
@@ -88,6 +89,23 @@ public class UIUtils
 		component.setMinimumSize( new Dimension( component.getMinimumSize().width, minimumHeight ) );
 	}
 
+	public static void drawString(
+			final Graphics g,
+			final String text,
+			final int line )
+	{
+		final Object key = UIUtils.class;
+		final double uiScale = UIUtils.getUIScaleFactor( key );
+
+		final int spacing = g.getFontMetrics().getHeight();
+		final int width = g.getFontMetrics().stringWidth( text );
+		final int anchorX = ( int ) ( g.getClipBounds().getWidth() - uiScale * 17 );
+		final int anchorY = -1;
+		g.drawString( text, anchorX - width, anchorY + ( line + 1 ) * spacing );
+	}
+
+
+
 	/**
 	 * cache UI scale factors
 	 */
@@ -122,6 +140,15 @@ public class UIUtils
 	}
 
 	/**
+	 * Resets the caches for {@link #getUIBoolean}, {@link #getPanelFontSize}.
+	 */
+	public static void reset()
+	{
+		uiScaleFactors.clear();
+		panelFontSizes.clear();
+	}
+
+	/**
 	 * Tell if the LAF color specified for the provided key is darker than 50%
 	 * gray.  If the property is undefined, it is considered not dark.
 	 *
@@ -148,11 +175,5 @@ public class UIUtils
 			return ( Boolean ) value;
 		else
 			return defaultValue;
-	}
-
-	public static void reset()
-	{
-		uiScaleFactors.clear();
-		panelFontSizes.clear();
 	}
 }
