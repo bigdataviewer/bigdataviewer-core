@@ -28,7 +28,8 @@
  */
 package bdv.viewer.overlay;
 
-import static bdv.util.Prefs.OverlayPosition.TOP_CENTER;
+import static bdv.ui.UIUtils.TextPosition.TOP_RIGHT;
+import static bdv.ui.UIUtils.TextPosition.TOP_CENTER;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -57,7 +58,7 @@ public class SourceInfoOverlayRenderer
 
 	protected String timepointString;
 
-	protected OverlayPosition sourceNameOverlayPosition = TOP_CENTER;
+	protected OverlayPosition sourceNameOverlayPosition = OverlayPosition.TOP_RIGHT;
 
 	public synchronized void paint( final Graphics2D g )
 	{
@@ -68,18 +69,18 @@ public class SourceInfoOverlayRenderer
 		g.setColor( Color.WHITE );
 		g.setFont( new Font( "Monospaced", Font.PLAIN, fontSize ) );
 
-		UIUtils.drawString( g, timepointString, 0 );
+		UIUtils.drawString( g, TOP_RIGHT, 0, timepointString );
 
 		switch ( sourceNameOverlayPosition )
 		{
 		default:
 		case TOP_CENTER:
-			g.drawString( sourceName, ( int )( ( g.getClipBounds().getWidth() - g.getFontMetrics().stringWidth( sourceName ) ) / 2 ), spacing - 1 );
-			g.drawString( groupName, ( int )( ( g.getClipBounds().getWidth() - g.getFontMetrics().stringWidth( groupName ) ) / 2 ), 2 * spacing - 1 );
+			UIUtils.drawString( g, TOP_CENTER, 0, sourceName );
+			UIUtils.drawString( g, TOP_CENTER, 1, groupName );
 			break;
 		case TOP_RIGHT:
-			UIUtils.drawString( g, sourceName, 2 );
-			UIUtils.drawString( g, groupName, 3 );
+			UIUtils.drawString( g, TOP_RIGHT, 2, sourceName );
+			UIUtils.drawString( g, TOP_RIGHT, 3, groupName );
 			break;
 		}
 	}

@@ -32,7 +32,9 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 
+import java.awt.FontMetrics;
 import java.awt.Graphics;
+import java.awt.Rectangle;
 import java.util.WeakHashMap;
 import javax.swing.UIManager;
 
@@ -89,22 +91,42 @@ public final class UIUtils
 		component.setMinimumSize( new Dimension( component.getMinimumSize().width, minimumHeight ) );
 	}
 
+	public enum TextPosition
+	{
+		TOP_CENTER,
+		TOP_RIGHT
+	}
+
 	public static void drawString(
 			final Graphics g,
-			final String text,
-			final int line )
+			final TextPosition textPosition,
+			final int line,
+			final String text )
 	{
 		final Object key = UIUtils.class;
 		final double uiScale = UIUtils.getUIScaleFactor( key );
 
-		final int spacing = g.getFontMetrics().getHeight();
-		final int width = g.getFontMetrics().stringWidth( text );
-		final int anchorX = ( int ) ( g.getClipBounds().getWidth() - uiScale * 17 );
-		final int anchorY = -1;
-		g.drawString( text, anchorX - width, anchorY + ( line + 1 ) * spacing );
+		final FontMetrics fontMetrics = g.getFontMetrics();
+		final Rectangle clipBounds = g.getClipBounds();
+		final int spacing = fontMetrics.getHeight();
+		final int textWidth = fontMetrics.stringWidth( text );
+
+		final int posX;
+		switch ( textPosition )
+		{
+		case TOP_CENTER:
+			posX = ( int ) ( ( clipBounds.getWidth() - textWidth ) / 2 );
+			break;
+		default:
+		case TOP_RIGHT:
+			posX = ( int ) ( clipBounds.getWidth() - textWidth - uiScale * 17 );
+			break;
+		}
+
+		final int posY =  ( line + 1 ) * spacing - 1;
+
+		g.drawString( text, posX, posY );
 	}
-
-
 
 	/**
 	 * cache UI scale factors
