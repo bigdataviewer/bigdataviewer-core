@@ -47,6 +47,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.JTree;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.MatteBorder;
@@ -291,6 +292,15 @@ public class SettingsPanel extends JPanel
 			treeScrollPane.setBorder( new MatteBorder( 0, 0, 0, 1, c ) );
 			splitPane.setBorder( new MatteBorder( 0, 0, 1, 0, c ) );
 		}
+		if ( breadcrumbs != null )
+		{
+			SwingUtilities.invokeLater( () -> {
+				model.reload();
+				final DefaultMutableTreeNode selectedNode = ( DefaultMutableTreeNode ) tree.getLastSelectedPathComponent();
+				if ( selectedNode != null )
+					setBreadCrumbs( selectedNode );
+			} );
+		}
 	}
 
 	public void cancel()
@@ -329,7 +339,7 @@ public class SettingsPanel extends JPanel
 	private void setBreadCrumbs( final DefaultMutableTreeNode selectedNode )
 	{
 		breadcrumbs.removeAll();
-		final Font font = new JLabel().getFont().deriveFont( Font.BOLD );
+		final Font font = UIManager.getFont( "Label.font" ).deriveFont( Font.BOLD );
 		DefaultMutableTreeNode current = selectedNode;
 		while ( current != root )
 		{
