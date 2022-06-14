@@ -28,8 +28,8 @@
  */
 package bdv.viewer.overlay;
 
-import static bdv.ui.UIUtils.TextPosition.TOP_RIGHT;
 import static bdv.ui.UIUtils.TextPosition.TOP_CENTER;
+import static bdv.ui.UIUtils.TextPosition.TOP_RIGHT;
 
 import java.awt.Color;
 import java.awt.Font;
@@ -62,12 +62,10 @@ public class SourceInfoOverlayRenderer
 
 	public synchronized void paint( final Graphics2D g )
 	{
-		final double uiScale = UIUtils.getUIScaleFactor( this );
-		final int fontSize = UIUtils.getPanelFontSize( this );
-		final int spacing = fontSize + 1;
+		final Font font = UIUtils.getFont( "monospaced.font" );
 
 		g.setColor( Color.WHITE );
-		g.setFont( new Font( "Monospaced", Font.PLAIN, fontSize ) );
+		g.setFont( font );
 
 		UIUtils.drawString( g, TOP_RIGHT, 0, timepointString );
 
