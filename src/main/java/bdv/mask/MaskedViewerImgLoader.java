@@ -66,4 +66,9 @@ public class MaskedViewerImgLoader implements ViewerImgLoader
 	{
 		imgLoader.setCreatedSharedQueue( createdSharedQueue );
 	}
+
+	ViewerImgLoader getWrappedImgLoader()
+	{
+		return imgLoader;
+	}
 }

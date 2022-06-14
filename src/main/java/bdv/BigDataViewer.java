@@ -28,6 +28,7 @@
  */
 package bdv;
 
+import bdv.mask.MaskedSpimData;
 import bdv.viewer.ConverterSetups;
 import bdv.viewer.ViewerState;
 import java.io.File;
@@ -483,6 +484,8 @@ public class BigDataViewer
 			System.err.println( "WARNING:\nOpening <SpimData> dataset that is not suited for interactive browsing.\nConsider resaving as HDF5 for better performance." );
 		}
 
+		MaskedSpimData.wrapImgLoaderIfNecessary( spimData );
+
 		final ArrayList< ConverterSetup > converterSetups = new ArrayList<>();
 		final ArrayList< SourceAndConverter< ? > > sources = new ArrayList<>();
 		initSetups( spimData, converterSetups, sources );
@@ -492,6 +495,8 @@ public class BigDataViewer
 		final CacheControl cache = ( ( ViewerImgLoader ) seq.getImgLoader() ).getCacheControl();
 
 		final BigDataViewer bdv = new BigDataViewer( converterSetups, sources, spimData, numTimepoints, cache, windowTitle, progressWriter, options );
+
+		MaskedSpimData.removeWrapperIfPresent( spimData );
 
 		WrapBasicImgLoader.removeWrapperIfPresent( spimData );
 
