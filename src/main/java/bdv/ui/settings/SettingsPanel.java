@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -59,6 +59,8 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreeModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
+
+import bdv.ui.UIUtils;
 
 /**
  * Main panel for preferences dialogs.
@@ -339,7 +341,7 @@ public class SettingsPanel extends JPanel
 	private void setBreadCrumbs( final DefaultMutableTreeNode selectedNode )
 	{
 		breadcrumbs.removeAll();
-		final Font font = UIManager.getFont( "Label.font" ).deriveFont( Font.BOLD );
+		final Font font = UIUtils.getFont( "semibold.font" );
 		DefaultMutableTreeNode current = selectedNode;
 		while ( current != root )
 		{
