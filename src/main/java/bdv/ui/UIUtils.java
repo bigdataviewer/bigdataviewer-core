@@ -31,11 +31,12 @@ package bdv.ui;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
-
+import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 import java.util.WeakHashMap;
+
 import javax.swing.UIManager;
 
 import com.formdev.flatlaf.util.UIScale;
@@ -156,13 +157,72 @@ public final class UIUtils
 		return uiScaleFactors.computeIfAbsent( key, k -> ( double ) UIScale.getUserScaleFactor() );
 	}
 
-	public static int getPanelFontSize( final Object key )
+	public static int getDefaultFontSize( final Object key )
 	{
-		return panelFontSizes.computeIfAbsent( key, k -> UIManager.getFont( "Panel.font" ).getSize() );
+		return panelFontSizes.computeIfAbsent( key, k -> UIManager.getFont( "Label.font" ).getSize() );
+	}
+
+	private static int getFontSize( final Font referenceFont, final String category )
+	{
+		final double uiScale = getUIScaleFactor( Runtime.getRuntime() );
+		final int referenceFontSize = referenceFont.getSize();
+
+		switch (category)
+		{
+		case "mini":
+			return ( int )Math.round( referenceFontSize - 3 * uiScale );
+		case "small":
+			return ( int )Math.round( referenceFontSize - 2 * uiScale );
+		case "medium":
+			return ( int )Math.round( referenceFontSize - uiScale );
+		case "large":
+			return ( int )Math.round( referenceFontSize + 2 * uiScale );
+		default:
+			return referenceFontSize;
+		}
+	}
+
+	public static Font getFont( final String key )
+	{
+		Font font = UIManager.getFont( key );
+
+		/* all this bruhaha is for the legacy LAFs that do not have user friendly font definitions */
+		if ( font == null )
+		{
+			final Font defaultFont = UIManager.getFont("Label.font");
+
+			final int fontSize;
+			if (key.contains("mini"))
+				fontSize = getFontSize(defaultFont, "mini");
+			else if (key.contains("small"))
+				fontSize = getFontSize(defaultFont, "small");
+			else if (key.contains("medium"))
+				fontSize = getFontSize(defaultFont, "medium");
+			else if (key.contains("large"))
+				fontSize = getFontSize(defaultFont, "large");
+			else
+				fontSize = defaultFont.getSize();
+
+			final String fontName;
+			if (key.contains("monospace") || key.contains("Monospace"))
+				fontName = Font.MONOSPACED;
+			else
+				fontName = defaultFont.getName();
+
+			final int fontStyle;
+			if (key.contains("bold"))
+				fontStyle = Font.BOLD;
+			else
+				fontStyle = defaultFont.getStyle();
+
+			font = new Font(fontName, fontStyle, fontSize);
+		}
+
+		return font;
 	}
 
 	/**
-	 * Resets the caches for {@link #getUIBoolean}, {@link #getPanelFontSize}.
+	 * Resets the caches for {@link #getUIBoolean}, {@link #getDefaultFontSize}.
 	 */
 	public static void reset()
 	{

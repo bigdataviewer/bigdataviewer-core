@@ -30,7 +30,6 @@ package bdv.viewer.overlay;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
-import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.geom.AffineTransform;
@@ -273,7 +272,6 @@ public class MultiBoxOverlay
 
 		final double uiScale = UIUtils.getUIScaleFactor( this );
 		final BasicStroke stroke = new BasicStroke( ( float ) uiScale );
-		final int fontSize = ( int ) Math.round( 8 * uiScale );
 
 		graphics.setRenderingHint( RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON );
 		graphics.setStroke( stroke );
@@ -316,7 +314,7 @@ public class MultiBoxOverlay
 		source.getSourceToViewer().apply( pz, qz );
 
 		graphics.setPaint( Color.WHITE );
-		graphics.setFont( new Font( "SansSerif", Font.PLAIN, fontSize ) );
+		graphics.setFont( UIUtils.getFont("mini.font") );
 		graphics.drawString( "x", ( float ) renderBoxHelper.perspectiveX( qx ), ( float )( renderBoxHelper.perspectiveY( qx ) - uiScale * 2 ) );
 		graphics.drawString( "y", ( float ) renderBoxHelper.perspectiveX( qy ), ( float )( renderBoxHelper.perspectiveY( qy ) - uiScale * 2 ) );
 		graphics.drawString( "z", ( float ) renderBoxHelper.perspectiveX( qz ), ( float )( renderBoxHelper.perspectiveY( qz ) - uiScale * 2 ) );
