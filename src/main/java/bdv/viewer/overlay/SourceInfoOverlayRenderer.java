@@ -62,7 +62,7 @@ public class SourceInfoOverlayRenderer
 
 	public synchronized void paint( final Graphics2D g )
 	{
-		final Font font = UIUtils.getFont( "monospaced.font" );
+		final Font font = UIUtils.getFont( "monospaced.small.font" );
 
 		g.setColor( Color.WHITE );
 		g.setFont( font );
