@@ -28,7 +28,9 @@
  */
 package bdv;
 
+import bdv.mask.MaskedRealARGBColorConverter;
 import bdv.mask.MaskedSpimData;
+import bdv.mask.VolatileMaskedRealARGBColorConverter;
 import bdv.viewer.ConverterSetups;
 import bdv.viewer.ViewerState;
 import java.io.File;
@@ -50,6 +52,8 @@ import net.imglib2.converter.Converter;
 import net.imglib2.display.ColorConverter;
 import net.imglib2.display.RealARGBColorConverter;
 import net.imglib2.display.ScaledARGBConverter;
+import net.imglib2.type.mask.AbstractMaskedRealType;
+import net.imglib2.type.mask.VolatileMaskedRealType;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.NumericType;
 import net.imglib2.type.numeric.RealType;
@@ -189,6 +193,21 @@ public class BigDataViewer
 			final double typeMin = Math.max( 0, Math.min( t.getMinValue(), 65535 ) );
 			final double typeMax = Math.max( 0, Math.min( t.getMaxValue(), 65535 ) );
 			return ( Converter< T, ARGBType > ) RealARGBColorConverter.create( t, typeMin, typeMax );
+		}
+		else if ( type instanceof AbstractMaskedRealType )
+		{
+			@SuppressWarnings( "rawtypes" )
+			final AbstractMaskedRealType t = ( AbstractMaskedRealType ) type;
+			final double typeMin = Math.max( 0, Math.min( t.value().getMinValue(), 65535 ) );
+			final double typeMax = Math.max( 0, Math.min( t.value().getMaxValue(), 65535 ) );
+			return ( Converter< T, ARGBType > ) MaskedRealARGBColorConverter.create( t, typeMin, typeMax );
+		}
+		else if ( type instanceof VolatileMaskedRealType )
+		{
+			final VolatileMaskedRealType< ? > t = ( VolatileMaskedRealType< ? > ) type;
+			final double typeMin = Math.max( 0, Math.min( t.get().value().getMinValue(), 65535 ) );
+			final double typeMax = Math.max( 0, Math.min( t.get().value().getMaxValue(), 65535 ) );
+			return ( Converter< T, ARGBType > ) VolatileMaskedRealARGBColorConverter.create( t, typeMin, typeMax );
 		}
 		else if ( type instanceof ARGBType )
 			return ( Converter< T, ARGBType > ) new ScaledARGBConverter.ARGB( 0, 255 );
