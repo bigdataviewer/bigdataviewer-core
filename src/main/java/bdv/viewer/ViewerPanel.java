@@ -515,7 +515,7 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 
 		if ( Prefs.showTextOverlay() )
 		{
-			final Font font = UIUtils.getFont("monospaced.font");
+			final Font font = UIUtils.getFont( "monospaced.small.font" );
 			sourceInfoOverlayRenderer.setViewerState( state );
 			sourceInfoOverlayRenderer.setSourceNameOverlayPosition( Prefs.sourceNameOverlayPosition() );
 			sourceInfoOverlayRenderer.paint( ( Graphics2D ) g );
