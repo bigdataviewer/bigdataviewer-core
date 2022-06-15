@@ -135,11 +135,6 @@ public final class UIUtils
 	private static final WeakHashMap< Object, Double > uiScaleFactors = new WeakHashMap<>();
 
 	/**
-	 * cache {@code "Panel.font"} sizes
-	 */
-	private static final WeakHashMap< Object, Integer > panelFontSizes = new WeakHashMap<>();
-
-	/**
 	 * Get an approximate UI scaling factor.
 	 *
 	 * TODO UI scaling depends on the LAF and there is no straight forward way
@@ -157,10 +152,6 @@ public final class UIUtils
 		return uiScaleFactors.computeIfAbsent( key, k -> ( double ) UIScale.getUserScaleFactor() );
 	}
 
-	public static int getDefaultFontSize( final Object key )
-	{
-		return panelFontSizes.computeIfAbsent( key, k -> UIManager.getFont( "Label.font" ).getSize() );
-	}
 
 	private static int getFontSize( final Font referenceFont, final String category )
 	{
@@ -222,12 +213,11 @@ public final class UIUtils
 	}
 
 	/**
-	 * Resets the caches for {@link #getUIBoolean}, {@link #getDefaultFontSize}.
+	 * Resets the caches for {@link #getUIScaleFactor}.
 	 */
 	public static void reset()
 	{
 		uiScaleFactors.clear();
-		panelFontSizes.clear();
 	}
 
 	/**
