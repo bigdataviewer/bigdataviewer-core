@@ -175,6 +175,11 @@ public final class UIUtils
 
 	public static Font getFont( final String key )
 	{
+		// TODO: should we cache these?
+
+		// TODO: should we add legacy support for the "h0.font" etc of flatlaf?
+		//       (See https://www.formdev.com/flatlaf/typography/#set_style_class)
+
 		Font font = UIManager.getFont( key );
 
 		/* all this bruhaha is for the legacy LAFs that do not have user friendly font definitions */
