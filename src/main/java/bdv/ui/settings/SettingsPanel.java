@@ -294,14 +294,9 @@ public class SettingsPanel extends JPanel
 			treeScrollPane.setBorder( new MatteBorder( 0, 0, 0, 1, c ) );
 			splitPane.setBorder( new MatteBorder( 0, 0, 1, 0, c ) );
 		}
-		if ( breadcrumbs != null )
+		if ( model != null )
 		{
-			SwingUtilities.invokeLater( () -> {
-				model.reload();
-				final DefaultMutableTreeNode selectedNode = ( DefaultMutableTreeNode ) tree.getLastSelectedPathComponent();
-				if ( selectedNode != null )
-					setBreadCrumbs( selectedNode );
-			} );
+			SwingUtilities.invokeLater( model::reload );
 		}
 	}
 
@@ -341,13 +336,11 @@ public class SettingsPanel extends JPanel
 	private void setBreadCrumbs( final DefaultMutableTreeNode selectedNode )
 	{
 		breadcrumbs.removeAll();
-		final Font font = UIUtils.getFont( "semibold.font" );
 		DefaultMutableTreeNode current = selectedNode;
 		while ( current != root )
 		{
 			final SettingsNodeData data = ( SettingsNodeData ) current.getUserObject();
-			JLabel label = new JLabel( data.name );
-			label.setFont( font );
+			JLabel label = semiboldLabel( data.name );
 			final TreePath tpath = new TreePath( model.getPathToRoot( current ) );
 			label.addMouseListener( new MouseAdapter()
 			{
@@ -361,18 +354,30 @@ public class SettingsPanel extends JPanel
 			final DefaultMutableTreeNode parent = ( DefaultMutableTreeNode ) current.getParent();
 			if ( parent != root )
 			{
-				label = new JLabel( " \u25b8 " );
-				label.setFont( font );
+				label = semiboldLabel( " \u25b8 " );
 				breadcrumbs.add( label, 0 );
 			}
 			current = parent;
 		}
 
 		if ( breadcrumbs.getComponentCount() == 0 )
-			breadcrumbs.add( new JLabel( " " ) );
+			breadcrumbs.add( semiboldLabel( " " ) );
 
 		breadcrumbs.revalidate();
 		breadcrumbs.repaint();
+	}
+
+	private JLabel semiboldLabel( final String text )
+	{
+		return new JLabel( text )
+		{
+			@Override
+			public void updateUI()
+			{
+				super.updateUI();
+				setFont( UIUtils.getFont( "semibold.font" ) );
+			}
+		};
 	}
 
 	static class SettingsNodeData
