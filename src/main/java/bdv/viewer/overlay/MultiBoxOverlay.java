@@ -314,7 +314,7 @@ public class MultiBoxOverlay
 		source.getSourceToViewer().apply( pz, qz );
 
 		graphics.setPaint( Color.WHITE );
-		graphics.setFont( UIUtils.getFont("mini.font") );
+		graphics.setFont( UIUtils.getFont( "mini.font" ) );
 		graphics.drawString( "x", ( float ) renderBoxHelper.perspectiveX( qx ), ( float )( renderBoxHelper.perspectiveY( qx ) - uiScale * 2 ) );
 		graphics.drawString( "y", ( float ) renderBoxHelper.perspectiveX( qy ), ( float )( renderBoxHelper.perspectiveY( qy ) - uiScale * 2 ) );
 		graphics.drawString( "z", ( float ) renderBoxHelper.perspectiveX( qz ), ( float )( renderBoxHelper.perspectiveY( qz ) - uiScale * 2 ) );
