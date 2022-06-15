@@ -281,9 +281,9 @@ public class SelectAndEditProfileSettingsPage< T extends SelectAndEditProfileSet
 
 			comboBox = new JComboBox<>();
 			comboBox.setEditable( false );
-			final Dimension dim = new Dimension( 300, comboBox.getPreferredSize().height );
-			comboBox.setPreferredSize( dim );
-			comboBox.setMaximumSize( dim );
+//			final Dimension dim = new Dimension( 300, comboBox.getPreferredSize().height );
+//			comboBox.setPreferredSize( dim );
+//			comboBox.setMaximumSize( dim );
 
 			buttonDuplicate = new JButton( "Duplicate" );
 			buttonRename = new JButton( "Rename" );
