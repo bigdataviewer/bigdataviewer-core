@@ -52,7 +52,7 @@ public class AppearanceManager
 	}
 
 	/**
-	 * Add components here that should be notified via {@cpde
+	 * Add components here that should be notified via {@code
 	 * SwingUtilities.updateComponentTreeUI()} when the Look-And-Feel is
 	 * changed.
 	 * <p>
