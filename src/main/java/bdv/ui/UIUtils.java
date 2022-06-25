@@ -220,7 +220,7 @@ public final class UIUtils
 	/**
 	 * Resets the caches for {@link #getUIScaleFactor}.
 	 */
-	public static void reset()
+	public static void resetPropertyCaches()
 	{
 		uiScaleFactors.clear();
 	}

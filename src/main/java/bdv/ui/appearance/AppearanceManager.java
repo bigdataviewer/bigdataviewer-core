@@ -102,7 +102,7 @@ public class AppearanceManager
 			return;
 		try
 		{
-			UIUtils.reset();
+			UIUtils.resetPropertyCaches();
 
 			UIManager.setLookAndFeel( laf.getClassName() );
 
