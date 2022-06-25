@@ -28,6 +28,10 @@
  */
 package bdv.ui;
 
+import com.formdev.flatlaf.FlatDarculaLaf;
+import com.formdev.flatlaf.FlatDarkLaf;
+import com.formdev.flatlaf.FlatIntelliJLaf;
+import com.formdev.flatlaf.FlatLightLaf;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -35,8 +39,11 @@ import java.awt.Font;
 import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Rectangle;
+import java.util.Arrays;
+import java.util.Set;
 import java.util.WeakHashMap;
 
+import java.util.stream.Collectors;
 import javax.swing.UIManager;
 
 import com.formdev.flatlaf.util.UIScale;
@@ -252,5 +259,21 @@ public final class UIUtils
 			return ( Boolean ) value;
 		else
 			return defaultValue;
+	}
+
+	public static synchronized void installFlatLafInfos()
+	{
+		final Set< String > lafNames = Arrays
+				.stream( UIManager.getInstalledLookAndFeels() )
+				.map( UIManager.LookAndFeelInfo::getName )
+				.collect( Collectors.toSet() );
+		if ( !lafNames.contains( FlatLightLaf.NAME ) )
+			FlatLightLaf.installLafInfo();
+		if ( !lafNames.contains( FlatDarkLaf.NAME ) )
+			FlatDarkLaf.installLafInfo();
+		if ( !lafNames.contains( FlatDarculaLaf.NAME ) )
+			FlatDarculaLaf.installLafInfo();
+		if ( !lafNames.contains( FlatIntelliJLaf.NAME ) )
+			FlatIntelliJLaf.installLafInfo();
 	}
 }

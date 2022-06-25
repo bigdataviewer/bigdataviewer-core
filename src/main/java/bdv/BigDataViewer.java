@@ -29,6 +29,7 @@
 package bdv;
 
 import bdv.tools.PreferencesDialog;
+import bdv.ui.UIUtils;
 import bdv.ui.keymap.Keymap;
 import bdv.ui.keymap.KeymapManager;
 import bdv.ui.keymap.KeymapSettingsPage;
@@ -36,10 +37,6 @@ import bdv.viewer.ConverterSetups;
 import bdv.viewer.ViewerState;
 import bdv.ui.appearance.AppearanceManager;
 import bdv.ui.appearance.AppearanceSettingsPage;
-import com.formdev.flatlaf.FlatDarculaLaf;
-import com.formdev.flatlaf.FlatDarkLaf;
-import com.formdev.flatlaf.FlatIntelliJLaf;
-import com.formdev.flatlaf.FlatLightLaf;
 import dev.dirs.ProjectDirectories;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -778,16 +775,12 @@ public class BigDataViewer
 
 	public static void main( final String[] args )
 	{
-		final String fn = "/Users/pietzsch/workspace/data/111010_weber_full.xml";
+		final String fn = "/Users/pietzsch/workspace/data/111010_weber_resave.xml";
 		try
 		{
 			System.setProperty( "apple.laf.useScreenMenuBar", "true" );
 //			System.setProperty( "apple.awt.application.appearance", "system" );
-
-			FlatLightLaf.installLafInfo();
-			FlatDarkLaf.installLafInfo();
-			FlatDarculaLaf.installLafInfo();
-			FlatIntelliJLaf.installLafInfo();
+			UIUtils.installFlatLafInfos();
 
 			System.out.println( "reading config files from \"" + configDir + "\"" );
 			final BigDataViewer bdv = open( fn, new File( fn ).getName(), new ProgressWriterConsole(), ViewerOptions.options() );
