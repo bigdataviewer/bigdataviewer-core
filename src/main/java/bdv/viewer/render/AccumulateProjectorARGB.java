@@ -46,7 +46,7 @@ import net.imglib2.util.StopWatch;
 
 public class AccumulateProjectorARGB
 {
-	public static AccumulateProjectorFactory< ARGBType > factory = new AccumulateProjectorFactory< ARGBType >()
+	public static class Factory implements AccumulateProjectorFactory< ARGBType >
 	{
 		@Override
 		public VolatileProjector createProjector(
@@ -63,7 +63,9 @@ public class AccumulateProjectorARGB
 			else
 				return new AccumulateProjectorARGBArrayData( sourceProjectors, projectorData );
 		}
-	};
+	}
+
+	public static AccumulateProjectorFactory< ARGBType > factory = new Factory();
 
 	private static ProjectorData getProjectorData(
 			final List< ? extends RandomAccessible< ? extends ARGBType > > sources,
