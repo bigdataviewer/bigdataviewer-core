@@ -355,7 +355,7 @@ public class BigDataViewer
 		if ( inputTriggerConfig == null )
 			inputTriggerConfig = keymap.getConfig();
 
-		viewerFrame = new ViewerFrame( sources, numTimepoints, cache, options.inputTriggerConfig( inputTriggerConfig ) );
+		viewerFrame = new ViewerFrame( sources, numTimepoints, cache, keymapManager, appearanceManager, options.inputTriggerConfig( inputTriggerConfig ) );
 		if ( windowTitle != null )
 			viewerFrame.setTitle( windowTitle );
 		viewer = viewerFrame.getViewerPanel();

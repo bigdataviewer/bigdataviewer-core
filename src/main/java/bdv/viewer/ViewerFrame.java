@@ -28,6 +28,9 @@
  */
 package bdv.viewer;
 
+import bdv.BigDataViewer;
+import bdv.ui.appearance.AppearanceManager;
+import bdv.ui.keymap.KeymapManager;
 import java.awt.BorderLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -74,12 +77,16 @@ public class ViewerFrame extends JFrame
 
 	private final ConverterSetups setups;
 
+	private final KeymapManager keymapManager;
+
+	private final AppearanceManager appearanceManager;
+
 	public ViewerFrame(
 			final List< SourceAndConverter< ? > > sources,
 			final int numTimepoints,
 			final CacheControl cache )
 	{
-		this( sources, numTimepoints, cache, ViewerOptions.options() );
+		this( sources, numTimepoints, cache, new KeymapManager( BigDataViewer.configDir ), new AppearanceManager( BigDataViewer.configDir ), ViewerOptions.options() );
 	}
 
 	/**
@@ -97,10 +104,14 @@ public class ViewerFrame extends JFrame
 			final List< SourceAndConverter< ? > > sources,
 			final int numTimepoints,
 			final CacheControl cacheControl,
+			final KeymapManager keymapManager,
+			final AppearanceManager appearanceManager,
 			final ViewerOptions optional )
 	{
 //		super( "BigDataViewer", GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.ARGB_COLOR_MODEL ) );
 		super( "BigDataViewer", AWTUtils.getSuitableGraphicsConfiguration( AWTUtils.RGB_COLOR_MODEL ) );
+		this.keymapManager = keymapManager;
+		this.appearanceManager = appearanceManager;
 		viewer = new ViewerPanel( sources, numTimepoints, cacheControl, optional );
 		setups = new ConverterSetups( viewer.state() );
 		setups.listeners().add( s -> viewer.requestRepaint() );
@@ -180,5 +191,15 @@ public class ViewerFrame extends JFrame
 	public ConverterSetups getConverterSetups()
 	{
 		return setups;
+	}
+
+	public KeymapManager getKeymapManager()
+	{
+		return keymapManager;
+	}
+
+	public AppearanceManager getAppearanceManager()
+	{
+		return appearanceManager;
 	}
 }
