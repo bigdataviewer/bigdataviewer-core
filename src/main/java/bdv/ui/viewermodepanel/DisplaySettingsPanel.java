@@ -28,19 +28,21 @@
  */
 package bdv.ui.viewermodepanel;
 
-import bdv.viewer.DisplayMode;
-import bdv.viewer.Interpolation;
-import bdv.viewer.ViewerState;
-import java.awt.Color;
-import javax.swing.ImageIcon;
-import javax.swing.JPanel;
-import javax.swing.SwingUtilities;
-import net.miginfocom.swing.MigLayout;
-
 import static bdv.viewer.Interpolation.NEARESTNEIGHBOR;
 import static bdv.viewer.Interpolation.NLINEAR;
 import static bdv.viewer.ViewerStateChange.DISPLAY_MODE_CHANGED;
 import static bdv.viewer.ViewerStateChange.INTERPOLATION_CHANGED;
+
+import javax.swing.ImageIcon;
+import javax.swing.JPanel;
+import javax.swing.SwingUtilities;
+import javax.swing.UIManager;
+
+import bdv.ui.UIUtils;
+import bdv.viewer.DisplayMode;
+import bdv.viewer.Interpolation;
+import bdv.viewer.ViewerState;
+import net.miginfocom.swing.MigLayout;
 
 /**
  * This panel adds buttons to toggle fused, grouped, and
@@ -64,28 +66,30 @@ public class DisplaySettingsPanel extends JPanel
 
 	public DisplaySettingsPanel( final ViewerState state )
 	{
-		super( new MigLayout( "ins 0, fillx, filly", "[][][]", "top" ) );
-		this.setBackground( Color.white );
+		super( new MigLayout( "ins 2 0 0 0, fillx, filly", "[][][]", "top" ) );
+
+		final String isDark = UIUtils.isDark( "Panel.background" ) ? "_dark" : "";
+		final String isLarge = UIUtils.getUIScaleFactor( this ) > 1.5 ? "_200" : "";
 
 		fusion = new LabeledToggleButton(
-				new ImageIcon( this.getClass().getResource( "single_mode.png" ) ),
-				new ImageIcon( this.getClass().getResource( "fusion_mode.png" ) ),
-				"Single",
-				"Fused",
+				new ImageIcon( this.getClass().getResource( "single_mode" + isDark + isLarge + ".png" ) ),
+				new ImageIcon( this.getClass().getResource( "fusion_mode" + isDark + isLarge + ".png" ) ),
+				" Single",
+				" Fused ",
 				SINGLE_MODE_TOOL_TIP,
 				FUSED_MODE_TOOL_TIP );
 		grouping = new LabeledToggleButton(
-				new ImageIcon( this.getClass().getResource( "source_mode.png" ) ),
-				new ImageIcon( this.getClass().getResource( "grouping_mode.png" ) ),
-				"Source",
-				"Group",
+				new ImageIcon( this.getClass().getResource( "source_mode" + isDark + isLarge + ".png" ) ),
+				new ImageIcon( this.getClass().getResource( "grouping_mode" + isDark + isLarge + ".png" ) ),
+				" Source",
+				" Group ",
 				SOURCE_MODE_TOOL_TIP,
 				GROUP_MODE_TOOL_TIP );
 		interpolation = new LabeledToggleButton(
-				new ImageIcon( this.getClass().getResource( "nearest.png" ) ),
-				new ImageIcon( this.getClass().getResource( "linear.png" ) ),
-				"Nearest",
-				"Linear",
+				new ImageIcon( this.getClass().getResource( "nearest" + isDark + isLarge + ".png" ) ),
+				new ImageIcon( this.getClass().getResource( "linear" + isDark + isLarge + ".png" ) ),
+				" Nearest",
+				" Linear ",
 				NEAREST_INTERPOLATION_TOOL_TIP,
 				LINEAR_INTERPOLATION_TOOL_TIP );
 
@@ -124,5 +128,30 @@ public class DisplaySettingsPanel extends JPanel
 		this.add( fusion );
 		this.add( grouping );
 		this.add( interpolation );
+	}
+
+	@Override
+	public void updateUI()
+	{
+		super.updateUI();
+		this.setBackground( UIManager.getColor( "Panel.background" ) );
+		if ( fusion != null )
+		{
+			final String isDark = UIUtils.isDark( "Panel.background" ) ? "_dark" : "";
+			final String isLarge = UIUtils.getUIScaleFactor( this ) > 1.5 ? "_200" : "";
+
+			fusion.setIcons(
+					new ImageIcon( this.getClass().getResource( "single_mode" + isDark + isLarge + ".png" ) ),
+					new ImageIcon( this.getClass().getResource( "fusion_mode" + isDark + isLarge + ".png" ) )
+			);
+			grouping.setIcons(
+					new ImageIcon( this.getClass().getResource( "source_mode" + isDark + isLarge + ".png" ) ),
+					new ImageIcon( this.getClass().getResource( "grouping_mode" + isDark + isLarge + ".png" ) )
+			);
+			interpolation.setIcons(
+					new ImageIcon( this.getClass().getResource( "nearest" + isDark + isLarge + ".png" ) ),
+					new ImageIcon( this.getClass().getResource( "linear" + isDark + isLarge + ".png" ) )
+			);
+		}
 	}
 }

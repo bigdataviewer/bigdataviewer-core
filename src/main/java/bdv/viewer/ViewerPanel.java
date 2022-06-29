@@ -28,11 +28,11 @@
  */
 package bdv.viewer;
 
+import static bdv.ui.UIUtils.TextPosition.TOP_RIGHT;
 import static bdv.viewer.DisplayMode.SINGLE;
 import static bdv.viewer.Interpolation.NEARESTNEIGHBOR;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
 import java.awt.Font;
 import java.awt.Graphics;
@@ -43,8 +43,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -54,12 +55,6 @@ import javax.swing.JSlider;
 import javax.swing.SwingConstants;
 import javax.swing.SwingUtilities;
 
-import net.imglib2.Interval;
-import net.imglib2.RealLocalizable;
-import net.imglib2.RealPoint;
-import net.imglib2.RealPositionable;
-import net.imglib2.realtransform.AffineTransform3D;
-
 import org.jdom2.Element;
 import org.scijava.listeners.Listeners;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
@@ -67,6 +62,7 @@ import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import bdv.TransformEventHandler;
 import bdv.TransformState;
 import bdv.cache.CacheControl;
+import bdv.ui.UIUtils;
 import bdv.util.Prefs;
 import bdv.viewer.animate.AbstractTransformAnimator;
 import bdv.viewer.animate.MessageOverlayAnimator;
@@ -76,10 +72,16 @@ import bdv.viewer.animate.TextOverlayAnimator.TextPosition;
 import bdv.viewer.overlay.MultiBoxOverlayRenderer;
 import bdv.viewer.overlay.ScaleBarOverlayRenderer;
 import bdv.viewer.overlay.SourceInfoOverlayRenderer;
+import bdv.viewer.render.DebugTilingOverlay;
 import bdv.viewer.render.MultiResolutionRenderer;
 import bdv.viewer.render.PainterThread;
 import bdv.viewer.render.awt.BufferedImageOverlayRenderer;
 import bdv.viewer.state.XmlIoViewerState;
+import net.imglib2.Interval;
+import net.imglib2.RealLocalizable;
+import net.imglib2.RealPoint;
+import net.imglib2.RealPositionable;
+import net.imglib2.realtransform.AffineTransform3D;
 
 /**
  * A JPanel for viewing multiple of {@link Source}s. The panel contains a
@@ -128,7 +130,7 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 	private final SourceInfoOverlayRenderer sourceInfoOverlayRenderer;
 
 	/**
-	 * TODO
+	 * Overlay scalebar for current source.
 	 */
 	private final ScaleBarOverlayRenderer scaleBarOverlayRenderer;
 
@@ -159,7 +161,7 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 	/**
 	 * The {@link ExecutorService} used for rendereing.
 	 */
-	private final ExecutorService renderingExecutorService;
+	private final ForkJoinPool renderingExecutorService;
 
 	/**
 	 * Manages visibility and currentness of sources and groups, as well as
@@ -231,7 +233,7 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 
 		multiBoxOverlayRenderer = new MultiBoxOverlayRenderer();
 		sourceInfoOverlayRenderer = new SourceInfoOverlayRenderer();
-		scaleBarOverlayRenderer = Prefs.showScaleBar() ? new ScaleBarOverlayRenderer() : null;
+		scaleBarOverlayRenderer = new ScaleBarOverlayRenderer();
 
 		threadGroup = new ThreadGroup( this.toString() );
 		painterThread = new PainterThread( threadGroup, this );
@@ -244,9 +246,8 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 		display.overlays().add( renderTarget );
 		display.overlays().add( this );
 
-		renderingExecutorService = Executors.newFixedThreadPool(
-				options.getNumRenderingThreads(),
-				new RenderThreadFactory( threadGroup ) );
+		renderingExecutorService = new ForkJoinPool(
+				options.getNumRenderingThreads() );
 		imageRenderer = new MultiResolutionRenderer(
 				renderTarget, painterThread,
 				options.getScreenScales(),
@@ -514,17 +515,17 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 
 		if ( Prefs.showTextOverlay() )
 		{
+			final Font font = UIUtils.getFont( "monospaced.small.font" );
 			sourceInfoOverlayRenderer.setViewerState( state );
 			sourceInfoOverlayRenderer.setSourceNameOverlayPosition( Prefs.sourceNameOverlayPosition() );
 			sourceInfoOverlayRenderer.paint( ( Graphics2D ) g );
 
-			final RealPoint gPos = new RealPoint( 3 );
-			getGlobalMouseCoordinates( gPos );
-			final String mousePosGlobalString = String.format( "(%6.1f,%6.1f,%6.1f)", gPos.getDoublePosition( 0 ), gPos.getDoublePosition( 1 ), gPos.getDoublePosition( 2 ) );
+			final double[] gPos = new double[ 3 ];
+			getGlobalMouseCoordinates( RealPoint.wrap( gPos ) );
+			final String mousePosGlobalString = String.format( Locale.ROOT, "%6.1f, %6.1f, %6.1f", gPos[ 0 ], gPos[ 1 ], gPos[ 2 ] );
 
-			g.setFont( new Font( "Monospaced", Font.PLAIN, 12 ) );
-			g.setColor( Color.white );
-			g.drawString( mousePosGlobalString, ( int ) g.getClipBounds().getWidth() - 170, 25 );
+			g.setFont( font );
+			UIUtils.drawString( g, TOP_RIGHT, 1, mousePosGlobalString );
 		}
 
 		if ( Prefs.showScaleBar() )
@@ -1021,5 +1022,16 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 				t.setPriority( Thread.NORM_PRIORITY );
 			return t;
 		}
+	}
+
+	/**
+	 * Display overlay to show how the display is tiled for rendering.
+	 * (For development and debugging purposes.)
+	 */
+	public DebugTilingOverlay showDebugTileOverlay()
+	{
+		final DebugTilingOverlay overlay = new DebugTilingOverlay( imageRenderer );
+		display.overlays().add( overlay );
+		return overlay;
 	}
 }

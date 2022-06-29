@@ -199,6 +199,10 @@ class ScreenScales
 		ScreenScale( final double scale )
 		{
 			this.scale = scale;
+			scaleTransform.set( scale, 0, 0 );
+			scaleTransform.set( scale, 1, 1 );
+			scaleTransform.set( 0.5 * scale - 0.5, 0, 3 );
+			scaleTransform.set( 0.5 * scale - 0.5, 1, 3 );
 		}
 
 		/**
@@ -227,12 +231,6 @@ class ScreenScales
 		{
 			w = ( int ) Math.ceil( scale * screenW );
 			h = ( int ) Math.ceil( scale * screenH );
-
-			scaleTransform.set( scale, 0, 0 );
-			scaleTransform.set( scale, 1, 1 );
-			scaleTransform.set( 0.5 * scale - 0.5, 0, 3 );
-			scaleTransform.set( 0.5 * scale - 0.5, 1, 3 );
-
 			requestedScreenInterval = null;
 		}
 
@@ -337,6 +335,7 @@ class ScreenScales
 		{
 			return ( int ) renderInterval.min( 0 );
 		}
+
 		public int offsetY()
 		{
 			return ( int ) renderInterval.min( 1 );

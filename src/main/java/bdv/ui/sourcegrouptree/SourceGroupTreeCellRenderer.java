@@ -28,8 +28,10 @@
  */
 package bdv.ui.sourcegrouptree;
 
+import bdv.ui.UIUtils;
 import bdv.ui.sourcegrouptree.SourceGroupTreeModel.GroupModel;
 import bdv.ui.sourcegrouptree.SourceGroupTreeModel.SourceModel;
+import com.formdev.flatlaf.ui.FlatUIUtils;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.ComponentOrientation;
@@ -41,6 +43,7 @@ import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTree;
+import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 import javax.swing.plaf.FontUIResource;
@@ -70,28 +73,38 @@ class SourceGroupTreeCellRenderer implements TreeCellRenderer
 
 
 	// Color to use for the foreground for selected nodes.
-	private final Color textSelectionColor;
+	private Color selectionForeground;
+
+	// TODO
+	private Color selectionInactiveForeground;
 
 	// Color to use for the foreground for non-selected nodes.
-	private final Color textNonSelectionColor;
-
-	// Color to use for the background when a node is selected.
-	private Color backgroundSelectionColor;
+	private Color foreground;
 
 	// Color to use for the background when the node isn't selected.
-	private final Color backgroundNonSelectionColor;
+	private Color background;
+
+	// Color to use for the background when the node is selected and the tree has focus.
+	private Color selectionBackground;
+
+	// Color to use for the background when the node is selected and the tree doesn't have focus.
+	private Color selectionInactiveBackground;
+
+	// Whether the tree has focus.
+	private boolean treeHasFocus;
+
 
 	// Color to use for the focus indicator when the node has focus.
-	private final Color borderSelectionColor;
+	private Color selectionBorderColor;
 
 	// TODO
-	private final Color backgroundDropCellColor;
+	private Color dropCellBackground;
 
 	// TODO
-	private final boolean fillBackground;
+	private boolean rendererFillBackground;
 
 	// If true, a dashed line is drawn as the focus indicator.
-	private final boolean drawDashedFocusIndicator;
+	private boolean drawDashedFocusIndicator;
 
 	// If drawDashedFocusIndicator is true, the following are used.
 
@@ -110,22 +123,38 @@ class SourceGroupTreeCellRenderer implements TreeCellRenderer
 
 	SourceGroupTreeCellRenderer()
 	{
-		textSelectionColor = getUIColor( "Tree.selectionForeground" );
-		textNonSelectionColor = getUIColor( "Tree.textForeground" );
-		backgroundSelectionColor = getUIColor( "Tree.selectionBackground" );
-		backgroundNonSelectionColor = getUIColor( "Tree.textBackground" );
-		borderSelectionColor = getUIColor( "Tree.selectionBorderColor" );
-		backgroundDropCellColor = getUIColor( "Tree.dropCellBackground", backgroundSelectionColor );
-		fillBackground = getUIBoolean( "Tree.rendererFillBackground", true );
-		drawDashedFocusIndicator = getUIBoolean( "Tree.drawDashedFocusIndicator", false );
+		updateUI();
+	}
+
+	void updateUI()
+	{
+		foreground = UIManager.getColor( "Tree.foreground" ); // TODO: "foreground"?
+		background = UIManager.getColor( "Tree.background" ); // TODO: "background"?
+		selectionForeground = UIManager.getColor( "Tree.selectionForeground" );
+		selectionInactiveForeground = FlatUIUtils.getUIColor(
+				"Tree.selectionInactiveForeground",
+				UIUtils.mix( selectionForeground, foreground, 0.0 )
+		);
+		selectionBackground = UIManager.getColor( "Tree.selectionBackground" );
+		selectionInactiveBackground = FlatUIUtils.getUIColor(
+				"Tree.selectionInactiveBackground",
+				UIUtils.mix( selectionBackground, background, 0.5 )
+		);
+		selectionBorderColor = UIManager.getColor( "Tree.selectionBorderColor" );
+		dropCellBackground = FlatUIUtils.getUIColor( "Tree.dropCellBackground", selectionBackground );
+		rendererFillBackground = UIUtils.getUIBoolean( "Tree.rendererFillBackground", true );
+		drawDashedFocusIndicator = UIUtils.getUIBoolean( "Tree.drawDashedFocusIndicator", false );
+		SwingUtilities.updateComponentTreeUI( groupRenderer );
+		SwingUtilities.updateComponentTreeUI( sourceRenderer );
 	}
 
 	/**
-	 * Sets the color to use for the background if node is selected.
+	 * Sets the color to use for the background if node is selected,
+	 * depending on whether the tree has focus.
 	 */
-	public void setBackgroundSelectionColor( final Color newColor )
+	public void setTreeHasFocus( final boolean hasFocus )
 	{
-		backgroundSelectionColor = newColor;
+		treeHasFocus = hasFocus;
 	}
 
 	/**
@@ -133,30 +162,7 @@ class SourceGroupTreeCellRenderer implements TreeCellRenderer
 	 */
 	public Color getBackgroundSelectionColor()
 	{
-		return backgroundSelectionColor;
-	}
-
-	private static boolean getUIBoolean( String key, boolean defaultValue )
-	{
-		final Object value = UIManager.get( key );
-		if ( value instanceof Boolean )
-			return ( Boolean ) value;
-		else
-			return defaultValue;
-	}
-
-	private static Color getUIColor( String key )
-	{
-		return getUIColor( key, null );
-	}
-
-	private static Color getUIColor( String key, Color defaultValue )
-	{
-		final Object value = UIManager.get( key );
-		if ( value instanceof Color )
-			return ( Color ) value;
-		else
-			return defaultValue;
+		return treeHasFocus ? selectionBackground : selectionInactiveBackground;
 	}
 
 	@Override
@@ -218,7 +224,7 @@ class SourceGroupTreeCellRenderer implements TreeCellRenderer
 
 	private void paintFocus( Graphics g, int x, int y, int w, int h, Color notColor )
 	{
-		Color bsColor = borderSelectionColor;
+		Color bsColor = selectionBorderColor;
 
 		if ( bsColor != null && ( selected || !drawDashedFocusIndicator ) )
 		{
@@ -290,11 +296,19 @@ class SourceGroupTreeCellRenderer implements TreeCellRenderer
 			activeCheckBox.setSelected( group.isActive() );
 
 			final Color fg;
+			final Color bg;
 			if ( selected )
-				fg = textSelectionColor;
+			{
+				fg = treeHasFocus ? selectionForeground : selectionInactiveForeground;
+				bg = treeHasFocus ? selectionBackground : selectionInactiveBackground;
+			}
 			else
-				fg = textNonSelectionColor;
+			{
+				fg = foreground;
+				bg = background;
+			}
 			nameLabel.setForeground( fg );
+			nameLabel.setBackground( bg );
 
 			final boolean enabled = tree.isEnabled();
 			setEnabled( enabled );
@@ -324,16 +338,16 @@ class SourceGroupTreeCellRenderer implements TreeCellRenderer
 			Color bColor;
 
 			if ( isDropCell )
-				bColor = backgroundDropCellColor;
+				bColor = dropCellBackground;
 			else if ( selected )
-				bColor = backgroundSelectionColor;
+				bColor = getBackgroundSelectionColor();
 			else
-				bColor = backgroundNonSelectionColor;
+				bColor = background;
 
 			if ( bColor == null )
 				bColor = getBackground();
 
-			if ( bColor != null && fillBackground )
+			if ( bColor != null && rendererFillBackground )
 			{
 				g.setColor( bColor );
 				g.fillRect( 0, 0, getWidth(), getHeight() );
@@ -374,11 +388,19 @@ class SourceGroupTreeCellRenderer implements TreeCellRenderer
 			setText( source.getName() );
 
 			final Color fg;
+			final Color bg;
 			if ( selected )
-				fg = textSelectionColor;
+			{
+				fg = treeHasFocus ? selectionForeground : selectionInactiveForeground;
+				bg = treeHasFocus ? selectionBackground : selectionInactiveBackground;
+			}
 			else
-				fg = textNonSelectionColor;
+			{
+				fg = foreground;
+				bg = background;
+			}
 			setForeground( fg );
+			setBackground( bg );
 
 			final boolean enabled = tree.isEnabled();
 			setEnabled( enabled );
@@ -401,16 +423,16 @@ class SourceGroupTreeCellRenderer implements TreeCellRenderer
 			Color bColor;
 
 			if ( isDropCell )
-				bColor = backgroundDropCellColor;
+				bColor = dropCellBackground;
 			else if ( selected )
-				bColor = backgroundSelectionColor;
+				bColor = getBackgroundSelectionColor();
 			else
-				bColor = backgroundNonSelectionColor;
+				bColor = background;
 
 			if ( bColor == null )
 				bColor = getBackground();
 
-			if ( bColor != null && fillBackground )
+			if ( bColor != null && rendererFillBackground )
 			{
 				g.setColor( bColor );
 				g.fillRect( 0, 0, getWidth(), getHeight() );

@@ -113,19 +113,19 @@ public class BrightnessDialog extends DelayedPackDialog
 			{
 				try
 				{
-					InvokeOnEDT.invokeAndWait( () -> {
-						if ( isVisible() )
-						{
+					if ( isVisible() )
+					{
+						InvokeOnEDT.invokeAndWait( () -> {
 							System.out.println( "colorsPanel.recreateContent()" );
 							colorsPanel.recreateContent();
 							minMaxPanels.recreateContent();
 							recreateContentPending.set( false );
-						}
-						else
-						{
-							recreateContentPending.set( true );
-						}
-					} );
+						} );
+					}
+					else
+					{
+						recreateContentPending.set( true );
+					}
 				}
 				catch ( InvocationTargetException | InterruptedException e )
 				{

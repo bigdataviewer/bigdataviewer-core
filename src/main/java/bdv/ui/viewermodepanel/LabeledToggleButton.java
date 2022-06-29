@@ -28,9 +28,10 @@
  */
 package bdv.ui.viewermodepanel;
 
-import java.awt.Font;
 import javax.swing.Icon;
 import javax.swing.JLabel;
+
+import bdv.ui.UIUtils;
 
 class LabeledToggleButton extends ToggleButton
 {
@@ -57,6 +58,7 @@ class LabeledToggleButton extends ToggleButton
 		this.add( label, "center" );
 	}
 
+	@Override
 	public void setSelected( final boolean selected )
 	{
 		super.setSelected( selected );
@@ -65,6 +67,16 @@ class LabeledToggleButton extends ToggleButton
 
 	private void setFont( final JLabel label )
 	{
-		label.setFont( new Font( Font.MONOSPACED, Font.BOLD, 9 ) );
+		label.setFont( UIUtils.getFont( "monospaced.bold.mini.font" ) );
+//		label.setFont( new Font( Font.MONOSPACED, Font.BOLD, ( int )Math.round(9 * UIUtils.getUIScaleFactor( this ) ) ) );
+	}
+
+	@Override
+	public void updateUI()
+	{
+		super.updateUI();
+
+		if ( label != null )
+			setFont( label );
 	}
 }

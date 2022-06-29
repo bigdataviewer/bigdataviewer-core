@@ -29,10 +29,13 @@
 package bdv;
 
 import net.imglib2.realtransform.AffineTransform3D;
+import org.scijava.plugin.Plugin;
 import org.scijava.ui.behaviour.Behaviour;
 import org.scijava.ui.behaviour.ClickBehaviour;
 import org.scijava.ui.behaviour.DragBehaviour;
 import org.scijava.ui.behaviour.ScrollBehaviour;
+import org.scijava.ui.behaviour.io.gui.CommandDescriptionProvider;
+import org.scijava.ui.behaviour.io.gui.CommandDescriptions;
 import org.scijava.ui.behaviour.util.Behaviours;
 
 /**
@@ -100,6 +103,52 @@ public class TransformEventHandler2D implements TransformEventHandler
 	public static final String[] ROTATE_RIGHT_SLOW_KEYS = new String[] { "ctrl RIGHT" };
 	public static final String[] KEY_ZOOM_IN_SLOW_KEYS = new String[] { "ctrl UP" };
 	public static final String[] KEY_ZOOM_OUT_SLOW_KEYS = new String[] { "ctrl DOWN" };
+
+	/*
+	 * Command descriptions for all provided commands
+	 */
+	@Plugin( type = CommandDescriptionProvider.class )
+	public static class Descriptions extends CommandDescriptionProvider
+	{
+		public Descriptions()
+		{
+			super( KeyConfigScopes.BIGDATAVIEWER, KeyConfigContexts.BIGDATAVIEWER );
+		}
+
+		@Override
+		public void getCommandDescriptions( final CommandDescriptions descriptions )
+		{
+			descriptions.add( DRAG_TRANSLATE, DRAG_TRANSLATE_KEYS, "Pan the view by mouse-dragging. Active in 2D mode." );
+			descriptions.add( DRAG_ROTATE, DRAG_ROTATE_KEYS, "Rotate the view by mouse-dragging. Active in 2D mode." );
+
+			descriptions.add( ZOOM_NORMAL, ZOOM_NORMAL_KEYS, "Zoom in by scrolling. Active in 2D mode." );
+			descriptions.add( ZOOM_FAST, ZOOM_FAST_KEYS, "Zoom in by scrolling (fast). Active in 2D mode." );
+			descriptions.add( ZOOM_SLOW, ZOOM_SLOW_KEYS, "Zoom in by scrolling (slow). Active in 2D mode." );
+
+			descriptions.add( SCROLL_TRANSLATE, SCROLL_TRANSLATE_KEYS, "Translate by scrolling. Active in 2D mode." );
+			descriptions.add( SCROLL_TRANSLATE_FAST, SCROLL_TRANSLATE_FAST_KEYS, "Translate by scrolling (fast). Active in 2D mode." );
+			descriptions.add( SCROLL_TRANSLATE_SLOW, SCROLL_TRANSLATE_SLOW_KEYS, "Translate by scrolling (slow). Active in 2D mode." );
+
+			descriptions.add( ROTATE_LEFT, ROTATE_LEFT_KEYS, "Rotate left (counter-clockwise) by 1 degree. Active in 2D mode." );
+			descriptions.add( ROTATE_RIGHT, ROTATE_RIGHT_KEYS, "Rotate right (clockwise) by 1 degree. Active in 2D mode." );
+			descriptions.add( KEY_ZOOM_IN, KEY_ZOOM_IN_KEYS, "Zoom in. Active in 2D mode." );
+			descriptions.add( KEY_ZOOM_OUT, KEY_ZOOM_OUT_KEYS, "Zoom out. Active in 2D mode." );
+
+			descriptions.add( ROTATE_LEFT_FAST, ROTATE_LEFT_FAST_KEYS, "Rotate left (counter-clockwise) by 10 degrees. Active in 2D mode." );
+			descriptions.add( ROTATE_RIGHT_FAST, ROTATE_RIGHT_FAST_KEYS, "Rotate right (clockwise) by 10 degrees. Active in 2D mode." );
+			descriptions.add( KEY_ZOOM_IN_FAST, KEY_ZOOM_IN_FAST_KEYS, "Zoom in (fast). Active in 2D mode." );
+			descriptions.add( KEY_ZOOM_OUT_FAST, KEY_ZOOM_OUT_FAST_KEYS, "Zoom out (fast). Active in 2D mode." );
+
+			descriptions.add( ROTATE_LEFT_SLOW, ROTATE_LEFT_SLOW_KEYS, "Rotate left (counter-clockwise) by 0.1 degree. Active in 2D mode." );
+			descriptions.add( ROTATE_RIGHT_SLOW, ROTATE_RIGHT_SLOW_KEYS, "Rotate right (clockwise) by 0.1 degree. Active in 2D mode." );
+			descriptions.add( KEY_ZOOM_IN_SLOW, KEY_ZOOM_IN_SLOW_KEYS, "Zoom in (slow). Active in 2D mode." );
+			descriptions.add( KEY_ZOOM_OUT_SLOW, KEY_ZOOM_OUT_SLOW_KEYS, "Zoom out (slow). Active in 2D mode." );
+
+			descriptions.add( SCROLL_ROTATE, SCROLL_ROTATE_KEYS, "Rotate by scrolling. Active in 2D mode." );
+			descriptions.add( SCROLL_ROTATE_FAST, SCROLL_ROTATE_FAST_KEYS, "Rotate by scrolling (fast). Active in 2D mode." );
+			descriptions.add( SCROLL_ROTATE_SLOW, SCROLL_ROTATE_SLOW_KEYS, "Rotate by scrolling (slow). Active in 2D mode." );
+		}
+	}
 
 	// -- behaviours --
 

@@ -50,6 +50,7 @@ import bdv.viewer.Interpolation;
 import bdv.viewer.Source;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerState;
+import net.imglib2.view.Views;
 
 /**
  * Creates projectors for rendering a given {@code ViewerState} to a given
@@ -171,6 +172,8 @@ class ProjectorFactory
 		}
 		else
 		{
+			final int offsetX = ( int ) screenImage.min( 0 );
+			final int offsetY = ( int ) screenImage.min( 1 );
 			final ArrayList< VolatileProjector > sourceProjectors = new ArrayList<>();
 			final ArrayList< RandomAccessibleInterval< ARGBType > > sourceImages = new ArrayList<>();
 			int j = 0;
@@ -179,11 +182,13 @@ class ProjectorFactory
 				final RandomAccessibleInterval< ARGBType > renderImage = renderStorage.getRenderImage( width, height, j );
 				final byte[] maskArray = renderStorage.getMaskArray( j );
 				++j;
-				final VolatileProjector p = createSingleSourceProjector( viewerState, source, renderImage, screenTransform, maskArray );
+				final AffineTransform3D renderTransform = screenTransform.copy();
+				renderTransform.translate( -offsetX, -offsetY, 0 );
+				final VolatileProjector p = createSingleSourceProjector( viewerState, source, renderImage, renderTransform, maskArray );
 				sourceProjectors.add( p );
 				sourceImages.add( renderImage );
 			}
-			projector = accumulateProjectorFactory.createProjector( sourceProjectors, visibleSourcesOnScreen, sourceImages, screenImage, numRenderingThreads, renderingExecutorService );
+			projector = accumulateProjectorFactory.createProjector( sourceProjectors, visibleSourcesOnScreen, sourceImages, Views.zeroMin( screenImage ), numRenderingThreads, renderingExecutorService );
 		}
 		previousTimepoint = viewerState.getCurrentTimepoint();
 		return projector;
@@ -211,7 +216,7 @@ class ProjectorFactory
 		final int bestLevel = getBestMipMapLevel( viewerState, source, screenTransform );
 		return new SimpleVolatileProjector<>(
 				getTransformedSource( viewerState, source.getSpimSource(), screenTransform, bestLevel, null ),
-				source.getConverter(), screenImage, numRenderingThreads, renderingExecutorService );
+				source.getConverter(), screenImage );
 	}
 
 	private < T extends Volatile< ? > > VolatileProjector createSingleSourceVolatileProjector(
@@ -249,7 +254,7 @@ class ProjectorFactory
 		if ( hints.renewHintsAfterPaintingOnce() )
 			newFrameRequest = true;
 
-		return new VolatileHierarchyProjector<>( renderList, source.getConverter(), screenImage, maskArray, numRenderingThreads, renderingExecutorService );
+		return new VolatileHierarchyProjector<>( renderList, source.getConverter(), screenImage, maskArray );
 	}
 
 	/**

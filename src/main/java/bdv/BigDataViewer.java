@@ -28,8 +28,16 @@
  */
 package bdv;
 
+import bdv.tools.PreferencesDialog;
+import bdv.ui.UIUtils;
+import bdv.ui.keymap.Keymap;
+import bdv.ui.keymap.KeymapManager;
+import bdv.ui.keymap.KeymapSettingsPage;
 import bdv.viewer.ConverterSetups;
 import bdv.viewer.ViewerState;
+import bdv.ui.appearance.AppearanceManager;
+import bdv.ui.appearance.AppearanceSettingsPage;
+import dev.dirs.ProjectDirectories;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
@@ -42,6 +50,7 @@ import javax.swing.JFileChooser;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileFilter;
 
 import net.imglib2.Volatile;
@@ -100,6 +109,8 @@ import org.scijava.ui.behaviour.util.Actions;
 
 public class BigDataViewer
 {
+	public static String configDir = ProjectDirectories.from( "sc", "fiji", "bigdataviewer" ).configDir;
+
 	protected final ViewerFrame viewerFrame;
 
 	protected final ViewerPanel viewer;
@@ -121,6 +132,12 @@ public class BigDataViewer
 	protected final VisibilityAndGroupingDialog activeSourcesDialog;
 
 	protected final HelpDialog helpDialog;
+
+	private final KeymapManager keymapManager;
+
+	private final AppearanceManager appearanceManager;
+
+	protected final PreferencesDialog preferencesDialog;
 
 	protected final ManualTransformationEditor manualTransformationEditor;
 
@@ -328,7 +345,15 @@ public class BigDataViewer
 			final ProgressWriter progressWriter,
 			final ViewerOptions options )
 	{
-		final InputTriggerConfig inputTriggerConfig = getInputTriggerConfig( options );
+		final KeymapManager optionsKeymapManager = options.values.getKeymapManager();
+		final AppearanceManager optionsAppearanceManager = options.values.getAppearanceManager();
+		keymapManager = optionsKeymapManager != null ? optionsKeymapManager : new KeymapManager( configDir );
+		appearanceManager = optionsAppearanceManager != null ? optionsAppearanceManager : new AppearanceManager( configDir );
+
+		InputTriggerConfig inputTriggerConfig = options.values.getInputTriggerConfig();
+		final Keymap keymap = this.keymapManager.getForwardSelectedKeymap();
+		if ( inputTriggerConfig == null )
+			inputTriggerConfig = keymap.getConfig();
 
 		viewerFrame = new ViewerFrame( sources, numTimepoints, cache, options.inputTriggerConfig( inputTriggerConfig ) );
 		if ( windowTitle != null )
@@ -412,6 +437,13 @@ public class BigDataViewer
 			}
 		} );
 
+		preferencesDialog = new PreferencesDialog( viewerFrame, keymap, new String[] { KeyConfigContexts.BIGDATAVIEWER } );
+		preferencesDialog.addPage( new AppearanceSettingsPage( "Appearance", appearanceManager ) );
+		preferencesDialog.addPage( new KeymapSettingsPage( "Keymap", this.keymapManager, this.keymapManager.getCommandDescriptions() ) );
+		appearanceManager.appearance().updateListeners().add( viewerFrame::repaint );
+		appearanceManager.addLafComponent( fileChooser );
+		SwingUtilities.invokeLater(() -> appearanceManager.updateLookAndFeel());
+
 		final Actions navigationActions = new Actions( inputTriggerConfig, "bdv", "navigation" );
 		navigationActions.install( viewerFrame.getKeybindings(), "navigation" );
 		NavigationActions.install( navigationActions, viewer, options.values.is2D() );
@@ -419,6 +451,12 @@ public class BigDataViewer
 		final Actions bdvActions = new Actions( inputTriggerConfig, "bdv" );
 		bdvActions.install( viewerFrame.getKeybindings(), "bdv" );
 		BigDataViewerActions.install( bdvActions, this );
+
+		keymap.updateListeners().add( () -> {
+			navigationActions.updateKeyConfig( keymap.getConfig() );
+			bdvActions.updateKeyConfig( keymap.getConfig() );
+			viewerFrame.getTransformBehaviours().updateKeyConfig( keymap.getConfig() );
+		} );
 
 		final JMenuBar menubar = new JMenuBar();
 		JMenu menu = new JMenu( "File" );
@@ -432,6 +470,12 @@ public class BigDataViewer
 		final JMenuItem miSaveSettings = new JMenuItem( actionMap.get( BigDataViewerActions.SAVE_SETTINGS ) );
 		miSaveSettings.setText( "Save settings" );
 		menu.add( miSaveSettings );
+
+		menu.addSeparator();
+
+		final JMenuItem miPreferences = new JMenuItem( actionMap.get( BigDataViewerActions.PREFERENCES_DIALOG ) );
+		miPreferences.setText( "Preferences..." );
+		menu.add( miPreferences );
 
 		menu = new JMenu( "Settings" );
 		menubar.add( menu );
@@ -553,6 +597,16 @@ public class BigDataViewer
 		return manualTransformationEditor;
 	}
 
+	public KeymapManager getKeymapManager()
+	{
+		return keymapManager;
+	}
+
+	public AppearanceManager getAppearanceManager()
+	{
+		return appearanceManager;
+	}
+
 	public boolean tryLoadSettings( final String xmlFilename )
 	{
 		proposedSettingsFile = null;
@@ -634,9 +688,10 @@ public class BigDataViewer
 	 * also written to "bdvkeyconfig.yaml").
 	 * </ol>
 	 *
-	 * @param options
-	 * @return
+	 * @deprecated This method is no longer used internally.
+	 * {@code InputTriggerConfig}s are now managed through {@link KeymapManager}.
 	 */
+	@Deprecated
 	public static InputTriggerConfig getInputTriggerConfig( final ViewerOptions options )
 	{
 		InputTriggerConfig conf = options.values.getInputTriggerConfig();
@@ -720,36 +775,14 @@ public class BigDataViewer
 
 	public static void main( final String[] args )
 	{
-//		final String fn = "http://tomancak-mac-17.mpi-cbg.de:8080/openspim/";
-//		final String fn = "/Users/Pietzsch/Desktop/openspim/datasetHDF.xml";
-//		final String fn = "/Users/pietzsch/workspace/data/111010_weber_full.xml";
-//		final String fn = "/Users/Pietzsch/Desktop/spimrec2/dataset.xml";
-//		final String fn = "/Users/pietzsch/Desktop/HisYFP-SPIM/dataset.xml";
-//		final String fn = "/Users/Pietzsch/Desktop/bdv example/drosophila 2.xml";
-//		final String fn = "/Users/pietzsch/Desktop/data/clusterValia/140219-1/valia-140219-1.xml";
-//		final String fn = "/Users/Pietzsch/Desktop/data/catmaid.xml";
-//		final String fn = "src/main/resources/openconnectome-bock11-neariso.xml";
-//		final String fn = "/home/saalfeld/catmaid.xml";
-//		final String fn = "/home/saalfeld/catmaid-fafb00-v9.xml";
-//		final String fn = "/home/saalfeld/catmaid-fafb00-sample_A_cutout_3k.xml";
-//		final String fn = "/home/saalfeld/catmaid-thorsten.xml";
-//		final String fn = "/home/saalfeld/knossos-example.xml";
-//		final String fn = "/Users/Pietzsch/Desktop/data/catmaid-confocal.xml";
-//		final String fn = "/Users/pietzsch/desktop/data/BDV130418A325/BDV130418A325_NoTempReg.xml";
-//		final String fn = "/Users/pietzsch/Desktop/data/valia2/valia.xml";
-//		final String fn = "/Users/pietzsch/workspace/data/fast fly/111010_weber/combined.xml";
-//		final String fn = "/Users/pietzsch/workspace/data/mette/mette.xml";
-//		final String fn = "/Users/tobias/Desktop/openspim.xml";
-//		final String fn = "/Users/pietzsch/Desktop/data/fibsem.xml";
-//		final String fn = "/Users/pietzsch/Desktop/data/fibsem-remote.xml";
-//		final String fn = "/Users/pietzsch/Desktop/url-valia.xml";
-//		final String fn = "/Users/pietzsch/Desktop/data/clusterValia/140219-1/valia-140219-1.xml";
-		final String fn = "/Users/pietzsch/workspace/data/111010_weber_full.xml";
-//		final String fn = "/Volumes/projects/tomancak_lightsheet/Mette/ZeissZ1SPIM/Maritigrella/021013_McH2BsGFP_CAAX-mCherry/11-use/hdf5/021013_McH2BsGFP_CAAX-mCherry-11-use.xml";
+		final String fn = "/Users/pietzsch/workspace/data/111010_weber_resave.xml";
 		try
 		{
 			System.setProperty( "apple.laf.useScreenMenuBar", "true" );
+//			System.setProperty( "apple.awt.application.appearance", "system" );
+			UIUtils.installFlatLafInfos();
 
+			System.out.println( "reading config files from \"" + configDir + "\"" );
 			final BigDataViewer bdv = open( fn, new File( fn ).getName(), new ProgressWriterConsole(), ViewerOptions.options() );
 
 //			DumpInputConfig.writeToYaml( System.getProperty( "user.home" ) + "/.bdv/bdvkeyconfig.yaml", bdv.getViewerFrame() );

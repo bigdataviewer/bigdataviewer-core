@@ -29,18 +29,19 @@
 package bdv.ui.sourcegrouptree;
 
 import bdv.ui.SourcesTransferable;
-import bdv.ui.UIUtils;
 import bdv.ui.sourcegrouptree.SourceGroupTreeModel.GroupModel;
 import bdv.ui.sourcegrouptree.SourceGroupTreeModel.SourceModel;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.SourceGroup;
 import bdv.viewer.ViewerState;
-import java.awt.Color;
+import com.formdev.flatlaf.ui.FlatUIUtils;
 import java.awt.Component;
 import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.Rectangle;
 import java.awt.datatransfer.Transferable;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
@@ -73,9 +74,6 @@ public class SourceGroupTree extends JTree
 
 	private final SourceGroupEditor editor;
 
-	private final Color focusedSelectionBg;
-	private final Color unfocusedSelectionBg;
-
 	public SourceGroupTree( final ViewerState state )
 	{
 		this( state, new InputTriggerConfig() );
@@ -99,14 +97,28 @@ public class SourceGroupTree extends JTree
 
 		this.installActions( inputTriggerConfig );
 
-		focusedSelectionBg = renderer.getBackgroundSelectionColor();
-		unfocusedSelectionBg = UIUtils.mix( focusedSelectionBg, getBackground(), 0.8 );
+		this.addFocusListener( new FocusListener()
+		{
+			@Override
+			public void focusGained( final FocusEvent e )
+			{
+				repaint();
+			}
+
+			@Override
+			public void focusLost( final FocusEvent e )
+			{
+				repaint();
+			}
+		} );
 	}
 
-	public void setSelectionBackground( final boolean hasFocus )
+	@Override
+	public void updateUI()
 	{
-		renderer.setBackgroundSelectionColor( hasFocus ? focusedSelectionBg : unfocusedSelectionBg );
-		this.repaint();
+		if ( renderer != null )
+			renderer.updateUI();
+		super.updateUI();
 	}
 
 	/**
@@ -359,6 +371,7 @@ public class SourceGroupTree extends JTree
 	@Override
 	public void paintComponent( final Graphics g )
 	{
+		renderer.setTreeHasFocus( FlatUIUtils.isPermanentFocusOwner( this ) );
 		g.setColor( getBackground() );
 		g.fillRect( 0, 0, getWidth(), getHeight() );
 		final int[] rows = getSelectionRows();
