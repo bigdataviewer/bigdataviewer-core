@@ -273,7 +273,7 @@ public class ViewerOptions
 
 		private boolean useVolatileIfAvailable = true;
 
-		private MessageOverlayAnimator msgOverlay = new MessageOverlayAnimator( width );
+		private MessageOverlayAnimator msgOverlay = new MessageOverlayAnimator( 800 );
 
 		private TransformEventHandlerFactory transformEventHandlerFactory = TransformEventHandler3D::new;
 
