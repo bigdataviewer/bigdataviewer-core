@@ -115,11 +115,6 @@ public class DebugTilingOverlay implements OverlayRenderer
 		this.showTiles = showTiles;
 	}
 
-	@Override
-	public void setCanvasSize( final int width, final int height )
-	{
-	}
-
 	public void setRenderTime( final long rendertime )
 	{
 		this.renderTime = rendertime;

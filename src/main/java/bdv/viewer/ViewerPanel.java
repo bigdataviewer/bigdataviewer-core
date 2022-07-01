@@ -550,10 +550,6 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 	}
 
 	@Override
-	public void setCanvasSize( final int width, final int height )
-	{}
-
-	@Override
 	public void viewerStateChanged( final ViewerStateChange change )
 	{
 		switch ( change )

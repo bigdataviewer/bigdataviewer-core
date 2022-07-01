@@ -54,5 +54,6 @@ public interface OverlayRenderer
 	 * @param height
 	 *            the new canvas height.
 	 */
-	void setCanvasSize( int width, int height );
+	default void setCanvasSize( int width, int height )
+	{}
 }
