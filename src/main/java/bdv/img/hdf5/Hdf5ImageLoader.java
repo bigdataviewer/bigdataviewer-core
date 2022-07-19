@@ -36,6 +36,8 @@ import bdv.util.ConstantRandomAccessible;
 import bdv.util.MipmapTransforms;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
+
+import java.io.Closeable;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -76,7 +78,7 @@ import net.imglib2.view.Views;
 import static bdv.img.hdf5.Util.getResolutionsPath;
 import static bdv.img.hdf5.Util.getSubdivisionsPath;
 
-public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
+public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader, Closeable
 {
 	protected File hdf5File;
 
@@ -239,6 +241,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 	 * after {@link #close()} will cause the hdf5 file to be reopened (with a
 	 * new cache).
 	 */
+	@Override
 	public void close()
 	{
 		if ( isOpen )

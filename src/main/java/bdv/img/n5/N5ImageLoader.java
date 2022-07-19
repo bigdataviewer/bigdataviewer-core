@@ -36,6 +36,8 @@ import bdv.img.cache.SimpleCacheArrayLoader;
 import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.util.ConstantRandomAccessible;
 import bdv.util.MipmapTransforms;
+
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -100,7 +102,7 @@ import static bdv.img.n5.BdvN5Format.DATA_TYPE_KEY;
 import static bdv.img.n5.BdvN5Format.DOWNSAMPLING_FACTORS_KEY;
 import static bdv.img.n5.BdvN5Format.getPathName;
 
-public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
+public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader, Closeable
 {
 	private final File n5File;
 
@@ -192,6 +194,7 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 	 * after {@link #close()} will cause the n5 to be reopened (with a
 	 * new cache).
 	 */
+	@Override
 	public void close()
 	{
 		if ( isOpen )
