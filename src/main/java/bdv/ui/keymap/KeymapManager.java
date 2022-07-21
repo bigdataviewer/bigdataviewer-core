@@ -76,10 +76,6 @@ public class KeymapManager extends AbstractKeymapManager< KeymapManager >
 			loadStyles();
 	}
 
-	/**
-	 * Discover all {@code CommandDescriptionProvider}s with scope {@link KeyConfigScopes#BIGDATAVIEWER},
-	 * build {@code CommandDescriptions}, and set it.
-	 */
 	public synchronized void setCommandDescriptions( final CommandDescriptions descriptions )
 	{
 		this.descriptions = descriptions;

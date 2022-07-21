@@ -43,7 +43,7 @@ public class StyleProfileManager< M extends StyleManager< M, S >, S extends Styl
 	public StyleProfileManager( final M styleManager, final M editingStyleManager )
 	{
 		this.styleManager = styleManager;
-		styles = editingStyleManager; // new AbstractStyleManager( false );
+		styles = editingStyleManager;
 		styles.set( styleManager );
 	}
 
