@@ -52,9 +52,26 @@ public class KeymapSettingsPage extends SelectAndEditProfileSettingsPage< StyleP
 	 */
 	public KeymapSettingsPage( final String treePath, final KeymapManager styleManager, final CommandDescriptions commandDescriptions )
 	{
+		this( treePath, styleManager, new KeymapManager(), commandDescriptions );
+	}
+
+	/**
+	 * Creates a new settings page for Keymaps.
+	 *
+	 * @param treePath
+	 *            path of this page in the settings tree.
+	 * @param styleManager
+	 *            the keymap manager.
+	 * @param editingStyleManager
+	 *            another keymap manager which will be used internally by the preferences page to hold changes that have not been applied yet.
+	 * @param commandDescriptions
+	 *            the command descriptions.
+	 */
+	public < M extends AbstractKeymapManager< M > > KeymapSettingsPage( final String treePath, final M styleManager, final M editingStyleManager, final CommandDescriptions commandDescriptions )
+	{
 		super(
 				treePath,
-				new StyleProfileManager<>( styleManager, new KeymapManager() ),
+				new StyleProfileManager<>( styleManager, editingStyleManager ),
 				new KeymapProfileEditPanel( styleManager.getSelectedStyle(), commandDescriptions ) );
 	}
 
