@@ -135,10 +135,10 @@
 		<license.licenseName>bsd_2</license.licenseName>
 		<license.copyrightOwners>BigDataViewer developers.</license.copyrightOwners>
 
-		<ui-behaviour.version>2.0.6</ui-behaviour.version>
-
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>
+
+		<directories.version>24</directories.version>
 	</properties>
 
 	<repositories>
@@ -200,12 +200,11 @@
 		<dependency>
 			<groupId>com.formdev</groupId>
 			<artifactId>flatlaf</artifactId>
-			<version>1.0</version>
 		</dependency>
 		<dependency>
 			<groupId>dev.dirs</groupId>
 			<artifactId>directories</artifactId>
-			<version>24</version>
+			<version>${directories.version}</version>
 		</dependency>
 
 		<!-- test dependencies -->
