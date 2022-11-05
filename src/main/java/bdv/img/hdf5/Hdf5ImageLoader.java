@@ -30,6 +30,7 @@ package bdv.img.hdf5;
 
 import bdv.AbstractViewerSetupImgLoader;
 import bdv.ViewerImgLoader;
+import bdv.cache.CacheOverrider;
 import bdv.cache.SharedQueue;
 import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.util.ConstantRandomAccessible;
@@ -76,7 +77,7 @@ import net.imglib2.view.Views;
 import static bdv.img.hdf5.Util.getResolutionsPath;
 import static bdv.img.hdf5.Util.getSubdivisionsPath;
 
-public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
+public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader, CacheOverrider
 {
 	protected File hdf5File;
 
@@ -309,6 +310,20 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 	{
 		open();
 		return cache;
+	}
+
+	@Override
+	public synchronized void setCache(VolatileGlobalCellCache cache) {
+		if ( isOpen )
+		{
+			if ( !isOpen )
+				return;
+			if ( createdSharedQueue != null )
+				createdSharedQueue.shutdown();
+			cache.clearCache();
+			createdSharedQueue = null;
+		}
+		this.cache = cache;
 	}
 
 	public Hdf5VolatileShortArrayLoader getShortArrayLoader()

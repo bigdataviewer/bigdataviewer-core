@@ -31,6 +31,7 @@ package bdv.img.n5;
 import bdv.AbstractViewerSetupImgLoader;
 import bdv.ViewerImgLoader;
 import bdv.cache.CacheControl;
+import bdv.cache.CacheOverrider;
 import bdv.cache.SharedQueue;
 import bdv.img.cache.SimpleCacheArrayLoader;
 import bdv.img.cache.VolatileGlobalCellCache;
@@ -100,7 +101,7 @@ import static bdv.img.n5.BdvN5Format.DATA_TYPE_KEY;
 import static bdv.img.n5.BdvN5Format.DOWNSAMPLING_FACTORS_KEY;
 import static bdv.img.n5.BdvN5Format.getPathName;
 
-public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
+public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader, CacheOverrider
 {
 	private final File n5File;
 
@@ -184,6 +185,20 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 				isOpen = true;
 			}
 		}
+	}
+
+	@Override
+	public synchronized void setCache(VolatileGlobalCellCache cache) {
+		if ( isOpen )
+		{
+			if ( !isOpen )
+				return;
+			if ( createdSharedQueue != null )
+				createdSharedQueue.shutdown();
+			cache.clearCache();
+			createdSharedQueue = null;
+		}
+		this.cache = cache;
 	}
 
 	/**

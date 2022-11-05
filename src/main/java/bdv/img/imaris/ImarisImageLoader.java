@@ -28,6 +28,7 @@
  */
 package bdv.img.imaris;
 
+import bdv.cache.CacheOverrider;
 import bdv.img.hdf5.Util;
 import bdv.util.MipmapTransforms;
 import ch.systemsx.cisd.hdf5.HDF5DataClass;
@@ -65,7 +66,7 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.volatiles.VolatileUnsignedShortType;
 
-public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T > & NativeType< V > , A extends VolatileAccess > implements ViewerImgLoader
+public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T > & NativeType< V > , A extends VolatileAccess > implements ViewerImgLoader, CacheOverrider
 {
 	private IHDF5Access hdf5Access;
 
@@ -283,6 +284,17 @@ public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T
 	{
 		open();
 		return cache;
+	}
+
+	@Override
+	public synchronized void setCache(VolatileGlobalCellCache cache) {
+		if ( isOpen )
+		{
+			if ( !isOpen )
+				return;
+			cache.clearCache();
+		}
+		this.cache = cache;
 	}
 
 	@Override

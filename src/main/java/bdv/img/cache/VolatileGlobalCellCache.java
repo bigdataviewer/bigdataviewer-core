@@ -130,6 +130,21 @@ public class VolatileGlobalCellCache implements CacheControl
 	/**
 	 * Create a new global cache with the specified fetch queue. (It is the
 	 * callers responsibility to create fetcher threads that serve the queue.)
+	 * and the backing cache.
+	 *
+	 * @param queue
+	 *            queue to which asynchronous data loading jobs are submitted
+	 * @param backingCache cache used to stored the cells
+	 */
+	public VolatileGlobalCellCache( final BlockingFetchQueues< Callable< ? > > queue, final LoaderCache< Key, Cell< ? > > backingCache)
+	{
+		this.queue = queue;
+		this.backingCache = backingCache;
+	}
+
+	/**
+	 * Create a new global cache with the specified fetch queue. (It is the
+	 * callers responsibility to create fetcher threads that serve the queue.)
 	 *
 	 * @param queue
 	 *            queue to which asynchronous data loading jobs are submitted
