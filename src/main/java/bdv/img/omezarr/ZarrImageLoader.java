@@ -19,8 +19,8 @@ import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.view.Views;
-import org.embl.mobie.io.ome.zarr.hackathon.MultiscaleImage;
-import org.embl.mobie.io.ome.zarr.hackathon.Multiscales;
+import bdv.img.omezarr.MultiscaleImage;
+import bdv.img.omezarr.Multiscales;
 
 import java.io.IOException;
 import java.nio.file.Paths;
