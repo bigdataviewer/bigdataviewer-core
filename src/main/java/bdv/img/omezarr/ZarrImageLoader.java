@@ -22,19 +22,27 @@ import net.imglib2.view.Views;
 import bdv.img.omezarr.MultiscaleImage;
 import bdv.img.omezarr.Multiscales;
 
+import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.*;
 
+/**
+ * Image loader for OME-NGFF images that are defined as views in the xml file.
+ *
+ * <p>Only full 5 dimensional OME-NGFF images are supported now.
+ * The 5 dimensional zarr images are sliced into 3 dimensional images at this level.
+ * Multiscale and MultiscaleImage keeps them as 5 dimensional.</p>
+ */
 public class ZarrImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 {
     private final String zpath;
-    private final Map<ViewId, String> zgroups;
+    private final SortedMap<ViewId, String> zgroups;
     private final AbstractSequenceDescription<?, ?, ?> seq;
 
-    private Map<Integer, SetupImgLoader> setupImgLoaders ;
+    private SortedMap<Integer, SetupImgLoader> setupImgLoaders ;
 
-    public ZarrImageLoader(final String zpath, final Map< ViewId, String > zgroups, final AbstractSequenceDescription<?, ?, ?> sequenceDescription)
+    public ZarrImageLoader(final String zpath, final SortedMap< ViewId, String > zgroups, final AbstractSequenceDescription<?, ?, ?> sequenceDescription)
     {
         this.zpath = zpath;
         this.zgroups = zgroups;
@@ -47,7 +55,7 @@ public class ZarrImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
         {
             try
             {
-                setupImgLoaders = new HashMap<>();
+                setupImgLoaders = new TreeMap<>();
                 final List<? extends BasicViewSetup> setups = seq.getViewSetupsOrdered();
                 for (final BasicViewSetup setup: setups)
                 {
@@ -87,6 +95,16 @@ public class ZarrImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
         return new CacheControl.Dummy();
     }
 
+    public File getBasePath()
+    {
+        return new File(zpath);
+    }
+
+    public SortedMap<ViewId, String> getZgroups()
+    {
+        return zgroups;
+    }
+
     class SetupImgLoader< T extends NativeType< T > & RealType<T>, V extends Volatile< T > & NativeType< V > & RealType<V> >
             extends AbstractViewerSetupImgLoader< T, V >
             implements MultiResolutionSetupImgLoader< T >
@@ -112,6 +130,7 @@ public class ZarrImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
             /* TODO in zarr nothing guarantees that multiple resolutions of an image are of the same type.
                 Must be verified. MultiscaleImage does not support different types of resolutions either.
              */
+            assert firstMscImg.numDimensions()==5 : "Only 5 dimensional zarr images supported";
             tpMmultiscaleImages.put(firstVId.getTimePointId(), firstMscImg);
             for (int tpId: tpIdSet)
             {
@@ -141,21 +160,23 @@ public class ZarrImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
         @Override
         public Dimensions getImageSize(final int timepointId, final int level )
         {
-            return new FinalDimensions(tpMmultiscaleImages.get(timepointId).getDimensions(level));
+            final long[] d = tpMmultiscaleImages.get(timepointId).getDimensions(level);
+            return new FinalDimensions(d[0], d[1], d[2]);
         }
 
         @Override
         public RandomAccessibleInterval< T > getImage( final int timepointId, final int level, final ImgLoaderHint... hints )
         {
             final MultiscaleImage<T, V> mscImg = tpMmultiscaleImages.get(timepointId);
-            return mscImg.getImg(level);
+            RandomAccessibleInterval<T> Img = mscImg.getImg(level);
+            return Views.hyperSlice(Views.hyperSlice(Img, 4,0),3,0);
         }
 
         /**
          * Reorder Zarr spatial transformation scaling or translation json vector values into X,Y,Z order.
          *
-         * Assume that the input vector is in the OME json order, i.e. usually t, ch, z, y, x while
-         * Multiscales.getSpatialAxisIndex already swaps indices to the java order of x, y, z, ch, t.
+         * <p>Assume that the input vector is in the OME json order, i.e. usually t, ch, z, y, x while
+         * Multiscales.getSpatialAxisIndex already swaps indices to the java order of x, y, z, ch, t.</p>
          *
          * @param mscales Multiscales instance that contains the axes order
          * @param v       Transformation scaling in the order as defined in the OME-Zarr coordinateTransform entry
@@ -207,9 +228,8 @@ public class ZarrImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 
         /** Concatenates the given OME transformations into one affine transformation.
          *
-         * dataset: (t1, t2), multiscales: (t3), then these should be applied in this order.
-         *
-         * As AffineTransform3D, we need to calculate t3 x t2 x t1
+         * <p>Dataset: (t1, t2), multiscales: (t3), then these should be applied in this order.
+         * As AffineTransform3D, we need to calculate t3 x t2 x t1</p>
          *
          * @param mscales Multiscales instance to determine axis order.
          * @param arrTransforms Array of arrays of OME coordinateTransformations.
@@ -231,20 +251,20 @@ public class ZarrImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
          * Create the 3D affine transformations and calculate the resolution factors
          * for the multi resolution display relative to the first resolution.
          *
-         * The 0th dataset must be the finest resolution that will have an identity transformation.
+         * <p>The 0th dataset must be the finest resolution that will have an identity transformation.</p>
          *
-         * Convert the OME json transformations into AffineTransform3D objects then normalize them relative
+         * <p>Convert the OME json transformations into AffineTransform3D objects then normalize them relative
          * to the 0th dataset. (The json transformations convert into physical coordinates.) Handle both scaling and
          * translation. Handle both "multiscale" (global transformations for all datasets)
-         * and "dataset" level entries in the OME metadata.
+         * and "dataset" level entries in the OME metadata.</p>
          *
-         * Assume that the coordinateTransforms do not correct for the pixel center alignment
-         * offsets at the different resolutions levels. Add correction for the pixel center translation here.
+         * <p>Assume that the coordinateTransforms do not correct for the pixel center alignment
+         * offsets at the different resolutions levels. Add correction for the pixel center translation here.</p>
          *
-         * Assume that dimensions and resolutions are defined exactly the same in case there are multiple timepoints.
-         * Definitions are taken from first timepoint.
+         * <p>Assume that dimensions and resolutions are defined exactly the same in case there are multiple timepoints.
+         * Definitions are taken from first timepoint.</p>
          *
-         * Set "mipmaptransforms" and "mipmapresolutions".
+         * <p>Set "mipmaptransforms" and "mipmapresolutions".</p>
          *
          */
         private void calculateMipmapTransforms()
@@ -252,7 +272,6 @@ public class ZarrImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
             // Assume everything is the same in case there are multiple timepoints
             final Multiscales mscale = tpMmultiscaleImages.get(0).getMultiscales();
             final int numResolutions = tpMmultiscaleImages.get(0).numResolutions();
-            final int numDimensions = tpMmultiscaleImages.get(0).numDimensions();
             final Multiscales.CoordinateTransformations[] globalTransformations = mscale.getCoordinateTransformations();
 
             mipmaptransforms = new AffineTransform3D[numResolutions];

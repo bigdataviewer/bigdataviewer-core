@@ -9,6 +9,7 @@ import bdv.spimdata.SpimDataMinimal;
 import bdv.spimdata.XmlIoSpimDataMinimal;
 import bdv.viewer.ViewerOptions;
 import mpicbg.spim.data.SpimDataException;
+import mpicbg.spim.data.XmlHelpers;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.ImgLoaderIo;
 import mpicbg.spim.data.generic.sequence.XmlIoBasicImgLoader;
@@ -30,18 +31,29 @@ public class XmlIoZarrImageLoader implements XmlIoBasicImgLoader<ZarrImageLoader
     @Override
     public Element toXml(final ZarrImageLoader imgLoader, final File basePath )
     {
-        final Element elem = new Element( "ImageLoader" );
-        elem.setAttribute( IMGLOADER_FORMAT_ATTRIBUTE_NAME, "bdv.multimg.zarr" );
-        elem.setAttribute( "version", "1.0" );
-        // TODO (?)
-//			elem.addContent( XmlHelpers.pathElement( "n5", imgLoader.getN5File(), basePath ) );
-        return elem;
+        final Element e_imgloader = new Element( "ImageLoader" );
+        e_imgloader.setAttribute( IMGLOADER_FORMAT_ATTRIBUTE_NAME, "bdv.multimg.zarr" );
+        e_imgloader.setAttribute( "version", "1.0" );
+        e_imgloader.addContent(XmlHelpers.pathElement("zarr", imgLoader.getBasePath(), null));
+        final Element e_zgroups = new Element("zgroups");
+        for (final Map.Entry<ViewId, String> ze: imgLoader.getZgroups().entrySet())
+        {
+            final ViewId vId = ze.getKey();
+            final Element e_zgroup = new Element("zgroup");
+            e_zgroup.setAttribute("setup", String.valueOf(vId.getViewSetupId()));
+            e_zgroup.setAttribute("timepoint", String.valueOf(vId.getTimePointId()));
+            final Element e_path = new Element("path");
+            e_path.addContent(ze.getValue());
+            e_zgroup.addContent(e_path);
+            e_zgroups.addContent(e_zgroup);
+        }
+        e_imgloader.addContent(e_zgroups);
+        return e_imgloader;
     }
 
     @Override
     public ZarrImageLoader fromXml(final Element elem, final File basePath, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
     {
-//            final String version = elem.getAttributeValue( "version" );
         final File zpath = loadPath( elem, "zarr", basePath );
         final Element zgroupsElem = elem.getChild( "zgroups" );
         final TreeMap<ViewId, String > zgroups = new TreeMap<>();
@@ -59,12 +71,14 @@ public class XmlIoZarrImageLoader implements XmlIoBasicImgLoader<ZarrImageLoader
 
     public static void main( String[] args ) throws SpimDataException
     {
-        final String fn = "/home/gkovacs/data/davidf_zarr_dataset.xml";
-//        final String fn = "/home/gabor.kovacs/data/davidf_zarr_dataset.xml";
+//        final String fn = "/home/gkovacs/data/davidf_zarr_dataset.xml";
+        final String fn = "/home/gabor.kovacs/data/davidf_zarr_dataset.xml";
+//        final String fn = "/home/gabor.kovacs/data/zarr_reader_test_2022-11-16/bdv_zarr_test3.xml";
 //        final String fn = "/Users/kgabor/data/davidf_zarr_dataset.xml";
         final SpimDataMinimal spimData = new XmlIoSpimDataMinimal().load( fn );
         final ViewerImgLoader imgLoader = ( ViewerImgLoader ) spimData.getSequenceDescription().getImgLoader();
         final ViewerSetupImgLoader<?, ?> setupImgLoader = imgLoader.getSetupImgLoader(0);
+        int d = setupImgLoader.getImage(0).numDimensions();
         setupImgLoader.getMipmapResolutions();
         BigDataViewer.open(spimData, "BigDataViewer Zarr Example", new ProgressWriterConsole(), ViewerOptions.options());
         System.out.println( "imgLoader = " + imgLoader );
