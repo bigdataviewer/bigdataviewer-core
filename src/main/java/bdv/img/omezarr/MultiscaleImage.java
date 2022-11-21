@@ -26,12 +26,18 @@ import org.janelia.saalfeldlab.n5.DatasetAttributes;
 import org.janelia.saalfeldlab.n5.imglib2.N5Utils;
 import org.janelia.saalfeldlab.n5.zarr.N5ZarrReader;
 
-import javax.annotation.Nullable;
+//import javax.annotation.Nullable;
 
 import java.util.ArrayList;
 
 import static bdv.img.omezarr.Multiscales.MULTI_SCALE_KEY;
 
+/**
+ * As n5-zarr already provides dimensions in the java order, this class also stores dimensions in the java order.
+ *
+ * @param <T> Image type.
+ * @param <V> Volatile image type.
+ */
 public class MultiscaleImage< T extends NativeType< T > & RealType< T >, V extends Volatile< T > & NativeType< V > & RealType< V > >
 {
 	private final String multiscalePath;
@@ -40,7 +46,7 @@ public class MultiscaleImage< T extends NativeType< T > & RealType< T >, V exten
 
 	private int numResolutions;
 
-	private long[] dimensions;
+	private long[] dimensions; // Java order of axes
 
 	private T type;
 
@@ -56,7 +62,7 @@ public class MultiscaleImage< T extends NativeType< T > & RealType< T >, V exten
 
 	private DataType dataType;
 
-	private long[][] multiDimensions;
+	private long[][] multiDimensions; // Java order of axes
 
 	private DataType[] multiDataType;
 
@@ -65,7 +71,7 @@ public class MultiscaleImage< T extends NativeType< T > & RealType< T >, V exten
 	 */
 	public MultiscaleImage(
 			final String multiscalePath,
-			@Nullable final SharedQueue queue )
+			final SharedQueue queue )
 	{
 		this.multiscalePath = multiscalePath;
 		this.queue = queue;
@@ -123,6 +129,7 @@ public class MultiscaleImage< T extends NativeType< T > & RealType< T >, V exten
 
 			for (int resolution = numResolutions-1; resolution >= 0; --resolution) {
 				final DatasetAttributes attributes = n5ZarrReader.getDatasetAttributes(datasets[resolution].path);
+				// n5-zarr provides dimensions in the java order
 				multiDimensions[resolution] = attributes.getDimensions();
 				multiDataType[resolution] = attributes.getDataType();
 			}
@@ -258,19 +265,8 @@ public class MultiscaleImage< T extends NativeType< T > & RealType< T >, V exten
 
 	public static void main( String[] args )
 	{
-		//final String multiscalePath = "/data1/gabor.kovacs/davidf_sample_dataset/SmartSPIM_617052_sample.zarr";
-//		final String multiscalePath = "/home/gabor.kovacs/data/davidf_sample_dataset/SmartSPIM_617052_sample.zarr";
 		final String multiscalePath = "/Users/kgabor/data/davidf_sample_dataset/SmartSPIM_617052_sample.zarr";
 		final MultiscaleImage< ?, ? > multiscaleImage = new MultiscaleImage<>( multiscalePath, null );
 		multiscaleImage.dimensions();
-
-		// Show as imagePlus
-//		final ImageJ imageJ = new ImageJ();
-//		imageJ.ui().showUI();
-//		final DefaultPyramidal5DImageData< ?, ? > dataset = new DefaultPyramidal5DImageData<>( imageJ.context(), "image", multiscaleImage );
-//		imageJ.ui().show( dataset.asPyramidalDataset() );
-//
-//		// Also show the displayed image in BDV
-//		imageJ.command().run( OpenInBDVCommand.class, true );
 	}
 }

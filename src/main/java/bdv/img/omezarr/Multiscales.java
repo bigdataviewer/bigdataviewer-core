@@ -1,13 +1,18 @@
 package bdv.img.omezarr;
 
-import com.google.common.collect.Lists;
 import com.google.gson.JsonElement;
 
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Copy from {@code org.embl.mobie.io.ome.zarr.util.OmeZarrMultiscales}
+ * Class to store OME-zarr json metadata.
+ *
+ * In this class most fields store information in the order it appears in the JSON file.
+ * {@code axes} follows the t,ch,z,y,x order; but {@code axisList} has the reversed, java order.
+ * {@code coordinateTransformations} follows the JSON order, first element is applicable first.
+ *
+ * Original code copied from {@code org.embl.mobie.io.ome.zarr.util.OmeZarrMultiscales}
  *
  */
 public class Multiscales
@@ -25,7 +30,7 @@ public class Multiscales
 
     // Runtime
 
-    // Simply contains the {@codeAxes[] axes}
+    // Simply contains the {@code Axes[] axes}
     // but in reversed order to accommodate
     // the Java array ordering of the image data.
     private List< Axis > axisList;
@@ -39,6 +44,10 @@ public class Multiscales
         public CoordinateTransformations[] coordinateTransformations;
     }
 
+    /**
+     * Object to represent a coordinateTransformation in the json metadata
+     * Elements in {@code scale} and {@code translation} follow the JSON order of axes.
+     */
     public static class CoordinateTransformations {
         public String type;
         public double[] scale;
@@ -63,7 +72,10 @@ public class Multiscales
 
     public void init()
     {
-        axisList = Lists.reverse( Arrays.asList( axes ) );
+        axisList = new ArrayList<Axis>(axes.length);
+        for (int i=axes.length; i-- >0; ) {
+            axisList.add(axes[i]);
+        }
         numDimensions = axisList.size();
     }
 
@@ -87,7 +99,9 @@ public class Multiscales
             throw new RuntimeException("Parsing version "+ version + " is not yet implemented.");
         }
     }
-
+    /**
+     * @return The java index of the channel axis if present. Otherwise -1.
+     */
     public int getChannelAxisIndex()
     {
         for ( int d = 0; d < numDimensions; d++ )
@@ -96,6 +110,9 @@ public class Multiscales
         return -1;
     }
 
+    /**
+     * @return The java index of the time axis if present. Otherwise -1.
+     */
     public int getTimePointAxisIndex()
     {
         for ( int d = 0; d < numDimensions; d++ )
@@ -104,6 +121,10 @@ public class Multiscales
         return -1;
     }
 
+    /**
+     * @param axisName The name of the axis as defined in the Axis class.
+     * @return The java index of the spatial axis if present. Otherwise -1.
+     */
     public int getSpatialAxisIndex( String axisName )
     {
         for ( int d = 0; d < numDimensions; d++ )
@@ -119,7 +140,10 @@ public class Multiscales
     }
 
     /**
-     * Get the global coordinate transformations.
+     * Get the global coordinate transformations of the multiscales section.
+     *
+     * Note that there are coordinate transformation entries in {@code datasets} that should
+     * be applied before these global transformations.
      *
      * @return CoordinateTransformations[]
      */
