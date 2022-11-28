@@ -29,6 +29,7 @@
 package bdv;
 
 import bdv.tools.PreferencesDialog;
+import bdv.tools.movie.ProduceMovieDialog;
 import bdv.ui.UIUtils;
 import bdv.ui.keymap.Keymap;
 import bdv.ui.keymap.KeymapManager;
@@ -126,6 +127,8 @@ public class BigDataViewer
 	protected final CropDialog cropDialog;
 
 	protected final RecordMovieDialog movieDialog;
+
+	protected final ProduceMovieDialog produceMovieDialog;
 
 	protected final RecordMaxProjectionDialog movieMaxProjectDialog;
 
@@ -398,6 +401,7 @@ public class BigDataViewer
 		cropDialog = ( spimData == null ) ? null : new CropDialog( viewerFrame, viewer, spimData.getSequenceDescription() );
 
 		movieDialog = new RecordMovieDialog( viewerFrame, viewer, progressWriter );
+		produceMovieDialog = new ProduceMovieDialog(viewerFrame,viewer,progressWriter);
 		// this is just to get updates of window size:
 		viewer.getDisplay().overlays().add( movieDialog );
 
@@ -501,6 +505,10 @@ public class BigDataViewer
 		final JMenuItem miMovie = new JMenuItem( actionMap.get( BigDataViewerActions.RECORD_MOVIE ) );
 		miMovie.setText( "Record Movie" );
 		menu.add( miMovie );
+
+		final JMenuItem miMovieProducer = new JMenuItem(actionMap.get(BigDataViewerActions.PRODUCE_MOVIE));
+		miMovieProducer.setText("Produce Movie");
+		menu.add(miMovieProducer);
 
 		final JMenuItem miMaxProjectMovie = new JMenuItem( actionMap.get( BigDataViewerActions.RECORD_MAX_PROJECTION_MOVIE ) );
 		miMaxProjectMovie.setText( "Record Max-Projection Movie" );
