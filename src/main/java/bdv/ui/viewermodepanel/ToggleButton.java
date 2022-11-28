@@ -28,12 +28,13 @@
  */
 package bdv.ui.viewermodepanel;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.event.ActionListener;
+
 import javax.swing.Icon;
 import javax.swing.JPanel;
 import javax.swing.JToggleButton;
+
 import net.miginfocom.swing.MigLayout;
 
 class ToggleButton extends JPanel
@@ -57,8 +58,14 @@ class ToggleButton extends JPanel
 		button.setSelectedIcon( selectedIcon );
 		setLook( button );
 
-		this.setBackground( Color.white );
 		this.add( button, "growx, center, wrap" );
+	}
+
+	public void setIcons( final Icon defaultIcon, final Icon selectedIcon )
+	{
+		button.setIcon( defaultIcon );
+		button.setSelectedIcon( selectedIcon );
+		setLook( button );
 	}
 
 	public void setSelected( final boolean selected )
@@ -85,7 +92,6 @@ class ToggleButton extends JPanel
 	private void setLook( final JToggleButton button )
 	{
 		button.setMaximumSize( new Dimension( button.getIcon().getIconWidth(), button.getIcon().getIconHeight() ) );
-		button.setBackground( Color.white );
 		button.setBorderPainted( false );
 		button.setFocusPainted( false );
 		button.setContentAreaFilled( false );

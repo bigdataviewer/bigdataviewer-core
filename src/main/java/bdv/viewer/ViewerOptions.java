@@ -28,21 +28,23 @@
  */
 package bdv.viewer;
 
-import bdv.TransformEventHandler2D;
-import bdv.TransformEventHandler3D;
 import java.awt.event.KeyListener;
 
 import org.scijava.ui.behaviour.KeyPressedManager;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 
+import bdv.TransformEventHandler2D;
+import bdv.TransformEventHandler3D;
+import bdv.TransformEventHandlerFactory;
+import bdv.ui.UIUtils;
+import bdv.ui.appearance.AppearanceManager;
+import bdv.ui.keymap.KeymapManager;
 import bdv.viewer.animate.MessageOverlayAnimator;
 import bdv.viewer.render.AccumulateProjector;
 import bdv.viewer.render.AccumulateProjectorARGB;
 import bdv.viewer.render.AccumulateProjectorFactory;
 import bdv.viewer.render.MultiResolutionRenderer;
-import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.ARGBType;
-import bdv.TransformEventHandlerFactory;
 
 /**
  * Optional parameters for {@link ViewerPanel}.
@@ -192,6 +194,9 @@ public class ViewerOptions
 
 	/**
 	 * Set the {@link InputTriggerConfig} from which keyboard and mouse action mapping is loaded.
+	 * <p>
+	 * Note that this will override the managed {@code InputTriggerConfig}, that is,
+	 * modifying the keymap through the preferences dialog will have no effect.
 	 *
 	 * @param c the {@link InputTriggerConfig} from which keyboard and mouse action mapping is loaded
 	 */
@@ -221,13 +226,42 @@ public class ViewerOptions
 	}
 
 	/**
+	 * Set the {@link KeymapManager} to share keymap settings with other
+	 * BigDataViewer windows.
+	 * <p>
+	 * This can be used to link multiple BigDataViewer windows such that they
+	 * use (and modify) the same {@code Keymap}, shortcuts and mouse gestures.
+	 * </p>
+	 */
+	public ViewerOptions keymapManager( final KeymapManager keymapManager )
+	{
+		values.keymapManager = keymapManager;
+		return this;
+	}
+
+	/**
+	 * Set the {@link AppearanceManager} to share appearance settings with other
+	 * BigDataViewer windows.
+	 * <p>
+	 * This can be used to link multiple BigDataViewer windows such that they
+	 * use (and modify) the same {@code Appearance} settings, e.g., LookAndFeel,
+	 * scalebar overlay settings, etc.
+	 * </p>
+	 */
+	public ViewerOptions appearanceManager( final AppearanceManager appearanceManager )
+	{
+		values.appearanceManager = appearanceManager;
+		return this;
+	}
+
+	/**
 	 * Read-only {@link ViewerOptions} values.
 	 */
 	public static class Values
 	{
-		private int width = 800;
+		private int width = ( int )Math.round( 800 * UIUtils.getUIScaleFactor( this ) );
 
-		private int height = 600;
+		private int height = ( int )Math.round( 600 * UIUtils.getUIScaleFactor( this ) );
 
 		private double[] screenScales = new double[] { 1, 0.75, 0.5, 0.25, 0.125 };
 
@@ -251,6 +285,10 @@ public class ViewerOptions
 
 		private KeyPressedManager keyPressedManager = null;
 
+		private KeymapManager keymapManager = null;
+
+		private AppearanceManager appearanceManager = null;
+
 		public ViewerOptions optionsFromValues()
 		{
 			return new ViewerOptions().
@@ -266,7 +304,9 @@ public class ViewerOptions
 				transformEventHandlerFactory( transformEventHandlerFactory ).
 				accumulateProjectorFactory( accumulateProjectorFactory ).
 				inputTriggerConfig( inputTriggerConfig ).
-				shareKeyPressedEvents( keyPressedManager );
+				shareKeyPressedEvents( keyPressedManager ).
+				keymapManager( keymapManager ).
+				appearanceManager( appearanceManager );
 		}
 
 		public int getWidth()
@@ -332,6 +372,16 @@ public class ViewerOptions
 		public KeyPressedManager getKeyPressedManager()
 		{
 			return keyPressedManager;
+		}
+
+		public KeymapManager getKeymapManager()
+		{
+			return keymapManager;
+		}
+
+		public AppearanceManager getAppearanceManager()
+		{
+			return appearanceManager;
 		}
 	}
 }

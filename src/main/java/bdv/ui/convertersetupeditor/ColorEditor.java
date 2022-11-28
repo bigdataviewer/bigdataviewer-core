@@ -32,8 +32,6 @@ import bdv.tools.brightness.ConverterSetup;
 import bdv.viewer.ConverterSetups;
 import bdv.ui.sourcetable.SourceTable;
 import bdv.ui.sourcegrouptree.SourceGroupTree;
-import bdv.ui.UIUtils;
-import java.awt.Color;
 import java.util.List;
 import java.util.function.Supplier;
 import javax.swing.SwingUtilities;
@@ -46,10 +44,6 @@ class ColorEditor
 	private final Supplier< List< ConverterSetup > > selectedConverterSetups;
 
 	private final ColorPanel colorPanel;
-
-	private final Color equalColor;
-
-	private final Color notEqualColor;
 
 	public ColorEditor(
 			final SourceTable table,
@@ -107,9 +101,6 @@ class ColorEditor
 
 		colorPanel.changeListeners().add( this::updateConverterSetupColors );
 		converterSetups.listeners().add( s -> updateColorPanel() );
-
-		equalColor = colorPanel.getBackground();
-		notEqualColor = UIUtils.mix( equalColor, Color.red, 0.9 );
 	}
 
 	private boolean blockUpdates = false;
@@ -145,7 +136,7 @@ class ColorEditor
 			SwingUtilities.invokeLater( () -> {
 				colorPanel.setEnabled( false );
 				colorPanel.setColor( null );
-				colorPanel.setBackground( equalColor );
+				colorPanel.setConsistent( true );
 			} );
 		}
 		else
@@ -163,14 +154,14 @@ class ColorEditor
 				}
 			}
 			final ARGBType finalColor = color;
-			final Color bg = allColorsEqual ? equalColor : notEqualColor;
+			final boolean isConsistent = allColorsEqual;
 			SwingUtilities.invokeLater( () -> {
 				synchronized ( ColorEditor.this )
 				{
 					blockUpdates = true;
 					colorPanel.setEnabled( finalColor != null );
 					colorPanel.setColor( finalColor );
-					colorPanel.setBackground( bg );
+					colorPanel.setConsistent( isConsistent );
 					blockUpdates = false;
 				}
 			} );

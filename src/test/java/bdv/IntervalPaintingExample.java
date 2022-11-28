@@ -61,7 +61,7 @@ public class IntervalPaintingExample
 	public IntervalPaintingExample( final ViewerFrame viewerFrame )
 	{
 		this.viewer = viewerFrame.getViewerPanel();
-		viewer.getDisplay().overlays().add( new Overlay() );
+		viewer.getDisplay().overlays().add( this::drawOverlay );
 
 		final Behaviours behaviours = new Behaviours( new InputTriggerConfig(), "bdv" );
 		behaviours.behaviour( new RepaintIntervalBehaviour(), "repaint interval", "SPACE" );
@@ -89,7 +89,7 @@ public class IntervalPaintingExample
 		viewer.getDisplay().repaint();
 	}
 
-	private synchronized void drawOverlay( final Graphics2D g )
+	private synchronized void drawOverlay( final Graphics g )
 	{
 		if ( repaintInterval != null )
 		{
@@ -100,7 +100,7 @@ public class IntervalPaintingExample
 		}
 	}
 
-	private static void draw( final Graphics2D g, final Interval interval )
+	private static void draw( final Graphics g, final Interval interval )
 	{
 		final int x = ( int ) interval.min( 0 );
 		final int y = ( int ) interval.min( 1 );
@@ -127,20 +127,6 @@ public class IntervalPaintingExample
 		public void end( final int x, final int y )
 		{
 			repaint( -1, -1 );
-		}
-	}
-
-	private class Overlay implements OverlayRenderer
-	{
-		@Override
-		public void drawOverlays( final Graphics g )
-		{
-			drawOverlay( ( Graphics2D ) g );
-		}
-
-		@Override
-		public void setCanvasSize( final int width, final int height )
-		{
 		}
 	}
 }

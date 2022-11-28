@@ -28,11 +28,13 @@
  */
 package bdv.ui.splitpanel;
 
+import bdv.ui.UIUtils;
 import bdv.viewer.animate.OverlayAnimator;
 import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.util.function.BooleanSupplier;
 import javax.swing.ImageIcon;
 
@@ -50,10 +52,10 @@ class SplitPaneOneTouchExpandAnimator implements OverlayAnimator
 {
 	private final BooleanSupplier isCollapsed;
 
-	private final ImageIcon rightArrowIcon;
-	private final ImageIcon leftArrowIcon;
-	private final int imgw;
-	private final int imgh;
+	private ImageIcon rightArrowIcon;
+	private ImageIcon leftArrowIcon;
+	private int imgw;
+	private int imgh;
 
 	private int borderWidth;
 	private int triggerHeight;
@@ -66,18 +68,14 @@ class SplitPaneOneTouchExpandAnimator implements OverlayAnimator
 	private int viewPortWidth;
 	private int viewPortHeight;
 
+	private double uiScale = -1;
+
 	/**
 	 * @param isCollapsed provides collapsed state to decide whether to display left-arrow of right-arrow icon
 	 */
 	public SplitPaneOneTouchExpandAnimator( final BooleanSupplier isCollapsed )
 	{
 		this.isCollapsed = isCollapsed;
-		rightArrowIcon = new ImageIcon( SplitPaneOneTouchExpandAnimator.class.getResource( "rightdoublearrow_tiny.png" ) );
-		leftArrowIcon = new ImageIcon( SplitPaneOneTouchExpandAnimator.class.getResource( "leftdoublearrow_tiny.png" ) );
-		imgw = leftArrowIcon.getIconWidth();
-		imgh = leftArrowIcon.getIconHeight();
-		borderWidth = imgw + 10;
-		triggerHeight = imgh + 10;
 	}
 
 	public enum AnimationType
@@ -98,9 +96,42 @@ class SplitPaneOneTouchExpandAnimator implements OverlayAnimator
 
 	private long last_time;
 
+	private void updateUIScale()
+	{
+		final double s = UIUtils.getUIScaleFactor( this );
+		if ( s != uiScale )
+		{
+			uiScale = s;
+
+			rightArrowIcon = new ImageIcon( SplitPaneOneTouchExpandAnimator.class.getResource( "rightdoublearrow_tiny.png" ) );
+			leftArrowIcon = new ImageIcon( SplitPaneOneTouchExpandAnimator.class.getResource( "leftdoublearrow_tiny.png" ) );
+			imgw = leftArrowIcon.getIconWidth();
+			imgh = leftArrowIcon.getIconHeight();
+
+			// TODO: created images for different scales and load the appropriate one.
+			//       similar to how it's done in bdv.ui.viewermodepanel.DisplaySettingsPanel.
+			if ( uiScale != 1 )
+			{
+				rightArrowIcon.setImage(
+						rightArrowIcon.getImage().getScaledInstance(
+								( int ) (uiScale * imgw), ( int ) (uiScale * imgh), Image.SCALE_SMOOTH ) );
+				leftArrowIcon.setImage(
+						leftArrowIcon.getImage().getScaledInstance(
+								( int ) (uiScale * imgw), ( int ) (uiScale * imgh), Image.SCALE_SMOOTH ) );
+				imgw = leftArrowIcon.getIconWidth();
+				imgh = leftArrowIcon.getIconHeight();
+			}
+
+			borderWidth = ( int ) ( imgw + 10 * uiScale );
+			triggerHeight = ( int ) ( imgh + 10 * uiScale );
+		}
+	}
+
 	@Override
 	public void paint( final Graphics2D g, final long time )
 	{
+		updateUIScale();
+
 		viewPortWidth = g.getClipBounds().width;
 		viewPortHeight = g.getClipBounds().height;
 

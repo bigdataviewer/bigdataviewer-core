@@ -28,16 +28,19 @@
  */
 package bdv.viewer.overlay;
 
-import bdv.util.Prefs.OverlayPosition;
+import static bdv.ui.UIUtils.TextPosition.TOP_CENTER;
+import static bdv.ui.UIUtils.TextPosition.TOP_RIGHT;
+
+import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.util.List;
 
+import bdv.ui.UIUtils;
+import bdv.util.Prefs.OverlayPosition;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerState;
 import mpicbg.spim.data.sequence.TimePoint;
-
-import static bdv.util.Prefs.OverlayPosition.TOP_CENTER;
 
 /**
  * Render current source name and current timepoint of a {@link ViewerState}
@@ -55,27 +58,27 @@ public class SourceInfoOverlayRenderer
 
 	protected String timepointString;
 
-	protected OverlayPosition sourceNameOverlayPosition = TOP_CENTER;
+	protected OverlayPosition sourceNameOverlayPosition = OverlayPosition.TOP_RIGHT;
 
 	public synchronized void paint( final Graphics2D g )
 	{
-		final int fontSize = 12;
-		final int spacing = fontSize + 1;
+		final Font font = UIUtils.getFont( "monospaced.small.font" );
 
-		g.setFont( new Font( "Monospaced", Font.PLAIN, fontSize ) );
+		g.setColor( Color.WHITE );
+		g.setFont( font );
 
-		g.drawString( timepointString, ( int ) g.getClipBounds().getWidth() - 170, spacing - 1 );
+		UIUtils.drawString( g, TOP_RIGHT, 0, timepointString );
 
 		switch ( sourceNameOverlayPosition )
 		{
 		default:
 		case TOP_CENTER:
-			g.drawString( sourceName, ( int ) g.getClipBounds().getWidth() / 2, spacing - 1 );
-			g.drawString( groupName, ( int ) g.getClipBounds().getWidth() / 2, 2 * spacing - 1 );
+			UIUtils.drawString( g, TOP_CENTER, 0, sourceName );
+			UIUtils.drawString( g, TOP_CENTER, 1, groupName );
 			break;
 		case TOP_RIGHT:
-			g.drawString( sourceName, ( int ) g.getClipBounds().getWidth() - Math.max( g.getFontMetrics().stringWidth( sourceName ) + 17, 170 ) , 3 * spacing - 1 );
-			g.drawString( groupName, ( int ) g.getClipBounds().getWidth() - Math.max( g.getFontMetrics().stringWidth( groupName ) + 17, 170 ) , 4 * spacing - 1 );
+			UIUtils.drawString( g, TOP_RIGHT, 2, sourceName );
+			UIUtils.drawString( g, TOP_RIGHT, 3, groupName );
 			break;
 		}
 	}

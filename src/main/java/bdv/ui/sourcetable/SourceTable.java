@@ -35,9 +35,13 @@ import bdv.viewer.ConverterSetups;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.SourceToConverterSetupBimap;
 import bdv.viewer.ViewerState;
+import com.formdev.flatlaf.ui.FlatUIUtils;
 import java.awt.Color;
+import java.awt.Graphics;
 import java.awt.Point;
 import java.awt.datatransfer.Transferable;
+import java.awt.event.FocusEvent;
+import java.awt.event.FocusListener;
 import java.awt.event.InputEvent;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
@@ -46,6 +50,7 @@ import javax.swing.JColorChooser;
 import javax.swing.JComponent;
 import javax.swing.JTable;
 import javax.swing.TransferHandler;
+import javax.swing.UIManager;
 import net.imglib2.type.numeric.ARGBType;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.util.Actions;
@@ -70,10 +75,10 @@ public class SourceTable extends JTable
 
 	private final SourceToConverterSetupBimap converters;
 
-	private final Color focusedSelectionBg;
-	private final Color unfocusedSelectionBg;
-
-	private final Color focusedSelectionFg;
+	private Color selectionActiveBackground;
+	private Color selectionInactiveBackground;
+	private Color selectionActiveForeground;
+	private Color selectionInactiveForeground;
 
 	public SourceTable( final ViewerState state, final ConverterSetups converterSetups )
 	{
@@ -90,7 +95,7 @@ public class SourceTable extends JTable
 
 		getColumnModel().getColumn( IS_CURRENT_COLUMN ).setCellRenderer( new RadioButtonRenderer() );
 		getColumnModel().getColumn( COLOR_COLUMN ).setCellRenderer( new ColorRenderer() );
-		setRowHeight( 18 );
+		setRowHeight( ( int ) Math.round( UIManager.getDefaults().getFont( "Table.font" ).getSize() * 1.5 ) );
 
 		setShowGrid( false );
 
@@ -100,15 +105,51 @@ public class SourceTable extends JTable
 
 		this.installActions( inputTriggerConfig );
 
-		focusedSelectionBg = getSelectionBackground();
-		focusedSelectionFg = getSelectionForeground();
-		unfocusedSelectionBg = UIUtils.mix( focusedSelectionBg, getBackground(), 0.8 );
+		this.addFocusListener( new FocusListener()
+		{
+			@Override
+			public void focusGained( final FocusEvent e )
+			{
+				repaint();
+			}
+
+			@Override
+			public void focusLost( final FocusEvent e )
+			{
+				repaint();
+			}
+		} );
 	}
 
-	public void setSelectionBackground( final boolean hasFocus )
+	@Override
+	public void updateUI()
 	{
-		setSelectionForeground( focusedSelectionFg );
-		setSelectionBackground( hasFocus ? focusedSelectionBg : unfocusedSelectionBg );
+		super.updateUI();
+		setRowHeight( ( int ) Math.round( UIManager.getDefaults().getFont( "Table.font" ).getSize() * 1.5 ) );
+		updateColors();
+	}
+
+	private void updateColors()
+	{
+		selectionActiveBackground = UIManager.getColor( "Table.selectionBackground" );
+		selectionInactiveBackground = FlatUIUtils.getUIColor(
+				"Table.selectionInactiveBackground",
+				UIUtils.mix( selectionActiveBackground, UIManager.getColor( "Table.background" ), 0.5)
+		);
+		selectionActiveForeground = UIManager.getColor( "Table.selectionForeground" );
+		selectionInactiveForeground = FlatUIUtils.getUIColor(
+				"Table.selectionInactiveForeground",
+				UIUtils.mix( selectionActiveForeground, UIManager.getColor( "Table.foreground" ), 0.0 )
+		);
+	}
+
+	@Override
+	protected void paintComponent( final Graphics g )
+	{
+		final boolean hasFocus = FlatUIUtils.isPermanentFocusOwner( this );
+		selectionBackground = hasFocus ? selectionActiveBackground : selectionInactiveBackground;
+		selectionForeground = hasFocus ? selectionActiveForeground : selectionInactiveForeground;
+		super.paintComponent( g );
 	}
 
 	public List< SourceAndConverter< ? > > getSelectedSources()
