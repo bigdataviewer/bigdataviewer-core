@@ -28,9 +28,9 @@
  */
 package bdv.ui;
 
-import bdv.ui.sourcetable.SourceTable;
-import bdv.ui.sourcegrouptree.SourceGroupTree;
 import bdv.ui.convertersetupeditor.ConverterSetupEditPanel;
+import bdv.ui.sourcegrouptree.SourceGroupTree;
+import bdv.ui.sourcetable.SourceTable;
 import bdv.viewer.BasicViewerState;
 import bdv.viewer.ConverterSetups;
 import bdv.viewer.SourceAndConverter;
@@ -38,15 +38,10 @@ import bdv.viewer.SourceGroup;
 import bdv.viewer.SynchronizedViewerState;
 import bdv.viewer.ViewerState;
 import java.awt.BorderLayout;
-import java.awt.Container;
 import java.awt.Dimension;
 import java.awt.Insets;
-import java.awt.KeyboardFocusManager;
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
 import java.util.ArrayList;
 import java.util.List;
-import javax.swing.JComponent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -124,66 +119,6 @@ public class PlaygroundCards
 		scrollPaneTree.setBorder( new EmptyBorder( 0, 0, 0, 0 ) );
 		treePanel.add( scrollPaneTree, BorderLayout.CENTER );
 		treePanel.add( editPanelTree, BorderLayout.SOUTH );
-
-
-		// -- handle focus --
-
-		KeyboardFocusManager.getCurrentKeyboardFocusManager().addPropertyChangeListener( "focusOwner", new PropertyChangeListener()
-		{
-			static final int MAX_DEPTH = 7;
-			boolean tableFocused;
-			boolean treeFocused;
-
-			void focusTable( boolean focus )
-			{
-				if ( focus != tableFocused )
-				{
-					tableFocused = focus;
-					table.setSelectionBackground( focus );
-				}
-			}
-
-			void focusTree( boolean focus )
-			{
-				if ( focus != treeFocused )
-				{
-					treeFocused = focus;
-					tree.setSelectionBackground( focus );
-				}
-			}
-
-			@Override
-			public void propertyChange( final PropertyChangeEvent evt )
-			{
-				if ( evt.getNewValue() instanceof JComponent )
-				{
-					JComponent component = ( JComponent ) evt.getNewValue();
-					for ( int i = 0; i < MAX_DEPTH; ++i )
-					{
-						Container parent = component.getParent();
-						if ( ! ( parent instanceof JComponent ) )
-							break;
-
-						component = ( JComponent ) parent;
-//						System.out.println( " -> " + component );
-						if ( component == treePanel && !treeFocused )
-						{
-							focusTable( false );
-							focusTree( true );
-							return;
-						}
-						else if ( component == tablePanel )
-						{
-							focusTable( true );
-							focusTree( false );
-							return;
-						}
-					}
-					focusTable( false );
-					focusTree( false );
-				}
-			}
-		} );
 
 
 		// -- cards --

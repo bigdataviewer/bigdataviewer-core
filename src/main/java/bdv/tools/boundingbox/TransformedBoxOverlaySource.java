@@ -134,7 +134,6 @@ public class TransformedBoxOverlaySource
 
 	private void repaint()
 	{
-		System.out.println( "TransformedBoxOverlaySource.repaint" );
 		boxOverlay.fillIntersection( isVisible );
 		if ( isVisible )
 		{

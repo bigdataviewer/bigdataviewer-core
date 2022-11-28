@@ -28,27 +28,21 @@
  */
 package bdv.ui.splitpanel;
 
-import java.awt.Color;
+import bdv.ui.CardPanel;
+import bdv.ui.UIUtils;
+import bdv.viewer.AbstractViewerPanel;
 import java.awt.Dimension;
-import java.awt.Graphics;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-
 import javax.swing.InputMap;
 import javax.swing.JComponent;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.KeyStroke;
-import javax.swing.border.Border;
+import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
-import javax.swing.plaf.basic.BasicSplitPaneDivider;
-import javax.swing.plaf.basic.BasicSplitPaneUI;
-
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.util.Actions;
-
-import bdv.ui.CardPanel;
-import bdv.viewer.AbstractViewerPanel;
 
 /**
  * A {@code JSplitPane} with a {@code ViewerPanel} on the left and a
@@ -77,13 +71,18 @@ public class SplitPanel extends JSplitPane
 	{
 		super( JSplitPane.HORIZONTAL_SPLIT );
 
+		final double uiScale = UIUtils.getUIScaleFactor( this );
+
 		configureSplitPane();
 
 		final JComponent cardPanelComponent = cardPanel.getComponent();
 		scrollPane = new JScrollPane( cardPanelComponent );
 		scrollPane.setBorder( new EmptyBorder( 0, 0, 0, 0 ) );
 		scrollPane.setHorizontalScrollBarPolicy( JScrollPane.HORIZONTAL_SCROLLBAR_NEVER );
-		scrollPane.setPreferredSize( new Dimension( 800, 200 ) );
+		scrollPane.setPreferredSize(
+				new Dimension(
+						( int ) Math.floor( 800 * uiScale ),
+						( int ) Math.floor( 200 * uiScale ) ) );
 
 		final InputMap inputMap = scrollPane.getInputMap( JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT );
 		inputMap.put( KeyStroke.getKeyStroke( "F6" ), "none" );
@@ -98,7 +97,7 @@ public class SplitPanel extends JSplitPane
 
 		setLeftComponent( viewerPanel );
 		setRightComponent( null );
-		setBorder( null );
+		setBorder( new EmptyBorder( 0, 0, 0, 0 ) );
 		setPreferredSize( viewerPanel.getPreferredSize() );
 
 		super.setDividerSize( 0 );
@@ -109,8 +108,6 @@ public class SplitPanel extends JSplitPane
 		final SplitPaneOneTouchExpandTrigger oneTouchExpandTrigger = new SplitPaneOneTouchExpandTrigger( oneTouchExpandAnimator, this, viewerPanel );
 		viewerPanel.getDisplayComponent().addMouseMotionListener( oneTouchExpandTrigger );
 		viewerPanel.getDisplayComponent().addMouseListener( oneTouchExpandTrigger );
-
-		setDividerSize( DEFAULT_DIVIDER_SIZE );
 
 		addComponentListener( new ComponentAdapter()
 		{
@@ -127,7 +124,7 @@ public class SplitPanel extends JSplitPane
 				{
 					// When the component is first made visible, set LastDividerLocation to a reasonable value
 					setDividerLocation( w );
-					setLastDividerLocation( Math.max( w / 2, w - Math.max( 200, cardPanelComponent.getPreferredSize().width ) ) );
+					setLastDividerLocation( Math.max( w / 2, w - Math.max( ( int ) Math.floor( 200 * uiScale ), cardPanelComponent.getPreferredSize().width ) ) );
 				}
 				width = w;
 			}
@@ -136,44 +133,18 @@ public class SplitPanel extends JSplitPane
 
 	private void configureSplitPane()
 	{
-		this.setUI( new BasicSplitPaneUI()
-		{
-			@Override
-			public BasicSplitPaneDivider createDefaultDivider()
-			{
-				return new BasicSplitPaneDivider( this )
-				{
-					private static final long serialVersionUID = 1L;
-
-					@Override
-					public void paint( final Graphics g )
-					{
-						g.setColor( Color.white );
-						g.fillRect( 0, 0, getSize().width, getSize().height );
-						super.paint( g );
-					}
-
-					@Override
-					public void setBorder( final Border border )
-					{
-						super.setBorder( null );
-					}
-				};
-			}
-		} );
-		this.setForeground( Color.white );
-		this.setBackground( Color.white );
 		this.setResizeWeight( 1.0 );
 		this.setContinuousLayout( true );
 	}
 
 	// divider size set externally
-	private int dividerSizeWhenVisible = DEFAULT_DIVIDER_SIZE;
+	private int dividerSizeWhenVisible = -1;
 
 	@Override
 	public void setDividerSize( final int newSize )
 	{
 		dividerSizeWhenVisible = newSize;
+		updateDividerSize();
 	}
 
 	/**
@@ -188,16 +159,56 @@ public class SplitPanel extends JSplitPane
 		if ( collapsed )
 		{
 			setRightComponent( null );
-			super.setDividerSize( 0 );
 			setDividerLocation( 1.0d );
 		}
 		else
 		{
 			setRightComponent( scrollPane );
-			super.setDividerSize( dividerSizeWhenVisible );
 			final int dl = getLastDividerLocation();
 			final int w = getWidth();
-			setDividerLocation( Math.max( Math.min ( w / 2, 50 ), Math.min( w - 50, dl ) ) );
+			final double uiScale = UIUtils.getUIScaleFactor( this );
+			setDividerLocation( Math.max( Math.min( w / 2, ( int ) Math.floor( 50 * uiScale ) ), Math.min( w - ( int ) Math.floor( 50 * uiScale ), dl ) ) );
+		}
+		updateDividerSize();
+	}
+
+	private void updateDividerSize()
+	{
+		final int s;
+		if ( isCollapsed() )
+		{
+			s = 0;
+		}
+		else if ( dividerSizeWhenVisible >= 0 )
+		{
+			// divider size was set externally
+			s = dividerSizeWhenVisible;
+		}
+		else
+		{
+			final double uiScale = UIUtils.getUIScaleFactor( this );
+			s = ( int ) Math.round( uiScale * DEFAULT_DIVIDER_SIZE );
+		}
+		super.setDividerSize( s );
+	}
+
+	@Override
+	public void updateUI()
+	{
+		super.updateUI();
+		if ( scrollPane != null )
+		{
+			final double uiScale = UIUtils.getUIScaleFactor( this );
+			scrollPane.setPreferredSize(
+					new Dimension(
+							( int ) Math.floor( 800 * uiScale ),
+							( int ) Math.floor( 200 * uiScale ) ) );
+			if ( getRightComponent() == null )
+			{
+				// scrollPane is currently not a child component, therefore update it "manually"
+				SwingUtilities.updateComponentTreeUI( scrollPane );
+			}
+			updateDividerSize();
 		}
 	}
 

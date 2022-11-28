@@ -28,7 +28,6 @@
  */
 package bdv.viewer;
 
-import bdv.TransformEventHandler;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
@@ -41,8 +40,12 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
 import java.awt.event.MouseWheelListener;
+
 import javax.swing.JComponent;
+
 import org.scijava.listeners.Listeners;
+
+import bdv.TransformEventHandler;
 
 /*
  * A {@link JComponent} that uses {@link OverlayRenderer OverlayRenderers}
@@ -80,7 +83,10 @@ public class InteractiveDisplayCanvas extends JComponent implements InteractiveD
 		setPreferredSize( new Dimension( width, height ) );
 		setFocusable( true );
 
-		overlayRenderers = new Listeners.SynchronizedList<>( r -> r.setCanvasSize( getWidth(), getHeight() ) );
+		overlayRenderers = new Listeners.SynchronizedList<>( r ->
+		{
+			r.setCanvasSize( getWidth(), getHeight() );
+		} );
 
 		addComponentListener( new ComponentAdapter()
 		{

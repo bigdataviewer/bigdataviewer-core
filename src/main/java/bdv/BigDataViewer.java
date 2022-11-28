@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -27,6 +27,51 @@
  * #L%
  */
 package bdv;
+
+import bdv.tools.PreferencesDialog;
+import bdv.tools.movie.ProduceMovieDialog;
+import bdv.ui.UIUtils;
+import bdv.ui.keymap.Keymap;
+import bdv.ui.keymap.KeymapManager;
+import bdv.ui.keymap.KeymapSettingsPage;
+import bdv.viewer.ConverterSetups;
+import bdv.viewer.ViewerState;
+import bdv.ui.appearance.AppearanceManager;
+import bdv.ui.appearance.AppearanceSettingsPage;
+import dev.dirs.ProjectDirectories;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.swing.ActionMap;
+import javax.swing.JFileChooser;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
+import javax.swing.SwingUtilities;
+import javax.swing.filechooser.FileFilter;
+
+import net.imglib2.Volatile;
+import net.imglib2.converter.Converter;
+import net.imglib2.display.ColorConverter;
+import net.imglib2.display.RealARGBColorConverter;
+import net.imglib2.display.ScaledARGBConverter;
+import net.imglib2.type.numeric.ARGBType;
+import net.imglib2.type.numeric.NumericType;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.volatiles.VolatileARGBType;
+
+import org.jdom2.Document;
+import org.jdom2.Element;
+import org.jdom2.JDOMException;
+import org.jdom2.input.SAXBuilder;
+import org.jdom2.output.Format;
+import org.jdom2.output.XMLOutputter;
+import org.scijava.ui.behaviour.io.InputTriggerConfig;
+import org.scijava.ui.behaviour.io.yaml.YamlConfigIO;
 
 import bdv.cache.CacheControl;
 import bdv.export.ProgressWriter;
@@ -47,53 +92,27 @@ import bdv.tools.brightness.MinMaxGroup;
 import bdv.tools.brightness.RealARGBColorConverterSetup;
 import bdv.tools.brightness.SetupAssignments;
 import bdv.tools.crop.CropDialog;
-import bdv.tools.movie.ProduceMovieDialog;
 import bdv.tools.transformation.ManualTransformation;
 import bdv.tools.transformation.ManualTransformationEditor;
 import bdv.tools.transformation.TransformedSource;
-import bdv.viewer.ConverterSetups;
 import bdv.viewer.NavigationActions;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerFrame;
 import bdv.viewer.ViewerOptions;
 import bdv.viewer.ViewerPanel;
-import bdv.viewer.ViewerState;
 import mpicbg.spim.data.SpimDataException;
 import mpicbg.spim.data.generic.AbstractSpimData;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.sequence.Angle;
 import mpicbg.spim.data.sequence.Channel;
-import net.imglib2.Volatile;
-import net.imglib2.converter.Converter;
-import net.imglib2.display.ColorConverter;
-import net.imglib2.display.RealARGBColorConverter;
-import net.imglib2.display.ScaledARGBConverter;
-import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.type.numeric.NumericType;
-import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.volatiles.VolatileARGBType;
-import org.jdom2.Document;
-import org.jdom2.Element;
-import org.jdom2.JDOMException;
-import org.jdom2.input.SAXBuilder;
-import org.jdom2.output.Format;
-import org.jdom2.output.XMLOutputter;
-import org.scijava.ui.behaviour.io.InputTriggerConfig;
-import org.scijava.ui.behaviour.io.yaml.YamlConfigIO;
 import org.scijava.ui.behaviour.util.Actions;
 
-import javax.swing.*;
-import javax.swing.filechooser.FileFilter;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
 public class BigDataViewer
 {
+	public static String configDir = ProjectDirectories.from( "sc", "fiji", "bigdataviewer" ).configDir;
+
 	protected final ViewerFrame viewerFrame;
 
 	protected final ViewerPanel viewer;
@@ -117,6 +136,12 @@ public class BigDataViewer
 	protected final VisibilityAndGroupingDialog activeSourcesDialog;
 
 	protected final HelpDialog helpDialog;
+
+	private final KeymapManager keymapManager;
+
+	private final AppearanceManager appearanceManager;
+
+	protected final PreferencesDialog preferencesDialog;
 
 	protected final ManualTransformationEditor manualTransformationEditor;
 
@@ -324,9 +349,17 @@ public class BigDataViewer
 			final ProgressWriter progressWriter,
 			final ViewerOptions options )
 	{
-		final InputTriggerConfig inputTriggerConfig = getInputTriggerConfig( options );
+		final KeymapManager optionsKeymapManager = options.values.getKeymapManager();
+		final AppearanceManager optionsAppearanceManager = options.values.getAppearanceManager();
+		keymapManager = optionsKeymapManager != null ? optionsKeymapManager : new KeymapManager( configDir );
+		appearanceManager = optionsAppearanceManager != null ? optionsAppearanceManager : new AppearanceManager( configDir );
 
-		viewerFrame = new ViewerFrame( sources, numTimepoints, cache, options.inputTriggerConfig( inputTriggerConfig ) );
+		InputTriggerConfig inputTriggerConfig = options.values.getInputTriggerConfig();
+		final Keymap keymap = this.keymapManager.getForwardSelectedKeymap();
+		if ( inputTriggerConfig == null )
+			inputTriggerConfig = keymap.getConfig();
+
+		viewerFrame = new ViewerFrame( sources, numTimepoints, cache, keymapManager, appearanceManager, options.inputTriggerConfig( inputTriggerConfig ) );
 		if ( windowTitle != null )
 			viewerFrame.setTitle( windowTitle );
 		viewer = viewerFrame.getViewerPanel();
@@ -410,6 +443,13 @@ public class BigDataViewer
 			}
 		} );
 
+		preferencesDialog = new PreferencesDialog( viewerFrame, keymap, new String[] { KeyConfigContexts.BIGDATAVIEWER } );
+		preferencesDialog.addPage( new AppearanceSettingsPage( "Appearance", appearanceManager ) );
+		preferencesDialog.addPage( new KeymapSettingsPage( "Keymap", this.keymapManager, this.keymapManager.getCommandDescriptions() ) );
+		appearanceManager.appearance().updateListeners().add( viewerFrame::repaint );
+		appearanceManager.addLafComponent( fileChooser );
+		SwingUtilities.invokeLater(() -> appearanceManager.updateLookAndFeel());
+
 		final Actions navigationActions = new Actions( inputTriggerConfig, "bdv", "navigation" );
 		navigationActions.install( viewerFrame.getKeybindings(), "navigation" );
 		NavigationActions.install( navigationActions, viewer, options.values.is2D() );
@@ -417,6 +457,12 @@ public class BigDataViewer
 		final Actions bdvActions = new Actions( inputTriggerConfig, "bdv" );
 		bdvActions.install( viewerFrame.getKeybindings(), "bdv" );
 		BigDataViewerActions.install( bdvActions, this );
+
+		keymap.updateListeners().add( () -> {
+			navigationActions.updateKeyConfig( keymap.getConfig() );
+			bdvActions.updateKeyConfig( keymap.getConfig() );
+			viewerFrame.getTransformBehaviours().updateKeyConfig( keymap.getConfig() );
+		} );
 
 		final JMenuBar menubar = new JMenuBar();
 		JMenu menu = new JMenu( "File" );
@@ -430,6 +476,12 @@ public class BigDataViewer
 		final JMenuItem miSaveSettings = new JMenuItem( actionMap.get( BigDataViewerActions.SAVE_SETTINGS ) );
 		miSaveSettings.setText( "Save settings" );
 		menu.add( miSaveSettings );
+
+		menu.addSeparator();
+
+		final JMenuItem miPreferences = new JMenuItem( actionMap.get( BigDataViewerActions.PREFERENCES_DIALOG ) );
+		miPreferences.setText( "Preferences..." );
+		menu.add( miPreferences );
 
 		menu = new JMenu( "Settings" );
 		menubar.add( menu );
@@ -555,6 +607,16 @@ public class BigDataViewer
 		return manualTransformationEditor;
 	}
 
+	public KeymapManager getKeymapManager()
+	{
+		return keymapManager;
+	}
+
+	public AppearanceManager getAppearanceManager()
+	{
+		return appearanceManager;
+	}
+
 	public boolean tryLoadSettings( final String xmlFilename )
 	{
 		proposedSettingsFile = null;
@@ -636,9 +698,10 @@ public class BigDataViewer
 	 * also written to "bdvkeyconfig.yaml").
 	 * </ol>
 	 *
-	 * @param options
-	 * @return
+	 * @deprecated This method is no longer used internally.
+	 * {@code InputTriggerConfig}s are now managed through {@link KeymapManager}.
 	 */
+	@Deprecated
 	public static InputTriggerConfig getInputTriggerConfig( final ViewerOptions options )
 	{
 		InputTriggerConfig conf = options.values.getInputTriggerConfig();
@@ -755,7 +818,10 @@ public class BigDataViewer
 		{
 			final String fn = args[0];
 			System.setProperty( "apple.laf.useScreenMenuBar", "true" );
+//			System.setProperty( "apple.awt.application.appearance", "system" );
+			UIUtils.installFlatLafInfos();
 
+			System.out.println( "reading config files from \"" + configDir + "\"" );
 			final BigDataViewer bdv = open( fn, new File( fn ).getName(), new ProgressWriterConsole(), ViewerOptions.options() );
 
 //			PanelSnapshot.showPanel(bdv.getViewer());

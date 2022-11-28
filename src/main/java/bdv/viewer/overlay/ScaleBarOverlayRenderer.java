@@ -36,24 +36,18 @@ import java.awt.font.TextLayout;
 import java.awt.geom.Rectangle2D;
 import java.text.DecimalFormat;
 
-import net.imglib2.realtransform.AffineTransform3D;
-
+import bdv.ui.UIUtils;
 import bdv.util.Affine3DHelpers;
 import bdv.util.Prefs;
 import bdv.viewer.Source;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerState;
 import mpicbg.spim.data.sequence.VoxelDimensions;
+import net.imglib2.realtransform.AffineTransform3D;
 
 public class ScaleBarOverlayRenderer
 {
-	private final Font font = new Font( "SansSerif", Font.PLAIN, 12 );
-
 	private final DecimalFormat format = new DecimalFormat("0.####");
-
-	private final Color color = new Color( Prefs.scaleBarColor(), true );
-
-	private final Color bgcolor = new Color( Prefs.scaleBarBgColor(), true );
 
 	private final AffineTransform3D transform = new AffineTransform3D();
 
@@ -84,7 +78,11 @@ public class ScaleBarOverlayRenderer
 	{
 		if ( drawScaleBar )
 		{
+			final Font font = UIUtils.getFont( "defaultFont" );
+
 			final String scaleBarText = format.format( scale ) + " " + unit;
+			final Color color = new Color( Prefs.scaleBarColor(), true );
+			final Color bgcolor = new Color( Prefs.scaleBarBgColor(), true );
 
 			// scalebar position
 			final int x = 20;

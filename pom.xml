@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
 	<parent>
 		<groupId>org.scijava</groupId>
 		<artifactId>pom-scijava</artifactId>
-		<version>31.1.0</version>
+		<version>33.2.0</version>
 		<relativePath />
 	</parent>
 
 	<groupId>sc.fiji</groupId>
 	<artifactId>bigdataviewer-core</artifactId>
-	<version>10.3.2-SNAPSHOT</version>
+	<version>10.4.6-SNAPSHOT</version>
 
 	<name>BigDataViewer Core</name>
 	<description>BigDataViewer core classes with minimal dependencies.</description>
@@ -111,7 +111,7 @@
 	<mailingLists>
 		<mailingList>
 			<name>Image.sc Forum</name>
-			<archive>https://forum.image.sc/tags/bigdataviewer</archive>
+			<archive>https://forum.image.sc/tag/bigdataviewer</archive>
 		</mailingList>
 	</mailingLists>
 
@@ -135,11 +135,10 @@
 		<license.licenseName>bsd_2</license.licenseName>
 		<license.copyrightOwners>BigDataViewer developers.</license.copyrightOwners>
 
-		<jhdf5.version>19.04.0</jhdf5.version>
-		<imglib2-realtransform.version>3.1.2</imglib2-realtransform.version>
-
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>
+
+		<directories.version>24</directories.version>
 	</properties>
 
 	<repositories>
@@ -206,6 +205,15 @@
 			<groupId>com.google.code.gson</groupId>
 			<artifactId>gson</artifactId>
 			<version>2.8.5</version>
+		</dependency>
+		<dependency>
+			<groupId>com.formdev</groupId>
+			<artifactId>flatlaf</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>dev.dirs</groupId>
+			<artifactId>directories</artifactId>
+			<version>${directories.version}</version>
 		</dependency>
 
 		<!-- test dependencies -->

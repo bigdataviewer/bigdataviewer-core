@@ -39,6 +39,10 @@ import org.scijava.ui.behaviour.io.yaml.YamlConfigIO;
 
 import bdv.viewer.ViewerFrame;
 
+/**
+ * @deprecated use {@code bdv.ui.keymap.DumpInputConfig} instead
+ */
+@Deprecated
 public class DumpInputConfig
 {
 	private static List< InputTriggerDescription > buildDescriptions( final ViewerFrame viewerFrame ) throws IOException
