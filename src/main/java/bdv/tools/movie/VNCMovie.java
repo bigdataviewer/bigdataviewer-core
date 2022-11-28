@@ -31,7 +31,6 @@ import bdv.viewer.render.MultiResolutionRenderer;
 import bdv.viewer.render.PainterThread;
 import bdv.viewer.render.RenderTarget;
 import bdv.viewer.render.awt.BufferedImageRenderResult;
-import ij.process.ColorProcessor;
 import mpicbg.spim.data.SpimDataException;
 import net.imglib2.realtransform.AffineTransform3D;
 
@@ -198,12 +197,12 @@ public class VNCMovie {
 
                 /* clahe */
                 final BufferedImage bi = target.renderResult.getBufferedImage();
-                final ColorProcessor ip = new ColorProcessor(bi);
+//                final ColorProcessor ip = new ColorProcessor(bi);
 //				final ImagePlus imp = new ImagePlus("", ip);
 //				Flat.getFastInstance().run(imp, 128, 256, 1.5f, null, false);
 
                 final Graphics2D g2 = bi.createGraphics();
-                g2.drawImage(ip.createImage(), 0, 0, null);
+                g2.drawImage(bi, 0, 0, null);
 
                 /* scalebar */
                 g2.setClip(0, 0, width, height);
