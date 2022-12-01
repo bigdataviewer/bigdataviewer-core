@@ -1,6 +1,6 @@
 package bdv.tools.movie.serilizers;
 
-import bdv.tools.movie.MovieFrame;
+import bdv.tools.movie.preview.MovieFrameInst;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
 import com.google.gson.reflect.TypeToken;
@@ -23,7 +23,7 @@ public class MovieFramesSerializer {
         return gsonBuilder.create();
     }
 
-    public static boolean save(List<MovieFrame> list, File file){
+    public static boolean save(List<MovieFrameInst> list, File file){
         try (Writer writer = new FileWriter(file)) {
             getGson().toJson(list, writer);
         } catch (IOException e) {
@@ -33,7 +33,7 @@ public class MovieFramesSerializer {
         return true;
     }
 
-    public static List<MovieFrame> getFrom(File file) throws FileNotFoundException {
-        return getGson().fromJson(new FileReader(file.getAbsolutePath()),new TypeToken<List<MovieFrame>>(){}.getType());
+    public static List<MovieFrameInst> getFrom(File file) throws FileNotFoundException {
+        return getGson().fromJson(new FileReader(file.getAbsolutePath()),new TypeToken<List<MovieFrameInst>>(){}.getType());
     }
 }

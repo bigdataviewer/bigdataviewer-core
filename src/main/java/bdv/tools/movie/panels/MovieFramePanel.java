@@ -1,5 +1,6 @@
-package bdv.tools.movie;
+package bdv.tools.movie.panels;
 
+import bdv.tools.movie.preview.MovieFrameInst;
 import net.imglib2.realtransform.AffineTransform3D;
 
 import javax.swing.*;
@@ -8,30 +9,25 @@ import javax.swing.border.TitledBorder;
 import java.awt.*;
 
 public class MovieFramePanel extends JPanel {
-    final private MovieFrame movieFrame;
+    final private MovieFrameInst movieFrame;
     final private ImagePanel image;
     private JTextField framesField;
     private JComboBox<String> accelField;
-
-      private final String[] ACCELS = new String[]{"symmetric","slow start","slow end","soft symmetric","soft slow start","soft slow end"};
-
-
-
+    private final String[] ACCELS = new String[]{"symmetric", "slow start", "slow end", "soft symmetric", "soft slow start", "soft slow end"};
 
     public MovieFramePanel(AffineTransform3D transform, ImagePanel image, int position) {
         super();
-        this.movieFrame = new MovieFrame(position, transform);
+        this.movieFrame = new MovieFrameInst(position, transform);
         this.image = image;
         initView();
     }
 
-    public MovieFramePanel(MovieFrame movieFrame, ImagePanel image) {
+    public MovieFramePanel(MovieFrameInst movieFrame, ImagePanel image) {
         super();
         this.movieFrame = movieFrame;
         this.image = image;
         initView();
     }
-
 
     private void initView() {
         Border blackline = BorderFactory.createLineBorder(Color.lightGray);
@@ -49,9 +45,7 @@ public class MovieFramePanel extends JPanel {
         accelField.setFont(new Font("Serif", Font.PLAIN, 9));
         JLabel framesLabel = new JLabel("Frames: ");
         framesLabel.setFont(new Font("Serif", Font.PLAIN, 8));
-//        JLabel accelLabel = new JLabel("Accel: ");
-//        accelLabel.setFont(new Font("Serif", Font.PLAIN, 8));
-        JPanel framePanel = new JPanel(new GridLayout(1,2));
+        JPanel framePanel = new JPanel(new GridLayout(1, 2));
         framePanel.add(framesLabel);
         framePanel.add(framesField);
         fieldsPanel.add(framePanel);
@@ -91,7 +85,7 @@ public class MovieFramePanel extends JPanel {
         return movieFrame.getFrames();
     }
 
-    public MovieFrame getMovieFrame() {
+    public MovieFrameInst getMovieFrame() {
         updateFields();
         return movieFrame;
     }

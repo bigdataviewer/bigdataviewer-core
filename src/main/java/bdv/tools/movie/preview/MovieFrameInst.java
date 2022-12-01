@@ -1,10 +1,10 @@
-package bdv.tools.movie;
+package bdv.tools.movie.preview;
 
 import net.imglib2.realtransform.AffineTransform3D;
 
 import java.io.Serializable;
 
-public class MovieFrame implements Serializable {
+public class MovieFrameInst implements Serializable {
     private AffineTransform3D transform;
 
     private int position;
@@ -14,11 +14,11 @@ public class MovieFrame implements Serializable {
     private final static int DEFAULT_ACCEL = 0;
 
 
-    public MovieFrame(int position, AffineTransform3D transform) {
+    public MovieFrameInst(int position, AffineTransform3D transform) {
         this(position, transform, ((position == 0) ? 0 : DEFAULT_FRAMES), ((position == 0) ? 0 : DEFAULT_ACCEL));
     }
 
-    public MovieFrame(int position, AffineTransform3D transform, int frames, int accel) {
+    public MovieFrameInst(int position, AffineTransform3D transform, int frames, int accel) {
         this.position = position;
         this.transform = transform;
         this.frames = frames;

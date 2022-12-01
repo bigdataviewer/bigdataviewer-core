@@ -29,6 +29,12 @@
 package bdv.tools.movie;
 
 import bdv.export.ProgressWriter;
+import bdv.tools.movie.MovieProducer;
+import bdv.tools.movie.panels.ImagePanel;
+import bdv.tools.movie.panels.MovieFramePanel;
+import bdv.tools.movie.panels.MovieSaveDialog;
+import bdv.tools.movie.preview.MovieFrameInst;
+import bdv.tools.movie.preview.PreviewRender;
 import bdv.tools.movie.serilizers.MovieFramesSerializer;
 import bdv.util.DelayedPackDialog;
 import bdv.viewer.ViewerPanel;
@@ -61,7 +67,7 @@ public class ProduceMovieDialog extends DelayedPackDialog {
     private final static int FrameWidth = 920;
     private final static int DEFAULT_SLEEP = 100;
     private final static int DEFAULT_DOWN = 10;
-    private PreviewThread previewThread;
+    private PreviewRender previewThread;
     private final JTextField downsampleField;
     private final JTextField sleepField;
 
@@ -72,30 +78,23 @@ public class ProduceMovieDialog extends DelayedPackDialog {
         JPanel playerPanel = new JPanel();
 
         downsampleField = new JTextField(String.valueOf(DEFAULT_DOWN));
+        downsampleField.setPreferredSize(new Dimension(50, 20));
         sleepField = new JTextField(String.valueOf(DEFAULT_SLEEP));
+        sleepField.setPreferredSize(new Dimension(50, 20));
         playerPanel.add(new JLabel("PREVIEW:  Downsampling:   1/"));
         playerPanel.add(downsampleField);
-        playerPanel.add(new JLabel("Sleep:"));
+        playerPanel.add(new JLabel("        Sleep:"));
         playerPanel.add(sleepField);
         playerPanel.add(new JLabel("ms    "));
 
         JButton playButton = new JButton("▶");
-        playButton.addActionListener(e -> {
-            startPreview();
-        });
+        playButton.addActionListener(e -> startPreview());
         playerPanel.add(playButton);
 
         JButton pauseButton = new JButton("Stop");
-        pauseButton.addActionListener(e -> {
-            pausePreview();
-        });
-        playerPanel.add(pauseButton);
+        pauseButton.addActionListener(e -> pausePreview());
 
-//        JButton restartButton = new JButton("Refresh");
-//        restartButton.addActionListener(e -> {
-//            restartPreview();
-//        });
-//        playerPanel.add(restartButton);
+        playerPanel.add(pauseButton);
 
         playerPanel.setPreferredSize(new Dimension(FrameWidth, 40));
 
@@ -164,7 +163,6 @@ public class ProduceMovieDialog extends DelayedPackDialog {
         };
         im.put(KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), hideKey);
         am.put(hideKey, hideAction);
-        // setResizable(false);
         validateButtons();
     }
 
@@ -182,17 +180,23 @@ public class ProduceMovieDialog extends DelayedPackDialog {
         final int[] accel = new int[size];
 
         for (int i = 0; i < size; i++) {
-            MovieFrame currentFrame = framesPanels.get(i).updateFields().getMovieFrame();
+            MovieFrameInst currentFrame = framesPanels.get(i).updateFields().getMovieFrame();
             transforms[i] = currentFrame.getTransform();
             frames[i] = currentFrame.getFrames();
             accel[i] = currentFrame.getAccel();
         }
 
-        previewThread = new PreviewThread(viewer,
+        previewThread = new PreviewRender(viewer,
                 transforms,
                 frames,
                 accel,
                 sleep, down);
+
+//        previewThread = new PreviewThread(viewer,
+//                transforms,
+//                frames,
+//                accel,
+//                sleep, down);
     }
 
     private void startPreview() {
@@ -203,7 +207,7 @@ public class ProduceMovieDialog extends DelayedPackDialog {
         previewThread.start();
     }
 
-    //    TODO import
+
     private void importSequence() {
         JFileChooser jfc = new JFileChooser(FileSystemView.getFileSystemView().getHomeDirectory());
         jfc.setDialogTitle("Select a Json");
@@ -218,23 +222,24 @@ public class ProduceMovieDialog extends DelayedPackDialog {
             new Thread(() -> {
                 try {
                     removeAllFrames();
-                    List<MovieFrame> list = MovieFramesSerializer.getFrom(new File(path));
-                    for (MovieFrame frame : list) {
+                    List<MovieFrameInst> list = MovieFramesSerializer.getFrom(new File(path));
+                    for (MovieFrameInst frame : list) {
                         AffineTransform3D currentTransform = frame.getTransform().copy();
                         viewer.state().setViewerTransform(currentTransform);
                         Thread.sleep(50);
                         ImagePanel imagePanel = ImagePanel.snapshotOf(viewer);
                         addFrame(frame, imagePanel);
                     }
-                    JOptionPane.showMessageDialog(this, "File imported successfully!", "File imported", JOptionPane.INFORMATION_MESSAGE);
 
 
                 } catch (FileNotFoundException | InterruptedException e) {
                     e.printStackTrace();
+                    JOptionPane.showMessageDialog(this, e.getMessage(), "ERROR", JOptionPane.ERROR_MESSAGE);
+
                 }
             }).run();
         }
-}
+    }
 
     private void removeAllFrames() {
         while (!framesPanels.isEmpty())
@@ -246,12 +251,14 @@ public class ProduceMovieDialog extends DelayedPackDialog {
         int returnVal = fileChooser.showSaveDialog(this);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
             String path = fileChooser.getSelectedFile().getAbsolutePath();
-            List<MovieFrame> list = new ArrayList<>();
+            if (!path.endsWith(".json"))
+                path = path + ".json";
+            List<MovieFrameInst> list = new ArrayList<>();
             for (MovieFramePanel panels : framesPanels)
                 list.add(panels.getMovieFrame());
             MovieFramesSerializer.save(list, new File(path));
 
-            JOptionPane.showMessageDialog(this, "File saved successfully!", "File saved", JOptionPane.INFORMATION_MESSAGE);
+            JOptionPane.showMessageDialog(this, "File saved successfully!", "File saved", JOptionPane.PLAIN_MESSAGE);
         }
     }
 
@@ -266,7 +273,7 @@ public class ProduceMovieDialog extends DelayedPackDialog {
         repaint();
     }
 
-    private void addFrame(MovieFrame movieFrame, ImagePanel imagePanel) {
+    private void addFrame(MovieFrameInst movieFrame, ImagePanel imagePanel) {
         MovieFramePanel movieFramePanel = new MovieFramePanel(movieFrame, imagePanel);
         framesPanels.add(movieFramePanel);
         mainPanel.add(movieFramePanel);
@@ -285,44 +292,33 @@ public class ProduceMovieDialog extends DelayedPackDialog {
         repaint();
     }
 
-    public void exportPNGs(int width, int height, File dir) {
-
+    public void exportPNGs(File dir,int width, int height, ProgressWriter progressWriter) {
         int size = framesPanels.size();
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-                final AffineTransform3D[] transforms = new AffineTransform3D[size];
-                final int[] frames = new int[size];
-                final int[] accel = new int[size];
+        new Thread(() -> {
+            final AffineTransform3D[] transforms = new AffineTransform3D[size];
+            final int[] frames = new int[size];
+            final int[] accel = new int[size];
 
-                for (int i = 0; i < size; i++) {
-                    MovieFrame currentFrame = framesPanels.get(i).updateFields().getMovieFrame();
-                    transforms[i] = currentFrame.getTransform();
-                    frames[i] = currentFrame.getFrames();
-                    accel[i] = currentFrame.getAccel();
-                }
+            for (int i = 0; i < size; i++) {
+                MovieFrameInst currentFrame = framesPanels.get(i).updateFields().getMovieFrame();
+                transforms[i] = currentFrame.getTransform();
+                frames[i] = currentFrame.getFrames();
+                accel[i] = currentFrame.getAccel();
+            }
 
-                AffineTransform3D viewerScale = new AffineTransform3D();
-                viewerScale.set(
-                        1.0, 0, 0, 0,
-                        0, 1.0, 0, 0,
-                        0, 0, 1.0, 0);
-
-                try {
-                    VNCMovie.recordMovie(
-                            viewer,
-                            width,
-                            height,
-                            transforms,
-                            viewerScale,
-                            frames,
-                            accel,
-                            1,
-                            dir.getAbsolutePath());
-                    JOptionPane.showMessageDialog(mainPanel, "All Files saved successfully!", "Files saved", JOptionPane.INFORMATION_MESSAGE);
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
+            try {
+                MovieProducer.recordMovie(
+                        viewer,
+                        transforms,
+                        frames,
+                        accel,
+                        width,
+                        height,
+                        dir.getAbsolutePath(),
+                        progressWriter);
+                JOptionPane.showMessageDialog(mainPanel, "All Files saved successfully!", "Files saved", JOptionPane.PLAIN_MESSAGE);
+            } catch (IOException e) {
+                e.printStackTrace();
             }
         }).run();
     }

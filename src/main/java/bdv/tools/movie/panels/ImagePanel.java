@@ -1,4 +1,4 @@
-package bdv.tools.movie;
+package bdv.tools.movie.panels;
 
 import javax.swing.*;
 import java.awt.*;

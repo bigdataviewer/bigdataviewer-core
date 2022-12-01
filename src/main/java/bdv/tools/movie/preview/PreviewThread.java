@@ -1,5 +1,6 @@
-package bdv.tools.movie;
+package bdv.tools.movie.preview;
 
+import bdv.tools.movie.MovieProducer;
 import bdv.viewer.Interpolation;
 import bdv.viewer.ViewerPanel;
 import bdv.viewer.animate.SimilarityTransformAnimator;
@@ -7,7 +8,7 @@ import net.imglib2.realtransform.AffineTransform3D;
 
 import javax.swing.*;
 
-public class PreviewThread extends VNCMovie implements Runnable {
+public class PreviewThread implements Runnable {
 
     private final ViewerPanel viewer;
     private final AffineTransform3D[] transforms;
@@ -51,8 +52,7 @@ public class PreviewThread extends VNCMovie implements Runnable {
                             0);
                     int downFrames = frames[k] / down;
                     for (int d = 0; d < downFrames; ++d) {
-//                        System.out.println(k + "-" + d);
-                        final AffineTransform3D tkd = animator.get(accel((double) d / (double) downFrames, accel[k]));
+                        final AffineTransform3D tkd = animator.get(MovieProducer.accel((double) d / (double) downFrames, accel[k]));
 //                        System.out.println(tkd.toString());
                         SwingUtilities.invokeLater(() -> {
                             viewer.state().setViewerTransform(tkd);

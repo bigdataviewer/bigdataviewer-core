@@ -1,6 +1,7 @@
-package bdv.tools.movie;
+package bdv.tools.movie.panels;
 
 import bdv.export.ProgressWriter;
+import bdv.tools.movie.ProduceMovieDialog;
 import bdv.util.DelayedPackDialog;
 import bdv.viewer.OverlayRenderer;
 import bdv.viewer.ViewerPanel;
@@ -89,22 +90,19 @@ public class MovieSaveDialog extends DelayedPackDialog implements OverlayRendere
             }
         });
 
-        recordButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(final ActionEvent e) {
-                final String dirname = pathTextField.getText();
-                final File dir = new File(dirname);
-                if (!dir.exists())
-                    dir.mkdirs();
-                if (!dir.exists() || !dir.isDirectory()) {
-                    System.err.println("Invalid export directory " + dirname);
-                    return;
-                }
-                setVisible(false);
-                final int width = (Integer) spinnerWidth.getValue();
-                final int height = (Integer) spinnerHeight.getValue();
-                produceMovieDialog.exportPNGs(width,height,dir);
+        recordButton.addActionListener(e -> {
+            final String dirname = pathTextField.getText();
+            final File dir = new File(dirname);
+            if (!dir.exists())
+                dir.mkdirs();
+            if (!dir.exists() || !dir.isDirectory()) {
+                System.err.println("Invalid export directory " + dirname);
+                return;
             }
+            setVisible(false);
+            final int width = (Integer) spinnerWidth.getValue();
+            final int height = (Integer) spinnerHeight.getValue();
+            produceMovieDialog.exportPNGs(dir,width,height,progressWriter);
         });
 
         final ActionMap am = getRootPane().getActionMap();
