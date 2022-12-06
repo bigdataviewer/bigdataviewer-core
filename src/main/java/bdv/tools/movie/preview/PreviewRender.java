@@ -80,7 +80,7 @@ public class PreviewRender implements Runnable {
                 0l,
                 12,
                 null,
-                true,
+                false,
                 viewer.getOptionValues().getAccumulateProjectorFactory(),
                 new CacheControl.Dummy());
 

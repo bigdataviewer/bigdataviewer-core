@@ -22,4 +22,5 @@ public class AffineTransform3DJsonSerializer implements JsonSerializerDeserializ
         src.toArray(data);
         return context.serialize(data);
     }
+
 }

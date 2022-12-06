@@ -99,6 +99,7 @@ public class MovieProducer {
      * 3  soft symmetric
      * 4  soft slow start
      * 5  soft slow end
+     * t = current frame / nb frames
      */
     public static double accel(final double t, final int type) {
 
@@ -125,11 +126,8 @@ public class MovieProducer {
             final int[] accel,
             int width,
             int height,
-
             final String dir,
             ProgressWriter progressWriter) throws IOException {
-
-
 
         final ViewerState renderState = viewer.state();
         final ScaleBarOverlayRenderer scalebar = new ScaleBarOverlayRenderer();
@@ -156,7 +154,7 @@ public class MovieProducer {
                 0l,
                 12,
                 null,
-                true,
+                false,
                 viewer.getOptionValues().getAccumulateProjectorFactory(),
                 new CacheControl.Dummy());
 
@@ -203,5 +201,7 @@ public class MovieProducer {
             }
         }
     }
+
+
 
 }
