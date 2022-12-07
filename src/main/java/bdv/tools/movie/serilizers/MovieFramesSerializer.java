@@ -12,6 +12,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.Writer;
+import java.util.ArrayList;
 import java.util.List;
 
 public class MovieFramesSerializer {
@@ -33,7 +34,7 @@ public class MovieFramesSerializer {
         return true;
     }
 
-    public static List<MovieFrameInst> getFrom(File file) throws FileNotFoundException {
-        return getGson().fromJson(new FileReader(file.getAbsolutePath()),new TypeToken<List<MovieFrameInst>>(){}.getType());
+    public static ArrayList<MovieFrameInst> getFrom(File file) throws FileNotFoundException {
+        return getGson().fromJson(new FileReader(file.getAbsolutePath()),new TypeToken<ArrayList<MovieFrameInst>>(){}.getType());
     }
 }

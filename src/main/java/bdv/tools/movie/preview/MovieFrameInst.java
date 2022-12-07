@@ -5,8 +5,8 @@ import net.imglib2.realtransform.AffineTransform3D;
 import java.io.Serializable;
 
 public class MovieFrameInst implements Serializable {
-    private AffineTransform3D transform;
-
+    private volatile transient AffineTransform3D transform;
+    private double[] transformParams;
     private int position;
     private int frames;
     private int accel;
@@ -21,12 +21,18 @@ public class MovieFrameInst implements Serializable {
     public MovieFrameInst(int position, AffineTransform3D transform, int frames, int accel) {
         this.position = position;
         this.transform = transform;
+        this.transformParams = transform.getRowPackedCopy();
         this.frames = frames;
         this.accel = accel;
     }
 
     public AffineTransform3D getTransform() {
-        return transform;
+        if (transform == null)
+        {
+            transform = new AffineTransform3D();
+            transform.set(transformParams);
+        }
+            return transform;
     }
 
     public void setTransform(AffineTransform3D transform) {

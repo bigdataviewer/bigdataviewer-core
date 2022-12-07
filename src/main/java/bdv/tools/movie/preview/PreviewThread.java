@@ -20,7 +20,7 @@ public class PreviewThread implements Runnable {
 
     boolean suspended = false;
 
-    PreviewThread(
+    public PreviewThread(
             final ViewerPanel viewer,
             final AffineTransform3D[] transforms,
             final int[] frames,

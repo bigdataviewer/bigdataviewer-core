@@ -35,6 +35,7 @@ import bdv.tools.movie.panels.MovieFramePanel;
 import bdv.tools.movie.panels.MovieSaveDialog;
 import bdv.tools.movie.preview.MovieFrameInst;
 import bdv.tools.movie.preview.PreviewRender;
+import bdv.tools.movie.preview.PreviewThread;
 import bdv.tools.movie.serilizers.MovieFramesSerializer;
 import bdv.util.DelayedPackDialog;
 import bdv.viewer.ViewerPanel;
@@ -67,7 +68,7 @@ public class ProduceMovieDialog extends DelayedPackDialog {
     private final static int FrameWidth = 920;
     private final static int DEFAULT_SLEEP = 100;
     private final static int DEFAULT_DOWN = 10;
-    private PreviewRender previewThread;
+    private PreviewThread previewThread;
     private final JTextField downsampleField;
     private final JTextField sleepField;
 
@@ -186,17 +187,17 @@ public class ProduceMovieDialog extends DelayedPackDialog {
             accel[i] = currentFrame.getAccel();
         }
 
-        previewThread = new PreviewRender(viewer,
-                transforms,
-                frames,
-                accel,
-                sleep, down);
-
-//        previewThread = new PreviewThread(viewer,
+//        previewThread = new PreviewRender(viewer,
 //                transforms,
 //                frames,
 //                accel,
 //                sleep, down);
+
+        previewThread = new PreviewThread(viewer,
+                transforms,
+                frames,
+                accel,
+                sleep, down);
     }
 
     private void startPreview() {
@@ -292,7 +293,7 @@ public class ProduceMovieDialog extends DelayedPackDialog {
         repaint();
     }
 
-    public void exportPNGs(File dir,int width, int height, ProgressWriter progressWriter) {
+    public void exportPNGs(File dir, int width, int height, ProgressWriter progressWriter) {
         int size = framesPanels.size();
         new Thread(() -> {
             final AffineTransform3D[] transforms = new AffineTransform3D[size];
