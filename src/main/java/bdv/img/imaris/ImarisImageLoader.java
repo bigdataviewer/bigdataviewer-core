@@ -42,6 +42,7 @@ import bdv.AbstractViewerSetupImgLoader;
 import bdv.ViewerImgLoader;
 import bdv.cache.CacheControl;
 import bdv.img.cache.CacheArrayLoader;
+import bdv.img.cache.VolatileCachedCellImg;
 import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.img.hdf5.MipmapInfo;
 import bdv.img.hdf5.ViewLevelId;
@@ -56,6 +57,7 @@ import net.imglib2.Volatile;
 import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.cache.volatiles.LoadingStrategy;
 import net.imglib2.img.NativeImg;
+import net.imglib2.img.basictypeaccess.DataAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 import net.imglib2.img.cell.AbstractCellImg;
 import net.imglib2.img.cell.CellGrid;
@@ -65,7 +67,7 @@ import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.volatiles.VolatileUnsignedShortType;
 
-public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T > & NativeType< V > , A extends VolatileAccess > implements ViewerImgLoader
+public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T > & NativeType< V > , A extends VolatileAccess & DataAccess > implements ViewerImgLoader
 {
 	private IHDF5Access hdf5Access;
 
@@ -258,7 +260,8 @@ public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T
 	 * type} before it can be used. The type should be either
 	 * {@link UnsignedShortType} and {@link VolatileUnsignedShortType}.
 	 */
-	protected < T extends NativeType< T > > AbstractCellImg< T, A, ?, ? > prepareCachedImage( final ViewLevelId id, final LoadingStrategy loadingStrategy, final T type )
+	@SuppressWarnings( "unchecked" )
+	protected < T extends NativeType< T >, A extends VolatileAccess & DataAccess > VolatileCachedCellImg< T, A > prepareCachedImage( final ViewLevelId id, final LoadingStrategy loadingStrategy, final T type )
 	{
 		open();
 		final int timepointId = id.getTimePointId();
@@ -270,7 +273,7 @@ public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T
 
 		final int priority = mipmapInfo.getMaxLevel() - level;
 		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
-		return cache.createImg( grid, timepointId, setupId, level, cacheHints, loader, type );
+		return ( VolatileCachedCellImg< T, A > ) cache.createImg( grid, timepointId, setupId, level, cacheHints, loader, type );
 	}
 
 	public File getImsFile()
