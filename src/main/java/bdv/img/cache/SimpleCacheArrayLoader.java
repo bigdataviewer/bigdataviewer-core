@@ -30,6 +30,7 @@ package bdv.img.cache;
 
 import java.io.IOException;
 
+import net.imglib2.img.basictypeaccess.DataAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileArrayDataAccess;
 import net.imglib2.img.basictypeaccess.volatiles.array.DirtyVolatileByteArray;
@@ -68,7 +69,7 @@ import net.imglib2.type.NativeType;
  *
  * @author Tobias Pietzsch
  */
-public interface SimpleCacheArrayLoader< A >
+public interface SimpleCacheArrayLoader< A extends DataAccess >
 {
 	/**
 	 * Implementing classes must override this if {@code A} is not a standard

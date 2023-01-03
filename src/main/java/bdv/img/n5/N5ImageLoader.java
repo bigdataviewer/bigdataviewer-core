@@ -57,6 +57,7 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
 import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.cache.volatiles.LoadingStrategy;
+import net.imglib2.img.basictypeaccess.DataAccess;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileByteArray;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileDoubleArray;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileFloatArray;
@@ -358,7 +359,7 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 		}
 	}
 
-	private static class N5CacheArrayLoader< T, A > implements SimpleCacheArrayLoader< A >
+	private static class N5CacheArrayLoader< T, A extends DataAccess > implements SimpleCacheArrayLoader< A >
 	{
 		private final N5Reader n5;
 		private final String pathName;

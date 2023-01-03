@@ -32,6 +32,7 @@ import bdv.viewer.Interpolation;
 import bdv.viewer.Source;
 import mpicbg.spim.data.sequence.VoxelDimensions;
 import net.imglib2.Localizable;
+import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealInterval;
 import net.imglib2.RealLocalizable;
@@ -262,7 +263,7 @@ final class TransformedBoxPlaceHolderSource implements Source< Void >
 		}
 
 		@Override
-		public Sampler< Void > copy()
+		public RealRandomAccess< Void > copy()
 		{
 			return this;
 		}

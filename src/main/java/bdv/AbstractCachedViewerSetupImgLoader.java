@@ -36,6 +36,7 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
 import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.cache.volatiles.LoadingStrategy;
+import net.imglib2.img.basictypeaccess.DataAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 import net.imglib2.img.cell.CellGrid;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -46,8 +47,10 @@ import net.imglib2.type.NativeType;
  *
  * @author Stephan Saalfeld
  */
-abstract public class AbstractCachedViewerSetupImgLoader< T extends NativeType< T > , V extends Volatile< T > & NativeType< V >, A extends VolatileAccess >
-	extends AbstractViewerSetupImgLoader< T, V >
+abstract public class AbstractCachedViewerSetupImgLoader< T extends NativeType< T >, 
+	V extends Volatile< T > & NativeType< V >,
+	A extends VolatileAccess & DataAccess >
+		extends AbstractViewerSetupImgLoader< T, V >
 {
 	final protected long[][] dimensions;
 
@@ -104,7 +107,8 @@ abstract public class AbstractCachedViewerSetupImgLoader< T extends NativeType< 
 		return resolutions.length;
 	}
 
-	protected < S extends NativeType< S > > VolatileCachedCellImg< S, A > prepareCachedImage(
+	@SuppressWarnings( "unchecked" )
+	protected < S extends NativeType< S >, A extends VolatileAccess & DataAccess > VolatileCachedCellImg< S, A > prepareCachedImage(
 			final int timepointId,
 			final int level,
 			final LoadingStrategy loadingStrategy,
@@ -114,7 +118,7 @@ abstract public class AbstractCachedViewerSetupImgLoader< T extends NativeType< 
 		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
 		final CellGrid grid = new CellGrid( dimensions[ level ], cellDimensions[level ] );
 
-		return cache.createImg( grid, timepointId, setupId, level, cacheHints, loader, t );
+		return ( VolatileCachedCellImg< S, A > ) cache.createImg( grid, timepointId, setupId, level, cacheHints, loader, t );
 	}
 
 	@Override

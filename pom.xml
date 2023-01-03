@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.scijava</groupId>
 		<artifactId>pom-scijava</artifactId>
-		<version>33.2.0</version>
+		<version>34.0.0</version>
 		<relativePath />
 	</parent>
 
@@ -139,6 +139,9 @@
 		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>
 
 		<directories.version>24</directories.version>
+
+		<imglib2.version>6.1.0</imglib2.version>
+		<imglib2-cache.version>1.0.0-beta-17</imglib2-cache.version>
 	</properties>
 
 	<repositories>
