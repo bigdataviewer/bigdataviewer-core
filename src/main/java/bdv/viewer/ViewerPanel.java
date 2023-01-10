@@ -993,6 +993,7 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 
 	protected static final AtomicInteger panelNumber = new AtomicInteger( 1 );
 
+	// TODO REMOVE
 	protected static class RenderThreadFactory implements ThreadFactory
 	{
 		private final ThreadGroup threadGroup;
