@@ -775,7 +775,7 @@ public class BigDataViewer
 
 	public static void main( final String[] args )
 	{
-		final String fn = "/Users/pietzsch/workspace/data/111010_weber_resave.xml";
+//		final String fn = "/Users/pietzsch/workspace/data/111010_weber_resave.xml";
 		try
 		{
 			System.setProperty( "apple.laf.useScreenMenuBar", "true" );
@@ -783,9 +783,13 @@ public class BigDataViewer
 			UIUtils.installFlatLafInfos();
 
 			System.out.println( "reading config files from \"" + configDir + "\"" );
-			final BigDataViewer bdv = open( fn, new File( fn ).getName(), new ProgressWriterConsole(), ViewerOptions.options() );
-
+			if(args.length>0){
+				final String fn = args[0];
+				final BigDataViewer bdv = open( fn, new File( fn ).getName(), new ProgressWriterConsole(), ViewerOptions.options() );
 //			DumpInputConfig.writeToYaml( System.getProperty( "user.home" ) + "/.bdv/bdvkeyconfig.yaml", bdv.getViewerFrame() );
+			}else {
+				throw new IOException("No input file selected !");
+			}
 		}
 		catch ( final Exception e )
 		{
