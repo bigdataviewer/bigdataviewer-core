@@ -610,7 +610,7 @@ public class WriteSequenceToHdf5
 		@Override
 		public RandomAccessibleInterval< UnsignedShortType > getImage( final int level )
 		{
-			return loopback.getSetupImgLoader( viewIdPartition.getViewSetupId() ).getImage( viewIdPartition.getTimePointId(), level );
+			return Cast.unchecked( loopback.getSetupImgLoader( viewIdPartition.getViewSetupId() ).getImage( viewIdPartition.getTimePointId(), level ) );
 		}
 	}
 
