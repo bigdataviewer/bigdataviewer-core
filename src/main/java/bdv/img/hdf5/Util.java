@@ -36,6 +36,8 @@ public class Util
 
 	final static private String cellsFormatString = "%s/cells";
 
+	final static private String setupFormatString = "s%02d";
+
 	final static private String resolutionsFormatString = "s%02d/resolutions";
 
 	final static private String subdivisionsFormatString = "s%02d/subdivisions";
@@ -68,6 +70,11 @@ public class Util
 	public static String getCellsPath( final ViewLevelId viewLevelId )
 	{
 		return String.format( cellsFormatString, getGroupPath( viewLevelId ) );
+	}
+
+	public static String getSetupPath( final int setupId )
+	{
+		return String.format( setupFormatString, setupId );
 	}
 
 	public static String getResolutionsPath( final int setupId )
@@ -108,7 +115,7 @@ public class Util
 	 */
 	public static long[] reorder( final long[] in )
 	{
-		return reorder( in, new long[ in.length ] );
+		return in == null ? null : reorder( in, new long[ in.length ] );
 	}
 
 	/**
@@ -139,7 +146,7 @@ public class Util
 	 */
 	public static int[] reorder( final int[] in )
 	{
-		return reorder( in, new int[ in.length ] );
+		return in == null ? null : reorder( in, new int[ in.length ] );
 	}
 
 	/**

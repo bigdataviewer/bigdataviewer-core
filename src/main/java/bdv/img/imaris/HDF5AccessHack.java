@@ -174,9 +174,9 @@ public class HDF5AccessHack implements IHDF5Access
 		catch ( final Exception e )
 		{}
 		if ( exists )
-			return new DimsAndExistence( reorder( realDimensions ), true );
+			return new DimsAndExistence( reorder( realDimensions ), null, true );
 		else
-			return new DimsAndExistence( new long[] { 1, 1, 1 }, false );
+			return new DimsAndExistence( new long[] { 1, 1, 1 }, null, false );
 	}
 
 	@Override

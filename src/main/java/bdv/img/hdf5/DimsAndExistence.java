@@ -28,6 +28,9 @@
  */
 package bdv.img.hdf5;
 
+import java.util.Arrays;
+import java.util.StringJoiner;
+
 /**
  * The dimensions of an image and a flag indicating whether that image
  * exists (can be loaded)
@@ -38,11 +41,14 @@ public class DimsAndExistence
 {
 	private final long[] dimensions;
 
+	private final int[] blockSize;
+
 	private final boolean exists;
 
-	public DimsAndExistence( final long[] dimensions, final boolean exists )
+	public DimsAndExistence( final long[] dimensions, final int[] blockSize, final boolean exists )
 	{
 		this.dimensions = dimensions;
+		this.blockSize = blockSize;
 		this.exists = exists;
 	}
 
@@ -51,8 +57,23 @@ public class DimsAndExistence
 		return dimensions;
 	}
 
+	public int[] getBlockSize()
+	{
+		return blockSize;
+	}
+
 	public boolean exists()
 	{
 		return exists;
+	}
+
+	@Override
+	public String toString()
+	{
+		return new StringJoiner( ", ", DimsAndExistence.class.getSimpleName() + "[", "]" )
+				.add( "dimensions=" + Arrays.toString( dimensions ) )
+				.add( "blockSize=" + Arrays.toString( blockSize ) )
+				.add( "exists=" + exists )
+				.toString();
 	}
 }
