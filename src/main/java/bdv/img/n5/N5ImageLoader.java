@@ -58,36 +58,10 @@ import net.imglib2.Volatile;
 import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.cache.volatiles.LoadingStrategy;
 import net.imglib2.img.basictypeaccess.DataAccess;
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileByteArray;
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileDoubleArray;
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileFloatArray;
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileLongArray;
-import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
 import net.imglib2.img.cell.CellGrid;
 import net.imglib2.img.cell.CellImg;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.integer.ByteType;
-import net.imglib2.type.numeric.integer.IntType;
-import net.imglib2.type.numeric.integer.LongType;
-import net.imglib2.type.numeric.integer.ShortType;
-import net.imglib2.type.numeric.integer.UnsignedByteType;
-import net.imglib2.type.numeric.integer.UnsignedIntType;
-import net.imglib2.type.numeric.integer.UnsignedLongType;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.type.numeric.real.DoubleType;
-import net.imglib2.type.numeric.real.FloatType;
-import net.imglib2.type.volatiles.VolatileByteType;
-import net.imglib2.type.volatiles.VolatileDoubleType;
-import net.imglib2.type.volatiles.VolatileFloatType;
-import net.imglib2.type.volatiles.VolatileIntType;
-import net.imglib2.type.volatiles.VolatileLongType;
-import net.imglib2.type.volatiles.VolatileShortType;
-import net.imglib2.type.volatiles.VolatileUnsignedByteType;
-import net.imglib2.type.volatiles.VolatileUnsignedIntType;
-import net.imglib2.type.volatiles.VolatileUnsignedLongType;
-import net.imglib2.type.volatiles.VolatileUnsignedShortType;
 import net.imglib2.util.Cast;
 import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
@@ -223,30 +197,7 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 	{
 		final String pathName = getPathName( setupId );
 		final DataType dataType = n5.getAttribute( pathName, DATA_TYPE_KEY, DataType.class );
-		switch ( dataType )
-		{
-		case UINT8:
-			return Cast.unchecked( new SetupImgLoader<>( setupId, new UnsignedByteType(), new VolatileUnsignedByteType() ) );
-		case UINT16:
-			return Cast.unchecked( new SetupImgLoader<>( setupId, new UnsignedShortType(), new VolatileUnsignedShortType() ) );
-		case UINT32:
-			return Cast.unchecked( new SetupImgLoader<>( setupId, new UnsignedIntType(), new VolatileUnsignedIntType() ) );
-		case UINT64:
-			return Cast.unchecked( new SetupImgLoader<>( setupId, new UnsignedLongType(), new VolatileUnsignedLongType() ) );
-		case INT8:
-			return Cast.unchecked( new SetupImgLoader<>( setupId, new ByteType(), new VolatileByteType() ) );
-		case INT16:
-			return Cast.unchecked( new SetupImgLoader<>( setupId, new ShortType(), new VolatileShortType() ) );
-		case INT32:
-			return Cast.unchecked( new SetupImgLoader<>( setupId, new IntType(), new VolatileIntType() ) );
-		case INT64:
-			return Cast.unchecked( new SetupImgLoader<>( setupId, new LongType(), new VolatileLongType() ) );
-		case FLOAT32:
-			return Cast.unchecked( new SetupImgLoader<>( setupId, new FloatType(), new VolatileFloatType() ) );
-		case FLOAT64:
-			return Cast.unchecked( new SetupImgLoader<>( setupId, new DoubleType(), new VolatileDoubleType() ) );
-		}
-		return null;
+		return new SetupImgLoader<>( setupId, Cast.unchecked( DataTypeProperties.of( dataType ) ) );
 	}
 
 	@Override
@@ -265,6 +216,11 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 		private final double[][] mipmapResolutions;
 
 		private final AffineTransform3D[] mipmapTransforms;
+
+		public SetupImgLoader( final int setupId, final DataTypeProperties< T, V, ?, ? > props ) throws IOException
+		{
+			this(setupId, props.type(), props.volatileType() );
+		}
 
 		public SetupImgLoader( final int setupId, final T type, final V volatileType ) throws IOException
 		{
@@ -368,6 +324,12 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 		private final Function< T, A > createVolatileArrayAccess;
 
 		N5CacheArrayLoader( final N5Reader n5, final String pathName, final DatasetAttributes attributes,
+				DataTypeProperties< ?, ?, T, A > dataTypeProperties )
+		{
+			this( n5, pathName, attributes, dataTypeProperties.createPrimitiveArray(), dataTypeProperties.createVolatileArrayAccess() );
+		}
+
+		N5CacheArrayLoader( final N5Reader n5, final String pathName, final DatasetAttributes attributes,
 				final IntFunction< T > createPrimitiveArray,
 				final Function< T, A > createVolatileArrayAccess )
 		{
@@ -406,27 +368,7 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 	public static SimpleCacheArrayLoader< ? > createCacheArrayLoader( final N5Reader n5, final String pathName ) throws IOException
 	{
 		final DatasetAttributes attributes = n5.getDatasetAttributes( pathName );
-		switch ( attributes.getDataType() )
-		{
-		case UINT8:
-		case INT8:
-			return new N5CacheArrayLoader<>( n5, pathName, attributes, byte[]::new, data -> new VolatileByteArray( data, true ) );
-		case UINT16:
-		case INT16:
-			return new N5CacheArrayLoader<>( n5, pathName, attributes, short[]::new, data -> new VolatileShortArray( data, true ) );
-		case UINT32:
-		case INT32:
-			return new N5CacheArrayLoader<>( n5, pathName, attributes, int[]::new, data -> new VolatileIntArray( data, true ) );
-		case UINT64:
-		case INT64:
-			return new N5CacheArrayLoader<>( n5, pathName, attributes, long[]::new, data -> new VolatileLongArray( data, true ) );
-		case FLOAT32:
-			return new N5CacheArrayLoader<>( n5, pathName, attributes, float[]::new, data -> new VolatileFloatArray( data, true ) );
-		case FLOAT64:
-			return new N5CacheArrayLoader<>( n5, pathName, attributes, double[]::new, data -> new VolatileDoubleArray( data, true ) );
-		default:
-			throw new IllegalArgumentException();
-		}
+		return new N5CacheArrayLoader<>( n5, pathName, attributes, DataTypeProperties.of( attributes.getDataType() ) );
 	}
 
 	/**
@@ -496,7 +438,4 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 			}
 		}
 	}
-
-
-
 }
