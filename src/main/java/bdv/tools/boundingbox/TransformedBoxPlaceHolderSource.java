@@ -136,12 +136,6 @@ final class TransformedBoxPlaceHolderSource implements Source< Void >
 	private final RealRandomAccess< Void > access = new RealRandomAccess< Void >()
 	{
 		@Override
-		public RealRandomAccess< Void > copyRealRandomAccess()
-		{
-			return this;
-		}
-
-		@Override
 		public void localize( final float[] position )
 		{}
 
