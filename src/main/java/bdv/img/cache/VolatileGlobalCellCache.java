@@ -42,7 +42,6 @@ import net.imglib2.cache.util.KeyBimap;
 import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.cache.volatiles.VolatileCache;
 import net.imglib2.img.basictypeaccess.DataAccess;
-import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 import net.imglib2.img.cell.Cell;
 import net.imglib2.img.cell.CellGrid;
 import net.imglib2.type.NativeType;
@@ -177,7 +176,7 @@ public class VolatileGlobalCellCache implements CacheControl
 	 * @param type
 	 * @return
 	 */
-	public < T extends NativeType< T >, A extends VolatileAccess & DataAccess > VolatileCachedCellImg< T, A > createImg(
+	public < T extends NativeType< T >, A extends DataAccess > VolatileCachedCellImg< T, A > createImg(
 			final CellGrid grid,
 			final int timepoint,
 			final int setup,

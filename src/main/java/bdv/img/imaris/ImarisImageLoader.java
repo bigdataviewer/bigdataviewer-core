@@ -28,6 +28,7 @@
  */
 package bdv.img.imaris;
 
+import bdv.img.cache.VolatileCachedCellImg;
 import bdv.img.hdf5.Util;
 import bdv.util.MipmapTransforms;
 import ch.systemsx.cisd.hdf5.HDF5DataClass;
@@ -42,7 +43,6 @@ import bdv.AbstractViewerSetupImgLoader;
 import bdv.ViewerImgLoader;
 import bdv.cache.CacheControl;
 import bdv.img.cache.CacheArrayLoader;
-import bdv.img.cache.VolatileCachedCellImg;
 import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.img.hdf5.MipmapInfo;
 import bdv.img.hdf5.ViewLevelId;
@@ -59,7 +59,6 @@ import net.imglib2.cache.volatiles.LoadingStrategy;
 import net.imglib2.img.NativeImg;
 import net.imglib2.img.basictypeaccess.DataAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
-import net.imglib2.img.cell.AbstractCellImg;
 import net.imglib2.img.cell.CellGrid;
 import net.imglib2.img.cell.CellImg;
 import net.imglib2.realtransform.AffineTransform3D;
@@ -260,8 +259,7 @@ public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T
 	 * type} before it can be used. The type should be either
 	 * {@link UnsignedShortType} and {@link VolatileUnsignedShortType}.
 	 */
-	@SuppressWarnings( "unchecked" )
-	protected < T extends NativeType< T >, A extends VolatileAccess & DataAccess > VolatileCachedCellImg< T, A > prepareCachedImage( final ViewLevelId id, final LoadingStrategy loadingStrategy, final T type )
+	protected < T extends NativeType< T > > VolatileCachedCellImg< T, A > prepareCachedImage( final ViewLevelId id, final LoadingStrategy loadingStrategy, final T type )
 	{
 		open();
 		final int timepointId = id.getTimePointId();
@@ -273,7 +271,7 @@ public class ImarisImageLoader< T extends NativeType< T >, V extends Volatile< T
 
 		final int priority = mipmapInfo.getMaxLevel() - level;
 		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
-		return ( VolatileCachedCellImg< T, A > ) cache.createImg( grid, timepointId, setupId, level, cacheHints, loader, type );
+		return cache.createImg( grid, timepointId, setupId, level, cacheHints, loader, type );
 	}
 
 	public File getImsFile()
