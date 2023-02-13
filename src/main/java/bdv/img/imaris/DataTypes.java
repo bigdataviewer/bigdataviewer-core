@@ -30,6 +30,7 @@ package bdv.img.imaris;
 
 import bdv.img.cache.CacheArrayLoader;
 import net.imglib2.Volatile;
+import net.imglib2.img.basictypeaccess.DataAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileByteArray;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileFloatArray;
@@ -47,7 +48,7 @@ class DataTypes
 	interface DataType<
 			T extends NativeType< T >,
 			V extends Volatile< T > & NativeType< V > ,
-			A extends VolatileAccess >
+			A extends VolatileAccess & DataAccess >
 	{
 		T getType();
 

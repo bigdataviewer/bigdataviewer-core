@@ -29,6 +29,7 @@
 package bdv.img.cache;
 
 import bdv.ViewerImgLoader;
+import net.imglib2.img.basictypeaccess.DataAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileAccess;
 import net.imglib2.img.basictypeaccess.volatiles.VolatileArrayDataAccess;
 import net.imglib2.img.basictypeaccess.volatiles.array.DirtyVolatileByteArray;
@@ -58,7 +59,7 @@ import net.imglib2.type.NativeType;
  *
  * @author Tobias Pietzsch
  */
-public interface CacheArrayLoader< A >
+public interface CacheArrayLoader< A extends DataAccess >
 {
 	/**
 	 * How many bytes does one element (voxel) occupy? This is used only for
