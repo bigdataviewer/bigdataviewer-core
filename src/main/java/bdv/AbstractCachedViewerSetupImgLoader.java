@@ -47,10 +47,8 @@ import net.imglib2.type.NativeType;
  *
  * @author Stephan Saalfeld
  */
-abstract public class AbstractCachedViewerSetupImgLoader< T extends NativeType< T >, 
-	V extends Volatile< T > & NativeType< V >,
-	A extends VolatileAccess & DataAccess >
-		extends AbstractViewerSetupImgLoader< T, V >
+abstract public class AbstractCachedViewerSetupImgLoader< T extends NativeType< T > , V extends Volatile< T > & NativeType< V >, A extends VolatileAccess & DataAccess >
+	extends AbstractViewerSetupImgLoader< T, V >
 {
 	final protected long[][] dimensions;
 
@@ -107,8 +105,7 @@ abstract public class AbstractCachedViewerSetupImgLoader< T extends NativeType< 
 		return resolutions.length;
 	}
 
-	@SuppressWarnings( "unchecked" )
-	protected < S extends NativeType< S >, A extends VolatileAccess & DataAccess > VolatileCachedCellImg< S, A > prepareCachedImage(
+	protected < S extends NativeType< S > > VolatileCachedCellImg< S, A > prepareCachedImage(
 			final int timepointId,
 			final int level,
 			final LoadingStrategy loadingStrategy,
@@ -118,7 +115,7 @@ abstract public class AbstractCachedViewerSetupImgLoader< T extends NativeType< 
 		final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
 		final CellGrid grid = new CellGrid( dimensions[ level ], cellDimensions[level ] );
 
-		return ( VolatileCachedCellImg< S, A > ) cache.createImg( grid, timepointId, setupId, level, cacheHints, loader, t );
+		return cache.createImg( grid, timepointId, setupId, level, cacheHints, loader, t );
 	}
 
 	@Override
