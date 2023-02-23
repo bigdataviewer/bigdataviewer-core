@@ -19,7 +19,7 @@
 	<inceptionYear>2012</inceptionYear>
 	<organization>
 		<name>BigDataViewer</name>
-		<url>https://imagej.net/BigDataViewer</url>
+		<url>https://imagej.net/plugins/bdv</url>
 	</organization>
 	<licenses>
 		<license>
@@ -33,7 +33,7 @@
 		<developer>
 			<id>tpietzsch</id>
 			<name>Tobias Pietzsch</name>
-			<url>https://imagej.net/User:Pietzsch</url>
+			<url>https://imagej.net/people/tpietzsch</url>
 			<roles>
 				<role>founder</role>
 				<role>lead</role>
@@ -47,7 +47,7 @@
 		<developer>
 			<id>ctrueden</id>
 			<name>Curtis Rueden</name>
-			<url>https://imagej.net/User:Rueden</url>
+			<url>https://imagej.net/people/ctrueden</url>
 			<roles>
 				<role>maintainer</role>
 			</roles>
@@ -56,32 +56,32 @@
 	<contributors>
 		<contributor>
 			<name>John Bogovic</name>
-			<url>https://imagej.net/User:Bogovic</url>
+			<url>https://imagej.net/people/bogovicj</url>
 			<properties><id>bogovicj</id></properties>
 		</contributor>
 		<contributor>
 			<name>HongKee Moon</name>
-			<url>https://imagej.net/User:Moon</url>
+			<url>https://imagej.net/people/hkmoon</url>
 			<properties><id>hkmoon</id></properties>
 		</contributor>
 		<contributor>
 			<name>Stephan Preibisch</name>
-			<url>https://imagej.net/User:StephanP</url>
+			<url>https://imagej.net/people/StephanPreibisch</url>
 			<properties><id>StephanPreibisch</id></properties>
 		</contributor>
 		<contributor>
 			<name>Stephan Saalfeld</name>
-			<url>https://imagej.net/User:Saalfeld</url>
+			<url>https://imagej.net/people/axtimwalde</url>
 			<properties><id>axtimwalde</id></properties>
 		</contributor>
 		<contributor>
 			<name>Johannes Schindelin</name>
-			<url>https://imagej.net/User:Schindelin</url>
+			<url>https://imagej.net/people/dscho</url>
 			<properties><id>dscho</id></properties>
 		</contributor>
 		<contributor>
 			<name>Jean-Yves Tinevez</name>
-			<url>https://imagej.net/User:JeanYvesTinevez</url>
+			<url>https://imagej.net/people/tinevez</url>
 			<properties><id>tinevez</id></properties>
 		</contributor>
 		<contributor>
@@ -94,12 +94,12 @@
 		</contributor>
 		<contributor>
 			<name>Philipp Hanslovsky</name>
-			<url>https://imagej.net/User:Hanslovsky</url>
+			<url>https://imagej.net/people/hanslovsky</url>
 			<properties><id>hanslovsky</id></properties>
 		</contributor>
 		<contributor>
 			<name>Tim-Oliver Buchholz</name>
-			<url>https://imagej.net/User:Tibuch</url>
+			<url>https://imagej.net/people/tibuch</url>
 			<properties><id>tibuch</id></properties>
 		</contributor>
 		<contributor>
