@@ -61,6 +61,7 @@ public class BigDataViewerActions extends Actions
 	public static final String LOAD_SETTINGS = "load settings";
 	public static final String EXPAND_CARDS = "expand and focus cards panel";
 	public static final String COLLAPSE_CARDS = "collapse cards panel";
+	public static final String PRODUCE_MOVIE = "produce movie";
 	public static final String RECORD_MOVIE = "record movie";
 	public static final String RECORD_MAX_PROJECTION_MOVIE = "record max projection movie";
 	public static final String SET_BOOKMARK = "set bookmark";
@@ -78,6 +79,7 @@ public class BigDataViewerActions extends Actions
 	public static final String[] EXPAND_CARDS_KEYS                = new String[] { "P" };
 	public static final String[] COLLAPSE_CARDS_KEYS              = new String[] { "shift P", "shift ESCAPE" };
 	public static final String[] RECORD_MOVIE_KEYS                = new String[] { "F10" };
+	public static final String[] PRODUCE_MOVIE_KEYS                = new String[] { "F7" };
 	public static final String[] RECORD_MAX_PROJECTION_MOVIE_KEYS = new String[] { "F8" };
 	public static final String[] SET_BOOKMARK_KEYS                = new String[] { "shift B" };
 	public static final String[] GO_TO_BOOKMARK_KEYS              = new String[] { "B" };
@@ -108,6 +110,7 @@ public class BigDataViewerActions extends Actions
 			descriptions.add( EXPAND_CARDS, EXPAND_CARDS_KEYS, "Expand and focus the BigDataViewer card panel" );
 			descriptions.add( COLLAPSE_CARDS, COLLAPSE_CARDS_KEYS, "Collapse the BigDataViewer card panel" );
 			descriptions.add( RECORD_MOVIE, RECORD_MOVIE_KEYS, "Show the Record Movie dialog." );
+			descriptions.add( PRODUCE_MOVIE, PRODUCE_MOVIE_KEYS, "Show the Produce Movie dialog." );
 			descriptions.add( RECORD_MAX_PROJECTION_MOVIE, RECORD_MAX_PROJECTION_MOVIE_KEYS, "Show the Record Max Projection Movie dialog." );
 			descriptions.add( SET_BOOKMARK, SET_BOOKMARK_KEYS, "Set a labeled bookmark at the current location." );
 			descriptions.add( GO_TO_BOOKMARK, GO_TO_BOOKMARK_KEYS, "Retrieve a labeled bookmark location." );
@@ -132,6 +135,7 @@ public class BigDataViewerActions extends Actions
 		toggleDialogAction( actions, bdv.helpDialog, SHOW_HELP, SHOW_HELP_KEYS );
 		toggleDialogAction( actions, bdv.cropDialog, CROP, CROP_KEYS );
 		toggleDialogAction( actions, bdv.movieDialog, RECORD_MOVIE, RECORD_MOVIE_KEYS );
+		toggleDialogAction( actions, bdv.produceMovieDialog, PRODUCE_MOVIE, PRODUCE_MOVIE_KEYS );
 		toggleDialogAction( actions, bdv.movieMaxProjectDialog, RECORD_MAX_PROJECTION_MOVIE, RECORD_MAX_PROJECTION_MOVIE_KEYS );
 		toggleDialogAction( actions, bdv.preferencesDialog, PREFERENCES_DIALOG, PREFERENCES_DIALOG_KEYS );
 		bookmarks( actions, bdv.bookmarkEditor );
