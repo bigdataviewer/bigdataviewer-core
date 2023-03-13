@@ -477,6 +477,7 @@ public class MultiResolutionRenderer
 
 				projector = createProjector( currentViewerState, requestedScreenScaleIndex, renderResult.getTargetImage(), 0, 0 );
 				requestNewFrameIfIncomplete = projectorFactory.requestNewFrameIfIncomplete();
+				projectorFactory.setPreviousTimepoint( currentViewerState.getCurrentTimepoint() );
 			}
 			p = projector;
 		}

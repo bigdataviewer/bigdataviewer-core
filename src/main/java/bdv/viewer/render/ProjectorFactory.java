@@ -102,7 +102,7 @@ class ProjectorFactory
 	 * <p>
 	 * (This method is implemented by {@link DefaultMipmapOrdering}.)
 	 */
-	private boolean newFrameRequest;
+	private boolean newFrameRequest = false;
 
 	/**
 	 * The timepoint for which last a projector was {@link #createProjector
@@ -157,7 +157,6 @@ class ProjectorFactory
 		 * CacheHints.LoadingStrategy==VOLATILE
 		 */
 //		CacheIoTiming.getIoTimeBudget().clear(); // clear time budget such that prefetching doesn't wait for loading blocks.
-		newFrameRequest = false;
 
 		final int width = ( int ) screenImage.dimension( 0 );
 		final int height = ( int ) screenImage.dimension( 1 );
@@ -190,7 +189,6 @@ class ProjectorFactory
 			}
 			projector = accumulateProjectorFactory.createProjector( sourceProjectors, visibleSourcesOnScreen, sourceImages, Views.zeroMin( screenImage ), numRenderingThreads, renderingExecutorService );
 		}
-		previousTimepoint = viewerState.getCurrentTimepoint();
 		return projector;
 	}
 
@@ -332,6 +330,12 @@ class ProjectorFactory
 
 			Prefetcher.fetchCells( sourceToScreen, cellDimensions, dimensions, screenInterval, interpolation, cellsRandomAccess );
 		}
+	}
+
+	public void setPreviousTimepoint( final int t )
+	{
+		previousTimepoint = t;
+		newFrameRequest = false;
 	}
 
 	public boolean requestNewFrameIfIncomplete()
