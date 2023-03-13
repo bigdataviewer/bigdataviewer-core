@@ -184,7 +184,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 
 					final int numFetcherThreads = requestedNumFetcherThreads >= 0
 							? requestedNumFetcherThreads
-							: Math.max( 1, Runtime.getRuntime().availableProcessors() );
+							: 1;
 					final SharedQueue queue = requestedSharedQueue != null
 							? requestedSharedQueue
 							: ( createdSharedQueue = new SharedQueue( numFetcherThreads, maxNumLevels ) );
