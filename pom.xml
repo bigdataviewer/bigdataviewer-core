@@ -209,7 +209,11 @@
 			<artifactId>directories</artifactId>
 			<version>${directories.version}</version>
 		</dependency>
-
+		<dependency>
+    			<groupId>org.yaml</groupId>
+    			<artifactId>snakeyaml</artifactId>
+    			<version>1.33</version>
+		</dependency>
 		<!-- test dependencies -->
 		<dependency>
 			<groupId>junit</groupId>
