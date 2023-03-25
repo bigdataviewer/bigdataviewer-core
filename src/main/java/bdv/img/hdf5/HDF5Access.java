@@ -258,8 +258,7 @@ class HDF5Access
 		if ( Thread.interrupted() )
 			throw new InterruptedException();
 
-		final long[] reorderedDimensions = new long[ dimensions.length ];
-		Util.reorder( dimensions, reorderedDimensions );
+		final long[] reorderedDimensions = Util.reorder( dimensions, new long[ dimensions.length ] );
 		final long[] reorderedMin = Util.reorder( min );
 
 		// TODO: using min for DataBlock.gridPosition is wrong. Should divide min by blockSize instead.
