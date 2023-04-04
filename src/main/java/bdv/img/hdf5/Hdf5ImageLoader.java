@@ -39,6 +39,8 @@ import bdv.util.ConstantRandomAccessible;
 import bdv.util.MipmapTransforms;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.IHDF5Reader;
+
+import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -78,7 +80,7 @@ import static bdv.img.hdf5.Util.getSubdivisionsPath;
 import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_INT16;
 import static net.imglib2.util.Util.printCoordinates;
 
-public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
+public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader, Closeable
 {
 	private final File hdf5File;
 
@@ -205,6 +207,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 	 * after {@link #close()} will cause the n5 to be reopened (with a
 	 * new cache).
 	 */
+	@Override
 	public void close()
 	{
 		if ( isOpen )
