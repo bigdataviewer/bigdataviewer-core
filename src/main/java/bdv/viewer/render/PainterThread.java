@@ -117,7 +117,7 @@ public class PainterThread extends Thread implements RequestRepaint
 		{
 //			DebugHelpers.printStackTrace( 15 );
 			pleaseRepaint = true;
-			notify();
+			notifyAll();
 		}
 	}
 }
