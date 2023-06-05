@@ -29,6 +29,8 @@
 package bdv.viewer.render;
 
 import bdv.viewer.RequestRepaint;
+
+import java.lang.ref.WeakReference;
 import java.util.concurrent.RejectedExecutionException;
 
 /**
@@ -44,7 +46,7 @@ public class PainterThread extends Thread implements RequestRepaint
 		void paint();
 	}
 
-	private final Paintable paintable;
+	private final WeakReference< Paintable > paintable;
 
 	private boolean pleaseRepaint;
 
@@ -61,7 +63,7 @@ public class PainterThread extends Thread implements RequestRepaint
 	public PainterThread( final ThreadGroup group, final String name, final Paintable paintable )
 	{
 		super( group, name );
-		this.paintable = paintable;
+		this.paintable = new WeakReference<>( paintable );
 		this.pleaseRepaint = false;
 	}
 
@@ -79,7 +81,10 @@ public class PainterThread extends Thread implements RequestRepaint
 			if ( b )
 				try
 				{
-					paintable.paint();
+					Paintable p = paintable.get();
+					if( p == null )
+						return;
+					p.paint();
 				}
 				catch ( final RejectedExecutionException e )
 				{
