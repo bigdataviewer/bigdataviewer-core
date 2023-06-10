@@ -311,6 +311,12 @@ public class BigDataViewer
 			initSetupNumericType( spimData, setup, converterSetups, sources );
 	}
 
+	@Deprecated
+	public BigDataViewer( final ArrayList< ConverterSetup > converterSetups, final ArrayList< SourceAndConverter< ? > > sources, final AbstractSpimData< ? > spimData, final int numTimepoints, final CacheControl cache, final String windowTitle, final ProgressWriter progressWriter, final ViewerOptions options )
+	{
+		this( ( List< ConverterSetup > ) converterSetups, sources, spimData, numTimepoints, cache, windowTitle, progressWriter, options );
+	}
+
 	/**
 	 *
 	 * @param converterSetups
@@ -336,8 +342,8 @@ public class BigDataViewer
 	 *            optional parameters.
 	 */
 	public BigDataViewer(
-			final ArrayList< ConverterSetup > converterSetups,
-			final ArrayList< SourceAndConverter< ? > > sources,
+			final List< ConverterSetup > converterSetups,
+			final List< SourceAndConverter< ? > > sources,
 			final AbstractSpimData< ? > spimData,
 			final int numTimepoints,
 			final CacheControl cache,

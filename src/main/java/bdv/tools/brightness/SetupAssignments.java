@@ -90,6 +90,16 @@ public class SetupAssignments
 
 	public SetupAssignments( final ArrayList< ConverterSetup > converterSetups, final double defaultRangeMin, final double defaultRangeMax )
 	{
+		this( ( List< ConverterSetup > ) converterSetups, defaultRangeMin, defaultRangeMax );
+	}
+
+	public SetupAssignments( final ArrayList< ConverterSetup > converterSetups, final double fullRangeMin, final double fullRangeMax, final double defaultRangeMin, final double defaultRangeMax )
+	{
+		this( ( List< ConverterSetup > ) converterSetups, fullRangeMin, fullRangeMax, defaultRangeMin, defaultRangeMax );
+	}
+
+	public SetupAssignments( final List< ConverterSetup > converterSetups, final double defaultRangeMin, final double defaultRangeMax )
+	{
 		this( converterSetups, Integer.MIN_VALUE, Integer.MAX_VALUE, defaultRangeMin, defaultRangeMax );
 	}
 
@@ -101,7 +111,7 @@ public class SetupAssignments
 	 * @param defaultRangeMin
 	 * @param defaultRangeMax
 	 */
-	public SetupAssignments( final ArrayList< ConverterSetup > converterSetups, final double fullRangeMin, final double fullRangeMax, final double defaultRangeMin, final double defaultRangeMax )
+	public SetupAssignments( final List< ConverterSetup > converterSetups, final double fullRangeMin, final double fullRangeMax, final double defaultRangeMin, final double defaultRangeMax )
 	{
 		setups = new ArrayList<>( converterSetups );
 		minMaxGroups = new ArrayList<>();
