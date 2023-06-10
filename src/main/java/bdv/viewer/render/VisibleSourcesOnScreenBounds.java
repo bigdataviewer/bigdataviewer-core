@@ -152,7 +152,7 @@ class VisibleSourcesOnScreenBounds
 				sourceMin[ d ] = interval.realMin( d ) - expand;
 				sourceMax[ d ] = interval.realMax( d ) + expand;
 			}
-			final FinalRealInterval bb = sourceToScreen.estimateBounds( new FinalRealInterval( sourceMin, sourceMax ) );
+			final FinalRealInterval bb = sourceToScreen.estimateBounds( FinalRealInterval.wrap( sourceMin, sourceMax ) );
 
 			if ( bb.realMax( 0 ) >= screenMinX
 					&& bb.realMin( 0 ) <= screenMaxX
