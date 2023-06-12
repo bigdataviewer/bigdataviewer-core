@@ -33,9 +33,11 @@ import ch.systemsx.cisd.hdf5.IHDF5Reader;
 import ch.systemsx.cisd.hdf5.hdf5lib.HDFHelper;
 import hdf.hdf5lib.H5;
 import hdf.hdf5lib.HDF5Constants;
+import hdf.hdf5lib.exceptions.HDF5LibraryException;
 import java.io.File;
 import java.util.LinkedHashMap;
-import java.util.Map.Entry;
+import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import org.janelia.saalfeldlab.n5.DataBlock;
 import org.janelia.saalfeldlab.n5.DataType;
 
@@ -58,16 +60,6 @@ import static hdf.hdf5lib.HDF5Constants.H5O_TYPE_DATASET;
 import static hdf.hdf5lib.HDF5Constants.H5O_TYPE_GROUP;
 import static hdf.hdf5lib.HDF5Constants.H5P_DEFAULT;
 import static hdf.hdf5lib.HDF5Constants.H5S_SELECT_SET;
-import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_DOUBLE;
-import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_FLOAT;
-import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_INT16;
-import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_INT32;
-import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_INT64;
-import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_INT8;
-import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_UINT16;
-import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_UINT32;
-import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_UINT64;
-import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_UINT8;
 import static net.imglib2.util.Util.long2int;
 
 /**
@@ -88,67 +80,88 @@ class HDF5Access
 
 	private final long numericConversionXferPropertyListID;
 
-	private final long[] reorderedDimensions = new long[ 3 ];
-
-	private final long[] reorderedMin = new long[ 3 ];
-
 	private static final int MAX_OPEN_DATASETS = 48;
 
-	private class OpenDataSet
+	private class OpenDataSet implements AutoCloseable
 	{
-		final long dataSetId;
+		final AtomicInteger refcount;
 
-		final long fileSpaceId;
+		final long dataSetId;
 
 		public OpenDataSet( final String pathName )
 		{
+			refcount = new AtomicInteger( 1 );
 			dataSetId = H5Dopen( fileId, pathName, H5P_DEFAULT );
-			fileSpaceId = H5Dget_space( dataSetId );
 		}
 
-		public void close()
+		public void retain()
 		{
-			H5Sclose( fileSpaceId );
-			H5Dclose( dataSetId );
-		}
-	}
-
-	private class OpenDataSetCache extends LinkedHashMap< String, OpenDataSet >
-	{
-		private static final long serialVersionUID = 1L;
-
-		public OpenDataSetCache()
-		{
-			super( MAX_OPEN_DATASETS, 0.75f, true );
+			if ( refcount.getAndIncrement() <= 0 )
+				throw new IllegalStateException();
 		}
 
 		@Override
-		protected boolean removeEldestEntry( final Entry< String, OpenDataSet > eldest )
+		public void close()
 		{
-			if ( size() > MAX_OPEN_DATASETS )
+			if ( refcount.decrementAndGet() == 0 )
+				H5Dclose( dataSetId );
+		}
+	}
+
+	private class OpenDataSetCache
+	{
+		private final Map< String, OpenDataSet > cache;
+
+		public OpenDataSetCache()
+		{
+			cache = new LinkedHashMap< String, OpenDataSet >( MAX_OPEN_DATASETS, 0.75f, true )
 			{
-				eldest.getValue().close();
-				return true;
-			}
-			else
-				return false;
+				@Override
+				protected boolean removeEldestEntry( final Map.Entry< String, OpenDataSet > eldest )
+				{
+					if ( size() > MAX_OPEN_DATASETS )
+					{
+						final OpenDataSet dataSet = eldest.getValue();
+						if ( dataSet != null )
+							dataSet.close();
+						return true;
+					}
+					else
+						return false;
+				}
+			};
 		}
 
-		public OpenDataSet getDataSet( final String pathName )
+		public synchronized OpenDataSet getDataSet( final String pathName )
 		{
-			OpenDataSet openDataSet = super.get( pathName );
-			if ( openDataSet == null && datasetExists( pathName ) )
+			OpenDataSet dataSet = cache.get( pathName );
+			if ( dataSet == null && datasetExists( pathName ) )
 			{
-				openDataSet = new OpenDataSet( pathName );
-				put( pathName, openDataSet );
+				dataSet = new OpenDataSet( pathName );
+				cache.put( pathName, dataSet );
 			}
-			return openDataSet;
+			if ( dataSet != null )
+				dataSet.retain();
+			return dataSet;
+		}
+
+		public synchronized void clear()
+		{
+			cache.values().forEach( OpenDataSet::close );
+			cache.clear();
 		}
 
 		private boolean datasetExists( final String pathName )
 		{
-			final int objectTypeId = "/".equals(pathName) ? H5O_TYPE_GROUP : HDFHelper.H5Oget_info_by_name(fileId, pathName, false).type;
-			return objectTypeId == H5O_TYPE_DATASET ;
+			try
+			{
+				final int objectTypeId = "/".equals( pathName ) ? H5O_TYPE_GROUP : HDFHelper.H5Oget_info_by_name( fileId, pathName, false ).type;
+				return objectTypeId == H5O_TYPE_DATASET;
+			}
+			catch ( HDF5LibraryException e )
+			{
+				return false;
+			}
 		}
 	}
 
@@ -183,56 +196,59 @@ class HDF5Access
 		openDataSetCache = new OpenDataSetCache();
 	}
 
-	public synchronized DimsAndExistence getDimsAndExistence( final String pathName )
+	public DimsAndExistence getDimsAndExistence( final String pathName )
 	{
-		final OpenDataSet dataset = openDataSetCache.getDataSet( pathName );
-		if ( dataset == null )
+		try( OpenDataSet dataset = openDataSetCache.getDataSet( pathName ) )
 		{
-			return new DimsAndExistence( new long[] { 1, 1, 1 }, null, false );
-		}
-		else
-		{
-			final int nDims = H5Sget_simple_extent_ndims( dataset.fileSpaceId );
-			final long[] dimensions = new long[ nDims ];
-			H5Sget_simple_extent_dims( dataset.fileSpaceId, dimensions, null );
-
-			int[] chunkSizes = null;
-			final long creationPropertyList = H5.H5Dget_create_plist( dataset.dataSetId );
-			if ( H5.H5Pget_layout( creationPropertyList ) == HDF5Constants.H5D_CHUNKED )
+			if ( dataset == null )
 			{
-				final long[] longChunkSizes = new long[ nDims ];
-				H5.H5Pget_chunk( creationPropertyList, nDims, longChunkSizes );
-				chunkSizes = long2int( longChunkSizes );
+				return new DimsAndExistence( new long[] { 1, 1, 1 }, null, false );
 			}
-			H5.H5Pclose( creationPropertyList );
+			else
+			{
+				final long fileSpaceId = H5Dget_space( dataset.dataSetId );
+				final int nDims = H5Sget_simple_extent_ndims( fileSpaceId );
+				final long[] dimensions = new long[ nDims ];
+				H5Sget_simple_extent_dims( fileSpaceId, dimensions, null );
+				H5Sclose( fileSpaceId );
 
-			return new DimsAndExistence( reorder( dimensions ), reorder( chunkSizes ), true );
+				int[] chunkSizes = null;
+				final long creationPropertyList = H5.H5Dget_create_plist( dataset.dataSetId );
+				if ( H5.H5Pget_layout( creationPropertyList ) == HDF5Constants.H5D_CHUNKED )
+				{
+					final long[] longChunkSizes = new long[ nDims ];
+					H5.H5Pget_chunk( creationPropertyList, nDims, longChunkSizes );
+					chunkSizes = long2int( longChunkSizes );
+				}
+				H5.H5Pclose( creationPropertyList );
+
+				return new DimsAndExistence( reorder( dimensions ), reorder( chunkSizes ), true );
+			}
 		}
 	}
 
 	public void closeAllDataSets()
 	{
-		for ( final OpenDataSet dataset : openDataSetCache.values() )
-			dataset.close();
 		openDataSetCache.clear();
 	}
 
 	public void close()
 	{
 		closeAllDataSets();
-		int status = 0;
-		status = H5Pclose(numericConversionXferPropertyListID);
-		if (status < 0) {
-			System.err.println("HDF5AccessHack: Error closing property list");
+		int status = H5Pclose( numericConversionXferPropertyListID );
+		if ( status < 0 )
+		{
+			throw new RuntimeException( "Error closing property list" );
 		}
-		status = H5Fclose(fileId);
-		if (status < 0) {
-			System.err.println("HDF5AccessHack: Error closing file");
+		status = H5Fclose( fileId );
+		if ( status < 0 )
+		{
+			throw new RuntimeException( "Error closing file" );
 		}
 		hdf5Reader.close();
 	}
 
-	public synchronized DataBlock< ? > readBlock(
+	public DataBlock< ? > readBlock(
 			final String pathName,
 			final DataType dataType,
 			final long memTypeId,
@@ -242,45 +258,24 @@ class HDF5Access
 		if ( Thread.interrupted() )
 			throw new InterruptedException();
 
+		final long[] reorderedDimensions = new long[ dimensions.length ];
 		Util.reorder( dimensions, reorderedDimensions );
-		Util.reorder( min, reorderedMin );
+		final long[] reorderedMin = Util.reorder( min );
 
+		// TODO: using min for DataBlock.gridPosition is wrong. Should divide min by blockSize instead.
+		//       it's ok for now, because we dont use it, but should be changed when this is pushed down to n5-hdf5
 		final DataBlock< ? > block = dataType.createDataBlock( dimensions, min );
-		final OpenDataSet dataset = openDataSetCache.getDataSet( pathName );
-		final long memorySpaceId = H5Screate_simple( reorderedDimensions.length, reorderedDimensions, null );
-		H5Sselect_hyperslab( dataset.fileSpaceId, H5S_SELECT_SET, reorderedMin, null, reorderedDimensions, null );
-		H5Dread( dataset.dataSetId, memTypeId, memorySpaceId, dataset.fileSpaceId, numericConversionXferPropertyListID, block.getData() );
-		H5Sclose( memorySpaceId );
+
+		try ( OpenDataSet dataset = openDataSetCache.getDataSet( pathName ) )
+		{
+			final long memorySpaceId = H5Screate_simple( reorderedDimensions.length, reorderedDimensions, null );
+			final long fileSpaceId = H5Dget_space( dataset.dataSetId );
+			H5Sselect_hyperslab( fileSpaceId, H5S_SELECT_SET, reorderedMin, null, reorderedDimensions, null );
+			H5Dread( dataset.dataSetId, memTypeId, memorySpaceId, fileSpaceId, numericConversionXferPropertyListID, block.getData() );
+			H5Sclose( fileSpaceId );
+			H5Sclose( memorySpaceId );
+		}
 
 		return block;
-	}
-
-	public static long memTypeId( final DataType dataType )
-	{
-		switch ( dataType )
-		{
-		case INT8:
-			return H5T_NATIVE_INT8;
-		case UINT8:
-			return H5T_NATIVE_UINT8;
-		case INT16:
-			return H5T_NATIVE_INT16;
-		case UINT16:
-			return H5T_NATIVE_UINT16;
-		case INT32:
-			return H5T_NATIVE_INT32;
-		case UINT32:
-			return H5T_NATIVE_UINT32;
-		case INT64:
-			return H5T_NATIVE_INT64;
-		case UINT64:
-			return H5T_NATIVE_UINT64;
-		case FLOAT32:
-			return H5T_NATIVE_FLOAT;
-		case FLOAT64:
-			return H5T_NATIVE_DOUBLE;
-		default:
-			throw new IllegalArgumentException();
-		}
 	}
 }

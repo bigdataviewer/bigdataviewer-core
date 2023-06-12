@@ -75,6 +75,7 @@ import org.janelia.saalfeldlab.n5.DataType;
 import static bdv.img.hdf5.Util.getCellsPath;
 import static bdv.img.hdf5.Util.getResolutionsPath;
 import static bdv.img.hdf5.Util.getSubdivisionsPath;
+import static bdv.img.hdf5.Util.memTypeId;
 import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_INT16;
 import static net.imglib2.util.Util.printCoordinates;
 
@@ -459,7 +460,7 @@ public class Hdf5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoade
 			this.hdf5Access = hdf5Access;
 			this.pathName = pathName;
 			this.dataType = typeProps.dataType();
-			this.memTypeId = legacyInt16 ? H5T_NATIVE_INT16 : HDF5Access.memTypeId( dataType );
+			this.memTypeId = legacyInt16 ? H5T_NATIVE_INT16 : memTypeId( dataType );
 			this.createVolatileArrayAccess = typeProps.createVolatileArrayAccess();
 		}
 

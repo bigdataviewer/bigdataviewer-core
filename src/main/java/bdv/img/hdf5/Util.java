@@ -29,6 +29,18 @@
 package bdv.img.hdf5;
 
 import mpicbg.spim.data.sequence.ViewId;
+import org.janelia.saalfeldlab.n5.DataType;
+
+import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_DOUBLE;
+import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_FLOAT;
+import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_INT16;
+import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_INT32;
+import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_INT64;
+import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_INT8;
+import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_UINT16;
+import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_UINT32;
+import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_UINT64;
+import static hdf.hdf5lib.HDF5Constants.H5T_NATIVE_UINT8;
 
 public class Util
 {
@@ -197,5 +209,34 @@ public class Util
 		for ( int l = 0; l < ints.length; ++l )
 			doubles[ l ] = castToDoubles( ints[ l ] );
 		return doubles;
+	}
+
+	public static long memTypeId( final DataType dataType )
+	{
+		switch ( dataType )
+		{
+		case INT8:
+			return H5T_NATIVE_INT8;
+		case UINT8:
+			return H5T_NATIVE_UINT8;
+		case INT16:
+			return H5T_NATIVE_INT16;
+		case UINT16:
+			return H5T_NATIVE_UINT16;
+		case INT32:
+			return H5T_NATIVE_INT32;
+		case UINT32:
+			return H5T_NATIVE_UINT32;
+		case INT64:
+			return H5T_NATIVE_INT64;
+		case UINT64:
+			return H5T_NATIVE_UINT64;
+		case FLOAT32:
+			return H5T_NATIVE_FLOAT;
+		case FLOAT64:
+			return H5T_NATIVE_DOUBLE;
+		default:
+			throw new IllegalArgumentException();
+		}
 	}
 }
