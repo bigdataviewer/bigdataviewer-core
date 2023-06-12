@@ -187,4 +187,30 @@ public class DataTypeProperties< T extends NativeType< T >, V extends Volatile< 
 	{
 		return props.get( dataType );
 	}
+
+	public static < T extends NativeType< T > > DataType n5DataType( final T type )
+	{
+		if ( type instanceof DoubleType )
+			return DataType.FLOAT64;
+		if ( type instanceof FloatType )
+			return DataType.FLOAT32;
+		if ( type instanceof LongType )
+			return DataType.INT64;
+		if ( type instanceof UnsignedLongType )
+			return DataType.UINT64;
+		if ( type instanceof IntType )
+			return DataType.INT32;
+		if ( type instanceof UnsignedIntType )
+			return DataType.UINT32;
+		if ( type instanceof ShortType )
+			return DataType.INT16;
+		if ( type instanceof UnsignedShortType )
+			return DataType.UINT16;
+		if ( type instanceof ByteType )
+			return DataType.INT8;
+		if ( type instanceof UnsignedByteType )
+			return DataType.UINT8;
+		else
+			return null;
+	}
 }

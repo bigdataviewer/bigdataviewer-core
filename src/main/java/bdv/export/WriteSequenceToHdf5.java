@@ -35,6 +35,7 @@ import bdv.export.ExportScalePyramid.LoopbackHeuristic;
 import bdv.img.hdf5.Hdf5ImageLoader;
 import bdv.img.hdf5.Partition;
 import bdv.img.hdf5.Util;
+import bdv.img.n5.DataTypeProperties;
 import bdv.spimdata.SequenceDescriptionMinimal;
 import ch.systemsx.cisd.hdf5.HDF5Factory;
 import ch.systemsx.cisd.hdf5.HDF5IntStorageFeatures;
@@ -49,6 +50,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.Function;
 import mpicbg.spim.data.XmlHelpers;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicImgLoader;
@@ -61,9 +63,26 @@ import net.imglib2.Dimensions;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.cache.img.SingleCellArrayImg;
 import net.imglib2.img.cell.CellImg;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.util.Cast;
 import net.imglib2.util.Intervals;
+import org.janelia.saalfeldlab.n5.ByteArrayDataBlock;
+import org.janelia.saalfeldlab.n5.Compression;
+import org.janelia.saalfeldlab.n5.DataBlock;
+import org.janelia.saalfeldlab.n5.DataType;
+import org.janelia.saalfeldlab.n5.DatasetAttributes;
+import org.janelia.saalfeldlab.n5.DoubleArrayDataBlock;
+import org.janelia.saalfeldlab.n5.FloatArrayDataBlock;
+import org.janelia.saalfeldlab.n5.GzipCompression;
+import org.janelia.saalfeldlab.n5.IntArrayDataBlock;
+import org.janelia.saalfeldlab.n5.LongArrayDataBlock;
+import org.janelia.saalfeldlab.n5.N5Writer;
+import org.janelia.saalfeldlab.n5.RawCompression;
+import org.janelia.saalfeldlab.n5.ShortArrayDataBlock;
+
+import static net.imglib2.util.Util.long2int;
 
 /**
  * Create a hdf5 files containing image data from all views and all timepoints
@@ -271,13 +290,15 @@ public class WriteSequenceToHdf5
 			hdf5File.delete();
 		final IHDF5Writer hdf5Writer = HDF5Factory.open( hdf5File );
 
-		// write Mipmap descriptions
+		// write Mipmap descriptions and DataType
 		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() )
 		{
 			final int setupId = setup.getId();
 			final ExportMipmapInfo mipmapInfo = perSetupMipmapInfo.get( setupId );
+			final DataType dataType = DataTypeProperties.n5DataType( Cast.unchecked( seq.getImgLoader().getSetupImgLoader( setupId ).getImageType() ) );
 			hdf5Writer.writeDoubleMatrix( Util.getResolutionsPath( setupId ), mipmapInfo.getResolutions() );
 			hdf5Writer.writeIntMatrix( Util.getSubdivisionsPath( setupId ), mipmapInfo.getSubdivisions() );
+			hdf5Writer.string().setAttr( Util.getSetupPath( setupId ), "dataType", dataType.toString() );
 		}
 
 		// link Cells for all views in the partition
@@ -406,15 +427,6 @@ public class WriteSequenceToHdf5
 							numTasks++;
 				int numCompletedTasks = 0;
 
-				// write Mipmap descriptions
-				for ( final Entry< Integer, Integer > entry : partition.getSetupIdSequenceToPartition().entrySet() )
-				{
-					final int setupIdSequence = entry.getKey();
-					final int setupIdPartition = entry.getValue();
-					final ExportMipmapInfo mipmapInfo = perSetupMipmapInfo.get( setupIdSequence );
-					writerQueue.writeMipmapDescription( setupIdPartition, mipmapInfo );
-				}
-
 				// Progress of 1% for writing meta data
 				progressWriter.setProgress(0.01);
 				progressWriter = new SubTaskProgressWriter(progressWriter, 0.01, 1.0);
@@ -441,16 +453,15 @@ public class WriteSequenceToHdf5
 						final int setupIdPartition = partition.getSetupIdSequenceToPartition().get( setupIdSequence );
 						progressWriter.out().printf( "proccessing setup %d / %d\n", ++setupIndex, numSetups );
 
-						@SuppressWarnings( "unchecked" )
-						final RandomAccessibleInterval< UnsignedShortType > img = ( ( BasicSetupImgLoader< UnsignedShortType > ) imgLoader.getSetupImgLoader( setupIdSequence ) ).getImage( timepointIdSequence );
-						final ExportMipmapInfo mipmapInfo = perSetupMipmapInfo.get( setupIdSequence );
 						final double startCompletionRatio = ( double ) numCompletedTasks++ / numTasks;
 						final double endCompletionRatio = ( double ) numCompletedTasks / numTasks;
 						final ProgressWriter subProgressWriter = new SubTaskProgressWriter( progressWriter, startCompletionRatio, endCompletionRatio );
-
-						writeViewToHdf5PartitionFile(
-								img, timepointIdPartition, setupIdPartition, mipmapInfo, false,
-								deflate, writerQueue, executorService, numCellCreatorThreads, loopbackHeuristic, afterEachPlane, subProgressWriter );
+						final ExportMipmapInfo mipmapInfo = perSetupMipmapInfo.get( setupIdSequence );
+						writeViewToHdf5PartitionFile( writerQueue, imgLoader,
+								timepointIdPartition, setupIdPartition,
+								mipmapInfo, true, deflate,
+								executorService, numCellCreatorThreads,
+								loopbackHeuristic, afterEachPlane, subProgressWriter );
 					}
 				}
 			}
@@ -465,6 +476,149 @@ public class WriteSequenceToHdf5
 		progressWriter.setProgress( 1.0 );
 	}
 
+	static class LoopBackImageLoader extends Hdf5ImageLoader
+	{
+		private LoopBackImageLoader( final IHDF5Reader existingHdf5Reader, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
+		{
+			super( null, existingHdf5Reader, null, sequenceDescription, false );
+		}
+
+		static LoopBackImageLoader create( final IHDF5Reader existingHdf5Reader, final int timepointIdPartition, final int setupIdPartition, final Dimensions imageDimensions )
+		{
+			final HashMap< Integer, TimePoint > timepoints = new HashMap<>();
+			timepoints.put( timepointIdPartition, new TimePoint( timepointIdPartition ) );
+			final HashMap< Integer, BasicViewSetup > setups = new HashMap<>();
+			setups.put( setupIdPartition, new BasicViewSetup( setupIdPartition, null, imageDimensions, null ) );
+			final SequenceDescriptionMinimal seq = new SequenceDescriptionMinimal( new TimePoints( timepoints ), setups, null, null );
+			return new LoopBackImageLoader( existingHdf5Reader, seq );
+		}
+	}
+
+	static class H5Dataset
+	{
+		final String pathName;
+		final DatasetAttributes attributes;
+
+		public H5Dataset( final String pathName, final DatasetAttributes attributes )
+		{
+			this.pathName = pathName;
+			this.attributes = attributes;
+		}
+	}
+
+	static class HDF5DatasetIO< T extends RealType< T > & NativeType< T > > implements DatasetIO< H5Dataset, T >
+	{
+		private final Hdf5BlockWriterThread writerQueue;
+		private final Compression compression;
+		private final int setupIdPartition;
+		private final int timepointIdPartition;
+		private final DataType dataType;
+		private final T type;
+		private final Function< Block< T >, DataBlock< ? > > getDataBlock;
+		private final LoopBackImageLoader loopback;
+
+		public HDF5DatasetIO(
+				final Hdf5BlockWriterThread writerQueue,
+				final Compression compression,
+				final int setupIdPartition,
+				final int timepointIdPartition,
+				final T type,
+				final LoopBackImageLoader loopback )
+		{
+			this.writerQueue = writerQueue;
+			this.compression = compression;
+			this.timepointIdPartition= timepointIdPartition;
+			this.setupIdPartition = setupIdPartition;
+			this.dataType = DataTypeProperties.n5DataType( type );
+			this.type = type;
+			this.loopback = loopback;
+
+			switch ( dataType )
+			{
+			case UINT8:
+				getDataBlock = b -> new ByteArrayDataBlock( b.getSize(), b.getGridPosition(), Cast.unchecked( b.getData().getStorageArray() ) );
+				break;
+			case UINT16:
+				getDataBlock = b -> new ShortArrayDataBlock( b.getSize(), b.getGridPosition(), Cast.unchecked( b.getData().getStorageArray() ) );
+				break;
+			case UINT32:
+				getDataBlock = b -> new IntArrayDataBlock( b.getSize(), b.getGridPosition(), Cast.unchecked( b.getData().getStorageArray() ) );
+				break;
+			case UINT64:
+				getDataBlock = b -> new LongArrayDataBlock( b.getSize(), b.getGridPosition(), Cast.unchecked( b.getData().getStorageArray() ) );
+				break;
+			case INT8:
+				getDataBlock = b -> new ByteArrayDataBlock( b.getSize(), b.getGridPosition(), Cast.unchecked( b.getData().getStorageArray() ) );
+				break;
+			case INT16:
+				getDataBlock = b -> new ShortArrayDataBlock( b.getSize(), b.getGridPosition(), Cast.unchecked( b.getData().getStorageArray() ) );
+				break;
+			case INT32:
+				getDataBlock = b -> new IntArrayDataBlock( b.getSize(), b.getGridPosition(), Cast.unchecked( b.getData().getStorageArray() ) );
+				break;
+			case INT64:
+				getDataBlock = b -> new LongArrayDataBlock( b.getSize(), b.getGridPosition(), Cast.unchecked( b.getData().getStorageArray() ) );
+				break;
+			case FLOAT32:
+				getDataBlock = b -> new FloatArrayDataBlock( b.getSize(), b.getGridPosition(), Cast.unchecked( b.getData().getStorageArray() ) );
+				break;
+			case FLOAT64:
+				getDataBlock = b -> new DoubleArrayDataBlock( b.getSize(), b.getGridPosition(), Cast.unchecked( b.getData().getStorageArray() ) );
+				break;
+			default:
+				throw new IllegalArgumentException();
+			}
+		}
+
+		@Override
+		public H5Dataset createDataset( final int level, final long[] dimensions, final int[] blockSize )
+		{
+			final String path = Util.getCellsPath( timepointIdPartition, setupIdPartition, level );
+			writerQueue.createDataset( path, dimensions, blockSize, dataType, compression );
+			return new H5Dataset( path, new DatasetAttributes(dimensions, blockSize, dataType, compression) );
+		}
+
+		@Override
+		public void writeBlock( final H5Dataset dataset, final ExportScalePyramid.Block< T > dataBlock )
+		{
+			writerQueue.writeBlock( dataset.pathName, dataset.attributes, getDataBlock.apply( dataBlock ) );
+		}
+
+		@Override
+		public void flush()
+		{
+			writerQueue.flush();
+		}
+
+		@Override
+		public RandomAccessibleInterval< T > getImage( final int level )
+		{
+			return Cast.unchecked( loopback.getSetupImgLoader( setupIdPartition ).getImage( timepointIdPartition, level ) );
+		}
+	}
+
+	static < T extends RealType< T > & NativeType< T > > void writeViewToHdf5PartitionFile(
+			final Hdf5BlockWriterThread writerQueue,
+			final BasicImgLoader imgLoader,
+			final int timepointId,
+			final int setupId,
+			final ExportMipmapInfo mipmapInfo,
+			final boolean writeMipmapInfo,
+			final boolean deflate,
+			final ExecutorService executorService,
+			final int numThreads,
+			final LoopbackHeuristic loopbackHeuristic,
+			final AfterEachPlane afterEachPlane,
+			ProgressWriter progressWriter )
+	{
+		final BasicSetupImgLoader< T > setupImgLoader = Cast.unchecked( imgLoader.getSetupImgLoader( setupId ) );
+		final RandomAccessibleInterval< T > img = setupImgLoader.getImage( timepointId );
+		final T type = setupImgLoader.getImageType();
+		System.out.println( "typed ... WriteSequenceToHdf5.writeViewToHdf5PartitionFile" );
+		writeViewToHdf5PartitionFile( img, type, timepointId, setupId, mipmapInfo, writeMipmapInfo, deflate, writerQueue,
+				executorService, numThreads, loopbackHeuristic, afterEachPlane, progressWriter);
+	}
+
 	/**
 	 * Write a single view to a hdf5 partition file, in a chunked, mipmaped
 	 * representation. Note that the specified view must not already exist in
@@ -472,9 +626,8 @@ public class WriteSequenceToHdf5
 	 *
 	 * @param img
 	 *            the view to be written.
-	 * @param partition
-	 *            describes which part of the full sequence is contained in this
-	 *            partition, and to which file this partition is written.
+	 * @param type
+	 * 			  pixel type
 	 * @param timepointIdPartition
 	 *            the timepoint id wrt the partition of the view to be written.
 	 *            The information in {@code partition} relates this to timepoint
@@ -491,6 +644,12 @@ public class WriteSequenceToHdf5
 	 *            done (at least) once for each setup in the partition.
 	 * @param deflate
 	 *            whether to compress the data with the HDF5 DEFLATE filter.
+	 * @param writerQueue
+	 *            block writing tasks are enqueued here.
+	 * @param executorService
+	 *            executor used for creating (possibly down-sampled) blocks of
+	 *            the view to be written.
+	 * @param numThreads
 	 * @param loopbackHeuristic
 	 *            heuristic to decide whether to create each resolution level by
 	 *            reading pixels from the original image or by reading back a
@@ -499,15 +658,73 @@ public class WriteSequenceToHdf5
 	 * @param afterEachPlane
 	 *            this is called after each "plane of chunks" is written, giving
 	 *            the opportunity to clear caches, etc.
-	 * @param numCellCreatorThreads
-	 *            The number of threads that will be instantiated to generate
-	 *            cell data. Must be at least 1. (In addition the cell creator
-	 *            threads there is one writer thread that saves the generated
-	 *            data to HDF5.)
 	 * @param progressWriter
 	 *            completion ratio and status output will be directed here. may
 	 *            be null.
 	 */
+	public static < T extends RealType< T > & NativeType< T > > void writeViewToHdf5PartitionFile(
+			final RandomAccessibleInterval< T > img,
+			final T type,
+			final int timepointIdPartition,
+			final int setupIdPartition,
+			final ExportMipmapInfo mipmapInfo,
+			final boolean writeMipmapInfo,
+			final boolean deflate,
+			final Hdf5BlockWriterThread writerQueue,
+			final ExecutorService executorService,
+			final int numThreads,
+			final LoopbackHeuristic loopbackHeuristic,
+			final AfterEachPlane afterEachPlane,
+			ProgressWriter progressWriter )
+	{
+		// write Mipmap descriptions and DataType for setup
+		if ( writeMipmapInfo )
+		{
+			writerQueue.writeMipmapDescription( setupIdPartition, mipmapInfo );
+			writerQueue.writeDataType( setupIdPartition, DataTypeProperties.n5DataType( type ) );
+		}
+
+		// create loopback image-loader to read already written chunks from the
+		// h5 for generating low-resolution versions.
+		final LoopBackImageLoader loopback = ( loopbackHeuristic == null )
+				? null
+				: LoopBackImageLoader.create( writerQueue.getIHDF5Writer(), timepointIdPartition, setupIdPartition, img );
+
+		final Compression compression = deflate
+				? new GzipCompression()
+				: new RawCompression();
+
+		final DatasetIO< H5Dataset, T > io = new HDF5DatasetIO<>(
+				writerQueue,
+				compression,
+				setupIdPartition,
+				timepointIdPartition,
+				type,
+				loopback );
+
+		try
+		{
+			ExportScalePyramid.writeScalePyramid(
+					img,
+					type,
+					mipmapInfo,
+					io,
+					executorService,
+					numThreads,
+					loopbackHeuristic,
+					afterEachPlane,
+					progressWriter );
+		}
+		catch ( IOException e )
+		{
+			e.printStackTrace();
+		}
+
+		if ( loopback != null )
+			loopback.close();
+	}
+
+	@Deprecated
 	public static void writeViewToHdf5PartitionFile(
 			final RandomAccessibleInterval< UnsignedShortType > img,
 			final Partition partition,
@@ -545,116 +762,7 @@ public class WriteSequenceToHdf5
 		}
 	}
 
-	static class LoopBackImageLoader extends Hdf5ImageLoader
-	{
-		private LoopBackImageLoader( final IHDF5Reader existingHdf5Reader, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
-		{
-			super( null, existingHdf5Reader, null, sequenceDescription, false );
-		}
-
-		static LoopBackImageLoader create( final IHDF5Reader existingHdf5Reader, final int timepointIdPartition, final int setupIdPartition, final Dimensions imageDimensions )
-		{
-			final HashMap< Integer, TimePoint > timepoints = new HashMap<>();
-			timepoints.put( timepointIdPartition, new TimePoint( timepointIdPartition ) );
-			final HashMap< Integer, BasicViewSetup > setups = new HashMap<>();
-			setups.put( setupIdPartition, new BasicViewSetup( setupIdPartition, null, imageDimensions, null ) );
-			final SequenceDescriptionMinimal seq = new SequenceDescriptionMinimal( new TimePoints( timepoints ), setups, null, null );
-			return new LoopBackImageLoader( existingHdf5Reader, seq );
-		}
-	}
-
-	/*
-	 TODO:
-	 	This approximately implements DatasetIO in terms of IHDFAccess.
-	 	It works with how DatasetIO is currently used,
-	 	but for general usage, IHDF5Access must be revised.
-	 */
-	static class HDF5DatasetIO implements DatasetIO< Object, UnsignedShortType >
-	{
-		private final IHDF5Access writerQueue;
-		private final ViewId viewIdPartition;
-		private final HDF5IntStorageFeatures storage;
-		private final LoopBackImageLoader loopback;
-
-		public HDF5DatasetIO( final IHDF5Access writerQueue, final ViewId viewIdPartition, final HDF5IntStorageFeatures storage, final LoopBackImageLoader loopback )
-		{
-			this.writerQueue = writerQueue;
-			this.viewIdPartition = viewIdPartition;
-			this.storage = storage;
-			this.loopback = loopback;
-		}
-
-		@Override
-		public Object createDataset( final int level, final long[] dimensions, final int[] blockSize )
-		{
-			final String path = Util.getCellsPath( viewIdPartition, level );
-			writerQueue.createAndOpenDataset( path, dimensions.clone(), blockSize.clone(), storage );
-			return null;
-		}
-
-		@Override
-		public void writeBlock( final Object dataset, final Block< UnsignedShortType > dataBlock )
-		{
-			final SingleCellArrayImg< UnsignedShortType, ? > img = dataBlock.getData();
-			final long[] blockDimensions = Intervals.dimensionsAsLongArray( img );
-			final long[] offset = Intervals.minAsLongArray( img );
-			writerQueue.writeBlockWithOffset( Cast.unchecked( img.getStorageArray() ), blockDimensions, offset );
-		}
-
-		@Override
-		public void flush( final Object dataset )
-		{
-			writerQueue.closeDataset();
-		}
-
-		@Override
-		public RandomAccessibleInterval< UnsignedShortType > getImage( final int level )
-		{
-			return Cast.unchecked( loopback.getSetupImgLoader( viewIdPartition.getViewSetupId() ).getImage( viewIdPartition.getTimePointId(), level ) );
-		}
-	}
-
-	/**
-	 * Write a single view to a hdf5 partition file, in a chunked, mipmaped
-	 * representation. Note that the specified view must not already exist in
-	 * the partition file!
-	 *
-	 * @param img
-	 *            the view to be written.
-	 * @param timepointIdPartition
-	 *            the timepoint id wrt the partition of the view to be written.
-	 *            The information in {@code partition} relates this to timepoint
-	 *            id in the full sequence.
-	 * @param setupIdPartition
-	 *            the setup id wrt the partition of the view to be written. The
-	 *            information in {@code partition} relates this to setup id in
-	 *            the full sequence.
-	 * @param mipmapInfo
-	 *            contains for each mipmap level of the setup, the subsampling
-	 *            factors and subdivision block sizes.
-	 * @param writeMipmapInfo
-	 *            whether to write mipmap description for the setup. must be
-	 *            done (at least) once for each setup in the partition.
-	 * @param deflate
-	 *            whether to compress the data with the HDF5 DEFLATE filter.
-	 * @param writerQueue
-	 *            block writing tasks are enqueued here.
-	 * @param executorService
-	 *            executor used for creating (possibly down-sampled) blocks of
-	 *            the view to be written.
-	 * @param numThreads
-	 * @param loopbackHeuristic
-	 *            heuristic to decide whether to create each resolution level by
-	 *            reading pixels from the original image or by reading back a
-	 *            finer resolution level already written to the hdf5. may be
-	 *            null (in this case always use the original image).
-	 * @param afterEachPlane
-	 *            this is called after each "plane of chunks" is written, giving
-	 *            the opportunity to clear caches, etc.
-	 * @param progressWriter
-	 *            completion ratio and status output will be directed here. may
-	 *            be null.
-	 */
+	@Deprecated
 	public static void writeViewToHdf5PartitionFile(
 			final RandomAccessibleInterval< UnsignedShortType > img,
 			final int timepointIdPartition,
@@ -662,46 +770,17 @@ public class WriteSequenceToHdf5
 			final ExportMipmapInfo mipmapInfo,
 			final boolean writeMipmapInfo,
 			final boolean deflate,
-			final IHDF5Access writerQueue,
-			final ExecutorService executorService, // TODO
-			final int numThreads, // TODO
+			final Hdf5BlockWriterThread writerQueue,
+			final ExecutorService executorService,
+			final int numThreads,
 			final LoopbackHeuristic loopbackHeuristic,
 			final AfterEachPlane afterEachPlane,
 			ProgressWriter progressWriter )
 	{
-		// write Mipmap descriptions
-		if ( writeMipmapInfo )
-			writerQueue.writeMipmapDescription( setupIdPartition, mipmapInfo );
-
-		// create loopback image-loader to read already written chunks from the
-		// h5 for generating low-resolution versions.
-		final LoopBackImageLoader loopback = ( loopbackHeuristic == null ) ? null : LoopBackImageLoader.create( writerQueue.getIHDF5Writer(), timepointIdPartition, setupIdPartition, img );
-
-		final DatasetIO< Object, UnsignedShortType > io = new HDF5DatasetIO(
-				writerQueue,
-				new ViewId( timepointIdPartition, setupIdPartition ),
-				deflate ? HDF5IntStorageFeatures.INT_AUTO_SCALING_DEFLATE : HDF5IntStorageFeatures.INT_AUTO_SCALING,
-				loopback );
-
-		try
-		{
-			ExportScalePyramid.writeScalePyramid(
-					img,
-					new UnsignedShortType(),
-					mipmapInfo,
-					io,
-					executorService,
-					numThreads,
-					loopbackHeuristic,
-					afterEachPlane,
-					progressWriter );
-		}
-		catch ( IOException e )
-		{
-			e.printStackTrace();
-		}
-
-		if ( loopback != null )
-			loopback.close();
+		writeViewToHdf5PartitionFile( img, new UnsignedShortType(),
+				timepointIdPartition, setupIdPartition,
+				mipmapInfo, writeMipmapInfo, deflate,
+				writerQueue, executorService, numThreads,
+				loopbackHeuristic, afterEachPlane, progressWriter );
 	}
 }

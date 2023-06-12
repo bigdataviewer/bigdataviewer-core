@@ -125,8 +125,8 @@ public class ExportScalePyramid
 		Block( final SingleCellArrayImg< T, ? > data, final int[] size, final long[] position )
 		{
 			this.data = data;
-			this.size = size;
-			this.position = position;
+			this.size = size.clone();
+			this.position = position.clone();
 		}
 
 		public SingleCellArrayImg< T, ? > getData()
@@ -175,7 +175,7 @@ public class ExportScalePyramid
 		/**
 		 * Blocks until all pending data was written to {@code dataset}.
 		 */
-		void flush( D dataset ) throws IOException;
+		void flush() throws IOException;
 
 		/**
 		 * Opens a dataset that was already written as a
@@ -409,7 +409,7 @@ public class ExportScalePyramid
 
 				subProgressWriter.setProgress( ( double ) plane / numPlanes );
 			}
-			io.flush( dataset );
+			io.flush();
 			progressWriter.setProgress( ( double ) ++numCompletedTasks / numTasks );
 		}
 	}

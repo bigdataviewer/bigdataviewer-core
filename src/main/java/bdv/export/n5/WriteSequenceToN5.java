@@ -59,16 +59,6 @@ import net.imglib2.img.cell.Cell;
 import net.imglib2.img.cell.CellGrid;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.integer.ByteType;
-import net.imglib2.type.numeric.integer.IntType;
-import net.imglib2.type.numeric.integer.LongType;
-import net.imglib2.type.numeric.integer.ShortType;
-import net.imglib2.type.numeric.integer.UnsignedByteType;
-import net.imglib2.type.numeric.integer.UnsignedIntType;
-import net.imglib2.type.numeric.integer.UnsignedLongType;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.type.numeric.real.DoubleType;
-import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Cast;
 import org.janelia.saalfeldlab.n5.ByteArrayDataBlock;
 import org.janelia.saalfeldlab.n5.Compression;
@@ -86,6 +76,7 @@ import org.janelia.saalfeldlab.n5.ShortArrayDataBlock;
 import static bdv.img.n5.BdvN5Format.DATA_TYPE_KEY;
 import static bdv.img.n5.BdvN5Format.DOWNSAMPLING_FACTORS_KEY;
 import static bdv.img.n5.BdvN5Format.getPathName;
+import static bdv.img.n5.DataTypeProperties.n5DataType;
 import static net.imglib2.cache.img.ReadOnlyCachedCellImgOptions.options;
 
 /**
@@ -351,7 +342,7 @@ public class WriteSequenceToN5
 		}
 
 		@Override
-		public void flush( final N5Dataset dataset )
+		public void flush()
 		{}
 
 		@Override
@@ -376,31 +367,5 @@ public class WriteSequenceToN5
 					},
 					options().cellDimensions( cellDimensions ) );
 		}
-	}
-
-	private static < T extends NativeType< T > > DataType n5DataType( final T type )
-	{
-		if ( type instanceof DoubleType )
-			return DataType.FLOAT64;
-		if ( type instanceof FloatType )
-			return DataType.FLOAT32;
-		if ( type instanceof LongType )
-			return DataType.INT64;
-		if ( type instanceof UnsignedLongType )
-			return DataType.UINT64;
-		if ( type instanceof IntType )
-			return DataType.INT32;
-		if ( type instanceof UnsignedIntType )
-			return DataType.UINT32;
-		if ( type instanceof ShortType )
-			return DataType.INT16;
-		if ( type instanceof UnsignedShortType )
-			return DataType.UINT16;
-		if ( type instanceof ByteType )
-			return DataType.INT8;
-		if ( type instanceof UnsignedByteType )
-			return DataType.UINT8;
-		else
-			return null;
 	}
 }
