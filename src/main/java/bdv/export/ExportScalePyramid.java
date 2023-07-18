@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -163,25 +163,25 @@ public class ExportScalePyramid
 		D createDataset(
 				final int level,
 				final long[] dimensions,
-				final int[] blockSize ) throws IOException;
+				final int[] blockSize );
 
 		/**
 		 * Write the given {@code dataBlock} to the {@code dataset}.
 		 */
 		void writeBlock(
 				final D dataset,
-				final Block< T > dataBlock ) throws IOException;
+				final Block< T > dataBlock );
 
 		/**
 		 * Blocks until all pending data was written to {@code dataset}.
 		 */
-		void flush() throws IOException;
+		void flush();
 
 		/**
 		 * Opens a dataset that was already written as a
 		 * {@code RaπdomAccessibleInterval}.
 		 */
-		default RandomAccessibleInterval< T > getImage( final int level ) throws IOException
+		default RandomAccessibleInterval< T > getImage( final int level )
 		{
 			return null;
 		}
