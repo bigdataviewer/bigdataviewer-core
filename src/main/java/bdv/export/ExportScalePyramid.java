@@ -163,25 +163,25 @@ public class ExportScalePyramid
 		D createDataset(
 				final int level,
 				final long[] dimensions,
-				final int[] blockSize );
+				final int[] blockSize ) throws IOException;
 
 		/**
 		 * Write the given {@code dataBlock} to the {@code dataset}.
 		 */
 		void writeBlock(
 				final D dataset,
-				final Block< T > dataBlock );
+				final Block< T > dataBlock ) throws IOException;
 
 		/**
 		 * Blocks until all pending data was written to {@code dataset}.
 		 */
-		void flush();
+		void flush() throws IOException;
 
 		/**
 		 * Opens a dataset that was already written as a
 		 * {@code RaπdomAccessibleInterval}.
 		 */
-		default RandomAccessibleInterval< T > getImage( final int level )
+		default RandomAccessibleInterval< T > getImage( final int level ) throws IOException
 		{
 			return null;
 		}

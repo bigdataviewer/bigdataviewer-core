@@ -33,6 +33,7 @@ import static bdv.img.n5.BdvN5Format.DOWNSAMPLING_FACTORS_KEY;
 import static bdv.img.n5.BdvN5Format.getPathName;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -131,25 +132,32 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 				if ( isOpen )
 					return;
 
-				this.n5 = new N5FSReader( n5File.getAbsolutePath() );
-
-				int maxNumLevels = 0;
-				final List< ? extends BasicViewSetup > setups = seq.getViewSetupsOrdered();
-				for ( final BasicViewSetup setup : setups )
+				try
 				{
-					final int setupId = setup.getId();
-					final SetupImgLoader setupImgLoader = createSetupImgLoader( setupId );
-					setupImgLoaders.put( setupId, setupImgLoader );
-					maxNumLevels = Math.max( maxNumLevels, setupImgLoader.numMipmapLevels() );
-				}
+					this.n5 = new N5FSReader( n5File.getAbsolutePath() );
 
-				final int numFetcherThreads = requestedNumFetcherThreads >= 0
-						? requestedNumFetcherThreads
-						: Math.max( 1, Runtime.getRuntime().availableProcessors() );
-				final SharedQueue queue = requestedSharedQueue != null
-						? requestedSharedQueue
-						: ( createdSharedQueue = new SharedQueue( numFetcherThreads, maxNumLevels ) );
-				cache = new VolatileGlobalCellCache( queue );
+					int maxNumLevels = 0;
+					final List< ? extends BasicViewSetup > setups = seq.getViewSetupsOrdered();
+					for ( final BasicViewSetup setup : setups )
+					{
+						final int setupId = setup.getId();
+						final SetupImgLoader setupImgLoader = createSetupImgLoader( setupId );
+						setupImgLoaders.put( setupId, setupImgLoader );
+						maxNumLevels = Math.max( maxNumLevels, setupImgLoader.numMipmapLevels() );
+					}
+
+					final int numFetcherThreads = requestedNumFetcherThreads >= 0
+							? requestedNumFetcherThreads
+							: Math.max( 1, Runtime.getRuntime().availableProcessors() );
+					final SharedQueue queue = requestedSharedQueue != null
+							? requestedSharedQueue
+							: ( createdSharedQueue = new SharedQueue( numFetcherThreads, maxNumLevels ) );
+					cache = new VolatileGlobalCellCache( queue );
+				}
+				catch ( final IOException e )
+				{
+					throw new RuntimeException( e );
+				}
 
 				isOpen = true;
 			}
@@ -188,10 +196,18 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 		return setupImgLoaders.get( setupId );
 	}
 
-	private < T extends NativeType< T >, V extends Volatile< T > & NativeType< V > > SetupImgLoader< T, V > createSetupImgLoader( final int setupId )
+	private < T extends NativeType< T >, V extends Volatile< T > & NativeType< V > > SetupImgLoader< T, V > createSetupImgLoader( final int setupId ) throws IOException
 	{
 		final String pathName = getPathName( setupId );
-		final DataType dataType = n5.getAttribute( pathName, DATA_TYPE_KEY, DataType.class );
+		final DataType dataType;
+		try
+		{
+			dataType = n5.getAttribute( pathName, DATA_TYPE_KEY, DataType.class );
+		}
+		catch ( final N5Exception e )
+		{
+			throw new IOException( e );
+		}
 		return new SetupImgLoader<>( setupId, Cast.unchecked( DataTypeProperties.of( dataType ) ) );
 	}
 
@@ -212,17 +228,24 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 
 		private final AffineTransform3D[] mipmapTransforms;
 
-		public SetupImgLoader( final int setupId, final DataTypeProperties< T, V, ?, ? > props )
+		public SetupImgLoader( final int setupId, final DataTypeProperties< T, V, ?, ? > props ) throws IOException
 		{
 			this(setupId, props.type(), props.volatileType() );
 		}
 
-		public SetupImgLoader( final int setupId, final T type, final V volatileType )
+		public SetupImgLoader( final int setupId, final T type, final V volatileType ) throws IOException
 		{
 			super( type, volatileType );
 			this.setupId = setupId;
 			final String pathName = getPathName( setupId );
-			mipmapResolutions = n5.getAttribute( pathName, DOWNSAMPLING_FACTORS_KEY, double[][].class );
+			try
+			{
+				mipmapResolutions = n5.getAttribute( pathName, DOWNSAMPLING_FACTORS_KEY, double[][].class );
+			}
+			catch ( final N5Exception e )
+			{
+				throw new IOException( e );
+			}
 			mipmapTransforms = new AffineTransform3D[ mipmapResolutions.length ];
 			for ( int level = 0; level < mipmapResolutions.length; level++ )
 				mipmapTransforms[ level ] = MipmapTransforms.getMipmapTransformDefault( mipmapResolutions[ level ] );
@@ -298,7 +321,7 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 				final SimpleCacheArrayLoader< ? > loader = createCacheArrayLoader( n5, pathName );
 				return cache.createImg( grid, timepointId, setupId, level, cacheHints, loader, type );
 			}
-			catch ( final N5Exception e )
+			catch ( final IOException | N5Exception e )
 			{
 				System.err.println( String.format(
 						"image data for timepoint %d setup %d level %d could not be found.",
@@ -336,9 +359,17 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 		}
 
 		@Override
-		public A loadArray( final long[] gridPosition, final int[] cellDimensions )
+		public A loadArray( final long[] gridPosition, final int[] cellDimensions ) throws IOException
 		{
-			final DataBlock< T > dataBlock = Cast.unchecked( n5.readBlock( pathName, attributes, gridPosition ) );
+			final DataBlock< T > dataBlock;
+			try
+			{
+				dataBlock = Cast.unchecked( n5.readBlock( pathName, attributes, gridPosition ) );
+			}
+			catch ( final N5Exception e )
+			{
+				throw new IOException( e );
+			}
 			if ( dataBlock != null && Arrays.equals( dataBlock.getSize(), cellDimensions ) )
 			{
 				return createVolatileArrayAccess.apply( dataBlock.getData() );
@@ -360,9 +391,17 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 		}
 	}
 
-	public static SimpleCacheArrayLoader< ? > createCacheArrayLoader( final N5Reader n5, final String pathName )
+	public static SimpleCacheArrayLoader< ? > createCacheArrayLoader( final N5Reader n5, final String pathName ) throws IOException
 	{
-		final DatasetAttributes attributes = n5.getDatasetAttributes( pathName );
+		final DatasetAttributes attributes;
+		try
+		{
+			attributes = n5.getDatasetAttributes( pathName );
+		}
+		catch ( final N5Exception e )
+		{
+			throw new IOException( e );
+		}
 		return new N5CacheArrayLoader<>( n5, pathName, attributes, DataTypeProperties.of( attributes.getDataType() ) );
 	}
 

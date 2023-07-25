@@ -53,6 +53,7 @@ import org.janelia.saalfeldlab.n5.DoubleArrayDataBlock;
 import org.janelia.saalfeldlab.n5.FloatArrayDataBlock;
 import org.janelia.saalfeldlab.n5.IntArrayDataBlock;
 import org.janelia.saalfeldlab.n5.LongArrayDataBlock;
+import org.janelia.saalfeldlab.n5.N5Exception;
 import org.janelia.saalfeldlab.n5.N5FSWriter;
 import org.janelia.saalfeldlab.n5.N5Writer;
 import org.janelia.saalfeldlab.n5.ShortArrayDataBlock;
@@ -329,18 +330,33 @@ public class WriteSequenceToN5
 		}
 
 		@Override
-		public N5Dataset createDataset( final int level, final long[] dimensions, final int[] blockSize )
+		public N5Dataset createDataset( final int level, final long[] dimensions, final int[] blockSize ) throws IOException
 		{
 			final String pathName = getPathName( setupId, timepointId, level );
-			n5.createDataset( pathName, dimensions, blockSize, dataType, compression );
+			try
+			{
+				n5.createDataset( pathName, dimensions, blockSize, dataType, compression );
+			}
+			catch ( final N5Exception e )
+			{
+				throw new IOException( e );
+			}
+
 			final DatasetAttributes attributes = n5.getDatasetAttributes( pathName );
 			return new N5Dataset( pathName, attributes );
 		}
 
 		@Override
-		public void writeBlock( final N5Dataset dataset, final ExportScalePyramid.Block< T > dataBlock )
+		public void writeBlock( final N5Dataset dataset, final ExportScalePyramid.Block< T > dataBlock ) throws IOException
 		{
-			n5.writeBlock( dataset.pathName, dataset.attributes, getDataBlock.apply( dataBlock ) );
+			try
+			{
+				n5.writeBlock( dataset.pathName, dataset.attributes, getDataBlock.apply( dataBlock ) );
+			}
+			catch ( final N5Exception e )
+			{
+				throw new IOException( e );
+			}
 		}
 
 		@Override
@@ -348,10 +364,18 @@ public class WriteSequenceToN5
 		{}
 
 		@Override
-		public RandomAccessibleInterval< T > getImage( final int level )
+		public RandomAccessibleInterval< T > getImage( final int level ) throws IOException
 		{
 			final String pathName = getPathName( setupId, timepointId, level );
-			final DatasetAttributes attributes = n5.getDatasetAttributes( pathName );
+			final DatasetAttributes attributes;
+			try
+			{
+				attributes = n5.getDatasetAttributes( pathName );
+			}
+			catch ( final N5Exception e )
+			{
+				throw new IOException( e );
+			}
 			final long[] dimensions = attributes.getDimensions();
 			final int[] cellDimensions = attributes.getBlockSize();
 			final CellGrid grid = new CellGrid( dimensions, cellDimensions );
