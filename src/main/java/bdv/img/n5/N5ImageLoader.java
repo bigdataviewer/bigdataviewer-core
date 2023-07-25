@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -28,14 +28,10 @@
  */
 package bdv.img.n5;
 
-import bdv.AbstractViewerSetupImgLoader;
-import bdv.ViewerImgLoader;
-import bdv.cache.CacheControl;
-import bdv.cache.SharedQueue;
-import bdv.img.cache.SimpleCacheArrayLoader;
-import bdv.img.cache.VolatileGlobalCellCache;
-import bdv.util.ConstantRandomAccessible;
-import bdv.util.MipmapTransforms;
+import static bdv.img.n5.BdvN5Format.DATA_TYPE_KEY;
+import static bdv.img.n5.BdvN5Format.DOWNSAMPLING_FACTORS_KEY;
+import static bdv.img.n5.BdvN5Format.getPathName;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.Arrays;
@@ -44,6 +40,22 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
 import java.util.function.IntFunction;
+
+import org.janelia.saalfeldlab.n5.DataBlock;
+import org.janelia.saalfeldlab.n5.DataType;
+import org.janelia.saalfeldlab.n5.DatasetAttributes;
+import org.janelia.saalfeldlab.n5.N5Exception;
+import org.janelia.saalfeldlab.n5.N5FSReader;
+import org.janelia.saalfeldlab.n5.N5Reader;
+
+import bdv.AbstractViewerSetupImgLoader;
+import bdv.ViewerImgLoader;
+import bdv.cache.CacheControl;
+import bdv.cache.SharedQueue;
+import bdv.img.cache.SimpleCacheArrayLoader;
+import bdv.img.cache.VolatileGlobalCellCache;
+import bdv.util.ConstantRandomAccessible;
+import bdv.util.MipmapTransforms;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.generic.sequence.ImgLoaderHint;
@@ -65,15 +77,6 @@ import net.imglib2.type.NativeType;
 import net.imglib2.util.Cast;
 import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
-import org.janelia.saalfeldlab.n5.DataBlock;
-import org.janelia.saalfeldlab.n5.DataType;
-import org.janelia.saalfeldlab.n5.DatasetAttributes;
-import org.janelia.saalfeldlab.n5.N5FSReader;
-import org.janelia.saalfeldlab.n5.N5Reader;
-
-import static bdv.img.n5.BdvN5Format.DATA_TYPE_KEY;
-import static bdv.img.n5.BdvN5Format.DOWNSAMPLING_FACTORS_KEY;
-import static bdv.img.n5.BdvN5Format.getPathName;
 
 public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 {
@@ -151,7 +154,7 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 							: ( createdSharedQueue = new SharedQueue( numFetcherThreads, maxNumLevels ) );
 					cache = new VolatileGlobalCellCache( queue );
 				}
-				catch ( IOException e )
+				catch ( final IOException e )
 				{
 					throw new RuntimeException( e );
 				}
@@ -196,7 +199,15 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 	private < T extends NativeType< T >, V extends Volatile< T > & NativeType< V > > SetupImgLoader< T, V > createSetupImgLoader( final int setupId ) throws IOException
 	{
 		final String pathName = getPathName( setupId );
-		final DataType dataType = n5.getAttribute( pathName, DATA_TYPE_KEY, DataType.class );
+		final DataType dataType;
+		try
+		{
+			dataType = n5.getAttribute( pathName, DATA_TYPE_KEY, DataType.class );
+		}
+		catch ( final N5Exception e )
+		{
+			throw new IOException( e );
+		}
 		return new SetupImgLoader<>( setupId, Cast.unchecked( DataTypeProperties.of( dataType ) ) );
 	}
 
@@ -227,7 +238,14 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 			super( type, volatileType );
 			this.setupId = setupId;
 			final String pathName = getPathName( setupId );
-			mipmapResolutions = n5.getAttribute( pathName, DOWNSAMPLING_FACTORS_KEY, double[][].class );
+			try
+			{
+				mipmapResolutions = n5.getAttribute( pathName, DOWNSAMPLING_FACTORS_KEY, double[][].class );
+			}
+			catch ( final N5Exception e )
+			{
+				throw new IOException( e );
+			}
 			mipmapTransforms = new AffineTransform3D[ mipmapResolutions.length ];
 			for ( int level = 0; level < mipmapResolutions.length; level++ )
 				mipmapTransforms[ level ] = MipmapTransforms.getMipmapTransformDefault( mipmapResolutions[ level ] );
@@ -254,7 +272,7 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 				final DatasetAttributes attributes = n5.getDatasetAttributes( pathName );
 				return new FinalDimensions( attributes.getDimensions() );
 			}
-			catch( Exception e )
+			catch( final RuntimeException e )
 			{
 				return null;
 			}
@@ -303,7 +321,7 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 				final SimpleCacheArrayLoader< ? > loader = createCacheArrayLoader( n5, pathName );
 				return cache.createImg( grid, timepointId, setupId, level, cacheHints, loader, type );
 			}
-			catch ( IOException e )
+			catch ( final IOException | N5Exception e )
 			{
 				System.err.println( String.format(
 						"image data for timepoint %d setup %d level %d could not be found.",
@@ -324,7 +342,7 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 		private final Function< T, A > createVolatileArrayAccess;
 
 		N5CacheArrayLoader( final N5Reader n5, final String pathName, final DatasetAttributes attributes,
-				DataTypeProperties< ?, ?, T, A > dataTypeProperties )
+				final DataTypeProperties< ?, ?, T, A > dataTypeProperties )
 		{
 			this( n5, pathName, attributes, dataTypeProperties.createPrimitiveArray(), dataTypeProperties.createVolatileArrayAccess() );
 		}
@@ -343,7 +361,15 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 		@Override
 		public A loadArray( final long[] gridPosition, final int[] cellDimensions ) throws IOException
 		{
-			final DataBlock< T > dataBlock = Cast.unchecked( n5.readBlock( pathName, attributes, gridPosition ) );
+			final DataBlock< T > dataBlock;
+			try
+			{
+				dataBlock = Cast.unchecked( n5.readBlock( pathName, attributes, gridPosition ) );
+			}
+			catch ( final N5Exception e )
+			{
+				throw new IOException( e );
+			}
 			if ( dataBlock != null && Arrays.equals( dataBlock.getSize(), cellDimensions ) )
 			{
 				return createVolatileArrayAccess.apply( dataBlock.getData() );
@@ -367,7 +393,15 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 
 	public static SimpleCacheArrayLoader< ? > createCacheArrayLoader( final N5Reader n5, final String pathName ) throws IOException
 	{
-		final DatasetAttributes attributes = n5.getDatasetAttributes( pathName );
+		final DatasetAttributes attributes;
+		try
+		{
+			attributes = n5.getDatasetAttributes( pathName );
+		}
+		catch ( final N5Exception e )
+		{
+			throw new IOException( e );
+		}
 		return new N5CacheArrayLoader<>( n5, pathName, attributes, DataTypeProperties.of( attributes.getDataType() ) );
 	}
 

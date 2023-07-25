@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -28,15 +28,12 @@
  */
 package bdv.export.n5;
 
-import bdv.export.ExportMipmapInfo;
-import bdv.export.ExportScalePyramid;
-import bdv.export.ProgressWriter;
-import bdv.export.ProgressWriterNull;
-import bdv.export.SubTaskProgressWriter;
-import bdv.export.ExportScalePyramid.AfterEachPlane;
-import bdv.export.ExportScalePyramid.LoopbackHeuristic;
-import bdv.img.cache.SimpleCacheArrayLoader;
-import bdv.img.n5.N5ImageLoader;
+import static bdv.img.n5.BdvN5Format.DATA_TYPE_KEY;
+import static bdv.img.n5.BdvN5Format.DOWNSAMPLING_FACTORS_KEY;
+import static bdv.img.n5.BdvN5Format.getPathName;
+import static bdv.img.n5.DataTypeProperties.n5DataType;
+import static net.imglib2.cache.img.ReadOnlyCachedCellImgOptions.options;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -46,6 +43,30 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import org.janelia.saalfeldlab.n5.ByteArrayDataBlock;
+import org.janelia.saalfeldlab.n5.Compression;
+import org.janelia.saalfeldlab.n5.DataBlock;
+import org.janelia.saalfeldlab.n5.DataType;
+import org.janelia.saalfeldlab.n5.DatasetAttributes;
+import org.janelia.saalfeldlab.n5.DoubleArrayDataBlock;
+import org.janelia.saalfeldlab.n5.FloatArrayDataBlock;
+import org.janelia.saalfeldlab.n5.IntArrayDataBlock;
+import org.janelia.saalfeldlab.n5.LongArrayDataBlock;
+import org.janelia.saalfeldlab.n5.N5Exception;
+import org.janelia.saalfeldlab.n5.N5FSWriter;
+import org.janelia.saalfeldlab.n5.N5Writer;
+import org.janelia.saalfeldlab.n5.ShortArrayDataBlock;
+
+import bdv.export.ExportMipmapInfo;
+import bdv.export.ExportScalePyramid;
+import bdv.export.ExportScalePyramid.AfterEachPlane;
+import bdv.export.ExportScalePyramid.LoopbackHeuristic;
+import bdv.export.ProgressWriter;
+import bdv.export.ProgressWriterNull;
+import bdv.export.SubTaskProgressWriter;
+import bdv.img.cache.SimpleCacheArrayLoader;
+import bdv.img.n5.N5ImageLoader;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicImgLoader;
 import mpicbg.spim.data.generic.sequence.BasicSetupImgLoader;
@@ -60,24 +81,6 @@ import net.imglib2.img.cell.CellGrid;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.util.Cast;
-import org.janelia.saalfeldlab.n5.ByteArrayDataBlock;
-import org.janelia.saalfeldlab.n5.Compression;
-import org.janelia.saalfeldlab.n5.DataBlock;
-import org.janelia.saalfeldlab.n5.DataType;
-import org.janelia.saalfeldlab.n5.DatasetAttributes;
-import org.janelia.saalfeldlab.n5.DoubleArrayDataBlock;
-import org.janelia.saalfeldlab.n5.FloatArrayDataBlock;
-import org.janelia.saalfeldlab.n5.IntArrayDataBlock;
-import org.janelia.saalfeldlab.n5.LongArrayDataBlock;
-import org.janelia.saalfeldlab.n5.N5FSWriter;
-import org.janelia.saalfeldlab.n5.N5Writer;
-import org.janelia.saalfeldlab.n5.ShortArrayDataBlock;
-
-import static bdv.img.n5.BdvN5Format.DATA_TYPE_KEY;
-import static bdv.img.n5.BdvN5Format.DOWNSAMPLING_FACTORS_KEY;
-import static bdv.img.n5.BdvN5Format.getPathName;
-import static bdv.img.n5.DataTypeProperties.n5DataType;
-import static net.imglib2.cache.img.ReadOnlyCachedCellImgOptions.options;
 
 /**
  * @author Tobias Pietzsch
@@ -155,7 +158,7 @@ public class WriteSequenceToN5
 				.map( BasicViewSetup::getId )
 				.collect( Collectors.toList() );
 
-		N5Writer n5 = new N5FSWriter( n5File.getAbsolutePath() );
+		final N5Writer n5 = new N5FSWriter( n5File.getAbsolutePath() );
 
 		// write Mipmap descriptions
 		for ( final int setupId : setupIds )
@@ -246,7 +249,7 @@ public class WriteSequenceToN5
 			final int numThreads,
 			final LoopbackHeuristic loopbackHeuristic,
 			final AfterEachPlane afterEachPlane,
-			ProgressWriter progressWriter ) throws IOException
+			final ProgressWriter progressWriter ) throws IOException
 	{
 		final BasicSetupImgLoader< T > setupImgLoader = Cast.unchecked( imgLoader.getSetupImgLoader( setupId ) );
 		final RandomAccessibleInterval< T > img = setupImgLoader.getImage( timepointId );
@@ -330,7 +333,15 @@ public class WriteSequenceToN5
 		public N5Dataset createDataset( final int level, final long[] dimensions, final int[] blockSize ) throws IOException
 		{
 			final String pathName = getPathName( setupId, timepointId, level );
-			n5.createDataset( pathName, dimensions, blockSize, dataType, compression );
+			try
+			{
+				n5.createDataset( pathName, dimensions, blockSize, dataType, compression );
+			}
+			catch ( final N5Exception e )
+			{
+				throw new IOException( e );
+			}
+
 			final DatasetAttributes attributes = n5.getDatasetAttributes( pathName );
 			return new N5Dataset( pathName, attributes );
 		}
@@ -338,7 +349,14 @@ public class WriteSequenceToN5
 		@Override
 		public void writeBlock( final N5Dataset dataset, final ExportScalePyramid.Block< T > dataBlock ) throws IOException
 		{
-			n5.writeBlock( dataset.pathName, dataset.attributes, getDataBlock.apply( dataBlock ) );
+			try
+			{
+				n5.writeBlock( dataset.pathName, dataset.attributes, getDataBlock.apply( dataBlock ) );
+			}
+			catch ( final N5Exception e )
+			{
+				throw new IOException( e );
+			}
 		}
 
 		@Override
@@ -349,7 +367,15 @@ public class WriteSequenceToN5
 		public RandomAccessibleInterval< T > getImage( final int level ) throws IOException
 		{
 			final String pathName = getPathName( setupId, timepointId, level );
-			final DatasetAttributes attributes = n5.getDatasetAttributes( pathName );
+			final DatasetAttributes attributes;
+			try
+			{
+				attributes = n5.getDatasetAttributes( pathName );
+			}
+			catch ( final N5Exception e )
+			{
+				throw new IOException( e );
+			}
 			final long[] dimensions = attributes.getDimensions();
 			final int[] cellDimensions = attributes.getBlockSize();
 			final CellGrid grid = new CellGrid( dimensions, cellDimensions );
