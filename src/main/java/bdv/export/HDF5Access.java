@@ -33,8 +33,10 @@ import ch.systemsx.cisd.hdf5.HDF5FloatStorageFeatures;
 import ch.systemsx.cisd.hdf5.HDF5IntStorageFeatures;
 import ch.systemsx.cisd.hdf5.IHDF5FileLevelReadOnlyHandler;
 import ch.systemsx.cisd.hdf5.IHDF5Writer;
-import ch.systemsx.cisd.hdf5.hdf5lib.HDFHelper;
+import hdf.hdf5lib.H5;
+import hdf.hdf5lib.HDF5Constants;
 import hdf.hdf5lib.exceptions.HDF5LibraryException;
+import hdf.hdf5lib.structs.H5O_info_t;
 import java.io.File;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
@@ -60,7 +62,6 @@ import static hdf.hdf5lib.H5.H5Sselect_hyperslab;
 import static hdf.hdf5lib.H5.H5open;
 import static hdf.hdf5lib.HDF5Constants.H5F_ACC_RDWR;
 import static hdf.hdf5lib.HDF5Constants.H5O_TYPE_DATASET;
-import static hdf.hdf5lib.HDF5Constants.H5O_TYPE_GROUP;
 import static hdf.hdf5lib.HDF5Constants.H5P_DEFAULT;
 import static hdf.hdf5lib.HDF5Constants.H5S_SELECT_SET;
 
@@ -143,10 +144,13 @@ class HDF5Access
 
 		private boolean datasetExists( final String pathName )
 		{
+			if ( "/".equals( pathName ) )
+				return false;
+
 			try
 			{
-				final int objectTypeId = "/".equals( pathName ) ? H5O_TYPE_GROUP : HDFHelper.H5Oget_info_by_name( fileId, pathName, false ).type;
-				return objectTypeId == H5O_TYPE_DATASET;
+				final H5O_info_t info = H5.H5Oget_info_by_name( fileId, pathName, HDF5Constants.H5O_INFO_BASIC, HDF5Constants.H5P_DEFAULT );
+				return info.type == H5O_TYPE_DATASET;
 			}
 			catch ( HDF5LibraryException e )
 			{
