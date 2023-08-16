@@ -138,6 +138,8 @@
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>
 
+		<snakeyaml.version>2.0</snakeyaml.version>
+		<ui-behaviour.version>2.0.8</ui-behaviour.version>
 		<n5.version>3.0.0</n5.version>
 	</properties>
 

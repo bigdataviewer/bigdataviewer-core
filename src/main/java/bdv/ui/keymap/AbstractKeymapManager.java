@@ -44,6 +44,7 @@ import org.scijava.ui.behaviour.io.InputTriggerDescription;
 import org.scijava.ui.behaviour.io.InputTriggerDescriptionsBuilder;
 import org.scijava.ui.behaviour.io.yaml.YamlConfigIO;
 import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.TypeDescription;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.Constructor;
@@ -166,9 +167,10 @@ public abstract class AbstractKeymapManager< T extends AbstractKeymapManager< T 
 	{
 		final DumperOptions dumperOptions = new DumperOptions();
 		dumperOptions.setDefaultFlowStyle( DumperOptions.FlowStyle.BLOCK );
-		final Representer representer = new Representer();
+		final Representer representer = new Representer( dumperOptions );
 		representer.addClassTag( KeymapsListData.class, new Tag( "!keymapslist" ) );
-		final Constructor constructor = new Constructor();
+		final LoaderOptions loaderOptions = new LoaderOptions();
+		final Constructor constructor = new Constructor( loaderOptions );
 		constructor.addTypeDescription( new TypeDescription( KeymapsListData.class, "!keymapslist" ) );
 		return new Yaml( constructor, representer, dumperOptions );
 	}

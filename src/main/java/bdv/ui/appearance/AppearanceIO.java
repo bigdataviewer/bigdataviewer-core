@@ -40,6 +40,7 @@ import java.util.Map;
 import javax.swing.UIManager.LookAndFeelInfo;
 
 import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.AbstractConstruct;
 import org.yaml.snakeyaml.constructor.Constructor;
@@ -60,7 +61,8 @@ public class AppearanceIO
 	public static Appearance load( final String filename ) throws IOException
 	{
 		final FileReader input = new FileReader( filename );
-		final Yaml yaml = new Yaml( new AppearanceConstructor() );
+		final LoaderOptions loaderOptions = new LoaderOptions();
+		final Yaml yaml = new Yaml( new AppearanceConstructor( loaderOptions ) );
 		final Iterable< Object > objs = yaml.loadAll( input );
 		final List< Object > list = new ArrayList<>();
 		objs.forEach( list::add );
@@ -75,7 +77,7 @@ public class AppearanceIO
 		final FileWriter output = new FileWriter( filename );
 		final DumperOptions dumperOptions = new DumperOptions();
 		dumperOptions.setDefaultFlowStyle( DumperOptions.FlowStyle.BLOCK );
-		final Yaml yaml = new Yaml( new AppearanceRepresenter(), dumperOptions );
+		final Yaml yaml = new Yaml( new AppearanceRepresenter( dumperOptions ), dumperOptions );
 		final ArrayList< Object > objects = new ArrayList<>();
 		objects.add( appearance );
 		yaml.dumpAll( objects.iterator(), output );
@@ -87,8 +89,9 @@ public class AppearanceIO
 
 	static class AppearanceRepresenter extends Representer
 	{
-		public AppearanceRepresenter()
+		public AppearanceRepresenter( final DumperOptions dumperOptions )
 		{
+			super( dumperOptions );
 			this.representers.put( Appearance.class, new RepresentAppearance() );
 			this.representers.put( Hex.class, new RepresentHex() );
 			this.representers.put( LookAndFeelInfo.class, new RepresentLookAndFeelInfo() );
@@ -151,8 +154,9 @@ public class AppearanceIO
 
 	static class AppearanceConstructor extends Constructor
 	{
-		public AppearanceConstructor()
+		public AppearanceConstructor( final LoaderOptions loaderOptions )
 		{
+			super( loaderOptions );
 			this.yamlConstructors.put( APPEARANCE_TAG, new ConstructAppearance() );
 			this.yamlConstructors.put( LOOK_AND_FEEL_TAG, new ConstructLookAndFeelInfo() );
 		}
