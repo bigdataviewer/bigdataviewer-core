@@ -11,7 +11,7 @@
 
 	<groupId>sc.fiji</groupId>
 	<artifactId>bigdataviewer-core</artifactId>
-	<version>10.4.10-SNAPSHOT</version>
+	<version>10.4.10</version>
 
 	<name>BigDataViewer Core</name>
 	<description>BigDataViewer core classes with minimal dependencies.</description>
@@ -118,7 +118,7 @@
 	<scm>
 		<connection>scm:git:https://github.com/bigdataviewer/bigdataviewer-core</connection>
 		<developerConnection>scm:git:git@github.com:bigdataviewer/bigdataviewer-core</developerConnection>
-		<tag>HEAD</tag>
+		<tag>bigdataviewer-core-10.4.10</tag>
 		<url>https://github.com/bigdataviewer/bigdataviewer-core</url>
 	</scm>
 	<issueManagement>
