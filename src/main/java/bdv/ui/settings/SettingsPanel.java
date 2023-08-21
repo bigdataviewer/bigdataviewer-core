@@ -32,7 +32,6 @@ import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
@@ -371,6 +370,8 @@ public class SettingsPanel extends JPanel
 	{
 		return new JLabel( text )
 		{
+			private static final long serialVersionUID = 1L;
+
 			@Override
 			public void updateUI()
 			{
