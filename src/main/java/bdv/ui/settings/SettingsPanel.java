@@ -433,4 +433,40 @@ public class SettingsPanel extends JPanel
 			super.paintComponent( g );
 		}
 	}
+
+	public void showPage( final String path )
+	{
+		final String[] parts = path.split( ">" );
+		DefaultMutableTreeNode current = root;
+		for ( final String part : parts )
+		{
+			final String text = part.trim();
+			DefaultMutableTreeNode next = null;
+			for ( int i = 0; i < current.getChildCount(); ++i )
+			{
+				final DefaultMutableTreeNode child = ( DefaultMutableTreeNode ) current.getChildAt( i );
+				final SettingsNodeData data = ( SettingsNodeData ) child.getUserObject();
+				if ( text.equals( data.name ) )
+				{
+					next = child;
+					break;
+				}
+			}
+			current = next;
+		}
+		if ( null == current )
+			return; // Path not found in the tree.
+
+		for ( final SettingsPage page : getPages() )
+		{
+			if ( page.getTreePath().equals( path ) )
+			{
+				final TreePath tp = new TreePath( model.getPathToRoot( current ) );
+				tree.setSelectionPath( tp );
+				break;
+			}
+		}
+		pages.revalidate();
+		pages.repaint();
+	}
 }
