@@ -55,7 +55,9 @@ import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeModel;
+import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
@@ -101,32 +103,7 @@ public class SettingsPanel extends JPanel
 	public void addPage( final SettingsPage page )
 	{
 		final String path = page.getTreePath();
-		final String[] parts = path.split( ">" );
-		DefaultMutableTreeNode current = root;
-		for ( final String part : parts )
-		{
-			final String text = part.trim();
-			DefaultMutableTreeNode next = null;
-			for ( int i = 0; i < current.getChildCount(); ++i )
-			{
-				final DefaultMutableTreeNode child = ( DefaultMutableTreeNode ) current.getChildAt( i );
-				final SettingsNodeData data = ( SettingsNodeData ) child.getUserObject();
-				if ( text.equals( data.name ) )
-				{
-					next = child;
-					break;
-				}
-			}
-
-			if ( next == null )
-			{
-				final SettingsNodeData data = new SettingsNodeData( text, null );
-				next = new DefaultMutableTreeNode( data );
-				model.insertNodeInto( next, current, current.getChildCount() );
-			}
-
-			current = next;
-		}
+		final DefaultMutableTreeNode current = getSettingsPageNode( path, true );
 
 		page.modificationListeners().add( modificationListener );
 
@@ -137,7 +114,7 @@ public class SettingsPanel extends JPanel
 		if ( pages.getComponents().length == 0 )
 			tree.getSelectionModel().setSelectionPath( new TreePath( model.getPathToRoot( current ) ) );
 
-		pages.add( data.page.getTreePath(), data.page.getJPanel() );
+		pages.add( page.getTreePath(), page.getJPanel() );
 		pages.revalidate();
 		pages.repaint();
 	}
@@ -152,25 +129,8 @@ public class SettingsPanel extends JPanel
 	 */
 	public void removePage( final String path )
 	{
-		final String[] parts = path.split( ">" );
-		DefaultMutableTreeNode current = root;
-		for ( final String part : parts )
-		{
-			final String text = part.trim();
-			DefaultMutableTreeNode next = null;
-			for ( int i = 0; i < current.getChildCount(); ++i )
-			{
-				final DefaultMutableTreeNode child = ( DefaultMutableTreeNode ) current.getChildAt( i );
-				final SettingsNodeData data = ( SettingsNodeData ) child.getUserObject();
-				if ( text.equals( data.name ) )
-				{
-					next = child;
-					break;
-				}
-			}
-			current = next;
-		}
-		if ( null == current )
+		final MutableTreeNode current = getSettingsPageNode( path, false );
+		if ( current == null )
 			return; // Path not found in the tree.
 
 		model.removeNodeFromParent( current );
@@ -178,6 +138,25 @@ public class SettingsPanel extends JPanel
 		{
 			if ( page.getTreePath().equals( path ) )
 				pages.remove( page.getJPanel() );
+		}
+		pages.revalidate();
+		pages.repaint();
+	}
+
+	public void showPage( final String path )
+	{
+		final TreeNode current = getSettingsPageNode( path, false );
+		if ( current == null )
+			return; // Path not found in the tree.
+
+		for ( final SettingsPage page : getPages() )
+		{
+			if ( page.getTreePath().equals( path ) )
+			{
+				final TreePath tp = new TreePath( model.getPathToRoot( current ) );
+				tree.setSelectionPath( tp );
+				break;
+			}
 		}
 		pages.revalidate();
 		pages.repaint();
@@ -366,6 +345,42 @@ public class SettingsPanel extends JPanel
 		breadcrumbs.repaint();
 	}
 
+	private DefaultMutableTreeNode getSettingsPageNode( final String path, final boolean createIfNotExists )
+	{
+		final String[] parts = path.split( ">" );
+		DefaultMutableTreeNode current = root;
+		for ( final String part : parts )
+		{
+			final String text = part.trim();
+			DefaultMutableTreeNode next = null;
+			for ( int i = 0; i < current.getChildCount(); ++i )
+			{
+				final DefaultMutableTreeNode child = ( DefaultMutableTreeNode ) current.getChildAt( i );
+				final SettingsNodeData data = ( SettingsNodeData ) child.getUserObject();
+				if ( text.equals( data.name ) )
+				{
+					next = child;
+					break;
+				}
+			}
+
+			if ( next == null )
+			{
+				if ( createIfNotExists )
+				{
+					final SettingsNodeData data = new SettingsNodeData( text, null );
+					next = new DefaultMutableTreeNode( data );
+					model.insertNodeInto( next, current, current.getChildCount() );
+				}
+				else
+					return null;
+			}
+
+			current = next;
+		}
+		return current;
+	}
+
 	private JLabel semiboldLabel( final String text )
 	{
 		return new JLabel( text )
@@ -433,41 +448,5 @@ public class SettingsPanel extends JPanel
 			}
 			super.paintComponent( g );
 		}
-	}
-
-	public void showPage( final String path )
-	{
-		final String[] parts = path.split( ">" );
-		DefaultMutableTreeNode current = root;
-		for ( final String part : parts )
-		{
-			final String text = part.trim();
-			DefaultMutableTreeNode next = null;
-			for ( int i = 0; i < current.getChildCount(); ++i )
-			{
-				final DefaultMutableTreeNode child = ( DefaultMutableTreeNode ) current.getChildAt( i );
-				final SettingsNodeData data = ( SettingsNodeData ) child.getUserObject();
-				if ( text.equals( data.name ) )
-				{
-					next = child;
-					break;
-				}
-			}
-			current = next;
-		}
-		if ( null == current )
-			return; // Path not found in the tree.
-
-		for ( final SettingsPage page : getPages() )
-		{
-			if ( page.getTreePath().equals( path ) )
-			{
-				final TreePath tp = new TreePath( model.getPathToRoot( current ) );
-				tree.setSelectionPath( tp );
-				break;
-			}
-		}
-		pages.revalidate();
-		pages.repaint();
 	}
 }
