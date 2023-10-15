@@ -143,6 +143,15 @@ public class SettingsPanel extends JPanel
 		pages.repaint();
 	}
 
+	/**
+	 * Shows the settings page with the specified path. Does nothing if there is
+	 * no settings page for the path. If (any part of) the path is collapsed in
+	 * the tree, it is expanded.
+	 *
+	 * @param path
+	 *            the path of the settings page to remove. Example:
+	 *            {@code "Analyze > Tables"}
+	 */
 	public void showPage( final String path )
 	{
 		final TreeNode current = getSettingsPageNode( path, false );
@@ -345,6 +354,16 @@ public class SettingsPanel extends JPanel
 		breadcrumbs.repaint();
 	}
 
+	/**
+	 * Get the TreeNode for a given settings page path.
+	 *
+	 * @param path
+	 *            the path of the settings page to remove. Example: {@code "Analyze > Tables"}
+	 * @param createIfNotExists
+	 *            if {@code true}, nodes for non-existing pages are created.
+	 *
+	 * @return TreeNode corresponding to {@code path}, or {@code null} if there is no such page.
+	 */
 	private DefaultMutableTreeNode getSettingsPageNode( final String path, final boolean createIfNotExists )
 	{
 		final String[] parts = path.split( ">" );
