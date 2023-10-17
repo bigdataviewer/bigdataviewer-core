@@ -43,6 +43,11 @@ public class Prefs
 		return getInstance().showScaleBar;
 	}
 
+	public static boolean showLocationBar()
+	{
+		return getInstance().showLocationBar;
+	}
+
 	public static boolean showMultibox()
 	{
 		return getInstance().showMultibox;
@@ -108,6 +113,11 @@ public class Prefs
 		getInstance().scaleBarBgColor = color;
 	}
 
+	public static void showLocationBar( final boolean show )
+	{
+		getInstance().showLocationBar = show;
+	}
+
 	private static Prefs instance;
 
 	public static Prefs getInstance()
@@ -132,6 +142,7 @@ public class Prefs
 	private static final String SHOW_SCALE_BAR_IN_MOVIE = "show-scale-bar-in-movie";
 	private static final String SCALE_BAR_COLOR = "scale-bar-color";
 	private static final String SCALE_BAR_BG_COLOR = "scale-bar-bg-color";
+	private static final String SHOW_LOCATION_BAR = "show-location-bar";
 
 	private boolean showScaleBar;
 	private boolean showMultibox;
@@ -140,6 +151,7 @@ public class Prefs
 	private boolean showScaleBarInMovie;
 	private int scaleBarColor;
 	private int scaleBarBgColor;
+	private boolean showLocationBar;
 
 	private Prefs( final Properties p )
 	{
@@ -150,6 +162,7 @@ public class Prefs
 		showScaleBarInMovie = getBoolean( p, SHOW_SCALE_BAR_IN_MOVIE, false );
 		scaleBarColor = getInt( p, SCALE_BAR_COLOR, 0xffffffff );
 		scaleBarBgColor = getInt( p, SCALE_BAR_BG_COLOR, 0x88000000 );
+		showLocationBar = getBoolean( p, SHOW_LOCATION_BAR, false );
 	}
 
 	private boolean getBoolean( final Properties p, final String key, final boolean defaultValue )
@@ -244,6 +257,7 @@ public class Prefs
 		properties.put( SHOW_SCALE_BAR_IN_MOVIE, "" + prefs.showScaleBarInMovie );
 		properties.put( SCALE_BAR_COLOR, "" + prefs.scaleBarColor );
 		properties.put( SCALE_BAR_BG_COLOR, "" + prefs.scaleBarBgColor );
+		properties.put( SHOW_LOCATION_BAR, "" + prefs.showLocationBar );
 		return properties;
 	}
 

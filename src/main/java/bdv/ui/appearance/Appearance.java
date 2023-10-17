@@ -58,6 +58,7 @@ public class Appearance
 	private int scaleBarColor = 0xffffffff;
 	private int scaleBarBgColor = 0x88000000;
 	private LookAndFeelInfo lookAndFeel = DONT_MODIFY_LOOK_AND_FEEL;
+	private boolean showLocationBar = false;
 
 	public interface UpdateListener
 	{
@@ -81,6 +82,7 @@ public class Appearance
 		this.scaleBarColor = other.scaleBarColor;
 		this.scaleBarBgColor = other.scaleBarBgColor;
 		this.lookAndFeel = other.lookAndFeel;
+		this.showLocationBar = other.showLocationBar;
 		notifyListeners();
 	}
 
@@ -222,6 +224,15 @@ public class Appearance
 		return DONT_MODIFY_LOOK_AND_FEEL;
 	}
 
+	public boolean showLocationBar() {
+		return showLocationBar;
+	}
+
+	public void setShowLocationBar(final boolean showLocationBar) {
+		this.showLocationBar = showLocationBar;
+		notifyListeners();
+	}
+
 	@Override
 	public String toString()
 	{
@@ -234,6 +245,7 @@ public class Appearance
 		sb.append( ", scaleBarColor=" ).append( scaleBarColor );
 		sb.append( ", scaleBarBgColor=" ).append( scaleBarBgColor );
 		sb.append( ", lookAndFeel=" ).append( lookAndFeel );
+		sb.append( ", showLocationBar=" ).append( showLocationBar );
 		sb.append( '}' );
 		return sb.toString();
 	}

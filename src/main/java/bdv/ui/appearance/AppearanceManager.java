@@ -179,7 +179,8 @@ public class AppearanceManager
 		Prefs.sourceNameOverlayPosition( appearance.sourceNameOverlayPosition() );
 		Prefs.scaleBarColor( appearance.scaleBarColor() );
 		Prefs.scaleBarBgColor( appearance.scaleBarBgColor() );
-	}
+		Prefs.showLocationBar( appearance.showLocationBar() );
+		}
 
 	/**
 	 * @deprecated Prefs will be replaced eventually by directly using {@code Appearance} in BDV

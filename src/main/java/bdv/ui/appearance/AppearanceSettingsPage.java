@@ -137,6 +137,7 @@ public class AppearanceSettingsPage implements SettingsPage
 					booleanElement( "show scalebar in movies", appearance::showScaleBarInMovie, appearance::setShowScaleBarInMovie ),
 					colorElement( "scalebar foreground", appearance::scaleBarColor, appearance::setScaleBarColor ),
 					colorElement( "scalebar background", appearance::scaleBarBgColor, appearance::setScaleBarBgColor ),
+					booleanElement( "show location bar", appearance::showLocationBar, appearance::setShowLocationBar ),
 					separator(),
 					booleanElement( "show minimap", appearance::showMultibox, appearance::setShowMultibox ),
 					booleanElement( "show source info", appearance::showTextOverlay, appearance::setShowTextOverlay ),
