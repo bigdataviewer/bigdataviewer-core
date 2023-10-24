@@ -48,7 +48,7 @@ import bdv.ui.UIUtils;
 import bdv.viewer.AbstractViewerPanel;
 import bdv.viewer.ViewerPanel;
 import bdv.viewer.location.LocationPanel;
-import bdv.viewer.location.LocationToolBar;
+import bdv.viewer.location.SourceInfoToolBar;
 
 import static bdv.ui.BdvDefaultCards.*;
 
@@ -138,12 +138,12 @@ public class SplitPanel extends JSplitPane
 			}
 		} );
 
-		// add hook to expand card panel and locations card when edit button in locations toolbar is clicked
+		// add hook to expand card panel and locations card when edit button in source info toolbar is clicked
 		if (viewerPanel instanceof ViewerPanel) {
 			final ViewerPanel viewer = (ViewerPanel) viewerPanel;
 			final LocationPanel locationPanel = viewer.getLocationPanel();
-			final LocationToolBar locationToolBar = viewer.getLocationToolBar();
-			locationToolBar.setEditActionListener(e -> {
+			final SourceInfoToolBar sourceInfoToolBar = viewer.getSourceInfoToolBar();
+			sourceInfoToolBar.setEditActionListener(e -> {
 				// expand card panel and location card
 				this.setCollapsed(false);
 				cardPanel.setCardExpanded(DEFAULT_SOURCES_CARD, false);

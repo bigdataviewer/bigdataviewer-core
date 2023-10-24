@@ -66,7 +66,7 @@ import bdv.viewer.animate.OverlayAnimator;
 import bdv.viewer.animate.TextOverlayAnimator;
 import bdv.viewer.animate.TextOverlayAnimator.TextPosition;
 import bdv.viewer.location.LocationPanel;
-import bdv.viewer.location.LocationToolBar;
+import bdv.viewer.location.SourceInfoToolBar;
 import bdv.viewer.overlay.MultiBoxOverlayRenderer;
 import bdv.viewer.overlay.ScaleBarOverlayRenderer;
 import bdv.viewer.overlay.SourceInfoOverlayRenderer;
@@ -136,7 +136,7 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 	 */
 	private final ScaleBarOverlayRenderer scaleBarOverlayRenderer;
 
-	private final LocationToolBar locationToolBar;
+	private final SourceInfoToolBar sourceInfoToolBar;
 	private LocationPanel locationPanel;
 
 	private final TransformEventHandler transformEventHandler;
@@ -265,9 +265,9 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 
 		display.addHandler( mouseCoordinates );
 
-		// add location toolbar to viewer - will be visible/hidden depending on Prefs.showLocationBar()
-		locationToolBar = new LocationToolBar();
-		add(locationToolBar, BorderLayout.NORTH);
+		// add source info toolbar to viewer - will be visible/hidden depending on Prefs.showSourceInfoToolBar()
+		sourceInfoToolBar = new SourceInfoToolBar();
+		add(sourceInfoToolBar, BorderLayout.NORTH);
 
 		sliderTime = new JSlider( SwingConstants.HORIZONTAL, 0, numTimepoints - 1, 0 );
 		sliderTime.addChangeListener( e -> {
@@ -307,8 +307,8 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 		painterThread.start();
 	}
 
-	public LocationToolBar getLocationToolBar() {
-		return locationToolBar;
+	public SourceInfoToolBar getSourceInfoToolBar() {
+		return sourceInfoToolBar;
 	}
 
 	public LocationPanel getLocationPanel() {
@@ -525,7 +525,7 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 	@Override
 	protected void onMouseMoved()
 	{
-		if ( Prefs.showTextOverlay() )
+		if ( Prefs.showTextOverlay()|| Prefs.showSourceInfoToolBar() )
 			// trigger repaint for showing updated mouse coordinates
 			getDisplayComponent().repaint();
 	}
@@ -542,39 +542,42 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 			requiresRepaint = multiBoxOverlayRenderer.isHighlightInProgress();
 		}
 
-		final boolean showLocationBar = Prefs.showLocationBar();
-		locationToolBar.setVisible(showLocationBar);
+		// always set sourceInfoOverlayRenderer state, even if not visible, in case it is used for source info toolbar
+		sourceInfoOverlayRenderer.setViewerState(state);
+
+		final boolean showSourceInfoToolBar = Prefs.showSourceInfoToolBar();
+		sourceInfoToolBar.setVisible(showSourceInfoToolBar);
 
 		final double[] gMousePos = new double[3];
 		getGlobalMouseCoordinates(RealPoint.wrap(gMousePos));
 
-		if (showLocationBar || (locationPanel != null)) {
+		if (showSourceInfoToolBar || (locationPanel != null)) {
 			final double[] gCenterPos = new double[3];
 			state().getViewerTransform().applyInverse(gCenterPos, getDisplayCenterCoordinates());
-			if (showLocationBar) {
-				locationToolBar.setPositions(gCenterPos, gMousePos);
+			if (showSourceInfoToolBar) {
+				sourceInfoToolBar.setSourceNamesAndTimepoint(sourceInfoOverlayRenderer.getSourceName(),
+															 sourceInfoOverlayRenderer.getGroupName(),
+															 sourceInfoOverlayRenderer.getTimepointString());
+				sourceInfoToolBar.setPositions(gCenterPos, gMousePos);
 			}
 			if (locationPanel != null) {
 				locationPanel.setCenterPosition(gCenterPos);
 			}
 		}
 
-		if ( Prefs.showTextOverlay() )
+		if ( Prefs.showTextOverlay() && (! showSourceInfoToolBar) )
 		{
 			final Font font = UIUtils.getFont( "monospaced.small.font" );
-			sourceInfoOverlayRenderer.setViewerState( state );
 			sourceInfoOverlayRenderer.setSourceNameOverlayPosition( Prefs.sourceNameOverlayPosition() );
 			sourceInfoOverlayRenderer.paint( ( Graphics2D ) g );
 
-			if (! showLocationBar) {
-				final String mousePosGlobalString = options.is2D()
-													? String.format(Locale.ROOT, "%6.1f, %6.1f", gMousePos[0], gMousePos[1])
-													:
-													String.format(Locale.ROOT, "%6.1f, %6.1f, %6.1f", gMousePos[0], gMousePos[1], gMousePos[2]);
+			final String mousePosGlobalString = options.is2D()
+												? String.format(Locale.ROOT, "%6.1f, %6.1f", gMousePos[0], gMousePos[1])
+												:
+												String.format(Locale.ROOT, "%6.1f, %6.1f, %6.1f", gMousePos[0], gMousePos[1], gMousePos[2]);
 
-				g.setFont(font);
-				UIUtils.drawString(g, TOP_RIGHT, 1, mousePosGlobalString);
-			}
+			g.setFont(font);
+			UIUtils.drawString(g, TOP_RIGHT, 1, mousePosGlobalString);
 		}
 
 		if ( Prefs.showScaleBar() )

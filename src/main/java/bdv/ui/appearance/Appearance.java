@@ -58,7 +58,7 @@ public class Appearance
 	private int scaleBarColor = 0xffffffff;
 	private int scaleBarBgColor = 0x88000000;
 	private LookAndFeelInfo lookAndFeel = DONT_MODIFY_LOOK_AND_FEEL;
-	private boolean showLocationBar = false;
+	private boolean showSourceInfoToolBar = false;
 
 	public interface UpdateListener
 	{
@@ -82,7 +82,7 @@ public class Appearance
 		this.scaleBarColor = other.scaleBarColor;
 		this.scaleBarBgColor = other.scaleBarBgColor;
 		this.lookAndFeel = other.lookAndFeel;
-		this.showLocationBar = other.showLocationBar;
+		this.showSourceInfoToolBar = other.showSourceInfoToolBar;
 		notifyListeners();
 	}
 
@@ -224,12 +224,12 @@ public class Appearance
 		return DONT_MODIFY_LOOK_AND_FEEL;
 	}
 
-	public boolean showLocationBar() {
-		return showLocationBar;
+	public boolean showSourceInfoToolBar() {
+		return showSourceInfoToolBar;
 	}
 
-	public void setShowLocationBar(final boolean showLocationBar) {
-		this.showLocationBar = showLocationBar;
+	public void setShowSourceInfoToolBar(final boolean showSourceInfoToolBar) {
+		this.showSourceInfoToolBar = showSourceInfoToolBar;
 		notifyListeners();
 	}
 
@@ -245,7 +245,7 @@ public class Appearance
 		sb.append( ", scaleBarColor=" ).append( scaleBarColor );
 		sb.append( ", scaleBarBgColor=" ).append( scaleBarBgColor );
 		sb.append( ", lookAndFeel=" ).append( lookAndFeel );
-		sb.append( ", showLocationBar=" ).append( showLocationBar );
+		sb.append( ", showSourceInfoToolBar=" ).append(showSourceInfoToolBar);
 		sb.append( '}' );
 		return sb.toString();
 	}

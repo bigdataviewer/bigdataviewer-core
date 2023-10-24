@@ -179,7 +179,7 @@ public class AppearanceManager
 		Prefs.sourceNameOverlayPosition( appearance.sourceNameOverlayPosition() );
 		Prefs.scaleBarColor( appearance.scaleBarColor() );
 		Prefs.scaleBarBgColor( appearance.scaleBarBgColor() );
-		Prefs.showLocationBar( appearance.showLocationBar() );
+		Prefs.showSourceInfoToolBar( appearance.showSourceInfoToolBar() );
 		}
 
 	/**
@@ -195,5 +195,6 @@ public class AppearanceManager
 		appearance.setSourceNameOverlayPosition( Prefs.sourceNameOverlayPosition() );
 		appearance.setScaleBarColor( Prefs.scaleBarColor() );
 		appearance.setScaleBarBgColor( Prefs.scaleBarBgColor() );
+		appearance.setShowSourceInfoToolBar(Prefs.showSourceInfoToolBar() );
 	}
 }

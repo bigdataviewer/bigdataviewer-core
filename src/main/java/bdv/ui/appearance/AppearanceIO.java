@@ -112,7 +112,7 @@ public class AppearanceIO
 				mapping.put( "scaleBarColor", hex( a.scaleBarColor() ) );
 				mapping.put( "scaleBarBgColor", hex( a.scaleBarBgColor() ) );
 				mapping.put( "lookAndFeel", a.lookAndFeel() );
-				mapping.put( "showLocationBar", a.showLocationBar() );
+				mapping.put( "showSourceInfoToolBar", a.showSourceInfoToolBar() );
 				return representMapping( APPEARANCE_TAG, mapping, getDefaultFlowStyle() );
 			}
 		}
@@ -179,7 +179,7 @@ public class AppearanceIO
 					a.setScaleBarColor( hexColor( mapping.get( "scaleBarColor" ) ) );
 					a.setScaleBarBgColor( hexColor( mapping.get( "scaleBarBgColor" ) ) );
 					a.setLookAndFeel( ( LookAndFeelInfo ) mapping.get( "lookAndFeel" ) );
-					a.setShowLocationBar( ( Boolean ) mapping.get( "showLocationBar" ) );
+					a.setShowSourceInfoToolBar(( Boolean ) mapping.get("showSourceInfoToolBar" ) );
 					return a;
 				}
 				catch( final Exception e )

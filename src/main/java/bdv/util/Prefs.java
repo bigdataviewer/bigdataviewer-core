@@ -43,9 +43,9 @@ public class Prefs
 		return getInstance().showScaleBar;
 	}
 
-	public static boolean showLocationBar()
+	public static boolean showSourceInfoToolBar()
 	{
-		return getInstance().showLocationBar;
+		return getInstance().showSourceInfoToolBar;
 	}
 
 	public static boolean showMultibox()
@@ -113,9 +113,9 @@ public class Prefs
 		getInstance().scaleBarBgColor = color;
 	}
 
-	public static void showLocationBar( final boolean show )
+	public static void showSourceInfoToolBar(final boolean show )
 	{
-		getInstance().showLocationBar = show;
+		getInstance().showSourceInfoToolBar = show;
 	}
 
 	private static Prefs instance;
@@ -142,8 +142,7 @@ public class Prefs
 	private static final String SHOW_SCALE_BAR_IN_MOVIE = "show-scale-bar-in-movie";
 	private static final String SCALE_BAR_COLOR = "scale-bar-color";
 	private static final String SCALE_BAR_BG_COLOR = "scale-bar-bg-color";
-	private static final String SHOW_LOCATION_BAR = "show-location-bar";
-
+	private static final String SHOW_SOURCE_INFO_TOOL_BAR = "show-source-info-tool-bar";
 	private boolean showScaleBar;
 	private boolean showMultibox;
 	private boolean showTextOverlay;
@@ -151,7 +150,7 @@ public class Prefs
 	private boolean showScaleBarInMovie;
 	private int scaleBarColor;
 	private int scaleBarBgColor;
-	private boolean showLocationBar;
+	private boolean showSourceInfoToolBar;
 
 	private Prefs( final Properties p )
 	{
@@ -162,7 +161,7 @@ public class Prefs
 		showScaleBarInMovie = getBoolean( p, SHOW_SCALE_BAR_IN_MOVIE, false );
 		scaleBarColor = getInt( p, SCALE_BAR_COLOR, 0xffffffff );
 		scaleBarBgColor = getInt( p, SCALE_BAR_BG_COLOR, 0x88000000 );
-		showLocationBar = getBoolean( p, SHOW_LOCATION_BAR, false );
+		showSourceInfoToolBar = getBoolean(p, SHOW_SOURCE_INFO_TOOL_BAR, false );
 	}
 
 	private boolean getBoolean( final Properties p, final String key, final boolean defaultValue )
@@ -257,7 +256,7 @@ public class Prefs
 		properties.put( SHOW_SCALE_BAR_IN_MOVIE, "" + prefs.showScaleBarInMovie );
 		properties.put( SCALE_BAR_COLOR, "" + prefs.scaleBarColor );
 		properties.put( SCALE_BAR_BG_COLOR, "" + prefs.scaleBarBgColor );
-		properties.put( SHOW_LOCATION_BAR, "" + prefs.showLocationBar );
+		properties.put( SHOW_SOURCE_INFO_TOOL_BAR, "" + prefs.showSourceInfoToolBar );
 		return properties;
 	}
 

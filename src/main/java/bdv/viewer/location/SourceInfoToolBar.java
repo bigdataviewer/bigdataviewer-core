@@ -14,26 +14,39 @@ import javax.swing.JPanel;
 import javax.swing.JToolBar;
 
 /**
- * Toolbar containing location information.
+ * Toolbar containing source information.
  *
  * @author Eric Trautman
  */
-public class LocationToolBar extends JToolBar {
+public class SourceInfoToolBar extends JToolBar {
 
+    private final JLabel sourceNameLabel;
+    private final JLabel groupNameLabel;
     private final JLabel centerCoordinatesLabel;
+    private final JLabel timepointLabel;
     private final JButton editCoordinatesButton;
     private final JLabel mouseCoordinatesLabel;
 
     private ActionListener editCoordinatesActionListener;
 
-    public LocationToolBar() {
-        super("Location Tools");
+    public SourceInfoToolBar() {
+        super("Source Information");
         this.setFloatable(false);
 
         final JPanel flowPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 1));
         this.add(flowPanel);
 
+        this.sourceNameLabel = new JLabel();
+        this.sourceNameLabel.setToolTipText("Source name");
+
+        this.groupNameLabel = new JLabel();
+        this.groupNameLabel.setToolTipText("Group name");
+
+        this.timepointLabel = new JLabel();
+        this.timepointLabel.setToolTipText("Timepoint");
+
         this.centerCoordinatesLabel = new JLabel();
+        this.centerCoordinatesLabel.setToolTipText("Center coordinates");
 
         final URL url = this.getClass().getResource("/bdv/ui/location/edit_pencil_20.png");
         if (url == null) {
@@ -47,11 +60,37 @@ public class LocationToolBar extends JToolBar {
         this.editCoordinatesButton.setVisible(false);
 
         this.mouseCoordinatesLabel = new JLabel();
+        this.mouseCoordinatesLabel.setToolTipText("Mouse coordinates");
         this.mouseCoordinatesLabel.setForeground(Color.MAGENTA);
 
+        flowPanel.add(this.sourceNameLabel);
+        flowPanel.add(this.groupNameLabel);
+        flowPanel.add(this.timepointLabel);
         flowPanel.add(this.centerCoordinatesLabel);
         flowPanel.add(this.editCoordinatesButton);
         flowPanel.add(this.mouseCoordinatesLabel);
+    }
+
+    public void setSourceNamesAndTimepoint(final String sourceName,
+                                           final String groupName,
+                                           final String timepointString) {
+        if ((sourceName != null) && (! sourceName.isEmpty())) {
+            this.sourceNameLabel.setText(sourceName);
+            if ((groupName != null) && (! groupName.isEmpty())) {
+                this.groupNameLabel.setText("| " + groupName);
+                this.groupNameLabel.setVisible(true);
+            } else {
+                this.groupNameLabel.setVisible(false);
+            }
+            this.sourceNameLabel.setVisible(true);
+        } else {
+            this.sourceNameLabel.setVisible(false);
+        }
+        if ((timepointString != null) && (! timepointString.isEmpty())) {
+            this.timepointLabel.setText(timepointString);
+        } else {
+            this.timepointLabel.setText("");
+        }
     }
 
     public void setEditActionListener(final ActionListener editCoordinatesActionListener) {
