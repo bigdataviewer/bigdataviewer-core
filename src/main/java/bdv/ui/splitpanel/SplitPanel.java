@@ -28,12 +28,10 @@
  */
 package bdv.ui.splitpanel;
 
-import bdv.ui.CardPanel;
-import bdv.ui.UIUtils;
-import bdv.viewer.AbstractViewerPanel;
 import java.awt.Dimension;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
+
 import javax.swing.InputMap;
 import javax.swing.JComponent;
 import javax.swing.JScrollPane;
@@ -41,8 +39,18 @@ import javax.swing.JSplitPane;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
+
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.util.Actions;
+
+import bdv.ui.CardPanel;
+import bdv.ui.UIUtils;
+import bdv.viewer.AbstractViewerPanel;
+import bdv.viewer.ViewerPanel;
+import bdv.viewer.location.LocationPanel;
+import bdv.viewer.location.LocationToolBar;
+
+import static bdv.ui.BdvDefaultCards.*;
 
 /**
  * A {@code JSplitPane} with a {@code ViewerPanel} on the left and a
@@ -129,6 +137,22 @@ public class SplitPanel extends JSplitPane
 				width = w;
 			}
 		} );
+
+		// add hook to expand card panel and locations card when edit button in locations toolbar is clicked
+		if (viewerPanel instanceof ViewerPanel) {
+			final ViewerPanel viewer = (ViewerPanel) viewerPanel;
+			final LocationPanel locationPanel = viewer.getLocationPanel();
+			final LocationToolBar locationToolBar = viewer.getLocationToolBar();
+			locationToolBar.setEditActionListener(e -> {
+				// expand card panel and location card
+				this.setCollapsed(false);
+				cardPanel.setCardExpanded(DEFAULT_SOURCES_CARD, false);
+				cardPanel.setCardExpanded(DEFAULT_SOURCEGROUPS_CARD, false);
+				cardPanel.setCardExpanded(DEFAULT_LOCATIONS_CARD, true);
+				locationPanel.requestFocusOnFirstComponent();
+			});
+		}
+
 	}
 
 	private void configureSplitPane()

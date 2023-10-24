@@ -34,7 +34,12 @@ import bdv.ui.sourcetable.SourceTable;
 import bdv.ui.viewermodepanel.DisplaySettingsPanel;
 import bdv.viewer.AbstractViewerPanel;
 import bdv.viewer.ConverterSetups;
+import bdv.viewer.ViewerPanel;
 import bdv.viewer.ViewerState;
+import bdv.viewer.location.DimensionCoordinateComponents;
+import bdv.viewer.location.LocationPanel;
+import net.imglib2.Interval;
+
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -62,6 +67,8 @@ public class BdvDefaultCards
 	public static final String DEFAULT_SOURCEGROUPS_CARD = "default bdv groups card";
 
 	public static final String DEFAULT_VIEWERMODES_CARD = "default bdv viewer modes card";
+
+	public static final String DEFAULT_LOCATIONS_CARD = "default bdv location card";
 
 	public static void setup( final CardPanel cards, final AbstractViewerPanel viewer, final ConverterSetups converterSetups )
 	{
@@ -101,6 +108,22 @@ public class BdvDefaultCards
 		cards.addCard( DEFAULT_VIEWERMODES_CARD, "Display Modes", new DisplaySettingsPanel( viewer.state() ), true, new Insets( 0, 4, 4, 0 ) );
 		cards.addCard( DEFAULT_SOURCES_CARD, "Sources", tablePanel, true, new Insets( 0, 0, 0, 0 ) );
 		cards.addCard( DEFAULT_SOURCEGROUPS_CARD, "Groups", treePanel, true, new Insets( 0, 0, 0, 0 ) );
+
+		// create card location panel and connect it to location toolbar in viewer
+		if (viewer instanceof ViewerPanel) {
+			final ViewerPanel viewerPanel = (ViewerPanel) viewer;
+			final Interval interval = viewerPanel.state().getCurrentSource().getSpimSource().getSource(0, 0);
+			final LocationPanel locationPanel = new LocationPanel(interval);
+			cards.addCard(DEFAULT_LOCATIONS_CARD, "Locations", locationPanel, false, new Insets(0, 4, 0, 0));
+
+			locationPanel.setDimensionValueChangeListener(e -> {
+				final DimensionCoordinateComponents coordinateComponents = (DimensionCoordinateComponents) e.getSource();
+				viewerPanel.centerViewAt(coordinateComponents.getPosition(), coordinateComponents.getDimension());
+			});
+
+			viewerPanel.setLocationPanel(locationPanel);
+		}
+
 	}
 
 	static class MyScrollPane extends JScrollPane

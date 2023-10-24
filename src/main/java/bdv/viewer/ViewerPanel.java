@@ -65,7 +65,7 @@ import bdv.viewer.animate.MessageOverlayAnimator;
 import bdv.viewer.animate.OverlayAnimator;
 import bdv.viewer.animate.TextOverlayAnimator;
 import bdv.viewer.animate.TextOverlayAnimator.TextPosition;
-import bdv.viewer.location.DimensionCoordinatePanel;
+import bdv.viewer.location.LocationPanel;
 import bdv.viewer.location.LocationToolBar;
 import bdv.viewer.overlay.MultiBoxOverlayRenderer;
 import bdv.viewer.overlay.ScaleBarOverlayRenderer;
@@ -137,6 +137,7 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 	private final ScaleBarOverlayRenderer scaleBarOverlayRenderer;
 
 	private final LocationToolBar locationToolBar;
+	private LocationPanel locationPanel;
 
 	private final TransformEventHandler transformEventHandler;
 
@@ -265,7 +266,7 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 		display.addHandler( mouseCoordinates );
 
 		// add location toolbar to viewer - will be visible/hidden depending on Prefs.showLocationBar()
-		locationToolBar = new LocationToolBar(buildCenterViewListener());
+		locationToolBar = new LocationToolBar();
 		add(locationToolBar, BorderLayout.NORTH);
 
 		sliderTime = new JSlider( SwingConstants.HORIZONTAL, 0, numTimepoints - 1, 0 );
@@ -304,6 +305,18 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 		state.changeListeners().add( this );
 
 		painterThread.start();
+	}
+
+	public LocationToolBar getLocationToolBar() {
+		return locationToolBar;
+	}
+
+	public LocationPanel getLocationPanel() {
+		return locationPanel;
+	}
+
+	public void setLocationPanel(final LocationPanel locationPanel) {
+		this.locationPanel = locationPanel;
 	}
 
 	/**
@@ -535,10 +548,15 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 		final double[] gMousePos = new double[3];
 		getGlobalMouseCoordinates(RealPoint.wrap(gMousePos));
 
-		if (showLocationBar) {
+		if (showLocationBar || (locationPanel != null)) {
 			final double[] gCenterPos = new double[3];
 			state().getViewerTransform().applyInverse(gCenterPos, getDisplayCenterCoordinates());
-			locationToolBar.setPositions(gCenterPos, gMousePos);
+			if (showLocationBar) {
+				locationToolBar.setPositions(gCenterPos, gMousePos);
+			}
+			if (locationPanel != null) {
+				locationPanel.setCenterPosition(gCenterPos);
+			}
 		}
 
 		if ( Prefs.showTextOverlay() )
@@ -1082,9 +1100,4 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 		state().setViewerTransform(updatedViewerTransform);
 	}
 
-	/** @return a listener that centers the viewer at the given global position in the specified dimension. */
-	public DimensionCoordinatePanel.ChangeListener buildCenterViewListener() {
-		final ViewerPanel viewerPanel = this;
-		return viewerPanel::centerViewAt;
-	}
 }
