@@ -62,6 +62,7 @@ public class SourceInfoToolBar extends JToolBar {
         this.mouseCoordinatesLabel = new JLabel();
         this.mouseCoordinatesLabel.setToolTipText("Mouse coordinates");
         this.mouseCoordinatesLabel.setForeground(Color.MAGENTA);
+        this.mouseCoordinatesLabel.setVisible(false);
 
         flowPanel.add(this.sourceNameLabel);
         flowPanel.add(this.groupNameLabel);
@@ -106,12 +107,20 @@ public class SourceInfoToolBar extends JToolBar {
         }
     }
 
-    public void setPositions(final double[] centerPosition,
-                             final double[] mousePosition) {
+    public void setCenterPosition(final double[] centerPosition) {
         for (int i = 0; i < centerPosition.length; i++) {
             this.centerCoordinatesLabel.setText(formatPosition(centerPosition));
+        }
+    }
+
+    public void setMousePosition(final double[] mousePosition) {
+        for (int i = 0; i < mousePosition.length; i++) {
             this.mouseCoordinatesLabel.setText(formatPosition(mousePosition));
         }
+    }
+
+    public void setMouseCoordinatesVisible(final boolean visible) {
+        this.mouseCoordinatesLabel.setVisible(visible);
     }
 
     private String formatPosition(final double[] position) {

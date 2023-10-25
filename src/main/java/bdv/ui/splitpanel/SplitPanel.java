@@ -46,11 +46,6 @@ import org.scijava.ui.behaviour.util.Actions;
 import bdv.ui.CardPanel;
 import bdv.ui.UIUtils;
 import bdv.viewer.AbstractViewerPanel;
-import bdv.viewer.ViewerPanel;
-import bdv.viewer.location.LocationPanel;
-import bdv.viewer.location.SourceInfoToolBar;
-
-import static bdv.ui.BdvDefaultCards.*;
 
 /**
  * A {@code JSplitPane} with a {@code ViewerPanel} on the left and a
@@ -137,22 +132,6 @@ public class SplitPanel extends JSplitPane
 				width = w;
 			}
 		} );
-
-		// add hook to expand card panel and locations card when edit button in source info toolbar is clicked
-		if (viewerPanel instanceof ViewerPanel) {
-			final ViewerPanel viewer = (ViewerPanel) viewerPanel;
-			final LocationPanel locationPanel = viewer.getLocationPanel();
-			final SourceInfoToolBar sourceInfoToolBar = viewer.getSourceInfoToolBar();
-			sourceInfoToolBar.setEditActionListener(e -> {
-				// expand card panel and location card
-				this.setCollapsed(false);
-				cardPanel.setCardExpanded(DEFAULT_SOURCES_CARD, false);
-				cardPanel.setCardExpanded(DEFAULT_SOURCEGROUPS_CARD, false);
-				cardPanel.setCardExpanded(DEFAULT_LOCATIONS_CARD, true);
-				locationPanel.requestFocusOnFirstComponent();
-			});
-		}
-
 	}
 
 	private void configureSplitPane()
