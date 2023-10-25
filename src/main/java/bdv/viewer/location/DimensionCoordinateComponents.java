@@ -1,9 +1,6 @@
 package bdv.viewer.location;
 
-import java.awt.Component;
-import java.awt.Container;
 import java.awt.Toolkit;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.List;
@@ -219,55 +216,4 @@ public class DimensionCoordinateComponents {
     public static String getDefaultDimensionName(final int dimension) {
         return (dimension < DEFAULT_NAMES.length) ? DEFAULT_NAMES[dimension] : "d" + dimension;
     }
-
-    /**
-     * Traversal policy that forces text area to get focus before slider.
-     * Seems like this should not be needed, but I wasn't able to get it to work without it.
-     * Adapted from
-     * <a href="https://docs.oracle.com/javase/tutorial/uiswing/examples/misc/FocusTraversalDemoProject/src/misc/FocusTraversalDemo.java">
-     *     FocusTraversalDemo.java
-     * </a>
-     */
-    public static class FocusTraversalPolicy
-            extends java.awt.FocusTraversalPolicy
-    {
-        List<Component> orderedComponents;
-
-        public FocusTraversalPolicy(List<DimensionCoordinateComponents> coordinateComponentsList) {
-            this.orderedComponents = new ArrayList<>();
-            for (final DimensionCoordinateComponents coordinateComponents : coordinateComponentsList) {
-                this.orderedComponents.add(coordinateComponents.valueTextField);
-                this.orderedComponents.add(coordinateComponents.valueSlider);
-            }
-        }
-        public Component getComponentAfter(Container focusCycleRoot,
-                                           Component aComponent)
-        {
-            final int idx = (orderedComponents.indexOf(aComponent) + 1) % orderedComponents.size();
-            return orderedComponents.get(idx);
-        }
-
-        public Component getComponentBefore(Container focusCycleRoot,
-                                            Component aComponent)
-        {
-            int idx = orderedComponents.indexOf(aComponent) - 1;
-            if (idx < 0) {
-                idx = orderedComponents.size() - 1;
-            }
-            return orderedComponents.get(idx);
-        }
-
-        public Component getDefaultComponent(Container focusCycleRoot) {
-            return orderedComponents.get(0);
-        }
-
-        public Component getLastComponent(Container focusCycleRoot) {
-            return orderedComponents.get(orderedComponents.size() - 1);
-        }
-
-        public Component getFirstComponent(Container focusCycleRoot) {
-            return orderedComponents.get(0);
-        }
-    }
-
 }

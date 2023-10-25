@@ -36,18 +36,20 @@ public class LocationPanel
             this.dimensionComponentsList.add(coordinateComponents);
 
             final GridBagConstraints c = new GridBagConstraints();
-            c.gridx = GridBagConstraints.RELATIVE;
-            c.gridy = dimension;
+            c.gridx = 0;
+            c.gridy = dimension * 2;
             c.weightx = 0.01;
             this.add(coordinateComponents.getValueLabel(), c);
 
             // text field should grow with card width
+            c.gridx = 1;
             c.weightx = 0.99;
             c.fill = GridBagConstraints.HORIZONTAL;
             this.add(coordinateComponents.getValueTextField(), c);
 
-            c.weightx = 0.01;
-            c.fill = GridBagConstraints.NONE;
+            c.gridy++;
+            c.weightx = 0.99;
+            c.fill = GridBagConstraints.HORIZONTAL;
             this.add(coordinateComponents.getValueSlider(), c);
         }
 
@@ -56,10 +58,6 @@ public class LocationPanel
             final DimensionCoordinateComponents prior = dimensionComponentsList.get(d - 1);
             prior.setNextDimensionComponents(dimensionComponentsList.get(d));
         }
-
-        // make text area get focus before slider, not sure why I had to go to all of this trouble to make focus work
-        this.setFocusCycleRoot(true);
-        this.setFocusTraversalPolicy(new DimensionCoordinateComponents.FocusTraversalPolicy(dimensionComponentsList));
     }
 
     /**

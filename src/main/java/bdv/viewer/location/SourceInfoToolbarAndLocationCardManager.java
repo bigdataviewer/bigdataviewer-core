@@ -109,7 +109,7 @@ public class SourceInfoToolbarAndLocationCardManager implements ViewerStateChang
 					  "Locations",
 					  locationPanel,
 					  false,
-					  new Insets(0, 4, 0, 0));
+					  new Insets(10, 4, 0, 10));
 
 		// add hook to expand card panel and locations card when edit button in source info toolbar is clicked
 		sourceInfoToolBar.setEditActionListener(e -> {
