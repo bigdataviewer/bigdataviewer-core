@@ -58,12 +58,17 @@ public class GridViewerTest {
 		final ProgressWriterConsole progressWriter = new ProgressWriterConsole();
 		final ViewerOptions viewerOptions = ViewerOptions.options();
 
-		final RealARGBColorConverter<IntType> converter = RealARGBColorConverter.create(new IntType(), 0, 127);
-		final ConverterSetup converterSetup = new RealARGBColorConverterSetup(0, converter);
-		converterSetups.add(converterSetup);
+		for (int i = 0; i < 3; i++) {
+			final RealARGBColorConverter<IntType> converter = RealARGBColorConverter.create(new IntType(), 0, 127);
+			final ConverterSetup converterSetup = new RealARGBColorConverterSetup(i, converter);
+			converterSetups.add(converterSetup);
 
-		final SourceAndConverter<IntType> soc = new SourceAndConverter<>(GRID_SOURCE, converter);
-		sources.add(soc);
+			final String suffix = String.valueOf((char)('A' + i));
+			final int size = 100 * (i + 1);
+			final RealRandomAccessibleSource<IntType> source = buildGridSource("Grid " + suffix, size);
+			final SourceAndConverter<IntType> soc = new SourceAndConverter<>(source, converter);
+			sources.add(soc);
+		}
 
 		BigDataViewer.open(converterSetups,
 						   sources,
@@ -94,15 +99,15 @@ public class GridViewerTest {
 					},
 					IntType::new);
 
-	public static final RealRandomAccessibleSource<IntType> GRID_SOURCE =
-			new RealRandomAccessibleSource<IntType>(GRID, new IntType(), "Grid" ) {
-				private final int s = 100;
-				private final Interval interval = Intervals.createMinMax(-s, -s, -s, s, s, s);
-				@Override
-				public Interval getInterval(final int t,
-											final int level) {
-					return interval;
-				}
-			};
-
+	public static RealRandomAccessibleSource<IntType> buildGridSource(final String name,
+																	  final int size) {
+		return new RealRandomAccessibleSource<IntType>(GRID, new IntType(), name) {
+			private final Interval interval = Intervals.createMinMax(-size, -size, -size, size, size, size);
+			@Override
+			public Interval getInterval(final int t,
+										final int level) {
+				return interval;
+			}
+		};
+	}
 }

@@ -41,18 +41,23 @@ import bdv.ui.CardPanel;
 import bdv.ui.appearance.Appearance;
 import bdv.ui.appearance.AppearanceManager;
 import bdv.ui.splitpanel.SplitPanel;
+import bdv.viewer.Source;
+import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerFrame;
 import bdv.viewer.ViewerPanel;
+import bdv.viewer.ViewerStateChange;
+import bdv.viewer.ViewerStateChangeListener;
 import bdv.viewer.overlay.SourceInfoOverlayRenderer;
 import net.imglib2.Interval;
 import net.imglib2.RealPoint;
+import net.imglib2.util.Intervals;
 
 /**
  * Helper class to set up the highly-coupled SourceInfoToolBar and LocationPanel UI components.
  *
  * @author Eric Trautman
  */
-public class SourceInfoToolbarAndLocationCardManager {
+public class SourceInfoToolbarAndLocationCardManager implements ViewerStateChangeListener {
 	private final AppearanceManager appearanceManager;
 	private final ViewerPanel viewer;
 	private final SourceInfoToolBar sourceInfoToolBar;
@@ -70,8 +75,7 @@ public class SourceInfoToolbarAndLocationCardManager {
 		updateListeners.add(() -> sourceInfoToolBar.setVisible(showSourceInfoToolBar()));
 
 		// create card locationPanel and connect it to sourceInfoToolBar
-		final Interval interval = viewer.state().getCurrentSource().getSpimSource().getSource(0, 0);
-		this.locationPanel = new LocationPanel(interval);
+		this.locationPanel = new LocationPanel(getCurrentSourceInterval());
 		locationPanel.setDimensionValueChangeListener(e -> {
 			final DimensionCoordinateComponents coordinateComponents = (DimensionCoordinateComponents) e.getSource();
 			viewer.centerViewAt(coordinateComponents.getPosition(),
@@ -82,6 +86,10 @@ public class SourceInfoToolbarAndLocationCardManager {
 			sourceInfoToolBar.revalidate();
 		});
 
+		// register for (source) state change updates
+		viewer.state().changeListeners().add(this);
+
+		// register for mouse events
 		addViewerMouseListeners();
 
 		// populate everything with starting location info
@@ -114,6 +122,39 @@ public class SourceInfoToolbarAndLocationCardManager {
 		});
 	}
 
+	@Override
+	public void viewerStateChanged(final ViewerStateChange change) {
+		switch (change) {
+			case CURRENT_SOURCE_CHANGED:
+			case GROUP_NAME_CHANGED:
+			case CURRENT_GROUP_CHANGED:
+			case CURRENT_TIMEPOINT_CHANGED:
+			case NUM_TIMEPOINTS_CHANGED:
+				updateSourceInfo();
+				locationPanel.setSourceInterval(getCurrentSourceInterval());
+				break;
+			case VIEWER_TRANSFORM_CHANGED:
+				updateCenterPosition();
+				updateMousePosition();
+		}
+	}
+
+	private Interval getCurrentSourceInterval() {
+		Interval interval = null;
+		final SourceAndConverter<?> currentSource = viewer.state().getCurrentSource();
+		if (currentSource != null) {
+			final Source<?> spimSource = currentSource.getSpimSource();
+			if (spimSource != null) {
+				final int timePoint = viewer.state().getCurrentTimepoint();
+				interval = spimSource.getSource(timePoint, 0);
+			}
+		}
+		if (interval == null) {
+			interval = Intervals.createMinMax(0, 0, 0, 0, 0, 0);
+		}
+		return interval;
+	}
+	
 	private boolean showSourceInfoToolBar() {
 		return appearanceManager.appearance().showSourceInfoToolBar();
 	}

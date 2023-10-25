@@ -78,6 +78,13 @@ public class LocationPanel
         }
     }
 
+    public void setSourceInterval(final Interval sourceInterval) {
+        for (int dimension = 0; dimension < sourceInterval.numDimensions(); dimension++) {
+            this.dimensionComponentsList.get(dimension).setMinAndMaxPosition(sourceInterval.min(dimension),
+                                                                             sourceInterval.max(dimension));
+        }
+    }
+
     public void requestFocusOnFirstComponent() {
         if (! dimensionComponentsList.isEmpty()) {
             this.dimensionComponentsList.get(0).getValueTextField().requestFocus();

@@ -27,8 +27,8 @@ public class DimensionCoordinateComponents {
     public static final String DEFAULT_VALUE_FORMAT = "%1.0f";
 
     private final int dimension;
-    private final double minPosition;
-    private final double maxPosition;
+    private double minPosition;
+    private double maxPosition;
     private final JLabel valueLabel;
     private final JTextField valueTextField;
     private final JSlider valueSlider;
@@ -60,8 +60,6 @@ public class DimensionCoordinateComponents {
 
         this.dimension = dimension;
         this.dimensionValueChangeListener = null;
-        this.minPosition = minPosition;
-        this.maxPosition = maxPosition;
         this.valueFormat = valueFormat;
         this.position = 0.0;
 
@@ -77,13 +75,8 @@ public class DimensionCoordinateComponents {
         this.valueSlider = new JSlider();
         this.valueSlider.setMajorTickSpacing(25);
         this.valueSlider.setPaintTicks(true);
-
-        final Hashtable<Integer, JLabel> labelTable = new Hashtable<>();
-        labelTable.put(0, new JLabel(formatSliderValue(minPosition)));
-        labelTable.put(100, new JLabel(formatSliderValue(maxPosition)));
-        this.valueSlider.setLabelTable(labelTable);
-
         this.valueSlider.setPaintLabels(true);
+        this.setMinAndMaxPosition(minPosition, maxPosition);
 
         this.sliderChangeListener = e -> {
             setPosition(getSliderPosition());
@@ -120,6 +113,16 @@ public class DimensionCoordinateComponents {
 
     public JSlider getValueSlider() {
         return valueSlider;
+    }
+
+    public void setMinAndMaxPosition(final double minPosition,
+                                     final double maxPosition) {
+        this.minPosition = minPosition;
+        this.maxPosition = maxPosition;
+        final Hashtable<Integer, JLabel> labelTable = new Hashtable<>();
+        labelTable.put(0, new JLabel(formatSliderValue(minPosition)));
+        labelTable.put(100, new JLabel(formatSliderValue(maxPosition)));
+        this.valueSlider.setLabelTable(labelTable);
     }
 
     public void setNextDimensionComponents(final DimensionCoordinateComponents nextDimensionComponents) {
