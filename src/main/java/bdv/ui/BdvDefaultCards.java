@@ -64,7 +64,7 @@ public class BdvDefaultCards
 
 	public static final String DEFAULT_VIEWERMODES_CARD = "default bdv viewer modes card";
 
-	public static final String DEFAULT_LOCATIONS_CARD = "default bdv location card";
+	public static final String DEFAULT_LOCATIONS_CARD = "default bdv locations card";
 
 	public static void setup( final CardPanel cards, final AbstractViewerPanel viewer, final ConverterSetups converterSetups )
 	{
