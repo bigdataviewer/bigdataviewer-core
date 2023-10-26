@@ -523,16 +523,16 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 
 		if ( Prefs.showTextOverlay() && (! Prefs.showSourceInfoToolBar()) )
 		{
-			sourceInfoOverlayRenderer.setViewerState( state );
 			final Font font = UIUtils.getFont( "monospaced.small.font" );
+			sourceInfoOverlayRenderer.setViewerState( state );
 			sourceInfoOverlayRenderer.setSourceNameOverlayPosition( Prefs.sourceNameOverlayPosition() );
 			sourceInfoOverlayRenderer.paint( ( Graphics2D ) g );
 
 			final double[] gPos = new double[ 3 ];
 			getGlobalMouseCoordinates( RealPoint.wrap( gPos ) );
 			final String mousePosGlobalString = options.is2D()
-												? String.format( Locale.ROOT, "%6.1f, %6.1f", gPos[ 0 ], gPos[ 1 ] )
-												: String.format( Locale.ROOT, "%6.1f, %6.1f, %6.1f", gPos[ 0 ], gPos[ 1 ], gPos[ 2 ] );
+					? String.format( Locale.ROOT, "%6.1f, %6.1f", gPos[ 0 ], gPos[ 1 ] )
+					: String.format( Locale.ROOT, "%6.1f, %6.1f, %6.1f", gPos[ 0 ], gPos[ 1 ], gPos[ 2 ] );
 
 			g.setFont( font );
 			UIUtils.drawString( g, TOP_RIGHT, 1, mousePosGlobalString );
