@@ -28,6 +28,10 @@
  */
 package bdv.viewer;
 
+import static bdv.ui.UIUtils.TextPosition.TOP_RIGHT;
+import static bdv.viewer.DisplayMode.SINGLE;
+import static bdv.viewer.Interpolation.NEARESTNEIGHBOR;
+
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Font;
@@ -78,10 +82,6 @@ import net.imglib2.RealLocalizable;
 import net.imglib2.RealPoint;
 import net.imglib2.RealPositionable;
 import net.imglib2.realtransform.AffineTransform3D;
-
-import static bdv.ui.UIUtils.TextPosition.TOP_RIGHT;
-import static bdv.viewer.DisplayMode.SINGLE;
-import static bdv.viewer.Interpolation.NEARESTNEIGHBOR;
 
 /**
  * A JPanel for viewing multiple of {@link Source}s. The panel contains a
@@ -523,20 +523,19 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 
 		if ( Prefs.showTextOverlay() && (! Prefs.showSourceInfoToolBar()) )
 		{
-			sourceInfoOverlayRenderer.setViewerState(state);
+			sourceInfoOverlayRenderer.setViewerState( state );
 			final Font font = UIUtils.getFont( "monospaced.small.font" );
 			sourceInfoOverlayRenderer.setSourceNameOverlayPosition( Prefs.sourceNameOverlayPosition() );
 			sourceInfoOverlayRenderer.paint( ( Graphics2D ) g );
 
-			final double[] gMousePos = new double[3];
-			getGlobalMouseCoordinates(RealPoint.wrap(gMousePos));
+			final double[] gPos = new double[ 3 ];
+			getGlobalMouseCoordinates( RealPoint.wrap( gPos ) );
 			final String mousePosGlobalString = options.is2D()
-												? String.format(Locale.ROOT, "%6.1f, %6.1f", gMousePos[0], gMousePos[1])
-												:
-												String.format(Locale.ROOT, "%6.1f, %6.1f, %6.1f", gMousePos[0], gMousePos[1], gMousePos[2]);
+												? String.format( Locale.ROOT, "%6.1f, %6.1f", gPos[ 0 ], gPos[ 1 ] )
+												: String.format( Locale.ROOT, "%6.1f, %6.1f, %6.1f", gPos[ 0 ], gPos[ 1 ], gPos[ 2 ] );
 
-			g.setFont(font);
-			UIUtils.drawString(g, TOP_RIGHT, 1, mousePosGlobalString);
+			g.setFont( font );
+			UIUtils.drawString( g, TOP_RIGHT, 1, mousePosGlobalString );
 		}
 
 		if ( Prefs.showScaleBar() )
