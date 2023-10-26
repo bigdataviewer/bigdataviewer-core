@@ -28,10 +28,12 @@
  */
 package bdv.ui.splitpanel;
 
+import bdv.ui.CardPanel;
+import bdv.ui.UIUtils;
+import bdv.viewer.AbstractViewerPanel;
 import java.awt.Dimension;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-
 import javax.swing.InputMap;
 import javax.swing.JComponent;
 import javax.swing.JScrollPane;
@@ -39,13 +41,8 @@ import javax.swing.JSplitPane;
 import javax.swing.KeyStroke;
 import javax.swing.SwingUtilities;
 import javax.swing.border.EmptyBorder;
-
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.util.Actions;
-
-import bdv.ui.CardPanel;
-import bdv.ui.UIUtils;
-import bdv.viewer.AbstractViewerPanel;
 
 /**
  * A {@code JSplitPane} with a {@code ViewerPanel} on the left and a
