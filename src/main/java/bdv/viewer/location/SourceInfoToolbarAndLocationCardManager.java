@@ -163,9 +163,9 @@ public class SourceInfoToolbarAndLocationCardManager implements ViewerStateChang
 		if (showSourceInfoToolBar()) {
 			final SourceInfoOverlayRenderer sourceInfoOverlayRenderer = viewer.getSourceInfoOverlayRenderer();
 			sourceInfoOverlayRenderer.setViewerState(viewer.state());
-			sourceInfoToolBar.setSourceNamesAndTimepoint(sourceInfoOverlayRenderer.getSourceName(),
-														 sourceInfoOverlayRenderer.getGroupName(),
-														 sourceInfoOverlayRenderer.getTimepointString());
+			sourceInfoToolBar.updateSource(sourceInfoOverlayRenderer.getSourceName(),
+										   sourceInfoOverlayRenderer.getGroupName(),
+										   sourceInfoOverlayRenderer.getTimepointString());
 		}
 	}
 

@@ -1,12 +1,14 @@
 package bdv.viewer.location;
 
 import java.awt.Color;
-import java.awt.FlowLayout;
+import java.awt.Font;
 import java.awt.Insets;
 import java.awt.event.ActionListener;
 import java.net.URL;
 import java.util.Locale;
 
+import javax.swing.Box;
+import javax.swing.BoxLayout;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JLabel;
@@ -20,9 +22,8 @@ import javax.swing.JToolBar;
  */
 public class SourceInfoToolBar extends JToolBar {
 
-    private final JLabel sourceNameLabel;
-    private final JLabel groupNameLabel;
-    private final JLabel centerCoordinatesLabel;
+    private final JLabel sourceAndGroupNameLabel;
+   private final JLabel centerCoordinatesLabel;
     private final JLabel timepointLabel;
     private final JButton editCoordinatesButton;
     private final JLabel mouseCoordinatesLabel;
@@ -33,20 +34,20 @@ public class SourceInfoToolBar extends JToolBar {
         super("Source Information");
         this.setFloatable(false);
 
-        final JPanel flowPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 1));
-        this.add(flowPanel);
+        final JPanel panel = new JPanel();
+        panel.setLayout(new BoxLayout(panel, BoxLayout.LINE_AXIS));
+        this.add(panel);
 
-        this.sourceNameLabel = new JLabel();
-        this.sourceNameLabel.setToolTipText("Source name");
-
-        this.groupNameLabel = new JLabel();
-        this.groupNameLabel.setToolTipText("Group name");
+        this.sourceAndGroupNameLabel = new JLabel();
 
         this.timepointLabel = new JLabel();
         this.timepointLabel.setToolTipText("Timepoint");
 
+        final Font monospacedFont = new Font(Font.MONOSPACED, Font.PLAIN, 12);
         this.centerCoordinatesLabel = new JLabel();
         this.centerCoordinatesLabel.setToolTipText("Center coordinates");
+        this.centerCoordinatesLabel.setHorizontalAlignment(JLabel.LEFT);
+        this.centerCoordinatesLabel.setFont(monospacedFont);
 
         final URL url = this.getClass().getResource("/bdv/ui/location/edit_pencil_20.png");
         if (url == null) {
@@ -63,34 +64,45 @@ public class SourceInfoToolBar extends JToolBar {
         this.mouseCoordinatesLabel.setToolTipText("Mouse coordinates");
         this.mouseCoordinatesLabel.setForeground(Color.MAGENTA);
         this.mouseCoordinatesLabel.setVisible(false);
+        this.mouseCoordinatesLabel.setHorizontalAlignment(JLabel.LEFT);
+        this.mouseCoordinatesLabel.setFont(monospacedFont);
 
-        flowPanel.add(this.sourceNameLabel);
-        flowPanel.add(this.groupNameLabel);
-        flowPanel.add(this.timepointLabel);
-        flowPanel.add(this.centerCoordinatesLabel);
-        flowPanel.add(this.editCoordinatesButton);
-        flowPanel.add(this.mouseCoordinatesLabel);
+        panel.add(this.sourceAndGroupNameLabel);
+        panel.add(Box.createHorizontalStrut(10));
+        panel.add(this.centerCoordinatesLabel);
+        panel.add(Box.createHorizontalStrut(10));
+        panel.add(this.editCoordinatesButton);
+        panel.add(Box.createHorizontalStrut(10));
+        panel.add(this.mouseCoordinatesLabel);
+        panel.add(Box.createHorizontalGlue());
+        panel.add(this.timepointLabel);
     }
 
-    public void setSourceNamesAndTimepoint(final String sourceName,
-                                           final String groupName,
-                                           final String timepointString) {
+    public void updateSource(final String sourceName,
+                             final String groupName,
+                             final String timepointString) {
         if ((sourceName != null) && (! sourceName.isEmpty())) {
-            this.sourceNameLabel.setText(sourceName);
+            String sourceAndGroupName = sourceName;
             if ((groupName != null) && (! groupName.isEmpty())) {
-                this.groupNameLabel.setText("| " + groupName);
-                this.groupNameLabel.setVisible(true);
-            } else {
-                this.groupNameLabel.setVisible(false);
+                sourceAndGroupName = sourceAndGroupName + " | " + groupName;
             }
-            this.sourceNameLabel.setVisible(true);
+            if (sourceAndGroupName.length() > 20) {
+                sourceAndGroupNameLabel.setToolTipText(sourceAndGroupName);
+                sourceAndGroupName = sourceAndGroupName.substring(0, 17) + "...";
+            } else {
+                sourceAndGroupNameLabel.setToolTipText("source and group name");
+            }
+            sourceAndGroupNameLabel.setText(sourceAndGroupName);
+            sourceAndGroupNameLabel.setVisible(true);
         } else {
-            this.sourceNameLabel.setVisible(false);
+            sourceAndGroupNameLabel.setVisible(false);
         }
+
         if ((timepointString != null) && (! timepointString.isEmpty())) {
-            this.timepointLabel.setText(timepointString);
+            timepointLabel.setText(timepointString);
+            timepointLabel.setVisible(true);
         } else {
-            this.timepointLabel.setText("");
+            timepointLabel.setVisible(false);
         }
     }
 
@@ -136,7 +148,7 @@ public class SourceInfoToolBar extends JToolBar {
 
     private String formatCoordinate(final int dimension,
                                     final double value) {
-        return String.format(Locale.ROOT, "%s: %1.0f",
+        return String.format(Locale.ROOT, "%s: % 8.1f",
                              DimensionCoordinateComponents.getDefaultDimensionName(dimension),
                              value);
     }

@@ -25,38 +25,10 @@ public class LocationPanel
         super(new GridBagLayout());
 
         this.dimensionComponentsList = new ArrayList<>();
-
         for (int dimension = 0; dimension < sourceInterval.numDimensions(); dimension++) {
-
-            final DimensionCoordinateComponents coordinateComponents =
-                    new DimensionCoordinateComponents(dimension,
-                                                      sourceInterval.min(dimension),
-                                                      sourceInterval.max(dimension));
-
-            this.dimensionComponentsList.add(coordinateComponents);
-
-            final GridBagConstraints c = new GridBagConstraints();
-            c.gridx = 0;
-            c.gridy = dimension * 2;
-            c.weightx = 0.01;
-            this.add(coordinateComponents.getValueLabel(), c);
-
-            // text field should grow with card width
-            c.gridx = 1;
-            c.weightx = 0.99;
-            c.fill = GridBagConstraints.HORIZONTAL;
-            this.add(coordinateComponents.getValueTextField(), c);
-
-            c.gridy++;
-            c.weightx = 0.99;
-            c.fill = GridBagConstraints.HORIZONTAL;
-            this.add(coordinateComponents.getValueSlider(), c);
-        }
-
-        // connect dimension components to support multi-value paste
-        for (int d = 1; d < dimensionComponentsList.size(); d++) {
-            final DimensionCoordinateComponents prior = dimensionComponentsList.get(d - 1);
-            prior.setNextDimensionComponents(dimensionComponentsList.get(d));
+            addDimension(dimension,
+                         sourceInterval.min(dimension),
+                         sourceInterval.max(dimension));
         }
     }
 
@@ -77,9 +49,23 @@ public class LocationPanel
     }
 
     public void setSourceInterval(final Interval sourceInterval) {
+
         for (int dimension = 0; dimension < sourceInterval.numDimensions(); dimension++) {
-            this.dimensionComponentsList.get(dimension).setMinAndMaxPosition(sourceInterval.min(dimension),
-                                                                             sourceInterval.max(dimension));
+            if (dimension < dimensionComponentsList.size()) {
+                dimensionComponentsList.get(dimension).setMinAndMaxPosition(sourceInterval.min(dimension),
+                                                                            sourceInterval.max(dimension));
+            } else {
+                addDimension(dimension,
+                             sourceInterval.min(dimension),
+                             sourceInterval.max(dimension));
+            }
+        }
+
+        for (int dimension = dimensionComponentsList.size(); dimension > sourceInterval.numDimensions() ; dimension--) {
+            final DimensionCoordinateComponents removedComponents = dimensionComponentsList.remove(dimension);
+            this.remove(removedComponents.getValueLabel());
+            this.remove(removedComponents.getValueTextField());
+            this.remove(removedComponents.getValueSlider());
         }
     }
 
@@ -97,9 +83,43 @@ public class LocationPanel
     }
 
     public void setCenterPosition(final double[] centerPosition) {
-        for (int i = 0; i < centerPosition.length; i++) {
-            this.dimensionComponentsList.get(i).setPosition(centerPosition[i]);
+        for (int i = 0; i < centerPosition.length && i < dimensionComponentsList.size(); i++) {
+            dimensionComponentsList.get(i).setPosition(centerPosition[i]);
         }
     }
 
+    private void addDimension(final int dimension,
+                              final double minPosition,
+                              final double maxPosition) {
+
+        final DimensionCoordinateComponents coordinateComponents =
+                new DimensionCoordinateComponents(dimension,
+                                                  minPosition,
+                                                  maxPosition);
+
+        this.dimensionComponentsList.add(coordinateComponents);
+
+        final GridBagConstraints c = new GridBagConstraints();
+        c.gridx = 0;
+        c.gridy = dimension * 2;
+        c.weightx = 0.01;
+        this.add(coordinateComponents.getValueLabel(), c);
+
+        // text field should grow with card width
+        c.gridx = 1;
+        c.weightx = 0.99;
+        c.fill = GridBagConstraints.HORIZONTAL;
+        this.add(coordinateComponents.getValueTextField(), c);
+
+        c.gridy++;
+        c.weightx = 0.99;
+        c.fill = GridBagConstraints.HORIZONTAL;
+        this.add(coordinateComponents.getValueSlider(), c);
+
+        if (dimension > 0) {
+            // connect dimension components to support multi-value paste
+            final DimensionCoordinateComponents prior = dimensionComponentsList.get(dimension - 1);
+            prior.setNextDimensionComponents(coordinateComponents);
+        }
+    }
 }
