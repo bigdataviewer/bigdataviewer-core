@@ -30,6 +30,7 @@ package bdv.tools.transformation;
 
 import java.awt.event.KeyEvent;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -75,6 +76,8 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 	private final ViewerState viewerState;
 
 	private final Consumer< String > viewerMessageDisplay;
+
+	private Collection< SourceAndConverter< ? > > customSources;
 
 	public ManualTransformationEditor( final AbstractViewerPanel viewer, final InputActionBindings inputActionBindings )
 	{
@@ -154,6 +157,12 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 		}
 	}
 
+	public synchronized void transform( Collection< SourceAndConverter< ? > > customSources )
+	{
+		this.customSources = customSources;
+		setActive( true );
+	}
+
 	public synchronized void setActive( final boolean a )
 	{
 		if ( this.active == a )
@@ -163,18 +172,25 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 		{
 			// Enter manual edit mode
 			final ViewerState state = this.viewerState.snapshot();
-			final List< SourceAndConverter< ? > > currentSources = new ArrayList<>();
-			switch ( state.getDisplayMode() )
+			final List< SourceAndConverter< ? > > transformableSources = new ArrayList<>();
+			if ( customSources != null )
 			{
-			case FUSED:
-				currentSources.add( state.getCurrentSource() );
-				break;
-			case FUSEDGROUP:
-				currentSources.addAll( state.getSourcesInGroup( state.getCurrentGroup() ) );
-				break;
-			default:
-				viewerMessageDisplay.accept( "Can only do manual transformation when in FUSED mode." );
-				return;
+				transformableSources.addAll( customSources );
+			}
+			else
+			{
+				switch ( state.getDisplayMode() )
+				{
+					case FUSED:
+						transformableSources.add( state.getCurrentSource() );
+						break;
+					case FUSEDGROUP:
+						transformableSources.addAll( state.getSourcesInGroup( state.getCurrentGroup() ) );
+						break;
+					default:
+						viewerMessageDisplay.accept( "Can only do manual transformation when in FUSED mode." );
+						return;
+				}
 			}
 			state.getViewerTransform( frozenTransform );
 			sourcesToModify.clear();
@@ -183,7 +199,7 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 			{
 				if ( source.getSpimSource() instanceof TransformedSource )
 				{
-					if ( currentSources.contains( source ) )
+					if ( transformableSources.contains( source ) )
 						sourcesToModify.add( ( TransformedSource< ? > ) source.getSpimSource() );
 					else
 						sourcesToFix.add( ( TransformedSource< ? > ) source.getSpimSource() );
@@ -198,6 +214,7 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 		{
 			// Exit manual edit mode.
 			active = false;
+			customSources = null;
 			viewerTransformListeners.remove( this );
 			bindings.removeInputMap( "manual transform" );
 			final AffineTransform3D tmp = new AffineTransform3D();
