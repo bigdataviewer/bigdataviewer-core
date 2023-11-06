@@ -57,19 +57,19 @@ import net.imglib2.view.Views;
 
 public abstract class AbstractSpimSource< T extends NumericType< T > > implements Source< T >
 {
-	protected static class ImgKey
+	private static class ImgKey
 	{
-		protected final int timepoint;
+		private final int timepoint;
 
-		protected final int level;
+		private final int level;
 
-		protected final Interpolation method;
+		private final Interpolation method;
 
-		protected final ThreadGroup threadGroup;
+		private final ThreadGroup threadGroup;
 
 		private final int hashcode;
 
-		public ImgKey(
+		ImgKey(
 				final int timepoint,
 				final int level,
 				final Interpolation method,
@@ -109,37 +109,37 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 		}
 	}
 
-	protected int currentTimePointIndex;
+	private int currentTimePointIndex;
 
-	protected boolean currentTimePointIsPresent;
+	private boolean currentTimePointIsPresent;
 
-	protected final AffineTransform3D[] currentSourceTransforms;
+	private final AffineTransform3D[] currentSourceTransforms;
 
-	protected final int setupId;
+	private final int setupId;
 
-	protected final String name;
+	private final String name;
 
-	protected final List< TimePoint > timePointsOrdered;
+	private final List< TimePoint > timePointsOrdered;
 
-	protected final Map< ViewId, ViewRegistration > viewRegistrations;
+	private final Map< ViewId, ViewRegistration > viewRegistrations;
 
-	protected final Set< ViewId > missingViews;
+	private final Set< ViewId > missingViews;
 
-	protected final VoxelDimensions voxelDimensions;
+	private final VoxelDimensions voxelDimensions;
 
-	protected final int numMipmapLevels;
+	private final int numMipmapLevels;
 
-	protected final static int numInterpolationMethods = 2;
+	private final static int numInterpolationMethods = 2;
 
-	protected final static int iNearestNeighborMethod = 0;
+	private final static int iNearestNeighborMethod = 0;
 
-	protected final static int iNLinearMethod = 1;
+	private final static int iNLinearMethod = 1;
 
-	protected final InterpolatorFactory< T, RandomAccessible< T > >[] interpolatorFactories;
+	private final InterpolatorFactory< T, RandomAccessible< T > >[] interpolatorFactories;
 
-	protected final UncheckedCache< ImgKey, RandomAccessibleInterval< T > > cachedSources;
+	private final UncheckedCache< ImgKey, RandomAccessibleInterval< T > > cachedSources;
 
-	protected final UncheckedCache< ImgKey, RealRandomAccessible< T > > cachedInterpolatedSources;
+	private final UncheckedCache< ImgKey, RealRandomAccessible< T > > cachedInterpolatedSources;
 
 	@SuppressWarnings( "unchecked" )
 	public AbstractSpimSource( final AbstractSpimData< ? > spimData, final int setupId, final String name )
@@ -181,9 +181,10 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 		for ( int level = 0; level < numMipmapLevels; level++ )
 			currentSourceTransforms[ level ] = new AffineTransform3D();
 
+		currentTimePointIndex = -1;
 	}
 
-	protected void loadTimepoint( final int timepointIndex )
+	void loadTimepoint( final int timepointIndex )
 	{
 		currentTimePointIndex = timepointIndex;
 		currentTimePointIsPresent = isPresent( timepointIndex );
@@ -206,9 +207,9 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 		}
 	}
 
-	protected abstract AffineTransform3D[] getMipmapTransforms();
+	abstract AffineTransform3D[] getMipmapTransforms();
 
-	protected abstract RandomAccessibleInterval< T > getImage( final int timepointId, final int level );
+	abstract RandomAccessibleInterval< T > getImage( int timepointId, int level );
 
 	@Override
 	public boolean isPresent( final int t )
