@@ -277,4 +277,18 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 	{
 		return setupId;
 	}
+
+	/**
+	 * Invalidate cached source transformations, triggering a reload from {@code SpimData}.
+	 * <p>
+	 * Implementation Note:
+	 * This method was added so that BigStitcher can trigger reloading source
+	 * transforms from ViewRegistrations. It doesn't currently trigger update of
+	 * anything else (MissingViews, available timepoints, etc.) However, if the
+	 * need for these arises, this method would be a good place to put it.
+	 */
+	public void reload()
+	{
+		currentTimePointIndex = -1;
+	}
 }
