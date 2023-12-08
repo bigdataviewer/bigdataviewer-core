@@ -179,7 +179,7 @@ public class AppearanceIO
 					a.setScaleBarColor( hexColor( mapping.get( "scaleBarColor" ) ) );
 					a.setScaleBarBgColor( hexColor( mapping.get( "scaleBarBgColor" ) ) );
 					a.setLookAndFeel( ( LookAndFeelInfo ) mapping.get( "lookAndFeel" ) );
-					a.setShowSourceInfoToolBar(( Boolean ) mapping.get("showSourceInfoToolBar" ) );
+					a.setShowSourceInfoToolBar( ( Boolean ) mapping.get( "showSourceInfoToolBar" ) );
 					return a;
 				}
 				catch( final Exception e )
