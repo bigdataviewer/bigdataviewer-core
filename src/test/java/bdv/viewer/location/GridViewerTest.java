@@ -28,6 +28,7 @@
  */
 package bdv.viewer.location;
 
+import bdv.ui.UIUtils;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.function.BiConsumer;
@@ -47,12 +48,19 @@ import net.imglib2.Interval;
 import net.imglib2.RealLocalizable;
 import net.imglib2.display.RealARGBColorConverter;
 import net.imglib2.position.FunctionRealRandomAccessible;
+import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.integer.IntType;
+
+import static java.lang.Math.PI;
 
 public class GridViewerTest {
 
 	public static void main(String[] args)
 			throws IOException, SpimDataException {
+
+		System.setProperty( "apple.laf.useScreenMenuBar", "true" );
+//			System.setProperty( "apple.awt.application.appearance", "system" );
+		UIUtils.installFlatLafInfos();
 
 		final ArrayList<ConverterSetup> converterSetups = new ArrayList<>();
 		final ArrayList<SourceAndConverter<?>> sources = new ArrayList<>();
@@ -73,7 +81,7 @@ public class GridViewerTest {
 
 			final int numDimensions = 3; // (i < 3) ? 3 : 2;
 			final int size = 100 * (i + 1);
-			final RealRandomAccessibleSource<IntType> source = buildGridSource(numDimensions, sourceNames[i], size);
+			final RealRandomAccessibleSource<IntType> source = buildGridSource(numDimensions, sourceNames[i], size, i);
 			final SourceAndConverter<IntType> soc = new SourceAndConverter<>(source, converter);
 			sources.add(soc);
 		}
@@ -105,7 +113,8 @@ public class GridViewerTest {
 
 	public static RealRandomAccessibleSource<IntType> buildGridSource(final int numDimensions,
 																	  final String name,
-																	  final int size) {
+																	  final int size,
+																	  final int i ) {
 		final FunctionRealRandomAccessible<IntType> grid =
 				new FunctionRealRandomAccessible<>(numDimensions, GRID_FUNCTION, IntType::new);
 
@@ -122,6 +131,19 @@ public class GridViewerTest {
 			public Interval getInterval(final int t,
 										final int level) {
 				return interval;
+			}
+
+			@Override
+			public void getSourceTransform( final int t, final int level, final AffineTransform3D transform )
+			{
+				transform.identity();
+				if ( i == 1 ) {
+					transform.scale( 2.3 );
+					transform.rotate( 2, 30 * PI / 180.0 );
+					transform.rotate( 1, 10 * PI / 180.0 );
+					transform.rotate( 0, 60 * PI / 180.0 );
+					transform.translate( -400, 70, 80 );
+				}
 			}
 		};
 	}
