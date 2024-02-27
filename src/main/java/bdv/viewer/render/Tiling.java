@@ -45,7 +45,7 @@ class Tiling
 	/**
 	 * Subdivide tiles for parallelization until they have this size approximately
 	 */
-	public static int MAX_TILE_SIZE = 32 * 32;
+	public static int MAX_TILE_SIZE = 32 * 32 * 64;
 
 	/**
 	 * If per-source render tasks in AccumulateProjector contain less target

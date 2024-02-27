@@ -32,8 +32,22 @@ import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.RealRandomAccessible;
+import net.imglib2.algorithm.blocks.BlockProcessor;
+import net.imglib2.algorithm.blocks.UnaryBlockOperator;
+import net.imglib2.algorithm.blocks.transform.Transform;
+import net.imglib2.blocks.PrimitiveBlocks;
 import net.imglib2.converter.Converter;
+import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.interpolation.Interpolant;
+import net.imglib2.interpolation.InterpolatorFactory;
+import net.imglib2.realtransform.AffineRandomAccessible;
+import net.imglib2.type.NativeType;
+import net.imglib2.util.Intervals;
 import net.imglib2.util.StopWatch;
+
+import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory;
+import net.imglib2.interpolation.randomaccess.ClampingNLinearInterpolatorFactory;
 
 // TODO Fix naming. This is a VolatileProjector for a non-volatile source...
 /**
@@ -66,6 +80,8 @@ public class SimpleVolatileProjector< A, B > implements VolatileProjector
 
 	private final RandomAccessible< A > source;
 
+	private final WithBlk< ? > blk;
+
 	/**
 	 * Time needed for rendering the last frame, in nano-seconds.
 	 */
@@ -95,6 +111,61 @@ public class SimpleVolatileProjector< A, B > implements VolatileProjector
 		this.target = target;
 		this.source = source;
 		lastFrameRenderNanoTime = -1;
+
+		blk = WithBlk.getIfPossible( ( RandomAccessible ) source );
+	}
+
+
+	static class WithBlk< A extends NativeType< A > >
+	{
+		private final UnaryBlockOperator< A, A > affine;
+
+		private final PrimitiveBlocks< A > blocks;
+
+		public WithBlk( final UnaryBlockOperator< A, A > affine, final PrimitiveBlocks< A > blocks )
+		{
+			this.affine = affine;
+			this.blocks = blocks;
+		}
+
+		static < A extends NativeType< A > > WithBlk< A > getIfPossible(
+				final RandomAccessible< A > source )
+		{
+			// TODO: update once getType() is in imglib2-core
+			A type = source.randomAccess().get();
+
+			if ( !( source instanceof AffineRandomAccessible ) )
+				return null;
+			final AffineRandomAccessible< A, ? > s0 = ( AffineRandomAccessible< A, ? > ) source;
+
+			final RealRandomAccessible< A > s1 = s0.getSource();
+			if ( !( s1 instanceof Interpolant ) )
+				return null;
+			final Interpolant< A, ? > s2 = ( Interpolant< A, ? > ) s1;
+
+			final InterpolatorFactory< A, ? > f = s2.getInterpolatorFactory();
+			final Transform.Interpolation interpolation;
+			if ( f instanceof ClampingNLinearInterpolatorFactory )
+			{
+				interpolation = Transform.Interpolation.NLINEAR;
+			}
+			else if ( f instanceof NearestNeighborInterpolatorFactory )
+			{
+				interpolation = Transform.Interpolation.NEARESTNEIGHBOR;
+			}
+			else
+			{
+				System.out.println( "cannot handle " + f.getClass() + " (yet)" );
+				return null;
+			}
+
+			final UnaryBlockOperator< A, A > affine = Transform.affine( type, s0.getTransformToSource().inverse(), interpolation );
+
+			final RandomAccessible< A > s3 = ( RandomAccessible< A > ) s2.getSource();
+			final PrimitiveBlocks< A > blocks = PrimitiveBlocks.of( s3 );
+
+			return new WithBlk<>( affine, blocks );
+		}
 	}
 
 	@Override
@@ -115,6 +186,63 @@ public class SimpleVolatileProjector< A, B > implements VolatileProjector
 		return valid;
 	}
 
+	private boolean blked()
+	{
+		final StopWatch stopWatch = StopWatch.createAndStart();
+
+		BlockProcessor processor = blk.affine.blockProcessor();
+
+		// Source interval which will be used for rendering. This is the 2D
+		// target interval expanded to source dimensionality (usually 3D) with
+		// min=max=0 in the additional dimensions.
+		final int n = Math.max( 2, source.numDimensions() );
+		final long[] smin = new long[ n ];
+		final long[] smax = new long[ n ];
+		smin[ 0 ] = target.min( 0 );
+		smax[ 0 ] = target.max( 0 );
+		smin[ 1 ] = target.min( 1 );
+		smax[ 1 ] = target.max( 1 );
+		final FinalInterval sourceInterval = new FinalInterval( smin, smax );
+
+		processor.setTargetInterval( sourceInterval );
+		blk.blocks.copy( processor.getSourcePos(), processor.getSourceBuffer(), processor.getSourceSize() );
+
+		// TODO: use correct primitive array type here ...
+		final byte[] dest = new byte[ ( int ) Intervals.numElements( sourceInterval ) ];
+		processor.compute( processor.getSourceBuffer(), dest );
+		final RandomAccessibleInterval< A > destImg = ( RandomAccessibleInterval< A > ) ArrayImgs.unsignedBytes( dest, target.dimension( 0 ), target.dimension( 1 ), 1 );
+		final long[] zmin = new long[ n ];
+
+		final RandomAccess< B > targetRandomAccess = target.randomAccess( target );
+		final RandomAccess< A > sourceRandomAccess = destImg.randomAccess();
+		final int width = ( int ) target.dimension( 0 );
+		final int height = ( int ) target.dimension( 1 );
+		for ( int y = 0; y < height; ++y )
+		{
+			sourceRandomAccess.setPosition( zmin );
+			targetRandomAccess.setPosition( smin );
+			for ( int x = 0; x < width; ++x )
+			{
+				converter.convert( sourceRandomAccess.get(), targetRandomAccess.get() );
+				sourceRandomAccess.fwd( 0 );
+				targetRandomAccess.fwd( 0 );
+			}
+			++smin[ 1 ];
+			++zmin[ 1 ];
+		}
+
+		lastFrameRenderNanoTime = stopWatch.nanoTime();
+
+		final boolean success = !canceled;
+		valid |= success;
+
+		if (!success)
+			System.out.println( "success = " + success );
+		return success;
+	}
+
+	public static boolean DEBUG_USE_BLK_AFFINE = true;
+
 	/**
 	 * Render the 2D target image by copying values from the source. Source can
 	 * have more dimensions than the target. Target coordinate <em>(x,y)</em> is
@@ -130,6 +258,9 @@ public class SimpleVolatileProjector< A, B > implements VolatileProjector
 	{
 		if ( canceled )
 			return false;
+
+		if ( blk != null && DEBUG_USE_BLK_AFFINE )
+			return blked();
 
 		final StopWatch stopWatch = StopWatch.createAndStart();
 
