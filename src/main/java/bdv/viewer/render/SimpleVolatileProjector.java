@@ -28,11 +28,28 @@
  */
 package bdv.viewer.render;
 
+import java.util.function.Supplier;
+
+import bdv.viewer.render.ProjectorUtils.ArrayData;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.RealRandomAccessible;
+import net.imglib2.algorithm.blocks.BlockSupplier;
+import net.imglib2.algorithm.blocks.convert.Convert;
+import net.imglib2.algorithm.blocks.transform.Transform;
+import net.imglib2.blocks.SubArrayCopy;
 import net.imglib2.converter.Converter;
+import net.imglib2.interpolation.Interpolant;
+import net.imglib2.interpolation.InterpolatorFactory;
+import net.imglib2.interpolation.randomaccess.ClampingNLinearInterpolatorFactory;
+import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory;
+import net.imglib2.realtransform.AffineGet;
+import net.imglib2.realtransform.AffineRandomAccessible;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.PrimitiveType;
+import net.imglib2.util.Intervals;
 import net.imglib2.util.StopWatch;
 
 // TODO Fix naming. This is a VolatileProjector for a non-volatile source...
@@ -66,6 +83,8 @@ public class SimpleVolatileProjector< A, B > implements VolatileProjector
 
 	private final RandomAccessible< A > source;
 
+	private final BlockSupplier< ? > blk;
+
 	/**
 	 * Time needed for rendering the last frame, in nano-seconds.
 	 */
@@ -95,6 +114,50 @@ public class SimpleVolatileProjector< A, B > implements VolatileProjector
 		this.target = target;
 		this.source = source;
 		lastFrameRenderNanoTime = -1;
+
+		blk = getBlockSupplierIfPossible( ( RandomAccessible ) source, ( RandomAccessibleInterval ) target, ( Converter ) converter );
+	}
+
+
+	static < A extends NativeType< A >, B extends NativeType< B > > BlockSupplier< B > getBlockSupplierIfPossible(
+			final RandomAccessible< A > source,
+			final RandomAccessibleInterval< B > target,
+			final Converter< ? super A, B > converter )
+	{
+		A type = source.getType();
+		B targetType = target.getType();
+
+		if ( !( source instanceof AffineRandomAccessible ) )
+			return null;
+		final AffineRandomAccessible< A, ? > s0 = ( AffineRandomAccessible< A, ? > ) source;
+		final AffineGet transformFromSource = s0.getTransformToSource().inverse();
+
+		final RealRandomAccessible< A > s1 = s0.getSource();
+		if ( !( s1 instanceof Interpolant ) )
+			return null;
+		final Interpolant< A, ? > s2 = ( Interpolant< A, ? > ) s1;
+
+		final InterpolatorFactory< A, ? > f = s2.getInterpolatorFactory();
+		final Transform.Interpolation interpolation;
+		if ( f instanceof ClampingNLinearInterpolatorFactory )
+		{
+			interpolation = Transform.Interpolation.NLINEAR;
+		}
+		else if ( f instanceof NearestNeighborInterpolatorFactory )
+		{
+			interpolation = Transform.Interpolation.NEARESTNEIGHBOR;
+		}
+		else
+		{
+			System.out.println( "cannot handle " + f.getClass() + " (yet)" );
+			return null;
+		}
+
+		final RandomAccessible< A > s3 = ( RandomAccessible< A > ) s2.getSource();
+		final Supplier< Converter< ? super A, B > > converterSupplier = () -> converter;
+		return BlockSupplier.of( s3 )
+				.andThen( Transform.affine( transformFromSource, interpolation ) )
+				.andThen( Convert.convert( targetType, converterSupplier ) );
 	}
 
 	@Override
@@ -115,6 +178,47 @@ public class SimpleVolatileProjector< A, B > implements VolatileProjector
 		return valid;
 	}
 
+	private boolean blked()
+	{
+		final StopWatch stopWatch = StopWatch.createAndStart();
+
+		// Source interval which will be used for rendering. This is the 2D
+		// target interval expanded to source dimensionality (usually 3D) with
+		// min=max=0 in the additional dimensions.
+		final int n = Math.max( 2, source.numDimensions() );
+		final long[] smin = new long[ n ];
+		final long[] smax = new long[ n ];
+		smin[ 0 ] = target.min( 0 );
+		smax[ 0 ] = target.max( 0 );
+		smin[ 1 ] = target.min( 1 );
+		smax[ 1 ] = target.max( 1 );
+		final FinalInterval sourceInterval = FinalInterval.wrap( smin, smax );
+
+		// TODO: use correct primitive array type here ...
+		final int[] dest = new int[ ( int ) Intervals.numElements( sourceInterval ) ];
+		blk.copy( sourceInterval, dest );
+		final ArrayData targetData = ProjectorUtils.getARGBArrayData( target );
+//		System.out.println( "targetData = " + targetData );
+		final int[] o_src = { 0, 0 };
+		final int[] size_src = { ( int ) sourceInterval.dimension( 0 ), ( int ) sourceInterval.dimension( 1 ) };
+		final int[] o_dst = { targetData.ox(), targetData.oy() };
+		final int[] size_dst = { targetData.stride(), 1 };
+		SubArrayCopy
+				.forPrimitiveType( PrimitiveType.INT )
+				.copy( dest, size_src, o_src, targetData.data(), size_dst, o_dst, size_src );
+
+		lastFrameRenderNanoTime = stopWatch.nanoTime();
+
+		final boolean success = !canceled;
+		valid |= success;
+
+		if (!success)
+			System.out.println( "success = " + success );
+		return success;
+	}
+
+	public static boolean DEBUG_USE_BLK_AFFINE = true;
+
 	/**
 	 * Render the 2D target image by copying values from the source. Source can
 	 * have more dimensions than the target. Target coordinate <em>(x,y)</em> is
@@ -130,6 +234,9 @@ public class SimpleVolatileProjector< A, B > implements VolatileProjector
 	{
 		if ( canceled )
 			return false;
+
+		if ( blk != null && DEBUG_USE_BLK_AFFINE )
+			return blked();
 
 		final StopWatch stopWatch = StopWatch.createAndStart();
 
