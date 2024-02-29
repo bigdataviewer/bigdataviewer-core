@@ -41,13 +41,13 @@ import net.imglib2.converter.Converter;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.interpolation.Interpolant;
 import net.imglib2.interpolation.InterpolatorFactory;
+import net.imglib2.interpolation.randomaccess.ClampingNLinearInterpolatorFactory;
+import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory;
+import net.imglib2.realtransform.AffineGet;
 import net.imglib2.realtransform.AffineRandomAccessible;
 import net.imglib2.type.NativeType;
 import net.imglib2.util.Intervals;
 import net.imglib2.util.StopWatch;
-
-import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory;
-import net.imglib2.interpolation.randomaccess.ClampingNLinearInterpolatorFactory;
 
 // TODO Fix naming. This is a VolatileProjector for a non-volatile source...
 /**
@@ -159,7 +159,8 @@ public class SimpleVolatileProjector< A, B > implements VolatileProjector
 				return null;
 			}
 
-			final UnaryBlockOperator< A, A > affine = Transform.affine( type, s0.getTransformToSource().inverse(), interpolation );
+			final AffineGet transformFromSource = s0.getTransformToSource().inverse();
+			final UnaryBlockOperator< A, A > affine = Transform.affine( type, transformFromSource, interpolation );
 
 			final RandomAccessible< A > s3 = ( RandomAccessible< A > ) s2.getSource();
 			final PrimitiveBlocks< A > blocks = PrimitiveBlocks.of( s3 );
@@ -202,14 +203,17 @@ public class SimpleVolatileProjector< A, B > implements VolatileProjector
 		smax[ 0 ] = target.max( 0 );
 		smin[ 1 ] = target.min( 1 );
 		smax[ 1 ] = target.max( 1 );
-		final FinalInterval sourceInterval = new FinalInterval( smin, smax );
+		final FinalInterval sourceInterval = FinalInterval.wrap( smin, smax );
 
 		processor.setTargetInterval( sourceInterval );
-		blk.blocks.copy( processor.getSourcePos(), processor.getSourceBuffer(), processor.getSourceSize() );
+		final int[] sourceSize = processor.getSourceSize();
+		final long[] sourcePos = processor.getSourcePos();
+		final Object sourceBuffer = processor.getSourceBuffer();
+		blk.blocks.copy( sourcePos, sourceBuffer, sourceSize );
 
 		// TODO: use correct primitive array type here ...
 		final byte[] dest = new byte[ ( int ) Intervals.numElements( sourceInterval ) ];
-		processor.compute( processor.getSourceBuffer(), dest );
+		processor.compute( sourceBuffer, dest );
 		final RandomAccessibleInterval< A > destImg = ( RandomAccessibleInterval< A > ) ArrayImgs.unsignedBytes( dest, target.dimension( 0 ), target.dimension( 1 ), 1 );
 		final long[] zmin = new long[ n ];
 
