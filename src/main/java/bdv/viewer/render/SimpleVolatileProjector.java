@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -35,6 +35,7 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.algorithm.blocks.BlockProcessor;
 import net.imglib2.algorithm.blocks.UnaryBlockOperator;
+import net.imglib2.algorithm.blocks.convert.Convert;
 import net.imglib2.algorithm.blocks.transform.Transform;
 import net.imglib2.blocks.PrimitiveBlocks;
 import net.imglib2.converter.Converter;
@@ -43,9 +44,11 @@ import net.imglib2.interpolation.Interpolant;
 import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.ClampingNLinearInterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory;
+import net.imglib2.loops.LoopBuilder;
 import net.imglib2.realtransform.AffineGet;
 import net.imglib2.realtransform.AffineRandomAccessible;
 import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.util.Intervals;
 import net.imglib2.util.StopWatch;
 
@@ -80,7 +83,7 @@ public class SimpleVolatileProjector< A, B > implements VolatileProjector
 
 	private final RandomAccessible< A > source;
 
-	private final WithBlk< ? > blk;
+	private final WithBlk< ?, ? > blk;
 
 	/**
 	 * Time needed for rendering the last frame, in nano-seconds.
@@ -112,27 +115,30 @@ public class SimpleVolatileProjector< A, B > implements VolatileProjector
 		this.source = source;
 		lastFrameRenderNanoTime = -1;
 
-		blk = WithBlk.getIfPossible( ( RandomAccessible ) source );
+		blk = WithBlk.getIfPossible( ( RandomAccessible ) source, ( RandomAccessibleInterval ) target, ( Converter ) converter );
 	}
 
 
-	static class WithBlk< A extends NativeType< A > >
+	static class WithBlk< A extends NativeType< A >, B extends NativeType< B > >
 	{
-		private final UnaryBlockOperator< A, A > affine;
+		private final UnaryBlockOperator< A, B > affine;
 
 		private final PrimitiveBlocks< A > blocks;
 
-		public WithBlk( final UnaryBlockOperator< A, A > affine, final PrimitiveBlocks< A > blocks )
+		public WithBlk( final UnaryBlockOperator< A, B > affine, final PrimitiveBlocks< A > blocks )
 		{
 			this.affine = affine;
 			this.blocks = blocks;
 		}
 
-		static < A extends NativeType< A > > WithBlk< A > getIfPossible(
-				final RandomAccessible< A > source )
+		static < A extends NativeType< A >, B extends NativeType< B > > WithBlk< A, B > getIfPossible(
+				final RandomAccessible< A > source,
+				final RandomAccessibleInterval< B > target,
+				final Converter< ? super A, B > converter )
 		{
 			// TODO: update once getType() is in imglib2-core
 			A type = source.randomAccess().get();
+			B targetType = target.randomAccess().get();
 
 			if ( !( source instanceof AffineRandomAccessible ) )
 				return null;
@@ -160,7 +166,7 @@ public class SimpleVolatileProjector< A, B > implements VolatileProjector
 			}
 
 			final AffineGet transformFromSource = s0.getTransformToSource().inverse();
-			final UnaryBlockOperator< A, A > affine = Transform.affine( type, transformFromSource, interpolation );
+			final UnaryBlockOperator< A, B > affine = Transform.affine( type, transformFromSource, interpolation ).andThen( Convert.convert( type, targetType, () -> converter ) );
 
 			final RandomAccessible< A > s3 = ( RandomAccessible< A > ) s2.getSource();
 			final PrimitiveBlocks< A > blocks = PrimitiveBlocks.of( s3 );
@@ -212,28 +218,13 @@ public class SimpleVolatileProjector< A, B > implements VolatileProjector
 		blk.blocks.copy( sourcePos, sourceBuffer, sourceSize );
 
 		// TODO: use correct primitive array type here ...
-		final byte[] dest = new byte[ ( int ) Intervals.numElements( sourceInterval ) ];
+		final int[] dest = new int[ ( int ) Intervals.numElements( sourceInterval ) ];
 		processor.compute( sourceBuffer, dest );
-		final RandomAccessibleInterval< A > destImg = ( RandomAccessibleInterval< A > ) ArrayImgs.unsignedBytes( dest, target.dimension( 0 ), target.dimension( 1 ), 1 );
-		final long[] zmin = new long[ n ];
-
-		final RandomAccess< B > targetRandomAccess = target.randomAccess( target );
-		final RandomAccess< A > sourceRandomAccess = destImg.randomAccess();
-		final int width = ( int ) target.dimension( 0 );
-		final int height = ( int ) target.dimension( 1 );
-		for ( int y = 0; y < height; ++y )
-		{
-			sourceRandomAccess.setPosition( zmin );
-			targetRandomAccess.setPosition( smin );
-			for ( int x = 0; x < width; ++x )
-			{
-				converter.convert( sourceRandomAccess.get(), targetRandomAccess.get() );
-				sourceRandomAccess.fwd( 0 );
-				targetRandomAccess.fwd( 0 );
-			}
-			++smin[ 1 ];
-			++zmin[ 1 ];
-		}
+		LoopBuilder
+				.setImages(
+						ArrayImgs.argbs( dest, target.dimension( 0 ), target.dimension( 1 ) ),
+						( RandomAccessibleInterval< ARGBType > ) target )
+				.forEachPixel( ( i, o ) -> o.set( i ) );
 
 		lastFrameRenderNanoTime = stopWatch.nanoTime();
 
