@@ -127,6 +127,9 @@ public class ProjectorUtils
 
 	public static ArrayData getARGBArrayData( final RandomAccessible< ? > img )
 	{
+		if ( img.numDimensions() != 2 )
+			return null;
+
 		if ( img instanceof IntervalView )
 		{
 			final IntervalView view = ( IntervalView ) img;
@@ -157,7 +160,19 @@ public class ProjectorUtils
 				return new ArrayData( data, ox, oy, width, height, stride );
 			}
 		}
-		// TODO: handle (non-view) ArrayImg
+		else if ( img instanceof ArrayImg )
+		{
+			final ArrayImg< ?, ? > aimg = ( ArrayImg< ?, ? > ) img;
+			if ( !( aimg.firstElement() instanceof ARGBType ) )
+				return null;
+			final Object access = aimg.update( null );
+			if ( !( access instanceof IntArray ) )
+				return null;
+			final int[] data = ( ( IntArray ) access ).getCurrentStorageArray();
+			final int width = ( int ) aimg.dimension( 0 );
+			final int height = ( int ) aimg.dimension( 1 );
+			return new ArrayData( data, 0, 0, width, height, width );
+		}
 		return null;
 	}
 }
