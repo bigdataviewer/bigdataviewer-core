@@ -28,6 +28,7 @@
  */
 package bdv.viewer.render;
 
+import bdv.viewer.render.ProjectorUtils.ArrayData;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
@@ -38,6 +39,7 @@ import net.imglib2.algorithm.blocks.UnaryBlockOperator;
 import net.imglib2.algorithm.blocks.convert.Convert;
 import net.imglib2.algorithm.blocks.transform.Transform;
 import net.imglib2.blocks.PrimitiveBlocks;
+import net.imglib2.blocks.SubArrayCopy;
 import net.imglib2.converter.Converter;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.interpolation.Interpolant;
@@ -48,6 +50,7 @@ import net.imglib2.loops.LoopBuilder;
 import net.imglib2.realtransform.AffineGet;
 import net.imglib2.realtransform.AffineRandomAccessible;
 import net.imglib2.type.NativeType;
+import net.imglib2.type.PrimitiveType;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.util.Intervals;
 import net.imglib2.util.StopWatch;
@@ -220,11 +223,15 @@ public class SimpleVolatileProjector< A, B > implements VolatileProjector
 		// TODO: use correct primitive array type here ...
 		final int[] dest = new int[ ( int ) Intervals.numElements( sourceInterval ) ];
 		processor.compute( sourceBuffer, dest );
-		LoopBuilder
-				.setImages(
-						ArrayImgs.argbs( dest, target.dimension( 0 ), target.dimension( 1 ) ),
-						( RandomAccessibleInterval< ARGBType > ) target )
-				.forEachPixel( ( i, o ) -> o.set( i ) );
+		final ArrayData targetData = ProjectorUtils.getARGBArrayData( target );
+//		System.out.println( "targetData = " + targetData );
+		final int[] o_src = { 0, 0 };
+		final int[] size_src = { ( int ) sourceInterval.dimension( 0 ), ( int ) sourceInterval.dimension( 1 ) };
+		final int[] o_dst = { targetData.ox(), targetData.oy() };
+		final int[] size_dst = { targetData.stride(), 1 };
+		SubArrayCopy
+				.create( 2, PrimitiveType.INT )
+				.copy( dest, o_src, size_src, targetData.data(), o_dst, size_dst, size_src );
 
 		lastFrameRenderNanoTime = stopWatch.nanoTime();
 
