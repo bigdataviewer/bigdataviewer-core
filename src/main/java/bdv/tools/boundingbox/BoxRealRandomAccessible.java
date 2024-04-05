@@ -103,6 +103,12 @@ public class BoxRealRandomAccessible< T extends Type< T > > implements RealRando
 		return new Access();
 	}
 
+	@Override
+	public T getType()
+	{
+		return insideValue;
+	}
+
 	public RealInterval getInterval()
 	{
 		return interval;
