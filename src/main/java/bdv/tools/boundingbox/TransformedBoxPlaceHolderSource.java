@@ -131,6 +131,12 @@ final class TransformedBoxPlaceHolderSource implements Source< Void >
 		{
 			return access;
 		}
+
+		@Override
+		public Void getType()
+		{
+			return null;
+		}
 	};
 
 	private final RealRandomAccess< Void > access = new RealRandomAccess< Void >()

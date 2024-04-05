@@ -91,4 +91,10 @@ public class ConstantRandomAccessible< T > implements RandomAccessible< T >
 	{
 		return new ConstantRandomAccess();
 	}
+
+	@Override
+	public T getType()
+	{
+		return constant;
+	}
 }
