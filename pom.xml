@@ -135,6 +135,9 @@
 		<license.licenseName>bsd_2</license.licenseName>
 		<license.copyrightOwners>BigDataViewer developers.</license.copyrightOwners>
 
+		<enforcer.skip>true</enforcer.skip>
+		<spim_data.version>2.3.0-SNAPSHOT</spim_data.version>
+
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>
 	</properties>
