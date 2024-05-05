@@ -103,6 +103,12 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 		this( n5File.toURI(), sequenceDescription );
 	}
 
+	public N5ImageLoader( final N5Reader n5Reader, final URI n5URI, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
+	{
+		this( n5URI, sequenceDescription );
+		n5 = n5Reader;
+	}
+
 	public URI getN5URI()
 	{
 		return n5URI;
@@ -145,7 +151,10 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 
 				try
 				{
-					this.n5 = new N5FSReader( getN5File().getAbsolutePath() );
+					if ( n5 == null )
+					{
+						n5 = new N5FSReader( getN5File().getAbsolutePath() );
+					}
 
 					int maxNumLevels = 0;
 					final List< ? extends BasicViewSetup > setups = seq.getViewSetupsOrdered();
