@@ -34,6 +34,7 @@ import static bdv.img.n5.BdvN5Format.getPathName;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -80,7 +81,7 @@ import net.imglib2.view.Views;
 
 public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 {
-	private final File n5File;
+	private final URI n5URI;
 
 	// TODO: it would be good if this would not be needed
 	//       find available setups from the n5
@@ -89,17 +90,33 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 	/**
 	 * Maps setup id to {@link SetupImgLoader}.
 	 */
-	private final Map< Integer, SetupImgLoader > setupImgLoaders = new HashMap<>();
+	private final Map< Integer, SetupImgLoader< ?, ? > > setupImgLoaders = new HashMap<>();
+
+	public N5ImageLoader( final URI n5URI, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
+	{
+		this.n5URI = n5URI;
+		this.seq = sequenceDescription;
+	}
 
 	public N5ImageLoader( final File n5File, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
 	{
-		this.n5File = n5File;
-		this.seq = sequenceDescription;
+		this( n5File.toURI(), sequenceDescription );
+	}
+
+	public N5ImageLoader( final N5Reader n5Reader, final URI n5URI, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
+	{
+		this( n5URI, sequenceDescription );
+		n5 = n5Reader;
+	}
+
+	public URI getN5URI()
+	{
+		return n5URI;
 	}
 
 	public File getN5File()
 	{
-		return n5File;
+		return new File( n5URI );
 	}
 
 	private volatile boolean isOpen = false;
@@ -134,14 +151,17 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 
 				try
 				{
-					this.n5 = new N5FSReader( n5File.getAbsolutePath() );
+					if ( n5 == null )
+					{
+						n5 = new N5FSReader( getN5File().getAbsolutePath() );
+					}
 
 					int maxNumLevels = 0;
 					final List< ? extends BasicViewSetup > setups = seq.getViewSetupsOrdered();
 					for ( final BasicViewSetup setup : setups )
 					{
 						final int setupId = setup.getId();
-						final SetupImgLoader setupImgLoader = createSetupImgLoader( setupId );
+						final SetupImgLoader< ?, ? > setupImgLoader = createSetupImgLoader( setupId );
 						setupImgLoaders.put( setupId, setupImgLoader );
 						maxNumLevels = Math.max( maxNumLevels, setupImgLoader.numMipmapLevels() );
 					}
@@ -190,7 +210,7 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 	}
 
 	@Override
-	public SetupImgLoader getSetupImgLoader( final int setupId )
+	public SetupImgLoader< ?, ? > getSetupImgLoader( final int setupId )
 	{
 		open();
 		return setupImgLoaders.get( setupId );
@@ -404,6 +424,8 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 		}
 		return new N5CacheArrayLoader<>( n5, pathName, attributes, DataTypeProperties.of( attributes.getDataType() ) );
 	}
+
+	// TODO: replace ndArrayCopy(...) below with new SubArrayCopy from imglib2 core ???
 
 	/**
 	 * Like `System.arrayCopy()` but for flattened nD arrays.
