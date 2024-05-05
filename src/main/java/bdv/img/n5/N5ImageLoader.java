@@ -34,6 +34,7 @@ import static bdv.img.n5.BdvN5Format.getPathName;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -80,7 +81,7 @@ import net.imglib2.view.Views;
 
 public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 {
-	private final File n5File;
+	private final URI n5URI;
 
 	// TODO: it would be good if this would not be needed
 	//       find available setups from the n5
@@ -91,15 +92,25 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 	 */
 	private final Map< Integer, SetupImgLoader< ?, ? > > setupImgLoaders = new HashMap<>();
 
+	public N5ImageLoader( final URI n5URI, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
+	{
+		this.n5URI = n5URI;
+		this.seq = sequenceDescription;
+	}
+
 	public N5ImageLoader( final File n5File, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
 	{
-		this.n5File = n5File;
-		this.seq = sequenceDescription;
+		this( n5File.toURI(), sequenceDescription );
+	}
+
+	public URI getN5URI()
+	{
+		return n5URI;
 	}
 
 	public File getN5File()
 	{
-		return n5File;
+		return new File( n5URI );
 	}
 
 	private volatile boolean isOpen = false;
@@ -134,7 +145,7 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 
 				try
 				{
-					this.n5 = new N5FSReader( n5File.getAbsolutePath() );
+					this.n5 = new N5FSReader( getN5File().getAbsolutePath() );
 
 					int maxNumLevels = 0;
 					final List< ? extends BasicViewSetup > setups = seq.getViewSetupsOrdered();
