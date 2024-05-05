@@ -28,17 +28,22 @@
  */
 package bdv.img.n5;
 
+import static mpicbg.spim.data.XmlKeys.IMGLOADER_FORMAT_ATTRIBUTE_NAME;
+
 import java.io.File;
 import java.net.URI;
+import java.util.regex.Pattern;
 
+import org.janelia.saalfeldlab.n5.N5FSReader;
+import org.jdom2.Element;
+
+import mpicbg.spim.data.SpimDataInstantiationException;
 import mpicbg.spim.data.XmlHelpers;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.ImgLoaderIo;
+import mpicbg.spim.data.generic.sequence.ImgLoaders;
 import mpicbg.spim.data.generic.sequence.XmlIoBasicImgLoader;
-import org.jdom2.Element;
-
-import static mpicbg.spim.data.XmlHelpers.loadPath;
-import static mpicbg.spim.data.XmlKeys.IMGLOADER_FORMAT_ATTRIBUTE_NAME;
+import net.imglib2.util.Cast;
 
 @ImgLoaderIo( format = "bdv.n5", type = N5ImageLoader.class )
 public class XmlIoN5ImageLoader implements XmlIoBasicImgLoader< N5ImageLoader >
@@ -64,6 +69,31 @@ public class XmlIoN5ImageLoader implements XmlIoBasicImgLoader< N5ImageLoader >
 	{
 //		final String version = elem.getAttributeValue( "version" );
 		final URI uri = XmlHelpers.loadPathURI( elem, "n5", basePathURI );
-		return new N5ImageLoader( uri, sequenceDescription );
+
+		// try to open with N5FSReader if URI is a file
+		try
+		{
+			final String scheme = uri.getScheme();
+			final boolean hasScheme = scheme != null;
+			if ( !hasScheme || FILE_SCHEME.asPredicate().test( scheme ) )
+			{
+				final N5FSReader n5 = new N5FSReader( new File( uri ).getAbsolutePath() );
+				return new N5ImageLoader( n5, uri, sequenceDescription );
+			}
+		}
+		catch ( Exception e ) {}
+
+		// try to open with "bdv.n5.cloud" format, if XmlIo for that can be discovered
+		try
+		{
+			final XmlIoBasicImgLoader< ? > io = ImgLoaders.createXmlIoForFormat( "bdv.n5.cloud" );
+			return Cast.unchecked( io.fromXml( elem, basePathURI, sequenceDescription ) );
+		}
+		catch ( SpimDataInstantiationException e )
+		{
+			return null;
+		}
 	}
+
+	private final static Pattern FILE_SCHEME = Pattern.compile("file", Pattern.CASE_INSENSITIVE);
 }
