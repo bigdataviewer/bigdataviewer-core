@@ -89,7 +89,7 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 	/**
 	 * Maps setup id to {@link SetupImgLoader}.
 	 */
-	private final Map< Integer, SetupImgLoader > setupImgLoaders = new HashMap<>();
+	private final Map< Integer, SetupImgLoader< ?, ? > > setupImgLoaders = new HashMap<>();
 
 	public N5ImageLoader( final File n5File, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
 	{
@@ -141,7 +141,7 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 					for ( final BasicViewSetup setup : setups )
 					{
 						final int setupId = setup.getId();
-						final SetupImgLoader setupImgLoader = createSetupImgLoader( setupId );
+						final SetupImgLoader< ?, ? > setupImgLoader = createSetupImgLoader( setupId );
 						setupImgLoaders.put( setupId, setupImgLoader );
 						maxNumLevels = Math.max( maxNumLevels, setupImgLoader.numMipmapLevels() );
 					}
@@ -190,7 +190,7 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 	}
 
 	@Override
-	public SetupImgLoader getSetupImgLoader( final int setupId )
+	public SetupImgLoader< ?, ? > getSetupImgLoader( final int setupId )
 	{
 		open();
 		return setupImgLoaders.get( setupId );
@@ -404,6 +404,8 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 		}
 		return new N5CacheArrayLoader<>( n5, pathName, attributes, DataTypeProperties.of( attributes.getDataType() ) );
 	}
+
+	// TODO: replace ndArrayCopy(...) below with new SubArrayCopy from imglib2 core ???
 
 	/**
 	 * Like `System.arrayCopy()` but for flattened nD arrays.
