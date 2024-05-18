@@ -2,7 +2,7 @@
  * #%L
  * BigDataViewer core classes with minimal dependencies.
  * %%
- * Copyright (C) 2012 - 2023 BigDataViewer developers.
+ * Copyright (C) 2012 - 2024 BigDataViewer developers.
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -101,6 +101,12 @@ public class BoxRealRandomAccessible< T extends Type< T > > implements RealRando
 	public RealRandomAccess< T > realRandomAccess( final RealInterval interval )
 	{
 		return new Access();
+	}
+
+	@Override
+	public T getType()
+	{
+		return insideValue;
 	}
 
 	public RealInterval getInterval()

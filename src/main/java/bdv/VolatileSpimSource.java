@@ -2,7 +2,7 @@
  * #%L
  * BigDataViewer core classes with minimal dependencies.
  * %%
- * Copyright (C) 2012 - 2023 BigDataViewer developers.
+ * Copyright (C) 2012 - 2024 BigDataViewer developers.
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -42,9 +42,9 @@ public class VolatileSpimSource< V extends Volatile< ? > & NumericType< V > >
 		extends AbstractSpimSource< V >
 		implements MipmapOrdering
 {
-	protected final ViewerSetupImgLoader< ?, V > imgLoader;
+	private final ViewerSetupImgLoader< ?, V > imgLoader;
 
-	protected final MipmapOrdering mipmapOrdering;
+	private final MipmapOrdering mipmapOrdering;
 
 	@SuppressWarnings( "unchecked" )
 	public VolatileSpimSource( final AbstractSpimData< ? > spimData, final int setup, final String name )
@@ -56,7 +56,6 @@ public class VolatileSpimSource< V extends Volatile< ? > & NumericType< V > >
 			mipmapOrdering = ( ( MipmapOrdering ) imgLoader );
 		else
 			mipmapOrdering = new DefaultMipmapOrdering( this );
-		loadTimepoint( 0 );
 	}
 
 	@Override
@@ -66,13 +65,13 @@ public class VolatileSpimSource< V extends Volatile< ? > & NumericType< V > >
 	}
 
 	@Override
-	protected RandomAccessibleInterval< V > getImage( final int timepointId, final int level )
+	RandomAccessibleInterval< V > getImage( final int timepointId, final int level )
 	{
 		return imgLoader.getVolatileImage( timepointId, level );
 	}
 
 	@Override
-	protected AffineTransform3D[] getMipmapTransforms()
+	AffineTransform3D[] getMipmapTransforms()
 	{
 		return imgLoader.getMipmapTransforms();
 	}

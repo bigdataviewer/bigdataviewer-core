@@ -2,7 +2,7 @@
  * #%L
  * BigDataViewer core classes with minimal dependencies.
  * %%
- * Copyright (C) 2012 - 2023 BigDataViewer developers.
+ * Copyright (C) 2012 - 2024 BigDataViewer developers.
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -28,19 +28,6 @@
  */
 package bdv.export;
 
-import bdv.export.ExportScalePyramid.AfterEachPlane;
-import bdv.export.ExportScalePyramid.Block;
-import bdv.export.ExportScalePyramid.DatasetIO;
-import bdv.export.ExportScalePyramid.LoopbackHeuristic;
-import bdv.img.hdf5.Hdf5ImageLoader;
-import bdv.img.hdf5.Partition;
-import bdv.img.hdf5.Util;
-import bdv.img.n5.DataTypeProperties;
-import bdv.spimdata.SequenceDescriptionMinimal;
-import ch.systemsx.cisd.hdf5.HDF5Factory;
-import ch.systemsx.cisd.hdf5.HDF5IntStorageFeatures;
-import ch.systemsx.cisd.hdf5.IHDF5Reader;
-import ch.systemsx.cisd.hdf5.IHDF5Writer;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -51,23 +38,7 @@ import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.function.Function;
-import mpicbg.spim.data.XmlHelpers;
-import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
-import mpicbg.spim.data.generic.sequence.BasicImgLoader;
-import mpicbg.spim.data.generic.sequence.BasicSetupImgLoader;
-import mpicbg.spim.data.generic.sequence.BasicViewSetup;
-import mpicbg.spim.data.sequence.TimePoint;
-import mpicbg.spim.data.sequence.TimePoints;
-import mpicbg.spim.data.sequence.ViewId;
-import net.imglib2.Dimensions;
-import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.cache.img.SingleCellArrayImg;
-import net.imglib2.img.cell.CellImg;
-import net.imglib2.type.NativeType;
-import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.numeric.integer.UnsignedShortType;
-import net.imglib2.util.Cast;
-import net.imglib2.util.Intervals;
+
 import org.janelia.saalfeldlab.n5.ByteArrayDataBlock;
 import org.janelia.saalfeldlab.n5.Compression;
 import org.janelia.saalfeldlab.n5.DataBlock;
@@ -78,11 +49,36 @@ import org.janelia.saalfeldlab.n5.FloatArrayDataBlock;
 import org.janelia.saalfeldlab.n5.GzipCompression;
 import org.janelia.saalfeldlab.n5.IntArrayDataBlock;
 import org.janelia.saalfeldlab.n5.LongArrayDataBlock;
-import org.janelia.saalfeldlab.n5.N5Writer;
 import org.janelia.saalfeldlab.n5.RawCompression;
 import org.janelia.saalfeldlab.n5.ShortArrayDataBlock;
 
-import static net.imglib2.util.Util.long2int;
+import bdv.export.ExportScalePyramid.AfterEachPlane;
+import bdv.export.ExportScalePyramid.Block;
+import bdv.export.ExportScalePyramid.DatasetIO;
+import bdv.export.ExportScalePyramid.LoopbackHeuristic;
+import bdv.img.hdf5.Hdf5ImageLoader;
+import bdv.img.hdf5.Partition;
+import bdv.img.hdf5.Util;
+import bdv.img.n5.DataTypeProperties;
+import bdv.spimdata.SequenceDescriptionMinimal;
+import ch.systemsx.cisd.hdf5.HDF5Factory;
+import ch.systemsx.cisd.hdf5.IHDF5Reader;
+import ch.systemsx.cisd.hdf5.IHDF5Writer;
+import mpicbg.spim.data.XmlHelpers;
+import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
+import mpicbg.spim.data.generic.sequence.BasicImgLoader;
+import mpicbg.spim.data.generic.sequence.BasicSetupImgLoader;
+import mpicbg.spim.data.generic.sequence.BasicViewSetup;
+import mpicbg.spim.data.sequence.TimePoint;
+import mpicbg.spim.data.sequence.TimePoints;
+import mpicbg.spim.data.sequence.ViewId;
+import net.imglib2.Dimensions;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.img.cell.CellImg;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.util.Cast;
 
 /**
  * Create a hdf5 files containing image data from all views and all timepoints
@@ -397,14 +393,6 @@ public class WriteSequenceToHdf5
 
 		// get the BasicImgLoader that supplies the images
 		final BasicImgLoader imgLoader = seq.getImgLoader();
-
-		for ( final BasicViewSetup setup : seq.getViewSetupsOrdered() ) {
-			final Object type = imgLoader.getSetupImgLoader( setup.getId() ).getImageType();
-			if ( !( type instanceof UnsignedShortType ) )
-				throw new IllegalArgumentException( "Expected BasicImgLoader<UnsignedShortTyp> but your dataset has BasicImgLoader<"
-						+ type.getClass().getSimpleName() + ">.\nCurrently writing to HDF5 is only supported for UnsignedShortType." );
-		}
-
 
 		// open HDF5 partition output file
 		final File hdf5File = new File( partition.getPath() );

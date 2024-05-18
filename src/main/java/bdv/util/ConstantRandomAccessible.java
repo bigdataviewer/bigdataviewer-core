@@ -2,7 +2,7 @@
  * #%L
  * BigDataViewer core classes with minimal dependencies.
  * %%
- * Copyright (C) 2012 - 2023 BigDataViewer developers.
+ * Copyright (C) 2012 - 2024 BigDataViewer developers.
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -90,5 +90,11 @@ public class ConstantRandomAccessible< T > implements RandomAccessible< T >
 	public RandomAccess< T > randomAccess( final Interval interval )
 	{
 		return new ConstantRandomAccess();
+	}
+
+	@Override
+	public T getType()
+	{
+		return constant;
 	}
 }

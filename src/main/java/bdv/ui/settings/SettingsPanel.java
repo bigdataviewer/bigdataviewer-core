@@ -2,7 +2,7 @@
  * #%L
  * BigDataViewer core classes with minimal dependencies.
  * %%
- * Copyright (C) 2012 - 2023 BigDataViewer developers.
+ * Copyright (C) 2012 - 2024 BigDataViewer developers.
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -32,7 +32,6 @@ import java.awt.BorderLayout;
 import java.awt.CardLayout;
 import java.awt.Color;
 import java.awt.Dimension;
-import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 import java.awt.event.MouseAdapter;
@@ -56,7 +55,9 @@ import javax.swing.event.TreeSelectionListener;
 import javax.swing.tree.DefaultMutableTreeNode;
 import javax.swing.tree.DefaultTreeCellRenderer;
 import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.MutableTreeNode;
 import javax.swing.tree.TreeModel;
+import javax.swing.tree.TreeNode;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 
@@ -102,32 +103,7 @@ public class SettingsPanel extends JPanel
 	public void addPage( final SettingsPage page )
 	{
 		final String path = page.getTreePath();
-		final String[] parts = path.split( ">" );
-		DefaultMutableTreeNode current = root;
-		for ( final String part : parts )
-		{
-			final String text = part.trim();
-			DefaultMutableTreeNode next = null;
-			for ( int i = 0; i < current.getChildCount(); ++i )
-			{
-				final DefaultMutableTreeNode child = ( DefaultMutableTreeNode ) current.getChildAt( i );
-				final SettingsNodeData data = ( SettingsNodeData ) child.getUserObject();
-				if ( text.equals( data.name ) )
-				{
-					next = child;
-					break;
-				}
-			}
-
-			if ( next == null )
-			{
-				final SettingsNodeData data = new SettingsNodeData( text, null );
-				next = new DefaultMutableTreeNode( data );
-				model.insertNodeInto( next, current, current.getChildCount() );
-			}
-
-			current = next;
-		}
+		final DefaultMutableTreeNode current = getSettingsPageNode( path, true );
 
 		page.modificationListeners().add( modificationListener );
 
@@ -138,7 +114,7 @@ public class SettingsPanel extends JPanel
 		if ( pages.getComponents().length == 0 )
 			tree.getSelectionModel().setSelectionPath( new TreePath( model.getPathToRoot( current ) ) );
 
-		pages.add( data.page.getTreePath(), data.page.getJPanel() );
+		pages.add( page.getTreePath(), page.getJPanel() );
 		pages.revalidate();
 		pages.repaint();
 	}
@@ -153,25 +129,8 @@ public class SettingsPanel extends JPanel
 	 */
 	public void removePage( final String path )
 	{
-		final String[] parts = path.split( ">" );
-		DefaultMutableTreeNode current = root;
-		for ( final String part : parts )
-		{
-			final String text = part.trim();
-			DefaultMutableTreeNode next = null;
-			for ( int i = 0; i < current.getChildCount(); ++i )
-			{
-				final DefaultMutableTreeNode child = ( DefaultMutableTreeNode ) current.getChildAt( i );
-				final SettingsNodeData data = ( SettingsNodeData ) child.getUserObject();
-				if ( text.equals( data.name ) )
-				{
-					next = child;
-					break;
-				}
-			}
-			current = next;
-		}
-		if ( null == current )
+		final MutableTreeNode current = getSettingsPageNode( path, false );
+		if ( current == null )
 			return; // Path not found in the tree.
 
 		model.removeNodeFromParent( current );
@@ -179,6 +138,34 @@ public class SettingsPanel extends JPanel
 		{
 			if ( page.getTreePath().equals( path ) )
 				pages.remove( page.getJPanel() );
+		}
+		pages.revalidate();
+		pages.repaint();
+	}
+
+	/**
+	 * Shows the settings page with the specified path. Does nothing if there is
+	 * no settings page for the path. If (any part of) the path is collapsed in
+	 * the tree, it is expanded.
+	 *
+	 * @param path
+	 *            the path of the settings page to remove. Example:
+	 *            {@code "Analyze > Tables"}
+	 */
+	public void showPage( final String path )
+	{
+		final TreeNode current = getSettingsPageNode( path, false );
+		if ( current == null )
+			return; // Path not found in the tree.
+
+		for ( final SettingsPage page : getPages() )
+		{
+			if ( page.getTreePath().equals( path ) )
+			{
+				final TreePath tp = new TreePath( model.getPathToRoot( current ) );
+				tree.setSelectionPath( tp );
+				break;
+			}
 		}
 		pages.revalidate();
 		pages.repaint();
@@ -367,10 +354,58 @@ public class SettingsPanel extends JPanel
 		breadcrumbs.repaint();
 	}
 
+	/**
+	 * Get the TreeNode for a given settings page path.
+	 *
+	 * @param path
+	 *            the path of the settings page to remove. Example: {@code "Analyze > Tables"}
+	 * @param createIfNotExists
+	 *            if {@code true}, nodes for non-existing pages are created.
+	 *
+	 * @return TreeNode corresponding to {@code path}, or {@code null} if there is no such page.
+	 */
+	private DefaultMutableTreeNode getSettingsPageNode( final String path, final boolean createIfNotExists )
+	{
+		final String[] parts = path.split( ">" );
+		DefaultMutableTreeNode current = root;
+		for ( final String part : parts )
+		{
+			final String text = part.trim();
+			DefaultMutableTreeNode next = null;
+			for ( int i = 0; i < current.getChildCount(); ++i )
+			{
+				final DefaultMutableTreeNode child = ( DefaultMutableTreeNode ) current.getChildAt( i );
+				final SettingsNodeData data = ( SettingsNodeData ) child.getUserObject();
+				if ( text.equals( data.name ) )
+				{
+					next = child;
+					break;
+				}
+			}
+
+			if ( next == null )
+			{
+				if ( createIfNotExists )
+				{
+					final SettingsNodeData data = new SettingsNodeData( text, null );
+					next = new DefaultMutableTreeNode( data );
+					model.insertNodeInto( next, current, current.getChildCount() );
+				}
+				else
+					return null;
+			}
+
+			current = next;
+		}
+		return current;
+	}
+
 	private JLabel semiboldLabel( final String text )
 	{
 		return new JLabel( text )
 		{
+			private static final long serialVersionUID = 1L;
+
 			@Override
 			public void updateUI()
 			{

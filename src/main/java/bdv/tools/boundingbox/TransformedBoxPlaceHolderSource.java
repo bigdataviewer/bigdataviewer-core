@@ -2,7 +2,7 @@
  * #%L
  * BigDataViewer core classes with minimal dependencies.
  * %%
- * Copyright (C) 2012 - 2023 BigDataViewer developers.
+ * Copyright (C) 2012 - 2024 BigDataViewer developers.
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -130,6 +130,12 @@ final class TransformedBoxPlaceHolderSource implements Source< Void >
 		public RealRandomAccess< Void > realRandomAccess( final RealInterval interval )
 		{
 			return access;
+		}
+
+		@Override
+		public Void getType()
+		{
+			return null;
 		}
 	};
 

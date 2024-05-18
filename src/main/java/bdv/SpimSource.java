@@ -2,7 +2,7 @@
  * #%L
  * BigDataViewer core classes with minimal dependencies.
  * %%
- * Copyright (C) 2012 - 2023 BigDataViewer developers.
+ * Copyright (C) 2012 - 2024 BigDataViewer developers.
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -36,7 +36,7 @@ import net.imglib2.type.numeric.NumericType;
 
 public class SpimSource< T extends NumericType< T > > extends AbstractSpimSource< T >
 {
-	protected final ViewerSetupImgLoader< T, ? > imgLoader;
+	private final ViewerSetupImgLoader< T, ? > imgLoader;
 
 	@SuppressWarnings( "unchecked" )
 	public SpimSource( final AbstractSpimData< ? > spimData, final int setup, final String name )
@@ -44,7 +44,6 @@ public class SpimSource< T extends NumericType< T > > extends AbstractSpimSource
 		super( spimData, setup, name );
 		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
 		imgLoader = ( ViewerSetupImgLoader< T, ? > ) ( ( ViewerImgLoader ) seq.getImgLoader() ).getSetupImgLoader( setup );
-		loadTimepoint( 0 );
 	}
 
 	@Override
@@ -54,13 +53,13 @@ public class SpimSource< T extends NumericType< T > > extends AbstractSpimSource
 	}
 
 	@Override
-	protected RandomAccessibleInterval< T > getImage( final int timepointId, final int level )
+	RandomAccessibleInterval< T > getImage( final int timepointId, final int level )
 	{
 		return imgLoader.getImage( timepointId, level );
 	}
 
 	@Override
-	protected AffineTransform3D[] getMipmapTransforms()
+	AffineTransform3D[] getMipmapTransforms()
 	{
 		return imgLoader.getMipmapTransforms();
 	}
