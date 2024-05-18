@@ -837,7 +837,7 @@ public class BasicViewerState implements ViewerState
 
 			boolean sourceToGroupAssignmentChanged = false;
 			for ( final GroupData groupData : groupData.values() )
-				sourceToGroupAssignmentChanged |= groupData.sources.removeAll( sources );
+				sourceToGroupAssignmentChanged |= groupData.sources.removeAll( collection );
 
 			if ( currentSourceChanged )
 				currentSource = sources.isEmpty() ? null : sources.get( 0 );
