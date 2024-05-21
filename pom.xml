@@ -131,7 +131,7 @@
 	</ciManagement>
 
 	<properties>
-		<package-name>bdv</package-name>
+		<package-name>org.bigdataviewer.core</package-name>
 		<license.licenseName>bsd_2</license.licenseName>
 		<license.copyrightOwners>BigDataViewer developers.</license.copyrightOwners>
 
