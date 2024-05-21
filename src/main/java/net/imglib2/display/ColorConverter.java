@@ -30,6 +30,12 @@ package net.imglib2.display;
 
 import net.imglib2.type.numeric.ARGBType;
 
+/**
+ * Allows to set a target color for a {@code Converter}, in addition to min/max
+ * of the source {@link LinearRange linear range}.
+ * <p>
+ * (This is used in BigDataViewer to tie converter configuration into the UI.)
+ */
 public interface ColorConverter extends LinearRange
 {
 	ARGBType getColor();
