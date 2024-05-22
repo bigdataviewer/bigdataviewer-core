@@ -38,7 +38,7 @@ import java.util.ListIterator;
  *
  * @author Tobias Pietzsch
  */
-public class WrappedList< E > implements List< E >
+public abstract class WrappedList< E > implements List< E >
 {
 	private final List< E > list;
 

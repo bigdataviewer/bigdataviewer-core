@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package bdv.util;
+package bdv.viewer.render.awt;
 
 import java.util.function.Supplier;
 
@@ -41,7 +41,7 @@ import java.util.function.Supplier;
  * @author Tobias Pietzsch
  * @see <a href="https://en.wikipedia.org/wiki/Multiple_buffering">Wikipedia Multiple Buffering</a>
  */
-public class TripleBuffer< T >
+class TripleBuffer< T >
 {
 	private T writable;
 	private T readable;

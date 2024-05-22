@@ -26,43 +26,39 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package bdv.util;
+package bdv.viewer.render;
 
-import javax.swing.*;
-import java.awt.*;
+import java.util.Arrays;
+import org.junit.Test;
 
-/**
- * A {@code JDialog} that delays {@code pack()} calls until the dialog is made visible.
- */
-public class DelayedPackDialog extends JDialog
+import static org.junit.Assert.assertEquals;
+
+public class MovingAverageTest
 {
-	private volatile boolean packIsPending = false;
-
-	public DelayedPackDialog( Frame owner, String title, boolean modal )
+	@Test
+	public void testAverage()
 	{
-		super( owner, title, modal );
+		final double[] values = new double[ 1000 ];
+		Arrays.setAll( values, i -> Math.random() );
+
+		final int width = 3;
+		final MovingAverage avg = new MovingAverage( width );
+		avg.init( 0 );
+
+		for ( int i = 0; i < values.length; ++i )
+		{
+			avg.add( values[ i ] );
+			double expected = average( values, i - width + 1, i + 1 );
+			assertEquals( expected, avg.getAverage(), 1e-6 );
+		}
 	}
 
-	@Override
-	public void pack()
+	private static double average( final double[] values, final int fromIndex, final int toIndex )
 	{
-		if ( isVisible() )
-		{
-			packIsPending = false;
-			super.pack();
-		}
-		else
-			packIsPending = true;
-	}
-
-	@Override
-	public void setVisible( boolean visible )
-	{
-		if ( visible && packIsPending )
-		{
-			packIsPending = false;
-			super.pack();
-		}
-		super.setVisible( visible );
+		final int numValues = toIndex - fromIndex;
+		double sum = 0;
+		for ( int i = fromIndex; i < toIndex; i++ )
+			sum += i < 0 ? 0 : values[ i ];
+		return sum / numValues;
 	}
 }

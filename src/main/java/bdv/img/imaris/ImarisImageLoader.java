@@ -44,7 +44,7 @@ import bdv.ViewerImgLoader;
 import bdv.cache.CacheControl;
 import bdv.img.cache.CacheArrayLoader;
 import bdv.img.cache.VolatileGlobalCellCache;
-import bdv.img.hdf5.MipmapInfo;
+import bdv.img.MipmapInfo;
 import bdv.img.hdf5.ViewLevelId;
 import bdv.img.imaris.DataTypes.DataType;
 import ch.systemsx.cisd.hdf5.HDF5Factory;

@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package bdv.img.hdf5;
+package bdv.img;
 
 import java.util.Arrays;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
@@ -39,7 +39,6 @@ import net.imglib2.realtransform.AffineTransform3D;
  *
  * @author Tobias Pietzsch
  */
-// TODO Move to bdv.img package
 public class MipmapInfo
 {
 	/**

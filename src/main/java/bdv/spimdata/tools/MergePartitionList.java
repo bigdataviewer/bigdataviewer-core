@@ -37,7 +37,7 @@ import mpicbg.spim.data.generic.sequence.BasicImgLoader;
 import mpicbg.spim.data.sequence.TimePoint;
 import bdv.export.ExportMipmapInfo;
 import bdv.img.hdf5.Hdf5ImageLoader;
-import bdv.img.hdf5.MipmapInfo;
+import bdv.img.MipmapInfo;
 import bdv.img.hdf5.Partition;
 import bdv.img.hdf5.Util;
 
