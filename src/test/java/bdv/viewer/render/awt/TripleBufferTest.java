@@ -26,7 +26,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package bdv.util;
+package bdv.viewer.render.awt;
 
 import static org.junit.Assert.assertEquals;
 

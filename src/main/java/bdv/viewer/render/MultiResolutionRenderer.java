@@ -44,7 +44,6 @@ import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.util.Intervals;
 
 import bdv.cache.CacheControl;
-import bdv.util.MovingAverage;
 import bdv.viewer.RequestRepaint;
 import bdv.viewer.ViewerState;
 import bdv.viewer.render.ScreenScales.IntervalRenderData;

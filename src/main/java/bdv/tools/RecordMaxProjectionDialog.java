@@ -30,7 +30,6 @@ package bdv.tools;
 
 import bdv.cache.CacheControl;
 import bdv.export.ProgressWriter;
-import bdv.util.DelayedPackDialog;
 import bdv.util.Prefs;
 import bdv.viewer.BasicViewerState;
 import bdv.viewer.ViewerPanel;

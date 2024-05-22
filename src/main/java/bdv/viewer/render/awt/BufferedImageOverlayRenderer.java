@@ -28,8 +28,7 @@
  */
 package bdv.viewer.render.awt;
 
-import bdv.util.TripleBuffer;
-import bdv.util.TripleBuffer.ReadableBuffer;
+import bdv.viewer.render.awt.TripleBuffer.ReadableBuffer;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;

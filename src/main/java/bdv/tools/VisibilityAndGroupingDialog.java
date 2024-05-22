@@ -28,7 +28,6 @@
  */
 package bdv.tools;
 
-import bdv.util.DelayedPackDialog;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerState;
 import bdv.viewer.VisibilityAndGrouping;

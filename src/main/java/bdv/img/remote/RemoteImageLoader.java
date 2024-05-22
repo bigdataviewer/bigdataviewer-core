@@ -40,7 +40,7 @@ import bdv.ViewerImgLoader;
 import bdv.img.cache.VolatileCachedCellImg;
 import bdv.img.cache.VolatileGlobalCellCache;
 import bdv.img.hdf5.DimsAndExistence;
-import bdv.img.hdf5.MipmapInfo;
+import bdv.img.MipmapInfo;
 import bdv.img.hdf5.ViewLevelId;
 import bdv.util.ConstantRandomAccessible;
 import mpicbg.spim.data.generic.sequence.ImgLoaderHint;

@@ -26,50 +26,46 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package bdv.util;
+package bdv.viewer.render;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-
-import org.scijava.ui.behaviour.io.InputTriggerDescription;
-import org.scijava.ui.behaviour.io.InputTriggerDescriptionsBuilder;
-import org.scijava.ui.behaviour.io.json.JsonConfigIO;
-import org.scijava.ui.behaviour.io.yaml.YamlConfigIO;
-
-import bdv.viewer.ViewerFrame;
+import java.util.Arrays;
 
 /**
- * @deprecated use {@code bdv.ui.keymap.DumpInputConfig} instead
+ * Maintains a moving average over the last {@code width} values {@link #add
+ * added}. The average can be {@link #init initialized} to some value (or starts
+ * as 0, i.e., as if {@code width} 0 values had been added)
  */
-@Deprecated
-public class DumpInputConfig
+class MovingAverage
 {
-	private static List< InputTriggerDescription > buildDescriptions( final ViewerFrame viewerFrame ) throws IOException
+	private final double[] values;
+
+	private final int width;
+
+	private int index = 0;
+
+	private double average;
+
+	public MovingAverage( final int width )
 	{
-		final InputTriggerDescriptionsBuilder builder = new InputTriggerDescriptionsBuilder();
-
-		builder.addMap( viewerFrame.getKeybindings().getConcatenatedInputMap(), "bdv" );
-		builder.addMap( viewerFrame.getTriggerbindings().getConcatenatedInputTriggerMap(), "bdv" );
-
-		return builder.getDescriptions();
+		values = new double[ width ];
+		this.width = width;
 	}
 
-	public static boolean mkdirs( final String fileName )
+	public void init( final double initialValue )
 	{
-		final File dir = new File( fileName ).getParentFile();
-		return dir == null ? false : dir.mkdirs();
+		Arrays.fill( values, initialValue );
+		average = initialValue;
 	}
 
-	public static void writeToJson( final String fileName, final ViewerFrame viewerFrame ) throws IOException
+	public void add( final double value )
 	{
-		mkdirs( fileName );
-		JsonConfigIO.write( buildDescriptions( viewerFrame ), fileName );
+		average = average + ( value - values[ index ] ) / width;
+		values[ index ] = value;
+		index = ( index + 1 ) % width;
 	}
 
-	public static void writeToYaml( final String fileName, final ViewerFrame viewerFrame ) throws IOException
+	public double getAverage()
 	{
-		mkdirs( fileName );
-		YamlConfigIO.write(  buildDescriptions( viewerFrame ), fileName );
+		return average;
 	}
 }

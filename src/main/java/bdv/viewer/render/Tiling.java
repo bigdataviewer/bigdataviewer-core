@@ -35,7 +35,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
-public class Tiling
+class Tiling
 {
 	/**
 	 * Do not subdivide tiles below (or equal to) this size

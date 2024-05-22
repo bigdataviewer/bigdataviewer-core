@@ -26,46 +26,43 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package bdv.util;
+package bdv.tools;
 
-import java.util.Arrays;
+import javax.swing.*;
+import java.awt.*;
 
 /**
- * Maintains a moving average over the last {@code width} values {@link #add
- * added}. The average can be {@link #init initialized} to some value (or starts
- * as 0, i.e., as if {@code width} 0 values had been added)
+ * A {@code JDialog} that delays {@code pack()} calls until the dialog is made visible.
  */
-public class MovingAverage
+public class DelayedPackDialog extends JDialog
 {
-	private final double[] values;
+	private volatile boolean packIsPending = false;
 
-	private final int width;
-
-	private int index = 0;
-
-	private double average;
-
-	public MovingAverage( final int width )
+	public DelayedPackDialog( Frame owner, String title, boolean modal )
 	{
-		values = new double[ width ];
-		this.width = width;
+		super( owner, title, modal );
 	}
 
-	public void init( final double initialValue )
+	@Override
+	public void pack()
 	{
-		Arrays.fill( values, initialValue );
-		average = initialValue;
+		if ( isVisible() )
+		{
+			packIsPending = false;
+			super.pack();
+		}
+		else
+			packIsPending = true;
 	}
 
-	public void add( final double value )
+	@Override
+	public void setVisible( boolean visible )
 	{
-		average = average + ( value - values[ index ] ) / width;
-		values[ index ] = value;
-		index = ( index + 1 ) % width;
-	}
-
-	public double getAverage()
-	{
-		return average;
+		if ( visible && packIsPending )
+		{
+			packIsPending = false;
+			super.pack();
+		}
+		super.setVisible( visible );
 	}
 }

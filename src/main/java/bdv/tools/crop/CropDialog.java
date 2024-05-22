@@ -64,7 +64,7 @@ import bdv.AbstractSpimSource;
 import bdv.export.ExportMipmapInfo;
 import bdv.export.WriteSequenceToHdf5;
 import bdv.img.hdf5.Hdf5ImageLoader;
-import bdv.img.hdf5.MipmapInfo;
+import bdv.img.MipmapInfo;
 import bdv.img.hdf5.Util;
 import bdv.spimdata.SequenceDescriptionMinimal;
 import bdv.spimdata.SpimDataMinimal;

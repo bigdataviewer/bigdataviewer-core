@@ -64,7 +64,7 @@ import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
 import bdv.util.InvokeOnEDT;
-import bdv.util.DelayedPackDialog;
+import bdv.tools.DelayedPackDialog;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import net.imglib2.type.numeric.ARGBType;
 
