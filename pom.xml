@@ -106,6 +106,14 @@
 			<name>Christian Tischer</name>
 			<properties><id>tischi</id></properties>
 		</contributor>
+		<contributor>
+			<name>Matthias Arzt</name>
+			<url>https://imagej.net/User:Maarzt</url>
+			<properties><id>maarzt</id></properties>
+		</contributor>
+		<contributor>
+			<name>Vanessa Leite</name>
+		</contributor>
 	</contributors>
 
 	<mailingLists>
