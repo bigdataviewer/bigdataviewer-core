@@ -55,12 +55,12 @@ public class PainterThreadGarbageCollectionTest
 
 		while ( true )
 		{
-			byte[] hundredMegaBytes = new byte[ 1024 * 1024 * 100 ];
+			byte[] tenMegaBytes = new byte[ 1024 * 1024 * 10 ];
 			MyPaintable p = paintable.get();
 			if ( p == null )
 				return; // Success! The "paintable" was garbage collected.
 			else
-				p.addMemory( hundredMegaBytes ); // Increase pressure to garbage collect "paintable".
+				p.addMemory( tenMegaBytes ); // Increase pressure to garbage collect "paintable".
 		}
 	}
 
