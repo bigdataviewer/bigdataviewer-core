@@ -80,7 +80,7 @@ import net.imglib2.view.Views;
 
 public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 {
-	private final File n5File;
+	private final N5Reader n5;
 
 	// TODO: it would be good if this would not be needed
 	//       find available setups from the n5
@@ -91,9 +91,9 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 	 */
 	private final Map< Integer, SetupImgLoader > setupImgLoaders = new HashMap<>();
 
-	public N5ImageLoader( final File n5File, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
+	public N5ImageLoader( final N5Reader n5, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
 	{
-		this.n5File = n5File;
+		this.n5 = n5;
 		this.seq = sequenceDescription;
 	}
 
@@ -102,10 +102,16 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 		return n5File;
 	}
 
+	public void setN5File( File n5File )
+	{
+		this.n5File = n5File;
+	}
+
+	private File n5File;
 	private volatile boolean isOpen = false;
 	private SharedQueue createdSharedQueue;
 	private VolatileGlobalCellCache cache;
-	private N5Reader n5;
+
 
 
 	private int requestedNumFetcherThreads = -1;
@@ -134,8 +140,6 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 
 				try
 				{
-					this.n5 = new N5FSReader( n5File.getAbsolutePath() );
-
 					int maxNumLevels = 0;
 					final List< ? extends BasicViewSetup > setups = seq.getViewSetupsOrdered();
 					for ( final BasicViewSetup setup : setups )
