@@ -146,7 +146,8 @@
 		<imglib2.version>7.0.3</imglib2.version>
 		<imglib2-realtransform.version>4.0.3</imglib2-realtransform.version>
 		<imglib2-cache.version>1.0.0-beta-18</imglib2-cache.version>
-		<imglib2-algorithm.version>0.15.2</imglib2-algorithm.version>
+		<imglib2-algorithm.version>0.15.3</imglib2-algorithm.version>
+		<spim_data.version>2.3.0</spim_data.version>
 
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>
