@@ -2,6 +2,7 @@ package bdv.zarr;
 
 import java.lang.reflect.Type;
 import java.net.URI;
+import java.net.URISyntaxException;
 
 import org.janelia.saalfeldlab.n5.zarr.N5ZarrReader;
 import org.janelia.saalfeldlab.n5.zarr.N5ZarrWriter;
@@ -25,13 +26,14 @@ import mpicbg.spim.data.zarr.JsonIoBasicImgLoader;
 
 public class ZarrExample
 {
-	public static void main( final String[] args ) throws SpimDataException
+	public static void main( final String[] args ) throws SpimDataException, URISyntaxException
 	{
 		// load SpimData from xml file
-//		final SpimData spimData = readFromXml();
-//		writeToZarr( spimData );
-		final SpimData spimData = readFromZarr();
-		System.out.println( "spimData = " + spimData );
+		final SpimData spimData = readFromXml();
+		spimData.setBasePathURI( null );
+		writeToZarr( spimData );
+		final SpimData spimDataRead = readFromZarr();
+//		System.out.println( "spimDataRead = " + spimDataRead );
 	}
 
 	private static SpimData readFromXml() throws SpimDataException
@@ -42,11 +44,16 @@ public class ZarrExample
 		return spimData;
 	}
 
-	private static void writeToZarr( final SpimData spimData )
+	private static void writeToZarr( final SpimData spimData ) throws URISyntaxException
 	{
 		final String basePath = "/Users/pietzsch/tmp/spimdata.zarr";
 		final N5ZarrWriter writer = new N5ZarrWriter(basePath, gsonBuilder());
-		writer.setAttribute(".", "spimdata", spimData );
+//		spimData.setBasePathURI( new URI(".") );
+//		spimData.setBasePathURI( writer.getURI() );
+//		spimData.setBasePathURI( null );
+		writer.createGroup( "bak1" );
+		spimData.setBasePathURI( new URI("bak1") );
+		writer.setAttribute("bak1", "spimdata", spimData );
 		writer.close();
 	}
 
@@ -54,8 +61,16 @@ public class ZarrExample
 	{
 		final String basePath = "/Users/pietzsch/tmp/spimdata.zarr";
 		final N5ZarrReader reader = new N5ZarrReader(basePath, gsonBuilder());
+
+		URI uri = reader.getURI();
+		System.out.println( "reader.getURI() = " + uri );
+
 		return reader.getAttribute( ".", "spimdata", SpimData.class );
+
 	}
+
+
+
 
 	static class SpimDataAdapter implements JsonSerializer< SpimData >, JsonDeserializer< SpimData >
 	{
@@ -63,7 +78,14 @@ public class ZarrExample
 		public JsonElement serialize( final SpimData src, final Type typeOfSrc, final JsonSerializationContext context )
 		{
 			JsonObject jsonObject = new JsonObject();
-			jsonObject.add( "ImageLoader", serializeBasicImgLoader( src.getSequenceDescription().getImgLoader(), null, context ) );
+
+
+			final URI basePathURI = src.getBasePathURI();
+			if ( basePathURI != null )
+			{
+				jsonObject.addProperty( "BasePath", basePathURI.toString() );
+			}
+			jsonObject.add( "ImageLoader", serializeBasicImgLoader( src.getSequenceDescription().getImgLoader(), basePathURI, context ) );
 			jsonObject.add( "SequenceDescription", context.serialize( src.getSequenceDescription() ) );
 //			jsonObject.addProperty("ViewRegistrations", src.getViewRegistrations().toString());
 			return jsonObject;
@@ -72,17 +94,30 @@ public class ZarrExample
 		@Override
 		public SpimData deserialize( final JsonElement json, final Type typeOfT, final JsonDeserializationContext context ) throws JsonParseException
 		{
-			System.out.println( "SpimDataAdapter.deserialize" );
-			System.out.println( "json = " + json + ", typeOfT = " + typeOfT + ", context = " + context );
-			System.out.println();
+			try
+			{
+				System.out.println( "SpimDataAdapter.deserialize" );
+				System.out.println( "json = " + json + ", typeOfT = " + typeOfT + ", context = " + context );
+				System.out.println();
 
-			JsonObject jsonObject = json.getAsJsonObject();
-			final JsonElement element = jsonObject.get( "ImageLoader" );
-			deserializeBasicImgLoader( element, null, context );
+				final JsonObject jsonObject = json.getAsJsonObject();
+				final JsonElement basePathElement = jsonObject.get( "BasePath" );
+				final URI basePathURI = basePathElement == null ? null : new URI( basePathElement.getAsString() );
 
-			return DEBUG_SPIMDATA_INSTANCE_FROM_XML(); // TODO
+				final JsonElement element = jsonObject.get( "ImageLoader" );
+				deserializeBasicImgLoader( element, basePathURI, context );
+
+				return DEBUG_SPIMDATA_INSTANCE_FROM_XML(); // TODO
+
+			}
+			catch ( URISyntaxException e )
+			{
+				throw new RuntimeException( e );
+			}
 		}
 	}
+
+
 
 	private static SpimData DEBUG_SPIMDATA_INSTANCE_FROM_XML()
 	{
