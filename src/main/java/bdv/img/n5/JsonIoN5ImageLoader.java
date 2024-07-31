@@ -47,6 +47,8 @@ public class JsonIoN5ImageLoader implements JsonIoBasicImgLoader< N5ImageLoader 
 	{
 		System.out.println( "JsonIoN5ImageLoader.deserialize" );
 		System.out.println( "json = " + json + ", basePathURI = " + basePathURI + ", context = " + context );
+		System.out.println();
+
 		return null;
 	}
 
@@ -55,6 +57,8 @@ public class JsonIoN5ImageLoader implements JsonIoBasicImgLoader< N5ImageLoader 
 	{
 		System.out.println( "JsonIoN5ImageLoader.serialize" );
 		System.out.println( "imgLoader = " + imgLoader + ", basePathURI = " + basePathURI + ", context = " + context );
+		System.out.println();
+
 		JsonObject jsonObject = new JsonObject();
 		jsonObject.addProperty("format", "bdv.n5");
 		jsonObject.addProperty("version", "0.0.1");
