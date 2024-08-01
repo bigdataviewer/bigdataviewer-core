@@ -61,42 +61,20 @@ public class JsonIoN5ImageLoader implements JsonIoBasicImgLoader< N5ImageLoader 
 		System.out.println( "imgLoader = " + imgLoader + ", basePathURI = " + basePathURI + ", context = " + context );
 		System.out.println();
 
-		// TODO:
-		//   We'll need the containerURI here (base URI of the N5 container)
-		//   It's important that it ends with "/". Should we append one, just to be save?
-		// TODO:
-		//   What is basePathURI again?
-		//	 It is the "SpimData/BasePath" URI resolved against the containerURI if the "SpimData/BasePath" attribute is present, and containerURI otherwise.
-		//   We should make sure that it is an absolute URI
-
-		/*
+		// basePathURI must an absolute URI.
+		// basePathURI is the "SpimData/BasePath" URI resolved against the
+		// containerURI if the "SpimData/BasePath" attribute is present, and
+		// containerURI otherwise.
 		if ( !basePathURI.isAbsolute() )
 		{
 			throw new IllegalArgumentException( "basePathURI must be absolute. basePathURI='" + basePathURI + "'" );
 		}
 
-		final URI containerURI = uri("file:/Users/pietzsch/workspace/data/spimdata.zarr/" );
-//		final URI containerURI = uri("file:/Users/pietzsch/tmp/spimdata.zarr/" );
-
-		final URI n5URI = imgLoader.getN5URI();
-//		final URI n5URI = uri( "file:/Users/pietzsch/workspace/data/111010_weber_resave.n5" );
-//		final URI n5URI = uri( "file:/Users/pietzsch/tmp/spimdata.zarr/" );
-//		final URI n5URI = uri( "." );
-
-		System.out.println( "  n5URI        = " + n5URI );
-		System.out.println( "  containerURI = " + containerURI );
-		System.out.println( "  basePathURI  = " + basePathURI );
-		System.out.println();
-		final URI absoluteBasePathURI = containerURI.resolve( basePathURI );
-		System.out.println( "  containerURI.resolve( basePathURI ) = absoluteBasePathURI = " + absoluteBasePathURI );
-		final URI relativeURI = absoluteBasePathURI.relativize( n5URI );
-		System.out.println( "  absoluteBasePathURI.relativize( n5URI ) = relativeURI = " + relativeURI );
-		System.out.println();
-		*/
-
+		final URI uri = basePathURI.relativize( imgLoader.getN5URI() );
 		JsonObject jsonObject = new JsonObject();
 		jsonObject.addProperty("format", "bdv.n5");
 		jsonObject.addProperty("version", "0.0.1");
+		jsonObject.addProperty( "uri", uri.toString() );
 		return jsonObject;
 	}
 }
