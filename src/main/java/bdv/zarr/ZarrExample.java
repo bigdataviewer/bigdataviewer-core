@@ -1,5 +1,7 @@
 package bdv.zarr;
 
+import static bdv.zarr.DebugUtils.uri;
+
 import java.lang.reflect.Type;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -26,11 +28,10 @@ import mpicbg.spim.data.zarr.JsonIoBasicImgLoader;
 
 public class ZarrExample
 {
-	public static void main( final String[] args ) throws SpimDataException, URISyntaxException
+	public static void main( final String[] args ) throws SpimDataException
 	{
 		// load SpimData from xml file
 		final SpimData spimData = readFromXml();
-		spimData.setBasePathURI( null );
 		writeToZarr( spimData );
 		final SpimData spimDataRead = readFromZarr();
 //		System.out.println( "spimDataRead = " + spimDataRead );
@@ -44,28 +45,27 @@ public class ZarrExample
 		return spimData;
 	}
 
-	private static void writeToZarr( final SpimData spimData ) throws URISyntaxException
+	private static void writeToZarr( final SpimData spimData )
 	{
-		final String basePath = "/Users/pietzsch/tmp/spimdata.zarr";
+		final String basePath = "/Users/pietzsch/workspace/data/spimdata.zarr";
 		final N5ZarrWriter writer = new N5ZarrWriter(basePath, gsonBuilder());
-//		spimData.setBasePathURI( new URI(".") );
+//		spimData.setBasePathURI( uri( "." ) );
 //		spimData.setBasePathURI( writer.getURI() );
 //		spimData.setBasePathURI( null );
-		writer.createGroup( "bak1" );
-		spimData.setBasePathURI( new URI("bak1") );
-		writer.setAttribute("bak1", "spimdata", spimData );
+//		spimData.setBasePathURI( uri( "../" ) );
+		writer.setAttribute( ".", "SpimData", spimData );
 		writer.close();
 	}
 
 	private static SpimData readFromZarr() throws SpimDataException
 	{
-		final String basePath = "/Users/pietzsch/tmp/spimdata.zarr";
+		final String basePath = "/Users/pietzsch/workspace/data/spimdata.zarr";
 		final N5ZarrReader reader = new N5ZarrReader(basePath, gsonBuilder());
 
 		URI uri = reader.getURI();
 		System.out.println( "reader.getURI() = " + uri );
 
-		return reader.getAttribute( ".", "spimdata", SpimData.class );
+		return reader.getAttribute( ".", "SpimData", SpimData.class );
 
 	}
 
@@ -79,10 +79,22 @@ public class ZarrExample
 		{
 			JsonObject jsonObject = new JsonObject();
 
-
 			final URI basePathURI = src.getBasePathURI();
 			if ( basePathURI != null )
 			{
+				// TODO:
+				//   For now the basePathURI is an absolute URI (by coincidence).
+				//   It might be a relative URI. Resolve it against containerURI to turn it into absolute.
+				//   Then relativize wrt containerURI.
+				//   If the relative URI is empty (or "."), don't put the BasePath property.
+				// TODO:
+				//   We need to get the containerURI in here to do the src.getBasePathURI() resolve/relativize.
+				//   We could do that outside and put the appropriately treated URI into SpimData.
+				//   However, we need to pass an absolute basePathURI to serializeBasicImgLoader().
+				//   So either way, we need the containerURI.
+				//   Option 1:) Wrap SpimData and containerURI into a tuple and serialize that.
+				//   Option 2:) Store the containerURI in a field in SpimDataAdapter (and make a new one for every container)
+				//   I slightly prefer Option 2).
 				jsonObject.addProperty( "BasePath", basePathURI.toString() );
 			}
 			jsonObject.add( "ImageLoader", serializeBasicImgLoader( src.getSequenceDescription().getImgLoader(), basePathURI, context ) );
