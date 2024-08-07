@@ -31,6 +31,7 @@ package bdv.img.n5;
 import static bdv.zarr.DebugUtils.uri;
 
 import java.net.URI;
+import java.net.URISyntaxException;
 
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonElement;
@@ -38,6 +39,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 
+import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.zarr.JsonImgLoaderIo;
 import mpicbg.spim.data.zarr.JsonIoBasicImgLoader;
 
@@ -51,7 +53,15 @@ public class JsonIoN5ImageLoader implements JsonIoBasicImgLoader< N5ImageLoader 
 		System.out.println( "json = " + json + ", basePathURI = " + basePathURI + ", context = " + context );
 		System.out.println();
 
-		return null;
+		JsonObject jsonObject = json.getAsJsonObject();
+		final URI uri = basePathURI.resolve( uri( jsonObject.get( "uri" ).getAsString() ) );
+
+		final AbstractSequenceDescription< ?, ?, ? > sequenceDescription = null;
+		// TODO:
+		//   We should pass the SequenceDescription into deserialize.
+		//   Ideally, ImageLoaders wouldn't need it, but post-pone that for now.
+
+		return new N5ImageLoader( uri, sequenceDescription );
 	}
 
 	@Override
