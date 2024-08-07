@@ -1,6 +1,9 @@
 package bdv.zarr;
 
 import static bdv.zarr.DebugUtils.uri;
+import static mpicbg.spim.data.zarr.JsonKeys.BASEPATH;
+import static mpicbg.spim.data.zarr.JsonKeys.SEQUENCEDESCRIPTION;
+import static mpicbg.spim.data.zarr.JsonKeys.SPIMDATA;
 
 import java.io.File;
 import java.lang.reflect.Type;
@@ -54,7 +57,7 @@ public class ZarrExample
 //		spimData.setBasePathURI( writer.getURI() );
 //		spimData.setBasePathURI( null );
 		spimData.setBasePathURI( uri( "../" ) );
-		writer.setAttribute( ".", "SpimData", spimData );
+		writer.setAttribute( ".", SPIMDATA, spimData );
 		writer.close();
 	}
 
@@ -62,13 +65,7 @@ public class ZarrExample
 	{
 		final String basePath = "/Users/pietzsch/workspace/data/spimdata.zarr";
 		final N5ZarrReader reader = new N5ZarrReader( basePath, gsonBuilder( new File( basePath ).toURI() ) );
-
-		URI uri = reader.getURI();
-		System.out.println( "reader.getURI() = " + uri );
-		System.out.println( "new File(basePath).toURI() = " + new File( basePath ).toURI() );
-
-		return reader.getAttribute( ".", "SpimData", SpimData.class );
-
+		return reader.getAttribute( ".", SPIMDATA, SpimData.class );
 	}
 
 
@@ -108,7 +105,7 @@ public class ZarrExample
 					final URI uri = containerURI.relativize( absoluteBasePathURI );
 					if ( !uri.toString().isEmpty() )
 					{
-						jsonObject.addProperty( "BasePath", basePathURI.toString() );
+						jsonObject.addProperty( BASEPATH, basePathURI.toString() );
 					}
 				}
 				else
@@ -118,7 +115,7 @@ public class ZarrExample
 			}
 
 			jsonObject.add( "ImageLoader", serializeBasicImgLoader( src.getSequenceDescription().getImgLoader(), absoluteBasePathURI, context ) );
-			jsonObject.add( "SequenceDescription", context.serialize( src.getSequenceDescription() ) );
+			jsonObject.add( SEQUENCEDESCRIPTION, context.serialize( src.getSequenceDescription() ) );
 //			jsonObject.addProperty("ViewRegistrations", src.getViewRegistrations().toString());
 			return jsonObject;
 		}
@@ -133,11 +130,21 @@ public class ZarrExample
 				System.out.println();
 
 				final JsonObject jsonObject = json.getAsJsonObject();
-				final JsonElement basePathElement = jsonObject.get( "BasePath" );
-				final URI basePathURI = basePathElement == null ? null : new URI( basePathElement.getAsString() );
+				final URI absoluteBasePathURI;
+				{
+					final JsonElement basePathElement = jsonObject.get( BASEPATH );
+					if ( basePathElement != null )
+					{
+						final URI basePathURI = new URI( basePathElement.getAsString() ); // TODO maybe overridden by this.basePathURI? How would this be useful for reading?
+						absoluteBasePathURI = containerURI.resolve( basePathURI );
+					}
+					else
+					{
+						absoluteBasePathURI = containerURI;
+					}
+				}
+				final BasicImgLoader imgLoader = deserializeBasicImgLoader( jsonObject.get( "ImageLoader" ), absoluteBasePathURI, context );
 
-				final JsonElement element = jsonObject.get( "ImageLoader" );
-				deserializeBasicImgLoader( element, basePathURI, context );
 
 				return DEBUG_SPIMDATA_INSTANCE_FROM_XML(); // TODO
 
@@ -202,17 +209,6 @@ public class ZarrExample
 		catch ( SpimDataInstantiationException e )
 		{
 			throw new RuntimeException( e );
-		}
-	}
-
-	static class SequenceDescriptionAdapter implements JsonSerializer< SequenceDescription >
-	{
-		@Override
-		public JsonElement serialize( final SequenceDescription src, final Type typeOfSrc, final JsonSerializationContext context )
-		{
-			JsonObject jsonObject = new JsonObject();
-//			jsonObject.add( "ViewSetups", context.serialize( src.getViewSetupsOrdered() ) );
-			return jsonObject;
 		}
 	}
 
