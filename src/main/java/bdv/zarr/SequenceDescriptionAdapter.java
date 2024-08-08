@@ -2,6 +2,7 @@ package bdv.zarr;
 
 import java.lang.reflect.Type;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -18,6 +19,9 @@ import mpicbg.spim.data.SpimDataInstantiationException;
 import mpicbg.spim.data.generic.base.Entity;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.sequence.SequenceDescription;
+import mpicbg.spim.data.sequence.TimePoint;
+import mpicbg.spim.data.sequence.TimePoints;
+import mpicbg.spim.data.sequence.TimePointsPattern;
 import mpicbg.spim.data.sequence.ViewSetup;
 import mpicbg.spim.data.sequence.VoxelDimensions;
 import mpicbg.spim.data.zarr.JsonIoViewSetupAttribute;
@@ -36,12 +40,7 @@ class SequenceDescriptionAdapter implements JsonSerializer< SequenceDescription 
 			attrs.addAttributes( setups );
 			jsonObject.add( "ViewSetups", serialize( setups, context ) );
 			jsonObject.add( "Attributes", serialize( attrs, context ) );
-
-			// TODO: TimePoints
-			wejhfoiser
-					resgjowahergohwaer
-					awe iuhgiuweahg
-							aw egywe
+			jsonObject.add( "TimePoints", serialize( src.getTimePoints(), context ) );
 		}
 		catch ( SpimDataException e ) // TODO: exception handling
 		{
@@ -141,15 +140,111 @@ class SequenceDescriptionAdapter implements JsonSerializer< SequenceDescription 
 				return a1;
 			} );
 		}
+	}
 
-		@Override
-		public String toString()
+
+
+
+
+
+
+	private static JsonElement serialize( final TimePoints timepoints, final JsonSerializationContext context )
+	{
+		if ( timepoints instanceof TimePointsPattern )
 		{
-			final StringBuilder sb = new StringBuilder( "ViewSetupAttributes{" );
-			sb.append( "attributeNameToValues=" ).append( attributeNameToValues );
-			sb.append( '}' );
-			return sb.toString();
+			return serialize( ( TimePointsPattern ) timepoints, context );
+		}
+		else
+		{
+			final TimePointsRange range = asRange( timepoints );
+			if ( range != null )
+				return serialize( range, context );
 		}
 
+		final JsonObject jsonObject = new JsonObject();
+		jsonObject.addProperty( "type", "list" );
+		final JsonArray jsonArray = new JsonArray();
+		for ( TimePoint tp : timepoints.getTimePointsOrdered() )
+			jsonArray.add( tp.getId() );
+		jsonObject.add( "list", jsonArray );
+		return jsonObject;
 	}
+
+	private static JsonElement serialize( final TimePointsPattern timepoints, final JsonSerializationContext context )
+	{
+		final JsonObject jsonObject = new JsonObject();
+		jsonObject.addProperty( "type", "pattern" );
+		jsonObject.addProperty( "pattern", timepoints.getPattern() );
+		return jsonObject;
+	}
+
+
+	private static JsonElement serialize( final TimePointsRange timepoints, final JsonSerializationContext context )
+	{
+		final JsonObject jsonObject = new JsonObject();
+		jsonObject.addProperty( "type", "range" );
+		jsonObject.addProperty( "first", timepoints.getFirst() );
+		jsonObject.addProperty( "last", timepoints.getLast() );
+		return jsonObject;
+	}
+
+
+	private static TimePointsRange asRange( final TimePoints timepoints )
+	{
+		final List< TimePoint > tps = timepoints.getTimePointsOrdered();
+
+		final int first = tps.get( 0 ).getId();
+		final int last = tps.get( tps.size() - 1 ).getId();
+
+		int i = first;
+		for ( TimePoint tp : tps )
+		{
+//			if ( !( tp.getId() == i && Integer.toString( i ).equals( tp.getName() ) ) )
+//				return null;
+//			++i;
+			if ( tp.getId() != i++ )
+				return null;
+		}
+
+		return new TimePointsRange( first, last );
+	}
+
+	private static class TimePointsRange extends TimePoints
+	{
+		private int first;
+		private int last;
+
+		public TimePointsRange( final int first, final int last )
+		{
+			this.first = first;
+			this.last = last;
+		}
+
+		int getFirst()
+		{
+			return first;
+		}
+
+		int getLast()
+		{
+			return last;
+		}
+
+		void setRange( final int first, final int last )
+		{
+			if ( last < first )
+				throw new IllegalArgumentException();
+
+			this.first = first;
+			this.last = last;
+
+			final Map< Integer, TimePoint > map = new HashMap<>();
+			for ( int i = first; i <= last; i++ )
+				map.put( i, new TimePoint( i ) );
+			setTimePoints( map );
+		}
+
+
+	}
+
 }
