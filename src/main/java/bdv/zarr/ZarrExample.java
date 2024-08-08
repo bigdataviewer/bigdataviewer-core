@@ -35,9 +35,9 @@ public class ZarrExample
 	public static void main( final String[] args ) throws SpimDataException
 	{
 		// load SpimData from xml file
-		final SpimData spimData = readFromXml();
-		writeToZarr( spimData );
-//		final SpimData spimDataRead = readFromZarr();
+//		final SpimData spimData = readFromXml();
+//		writeToZarr( spimData );
+		final SpimData spimDataRead = readFromZarr();
 //		System.out.println( "spimDataRead = " + spimDataRead );
 	}
 
@@ -144,6 +144,7 @@ public class ZarrExample
 					}
 				}
 				final BasicImgLoader imgLoader = deserializeBasicImgLoader( jsonObject.get( "ImageLoader" ), absoluteBasePathURI, context );
+				final SequenceDescription sequenceDescription = context.deserialize( jsonObject.get( SEQUENCEDESCRIPTION ), SequenceDescription.class );
 
 
 				return DEBUG_SPIMDATA_INSTANCE_FROM_XML(); // TODO
