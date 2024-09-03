@@ -602,7 +602,6 @@ public class WriteSequenceToHdf5
 		final BasicSetupImgLoader< T > setupImgLoader = Cast.unchecked( imgLoader.getSetupImgLoader( setupId ) );
 		final RandomAccessibleInterval< T > img = setupImgLoader.getImage( timepointId );
 		final T type = setupImgLoader.getImageType();
-		System.out.println( "typed ... WriteSequenceToHdf5.writeViewToHdf5PartitionFile" );
 		writeViewToHdf5PartitionFile( img, type, timepointId, setupId, mipmapInfo, writeMipmapInfo, deflate, writerQueue,
 				executorService, numThreads, loopbackHeuristic, afterEachPlane, progressWriter);
 	}
