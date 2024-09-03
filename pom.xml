@@ -143,11 +143,11 @@
 		<license.licenseName>bsd_2</license.licenseName>
 		<license.copyrightOwners>BigDataViewer developers.</license.copyrightOwners>
 
-		<imglib2.version>7.1.1</imglib2.version>
+		<imglib2.version>7.1.2</imglib2.version>
 		<imglib2-realtransform.version>4.0.3</imglib2-realtransform.version>
-		<imglib2-cache.version>1.0.0-beta-18</imglib2-cache.version>
-		<imglib2-algorithm.version>0.15.3</imglib2-algorithm.version>
-		<spim_data.version>2.3.2</spim_data.version>
+		<imglib2-cache.version>1.0.0-beta-19</imglib2-cache.version>
+		<imglib2-algorithm.version>0.16.0</imglib2-algorithm.version>
+		<spim_data.version>2.3.5</spim_data.version>
 
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>
