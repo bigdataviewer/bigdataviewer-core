@@ -41,11 +41,10 @@ import net.imglib2.algorithm.neighborhood.RectangleShape;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.view.Views;
 
+@Deprecated
 public class Downsample
 {
-	/**
-	 * TODO: Revise. This is probably not very efficient
-	 */
+	@Deprecated
 	public static < T extends RealType< T > > void downsample( final RandomAccessible< T > input, final RandomAccessibleInterval< T > output, final int[] factor )
 	{
 		assert input.numDimensions() == output.numDimensions();
