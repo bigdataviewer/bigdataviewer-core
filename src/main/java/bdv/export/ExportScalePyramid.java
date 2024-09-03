@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -40,6 +40,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.algorithm.blocks.BlockSupplier;
+import net.imglib2.algorithm.blocks.downsample.Downsample;
 import net.imglib2.cache.img.SingleCellArrayImg;
 import net.imglib2.img.basictypeaccess.ArrayDataAccessFactory;
 import net.imglib2.img.basictypeaccess.array.ArrayDataAccess;
@@ -49,7 +51,7 @@ import net.imglib2.type.NativeTypeFactory;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.util.Cast;
 import net.imglib2.util.Intervals;
-import net.imglib2.view.Views;
+import net.imglib2.view.fluent.RandomAccessibleIntervalView.Extension;
 
 /**
  * Write an image to a chunked mipmap representation.
@@ -234,7 +236,12 @@ public class ExportScalePyramid
 			final AfterEachPlane afterEachPlane,
 			ProgressWriter progressWriter ) throws IOException
 	{
+		System.out.println( "--> ExportScalePyramid.writeScalePyramid" );
+
 		final BlockCreator< T > blockCreator = BlockCreator.forType( type );
+		// TODO: We should be able to simplify BlockCreator. Maybe we don't need all the wrapping in SingleCellArrayImg etc
+		System.out.println( "    TODO: We should be able to simplify BlockCreator. Maybe we don't need all the wrapping in SingleCellArrayImg etc" );
+
 
 		if ( progressWriter == null )
 			progressWriter = new ProgressWriterNull();
@@ -246,7 +253,6 @@ public class ExportScalePyramid
 
 		// write image data for all views to the HDF5 file
 		final int n = 3; // TODO checkNumDimensions( img.numDimensions() );
-		final long[] dimensions = new long[ n ];
 
 		final int[][] resolutions = mipmapInfo.getExportResolutions();
 		final int[][] subdivisions = mipmapInfo.getSubdivisions();
@@ -315,27 +321,15 @@ public class ExportScalePyramid
 				factor = resolutions[ level ];
 			}
 
-			sourceImg.dimensions( dimensions );
 
-			final long size = Intervals.numElements( factor );
-			final boolean fullResolution = size == 1;
-			if ( !fullResolution )
-			{
-				for ( int d = 0; d < n; ++d )
-					dimensions[ d ] = Math.max( dimensions[ d ] / factor[ d ], 1 );
-			}
-
-			final long[] minRequiredInput = new long[ n ];
-			final long[] maxRequiredInput = new long[ n ];
-			sourceImg.min( minRequiredInput );
-			for ( int d = 0; d < n; ++d )
-				maxRequiredInput[ d ] = minRequiredInput[ d ] + dimensions[ d ] * factor[ d ] - 1;
-
-			// TODO: pass OutOfBoundsFactory
-			final RandomAccessibleInterval< T > extendedImg = Views.interval( Views.extendBorder( sourceImg ), new FinalInterval( minRequiredInput, maxRequiredInput ) );
+			final long[] dimensions = Downsample.getDownsampledDimensions( sourceImg.dimensionsAsLongArray(), factor );
+			final boolean fullResolution = (Intervals.numElements( factor ) == 1);
 
 			final int[] cellDimensions = subdivisions[ level ];
 			final D dataset = io.createDataset( level, dimensions, cellDimensions );
+
+			final BlockSupplier< T > imgBlocks = BlockSupplier.of( sourceImg.view().extend( Extension.border() ) );
+			final BlockSupplier< T > blocks = ( fullResolution ? imgBlocks : imgBlocks.andThen( Downsample.downsample( factor ) ) ).threadSafe();
 
 			final ProgressWriter subProgressWriter = new SubTaskProgressWriter(
 					progressWriter, ( double ) numCompletedTasks / numTasks,
@@ -356,37 +350,15 @@ public class ExportScalePyramid
 						final long[] currentCellMin = new long[ n ];
 						final int[] currentCellDim = new int[ n ];
 						final long[] currentCellPos = new long[ n ];
-						final long[] blockMin = new long[ n ];
-						final RandomAccess< T > in = extendedImg.randomAccess();
-
-						final Class< ? extends RealType > kl1 = type.getClass();
-						final Class< ? extends RandomAccess > kl2 = in.getClass();
-						final CopyBlock< T > copyBlock = fullResolution ? CopyBlock.create( n, kl1, kl2 ) : null;
-						final DownsampleBlock< T > downsampleBlock = fullResolution ? null : DownsampleBlock.create( cellDimensions, factor, kl1, kl2 );
-
 						for ( int i = nextCellInPlane.getAndIncrement(); i < numBlocksPerPlane; i = nextCellInPlane.getAndIncrement() )
 						{
 							final long index = planeBaseIndex + i;
-
 							grid.getCellDimensions( index, currentCellMin, currentCellDim );
 							grid.getCellGridPositionFlat( index, currentCellPos );
+//							TODO: use CellDimensionsAndSteps getCellDimensions( long index, final long[] cellMin )
+							System.out.println( "    TODO: use CellDimensionsAndSteps getCellDimensions( long index, final long[] cellMin )" );
 							final Block< T > block = blockCreator.create( currentCellDim, currentCellMin, currentCellPos );
-
-							if ( fullResolution )
-							{
-								final RandomAccess< T > out = block.getData().randomAccess();
-								in.setPosition( currentCellMin );
-								out.setPosition( currentCellMin );
-								copyBlock.copyBlock( in, out, currentCellDim );
-							}
-							else
-							{
-								for ( int d = 0; d < n; ++d )
-									blockMin[ d ] = currentCellMin[ d ] * factor[ d ];
-								in.setPosition( blockMin );
-								downsampleBlock.downsampleBlock( in, block.getData().cursor(), currentCellDim );
-							}
-
+							blocks.copy( currentCellMin, block.getData().getStorageArray(), currentCellDim );
 							io.writeBlock( dataset, block );
 						}
 						return null;
