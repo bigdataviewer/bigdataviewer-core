@@ -68,6 +68,7 @@ import net.imglib2.FinalDimensions;
 import net.imglib2.FinalInterval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
+import net.imglib2.blocks.SubArrayCopy;
 import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.cache.volatiles.LoadingStrategy;
 import net.imglib2.img.basictypeaccess.DataAccess;
@@ -360,22 +361,27 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 		private final DatasetAttributes attributes;
 		private final IntFunction< T > createPrimitiveArray;
 		private final Function< T, A > createVolatileArrayAccess;
+		private final SubArrayCopy.Typed< T, T > subArrayCopy;
 
 		N5CacheArrayLoader( final N5Reader n5, final String pathName, final DatasetAttributes attributes,
 				final DataTypeProperties< ?, ?, T, A > dataTypeProperties )
 		{
-			this( n5, pathName, attributes, dataTypeProperties.createPrimitiveArray(), dataTypeProperties.createVolatileArrayAccess() );
+			this( n5, pathName, attributes, dataTypeProperties.createPrimitiveArray(), dataTypeProperties.createVolatileArrayAccess(),
+					SubArrayCopy.forPrimitiveType( dataTypeProperties.type().getNativeTypeFactory().getPrimitiveType() ) );
 		}
 
 		N5CacheArrayLoader( final N5Reader n5, final String pathName, final DatasetAttributes attributes,
 				final IntFunction< T > createPrimitiveArray,
-				final Function< T, A > createVolatileArrayAccess )
+				final Function< T, A > createVolatileArrayAccess,
+				final SubArrayCopy.Typed< T, T > subArrayCopy )
 		{
+
 			this.n5 = n5;
 			this.pathName = pathName;
 			this.attributes = attributes;
 			this.createPrimitiveArray = createPrimitiveArray;
 			this.createVolatileArrayAccess = createVolatileArrayAccess;
+			this.subArrayCopy = subArrayCopy;
 		}
 
 		@Override
@@ -404,7 +410,7 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 					final int[] pos = new int[ srcDims.length ];
 					final int[] size = new int[ srcDims.length ];
 					Arrays.setAll( size, d -> Math.min( srcDims[ d ], cellDimensions[ d ] ) );
-					ndArrayCopy( src, srcDims, pos, data, cellDimensions, pos, size );
+					subArrayCopy.copy( src, srcDims, pos, data, cellDimensions, pos, size );
 				}
 				return createVolatileArrayAccess.apply( data );
 			}
@@ -423,75 +429,5 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 			throw new IOException( e );
 		}
 		return new N5CacheArrayLoader<>( n5, pathName, attributes, DataTypeProperties.of( attributes.getDataType() ) );
-	}
-
-	// TODO: replace ndArrayCopy(...) below with new SubArrayCopy from imglib2 core ???
-
-	/**
-	 * Like `System.arrayCopy()` but for flattened nD arrays.
-	 *
-	 * @param src
-	 * 		the (flattened) source array.
-	 * @param srcSize
-	 * 		dimensions of the source array.
-	 * @param srcPos
-	 * 		starting position in the source array.
-	 * @param dest
-	 * 		the (flattened destination array.
-	 * @param destSize
-	 * 		dimensions of the source array.
-	 * @param destPos
-	 * 		starting position in the destination data.
-	 * @param size
-	 * 		the number of array elements to be copied.
-	 */
-	// TODO: This will be moved to a new imglib2-blk artifact later. Re-use it from there when that happens.
-	private static < T > void ndArrayCopy(
-			final T src,  final int[] srcSize,  final int[] srcPos,
-			final T dest, final int[] destSize, final int[] destPos,
-			final int[] size)
-	{
-		final int n = srcSize.length;
-		int srcStride = 1;
-		int destStride = 1;
-		int srcOffset = 0;
-		int destOffset = 0;
-		for ( int d = 0; d < n; ++d )
-		{
-			srcOffset += srcStride * srcPos[ d ];
-			srcStride *= srcSize[ d ];
-			destOffset += destStride * destPos[ d ];
-			destStride *= destSize[ d ];
-		}
-		ndArrayCopy( n - 1, src, srcSize, srcOffset, dest, destSize, destOffset, size );
-	}
-
-	private static <T> void ndArrayCopy(
-			final int d,
-			final T src,  final int[] srcSize,  final int srcPos,
-			final T dest, final int[] destSize, final int destPos,
-			final int[] size)
-	{
-		if ( d == 0 )
-			System.arraycopy( src, srcPos, dest, destPos, size[ d ] );
-		else
-		{
-			int srcStride = 1;
-			int destStride = 1;
-			for ( int dd = 0; dd < d; ++dd )
-			{
-				srcStride *= srcSize[ dd ];
-				destStride *= destSize[ dd ];
-			}
-
-			final int w = size[ d ];
-			for ( int x = 0; x < w; ++x )
-			{
-				ndArrayCopy( d - 1,
-						src, srcSize, srcPos + x * srcStride,
-						dest, destSize, destPos + x * destStride,
-						size );
-			}
-		}
 	}
 }
