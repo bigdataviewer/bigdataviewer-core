@@ -37,19 +37,16 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import net.imglib2.FinalInterval;
-import net.imglib2.RandomAccess;
+import org.janelia.saalfeldlab.n5.DataBlock;
+import org.janelia.saalfeldlab.n5.DataType;
+
+import bdv.img.n5.DataTypeProperties;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.algorithm.blocks.BlockSupplier;
 import net.imglib2.algorithm.blocks.downsample.Downsample;
-import net.imglib2.cache.img.SingleCellArrayImg;
-import net.imglib2.img.basictypeaccess.ArrayDataAccessFactory;
-import net.imglib2.img.basictypeaccess.array.ArrayDataAccess;
 import net.imglib2.img.cell.CellGrid;
 import net.imglib2.type.NativeType;
-import net.imglib2.type.NativeTypeFactory;
 import net.imglib2.type.numeric.RealType;
-import net.imglib2.util.Cast;
 import net.imglib2.util.Intervals;
 import net.imglib2.view.fluent.RandomAccessibleIntervalView.Extension;
 
@@ -115,39 +112,6 @@ public class ExportScalePyramid
 	}
 
 	/**
-	 * A block to be written. See {@link DatasetIO#writeBlock(Object, Block)
-	 * DatasetIO.writeBlock()}.
-	 */
-	public static class Block< T extends NativeType< T > >
-	{
-		final SingleCellArrayImg< T, ? > data;
-		final int[] size;
-		final long[] position;
-
-		Block( final SingleCellArrayImg< T, ? > data, final int[] size, final long[] position )
-		{
-			this.data = data;
-			this.size = size.clone();
-			this.position = position.clone();
-		}
-
-		public SingleCellArrayImg< T, ? > getData()
-		{
-			return data;
-		}
-
-		public int[] getSize()
-		{
-			return size;
-		}
-
-		public long[] getGridPosition()
-		{
-			return position;
-		}
-	}
-
-	/**
 	 * Writing and reading back data for each resolution level.
 	 *
 	 * @param <D>
@@ -172,7 +136,7 @@ public class ExportScalePyramid
 		 */
 		void writeBlock(
 				final D dataset,
-				final Block< T > dataBlock ) throws IOException;
+				final DataBlock< ? > dataBlock ) throws IOException;
 
 		/**
 		 * Blocks until all pending data was written to {@code dataset}.
@@ -236,12 +200,7 @@ public class ExportScalePyramid
 			final AfterEachPlane afterEachPlane,
 			ProgressWriter progressWriter ) throws IOException
 	{
-		System.out.println( "--> ExportScalePyramid.writeScalePyramid" );
-
-		final BlockCreator< T > blockCreator = BlockCreator.forType( type );
-		// TODO: We should be able to simplify BlockCreator. Maybe we don't need all the wrapping in SingleCellArrayImg etc
-		System.out.println( "    TODO: We should be able to simplify BlockCreator. Maybe we don't need all the wrapping in SingleCellArrayImg etc" );
-
+		final DataType dataType = DataTypeProperties.n5DataType( type );
 
 		if ( progressWriter == null )
 			progressWriter = new ProgressWriterNull();
@@ -348,17 +307,14 @@ public class ExportScalePyramid
 				{
 					tasks.add( () -> {
 						final long[] currentCellMin = new long[ n ];
-						final int[] currentCellDim = new int[ n ];
-						final long[] currentCellPos = new long[ n ];
 						for ( int i = nextCellInPlane.getAndIncrement(); i < numBlocksPerPlane; i = nextCellInPlane.getAndIncrement() )
 						{
 							final long index = planeBaseIndex + i;
-							grid.getCellDimensions( index, currentCellMin, currentCellDim );
-							grid.getCellGridPositionFlat( index, currentCellPos );
-//							TODO: use CellDimensionsAndSteps getCellDimensions( long index, final long[] cellMin )
-							System.out.println( "    TODO: use CellDimensionsAndSteps getCellDimensions( long index, final long[] cellMin )" );
-							final Block< T > block = blockCreator.create( currentCellDim, currentCellMin, currentCellPos );
-							blocks.copy( currentCellMin, block.getData().getStorageArray(), currentCellDim );
+							final int[] blockSize = grid.getCellDimensions( index, currentCellMin ).dimensions();
+							final long[] gridPosition = new long[ n ];
+							grid.getCellGridPositionFlat( index, gridPosition );
+							final DataBlock< ? > block = dataType.createDataBlock( blockSize, gridPosition );
+							blocks.copy( currentCellMin, block.getData(), blockSize );
 							io.writeBlock( dataset, block );
 						}
 						return null;
@@ -392,22 +348,5 @@ public class ExportScalePyramid
 		for ( int d = mind; d < maxd; ++d )
 			numElements *= size[ d ];
 		return numElements;
-	}
-
-	private interface BlockCreator< T extends NativeType< T > >
-	{
-		Block< T > create( final int[] blockSize, final long[] blockMin, final long[] gridPosition );
-
-		static < T extends NativeType< T > & RealType< T >, A extends ArrayDataAccess< A > > BlockCreator< T > forType( final T type )
-		{
-			final A accessFactory = Cast.unchecked( ArrayDataAccessFactory.get( type ) );
-			final NativeTypeFactory< T, A > nativeTypeFactory = Cast.unchecked( type.getNativeTypeFactory() );
-			return ( blockSize, blockMin, gridPosition ) -> {
-				final A data = accessFactory.createArray( ( int ) Intervals.numElements( blockSize ) );
-				final SingleCellArrayImg< T, A > img = new SingleCellArrayImg<>( blockSize, blockMin, data, null );
-				img.setLinkedType( nativeTypeFactory.createLinkedType( img ) );
-				return new Block<>( img, blockSize, gridPosition );
-			};
-		}
 	}
 }
