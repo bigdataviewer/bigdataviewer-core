@@ -41,22 +41,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
-import org.janelia.saalfeldlab.n5.ByteArrayDataBlock;
 import org.janelia.saalfeldlab.n5.Compression;
 import org.janelia.saalfeldlab.n5.DataBlock;
 import org.janelia.saalfeldlab.n5.DataType;
 import org.janelia.saalfeldlab.n5.DatasetAttributes;
-import org.janelia.saalfeldlab.n5.DoubleArrayDataBlock;
-import org.janelia.saalfeldlab.n5.FloatArrayDataBlock;
-import org.janelia.saalfeldlab.n5.IntArrayDataBlock;
-import org.janelia.saalfeldlab.n5.LongArrayDataBlock;
 import org.janelia.saalfeldlab.n5.N5Exception;
 import org.janelia.saalfeldlab.n5.N5FSWriter;
 import org.janelia.saalfeldlab.n5.N5Writer;
-import org.janelia.saalfeldlab.n5.ShortArrayDataBlock;
 
 import bdv.export.ExportMipmapInfo;
 import bdv.export.ExportScalePyramid;
@@ -281,7 +274,6 @@ public class WriteSequenceToN5
 		private final int timepointId;
 		private final DataType dataType;
 		private final T type;
-		private final Function< ExportScalePyramid.Block< T >, DataBlock< ? > > getDataBlock;
 
 		public N5DatasetIO( final N5Writer n5, final Compression compression, final int setupId, final int timepointId, final T type )
 		{
@@ -291,42 +283,6 @@ public class WriteSequenceToN5
 			this.timepointId = timepointId;
 			this.dataType = n5DataType( type );
 			this.type = type;
-
-			switch ( dataType )
-			{
-			case UINT8:
-				getDataBlock = b -> new ByteArrayDataBlock( b.getSize(), b.getGridPosition(), Cast.unchecked( b.getData().getStorageArray() ) );
-				break;
-			case UINT16:
-				getDataBlock = b -> new ShortArrayDataBlock( b.getSize(), b.getGridPosition(), Cast.unchecked( b.getData().getStorageArray() ) );
-				break;
-			case UINT32:
-				getDataBlock = b -> new IntArrayDataBlock( b.getSize(), b.getGridPosition(), Cast.unchecked( b.getData().getStorageArray() ) );
-				break;
-			case UINT64:
-				getDataBlock = b -> new LongArrayDataBlock( b.getSize(), b.getGridPosition(), Cast.unchecked( b.getData().getStorageArray() ) );
-				break;
-			case INT8:
-				getDataBlock = b -> new ByteArrayDataBlock( b.getSize(), b.getGridPosition(), Cast.unchecked( b.getData().getStorageArray() ) );
-				break;
-			case INT16:
-				getDataBlock = b -> new ShortArrayDataBlock( b.getSize(), b.getGridPosition(), Cast.unchecked( b.getData().getStorageArray() ) );
-				break;
-			case INT32:
-				getDataBlock = b -> new IntArrayDataBlock( b.getSize(), b.getGridPosition(), Cast.unchecked( b.getData().getStorageArray() ) );
-				break;
-			case INT64:
-				getDataBlock = b -> new LongArrayDataBlock( b.getSize(), b.getGridPosition(), Cast.unchecked( b.getData().getStorageArray() ) );
-				break;
-			case FLOAT32:
-				getDataBlock = b -> new FloatArrayDataBlock( b.getSize(), b.getGridPosition(), Cast.unchecked( b.getData().getStorageArray() ) );
-				break;
-			case FLOAT64:
-				getDataBlock = b -> new DoubleArrayDataBlock( b.getSize(), b.getGridPosition(), Cast.unchecked( b.getData().getStorageArray() ) );
-				break;
-			default:
-				throw new IllegalArgumentException();
-			}
 		}
 
 		@Override
@@ -347,11 +303,11 @@ public class WriteSequenceToN5
 		}
 
 		@Override
-		public void writeBlock( final N5Dataset dataset, final ExportScalePyramid.Block< T > dataBlock ) throws IOException
+		public void writeBlock( final N5Dataset dataset, final DataBlock< ? > dataBlock ) throws IOException
 		{
 			try
 			{
-				n5.writeBlock( dataset.pathName, dataset.attributes, getDataBlock.apply( dataBlock ) );
+				n5.writeBlock( dataset.pathName, dataset.attributes, dataBlock );
 			}
 			catch ( final N5Exception e )
 			{

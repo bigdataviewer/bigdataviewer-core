@@ -37,23 +37,15 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.function.Function;
 
-import org.janelia.saalfeldlab.n5.ByteArrayDataBlock;
 import org.janelia.saalfeldlab.n5.Compression;
 import org.janelia.saalfeldlab.n5.DataBlock;
 import org.janelia.saalfeldlab.n5.DataType;
 import org.janelia.saalfeldlab.n5.DatasetAttributes;
-import org.janelia.saalfeldlab.n5.DoubleArrayDataBlock;
-import org.janelia.saalfeldlab.n5.FloatArrayDataBlock;
 import org.janelia.saalfeldlab.n5.GzipCompression;
-import org.janelia.saalfeldlab.n5.IntArrayDataBlock;
-import org.janelia.saalfeldlab.n5.LongArrayDataBlock;
 import org.janelia.saalfeldlab.n5.RawCompression;
-import org.janelia.saalfeldlab.n5.ShortArrayDataBlock;
 
 import bdv.export.ExportScalePyramid.AfterEachPlane;
-import bdv.export.ExportScalePyramid.Block;
 import bdv.export.ExportScalePyramid.DatasetIO;
 import bdv.export.ExportScalePyramid.LoopbackHeuristic;
 import bdv.img.hdf5.Hdf5ImageLoader;
@@ -501,8 +493,6 @@ public class WriteSequenceToHdf5
 		private final int setupIdPartition;
 		private final int timepointIdPartition;
 		private final DataType dataType;
-		private final T type;
-		private final Function< Block< T >, DataBlock< ? > > getDataBlock;
 		private final LoopBackImageLoader loopback;
 
 		public HDF5DatasetIO(
@@ -518,44 +508,7 @@ public class WriteSequenceToHdf5
 			this.timepointIdPartition= timepointIdPartition;
 			this.setupIdPartition = setupIdPartition;
 			this.dataType = DataTypeProperties.n5DataType( type );
-			this.type = type;
 			this.loopback = loopback;
-
-			switch ( dataType )
-			{
-			case UINT8:
-				getDataBlock = b -> new ByteArrayDataBlock( b.getSize(), b.getGridPosition(), Cast.unchecked( b.getData().getStorageArray() ) );
-				break;
-			case UINT16:
-				getDataBlock = b -> new ShortArrayDataBlock( b.getSize(), b.getGridPosition(), Cast.unchecked( b.getData().getStorageArray() ) );
-				break;
-			case UINT32:
-				getDataBlock = b -> new IntArrayDataBlock( b.getSize(), b.getGridPosition(), Cast.unchecked( b.getData().getStorageArray() ) );
-				break;
-			case UINT64:
-				getDataBlock = b -> new LongArrayDataBlock( b.getSize(), b.getGridPosition(), Cast.unchecked( b.getData().getStorageArray() ) );
-				break;
-			case INT8:
-				getDataBlock = b -> new ByteArrayDataBlock( b.getSize(), b.getGridPosition(), Cast.unchecked( b.getData().getStorageArray() ) );
-				break;
-			case INT16:
-				getDataBlock = b -> new ShortArrayDataBlock( b.getSize(), b.getGridPosition(), Cast.unchecked( b.getData().getStorageArray() ) );
-				break;
-			case INT32:
-				getDataBlock = b -> new IntArrayDataBlock( b.getSize(), b.getGridPosition(), Cast.unchecked( b.getData().getStorageArray() ) );
-				break;
-			case INT64:
-				getDataBlock = b -> new LongArrayDataBlock( b.getSize(), b.getGridPosition(), Cast.unchecked( b.getData().getStorageArray() ) );
-				break;
-			case FLOAT32:
-				getDataBlock = b -> new FloatArrayDataBlock( b.getSize(), b.getGridPosition(), Cast.unchecked( b.getData().getStorageArray() ) );
-				break;
-			case FLOAT64:
-				getDataBlock = b -> new DoubleArrayDataBlock( b.getSize(), b.getGridPosition(), Cast.unchecked( b.getData().getStorageArray() ) );
-				break;
-			default:
-				throw new IllegalArgumentException();
-			}
 		}
 
 		@Override
@@ -567,9 +520,9 @@ public class WriteSequenceToHdf5
 		}
 
 		@Override
-		public void writeBlock( final H5Dataset dataset, final ExportScalePyramid.Block< T > dataBlock )
+		public void writeBlock( final H5Dataset dataset, final DataBlock< ? > dataBlock )
 		{
-			writerQueue.writeBlock( dataset.pathName, dataset.attributes, getDataBlock.apply( dataBlock ) );
+			writerQueue.writeBlock( dataset.pathName, dataset.attributes, dataBlock );
 		}
 
 		@Override
