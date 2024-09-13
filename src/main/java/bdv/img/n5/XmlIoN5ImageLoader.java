@@ -77,7 +77,10 @@ public class XmlIoN5ImageLoader implements XmlIoBasicImgLoader< N5ImageLoader >
 			final boolean hasScheme = scheme != null;
 			if ( !hasScheme || FILE_SCHEME.asPredicate().test( scheme ) )
 			{
-				final N5FSReader n5 = new N5FSReader( new File( uri ).getAbsolutePath() );
+				final String path = hasScheme
+						? new File( uri ).getAbsolutePath()
+						: uri.getPath();
+				final N5FSReader n5 = new N5FSReader( path );
 				return new N5ImageLoader( n5, uri, sequenceDescription );
 			}
 		}
