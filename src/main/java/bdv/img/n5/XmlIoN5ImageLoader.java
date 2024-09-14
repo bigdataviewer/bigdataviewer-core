@@ -32,7 +32,6 @@ import static mpicbg.spim.data.XmlKeys.IMGLOADER_FORMAT_ATTRIBUTE_NAME;
 
 import java.io.File;
 import java.net.URI;
-import java.util.regex.Pattern;
 
 import org.janelia.saalfeldlab.n5.N5FSReader;
 import org.jdom2.Element;
@@ -48,14 +47,41 @@ import net.imglib2.util.Cast;
 @ImgLoaderIo( format = "bdv.n5", type = N5ImageLoader.class )
 public class XmlIoN5ImageLoader implements XmlIoBasicImgLoader< N5ImageLoader >
 {
+	public static boolean PREFER_URI_FOR_LOCAL_FILES = true;
+
 	@Override
 	public Element toXml( final N5ImageLoader imgLoader, final File basePath )
 	{
+		return toXml( imgLoader, basePath == null ? null : basePath.toURI() );
+	}
+
+	@Override
+	public Element toXml( final N5ImageLoader imgLoader, final URI basePathURI )
+	{
 		final Element elem = new Element( "ImageLoader" );
 		elem.setAttribute( IMGLOADER_FORMAT_ATTRIBUTE_NAME, "bdv.n5" );
-		elem.setAttribute( "version", "1.0" );
-		elem.addContent( XmlHelpers.pathElement( "n5", imgLoader.getN5File(), basePath ) );
+		elem.setAttribute( "version", "1.1" );
+		final File n5File = getLocalFile( imgLoader.getN5URI() );
+		if ( !PREFER_URI_FOR_LOCAL_FILES && n5File != null )
+		{
+			final File basePath = basePathURI == null ? null : new File( basePathURI );
+			elem.addContent( XmlHelpers.pathElement( "n5", n5File, basePath ) );
+		}
+		else
+		{
+			elem.addContent( XmlHelpers.pathElementURI( "n5", imgLoader.getN5URI(), basePathURI ) );
+		}
 		return elem;
+	}
+
+	private static File getLocalFile( final URI uri )
+	{
+		if ( "file".equalsIgnoreCase( uri.getScheme() ) )
+			return new File( uri );
+		else if ( uri.getScheme() == null )
+			return new File( uri.getPath() );
+		else
+			return null;
 	}
 
 	@Override
@@ -75,7 +101,7 @@ public class XmlIoN5ImageLoader implements XmlIoBasicImgLoader< N5ImageLoader >
 		{
 			final String scheme = uri.getScheme();
 			final boolean hasScheme = scheme != null;
-			if ( !hasScheme || FILE_SCHEME.asPredicate().test( scheme ) )
+			if ( !hasScheme || "file".equalsIgnoreCase( uri.getScheme() ) )
 			{
 				final String path = hasScheme
 						? new File( uri ).getAbsolutePath()
@@ -97,6 +123,4 @@ public class XmlIoN5ImageLoader implements XmlIoBasicImgLoader< N5ImageLoader >
 			return null;
 		}
 	}
-
-	private final static Pattern FILE_SCHEME = Pattern.compile("file", Pattern.CASE_INSENSITIVE);
 }
