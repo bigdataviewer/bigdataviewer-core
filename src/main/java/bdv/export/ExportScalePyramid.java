@@ -44,6 +44,7 @@ import bdv.img.n5.DataTypeProperties;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.algorithm.blocks.BlockSupplier;
 import net.imglib2.algorithm.blocks.downsample.Downsample;
+import net.imglib2.blocks.BlockInterval;
 import net.imglib2.img.cell.CellGrid;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.numeric.RealType;
@@ -314,7 +315,7 @@ public class ExportScalePyramid
 							final long[] gridPosition = new long[ n ];
 							grid.getCellGridPositionFlat( index, gridPosition );
 							final DataBlock< ? > block = dataType.createDataBlock( blockSize, gridPosition );
-							blocks.copy( currentCellMin, block.getData(), blockSize );
+							blocks.copy( BlockInterval.wrap( currentCellMin, blockSize), block.getData() );
 							io.writeBlock( dataset, block );
 						}
 						return null;
