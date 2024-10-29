@@ -28,11 +28,68 @@
  */
 package bdv.img.n5;
 
-public class BdvN5Format
+import org.janelia.saalfeldlab.n5.DataType;
+import org.janelia.saalfeldlab.n5.DatasetAttributes;
+import org.janelia.saalfeldlab.n5.N5Reader;
+
+import bdv.img.cache.VolatileCachedCellImg;
+import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.type.NativeType;
+
+public class BdvN5Format implements N5Properties
 {
 	public static final String DOWNSAMPLING_FACTORS_KEY = "downsamplingFactors";
 	public static final String DATA_TYPE_KEY = "dataType";
 
+	@Override
+	public String getPath( final int setupId )
+	{
+		return getPathName( setupId );
+	}
+
+	@Override
+	public String getPath( final int setupId, final int timepointId)
+	{
+		return getPathName( setupId, timepointId );
+	}
+
+	@Override
+	public String getPath( final int setupId, final int timepointId, final int level)
+	{
+		return getPathName( setupId, timepointId, level );
+	}
+
+	@Override
+	public DataType getDataType( final N5Reader n5, final int setupId )
+	{
+		// optionally cached as defined by N5ImageLoader.preFetchDatasetAttributes
+		return n5.getAttribute( getPath( setupId ), DATA_TYPE_KEY, DataType.class );
+	}
+
+	@Override
+	public double[][] getMipmapResolutions( final N5Reader n5, final int setupId )
+	{
+		// optionally cached as defined by N5ImageLoader.preFetchDatasetAttributes
+		return n5.getAttribute( getPath( setupId ), DOWNSAMPLING_FACTORS_KEY, double[][].class );
+	}
+
+	@Override
+	public DatasetAttributes getDatasetAttributes( final N5Reader n5, final String pathName )
+	{
+		// optionally cached as defined by N5ImageLoader.preFetchDatasetAttributes
+		return n5.getDatasetAttributes( pathName );
+	}
+
+	@Override
+	public <T extends NativeType<T>> RandomAccessibleInterval<T> extractImg(
+			final VolatileCachedCellImg<T, ?> img,
+			final int setupId,
+			final int timepointId)
+	{
+		return img;
+	}
+
+	// left the old code for compatibility 
 	public static String getPathName( final int setupId )
 	{
 		return String.format( "setup%d", setupId );
