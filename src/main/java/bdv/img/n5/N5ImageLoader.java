@@ -28,10 +28,6 @@
  */
 package bdv.img.n5;
 
-import static bdv.img.n5.BdvN5Format.DATA_TYPE_KEY;
-import static bdv.img.n5.BdvN5Format.DOWNSAMPLING_FACTORS_KEY;
-import static bdv.img.n5.BdvN5Format.getPathName;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -83,6 +79,7 @@ import net.imglib2.view.Views;
 public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 {
 	private final URI n5URI;
+	protected final N5Properties n5properties;
 
 	// TODO: it would be good if this would not be needed
 	//       find available setups from the n5
@@ -97,6 +94,7 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 	{
 		this.n5URI = n5URI;
 		this.seq = sequenceDescription;
+		this.n5properties = createN5PropertiesInstance();
 	}
 
 	public N5ImageLoader( final File n5File, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
@@ -119,6 +117,11 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 	{
 		return new File( n5URI );
 	}
+
+	/**
+	 * @return a class that creates the pathnames for the setupId, timePointId and multiresolution levels
+	 */
+	public N5Properties createN5PropertiesInstance() { return new BdvN5Format(); }
 
 	private volatile boolean isOpen = false;
 	private SharedQueue createdSharedQueue;
@@ -219,11 +222,10 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 
 	private < T extends NativeType< T >, V extends Volatile< T > & NativeType< V > > SetupImgLoader< T, V > createSetupImgLoader( final int setupId ) throws IOException
 	{
-		final String pathName = getPathName( setupId );
 		final DataType dataType;
 		try
 		{
-			dataType = n5.getAttribute( pathName, DATA_TYPE_KEY, DataType.class );
+			dataType = n5properties.getDataType( n5, setupId );
 		}
 		catch ( final N5Exception e )
 		{
@@ -258,10 +260,9 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 		{
 			super( type, volatileType );
 			this.setupId = setupId;
-			final String pathName = getPathName( setupId );
 			try
 			{
-				mipmapResolutions = n5.getAttribute( pathName, DOWNSAMPLING_FACTORS_KEY, double[][].class );
+				mipmapResolutions = n5properties.getMipmapResolutions( n5, setupId );
 			}
 			catch ( final N5Exception e )
 			{
@@ -289,7 +290,7 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 		{
 			try
 			{
-				final String pathName = getPathName( setupId, timepointId, level );
+				final String pathName = n5properties.getPath( setupId, timepointId, level );
 				final DatasetAttributes attributes = n5.getDatasetAttributes( pathName );
 				return new FinalDimensions( attributes.getDimensions() );
 			}
@@ -330,7 +331,7 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 		{
 			try
 			{
-				final String pathName = getPathName( setupId, timepointId, level );
+				final String pathName = n5properties.getPath( setupId, timepointId, level );
 				final DatasetAttributes attributes = n5.getDatasetAttributes( pathName );
 				final long[] dimensions = attributes.getDimensions();
 				final int[] cellDimensions = attributes.getBlockSize();
