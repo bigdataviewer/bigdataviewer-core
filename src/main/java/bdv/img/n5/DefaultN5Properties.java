@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -28,23 +28,35 @@
  */
 package bdv.img.n5;
 
-public class BdvN5Format
+import org.janelia.saalfeldlab.n5.DataType;
+import org.janelia.saalfeldlab.n5.N5Reader;
+
+public class DefaultN5Properties implements N5Properties
 {
-	public static final String DOWNSAMPLING_FACTORS_KEY = "downsamplingFactors";
-	public static final String DATA_TYPE_KEY = "dataType";
-
-	public static String getPathName( final int setupId )
+	@Override
+	public String getDatasetPath( final int setupId, final int timepointId, final int level )
 	{
-		return String.format( "setup%d", setupId );
+		return BdvN5Format.getPathName( setupId, timepointId, level );
 	}
 
-	public static String getPathName( final int setupId, final int timepointId )
+	@Override
+	public DataType getDataType( final N5Reader n5, final int setupId )
 	{
-		return String.format( "setup%d/timepoint%d", setupId, timepointId );
+		final String path = BdvN5Format.getPathName( setupId );
+		return n5.getAttribute( path, BdvN5Format.DATA_TYPE_KEY, DataType.class );
 	}
 
-	public static String getPathName( final int setupId, final int timepointId, final int level )
+	@Override
+	public double[][] getMipmapResolutions( final N5Reader n5, final int setupId )
 	{
-		return String.format( "setup%d/timepoint%d/s%d", setupId, timepointId, level );
+		final String path = BdvN5Format.getPathName( setupId );
+		return n5.getAttribute( path, BdvN5Format.DOWNSAMPLING_FACTORS_KEY, double[][].class );
+	}
+
+	@Override
+	public long[] getDimensions( final N5Reader n5, final int setupId, final int timepointId, final int level  )
+	{
+		final String path = getDatasetPath( setupId, timepointId, level );
+		return n5.getDatasetAttributes( path ).getDimensions();
 	}
 }

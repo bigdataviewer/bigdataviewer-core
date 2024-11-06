@@ -59,9 +59,7 @@ import bdv.export.ProgressWriter;
 import bdv.export.ProgressWriterNull;
 import bdv.export.SubTaskProgressWriter;
 import bdv.img.cache.SimpleCacheArrayLoader;
-import bdv.img.n5.BdvN5Format;
 import bdv.img.n5.N5ImageLoader;
-import bdv.img.n5.N5Properties;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicImgLoader;
 import mpicbg.spim.data.generic.sequence.BasicSetupImgLoader;
@@ -276,7 +274,6 @@ public class WriteSequenceToN5
 		private final int timepointId;
 		private final DataType dataType;
 		private final T type;
-		private final N5Properties n5Properties = new BdvN5Format();
 
 		public N5DatasetIO( final N5Writer n5, final Compression compression, final int setupId, final int timepointId, final T type )
 		{
@@ -338,7 +335,7 @@ public class WriteSequenceToN5
 			final long[] dimensions = attributes.getDimensions();
 			final int[] cellDimensions = attributes.getBlockSize();
 			final CellGrid grid = new CellGrid( dimensions, cellDimensions );
-			final SimpleCacheArrayLoader< ? > cacheArrayLoader = N5ImageLoader.createCacheArrayLoader( n5Properties, n5, pathName );
+			final SimpleCacheArrayLoader< ? > cacheArrayLoader = N5ImageLoader.createCacheArrayLoader( n5, pathName );
 			return new ReadOnlyCachedCellImgFactory().createWithCacheLoader(
 					dimensions, type,
 					key -> {
