@@ -45,7 +45,9 @@ class Tiling
 	/**
 	 * Subdivide tiles for parallelization until they have this size approximately
 	 */
-	public static int MAX_TILE_SIZE = 32 * 32;
+	public static int MAX_TILE_SIZE_X = 32;
+	public static int MAX_TILE_SIZE_Y = 32;
+	public static int MAX_TILE_SIZE = MAX_TILE_SIZE_X * MAX_TILE_SIZE_Y;
 
 	/**
 	 * If per-source render tasks in AccumulateProjector contain less target
@@ -141,8 +143,47 @@ class Tiling
 	{
 		final List< Tile > result = new ArrayList<>();
 		for ( final Tile tile : tiles )
-			splitForTargetSizeY( tile, MAX_TILE_SIZE, result );
+			splitForTargetSizeXY( tile, MAX_TILE_SIZE_X, MAX_TILE_SIZE_Y, result );
 		return result;
+	}
+
+	/**
+	 * Splits tile into a list of tiles with width below {@code targetSizeX} and height below {@code targetSizeY}.
+	 */
+	private static void splitForTargetSizeXY( final Tile tile, final int targetSizeX, final int targetSizeY, final List< Tile > splitTiles )
+	{
+		final List< SourceBounds > bounds = tile.sourceBounds();
+		final List< SourceAndConverter< ? > > alwaysVisibleSources = tile.alwaysVisibleSources();
+		final int[] splitsX = splits( tile.tileMinX(), tile.tileMaxX(), targetSizeX );
+		final int[] splitsY = splits( tile.tileMinY(), tile.tileMaxY(), targetSizeY );
+		final int nx = splitsX.length - 1;
+		final int ny = splitsY.length - 1;
+		for ( int y = 0; y < ny; ++y )
+		{
+			final int minY = splitsY[ y ];
+			final int maxY = splitsY[ y + 1 ] - 1;
+			for ( int x = 0; x < nx; ++x )
+			{
+				final int minX = splitsX[ x ];
+				final int maxX = splitsX[ x + 1 ] - 1;
+				splitTiles.add( new Tile( bounds, alwaysVisibleSources, minX, minY, maxX, maxY ) );
+			}
+		}
+	}
+
+	private static int[] splits( final int min, final int max, final int targetSize )
+	{
+		final int size = max - min + 1;
+		final double nSplits = Math.ceil( ( double ) size / targetSize );
+		final double splitSize = size / nSplits;
+
+		final int n = ( int ) nSplits;
+		final int[] splits = new int[ n + 1 ];
+		for ( int x = 0; x < n; ++x )
+			splits[ x ] = min + ( int ) ( x * splitSize );
+		splits[ n ] = max + 1;
+
+		return splits;
 	}
 
 	/**
@@ -180,8 +221,7 @@ class Tiling
 
 	/**
 	 * Splits tile into a list of tiles that are below {@code targetSize}.
-	 *
-	 * Recursively splits along
+	 * Recursively splits along X or Y, depending on which dimension is larger.
 	 */
 	private static void splitForTargetSize( final Tile tile, final int targetSize, final List< Tile > splitTiles )
 	{
