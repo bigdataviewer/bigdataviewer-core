@@ -670,7 +670,7 @@ public class MultiResolutionRenderer
 		}
 
 		if ( debugTileOverlay != null )
-			debugTileOverlay.setTiling( tiles, screenScale.scale(), offsetX, offsetY );
+			debugTileOverlay.setTiling( renderTiles, screenScale.scale(), offsetX, offsetY );
 
 		CacheIoTiming.getIoTimeBudget().reset( iobudget );
 		return new TiledProjector( tileProjectors );
