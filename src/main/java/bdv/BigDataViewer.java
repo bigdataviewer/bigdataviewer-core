@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -29,6 +29,7 @@
 package bdv;
 
 import bdv.tools.PreferencesDialog;
+import bdv.tools.links.LinkActions;
 import bdv.ui.UIUtils;
 import bdv.ui.keymap.Keymap;
 import bdv.ui.keymap.KeymapManager;
@@ -454,9 +455,19 @@ public class BigDataViewer
 		bdvActions.install( viewerFrame.getKeybindings(), "bdv" );
 		BigDataViewerActions.install( bdvActions, this );
 
+
+
+		// TODO: This is to quickly get something hooked into BDV to explore ViewerState copy&paste. Revise!
+		final Actions linkActions = new Actions( inputTriggerConfig, "bdv" );
+		linkActions.install( viewerFrame.getKeybindings(), "links" );
+		LinkActions.install( linkActions, viewerFrame );
+
+
+
 		keymap.updateListeners().add( () -> {
 			navigationActions.updateKeyConfig( keymap.getConfig() );
 			bdvActions.updateKeyConfig( keymap.getConfig() );
+			linkActions.updateKeyConfig( keymap.getConfig() );
 			viewerFrame.getTransformBehaviours().updateKeyConfig( keymap.getConfig() );
 		} );
 
