@@ -145,6 +145,7 @@
 
 		<imglib2.version>7.1.4</imglib2.version>
 		<imglib2-algorithm.version>0.17.2</imglib2-algorithm.version>
+		<spim_data.version>2.3.6-SNAPSHOT</spim_data.version>
 
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>
