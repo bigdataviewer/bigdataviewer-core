@@ -36,6 +36,14 @@ import org.scijava.ui.behaviour.util.Actions;
 import bdv.KeyConfigContexts;
 import bdv.KeyConfigScopes;
 import bdv.viewer.ViewerFrame;
+import bdv.viewer.ViewerState;
+
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
+import java.awt.datatransfer.UnsupportedFlavorException;
+import java.io.IOException;
 
 public class LinkActions
 {
@@ -64,14 +72,53 @@ public class LinkActions
 		}
 	}
 
+	static void copyViewerState( final ViewerFrame frame )
+	{
+		final ViewerState state = frame.getViewerPanel().state().snapshot();
+		final BdvPropertiesV0 properties = BdvPropertiesV0.fromViewerState( state );
+		copyToClipboard( JsonUtils.toJson( properties ) );
+	}
+
+	static void pasteViewerState( final ViewerFrame frame )
+	{
+		final String json = getFromClipboard();
+		if ( json != null )
+		{
+			final BdvPropertiesV0 properties = JsonUtils.fromJson( json );
+			frame.getViewerPanel().state().setViewerTransform( properties.transform() );
+		}
+	}
+
+	private static void copyToClipboard( final String string )
+	{
+		final Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+		clipboard.setContents( new StringSelection( string ), null );
+	}
+
+	private static String getFromClipboard()
+	{
+		final Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
+		try
+		{
+			if ( clipboard.isDataFlavorAvailable( DataFlavor.stringFlavor ) )
+			{
+				return ( String ) clipboard.getData( DataFlavor.stringFlavor );
+			}
+		}
+		catch ( UnsupportedFlavorException | IOException ignored )
+		{
+		}
+		return null;
+	}
+
 	/**
 	 * Install into the specified {@link Actions}.
 	 */
 	public static void install( final Actions actions, final ViewerFrame viewerFrame )
 	{
-		actions.runnableAction( () -> System.out.println( COPY_VIEWER_STATE ),
+		actions.runnableAction( () -> copyViewerState( viewerFrame ),
 				COPY_VIEWER_STATE, COPY_VIEWER_STATE_KEYS );
-		actions.runnableAction( () -> System.out.println( PASTE_VIEWER_STATE ),
+		actions.runnableAction( () -> pasteViewerState( viewerFrame ),
 				PASTE_VIEWER_STATE, PASTE_VIEWER_STATE_KEYS );
 	}
 }
