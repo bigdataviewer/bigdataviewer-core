@@ -41,6 +41,7 @@ import bdv.viewer.ViewerState;
 import net.imglib2.Dimensions;
 import net.imglib2.FinalDimensions;
 import net.imglib2.Point;
+import net.imglib2.realtransform.AffineTransform3D;
 
 import java.awt.Dimension;
 import java.awt.Toolkit;
@@ -77,7 +78,7 @@ public class LinkActions
 		}
 	}
 
-	static void copyViewerState( final ViewerFrame frame )
+	private static void copyViewerState( final ViewerFrame frame )
 	{
 		final ViewerPanel panel = frame.getViewerPanel();
 		final ViewerState state = panel.state().snapshot();
@@ -87,22 +88,57 @@ public class LinkActions
 		final Point mouse = new Point( 2 );
 		panel.getMouseCoordinates( mouse );
 		final BdvPropertiesV0 properties = BdvPropertiesV0.create( state, panelsize, mouse );
-		copyToClipboard( JsonUtils.toJson( properties ) );
+		copyToClipboard( JsonUtils.toJson( properties ).toString() );
 	}
 
-	static void pasteViewerState( final ViewerFrame frame )
+	private static void pasteViewerState( final ViewerFrame frame )
 	{
 		final String json = getFromClipboard();
 		if ( json != null )
 		{
 			final BdvPropertiesV0 properties = JsonUtils.fromJson( json );
-			final ViewerState state = frame.getViewerPanel().state();
+			final ViewerPanel panel = frame.getViewerPanel();
+			final ViewerState state = panel.state();
 			synchronized ( state )
 			{
-				state.setViewerTransform( properties.transform() );
+				final int panelWidth = panel.getDisplayComponent().getWidth();
+				final int panelHeight = panel.getDisplayComponent().getHeight();
+				state.setViewerTransform( adjustedViewerTransform( properties, panelWidth, panelHeight ) );
 				state.setCurrentTimepoint( properties.timepoint() );
 			}
 		}
+	}
+
+	private static AffineTransform3D adjustedViewerTransform( final BdvPropertiesV0 properties, final int panelWidth, final int panelHeight )
+	{
+		// TODO options
+		//   - center on properties.mousepos (instead of old panel center)
+		//   - scale to fit
+		//   - scale to fill
+
+		// take the transform from properties
+		AffineTransform3D t = properties.transform();
+		// shift it to the center of the panel that it was copied from
+		t = shift( t, properties.panelsize().dimension( 0 ) / 2, properties.panelsize().dimension( 1 ) / 2 );
+		// shift it back to the top-left corner of the panel we want to paste it into
+		t = shift( t, -panelWidth / 2, -panelHeight / 2 );
+		return t;
+	}
+
+	/**
+	 * Shift world-to-screen transform by (sx,sy) in screen coordinates.
+	 * <p>
+	 * For example, with (sx,sy) = (windowWidth/2, windowHeight/2), this make
+	 * the viewer transform obtained from {@code ViewerState} relative to the
+	 * window center instead of relative to the top-left corner.
+	 */
+	private static AffineTransform3D shift( final AffineTransform3D transform, final double sx, final double sy )
+	{
+		final AffineTransform3D t = new AffineTransform3D();
+		t.set( transform );
+		t.set( t.get( 0, 3 ) - sx, 0, 3 );
+		t.set( t.get( 1, 3 ) - sy, 1, 3 );
+		return t;
 	}
 
 	private static void copyToClipboard( final String string )
