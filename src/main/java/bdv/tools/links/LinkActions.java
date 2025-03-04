@@ -36,8 +36,13 @@ import org.scijava.ui.behaviour.util.Actions;
 import bdv.KeyConfigContexts;
 import bdv.KeyConfigScopes;
 import bdv.viewer.ViewerFrame;
+import bdv.viewer.ViewerPanel;
 import bdv.viewer.ViewerState;
+import net.imglib2.Dimensions;
+import net.imglib2.FinalDimensions;
+import net.imglib2.Point;
 
+import java.awt.Dimension;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
@@ -74,8 +79,14 @@ public class LinkActions
 
 	static void copyViewerState( final ViewerFrame frame )
 	{
-		final ViewerState state = frame.getViewerPanel().state().snapshot();
-		final BdvPropertiesV0 properties = BdvPropertiesV0.fromViewerState( state );
+		final ViewerPanel panel = frame.getViewerPanel();
+		final ViewerState state = panel.state().snapshot();
+		final Dimensions panelsize = new FinalDimensions(
+				panel.getDisplayComponent().getWidth(),
+				panel.getDisplayComponent().getHeight() );
+		final Point mouse = new Point( 2 );
+		panel.getMouseCoordinates( mouse );
+		final BdvPropertiesV0 properties = BdvPropertiesV0.create( state, panelsize, mouse );
 		copyToClipboard( JsonUtils.toJson( properties ) );
 	}
 
@@ -85,7 +96,12 @@ public class LinkActions
 		if ( json != null )
 		{
 			final BdvPropertiesV0 properties = JsonUtils.fromJson( json );
-			frame.getViewerPanel().state().setViewerTransform( properties.transform() );
+			final ViewerState state = frame.getViewerPanel().state();
+			synchronized ( state )
+			{
+				state.setViewerTransform( properties.transform() );
+				state.setCurrentTimepoint( properties.timepoint() );
+			}
 		}
 	}
 
