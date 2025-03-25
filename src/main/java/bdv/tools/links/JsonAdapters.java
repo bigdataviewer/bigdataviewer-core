@@ -18,7 +18,7 @@ import bdv.viewer.Interpolation;
 class JsonAdapters
 {
 	@JsonUtils.JsonIo( jsonType = "BdvPropertiesV0.Anchor", type = BdvPropertiesV0.Anchor.class )
-	static class AnchorAdapter implements JsonDeserializer< BdvPropertiesV0.Anchor >, JsonSerializer< BdvPropertiesV0.Anchor >
+	public static class AnchorAdapter implements JsonDeserializer< BdvPropertiesV0.Anchor >, JsonSerializer< BdvPropertiesV0.Anchor >
 	{
 		@Override
 		public BdvPropertiesV0.Anchor deserialize(
@@ -40,7 +40,7 @@ class JsonAdapters
 	}
 
 	@JsonUtils.JsonIo( jsonType = "BdvProperiesV0.SourceConverterConfig", type = BdvPropertiesV0.SourceConverterConfig.class )
-	static class SourceConverterConfigAdapter implements JsonDeserializer< BdvPropertiesV0.SourceConverterConfig >, JsonSerializer< BdvPropertiesV0.SourceConverterConfig >
+	public static class SourceConverterConfigAdapter implements JsonDeserializer< BdvPropertiesV0.SourceConverterConfig >, JsonSerializer< BdvPropertiesV0.SourceConverterConfig >
 	{
 		@Override
 		public BdvPropertiesV0.SourceConverterConfig deserialize(
@@ -77,7 +77,7 @@ class JsonAdapters
 	}
 
 	@JsonUtils.JsonIo( jsonType = "DisplayMode", type = DisplayMode.class )
-	static class DisplayModeAdapter implements JsonDeserializer< DisplayMode >, JsonSerializer< DisplayMode >
+	public static class DisplayModeAdapter implements JsonDeserializer< DisplayMode >, JsonSerializer< DisplayMode >
 	{
 		@Override
 		public DisplayMode deserialize(
@@ -130,7 +130,7 @@ class JsonAdapters
 	}
 
 	@JsonUtils.JsonIo( jsonType = "Interpolation", type = Interpolation.class )
-	static class InterpolationAdapter implements JsonDeserializer< Interpolation >, JsonSerializer< Interpolation >
+	public static class InterpolationAdapter implements JsonDeserializer< Interpolation >, JsonSerializer< Interpolation >
 	{
 		@Override
 		public Interpolation deserialize(
