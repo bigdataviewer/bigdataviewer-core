@@ -42,6 +42,7 @@ import bdv.TransformEventHandlerFactory;
 import bdv.ui.UIUtils;
 import bdv.ui.appearance.AppearanceManager;
 import bdv.ui.keymap.KeymapManager;
+import bdv.ui.links.LinkSettingsManager;
 import bdv.viewer.animate.MessageOverlayAnimator;
 import bdv.viewer.render.AccumulateProjector;
 import bdv.viewer.render.AccumulateProjectorARGB;
@@ -267,6 +268,15 @@ public class ViewerOptions
 	}
 
 	/**
+	 * Set the {@link LinkSettingsManager}.
+	 */
+	public ViewerOptions linkSettingsManager( final LinkSettingsManager linkSettingsManager )
+	{
+		values.linkSettingsManager = linkSettingsManager;
+		return this;
+	}
+
+	/**
 	 * Read-only {@link ViewerOptions} values.
 	 */
 	public static class Values
@@ -301,6 +311,8 @@ public class ViewerOptions
 
 		private AppearanceManager appearanceManager = null;
 
+		private LinkSettingsManager linkSettingsManager = null;
+
 		private ResourceManager resourceManager = new DefaultResourceManager();
 
 		public ViewerOptions optionsFromValues()
@@ -321,6 +333,7 @@ public class ViewerOptions
 				shareKeyPressedEvents( keyPressedManager ).
 				keymapManager( keymapManager ).
 				appearanceManager( appearanceManager ).
+				linkSettingsManager( linkSettingsManager ).
 				resourceManager( resourceManager);
 		}
 
@@ -397,6 +410,11 @@ public class ViewerOptions
 		public AppearanceManager getAppearanceManager()
 		{
 			return appearanceManager;
+		}
+
+		public LinkSettingsManager getLinkSettingsManager()
+		{
+			return linkSettingsManager;
 		}
 
 		public ResourceManager getResourceManager()

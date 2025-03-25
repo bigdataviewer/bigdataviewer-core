@@ -28,9 +28,11 @@
  */
 package bdv.util;
 
+import bdv.tools.links.ResourceManager;
 import bdv.ui.UIUtils;
 import bdv.ui.appearance.AppearanceManager;
 import bdv.ui.keymap.KeymapManager;
+import bdv.ui.links.LinkSettingsManager;
 import bdv.viewer.ViewerStateChange;
 import java.awt.event.WindowEvent;
 import java.util.ArrayList;
@@ -99,6 +101,18 @@ public class BdvHandleFrame extends BdvHandle
 	public AppearanceManager getAppearanceManager()
 	{
 		return bdv.getAppearanceManager();
+	}
+
+	@Override
+	public LinkSettingsManager getLinkSettingsManager()
+	{
+		return bdv.getLinkSettingsManager();
+	}
+
+	@Override
+	public ResourceManager getResourceManager()
+	{
+		return bdvOptions.values.getResourceManager();
 	}
 
 	@Override
