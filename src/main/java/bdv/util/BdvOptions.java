@@ -35,6 +35,7 @@ import bdv.tools.links.DefaultResourceManager;
 import bdv.tools.links.ResourceManager;
 import bdv.ui.appearance.AppearanceManager;
 import bdv.ui.keymap.KeymapManager;
+import bdv.ui.links.LinkSettingsManager;
 import bdv.viewer.render.AccumulateProjectorARGB;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 
@@ -195,6 +196,15 @@ public class BdvOptions
 	}
 
 	/**
+	 * Set the {@link LinkSettingsManager}.
+	 */
+	public BdvOptions linkSettingsManager( final LinkSettingsManager linkSettingsManager )
+	{
+		values.linkSettingsManager = linkSettingsManager;
+		return this;
+	}
+
+	/**
 	 * Set the {@link ResourceManager}.
 	 */
 	public BdvOptions resourceManager( final ResourceManager resourceManager )
@@ -317,6 +327,8 @@ public class BdvOptions
 
 		private AppearanceManager appearanceManager = null;
 
+		private LinkSettingsManager linkSettingsManager = null;
+
 		private ResourceManager resourceManager = new DefaultResourceManager();
 
 		private final AffineTransform3D sourceTransform = new AffineTransform3D();
@@ -347,6 +359,7 @@ public class BdvOptions
 					.inputTriggerConfig( inputTriggerConfig )
 					.keymapManager( keymapManager )
 					.appearanceManager( appearanceManager )
+					.linkSettingsManager( linkSettingsManager )
 					.resourceManager( resourceManager )
 					.sourceTransform( sourceTransform )
 					.frameTitle( frameTitle )
@@ -370,6 +383,7 @@ public class BdvOptions
 					.inputTriggerConfig( inputTriggerConfig )
 					.keymapManager( keymapManager )
 					.appearanceManager( appearanceManager )
+					.linkSettingsManager( linkSettingsManager )
 					.resourceManager( resourceManager );
 			if ( hasPreferredSize() )
 				o.width( width ).height( height );
@@ -414,6 +428,11 @@ public class BdvOptions
 		public AppearanceManager getAppearanceManager()
 		{
 			return appearanceManager;
+		}
+
+		public LinkSettingsManager getLinkSettingsManager()
+		{
+			return linkSettingsManager;
 		}
 
 		public ResourceManager getResourceManager()
