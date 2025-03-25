@@ -1,7 +1,7 @@
 package bdv.tools.links;
 
 /**
- * Associates resources and {@code ResourceSpec}s for copy&paste between
+ * Associates resources and {@code ResourceSpec}s for copy &amp; paste between
  * BigDataViewer instances.
  * <p>
  * Resources are for example {@code SpimData} objects, {@code
