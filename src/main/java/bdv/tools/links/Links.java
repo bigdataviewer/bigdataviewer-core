@@ -369,7 +369,7 @@ class Links
 		}
 
 		@JsonUtils.JsonIo( jsonType = "VersionAndProperties", type = VersionAndProperties.class )
-		static class Adapter implements JsonDeserializer< VersionAndProperties >, JsonSerializer< VersionAndProperties >
+		public static class Adapter implements JsonDeserializer< VersionAndProperties >, JsonSerializer< VersionAndProperties >
 		{
 			@Override
 			public VersionAndProperties deserialize(
