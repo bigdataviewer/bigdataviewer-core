@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import bdv.tools.links.ResourceManager;
 import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessible;
@@ -571,7 +572,7 @@ public class BdvFunctions
 			{
 				s = new RandomAccessibleIntervalSource<>( stack, type, sourceTransform, name );
 			}
-			addSourceToListsGenericType( s, handle.getUnusedSetupId(), converterSetups, sources );
+			addSourceToListsGenericType( s, handle.getUnusedSetupId(), converterSetups, sources, handle.getResourceManager() );
 		}
 		handle.add( converterSetups, sources, numTimepoints );
 		final BdvStackSource< T > bdvSource = new BdvStackSource<>( handle, numTimepoints, type, converterSetups, sources );
@@ -629,7 +630,7 @@ public class BdvFunctions
 				s = new RandomAccessibleSource4D<>( stack, stackInterval, type, sourceTransform, name );
 			else
 				s = new RandomAccessibleSource<>( stack, stackInterval, type, sourceTransform, name );
-			addSourceToListsGenericType( s, handle.getUnusedSetupId(), converterSetups, sources );
+			addSourceToListsGenericType( s, handle.getUnusedSetupId(), converterSetups, sources, handle.getResourceManager() );
 		}
 
 		handle.add( converterSetups, sources, numTimepoints );
@@ -708,7 +709,7 @@ public class BdvFunctions
 		final T type = source.getType();
 		final List< ConverterSetup > converterSetups = new ArrayList<>();
 		final List< SourceAndConverter< T > > sources = new ArrayList<>();
-		addSourceToListsGenericType( source, handle.getUnusedSetupId(), converterSetups, sources );
+		addSourceToListsGenericType( source, handle.getUnusedSetupId(), converterSetups, sources, handle.getResourceManager() );
 		handle.add( converterSetups, sources, numTimepoints );
 		final BdvStackSource< T > bdvSource = new BdvStackSource<>( handle, numTimepoints, type, converterSetups, sources );
 		handle.addBdvSource( bdvSource );
@@ -737,11 +738,12 @@ public class BdvFunctions
 			final Source< T > source,
 			final int setupId,
 			final List< ConverterSetup > converterSetups,
-			final List< SourceAndConverter< T > > sources )
+			final List< SourceAndConverter< T > > sources,
+			final ResourceManager resourceManager )
 	{
 		final T type = source.getType();
 		if ( type instanceof RealType || type instanceof ARGBType || type instanceof VolatileARGBType )
-			addSourceToListsNumericType( ( Source ) source, setupId, converterSetups, ( List ) sources );
+			addSourceToListsNumericType( ( Source ) source, setupId, converterSetups, ( List ) sources, resourceManager );
 		else
 			throw new IllegalArgumentException( "Unknown source type. Expected RealType, ARGBType, or VolatileARGBType" );
 	}
@@ -767,11 +769,13 @@ public class BdvFunctions
 			final Source< T > source,
 			final int setupId,
 			final List< ConverterSetup > converterSetups,
-			final List< SourceAndConverter< T > > sources )
+			final List< SourceAndConverter< T > > sources,
+			final ResourceManager resourceManager )
 	{
 		final T type = source.getType();
 		final SourceAndConverter< T > soc = BigDataViewer.wrapWithTransformedSource(
-				new SourceAndConverter<>( source, BigDataViewer.createConverterToARGB( type ) ) );
+				new SourceAndConverter<>( source, BigDataViewer.createConverterToARGB( type ) ),
+				resourceManager );
 		converterSetups.add( BigDataViewer.createConverterSetup( soc, setupId ) );
 		sources.add( soc );
 	}

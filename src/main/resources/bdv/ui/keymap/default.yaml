@@ -391,3 +391,11 @@
   action: 2d scroll rotate slow
   contexts: [bdv]
   triggers: [not mapped]
+- !mapping
+  action: copy viewer state
+  contexts: [bdv]
+  triggers: [ctrl C, meta C]
+- !mapping
+  action: paste viewer state
+  contexts: [bdv]
+  triggers: [ctrl V, meta V]

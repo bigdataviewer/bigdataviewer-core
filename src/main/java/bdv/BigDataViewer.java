@@ -73,6 +73,8 @@ import bdv.tools.brightness.MinMaxGroup;
 import bdv.tools.brightness.RealARGBColorConverterSetup;
 import bdv.tools.brightness.SetupAssignments;
 import bdv.tools.crop.CropDialog;
+import bdv.tools.links.LinkActions;
+import bdv.tools.links.PasteSettings;
 import bdv.tools.links.ResourceManager;
 import bdv.tools.links.resource.SpimDataMinimalFileResource;
 import bdv.tools.links.resource.SpimDataSetupSourceResource;
@@ -86,6 +88,9 @@ import bdv.ui.appearance.AppearanceSettingsPage;
 import bdv.ui.keymap.Keymap;
 import bdv.ui.keymap.KeymapManager;
 import bdv.ui.keymap.KeymapSettingsPage;
+import bdv.ui.links.LinkCard;
+import bdv.ui.links.LinkSettingsManager;
+import bdv.ui.links.LinkSettingsPage;
 import bdv.viewer.ConverterSetups;
 import bdv.viewer.NavigationActions;
 import bdv.viewer.SourceAndConverter;
@@ -139,6 +144,8 @@ public class BigDataViewer
 	private final KeymapManager keymapManager;
 
 	private final AppearanceManager appearanceManager;
+
+	private final LinkSettingsManager linkSettingsManager;
 
 	private final ResourceManager resourceManager;
 
@@ -422,8 +429,10 @@ public class BigDataViewer
 	{
 		final KeymapManager optionsKeymapManager = options.values.getKeymapManager();
 		final AppearanceManager optionsAppearanceManager = options.values.getAppearanceManager();
+		final LinkSettingsManager optionsLinkSettingsManager = options.values.getLinkSettingsManager();
 		keymapManager = optionsKeymapManager != null ? optionsKeymapManager : new KeymapManager( configDir );
 		appearanceManager = optionsAppearanceManager != null ? optionsAppearanceManager : new AppearanceManager( configDir );
+		linkSettingsManager = optionsLinkSettingsManager != null ? optionsLinkSettingsManager : new LinkSettingsManager( configDir );
 		resourceManager = options.values.getResourceManager();
 
 		InputTriggerConfig inputTriggerConfig = options.values.getInputTriggerConfig();
@@ -512,6 +521,7 @@ public class BigDataViewer
 		preferencesDialog = new PreferencesDialog( viewerFrame, keymap, new String[] { KeyConfigContexts.BIGDATAVIEWER } );
 		preferencesDialog.addPage( new AppearanceSettingsPage( "Appearance", appearanceManager ) );
 		preferencesDialog.addPage( new KeymapSettingsPage( "Keymap", this.keymapManager, this.keymapManager.getCommandDescriptions() ) );
+		preferencesDialog.addPage( new LinkSettingsPage( "Links", linkSettingsManager ) );
 		appearanceManager.appearance().updateListeners().add( viewerFrame::repaint );
 		appearanceManager.addLafComponent( fileChooser );
 		SwingUtilities.invokeLater(() -> appearanceManager.updateLookAndFeel());
@@ -524,9 +534,17 @@ public class BigDataViewer
 		bdvActions.install( viewerFrame.getKeybindings(), "bdv" );
 		BigDataViewerActions.install( bdvActions, this );
 
+		final Actions linkActions = new Actions( inputTriggerConfig, "bdv" );
+		linkActions.install( viewerFrame.getKeybindings(), "links" );
+		final PasteSettings pasteSettings = linkSettingsManager.linkSettings().pasteSettings();
+		LinkActions.install( linkActions, viewerFrame.getViewerPanel(), viewerFrame.getConverterSetups(), pasteSettings, resourceManager );
+
+		LinkCard.install( linkSettingsManager.linkSettings(), viewerFrame.getCardPanel() );
+
 		keymap.updateListeners().add( () -> {
 			navigationActions.updateKeyConfig( keymap.getConfig() );
 			bdvActions.updateKeyConfig( keymap.getConfig() );
+			linkActions.updateKeyConfig( keymap.getConfig() );
 			viewerFrame.getTransformBehaviours().updateKeyConfig( keymap.getConfig() );
 		} );
 
@@ -680,6 +698,11 @@ public class BigDataViewer
 	public AppearanceManager getAppearanceManager()
 	{
 		return appearanceManager;
+	}
+
+	public LinkSettingsManager getLinkSettingsManager()
+	{
+		return linkSettingsManager;
 	}
 
 	public ResourceManager getResourceManager()
