@@ -31,6 +31,8 @@ package bdv.util;
 import bdv.TransformEventHandler2D;
 import bdv.TransformEventHandler3D;
 import bdv.TransformEventHandlerFactory;
+import bdv.tools.links.DefaultResourceManager;
+import bdv.tools.links.ResourceManager;
 import bdv.ui.appearance.AppearanceManager;
 import bdv.ui.keymap.KeymapManager;
 import bdv.viewer.render.AccumulateProjectorARGB;
@@ -193,6 +195,17 @@ public class BdvOptions
 	}
 
 	/**
+	 * Set the {@link ResourceManager}.
+	 */
+	public BdvOptions resourceManager( final ResourceManager resourceManager )
+	{
+		if ( resourceManager == null )
+			throw new NullPointerException( "resourceManager cannot be null" );
+		values.resourceManager = resourceManager;
+		return this;
+	}
+
+	/**
 	 * Set the transform of the {@link BdvSource} to be created.
 	 *
 	 * @param t
@@ -304,6 +317,8 @@ public class BdvOptions
 
 		private AppearanceManager appearanceManager = null;
 
+		private ResourceManager resourceManager = new DefaultResourceManager();
+
 		private final AffineTransform3D sourceTransform = new AffineTransform3D();
 
 		private String frameTitle = "BigDataViewer";
@@ -332,6 +347,7 @@ public class BdvOptions
 					.inputTriggerConfig( inputTriggerConfig )
 					.keymapManager( keymapManager )
 					.appearanceManager( appearanceManager )
+					.resourceManager( resourceManager )
 					.sourceTransform( sourceTransform )
 					.frameTitle( frameTitle )
 					.axisOrder( axisOrder )
@@ -353,7 +369,8 @@ public class BdvOptions
 					.accumulateProjectorFactory( accumulateProjectorFactory )
 					.inputTriggerConfig( inputTriggerConfig )
 					.keymapManager( keymapManager )
-					.appearanceManager( appearanceManager );
+					.appearanceManager( appearanceManager )
+					.resourceManager( resourceManager );
 			if ( hasPreferredSize() )
 				o.width( width ).height( height );
 			return o;
@@ -397,6 +414,11 @@ public class BdvOptions
 		public AppearanceManager getAppearanceManager()
 		{
 			return appearanceManager;
+		}
+
+		public ResourceManager getResourceManager()
+		{
+			return resourceManager;
 		}
 
 		public Bdv addTo()

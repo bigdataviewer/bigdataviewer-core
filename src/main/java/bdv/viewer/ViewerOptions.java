@@ -30,12 +30,9 @@ package bdv.viewer;
 
 import java.awt.event.KeyListener;
 
-import net.imglib2.RandomAccessible;
-import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.converter.Converter;
-import net.imglib2.converter.Converters;
-import net.imglib2.type.numeric.integer.UnsignedByteType;
-import net.imglib2.type.numeric.real.FloatType;
+import bdv.tools.links.DefaultResourceManager;
+import bdv.tools.links.ResourceManager;
+
 import org.scijava.ui.behaviour.KeyPressedManager;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 
@@ -261,6 +258,15 @@ public class ViewerOptions
 	}
 
 	/**
+	 * Set the {@link ResourceManager}.
+	 */
+	public ViewerOptions resourceManager( final ResourceManager resourceManager )
+	{
+		values.resourceManager = resourceManager;
+		return this;
+	}
+
+	/**
 	 * Read-only {@link ViewerOptions} values.
 	 */
 	public static class Values
@@ -295,6 +301,8 @@ public class ViewerOptions
 
 		private AppearanceManager appearanceManager = null;
 
+		private ResourceManager resourceManager = new DefaultResourceManager();
+
 		public ViewerOptions optionsFromValues()
 		{
 			return new ViewerOptions().
@@ -312,7 +320,8 @@ public class ViewerOptions
 				inputTriggerConfig( inputTriggerConfig ).
 				shareKeyPressedEvents( keyPressedManager ).
 				keymapManager( keymapManager ).
-				appearanceManager( appearanceManager );
+				appearanceManager( appearanceManager ).
+				resourceManager( resourceManager);
 		}
 
 		public int getWidth()
@@ -388,6 +397,11 @@ public class ViewerOptions
 		public AppearanceManager getAppearanceManager()
 		{
 			return appearanceManager;
+		}
+
+		public ResourceManager getResourceManager()
+		{
+			return resourceManager;
 		}
 	}
 }
