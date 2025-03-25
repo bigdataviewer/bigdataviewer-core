@@ -30,6 +30,7 @@ package bdv.img.remote;
 
 import java.lang.reflect.Type;
 
+import bdv.tools.JsonUtils;
 import net.imglib2.realtransform.AffineTransform3D;
 
 import com.google.gson.JsonDeserializationContext;
@@ -39,6 +40,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
+@JsonUtils.JsonIo( jsonType = "AffineTransform3D.Anchor", type = AffineTransform3D.class )
 public class AffineTransform3DJsonSerializer implements JsonDeserializer< AffineTransform3D >, JsonSerializer< AffineTransform3D >
 {
 	@Override
