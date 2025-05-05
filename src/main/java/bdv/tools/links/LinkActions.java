@@ -30,6 +30,8 @@ package bdv.tools.links;
 
 import static bdv.tools.links.ClipboardUtils.getFromClipboard;
 
+import java.io.UnsupportedEncodingException;
+
 import org.scijava.plugin.Plugin;
 import org.scijava.ui.behaviour.io.gui.CommandDescriptionProvider;
 import org.scijava.ui.behaviour.io.gui.CommandDescriptions;
@@ -53,9 +55,11 @@ public class LinkActions
 
 	public static final String COPY_VIEWER_STATE = "copy viewer state";
 	public static final String PASTE_VIEWER_STATE = "paste viewer state";
+	public static final String GENERATE_LINK_VIEWER_STATE = "generate link viewer state";
 
 	public static final String[] COPY_VIEWER_STATE_KEYS = new String[] { "ctrl C", "meta C" };
 	public static final String[] PASTE_VIEWER_STATE_KEYS = new String[] { "ctrl V", "meta V" };
+	public static final String[] GENERATE_LINK_VIEWER_STATE_KEYS = new String[] { "ctrl L", "meta L" };
 
 	/*
 	 * Command descriptions for all provided commands
@@ -73,6 +77,7 @@ public class LinkActions
 		{
 			descriptions.add( COPY_VIEWER_STATE, COPY_VIEWER_STATE_KEYS, "Copy the current viewer state as a string." );
 			descriptions.add( PASTE_VIEWER_STATE, PASTE_VIEWER_STATE_KEYS, "Paste the current viewer state from a string." );
+			descriptions.add( GENERATE_LINK_VIEWER_STATE, GENERATE_LINK_VIEWER_STATE_KEYS, "Generate a fiji uri link to the current viewer state and copy it to the clipboard." );
 		}
 	}
 
@@ -84,6 +89,22 @@ public class LinkActions
 		final JsonElement json = Links.copyJson( panel, converterSetups, resources );
 		ClipboardUtils.copyToClipboard( json.toString() );
 	}
+
+	private static void generateLinkViewerState(
+		final AbstractViewerPanel panel,
+		final ConverterSetups converterSetups,
+		final ResourceManager resources )
+{
+	final JsonElement json = Links.copyJson( panel, converterSetups, resources );
+		try{
+			final String link = Links.generateLink( json );
+			ClipboardUtils.copyToClipboard( link);
+			LOG.debug( "Generated link: {}", link );
+		}
+		catch (final UnsupportedEncodingException e) {
+			LOG.debug( "couldn't generate link from JSON:\n\"{}\"", json, e );
+		}
+}
 
 	private static void pasteViewerState(
 			final AbstractViewerPanel panel,
@@ -133,5 +154,8 @@ public class LinkActions
 				COPY_VIEWER_STATE, COPY_VIEWER_STATE_KEYS );
 		actions.runnableAction( () -> pasteViewerState( panel, converterSetups, pasteSettings, resources ),
 				PASTE_VIEWER_STATE, PASTE_VIEWER_STATE_KEYS );
+		actions.runnableAction( () -> generateLinkViewerState( panel, converterSetups, resources ),
+				GENERATE_LINK_VIEWER_STATE, GENERATE_LINK_VIEWER_STATE_KEYS );
+				
 	}
 }
