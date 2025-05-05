@@ -142,6 +142,7 @@
 		<package-name>org.bigdataviewer.core</package-name>
 		<license.licenseName>bsd_2</license.licenseName>
 		<license.copyrightOwners>BigDataViewer developers.</license.copyrightOwners>
+		<scijava.jvm.version>11</scijava.jvm.version>
 
 		<imglib2.version>7.1.4</imglib2.version>
 		<imglib2-algorithm.version>0.17.2</imglib2-algorithm.version>
@@ -242,6 +243,11 @@
 		<dependency>
 			<groupId>org.slf4j</groupId>
 			<artifactId>slf4j-simple</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.scijava</groupId>
+			<artifactId>scijava-links</artifactId>
+			<version>1.0.0</version>
 		</dependency>
 
 		<!-- Test dependencies -->

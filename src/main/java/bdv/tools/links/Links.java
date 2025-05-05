@@ -6,7 +6,10 @@ import static bdv.tools.links.PasteSettings.RecenterMethod.PANEL_CENTER;
 import static bdv.tools.links.PasteSettings.SourceMatchingMethod.BY_INDEX;
 import static bdv.tools.links.PasteSettings.SourceMatchingMethod.BY_SPEC_LOAD_MISSING;
 
+import java.io.UnsupportedEncodingException;
 import java.lang.reflect.Type;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
 
@@ -40,6 +43,8 @@ import net.imglib2.util.Cast;
 class Links
 {
 	private static final Logger LOG = LoggerFactory.getLogger( Links.class );
+
+	final static String BASE_URL = "fiji://bdv?";
 
 	static JsonElement copyJson(
 			final AbstractViewerPanel panel,
@@ -413,5 +418,11 @@ class Links
 			}
 		}
 	}
+
+	public static String generateLink(JsonElement json) throws UnsupportedEncodingException{
+		final String jsonString = json.toString();
+		return BASE_URL + java.net.URLEncoder.encode(jsonString, java.nio.charset.StandardCharsets.UTF_8.name());
+	}
+	
 }
 
