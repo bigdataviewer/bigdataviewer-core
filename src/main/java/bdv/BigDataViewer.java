@@ -878,7 +878,7 @@ public class BigDataViewer
 
 	public static void main( final String[] args )
 	{
-		final String fn = "/Users/zouinkhim/Downloads/grid-3d-stitched-h5/dataset.xml";
+		final String fn = "/Users/pietzsch/workspace/data/111010_weber_resave.xml";
 		try
 		{
 			System.setProperty( "apple.laf.useScreenMenuBar", "true" );
