@@ -129,14 +129,6 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 
 	private final int numMipmapLevels;
 
-	private final static int numInterpolationMethods = 2;
-
-	private final static int iNearestNeighborMethod = 0;
-
-	private final static int iNLinearMethod = 1;
-
-	private final InterpolatorFactory< T, RandomAccessible< T > >[] interpolatorFactories;
-
 	private final UncheckedCache< ImgKey, RandomAccessibleInterval< T > > cachedSources;
 
 	private final UncheckedCache< ImgKey, RealRandomAccessible< T > > cachedInterpolatedSources;
@@ -155,26 +147,16 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 		voxelDimensions = seq.getViewSetups().get( setupId ).getVoxelSize();
 		numMipmapLevels = ( ( ViewerImgLoader ) seq.getImgLoader() ).getSetupImgLoader( setupId ).numMipmapLevels();
 
-		interpolatorFactories = new InterpolatorFactory[ numInterpolationMethods ];
-		interpolatorFactories[ iNearestNeighborMethod ] = new NearestNeighborInterpolatorFactory<>();
-		interpolatorFactories[ iNLinearMethod ] = new ClampingNLinearInterpolatorFactory<>();
-
-		final CacheLoader< ImgKey, RandomAccessibleInterval< T > > loader = key -> {
-			return getImage( timePointsOrdered.get( key.timepoint ).getId(), key.level );
-		};
+		final CacheLoader< ImgKey, RandomAccessibleInterval< T > > loader = key ->
+				getImage( timePointsOrdered.get( key.timepoint ).getId(), key.level );
 		cachedSources = Caches.unchecked( Caches.withLoader(
 				new BoundedSoftRefLoaderCache<>( 3 * numMipmapLevels ),
 				loader ) );
 
-		final CacheLoader< ImgKey, RealRandomAccessible< T > > interpolLoader = key -> {
-			final T zero = getType().createVariable();
-			zero.setZero();
-			final int i = key.method == Interpolation.NLINEAR ? iNLinearMethod : iNearestNeighborMethod;
-			final InterpolatorFactory< T, RandomAccessible< T > > factory = interpolatorFactories[ i ];
-			return Views.interpolate( Views.extendValue( getSource( key.timepoint, key.level ), zero ), factory );
-		};
+		final CacheLoader< ImgKey, RealRandomAccessible< T > > interpolLoader = key ->
+				Views.interpolate( Views.extendZero( getSource( key.timepoint, key.level, key.threadGroup ) ), interpolator( key.method ) );
 		cachedInterpolatedSources = Caches.unchecked( Caches.withLoader(
-				new BoundedSoftRefLoaderCache<>( 3 * numMipmapLevels * numInterpolationMethods ),
+				new BoundedSoftRefLoaderCache<>( 3 * numMipmapLevels * Interpolation.values().length ),
 				interpolLoader ) );
 
 		currentSourceTransforms = new AffineTransform3D[ numMipmapLevels ];
@@ -182,6 +164,13 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 			currentSourceTransforms[ level ] = new AffineTransform3D();
 
 		currentTimePointIndex = -1;
+	}
+
+	private static < T extends NumericType< T > > InterpolatorFactory< T, RandomAccessible< T > > interpolator( final Interpolation method )
+	{
+		return method == Interpolation.NEARESTNEIGHBOR
+				? new NearestNeighborInterpolatorFactory<>()
+				: new ClampingNLinearInterpolatorFactory<>();
 	}
 
 	void loadTimepoint( final int timepointIndex )
