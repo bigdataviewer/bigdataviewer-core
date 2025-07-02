@@ -72,10 +72,8 @@ public class RandomAccessibleIntervalSource< T extends NumericType< T > > extend
 		this.source = img;
 		this.sourceTransform = sourceTransform;
 		interpolatedSources = new RealRandomAccessible[ Interpolation.values().length ];
-		final T zero = getType().createVariable();
-		zero.setZero();
 		for ( final Interpolation method : Interpolation.values() )
-			interpolatedSources[ method.ordinal() ] = Views.interpolate( Views.extendValue( source, zero ), interpolators.get( method ) );
+			interpolatedSources[ method.ordinal() ] = Views.interpolate( Views.extendZero( source ), interpolators.get( method ) );
 	}
 
 	@Override

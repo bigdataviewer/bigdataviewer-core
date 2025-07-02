@@ -98,8 +98,6 @@ public class RandomAccessibleSource4D< T extends NumericType< T > > extends Abst
 		currentTimePointIndex = timepointIndex;
 		if ( isPresent( timepointIndex ) )
 		{
-			final T zero = getType().createVariable();
-			zero.setZero();
 			final RandomAccessible< T > slice = Views.hyperSlice( source, 3, timepointIndex );
 			currentSource = Views.interval( slice, timeSliceInterval );
 			for ( final Interpolation method : Interpolation.values() )

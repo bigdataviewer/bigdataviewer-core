@@ -75,11 +75,9 @@ public class RandomAccessibleIntervalSource4D< T extends NumericType< T > > exte
 		currentTimePointIndex = timepointIndex;
 		if ( isPresent( timepointIndex ) )
 		{
-			final T zero = getType().createVariable();
-			zero.setZero();
 			currentSource = Views.hyperSlice( source, 3, timepointIndex );
 			for ( final Interpolation method : Interpolation.values() )
-				currentInterpolatedSources[ method.ordinal() ] = Views.interpolate( Views.extendValue( currentSource, zero ), interpolators.get( method ) );
+				currentInterpolatedSources[ method.ordinal() ] = Views.interpolate( Views.extendZero( currentSource ), interpolators.get( method ) );
 		}
 		else
 		{
