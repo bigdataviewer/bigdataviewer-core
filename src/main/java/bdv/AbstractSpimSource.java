@@ -52,7 +52,13 @@ import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.ClampingNLinearInterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.Type;
+import net.imglib2.type.mask.Masked;
+import net.imglib2.type.mask.interpolation.MaskedClampingNLinearInterpolatorFactory;
+import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.NumericType;
+import net.imglib2.type.volatiles.VolatileARGBType;
+import net.imglib2.util.Cast;
 import net.imglib2.view.Views;
 
 public abstract class AbstractSpimSource< T extends NumericType< T > > implements Source< T >
@@ -133,7 +139,10 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 
 	private final UncheckedCache< ImgKey, RealRandomAccessible< T > > cachedInterpolatedSources;
 
-	@SuppressWarnings( "unchecked" )
+	private final UncheckedCache< ImgKey, RandomAccessibleInterval< ? extends Masked< T >  > > cachedMaskedSources;
+
+	private final UncheckedCache< ImgKey, RealRandomAccessible< ? extends Masked< T > > > cachedInterpolatedMaskedSources;
+
 	public AbstractSpimSource( final AbstractSpimData< ? > spimData, final int setupId, final String name )
 	{
 		this.setupId = setupId;
@@ -158,6 +167,28 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 		cachedInterpolatedSources = Caches.unchecked( Caches.withLoader(
 				new BoundedSoftRefLoaderCache<>( 3 * numMipmapLevels * Interpolation.values().length ),
 				interpolLoader ) );
+
+		final CacheLoader< ImgKey, RandomAccessibleInterval< ? extends Masked< T > > > maskedLoader = key ->
+				Masked.withConstant( getSource( key.timepoint, key.level, key.threadGroup ), 1 );
+		cachedMaskedSources = Caches.unchecked( Caches.withLoader(
+				new BoundedSoftRefLoaderCache<>( 3 * numMipmapLevels ),
+				maskedLoader ) );
+
+		final CacheLoader< ImgKey, RealRandomAccessible< ? extends Masked< T > > > maskedInterpolLoader = key -> {
+			if ( getType() instanceof ARGBType || getType() instanceof VolatileARGBType )
+			{
+				// TODO: How to correctly handle ARGBType sources?  We could make a
+				//       Masked<ARGBType> wrapper that uses the ARGBType's A as mask?
+				return Masked.withConstant( getInterpolatedSource( key.timepoint, key.level, key.method, key.threadGroup ), 1 );
+			}
+			else
+			{
+				return extendAndInterpolateMasked( Cast.unchecked( getMaskedSource( key.timepoint, key.level, key.threadGroup ) ), key.method );
+			}
+		};
+		cachedInterpolatedMaskedSources = Caches.unchecked( Caches.withLoader(
+				new BoundedSoftRefLoaderCache<>( 3 * numMipmapLevels * Interpolation.values().length ),
+				maskedInterpolLoader ) );
 
 		currentSourceTransforms = new AffineTransform3D[ numMipmapLevels ];
 		for ( int level = 0; level < numMipmapLevels; level++ )
@@ -279,5 +310,49 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 	public void reload()
 	{
 		currentTimePointIndex = -1;
+	}
+
+	@Override
+	public RandomAccessibleInterval< ? extends Masked< T > > getMaskedSource( final int t, final int level )
+	{
+		return getMaskedSource( t, level, Thread.currentThread().getThreadGroup() );
+	}
+
+	public synchronized RandomAccessibleInterval< ? extends Masked< T > > getMaskedSource( final int t, final int level, final ThreadGroup threadGroup )
+	{
+		if ( t != currentTimePointIndex )
+			loadTimepoint( t );
+		return currentTimePointIsPresent
+				? cachedMaskedSources.get( new ImgKey( t, level, null, threadGroup ) )
+				: null;
+	}
+
+	@Override
+	public RealRandomAccessible< ? extends Masked< T > > getInterpolatedMaskedSource( int t, int level, final Interpolation method )
+	{
+		return getInterpolatedMaskedSource( t, level, method, Thread.currentThread().getThreadGroup() );
+	}
+
+	public synchronized RealRandomAccessible< ? extends Masked< T > > getInterpolatedMaskedSource( final int t, final int level, final Interpolation method, final ThreadGroup threadGroup )
+	{
+		if ( t != currentTimePointIndex )
+			loadTimepoint( t );
+		return currentTimePointIsPresent
+				? cachedInterpolatedMaskedSources.get( new ImgKey( t, level, method, threadGroup ) )
+				: null;
+	}
+
+	/**
+	 * Zero-extend (value and mask are set to zero) and interpolate a {@code RandomAccessibleInterval<Masked<NumericType>>}.
+	 */
+	static < M extends Masked< ? extends NumericType< ? > > & Type< M > > RealRandomAccessible< M > extendAndInterpolateMasked( final RandomAccessibleInterval< M > source, final Interpolation method )
+	{
+		final InterpolatorFactory< M, RandomAccessible< M > > factory = (method == Interpolation.NLINEAR)
+				? new NearestNeighborInterpolatorFactory<>()
+				: new MaskedClampingNLinearInterpolatorFactory<>();
+		final M zero = source.getType().createVariable();
+		zero.setMask( 0 );
+		zero.value().setZero();
+		return Views.interpolate( Views.extendValue( source, zero ), factory );
 	}
 }
