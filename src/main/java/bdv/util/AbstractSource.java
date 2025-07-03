@@ -73,7 +73,7 @@ public abstract class AbstractSource< T extends NumericType< T > > implements So
 	{
 		/*
 		 * We don't know the dimensionality of the source here, but the
-		 * DefaultVoxelDimensionsimplementation will return the same result
+		 * DefaultVoxelDimensions implementation will return the same result
 		 * for spacing and units regardless of the number of dimensions passed.
 		 */
 		this( type, name, new DefaultVoxelDimensions( -1 ), true );
