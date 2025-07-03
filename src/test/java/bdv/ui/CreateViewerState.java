@@ -39,6 +39,7 @@ import mpicbg.spim.data.sequence.VoxelDimensions;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.mask.Masked;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 
@@ -132,6 +133,18 @@ public class CreateViewerState
 
 		@Override
 		public RealRandomAccessible< UnsignedShortType > getInterpolatedSource( final int t, final int level, final Interpolation method )
+		{
+			return null;
+		}
+
+		@Override
+		public RandomAccessibleInterval< ? extends Masked< UnsignedShortType > > getMaskedSource( final int t, final int level )
+		{
+			return null;
+		}
+
+		@Override
+		public RealRandomAccessible< ? extends Masked< UnsignedShortType > > getInterpolatedMaskedSource( final int t, final int level, final Interpolation method )
 		{
 			return null;
 		}

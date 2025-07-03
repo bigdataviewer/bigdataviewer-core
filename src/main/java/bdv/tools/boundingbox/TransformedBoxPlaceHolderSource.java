@@ -37,8 +37,8 @@ import net.imglib2.RealInterval;
 import net.imglib2.RealLocalizable;
 import net.imglib2.RealRandomAccess;
 import net.imglib2.RealRandomAccessible;
-import net.imglib2.Sampler;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.mask.Masked;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
@@ -104,6 +104,18 @@ final class TransformedBoxPlaceHolderSource implements Source< Void >
 	public RealRandomAccessible< Void > getInterpolatedSource( final int t, final int level, final Interpolation method )
 	{
 		return rra;
+	}
+
+	@Override
+	public RandomAccessibleInterval< ? extends Masked< Void > > getMaskedSource( final int t, final int level )
+	{
+		return Views.interval( Views.raster( Masked.withConstant( rra, 0 ) ), Intervals.smallestContainingInterval( bbSource.getInterval() ) );
+	}
+
+	@Override
+	public RealRandomAccessible< ? extends Masked< Void > > getInterpolatedMaskedSource( final int t, final int level, final Interpolation method )
+	{
+		return Masked.withConstant( rra, 0 );
 	}
 
 	@Override

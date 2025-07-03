@@ -35,6 +35,7 @@ import net.imglib2.realtransform.AffineTransform3D;
 import bdv.viewer.Interpolation;
 import bdv.viewer.Source;
 import mpicbg.spim.data.sequence.VoxelDimensions;
+import net.imglib2.type.mask.Masked;
 
 /**
  * A dummy {@link Source} that represents a {@link BdvOverlay}.
@@ -97,6 +98,18 @@ public final class PlaceHolderSource implements Source< Void >
 
 	@Override
 	public RealRandomAccessible< Void > getInterpolatedSource( final int t, final int level, final Interpolation method )
+	{
+		return null;
+	}
+
+	@Override
+	public RandomAccessibleInterval< ? extends Masked< Void > > getMaskedSource( final int t, final int level )
+	{
+		return null;
+	}
+
+	@Override
+	public RealRandomAccessible< ? extends Masked< Void > > getInterpolatedMaskedSource( final int t, final int level, final Interpolation method )
 	{
 		return null;
 	}
