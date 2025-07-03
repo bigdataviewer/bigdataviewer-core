@@ -34,6 +34,7 @@ import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.mask.Masked;
 import net.imglib2.type.numeric.NumericType;
 import net.imglib2.view.Views;
 
@@ -91,9 +92,21 @@ public class RandomAccessibleSource< T extends NumericType< T > > extends Abstra
 	}
 
 	@Override
+	public RandomAccessibleInterval< ? extends Masked< T > > getMaskedSource( final int t, final int level )
+	{
+		return Views.interval( Masked.withConstant( source, 1 ), interval );
+	}
+
+	@Override
 	public RealRandomAccessible< T > getInterpolatedSource( final int t, final int level, final Interpolation method )
 	{
 		return interpolatedSources[ method.ordinal() ];
+	}
+
+	@Override
+	public RealRandomAccessible< ? extends Masked< T > > getInterpolatedMaskedSource( final int t, final int level, final Interpolation method )
+	{
+		return Masked.withConstant( getInterpolatedSource( t, level, method ), 1 );
 	}
 
 	@Override
