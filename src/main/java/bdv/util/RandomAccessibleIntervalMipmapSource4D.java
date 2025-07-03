@@ -177,7 +177,7 @@ public class RandomAccessibleIntervalMipmapSource4D< T extends NumericType< T > 
 	}
 
 	@Override
-	public RandomAccessibleInterval< T > getSource( final int t, final int level )
+	public synchronized RandomAccessibleInterval< T > getSource( final int t, final int level )
 	{
 		if ( t != currentTimePointIndex )
 			loadTimepoint( t );
@@ -185,7 +185,7 @@ public class RandomAccessibleIntervalMipmapSource4D< T extends NumericType< T > 
 	}
 
 	@Override
-	public RealRandomAccessible< T > getInterpolatedSource( final int t, final int level, final Interpolation method )
+	public synchronized RealRandomAccessible< T > getInterpolatedSource( final int t, final int level, final Interpolation method )
 	{
 		if ( t != currentTimePointIndex )
 			loadTimepoint( t );
