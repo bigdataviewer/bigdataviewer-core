@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Set;
 
 import bdv.viewer.Interpolation;
+import bdv.viewer.MaskUtils;
 import bdv.viewer.Source;
 import mpicbg.spim.data.generic.AbstractSpimData;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
@@ -52,9 +53,7 @@ import net.imglib2.interpolation.InterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.ClampingNLinearInterpolatorFactory;
 import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory;
 import net.imglib2.realtransform.AffineTransform3D;
-import net.imglib2.type.Type;
 import net.imglib2.type.mask.Masked;
-import net.imglib2.type.mask.interpolation.MaskedClampingNLinearInterpolatorFactory;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.NumericType;
 import net.imglib2.type.volatiles.VolatileARGBType;
@@ -183,7 +182,7 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 			}
 			else
 			{
-				return extendAndInterpolateMasked( Cast.unchecked( getMaskedSource( key.timepoint, key.level, key.threadGroup ) ), key.method );
+				return MaskUtils.extendAndInterpolateMasked( Cast.unchecked( getMaskedSource( key.timepoint, key.level, key.threadGroup ) ), key.method );
 			}
 		};
 		cachedInterpolatedMaskedSources = Caches.unchecked( Caches.withLoader(
@@ -340,19 +339,5 @@ public abstract class AbstractSpimSource< T extends NumericType< T > > implement
 		return currentTimePointIsPresent
 				? cachedInterpolatedMaskedSources.get( new ImgKey( t, level, method, threadGroup ) )
 				: null;
-	}
-
-	/**
-	 * Zero-extend (value and mask are set to zero) and interpolate a {@code RandomAccessibleInterval<Masked<NumericType>>}.
-	 */
-	static < M extends Masked< ? extends NumericType< ? > > & Type< M > > RealRandomAccessible< M > extendAndInterpolateMasked( final RandomAccessibleInterval< M > source, final Interpolation method )
-	{
-		final InterpolatorFactory< M, RandomAccessible< M > > factory = (method == Interpolation.NLINEAR)
-				? new NearestNeighborInterpolatorFactory<>()
-				: new MaskedClampingNLinearInterpolatorFactory<>();
-		final M zero = source.getType().createVariable();
-		zero.setMask( 0 );
-		zero.value().setZero();
-		return Views.interpolate( Views.extendValue( source, zero ), factory );
 	}
 }
