@@ -47,6 +47,7 @@ import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.NumericType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.volatiles.VolatileARGBType;
+import net.imglib2.util.Intervals;
 import net.imglib2.util.Pair;
 import net.imglib2.util.Util;
 import net.imglib2.view.Views;
@@ -124,6 +125,29 @@ public class BdvFunctions
 			type = Util.getTypeFromInterval( img );
 
 		return addRandomAccessibleInterval( handle, ( RandomAccessibleInterval ) img, ( NumericType ) type, name, axisOrder, sourceTransform );
+	}
+
+	@SuppressWarnings( { "unchecked", "rawtypes" } )
+	public static < T, R extends RealType< R > > BdvStackSource< T > showMasked(
+			final RandomAccessibleInterval< T > img,
+			final RandomAccessibleInterval< R > mask,
+			final String name,
+			final BdvOptions options )
+	{
+		final BdvHandle handle = getHandle( options );
+		final AxisOrder axisOrder = AxisOrder.getAxisOrder( options.values.axisOrder(), img, handle.is2D() );
+		final AffineTransform3D sourceTransform = options.values.getSourceTransform();
+		final T type;
+		if ( img instanceof VolatileView )
+		{
+			final VolatileViewData< ?, ? > viewData = ( ( VolatileView< ?, ? > ) img ).getVolatileViewData();
+			type = ( T ) viewData.getVolatileType();
+			handle.getCacheControls().addCacheControl( viewData.getCacheControl() );
+		}
+		else
+			type = Util.getTypeFromInterval( img );
+
+		return addMaskedRandomAccessibleInterval( handle, ( RandomAccessibleInterval ) img, mask, ( NumericType ) type, name, axisOrder, sourceTransform );
 	}
 
 	public static < T extends NumericType< T > > BdvStackSource< T > show(
@@ -570,6 +594,66 @@ public class BdvFunctions
 			else
 			{
 				s = new RandomAccessibleIntervalSource<>( stack, type, sourceTransform, name );
+			}
+			addSourceToListsGenericType( s, handle.getUnusedSetupId(), converterSetups, sources );
+		}
+		handle.add( converterSetups, sources, numTimepoints );
+		final BdvStackSource< T > bdvSource = new BdvStackSource<>( handle, numTimepoints, type, converterSetups, sources );
+		handle.addBdvSource( bdvSource );
+		return bdvSource;
+	}
+
+	/**
+	 * Add the given {@link RandomAccessibleInterval} {@code img} to the given
+	 * {@link BdvHandle} as a new {@link BdvStackSource}. The {@code img} is
+	 * expected to be 2D, 3D, 4D, or 5D with the given {@link AxisOrder}.
+	 *
+	 * @param handle
+	 *            handle to add the {@code img} to.
+	 * @param img
+	 *            {@link RandomAccessibleInterval} to add.
+	 * @param mask
+	 *            alpha mask (same size as {@code img}).
+	 * @param type
+	 *            instance of the {@code img} type.
+	 * @param name
+	 *            name to give to the new source
+	 * @param axisOrder
+	 *            {@link AxisOrder} of the source, is used to appropriately split {@code img} into channels and timepoints.
+	 * @param sourceTransform
+	 *            transforms from source coordinates to global coordinates.
+	 * @return a new {@link BdvStackSource} handle for the newly added source(s).
+	 */
+	private static < T extends NumericType< T >, R extends RealType< R > > BdvStackSource< T > addMaskedRandomAccessibleInterval(
+			final BdvHandle handle,
+			final RandomAccessibleInterval< T > img,
+			final RandomAccessibleInterval< R > mask,
+			final T type,
+			final String name,
+			final AxisOrder axisOrder,
+			final AffineTransform3D sourceTransform )
+	{
+		if ( !Intervals.equals( img, mask ) )
+			throw new IllegalArgumentException();
+
+		final List< ConverterSetup > converterSetups = new ArrayList<>();
+		final List< SourceAndConverter< T > > sources = new ArrayList<>();
+		final ArrayList< RandomAccessibleInterval< T > > stacks = AxisOrder.splitInputStackIntoSourceStacks( img, axisOrder );
+		final ArrayList< RandomAccessibleInterval< R > > masks = AxisOrder.splitInputStackIntoSourceStacks( mask, axisOrder );
+		int numTimepoints = 1;
+		for ( int i = 0; i < stacks.size(); i++ )
+		{
+			final RandomAccessibleInterval< T > stack = stacks.get( i );
+			final RandomAccessibleInterval< R > stackMask = masks.get( i );
+			final Source< T > s;
+			if ( stack.numDimensions() > 3 )
+			{
+				numTimepoints = ( int ) stack.max( 3 ) + 1;
+				s = new MaskingRandomAccessibleIntervalSource4D<>( stack, stackMask, type, sourceTransform, name );
+			}
+			else
+			{
+				s = new MaskingRandomAccessibleIntervalSource<>( stack, stackMask, type, sourceTransform, name );
 			}
 			addSourceToListsGenericType( s, handle.getUnusedSetupId(), converterSetups, sources );
 		}
