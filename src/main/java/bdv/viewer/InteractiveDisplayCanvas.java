@@ -28,9 +28,11 @@
  */
 package bdv.viewer;
 
+import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.awt.event.FocusListener;
@@ -207,6 +209,8 @@ public class InteractiveDisplayCanvas extends JComponent implements InteractiveD
 	@Override
 	public void paintComponent( final Graphics g )
 	{
+		g.setColor( Color.BLACK );
+		g.fillRect( 0, 0, getWidth(), getHeight() );
 		overlayRenderers.list.forEach( r -> r.drawOverlays( g ) );
 	}
 

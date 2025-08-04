@@ -28,14 +28,10 @@
  */
 package bdv.viewer.render;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ForkJoinTask;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import net.imglib2.parallel.Parallelization;
+
 import net.imglib2.util.StopWatch;
 
 /**

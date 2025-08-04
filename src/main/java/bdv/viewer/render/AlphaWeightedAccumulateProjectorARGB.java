@@ -223,7 +223,7 @@ public class AlphaWeightedAccumulateProjectorARGB
 				}
 				for ( int x = 0; x < target.width(); ++x )
 				{
-					final int aSum = acc[ ( x << 2 ) ];
+					int aSum = acc[ ( x << 2 ) ];
 					final int rSum;
 					final int gSum;
 					final int bSum;
@@ -235,8 +235,9 @@ public class AlphaWeightedAccumulateProjectorARGB
 						rSum = Math.min( 255, acc[ ( x << 2 ) + 1 ] / aSum );
 						gSum = Math.min( 255, acc[ ( x << 2 ) + 2 ] / aSum );
 						bSum = Math.min( 255, acc[ ( x << 2 ) + 3 ] / aSum );
+						aSum = Math.min( 255, aSum );
 					}
-					target.data()[ oTarget + x ] = ARGBType.rgba( rSum, gSum, bSum, 255 );
+					target.data()[ oTarget + x ] = ARGBType.rgba( rSum, gSum, bSum, aSum );
 				}
 			}
 		}
@@ -296,11 +297,12 @@ public class AlphaWeightedAccumulateProjectorARGB
 			}
 			else
 			{
+				aSum = Math.min( 255, aSum );
 				rSum = Math.min( 255, rSum / aSum );
 				gSum = Math.min( 255, gSum / aSum );
 				bSum = Math.min( 255, bSum / aSum );
 			}
-			target.set( ARGBType.rgba( rSum, gSum, bSum, 255 ) );
+			target.set( ARGBType.rgba( rSum, gSum, bSum, aSum ) );
 		}
 	}
 }
