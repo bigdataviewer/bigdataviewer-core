@@ -248,7 +248,7 @@ class ProjectorFactory
 		}
 	}
 
-	private < T extends Volatile< ? >, M extends Volatile< T > & Masked< T > > VolatileProjector createSingleSourceVolatileProjector(
+	private < T extends Volatile< ? >, M extends Masked< T > > VolatileProjector createSingleSourceVolatileProjector(
 			final ViewerState viewerState,
 			final SourceAndConverter< T > source,
 			final boolean useAlphaMaskedSources,
@@ -285,7 +285,7 @@ class ProjectorFactory
 			final ArrayList< RandomAccessible< M > > renderList = new ArrayList<>();
 			for ( final MipmapOrdering.Level l : levels )
 				renderList.add( Cast.unchecked(getTransformedMaskedSource( viewerState, spimSource, screenTransform, l.getMipmapLevel(), l.getRenderCacheHints() ) ) );
-			return new VolatileHierarchyProjector<>( renderList, MaskedToARGBConverter.wrap( source.getConverter() ), screenImage, maskArray );
+			return new MaskedVolatileHierarchyProjector<>( renderList, MaskedToARGBConverter.wrap( source.getConverter() ), screenImage, maskArray );
 		}
 		else
 		{

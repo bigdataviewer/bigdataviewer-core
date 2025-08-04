@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -35,19 +35,20 @@ import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
 import net.imglib2.converter.Converter;
+import net.imglib2.type.mask.Masked;
 import net.imglib2.type.operators.SetZero;
 
 /**
- * {@link VolatileProjector} for a hierarchy of {@link Volatile} inputs.
+ * {@link VolatileProjector} for a hierarchy of {@link Masked} {@link Volatile} inputs.
  * After each {@link #map()} call, the projector has a {@link #isValid() state}
  * that signalizes whether all projected pixels were perfect.
  *
  * @author Stephan Saalfeld
  * @author Tobias Pietzsch
  */
-public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends SetZero > extends AbstractVolatileHierarchyProjector< A, B >
+class MaskedVolatileHierarchyProjector< A extends Masked< ? extends Volatile< ? > >, B extends SetZero > extends AbstractVolatileHierarchyProjector< A, B >
 {
-	public VolatileHierarchyProjector(
+	public MaskedVolatileHierarchyProjector(
 			final List< ? extends RandomAccessible< A > > sources,
 			final Converter< ? super A, B > converter,
 			final RandomAccessibleInterval< B > target )
@@ -55,7 +56,7 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends SetZ
 		this( sources, converter, target, new byte[ ( int ) ( target.dimension( 0 ) * target.dimension( 1 ) ) ] );
 	}
 
-	public VolatileHierarchyProjector(
+	public MaskedVolatileHierarchyProjector(
 			final List< ? extends RandomAccessible< A > > sources,
 			final Converter< ? super A, B > converter,
 			final RandomAccessibleInterval< B > target,
@@ -74,7 +75,7 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends SetZ
 			if ( mask[ mi + x ] > resolutionIndex )
 			{
 				final A a = sourceRandomAccess.get();
-				final boolean v = a.isValid();
+				final boolean v = a.value().isValid();
 				if ( v )
 				{
 					converter.convert( a, targetRandomAccess.get() );
