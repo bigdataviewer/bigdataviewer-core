@@ -67,7 +67,7 @@ public class BufferedImageRenderResult implements RenderResult
 			data = new int[ width * height ];
 
 		screenImage = new ARGBScreenImage( width, height, data );
-		bufferedImage = AWTUtils.getBufferedImage( screenImage );;
+		bufferedImage = AWTUtils.getBufferedImage( screenImage, false );;
 	}
 
 	@Override

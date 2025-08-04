@@ -109,7 +109,7 @@ public class ViewerFrame extends JFrame
 			final ViewerOptions optional )
 	{
 //		super( "BigDataViewer", GuiUtil.getSuitableGraphicsConfiguration( GuiUtil.ARGB_COLOR_MODEL ) );
-		super( "BigDataViewer", AWTUtils.getSuitableGraphicsConfiguration( AWTUtils.RGB_COLOR_MODEL ) );
+		super( "BigDataViewer", AWTUtils.getSuitableGraphicsConfiguration( AWTUtils.ARGB_COLOR_MODEL ) );
 		this.keymapManager = keymapManager;
 		this.appearanceManager = appearanceManager;
 		viewer = new ViewerPanel( sources, numTimepoints, cacheControl, optional );
