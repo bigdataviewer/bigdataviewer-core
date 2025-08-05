@@ -279,8 +279,6 @@ public class MultiResolutionRenderer
 	 * @param useVolatileIfAvailable
 	 *            whether volatile versions of sources should be used if
 	 *            available.
-	 * @param accumulateProjectorFactory
-	 *            can be used to customize how sources are combined.
 	 * @param cacheControl
 	 *            the cache controls IO budgeting and fetcher queue.
 	 */
@@ -292,7 +290,6 @@ public class MultiResolutionRenderer
 			final int numRenderingThreads,
 			final ExecutorService renderingExecutorService,
 			final boolean useVolatileIfAvailable,
-			final AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory,
 			final CacheControl cacheControl )
 	{
 		this.display = display;
@@ -324,8 +321,7 @@ public class MultiResolutionRenderer
 		projectorFactory = new ProjectorFactory(
 				numRenderingThreads,
 				renderingForkJoinPool,
-				useVolatileIfAvailable,
-				accumulateProjectorFactory );
+				useVolatileIfAvailable );
 	}
 
 	/**

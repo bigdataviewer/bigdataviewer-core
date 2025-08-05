@@ -149,11 +149,10 @@ public class RenderingSetup
 		public Renderer(final int[] targetSize, final int numRenderingThreads)
 		{
 			target = new BenchmarkRenderTarget( targetSize[ 0 ], targetSize[ 1 ] );
-			final AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory = AccumulateProjectorARGB.factory;
 			renderer = new MultiResolutionRenderer(
 					target, () -> {}, new double[] { 1 }, 0,
 					numRenderingThreads, null, false,
-					accumulateProjectorFactory, new CacheControl.Dummy() );
+					new CacheControl.Dummy() );
 		}
 
 		public void render( final ViewerState state )

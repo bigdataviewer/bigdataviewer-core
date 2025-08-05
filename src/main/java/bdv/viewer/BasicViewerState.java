@@ -30,6 +30,8 @@ package bdv.viewer;
 
 import bdv.util.Affine3DHelpers;
 import bdv.util.WrappedList;
+import bdv.viewer.render.AccumulateProjectorARGB;
+import bdv.viewer.render.AccumulateProjectorFactory;
 import gnu.trove.map.TObjectIntMap;
 import gnu.trove.map.hash.TObjectIntHashMap;
 import java.util.ArrayList;
@@ -43,8 +45,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.numeric.ARGBType;
+
 import org.scijava.listeners.Listeners;
 
+import static bdv.viewer.ViewerStateChange.ACCUMULATE_PROJECTOR_CHANGED;
 import static bdv.viewer.ViewerStateChange.CURRENT_GROUP_CHANGED;
 import static bdv.viewer.ViewerStateChange.CURRENT_SOURCE_CHANGED;
 import static bdv.viewer.ViewerStateChange.CURRENT_TIMEPOINT_CHANGED;
@@ -102,6 +107,11 @@ public class BasicViewerState implements ViewerState
 	 */
 	private DisplayMode displayMode;
 
+	/**
+	 * The current AccumulateProjectorFactory.
+	 */
+	private AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory;
+
 	// -- sources --
 
 	private final List< SourceAndConverter< ? > > sources;
@@ -149,6 +159,7 @@ public class BasicViewerState implements ViewerState
 		viewerTransform = new AffineTransform3D();
 		interpolation = Interpolation.NEARESTNEIGHBOR;
 		displayMode = DisplayMode.SINGLE;
+		accumulateProjectorFactory = AccumulateProjectorARGB.factory;
 		sources = new ArrayList<>();
 		unmodifiableSources = new UnmodifiableSources();
 		activeSources = new HashSet<>();
@@ -176,6 +187,7 @@ public class BasicViewerState implements ViewerState
 		viewerTransform = other.getViewerTransform();
 		interpolation = other.getInterpolation();
 		displayMode = other.getDisplayMode();
+		accumulateProjectorFactory = other.getAccumulateProjectorFactory();
 
 		sources = new ArrayList<>( other.getSources() );
 		unmodifiableSources = new UnmodifiableSources();
@@ -215,6 +227,7 @@ public class BasicViewerState implements ViewerState
 		viewerTransform.set( other.getViewerTransform() );
 		interpolation = other.getInterpolation();
 		displayMode = other.getDisplayMode();
+		accumulateProjectorFactory = other.getAccumulateProjectorFactory();
 
 		sources.clear();
 		sources.addAll( other.getSources() );
@@ -295,6 +308,23 @@ public class BasicViewerState implements ViewerState
 			notifyListeners( DISPLAY_MODE_CHANGED );
 			checkVisibilityChanged();
 		}
+	}
+
+	@Override
+	public AccumulateProjectorFactory< ARGBType > getAccumulateProjectorFactory()
+	{
+		return accumulateProjectorFactory;
+	}
+
+	@Override
+	public void setAccumulateProjectorFactory( final AccumulateProjectorFactory< ARGBType > factory )
+	{
+		if ( accumulateProjectorFactory != factory )
+		{
+			accumulateProjectorFactory = factory;
+			notifyListeners( ACCUMULATE_PROJECTOR_CHANGED );
+		}
+
 	}
 
 	@Override
