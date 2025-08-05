@@ -79,13 +79,6 @@ class ProjectorFactory
 	private final boolean useVolatileIfAvailable;
 
 	/**
-	 * Constructs projector that combines rendere ARGB images for individual
-	 * sources to the final screen image. This can be used to customize how
-	 * sources are combined.
-	 */
-	private final AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory;
-
-	/**
 	 * Whether repainting should be triggered after the previously
 	 * {@link #createProjector constructed} projector returns an incomplete
 	 * result.
@@ -118,26 +111,22 @@ class ProjectorFactory
 
 	/**
 	 * @param numRenderingThreads
-	 *     How many threads to use for rendering.
+	 * 		How many threads to use for rendering.
 	 * @param renderingExecutorService
-	 *     if non-null, this is used for rendering. Note, that it is still
-	 *     important to supply the numRenderingThreads parameter, because that
-	 *     is used to determine into how many sub-tasks rendering is split.
+	 * 		if non-null, this is used for rendering. Note, that it is still
+	 * 		important to supply the numRenderingThreads parameter, because that
+	 * 		is used to determine into how many sub-tasks rendering is split.
 	 * @param useVolatileIfAvailable
-	 *     whether volatile versions of sources should be used if available.
-	 * @param accumulateProjectorFactory
-	 *     can be used to customize how sources are combined.
+	 * 		whether volatile versions of sources should be used if available.
 	 */
 	public ProjectorFactory(
 			final int numRenderingThreads,
 			final ExecutorService renderingExecutorService,
-			final boolean useVolatileIfAvailable,
-			final AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory )
+			final boolean useVolatileIfAvailable )
 	{
 		this.numRenderingThreads = numRenderingThreads;
 		this.renderingExecutorService = renderingExecutorService;
 		this.useVolatileIfAvailable = useVolatileIfAvailable;
-		this.accumulateProjectorFactory = accumulateProjectorFactory;
 	}
 
 	/**
@@ -147,6 +136,20 @@ class ProjectorFactory
 	 * timepoint of the {@code ViewerState}, and the specified
 	 * {@code screenTransform} from global coordinates to coordinates in the
 	 * {@code screenImage}.
+	 *
+	 * @param viewerState
+	 * 		the ViewerState to render
+	 * @param visibleSourcesOnScreen
+	 * @param accumulateProjectorFactory
+	 * 		constructs a projector that combines the rendered ARGB images for individual sources into the final screen image.
+	 * @param screenImage
+	 * 		the ARGB screen image to render to
+	 * @param screenTransform
+	 * 		transforms global to screenImage coordinates
+	 * @param renderStorage
+	 * 		temporary storage
+	 *
+	 * @return a new projector
 	 */
 	public VolatileProjector createProjector(
 			final ViewerState viewerState,
@@ -164,6 +167,7 @@ class ProjectorFactory
 		final int width = ( int ) screenImage.dimension( 0 );
 		final int height = ( int ) screenImage.dimension( 1 );
 
+		final AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory = viewerState.getAccumulateProjectorFactory();
 		final boolean useAlphaMaskedSources = accumulateProjectorFactory.requiresMaskedSources();
 
 		VolatileProjector projector;

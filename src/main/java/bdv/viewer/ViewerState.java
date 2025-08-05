@@ -32,7 +32,11 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+
+import bdv.viewer.render.AccumulateProjectorFactory;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.numeric.ARGBType;
+
 import org.scijava.listeners.Listeners;
 
 /**
@@ -96,6 +100,27 @@ public interface ViewerState
 	 *     if the operation is not supported by this ViewerState
 	 */
 	void setDisplayMode( DisplayMode mode );
+
+	/**
+	 * Get the current {@code AccumulateProjectorFactory}.
+	 * <p>
+	 * This factory provides AccumulateProjectors for blending rendered
+	 * overlapping sources into the final screen image.
+	 *
+	 * @return current AccumulateProjector factory
+	 */
+	AccumulateProjectorFactory< ARGBType > getAccumulateProjectorFactory();
+
+	/**
+	 * Set the {@code AccumulateProjectorFactory}.
+	 * <p>
+	 * This factory provides AccumulateProjectors for blending rendered
+	 * overlapping sources into the final screen image. This can be used for
+	 * switching between "sum" and "average" blending mode for example.
+	 *
+	 * @param factory AccumulateProjector factory to set
+	 */
+	void setAccumulateProjectorFactory( AccumulateProjectorFactory< ARGBType > factory );
 
 	/**
 	 * Get the number of timepoints.

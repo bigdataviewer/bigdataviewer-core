@@ -34,7 +34,9 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
+import bdv.viewer.render.AccumulateProjectorFactory;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.numeric.ARGBType;
 
 import org.scijava.listeners.Listeners;
 
@@ -124,6 +126,18 @@ public class SynchronizedViewerState implements ViewerState
 	public synchronized void setDisplayMode( final DisplayMode mode )
 	{
 		state.setDisplayMode( mode );
+	}
+
+	@Override
+	public synchronized AccumulateProjectorFactory< ARGBType > getAccumulateProjectorFactory()
+	{
+		return state.getAccumulateProjectorFactory();
+	}
+
+	@Override
+	public synchronized void setAccumulateProjectorFactory( final AccumulateProjectorFactory< ARGBType > factory )
+	{
+		state.setAccumulateProjectorFactory( factory );
 	}
 
 	@Override

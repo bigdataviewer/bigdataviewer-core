@@ -229,6 +229,7 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 		options = optional.values;
 
 		state = setupState( sources, numTimepoints, options.getNumSourceGroups() );
+		state.setAccumulateProjectorFactory( options.getAccumulateProjectorFactory() );
 		deprecatedState = new bdv.viewer.state.ViewerState( state );
 
 		multiBoxOverlayRenderer = new MultiBoxOverlayRenderer();
@@ -255,7 +256,6 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 				options.getNumRenderingThreads(),
 				renderingExecutorService,
 				options.isUseVolatileIfAvailable(),
-				options.getAccumulateProjectorFactory(),
 				cacheControl );
 
 		display.addHandler( mouseCoordinates );
