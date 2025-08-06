@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+<svg width="100%" height="100%" viewBox="0 0 40 40" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xml:space="preserve" xmlns:serif="http://www.serif.com/" style="fill-rule:evenodd;clip-rule:evenodd;">
+    <g id="source-custom" serif:id="source custom">
+        <g id="source-fill-avg" serif:id="source fill avg" transform="matrix(1,0,0,1,12.5114,8.88178e-16)">
+            <path d="M-6.992,32.951L-6.992,7.083C-6.992,6.219 -6.291,5.518 -5.427,5.518L20.424,5.518C21.288,5.518 21.989,6.219 21.989,7.083L21.989,20.529C21.989,20.614 21.982,20.698 21.969,20.779L21.969,32.951C21.969,33.814 21.268,34.516 20.404,34.516L-5.427,34.516C-6.291,34.516 -6.992,33.814 -6.992,32.951Z" style="fill:rgb(46,46,46);fill-opacity:0.45;stroke:rgb(84,84,84);stroke-width:0.5px;"/>
+        </g>
+        <g id="source-outlines-avg" serif:id="source outlines avg">
+            <g transform="matrix(1,0,0,1,12.5114,8.88178e-16)">
+                <path d="M21.989,7.083L21.989,20.529C21.989,21.393 21.288,22.094 20.424,22.094L7.085,22.094C6.221,22.094 5.52,21.393 5.52,20.529L5.52,7.083C5.52,6.219 6.221,5.518 7.085,5.518L20.424,5.518C21.288,5.518 21.989,6.219 21.989,7.083Z" style="fill:none;stroke:black;stroke-opacity:0.14;stroke-width:0.5px;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,12.4915,12.4216)">
+                <path d="M21.989,7.083L21.989,20.529C21.989,21.393 21.288,22.094 20.424,22.094L7.085,22.094C6.221,22.094 5.52,21.393 5.52,20.529L5.52,7.083C5.52,6.219 6.221,5.518 7.085,5.518L20.424,5.518C21.288,5.518 21.989,6.219 21.989,7.083Z" style="fill:none;stroke:black;stroke-opacity:0.14;stroke-width:0.5px;"/>
+            </g>
+            <g transform="matrix(1,0,0,1,0,12.4216)">
+                <path d="M21.989,7.083L21.989,20.529C21.989,21.393 21.288,22.094 20.424,22.094L7.085,22.094C6.221,22.094 5.52,21.393 5.52,20.529L5.52,7.083C5.52,6.219 6.221,5.518 7.085,5.518L20.424,5.518C21.288,5.518 21.989,6.219 21.989,7.083Z" style="fill:none;stroke:black;stroke-opacity:0.14;stroke-width:0.5px;"/>
+            </g>
+            <path d="M21.989,7.083L21.989,20.529C21.989,21.393 21.288,22.094 20.424,22.094L7.085,22.094C6.221,22.094 5.52,21.393 5.52,20.529L5.52,7.083C5.52,6.219 6.221,5.518 7.085,5.518L20.424,5.518C21.288,5.518 21.989,6.219 21.989,7.083Z" style="fill:none;stroke:black;stroke-opacity:0.14;stroke-width:0.5px;"/>
+        </g>
+        <g id="outline" transform="matrix(1,0,0,1,12.5114,8.88178e-16)">
+            <path d="M-6.992,32.951L-6.992,7.083C-6.992,6.219 -6.291,5.518 -5.427,5.518L20.424,5.518C21.288,5.518 21.989,6.219 21.989,7.083L21.989,20.529C21.989,20.614 21.982,20.698 21.969,20.779L21.969,32.951C21.969,33.814 21.268,34.516 20.404,34.516L-5.427,34.516C-6.291,34.516 -6.992,33.814 -6.992,32.951Z" style="fill:none;stroke:black;stroke-width:0.5px;"/>
+        </g>
+        <g transform="matrix(2.21517,0,0,2.21517,-22.2506,-6.56261)">
+            <g transform="matrix(12,0,0,12,22.444,16.3594)">
+            </g>
+            <text x="15.77px" y="16.359px" style="font-family:'ArialMT', 'Arial', sans-serif;font-size:12px;">?</text>
+        </g>
+    </g>
+</svg>
