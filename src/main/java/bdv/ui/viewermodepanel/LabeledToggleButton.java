@@ -55,14 +55,9 @@ class LabeledToggleButton extends ToggleButton
 		label = new JLabel( text );
 		setFont( label );
 
-		this.add( label, "center" );
-	}
+		button.addItemListener( e -> label.setText( isSelected() ? selectedText : text ) );
 
-	@Override
-	public void setSelected( final boolean selected )
-	{
-		super.setSelected( selected );
-		label.setText( selected ? selectedText : text );
+		this.add( label, "center" );
 	}
 
 	private void setFont( final JLabel label )
