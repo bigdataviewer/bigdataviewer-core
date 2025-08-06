@@ -42,7 +42,7 @@ class ToggleButton extends JPanel
 	private final String tooltipText;
 	private final String selectedTooltipText;
 
-	private final JToggleButton button;
+	final JToggleButton button;
 
 	public ToggleButton(
 			final Icon icon,
@@ -58,6 +58,8 @@ class ToggleButton extends JPanel
 		button.setSelectedIcon( selectedIcon );
 		setLook( button );
 
+		button.addItemListener( e -> button.setToolTipText( isSelected() ? selectedTooltipText : tooltipText ) );
+
 		this.add( button, "growx, center, wrap" );
 	}
 
@@ -71,7 +73,6 @@ class ToggleButton extends JPanel
 	public void setSelected( final boolean selected )
 	{
 		button.setSelected( selected );
-		button.setToolTipText( selected ? selectedTooltipText : tooltipText );
 	}
 
 	public boolean isSelected()
