@@ -588,6 +588,10 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 			interpolationModeListeners.list.forEach( l -> l.interpolationModeChanged( interpolation ) );
 			requestRepaint();
 			break;
+		case ACCUMULATE_PROJECTOR_CHANGED:
+			showMessage( BlendMode.of( state.getAccumulateProjectorFactory() ).getName() );
+			requestRepaint();
+			break;
 		case NUM_TIMEPOINTS_CHANGED:
 		{
 			final int numTimepoints = state.getNumTimepoints();
