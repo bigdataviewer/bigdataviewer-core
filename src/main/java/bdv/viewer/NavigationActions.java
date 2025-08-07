@@ -48,6 +48,7 @@ public class NavigationActions extends Actions
 	public static final String TOGGLE_INTERPOLATION = "toggle interpolation";
 	public static final String TOGGLE_FUSED_MODE = "toggle fused mode";
 	public static final String TOGGLE_GROUPING = "toggle grouping";
+	public static final String TOGGLE_BLEND_MODE = "toggle blending mode";
 	public static final String SET_CURRENT_SOURCE = "set current source %d";
 	public static final String TOGGLE_SOURCE_VISIBILITY = "toggle source visibility %d";
 	public static final String ALIGN_XY_PLANE = "align XY plane";
@@ -59,6 +60,7 @@ public class NavigationActions extends Actions
 	public static final String[] TOGGLE_INTERPOLATION_KEYS = new String[] { "I" };
 	public static final String[] TOGGLE_FUSED_MODE_KEYS = new String[] { "F" };
 	public static final String[] TOGGLE_GROUPING_KEYS = new String[] { "G" };
+	public static final String[] TOGGLE_BLEND_MODE_KEYS = new String[] { "U" };
 	public static final String SET_CURRENT_SOURCE_KEYS_FORMAT = "%s";
 	public static final String TOGGLE_SOURCE_VISIBILITY_KEYS_FORMAT = "shift %s";
 	public static final String[] ALIGN_XY_PLANE_KEYS = new String[] { "shift Z" };
@@ -84,6 +86,7 @@ public class NavigationActions extends Actions
 			descriptions.add( TOGGLE_INTERPOLATION, TOGGLE_INTERPOLATION_KEYS, "Switch between nearest-neighbor and n-linear interpolation mode in BigDataViewer." );
 			descriptions.add( TOGGLE_FUSED_MODE, TOGGLE_FUSED_MODE_KEYS, "TODO" );
 			descriptions.add( TOGGLE_GROUPING, TOGGLE_GROUPING_KEYS, "TODO" );
+			descriptions.add( TOGGLE_BLEND_MODE, TOGGLE_BLEND_MODE_KEYS, "Switch between summing and averaging (and possibly custom blending) of overlapping sources" );
 
 			final String[] numkeys = new String[] { "1", "2", "3", "4", "5", "6", "7", "8", "9", "0" };
 			IntStream.range( 0, numkeys.length ).forEach( i -> {
@@ -121,6 +124,9 @@ public class NavigationActions extends Actions
 		actions.runnableAction( () -> toggleInterpolation( state ), TOGGLE_INTERPOLATION, TOGGLE_INTERPOLATION_KEYS );
 		actions.runnableAction(	() -> toggleFusedMode( state ), TOGGLE_FUSED_MODE, TOGGLE_FUSED_MODE_KEYS );
 		actions.runnableAction(	() -> toggleGroupingMode( state ), TOGGLE_GROUPING, TOGGLE_GROUPING_KEYS );
+
+		final BlendModeSwitcher blending = new BlendModeSwitcher( state );
+		actions.runnableAction( blending::switchToNextMode, TOGGLE_BLEND_MODE, TOGGLE_BLEND_MODE_KEYS );
 	}
 
 	public static void installTimeActions( final Actions actions, final ViewerState state )
