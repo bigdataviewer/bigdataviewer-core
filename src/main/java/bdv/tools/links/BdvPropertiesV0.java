@@ -117,7 +117,7 @@ class BdvPropertiesV0
 		{
 			final ConverterSetup setup = converterSetups.getConverterSetup( soc );
 			final boolean hasColor = setup.supportsColor();
-			final int color = setup.getColor().get();
+			final int color = hasColor ? setup.getColor().get() : 0;
 			final double min = setup.getDisplayRangeMin();
 			final double max = setup.getDisplayRangeMax();
 			final Bounds bounds = converterSetups.getBounds().getBounds( setup );
