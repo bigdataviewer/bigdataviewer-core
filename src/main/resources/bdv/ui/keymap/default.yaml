@@ -72,6 +72,10 @@
   contexts: [bdv]
   triggers: [G]
 - !mapping
+  action: toggle blending mode
+  contexts: [bdv]
+  triggers: [U]
+- !mapping
   action: set current source 0
   contexts: [bdv]
   triggers: ['1']
