@@ -40,7 +40,7 @@ import net.imglib2.Point;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.Cast;
 
-class Links
+public class Links
 {
 	private static final Logger LOG = LoggerFactory.getLogger( Links.class );
 
@@ -57,7 +57,7 @@ class Links
 		return gson.toJsonTree( versionAndProperties );
 	}
 
-	static void paste(
+	public static void paste(
 			final JsonElement json,
 			final AbstractViewerPanel panel,
 			final ConverterSetups converterSetups,
