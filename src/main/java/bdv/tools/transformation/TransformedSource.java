@@ -36,6 +36,7 @@ import mpicbg.spim.data.sequence.VoxelDimensions;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.mask.Masked;
 
 /**
  * A {@link Source} that wraps another {@link Source} and allows to decorate it
@@ -294,5 +295,17 @@ public class TransformedSource< T > implements Source< T >, MipmapOrdering
 	public Source< T > getWrappedSource()
 	{
 		return source;
+	}
+
+	@Override
+	public RandomAccessibleInterval< ? extends Masked< T > > getMaskedSource( final int t, final int level )
+	{
+		return source.getMaskedSource( t, level );
+	}
+
+	@Override
+	public RealRandomAccessible< ? extends Masked< T > > getInterpolatedMaskedSource( final int t, final int level, final Interpolation method )
+	{
+		return source.getInterpolatedMaskedSource( t, level, method );
 	}
 }

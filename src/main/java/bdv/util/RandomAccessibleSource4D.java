@@ -36,6 +36,7 @@ import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.mask.Masked;
 import net.imglib2.type.numeric.NumericType;
 import net.imglib2.util.Intervals;
 import net.imglib2.view.Views;
@@ -51,6 +52,8 @@ public class RandomAccessibleSource4D< T extends NumericType< T > > extends Abst
 	protected int currentTimePointIndex;
 
 	private RandomAccessibleInterval< T > currentSource;
+
+	private RandomAccessibleInterval< ? extends Masked< T > > currentMaskedSource;
 
 	private final RealRandomAccessible< T >[] currentInterpolatedSources;
 
@@ -98,10 +101,9 @@ public class RandomAccessibleSource4D< T extends NumericType< T > > extends Abst
 		currentTimePointIndex = timepointIndex;
 		if ( isPresent( timepointIndex ) )
 		{
-			final T zero = getType().createVariable();
-			zero.setZero();
 			final RandomAccessible< T > slice = Views.hyperSlice( source, 3, timepointIndex );
 			currentSource = Views.interval( slice, timeSliceInterval );
+			currentMaskedSource = Views.interval( Masked.withConstant( slice, 1 ), timeSliceInterval );
 			for ( final Interpolation method : Interpolation.values() )
 				currentInterpolatedSources[ method.ordinal() ] = Views.interpolate( slice, interpolators.get( method ) );
 		}
@@ -119,7 +121,7 @@ public class RandomAccessibleSource4D< T extends NumericType< T > > extends Abst
 	}
 
 	@Override
-	public RandomAccessibleInterval< T > getSource( final int t, final int level )
+	public synchronized RandomAccessibleInterval< T > getSource( final int t, final int level )
 	{
 		if ( t != currentTimePointIndex )
 			loadTimepoint( t );
@@ -127,11 +129,25 @@ public class RandomAccessibleSource4D< T extends NumericType< T > > extends Abst
 	}
 
 	@Override
-	public RealRandomAccessible< T > getInterpolatedSource( final int t, final int level, final Interpolation method )
+	public synchronized RandomAccessibleInterval< ? extends Masked< T > > getMaskedSource( final int t, final int level )
+	{
+		if ( t != currentTimePointIndex )
+			loadTimepoint( t );
+		return currentMaskedSource;
+	}
+
+	@Override
+	public synchronized RealRandomAccessible< T > getInterpolatedSource( final int t, final int level, final Interpolation method )
 	{
 		if ( t != currentTimePointIndex )
 			loadTimepoint( t );
 		return currentInterpolatedSources[ method.ordinal() ];
+	}
+
+	@Override
+	public RealRandomAccessible< ? extends Masked< T > > getInterpolatedMaskedSource( final int t, final int level, final Interpolation method )
+	{
+		return Masked.withConstant( getInterpolatedSource( t, level, method ), 1 );
 	}
 
 	@Override

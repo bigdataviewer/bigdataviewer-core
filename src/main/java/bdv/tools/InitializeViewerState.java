@@ -36,6 +36,7 @@ import net.imglib2.histogram.DiscreteFrequencyDistribution;
 import net.imglib2.histogram.Histogram1d;
 import net.imglib2.histogram.Real1dBinMapper;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.util.LinAlgHelpers;
@@ -198,32 +199,45 @@ public class InitializeViewerState
 		{
 			@SuppressWarnings( "unchecked" )
 			final RandomAccessibleInterval< UnsignedShortType > img = ( RandomAccessibleInterval< UnsignedShortType > ) source.getSource( timepoint, source.getNumMipmapLevels() - 1 );
-			final long z = ( img.min( 2 ) + img.max( 2 ) + 1 ) / 2;
-
-			final int numBins = 6535;
-			final Histogram1d< ? > histogram = new Histogram1d<>( Views.hyperSlice( img, 2, z ), new Real1dBinMapper<>( 0, 65535, numBins, false ) );
-			final DiscreteFrequencyDistribution dfd = histogram.dfd();
-			final long[] bin = new long[] { 0 };
-			double cumulative = 0;
-			int i = 0;
-			for ( ; i < numBins && cumulative < cumulativeMinCutoff; ++i )
-			{
-				bin[ 0 ] = i;
-				cumulative += dfd.relativeFrequency( bin );
-			}
-			final int min = i * 65535 / numBins;
-			for ( ; i < numBins && cumulative < cumulativeMaxCutoff; ++i )
-			{
-				bin[ 0 ] = i;
-				cumulative += dfd.relativeFrequency( bin );
-			}
-			final int max = i * 65535 / numBins;
-			return new Bounds( min, max );
+			return estimateBounds( img, cumulativeMinCutoff, cumulativeMaxCutoff);
 		}
 		else if ( type instanceof UnsignedByteType )
 			return new Bounds( 0, 255 );
 		else
 			return new Bounds( 0, 65535 );
+	}
+
+	/**
+	 * @param img
+	 * 		3D image, histogram of the center plane is used for estimating instensity range.
+	 * @param cumulativeMinCutoff
+	 * 		fraction of pixels that are allowed to be saturated at the lower end of the range.
+	 * @param cumulativeMaxCutoff
+	 * 		fraction of pixels that are allowed to be saturated at the upper end of the range.
+	 */
+	private static < T extends RealType< T > > Bounds estimateBounds( final RandomAccessibleInterval< T > img, final double cumulativeMinCutoff, final double cumulativeMaxCutoff )
+	{
+		final long z = ( img.min( 2 ) + img.max( 2 ) + 1 ) / 2;
+
+		final int numBins = 6535;
+		final Histogram1d< ? > histogram = new Histogram1d<>( Views.hyperSlice( img, 2, z ), new Real1dBinMapper<>( 0, 65535, numBins, false ) );
+		final DiscreteFrequencyDistribution dfd = histogram.dfd();
+		final long[] bin = new long[] { 0 };
+		double cumulative = 0;
+		int i = 0;
+		for ( ; i < numBins && cumulative < cumulativeMinCutoff; ++i )
+		{
+			bin[ 0 ] = i;
+			cumulative += dfd.relativeFrequency( bin );
+		}
+		final int min = i * 65535 / numBins;
+		for ( ; i < numBins && cumulative < cumulativeMaxCutoff; ++i )
+		{
+			bin[ 0 ] = i;
+			cumulative += dfd.relativeFrequency( bin );
+		}
+		final int max = i * 65535 / numBins;
+		return new Bounds( min, max );
 	}
 
 	@Deprecated

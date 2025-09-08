@@ -32,7 +32,11 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
+
+import bdv.viewer.render.AccumulateProjectorFactory;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.numeric.ARGBType;
+
 import org.scijava.listeners.Listeners;
 
 /**
@@ -82,6 +86,18 @@ class UnmodifiableViewerState implements ViewerState
 
 	@Override
 	public void setDisplayMode( final DisplayMode mode )
+	{
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public AccumulateProjectorFactory< ARGBType > getAccumulateProjectorFactory()
+	{
+		return state.getAccumulateProjectorFactory();
+	}
+
+	@Override
+	public void setAccumulateProjectorFactory( final AccumulateProjectorFactory< ARGBType > factory )
 	{
 		throw new UnsupportedOperationException();
 	}

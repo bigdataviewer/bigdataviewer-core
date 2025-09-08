@@ -40,6 +40,7 @@ import javax.swing.ActionMap;
 import javax.swing.InputMap;
 import javax.swing.KeyStroke;
 
+import bdv.viewer.RequestRepaint;
 import net.imglib2.realtransform.AffineTransform3D;
 
 import org.scijava.listeners.Listeners;
@@ -74,11 +75,13 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 
 	private final ViewerState viewerState;
 
+	private final Runnable requestRepaint;
+
 	private final Consumer< String > viewerMessageDisplay;
 
 	public ManualTransformationEditor( final AbstractViewerPanel viewer, final InputActionBindings inputActionBindings )
 	{
-		this( viewer.transformListeners(), viewer.state(), viewer::showMessage, inputActionBindings );
+		this( viewer.transformListeners(), viewer.state(), viewer::requestRepaint, viewer::showMessage, inputActionBindings );
 	}
 
 	/**
@@ -94,11 +97,13 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 	public ManualTransformationEditor(
 			final Listeners< TransformListener< AffineTransform3D > > viewerTransformListeners,
 			final ViewerState viewerState,
+			final Runnable requestRepaint,
 			final Consumer< String > viewerMessageDisplay,
 			final InputActionBindings inputActionBindings )
 	{
 		this.viewerTransformListeners = viewerTransformListeners;
 		this.viewerState = viewerState;
+		this.requestRepaint = requestRepaint;
 		this.viewerMessageDisplay = viewerMessageDisplay;
 
 		bindings = inputActionBindings;
@@ -164,6 +169,7 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 			sourcesToTransform = getCurrentSources( state );
 		}
 		state.getViewerTransform( frozenTransform );
+		liveTransform.identity();
 		sourcesToModify.clear();
 		sourcesToFix.clear();
 		for ( final SourceAndConverter< ? > source : state.getSources() )
@@ -194,18 +200,20 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 	{
 		if ( active )
 		{
-			final AffineTransform3D identity = new AffineTransform3D();
+			final AffineTransform3D tmp = new AffineTransform3D();
 			for ( final TransformedSource< ? > source : sourcesToModify )
 			{
-				source.setIncrementalTransform( identity );
-				source.setFixedTransform( identity );
+				source.getFixedTransform( tmp );
+				source.setIncrementalTransform( tmp.inverse() );
 			}
+			tmp.identity();
 			for ( final TransformedSource< ? > source : sourcesToFix )
 			{
-				source.setIncrementalTransform( identity );
+				source.setIncrementalTransform( tmp );
 			}
 			viewerState.setViewerTransform( frozenTransform );
 			viewerMessageDisplay.accept( "reset manual transform" );
+			requestRepaint.run();
 		}
 	}
 
@@ -218,18 +226,21 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 		if ( active )
 		{
 			// Exit manual edit mode.
-			final AffineTransform3D tmp = new AffineTransform3D();
+			final AffineTransform3D incremental = new AffineTransform3D();
+			final AffineTransform3D fixed = new AffineTransform3D();
 			for ( final TransformedSource< ? > source : sourcesToModify )
 			{
-				tmp.identity();
-				source.setIncrementalTransform( tmp );
-				source.getFixedTransform( tmp );
-				tmp.preConcatenate( liveTransform );
-				source.setFixedTransform( tmp );
+				source.getIncrementalTransform( incremental );
+				source.getFixedTransform( fixed );
+				incremental.preConcatenate( fixed ).preConcatenate( liveTransform );
+				source.setFixedTransform( incremental );
+
 			}
-			tmp.identity();
+			final AffineTransform3D identity = new AffineTransform3D();
+			for ( final TransformedSource< ? > source : sourcesToModify )
+				source.setIncrementalTransform( identity );
 			for ( final TransformedSource< ? > source : sourcesToFix )
-				source.setIncrementalTransform( tmp );
+				source.setIncrementalTransform( identity );
 
 			terminate( "fixed manual transform" );
 		}
@@ -247,6 +258,7 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 			for ( final TransformedSource< ? > source : sourcesToModify )
 				source.setIncrementalTransform( identity );
 
+			viewerState.setViewerTransform( frozenTransform );
 			terminate("aborted manual transform");
 		}
 	}
@@ -260,6 +272,7 @@ public class ManualTransformationEditor implements TransformListener< AffineTran
 		if ( message != null )
 			viewerMessageDisplay.accept( message );
 		manualTransformActiveListeners.list.forEach( l -> l.manualTransformActiveChanged( active ) );
+		requestRepaint.run();
 	}
 
 	public synchronized void setActive( final boolean a )

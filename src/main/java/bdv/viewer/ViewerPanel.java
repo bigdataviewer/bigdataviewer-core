@@ -229,6 +229,7 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 		options = optional.values;
 
 		state = setupState( sources, numTimepoints, options.getNumSourceGroups() );
+		state.setAccumulateProjectorFactory( options.getAccumulateProjectorFactory() );
 		deprecatedState = new bdv.viewer.state.ViewerState( state );
 
 		multiBoxOverlayRenderer = new MultiBoxOverlayRenderer();
@@ -255,7 +256,6 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 				options.getNumRenderingThreads(),
 				renderingExecutorService,
 				options.isUseVolatileIfAvailable(),
-				options.getAccumulateProjectorFactory(),
 				cacheControl );
 
 		display.addHandler( mouseCoordinates );
@@ -586,6 +586,10 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 			final Interpolation interpolation = state.getInterpolation();
 			showMessage( interpolation.getName() );
 			interpolationModeListeners.list.forEach( l -> l.interpolationModeChanged( interpolation ) );
+			requestRepaint();
+			break;
+		case ACCUMULATE_PROJECTOR_CHANGED:
+			showMessage( BlendMode.of( state.getAccumulateProjectorFactory() ).getName() );
 			requestRepaint();
 			break;
 		case NUM_TIMEPOINTS_CHANGED:

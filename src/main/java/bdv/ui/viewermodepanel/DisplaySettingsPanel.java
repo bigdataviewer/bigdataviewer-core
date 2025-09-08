@@ -30,15 +30,18 @@ package bdv.ui.viewermodepanel;
 
 import static bdv.viewer.Interpolation.NEARESTNEIGHBOR;
 import static bdv.viewer.Interpolation.NLINEAR;
+import static bdv.viewer.ViewerStateChange.ACCUMULATE_PROJECTOR_CHANGED;
 import static bdv.viewer.ViewerStateChange.DISPLAY_MODE_CHANGED;
 import static bdv.viewer.ViewerStateChange.INTERPOLATION_CHANGED;
 
+import javax.swing.Icon;
 import javax.swing.ImageIcon;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 import javax.swing.UIManager;
 
 import bdv.ui.UIUtils;
+import bdv.viewer.BlendModeSwitcher;
 import bdv.viewer.DisplayMode;
 import bdv.viewer.Interpolation;
 import bdv.viewer.ViewerState;
@@ -59,12 +62,21 @@ public class DisplaySettingsPanel extends JPanel
 	private static final String SOURCE_MODE_TOOL_TIP = "<html><b>Source</b>/Group</html>";
 	private static final String NEAREST_INTERPOLATION_TOOL_TIP = "<html><b>Nearest</b>/Linear</html>";
 	private static final String LINEAR_INTERPOLATION_TOOL_TIP = "<html>Nearest/<b>Linear</b></html>";
+	private static final String SUM_BLENDING_TOOL_TIP = "<html><b>Sum</b>/Average</html>";
+	private static final String AVG_BLENDING_TOOL_TIP = "<html>Sum/<b>Average</html>";
+	private static final String CUSTOM_BLENDING_TOOL_TIP = "<html>Sum/Average/<b>Custom</b></html>";
 
 	private final LabeledToggleButton fusion;
 	private final LabeledToggleButton grouping;
 	private final LabeledToggleButton interpolation;
+	private final LabeledOptionButton blending;
 
 	public DisplaySettingsPanel( final ViewerState state )
+	{
+		this( state, true ); // TODO: change to false by default, so that it doesn't show in BVV
+	}
+
+	public DisplaySettingsPanel( final ViewerState state, final boolean showBlendMode )
 	{
 		super( new MigLayout( "ins 2 0 0 0, fillx, filly", "[][][]", "top" ) );
 
@@ -128,6 +140,35 @@ public class DisplaySettingsPanel extends JPanel
 		this.add( fusion );
 		this.add( grouping );
 		this.add( interpolation );
+
+		if ( showBlendMode )
+		{
+			final BlendModeSwitcher blendModeSwitcher = new BlendModeSwitcher( state );
+			blending = new LabeledOptionButton(
+					new Icon[] {
+							new ImageIcon( this.getClass().getResource( "blend_sum" + isDark + isLarge + ".png" ) ),
+							new ImageIcon( this.getClass().getResource( "blend_avg" + isDark + isLarge + ".png" ) ),
+							new ImageIcon( this.getClass().getResource( "blend_custom" + isDark + isLarge + ".png" ) ) },
+					new String[] {
+							"Sum",
+							"Avg",
+							"Custom"
+					},
+					new String[] {
+							SUM_BLENDING_TOOL_TIP,
+							AVG_BLENDING_TOOL_TIP,
+							CUSTOM_BLENDING_TOOL_TIP } );
+			blending.setOption( blendModeSwitcher.getCurrentMode().ordinal() );
+			blending.addActionListener( e -> blendModeSwitcher.switchToNextMode() );
+			blendModeSwitcher.changeListeners().add( mode -> {
+				blending.setOption( mode.ordinal() );
+			} );
+			this.add( blending );
+		}
+		else
+		{
+			blending = null;
+		}
 	}
 
 	@Override
@@ -152,6 +193,14 @@ public class DisplaySettingsPanel extends JPanel
 					new ImageIcon( this.getClass().getResource( "nearest" + isDark + isLarge + ".png" ) ),
 					new ImageIcon( this.getClass().getResource( "linear" + isDark + isLarge + ".png" ) )
 			);
+			if ( blending != null )
+			{
+				blending.setIcons( new Icon[] {
+						new ImageIcon( this.getClass().getResource( "blend_sum" + isDark + isLarge + ".png" ) ),
+						new ImageIcon( this.getClass().getResource( "blend_avg" + isDark + isLarge + ".png" ) ),
+						new ImageIcon( this.getClass().getResource( "blend_custom" + isDark + isLarge + ".png" ) )
+				} );
+			}
 		}
 	}
 }

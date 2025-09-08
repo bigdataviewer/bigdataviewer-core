@@ -124,25 +124,17 @@ public class MipmapTransforms
 	 */
 	public static double[] getPixelSourceSize( final AffineTransform3D screenTransform, final Source< ? > source, final int timepoint, final int mipmapIndex )
 	{
+		final AffineTransform3D t = new AffineTransform3D();
+		source.getSourceTransform( timepoint, mipmapIndex, t );
+		t.preConcatenate( screenTransform );
+		final AffineTransform3D screenToSource = t.inverse();
 		final double[] sourcePixelSize = new double[ 2 ];
-		final AffineTransform3D sourceToScreen = new AffineTransform3D();
-		sourceToScreen.set( screenTransform );
-		final AffineTransform3D sourceTransform = new AffineTransform3D();
-		source.getSourceTransform( timepoint, mipmapIndex, sourceTransform );
-		sourceToScreen.concatenate( sourceTransform );
-		final double[] zero = new double[] { 0, 0, 0 };
-		final double[] tzero = new double[ 3 ];
-		final double[] one = new double[ 3 ];
-		final double[] tone = new double[ 3 ];
-		final double[] diff = new double[ 3 ];
-		sourceToScreen.applyInverse( tzero, zero );
-		for ( int i = 0; i < 2; ++i )
+		final double[] tmp = new double[ 3 ];
+		for ( int d = 0; d < 2; ++d )
 		{
-			for ( int d = 0; d < 3; ++d )
-				one[ d ] = d == i ? 1 : 0;
-			sourceToScreen.applyInverse( tone, one );
-			LinAlgHelpers.subtract( tone, tzero, diff );
-			sourcePixelSize[ i ] = LinAlgHelpers.length( diff );
+			for ( int i = 0; i < 3; ++i )
+				tmp[ i ] = screenToSource.get( i, d );
+			sourcePixelSize[ d ] = LinAlgHelpers.length( tmp );
 		}
 		return sourcePixelSize;
 	}

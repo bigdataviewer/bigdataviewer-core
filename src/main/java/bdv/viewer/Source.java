@@ -35,6 +35,7 @@ import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.mask.Masked;
 
 /**
  * Provides image data for all timepoints of one view setup.
@@ -132,4 +133,44 @@ public interface Source< T >
 	VoxelDimensions getVoxelDimensions();
 
 	int getNumMipmapLevels();
+
+	/**
+	 * Get a {@code Masked} version of the {@link #getSource 3D stack} at
+	 * timepoint index t.
+	 * <p>
+	 * By default, this is just {@link #getSource} augmented with a constant
+	 * mask {@code 1.0}.
+	 *
+	 * @param t
+	 *            timepoint index
+	 * @param level
+	 * 			  mipmap level
+	 * @return the masked stack
+	 */
+	default RandomAccessibleInterval< ? extends Masked< T > > getMaskedSource( int t, int level ) {
+		return Masked.withConstant( getSource( t, level ), 1 );
+	}
+
+	/**
+	 * Get a {@code Masked} version of the {@link #getInterpolatedSource 3D
+	 * stack} at timepoint index t, extended to infinity and interpolated.
+	 * <p>
+	 * By default, this is just {@link #getInterpolatedSource} augmented with a
+	 * constant mask {@code 1.0}.
+	 * <p>
+	 * However, most sources should override this to extend {@link
+	 * #getMaskedSource(int, int)} to infinity (with a {@code 0} mask) and
+	 * interpolate.
+	 *
+	 * @param t
+	 *            timepoint index
+	 * @param level
+	 * 			  mipmap level
+	 * @param method
+	 * 			  interpolation method to use
+	 * @return the extended and interpolated {@link RandomAccessible stack}.
+	 */
+	default RealRandomAccessible< ? extends Masked< T > > getInterpolatedMaskedSource( int t, int level, final Interpolation method ) {
+		return Masked.withConstant( getInterpolatedSource( t, level, method ), 1 );
+	}
 }

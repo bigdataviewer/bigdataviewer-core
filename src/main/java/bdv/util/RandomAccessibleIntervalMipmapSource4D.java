@@ -153,14 +153,12 @@ public class RandomAccessibleIntervalMipmapSource4D< T extends NumericType< T > 
 		currentTimePointIndex = timepointIndex;
 		if ( isPresent( timepointIndex ) )
 		{
-			final T zero = getType().createVariable();
-			zero.setZero();
 			for ( int level = 0; level < currentMipmaps.length; ++level )
 			{
 				currentMipmaps[level] = Views.hyperSlice(mipmapSources[level], 3, timepointIndex );
 				for ( final Interpolation method : Interpolation.values() )
 					currentInterpolatedSources[ method.ordinal() ][ level ] =
-							Views.interpolate( Views.extendValue( currentMipmaps[level], zero ), interpolators.get( method ) );
+							Views.interpolate( Views.extendZero( currentMipmaps[level] ), interpolators.get( method ) );
 			}
 		}
 		else
@@ -177,7 +175,7 @@ public class RandomAccessibleIntervalMipmapSource4D< T extends NumericType< T > 
 	}
 
 	@Override
-	public RandomAccessibleInterval< T > getSource( final int t, final int level )
+	public synchronized RandomAccessibleInterval< T > getSource( final int t, final int level )
 	{
 		if ( t != currentTimePointIndex )
 			loadTimepoint( t );
@@ -185,7 +183,7 @@ public class RandomAccessibleIntervalMipmapSource4D< T extends NumericType< T > 
 	}
 
 	@Override
-	public RealRandomAccessible< T > getInterpolatedSource( final int t, final int level, final Interpolation method )
+	public synchronized RealRandomAccessible< T > getInterpolatedSource( final int t, final int level, final Interpolation method )
 	{
 		if ( t != currentTimePointIndex )
 			loadTimepoint( t );

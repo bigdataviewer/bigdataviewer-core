@@ -40,6 +40,8 @@ import mpicbg.spim.data.sequence.VoxelDimensions;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.mask.Masked;
+
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -393,6 +395,18 @@ public class BasicViewerStateTest
 
 		@Override
 		public RealRandomAccessible< Void > getInterpolatedSource( final int t, final int level, final Interpolation method )
+		{
+			return null;
+		}
+
+		@Override
+		public RandomAccessibleInterval< ? extends Masked< Void > > getMaskedSource( final int t, final int level )
+		{
+			return null;
+		}
+
+		@Override
+		public RealRandomAccessible< ? extends Masked< Void > > getInterpolatedMaskedSource( final int t, final int level, final Interpolation method )
 		{
 			return null;
 		}

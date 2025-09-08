@@ -270,14 +270,10 @@ public class AccumulateProjectorARGB
 				gSum += g;
 				bSum += b;
 			}
-			if ( aSum > 255 )
-				aSum = 255;
-			if ( rSum > 255 )
-				rSum = 255;
-			if ( gSum > 255 )
-				gSum = 255;
-			if ( bSum > 255 )
-				bSum = 255;
+			aSum = Math.min( 255, aSum );
+			rSum = Math.min( 255, rSum );
+			gSum = Math.min( 255, gSum );
+			bSum = Math.min( 255, bSum );
 			target.set( ARGBType.rgba( rSum, gSum, bSum, aSum ) );
 		}
 	}

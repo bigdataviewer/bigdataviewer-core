@@ -31,13 +31,16 @@ package bdv.util;
 import java.util.function.Supplier;
 
 import bdv.viewer.Interpolation;
+import bdv.viewer.MaskUtils;
 import bdv.viewer.Source;
 import mpicbg.spim.data.sequence.DefaultVoxelDimensions;
-import mpicbg.spim.data.sequence.FinalVoxelDimensions;
 import mpicbg.spim.data.sequence.VoxelDimensions;
+import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.type.Type;
+import net.imglib2.type.mask.Masked;
 import net.imglib2.type.numeric.NumericType;
+import net.imglib2.util.Cast;
 import net.imglib2.view.Views;
 
 public abstract class AbstractSource< T extends NumericType< T > > implements Source< T >
@@ -73,7 +76,7 @@ public abstract class AbstractSource< T extends NumericType< T > > implements So
 	{
 		/*
 		 * We don't know the dimensionality of the source here, but the
-		 * DefaultVoxelDimensionsimplementation will return the same result
+		 * DefaultVoxelDimensions implementation will return the same result
 		 * for spacing and units regardless of the number of dimensions passed.
 		 */
 		this( type, name, new DefaultVoxelDimensions( -1 ), true );
@@ -105,6 +108,18 @@ public abstract class AbstractSource< T extends NumericType< T > > implements So
 	public RealRandomAccessible< T > getInterpolatedSource( final int t, final int level, final Interpolation method )
 	{
 		return Views.interpolate( Views.extendZero( getSource( t, level ) ), interpolators.get( method ) );
+	}
+
+	@Override
+	public RandomAccessibleInterval< ? extends Masked< T > > getMaskedSource( final int t, final int level )
+	{
+		return Masked.withConstant( getSource( t, level ), 1 );
+	}
+
+	@Override
+	public RealRandomAccessible< ? extends Masked< T > > getInterpolatedMaskedSource( final int t, final int level, final Interpolation method )
+	{
+		return MaskUtils.extendAndInterpolateMasked( Cast.unchecked( getMaskedSource( t, level ) ), method );
 	}
 
 	@Override

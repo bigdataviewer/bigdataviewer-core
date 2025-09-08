@@ -75,6 +75,20 @@ public interface AccumulateProjectorFactory< A >
 	}
 
 	/**
+	 * Returns {@code true} if projectors created by this factory make use of
+	 * alpha masks.
+	 * <p>
+	 * (In that case, individual sources should be rendered using
+	 * {@link Source#getInterpolatedMaskedSource} instead of
+	 * {@link Source#getInterpolatedSource}.)
+	 *
+	 * @return true, if projectors created by this factory make use of alpha masks
+	 */
+	default boolean requiresMaskedSources() {
+		return false;
+	}
+
+	/**
 	 * @deprecated Use {@link #createProjector(List, List, List, RandomAccessibleInterval, int, ExecutorService)} instead.
 	 * The new variant of the method is named "createProjector" instead of
 	 * "createAccumulateProjector" because it has the same erasure. The default
