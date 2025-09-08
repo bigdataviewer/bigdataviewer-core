@@ -399,3 +399,7 @@
   action: paste viewer state
   contexts: [bdv]
   triggers: [ctrl V, meta V]
+- !mapping
+  action: generate link viewer state
+  contexts: [bdv]
+  triggers: [ctrl L, meta L]
