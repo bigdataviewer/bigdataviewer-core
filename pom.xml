@@ -253,5 +253,12 @@
 			<artifactId>jmh-generator-annprocess</artifactId>
 			<scope>test</scope>
 		</dependency>
+
+		<!-- exploring displacement fields -->
+		<dependency>
+			<groupId>org.janelia.saalfeldlab</groupId>
+			<artifactId>n5-universe</artifactId>
+			<scope>test</scope>
+		</dependency>
 	</dependencies>
 </project>
