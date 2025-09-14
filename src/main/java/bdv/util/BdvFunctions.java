@@ -43,6 +43,7 @@ import net.imglib2.converter.Converter;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.realtransform.RealViews;
 import net.imglib2.type.Type;
+import net.imglib2.type.mask.Masked;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.NumericType;
 import net.imglib2.type.numeric.RealType;
@@ -772,6 +773,61 @@ public class BdvFunctions
 		final BdvStackSource< T > bdvSource = new BdvStackSource<>( handle, numTimepoints, type, setups, sources );
 		handle.addBdvSource( bdvSource );
 
+		return bdvSource;
+	}
+
+
+
+	// --- handle Masked sources ---
+
+
+	@SuppressWarnings( { "unchecked", "rawtypes" } )
+	public static < T, M extends Masked< T > > BdvStackSource< T > showMasked(
+			final RandomAccessibleInterval< M > maskedImg,
+			final String name,
+			final BdvOptions options )
+	{
+		final BdvHandle handle = getHandle( options );
+		final AxisOrder axisOrder = AxisOrder.getAxisOrder( options.values.axisOrder(), maskedImg, handle.is2D() );
+		final AffineTransform3D sourceTransform = options.values.getSourceTransform();
+		if ( maskedImg instanceof VolatileView )
+		{
+			final VolatileViewData< ?, ? > viewData = ( ( VolatileView< ?, ? > ) maskedImg ).getVolatileViewData();
+			handle.getCacheControls().addCacheControl( viewData.getCacheControl() );
+		}
+		return addMaskedRandomAccessibleInterval( handle, ( RandomAccessibleInterval ) maskedImg, name, axisOrder, sourceTransform );
+	}
+
+	private static < M extends Masked< T > & Type< M >, T extends NumericType< T > > BdvStackSource< T > addMaskedRandomAccessibleInterval(
+			final BdvHandle handle,
+			final RandomAccessibleInterval< M > maskedImg,
+			final String name,
+			final AxisOrder axisOrder,
+			final AffineTransform3D sourceTransform )
+	{
+		final M maskedType = maskedImg.getType();
+		final T type = maskedType.value().createVariable();
+		final List< ConverterSetup > converterSetups = new ArrayList<>();
+		final List< SourceAndConverter< T > > sources = new ArrayList<>();
+		final ArrayList< RandomAccessibleInterval< M > > stacks = AxisOrder.splitInputStackIntoSourceStacks( maskedImg, axisOrder );
+		int numTimepoints = 1;
+		for ( final RandomAccessibleInterval< M > stack : stacks )
+		{
+			final Source< T > s;
+			if ( stack.numDimensions() > 3 )
+			{
+				numTimepoints = ( int ) stack.max( 3 ) + 1;
+				s = new MaskedRandomAccessibleIntervalSource4D<>( stack, sourceTransform, name );
+			}
+			else
+			{
+				s = new MaskedRandomAccessibleIntervalSource<>( stack, sourceTransform, name );
+			}
+			addSourceToListsGenericType( s, handle.getUnusedSetupId(), converterSetups, sources );
+		}
+		handle.add( converterSetups, sources, numTimepoints );
+		final BdvStackSource< T > bdvSource = new BdvStackSource<>( handle, numTimepoints, type, converterSetups, sources );
+		handle.addBdvSource( bdvSource );
 		return bdvSource;
 	}
 }
