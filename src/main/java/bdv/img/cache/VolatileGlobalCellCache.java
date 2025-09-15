@@ -153,6 +153,19 @@ public class VolatileGlobalCellCache implements CacheControl
 	}
 
 	/**
+	 * Make sure that the {@link BlockingFetchQueues fetch queue} has at least
+	 * {@code numPriorities} priority levels.
+	 * <p>
+	 * Typically, {@code numPriorities} should be the number of mipmap levels.
+	 * Then loading of lower-resolution blocks can be prioritized over
+	 * higher-resolution blocks.
+	 */
+	public void ensureNumPriorities( final int numPriorities )
+	{
+		queue.ensureNumPriorities( numPriorities );
+	}
+
+	/**
 	 * Remove all references to loaded data.
 	 * <p>
 	 * Note that there may be pending cell requests which will re-populate the cache

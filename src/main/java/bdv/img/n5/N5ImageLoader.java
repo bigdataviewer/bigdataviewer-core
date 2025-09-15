@@ -36,8 +36,6 @@ import java.io.IOException;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -100,7 +98,7 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 	/**
 	 * Maps setup id to {@link SetupImgLoader}.
 	 */
-	private final Map< Integer, SetupImgLoader< ?, ? > > setupImgLoaders = new HashMap<>();
+	private final Map< Integer, SetupImgLoader< ?, ? > > setupImgLoaders = new ConcurrentHashMap<>();
 
 	public N5ImageLoader( final URI n5URI, final AbstractSequenceDescription< ?, ?, ? > sequenceDescription )
 	{
@@ -270,32 +268,15 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 				if ( isOpen )
 					return;
 
-				try
-				{
-					openReader();
+				openReader();
 
-					int maxNumLevels = 0;
-					final List< ? extends BasicViewSetup > setups = seq.getViewSetupsOrdered();
-					for ( final BasicViewSetup setup : setups )
-					{
-						final int setupId = setup.getId();
-						final SetupImgLoader< ?, ? > setupImgLoader = createSetupImgLoader( setupId );
-						setupImgLoaders.put( setupId, setupImgLoader );
-						maxNumLevels = Math.max( maxNumLevels, setupImgLoader.numMipmapLevels() );
-					}
-
-					final int numFetcherThreads = requestedNumFetcherThreads >= 0
-							? requestedNumFetcherThreads
-							: Math.max( 1, Runtime.getRuntime().availableProcessors() );
-					final SharedQueue queue = requestedSharedQueue != null
-							? requestedSharedQueue
-							: ( createdSharedQueue = new SharedQueue( numFetcherThreads, maxNumLevels ) );
-					cache = new VolatileGlobalCellCache( queue );
-				}
-				catch ( final IOException e )
-				{
-					throw new RuntimeException( e );
-				}
+				final int numFetcherThreads = requestedNumFetcherThreads >= 0
+						? requestedNumFetcherThreads
+						: Math.max( 1, Runtime.getRuntime().availableProcessors() );
+				final SharedQueue queue = requestedSharedQueue != null
+						? requestedSharedQueue
+						: ( createdSharedQueue = new SharedQueue( numFetcherThreads ) );
+				cache = new VolatileGlobalCellCache( queue );
 
 				isOpen = true;
 			}
@@ -332,20 +313,13 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 	public SetupImgLoader< ?, ? > getSetupImgLoader( final int setupId )
 	{
 		open();
-		return setupImgLoaders.get( setupId );
+		return setupImgLoaders.computeIfAbsent( setupId, this::createSetupImgLoader );
 	}
 
-	private < T extends NativeType< T >, V extends Volatile< T > & NativeType< V > > SetupImgLoader< T, V > createSetupImgLoader( final int setupId ) throws IOException
+	private < T extends NativeType< T >, V extends Volatile< T > & NativeType< V > > SetupImgLoader< T, V > createSetupImgLoader( final int setupId ) throws N5Exception
 	{
-		try
-		{
-			final DataType dataType = n5properties.getDataType( n5, setupId );
-			return new SetupImgLoader<>( setupId, Cast.unchecked( DataTypeProperties.of( dataType ) ) );
-		}
-		catch ( final N5Exception e )
-		{
-			throw new IOException( e );
-		}
+		final DataType dataType = n5properties.getDataType( n5, setupId );
+		return new SetupImgLoader<>( setupId, Cast.unchecked( DataTypeProperties.of( dataType ) ) );
 	}
 
 	@Override
@@ -361,30 +335,19 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 	{
 		private final int setupId;
 
-		private final double[][] mipmapResolutions;
+		private volatile boolean mipmapInitialized = false;
+		private double[][] mipmapResolutions;
+		private AffineTransform3D[] mipmapTransforms;
 
-		private final AffineTransform3D[] mipmapTransforms;
-
-		public SetupImgLoader( final int setupId, final DataTypeProperties< T, V, ?, ? > props ) throws IOException
+		public SetupImgLoader( final int setupId, final DataTypeProperties< T, V, ?, ? > props )
 		{
 			this( setupId, props.type(), props.volatileType() );
 		}
 
-		public SetupImgLoader( final int setupId, final T type, final V volatileType ) throws IOException
+		public SetupImgLoader( final int setupId, final T type, final V volatileType )
 		{
 			super( type, volatileType );
 			this.setupId = setupId;
-			try
-			{
-				mipmapResolutions = n5properties.getMipmapResolutions( n5, setupId );
-			}
-			catch ( final N5Exception e )
-			{
-				throw new IOException( e );
-			}
-			mipmapTransforms = new AffineTransform3D[ mipmapResolutions.length ];
-			for ( int level = 0; level < mipmapResolutions.length; level++ )
-				mipmapTransforms[ level ] = MipmapTransforms.getMipmapTransformDefault( mipmapResolutions[ level ] );
 		}
 
 		@Override
@@ -423,21 +386,44 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 			}
 		}
 
+		private void initializeMipmap()
+		{
+			if ( !mipmapInitialized )
+			{
+				synchronized ( this )
+				{
+					if ( mipmapInitialized )
+						return;
+
+					mipmapResolutions = n5properties.getMipmapResolutions( n5, setupId );
+					mipmapTransforms = new AffineTransform3D[ mipmapResolutions.length ];
+					for ( int level = 0; level < mipmapResolutions.length; level++ )
+						mipmapTransforms[ level ] = MipmapTransforms.getMipmapTransformDefault( mipmapResolutions[ level ] );
+					cache.ensureNumPriorities( mipmapResolutions.length );
+
+					mipmapInitialized = true;
+				}
+			}
+		}
+
 		@Override
 		public double[][] getMipmapResolutions()
 		{
+			initializeMipmap();
 			return mipmapResolutions;
 		}
 
 		@Override
 		public AffineTransform3D[] getMipmapTransforms()
 		{
+			initializeMipmap();
 			return mipmapTransforms;
 		}
 
 		@Override
 		public int numMipmapLevels()
 		{
+			initializeMipmap();
 			return mipmapResolutions.length;
 		}
 
