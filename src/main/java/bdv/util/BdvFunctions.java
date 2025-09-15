@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -48,8 +48,6 @@ import net.imglib2.type.numeric.NumericType;
 import net.imglib2.type.numeric.RealType;
 import net.imglib2.type.volatiles.VolatileARGBType;
 import net.imglib2.util.Pair;
-import net.imglib2.util.Util;
-import net.imglib2.view.Views;
 
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 
@@ -113,17 +111,13 @@ public class BdvFunctions
 		final BdvHandle handle = getHandle( options );
 		final AxisOrder axisOrder = AxisOrder.getAxisOrder( options.values.axisOrder(), img, handle.is2D() );
 		final AffineTransform3D sourceTransform = options.values.getSourceTransform();
-		final T type;
 		if ( img instanceof VolatileView )
 		{
 			final VolatileViewData< ?, ? > viewData = ( ( VolatileView< ?, ? > ) img ).getVolatileViewData();
-			type = ( T ) viewData.getVolatileType();
 			handle.getCacheControls().addCacheControl( viewData.getCacheControl() );
 		}
-		else
-			type = Util.getTypeFromInterval( img );
 
-		return addRandomAccessibleInterval( handle, ( RandomAccessibleInterval ) img, ( NumericType ) type, name, axisOrder, sourceTransform );
+		return addRandomAccessibleInterval( handle, ( RandomAccessibleInterval ) img, name, axisOrder, sourceTransform );
 	}
 
 	public static < T extends NumericType< T > > BdvStackSource< T > show(
@@ -146,17 +140,13 @@ public class BdvFunctions
 		final int numTimepoints = 1;
 		final AxisOrder axisOrder = AxisOrder.getAxisOrder( options.values.axisOrder(), img, handle.is2D() );
 		final AffineTransform3D sourceTransform = options.values.getSourceTransform();
-		final T type;
 		if ( img instanceof VolatileView )
 		{
 			final VolatileViewData< ?, ? > viewData = ( ( VolatileView< ?, ? > ) img ).getVolatileViewData();
-			type = ( T ) viewData.getVolatileType();
 			handle.getCacheControls().addCacheControl( viewData.getCacheControl() );
 		}
-		else
-			type = Util.getTypeFromInterval( Views.interval( img, interval ) );
 
-		return addRandomAccessible( handle, img, interval, numTimepoints, type, name, axisOrder, sourceTransform );
+		return addRandomAccessible( handle, img, interval, numTimepoints, name, axisOrder, sourceTransform );
 	}
 
 	public static < T extends Type< T > > BdvStackSource< T > show(
@@ -176,8 +166,7 @@ public class BdvFunctions
 		final BdvHandle handle = getHandle( options );
 		final AxisOrder axisOrder = AxisOrder.getAxisOrder( options.values.axisOrder(), img, handle.is2D() );
 		final AffineTransform3D sourceTransform = options.values.getSourceTransform();
-		final T type = img.realRandomAccess().get();
-		return addRealRandomAccessible( handle, img, interval, type, name, axisOrder, sourceTransform );
+		return addRealRandomAccessible( handle, img, interval, name, axisOrder, sourceTransform );
 	}
 
 	public static List< BdvVirtualChannelSource > show(
@@ -537,8 +526,6 @@ public class BdvFunctions
 	 *            handle to add the {@code img} to.
 	 * @param img
 	 *            {@link RandomAccessibleInterval} to add.
-	 * @param type
-	 *            instance of the {@code img} type.
 	 * @param name
 	 *            name to give to the new source
 	 * @param axisOrder
@@ -550,11 +537,11 @@ public class BdvFunctions
 	private static < T extends NumericType< T > > BdvStackSource< T > addRandomAccessibleInterval(
 			final BdvHandle handle,
 			final RandomAccessibleInterval< T > img,
-			final T type,
 			final String name,
 			final AxisOrder axisOrder,
 			final AffineTransform3D sourceTransform )
 	{
+		final T type = img.getType();
 		final List< ConverterSetup > converterSetups = new ArrayList<>();
 		final List< SourceAndConverter< T > > sources = new ArrayList<>();
 		final ArrayList< RandomAccessibleInterval< T > > stacks = AxisOrder.splitInputStackIntoSourceStacks( img, axisOrder );
@@ -593,8 +580,6 @@ public class BdvFunctions
 	 *            box overlay in BDV).
 	 * @param numTimepoints
 	 *            the number of timepoints of the source.
-	 * @param type
-	 *            instance of the {@code img} type.
 	 * @param name
 	 *            name to give to the new source
 	 * @param axisOrder
@@ -608,12 +593,11 @@ public class BdvFunctions
 			final RandomAccessible< T > img,
 			final Interval interval,
 			final int numTimepoints,
-			final T type,
 			final String name,
 			final AxisOrder axisOrder,
 			final AffineTransform3D sourceTransform )
 	{
-
+		final T type = img.getType();
 		final List< ConverterSetup > converterSetups = new ArrayList<>();
 		final List< SourceAndConverter< T > > sources = new ArrayList<>();
 		final Pair< ArrayList< RandomAccessible< T > >, Interval > stacksAndInterval = AxisOrder.splitInputStackIntoSourceStacks(
@@ -650,8 +634,6 @@ public class BdvFunctions
 	 * @param interval
 	 *            interval of the source (this is only used in the navigation
 	 *            box overlay in BDV).
-	 * @param type
-	 *            instance of the {@code img} type.
 	 * @param name
 	 *            name to give to the new source
 	 * @param axisOrder
@@ -665,7 +647,6 @@ public class BdvFunctions
 			final BdvHandle handle,
 			RealRandomAccessible< T > img,
 			Interval interval,
-			final T type,
 			final String name,
 			final AxisOrder axisOrder,
 			final AffineTransform3D sourceTransform )
@@ -682,6 +663,7 @@ public class BdvFunctions
 					new long[]{ interval.max( 0 ), interval.max( 1 ), 0 } );
 		}
 
+		final T type = img.getType();
 		final Source< T > s = new RealRandomAccessibleIntervalSource<>( img, interval, type, sourceTransform, name );
 		return addSource( handle, s, 1 );
 	}
