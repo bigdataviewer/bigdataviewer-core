@@ -79,8 +79,8 @@ public final class PlaceHolderOverlayInfo implements TransformListener< AffineTr
 		this.viewerTransform = new AffineTransform3D();
 		this.listeners = new Listeners.SynchronizedList<>();
 
-		viewer.addRenderTransformListener( this );
-		viewer.addTimePointListener( this );
+		viewer.renderTransformListeners().add( this );
+		viewer.timePointListeners().add( this );
 		viewer.state().changeListeners().add( this );
 	}
 

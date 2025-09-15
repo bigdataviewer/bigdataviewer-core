@@ -83,12 +83,6 @@ public class BoxRealRandomAccessible< T extends Type< T > > implements RealRando
 		{
 			return new Access( this );
 		}
-
-		@Override
-		public Access copyRealRandomAccess()
-		{
-			return copy();
-		}
 	}
 
 	@Override

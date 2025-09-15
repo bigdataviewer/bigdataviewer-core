@@ -88,7 +88,7 @@ public class ExampleMipmapSource4D
 
 		final RandomAccessibleIntervalMipmapSource4D< DoubleType > raiSource4D = new RandomAccessibleIntervalMipmapSource4D<>(
 				imgs,
-				Util.getTypeFromInterval( img ),
+				img.getType(),
 				transforms,
 				new FinalVoxelDimensions( "um", 1, 1, 1 ),
 				"4d rai source", true );

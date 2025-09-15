@@ -56,12 +56,6 @@ public class ConstantRandomAccessible< T > implements RandomAccessible< T >
 		{
 			return new ConstantRandomAccess();
 		}
-
-		@Override
-		public ConstantRandomAccess copyRandomAccess()
-		{
-			return new ConstantRandomAccess();
-		}
 	}
 
 	private final int nDimensions;

@@ -250,7 +250,7 @@ public abstract class BdvHandle implements Bdv
 
 		if ( timepointListeners != null )
 			for ( final TimePointListener l : timepointListeners )
-				viewer.removeTimePointListener( l );
+				viewer.timePointListeners().remove( l );
 
 		if ( viewerStateChangeListeners != null )
 			viewer.state().changeListeners().removeAll( viewerStateChangeListeners );

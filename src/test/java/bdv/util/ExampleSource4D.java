@@ -48,7 +48,7 @@ public class ExampleSource4D
 		final RandomAccessibleIntervalSource4D raiSource4D
 				= new RandomAccessibleIntervalSource4D(
 				img,
-				Util.getTypeFromInterval( img ),
+				img.getType(),
 				"4d rai source" );
 
 		BdvFunctions.show( raiSource4D, 5 );
