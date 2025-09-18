@@ -48,6 +48,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
 import javax.swing.DefaultBoundedRangeModel;
@@ -191,7 +192,7 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 	 * to make smooth transitions when {@link #align(AlignPlane) aligning to
 	 * orthogonal planes}.
 	 */
-	private AbstractTransformAnimator currentAnimator = null;
+	private AtomicReference<AbstractTransformAnimator> currentAnimator = new AtomicReference<>();
 
 	/**
 	 * A list of currently incomplete (see {@link OverlayAnimator#isComplete()})
@@ -365,10 +366,7 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 	@Deprecated
 	public void removeSource( final Source< ? > source )
 	{
-		synchronized ( state )
-		{
-			state.removeSource( soc( source ) );
-		}
+		state.removeSource( soc( source ) );
 	}
 
 	/**
@@ -377,10 +375,7 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 	@Deprecated
 	public void removeSources( final Collection< Source< ? > > sources )
 	{
-		synchronized ( state )
-		{
-			state.removeSources( sources.stream().map( this::soc ).collect( Collectors.toList() ) );
-		}
+		state.removeSources( sources.stream().map( this::soc ).collect( Collectors.toList() ) );
 	}
 
 	/**
@@ -465,17 +460,15 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 
 		display.repaint();
 
-		synchronized ( this )
+		final AbstractTransformAnimator animator = currentAnimator.get();
+		if ( animator != null )
 		{
-			if ( currentAnimator != null )
-			{
-				final AffineTransform3D transform = currentAnimator.getCurrent( System.currentTimeMillis() );
-				state.setViewerTransform( transform );
-				if ( currentAnimator.isComplete() )
-					currentAnimator = null;
-				else
-					requestRepaint();
-			}
+			final AffineTransform3D transform = animator.getCurrent( System.currentTimeMillis() );
+			state.setViewerTransform( transform );
+			if ( animator.isComplete() )
+				currentAnimator.compareAndSet( animator, null );
+			else
+				requestRepaint();
 		}
 	}
 
@@ -628,10 +621,10 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 	}
 
 	@Override
-	public synchronized void setTransformAnimator( final AbstractTransformAnimator animator )
+	public void setTransformAnimator( final AbstractTransformAnimator animator )
 	{
-		currentAnimator = animator;
-		currentAnimator.setTime( System.currentTimeMillis() );
+		animator.setTime( System.currentTimeMillis() );
+		currentAnimator.set( animator );
 		requestRepaint();
 	}
 
@@ -640,7 +633,7 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 	 * interpolation modes: nearest-neighbor and N-linear.)
 	 */
 	// TODO: Deprecate or leave as convenience?
-	public synchronized void toggleInterpolation()
+	public void toggleInterpolation()
 	{
 		NavigationActions.toggleInterpolation( state );
 	}
@@ -649,7 +642,7 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 	 * Set the {@link Interpolation} mode.
 	 */
 	// TODO: Deprecate or leave as convenience?
-	public synchronized void setInterpolation( final Interpolation mode )
+	public void setInterpolation( final Interpolation mode )
 	{
 		state.setInterpolation( mode );
 	}
@@ -658,7 +651,7 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 	 * Set the {@link DisplayMode}.
 	 */
 	// TODO: Deprecate or leave as convenience?
-	public synchronized void setDisplayMode( final DisplayMode displayMode )
+	public void setDisplayMode( final DisplayMode displayMode )
 	{
 		state.setDisplayMode( displayMode );
 	}
@@ -679,7 +672,7 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 	 *            time-point index.
 	 */
 	// TODO: Deprecate or leave as convenience?
-	public synchronized void setTimepoint( final int timepoint )
+	public void setTimepoint( final int timepoint )
 	{
 		state.setCurrentTimepoint( timepoint );
 	}
@@ -688,7 +681,7 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 	 * Show the next time-point.
 	 */
 	// TODO: Deprecate or leave as convenience?
-	public synchronized void nextTimePoint()
+	public void nextTimePoint()
 	{
 		NavigationActions.nextTimePoint( state );
 	}
@@ -697,7 +690,7 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 	 * Show the previous time-point.
 	 */
 	// TODO: Deprecate or leave as convenience?
-	public synchronized void previousTimePoint()
+	public void previousTimePoint()
 	{
 		NavigationActions.previousTimePoint( state );
 	}
@@ -934,15 +927,21 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 		timePointListeners().remove( listener );
 	}
 
-	public synchronized Element stateToXml()
+	public Element stateToXml()
 	{
-		return new XmlIoViewerState().toXml( deprecatedState );
+		synchronized ( state )
+		{
+			return new XmlIoViewerState().toXml( deprecatedState );
+		}
 	}
 
-	public synchronized void stateFromXml( final Element parent )
+	public void stateFromXml( final Element parent )
 	{
-		final XmlIoViewerState io = new XmlIoViewerState();
-		io.restoreFromXml( parent.getChild( io.getTagName() ), deprecatedState );
+		synchronized ( state )
+		{
+			final XmlIoViewerState io = new XmlIoViewerState();
+			io.restoreFromXml( parent.getChild( io.getTagName() ), deprecatedState );
+		}
 	}
 
 	/**
