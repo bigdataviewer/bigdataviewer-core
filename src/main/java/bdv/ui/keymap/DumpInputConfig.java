@@ -13,6 +13,7 @@
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
  * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -33,6 +34,7 @@ import bdv.KeyConfigContexts;
 import bdv.TransformEventHandler2D;
 import bdv.TransformEventHandler3D;
 import bdv.tools.CloseWindowActions;
+import bdv.tools.links.LinkActions;
 import bdv.viewer.NavigationActions;
 import java.io.File;
 import java.io.IOException;
@@ -78,6 +80,7 @@ class DumpInputConfig
 		builder.addManually( new CloseWindowActions.Descriptions(), KeyConfigContexts.BIGDATAVIEWER );
 		builder.addManually( new TransformEventHandler3D.Descriptions(), KeyConfigContexts.BIGDATAVIEWER );
 		builder.addManually( new TransformEventHandler2D.Descriptions(), KeyConfigContexts.BIGDATAVIEWER );
+		builder.addManually( new LinkActions.Descriptions(), KeyConfigContexts.BIGDATAVIEWER );
 
 		builder.verifyManuallyAdded(); // TODO: It should be possible to filter by Scope here
 

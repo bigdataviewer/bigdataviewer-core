@@ -30,12 +30,9 @@ package bdv.viewer;
 
 import java.awt.event.KeyListener;
 
-import net.imglib2.RandomAccessible;
-import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.converter.Converter;
-import net.imglib2.converter.Converters;
-import net.imglib2.type.numeric.integer.UnsignedByteType;
-import net.imglib2.type.numeric.real.FloatType;
+import bdv.tools.links.DefaultResourceManager;
+import bdv.tools.links.ResourceManager;
+
 import org.scijava.ui.behaviour.KeyPressedManager;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 
@@ -45,6 +42,7 @@ import bdv.TransformEventHandlerFactory;
 import bdv.ui.UIUtils;
 import bdv.ui.appearance.AppearanceManager;
 import bdv.ui.keymap.KeymapManager;
+import bdv.ui.links.LinkSettingsManager;
 import bdv.viewer.animate.MessageOverlayAnimator;
 import bdv.viewer.render.AccumulateProjector;
 import bdv.viewer.render.AccumulateProjectorARGB;
@@ -261,6 +259,24 @@ public class ViewerOptions
 	}
 
 	/**
+	 * Set the {@link ResourceManager}.
+	 */
+	public ViewerOptions resourceManager( final ResourceManager resourceManager )
+	{
+		values.resourceManager = resourceManager;
+		return this;
+	}
+
+	/**
+	 * Set the {@link LinkSettingsManager}.
+	 */
+	public ViewerOptions linkSettingsManager( final LinkSettingsManager linkSettingsManager )
+	{
+		values.linkSettingsManager = linkSettingsManager;
+		return this;
+	}
+
+	/**
 	 * Read-only {@link ViewerOptions} values.
 	 */
 	public static class Values
@@ -295,6 +311,10 @@ public class ViewerOptions
 
 		private AppearanceManager appearanceManager = null;
 
+		private LinkSettingsManager linkSettingsManager = null;
+
+		private ResourceManager resourceManager = new DefaultResourceManager();
+
 		public ViewerOptions optionsFromValues()
 		{
 			return new ViewerOptions().
@@ -312,7 +332,9 @@ public class ViewerOptions
 				inputTriggerConfig( inputTriggerConfig ).
 				shareKeyPressedEvents( keyPressedManager ).
 				keymapManager( keymapManager ).
-				appearanceManager( appearanceManager );
+				appearanceManager( appearanceManager ).
+				linkSettingsManager( linkSettingsManager ).
+				resourceManager( resourceManager);
 		}
 
 		public int getWidth()
@@ -388,6 +410,16 @@ public class ViewerOptions
 		public AppearanceManager getAppearanceManager()
 		{
 			return appearanceManager;
+		}
+
+		public LinkSettingsManager getLinkSettingsManager()
+		{
+			return linkSettingsManager;
+		}
+
+		public ResourceManager getResourceManager()
+		{
+			return resourceManager;
 		}
 	}
 }

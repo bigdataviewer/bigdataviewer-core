@@ -28,16 +28,6 @@
  */
 package bdv;
 
-import bdv.tools.PreferencesDialog;
-import bdv.ui.UIUtils;
-import bdv.ui.keymap.Keymap;
-import bdv.ui.keymap.KeymapManager;
-import bdv.ui.keymap.KeymapSettingsPage;
-import bdv.viewer.ConverterSetups;
-import bdv.viewer.ViewerState;
-import bdv.ui.appearance.AppearanceManager;
-import bdv.ui.appearance.AppearanceSettingsPage;
-import dev.dirs.ProjectDirectories;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileWriter;
@@ -53,16 +43,6 @@ import javax.swing.JMenuItem;
 import javax.swing.SwingUtilities;
 import javax.swing.filechooser.FileFilter;
 
-import net.imglib2.Volatile;
-import net.imglib2.converter.Converter;
-import net.imglib2.display.ColorConverter;
-import net.imglib2.display.RealARGBColorConverter;
-import net.imglib2.display.ScaledARGBConverter;
-import net.imglib2.type.numeric.ARGBType;
-import net.imglib2.type.numeric.NumericType;
-import net.imglib2.type.numeric.RealType;
-import net.imglib2.type.volatiles.VolatileARGBType;
-
 import org.jdom2.Document;
 import org.jdom2.Element;
 import org.jdom2.JDOMException;
@@ -71,6 +51,7 @@ import org.jdom2.output.Format;
 import org.jdom2.output.XMLOutputter;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
 import org.scijava.ui.behaviour.io.yaml.YamlConfigIO;
+import org.scijava.ui.behaviour.util.Actions;
 
 import bdv.cache.CacheControl;
 import bdv.export.ProgressWriter;
@@ -80,6 +61,7 @@ import bdv.spimdata.WrapBasicImgLoader;
 import bdv.spimdata.XmlIoSpimDataMinimal;
 import bdv.tools.HelpDialog;
 import bdv.tools.InitializeViewerState;
+import bdv.tools.PreferencesDialog;
 import bdv.tools.RecordMaxProjectionDialog;
 import bdv.tools.RecordMovieDialog;
 import bdv.tools.VisibilityAndGroupingDialog;
@@ -91,21 +73,47 @@ import bdv.tools.brightness.MinMaxGroup;
 import bdv.tools.brightness.RealARGBColorConverterSetup;
 import bdv.tools.brightness.SetupAssignments;
 import bdv.tools.crop.CropDialog;
+import bdv.tools.links.LinkActions;
+import bdv.tools.links.PasteSettings;
+import bdv.tools.links.ResourceManager;
+import bdv.tools.links.resource.SpimDataMinimalFileResource;
+import bdv.tools.links.resource.SpimDataSetupSourceResource;
+import bdv.tools.links.resource.TransformedSourceResource;
 import bdv.tools.transformation.ManualTransformation;
 import bdv.tools.transformation.ManualTransformationEditor;
 import bdv.tools.transformation.TransformedSource;
+import bdv.ui.UIUtils;
+import bdv.ui.appearance.AppearanceManager;
+import bdv.ui.appearance.AppearanceSettingsPage;
+import bdv.ui.keymap.Keymap;
+import bdv.ui.keymap.KeymapManager;
+import bdv.ui.keymap.KeymapSettingsPage;
+import bdv.ui.links.LinkCard;
+import bdv.ui.links.LinkSettingsManager;
+import bdv.ui.links.LinkSettingsPage;
+import bdv.viewer.ConverterSetups;
 import bdv.viewer.NavigationActions;
 import bdv.viewer.SourceAndConverter;
 import bdv.viewer.ViewerFrame;
 import bdv.viewer.ViewerOptions;
 import bdv.viewer.ViewerPanel;
+import bdv.viewer.ViewerState;
+import dev.dirs.ProjectDirectories;
 import mpicbg.spim.data.SpimDataException;
 import mpicbg.spim.data.generic.AbstractSpimData;
 import mpicbg.spim.data.generic.sequence.AbstractSequenceDescription;
 import mpicbg.spim.data.generic.sequence.BasicViewSetup;
 import mpicbg.spim.data.sequence.Angle;
 import mpicbg.spim.data.sequence.Channel;
-import org.scijava.ui.behaviour.util.Actions;
+import net.imglib2.Volatile;
+import net.imglib2.converter.Converter;
+import net.imglib2.display.ColorConverter;
+import net.imglib2.display.RealARGBColorConverter;
+import net.imglib2.display.ScaledARGBConverter;
+import net.imglib2.type.numeric.ARGBType;
+import net.imglib2.type.numeric.NumericType;
+import net.imglib2.type.numeric.RealType;
+import net.imglib2.type.volatiles.VolatileARGBType;
 
 public class BigDataViewer
 {
@@ -136,6 +144,10 @@ public class BigDataViewer
 	private final KeymapManager keymapManager;
 
 	private final AppearanceManager appearanceManager;
+
+	private final LinkSettingsManager linkSettingsManager;
+
+	private final ResourceManager resourceManager;
 
 	protected final PreferencesDialog preferencesDialog;
 
@@ -257,49 +269,103 @@ public class BigDataViewer
 	 */
 	public static < T, V extends Volatile< T > > SourceAndConverter< T > wrapWithTransformedSource( final SourceAndConverter< T > soc )
 	{
-		if ( soc.asVolatile() == null )
-			return new SourceAndConverter<>( new TransformedSource<>( soc.getSpimSource() ), soc.getConverter() );
+		return wrapWithTransformedSource( soc, null );
+	}
 
-		@SuppressWarnings( "unchecked" )
-		final SourceAndConverter< V > vsoc = ( SourceAndConverter< V > ) soc.asVolatile();
+	/**
+	 * Decorate source with an extra transformation, that can be edited manually
+	 * in this viewer. {@link SourceAndConverter#asVolatile() Nested volatile}
+	 * {@code SourceAndConverter} are wrapped as well, if present.
+	 *
+	 * @param soc
+	 * 		source to decorate
+	 * @param resources
+	 * 		if non-null, a {@code ResourceSpec} for the created {@code TransformedSource} wrapper.
+	 *
+	 * @return {@code TransformedSource} wrapper around {@code soc}
+	 */
+	public static < T, V extends Volatile< T > > SourceAndConverter< T > wrapWithTransformedSource( final SourceAndConverter< T > soc, final ResourceManager resources )
+	{
 		final TransformedSource< T > ts = new TransformedSource<>( soc.getSpimSource() );
-		final TransformedSource< V > vts = new TransformedSource<>( vsoc.getSpimSource(), ts );
-		return new SourceAndConverter<>( ts, soc.getConverter(), new SourceAndConverter<>( vts, vsoc.getConverter() ) );
+
+		final SourceAndConverter< V > vtsoc;
+		if ( soc.asVolatile() == null )
+		{
+			vtsoc = null;
+		}
+		else
+		{
+			@SuppressWarnings( "unchecked" )
+			final SourceAndConverter< V > vsoc = ( SourceAndConverter< V > ) soc.asVolatile();
+			final TransformedSource< V > vts = new TransformedSource<>( vsoc.getSpimSource(), ts );
+			vtsoc = new SourceAndConverter<>( vts, vsoc.getConverter() );
+		}
+
+		final SourceAndConverter< T > tsoc = new SourceAndConverter<>( ts, soc.getConverter(), vtsoc );
+		if (resources != null)
+		{
+			final TransformedSourceResource.Spec spec = new TransformedSourceResource.Spec(
+					resources.getResourceSpec( soc ) );
+			resources.put( tsoc, spec );
+			resources.keepAlive( tsoc, soc );
+		}
+		return tsoc;
 	}
 
 	private static < T extends NumericType< T >, V extends Volatile< T > & NumericType< V > > void initSetupNumericType(
 			final AbstractSpimData< ? > spimData,
 			final BasicViewSetup setup,
 			final List< ConverterSetup > converterSetups,
-			final List< SourceAndConverter< ? > > sources )
+			final List< SourceAndConverter< ? > > sources,
+			final ResourceManager resources )
 	{
 		final int setupId = setup.getId();
+		final String setupName = createSetupName( setup );
+		final SourceAndConverter< T > soc = createSetupSourceNumericType( spimData, setupId, setupName, resources );
+		final SourceAndConverter< T > tsoc = wrapWithTransformedSource( soc, resources );
+		sources.add( tsoc );
+
+		final ConverterSetup converterSetup = createConverterSetup( tsoc, setupId );
+		if ( converterSetup != null )
+			converterSetups.add( converterSetup );
+	}
+
+	public static < T extends NumericType< T >, V extends Volatile< T > & NumericType< V > > SourceAndConverter< T > createSetupSourceNumericType(
+			final AbstractSpimData< ? > spimData,
+			final int setupId,
+			final String name,
+			final ResourceManager resources )
+	{
 		final ViewerImgLoader imgLoader = ( ViewerImgLoader ) spimData.getSequenceDescription().getImgLoader();
 		@SuppressWarnings( "unchecked" )
 		final ViewerSetupImgLoader< T, V > setupImgLoader = ( ViewerSetupImgLoader< T, V > ) imgLoader.getSetupImgLoader( setupId );
+		if ( setupImgLoader == null )
+			throw new IllegalArgumentException( "No SetupImgLoader for setup ID " + setupId + " found." );
+
 		final T type = setupImgLoader.getImageType();
 		final V volatileType = setupImgLoader.getVolatileImageType();
 
 		if ( ! ( type instanceof NumericType ) )
 			throw new IllegalArgumentException( "ImgLoader of type " + type.getClass() + " not supported." );
 
-		final String setupName = createSetupName( setup );
-
 		SourceAndConverter< V > vsoc = null;
 		if ( volatileType != null )
 		{
-			final VolatileSpimSource< V > vs = new VolatileSpimSource<>( spimData, setupId, setupName );
+			final VolatileSpimSource< V > vs = new VolatileSpimSource<>( spimData, setupId, name );
 			vsoc = new SourceAndConverter<>( vs, createConverterToARGB( volatileType ) );
 		}
 
-		final SpimSource< T > s = new SpimSource<>( spimData, setupId, setupName );
+		final SpimSource< T > s = new SpimSource<>( spimData, setupId, name );
 		final SourceAndConverter< T > soc = new SourceAndConverter<>( s, createConverterToARGB( type ), vsoc );
-		final SourceAndConverter< T > tsoc = wrapWithTransformedSource( soc );
-		sources.add( tsoc );
-
-		final ConverterSetup converterSetup = createConverterSetup( tsoc, setupId );
-		if ( converterSetup != null )
-			converterSetups.add( converterSetup );
+		if (resources != null)
+		{
+			final SpimDataSetupSourceResource.Spec spec = new SpimDataSetupSourceResource.Spec(
+					resources.getResourceSpec( spimData ),
+					setupId, name );
+			resources.put( soc, spec );
+			resources.keepAlive( soc, spimData );
+		}
+		return soc;
 	}
 
 	public static void initSetups(
@@ -308,7 +374,17 @@ public class BigDataViewer
 			final List< SourceAndConverter< ? > > sources )
 	{
 		for ( final BasicViewSetup setup : spimData.getSequenceDescription().getViewSetupsOrdered() )
-			initSetupNumericType( spimData, setup, converterSetups, sources );
+			initSetupNumericType( spimData, setup, converterSetups, sources, null );
+	}
+
+	public static void initSetups(
+			final AbstractSpimData< ? > spimData,
+			final List< ConverterSetup > converterSetups,
+			final List< SourceAndConverter< ? > > sources,
+			final ResourceManager resources )
+	{
+		for ( final BasicViewSetup setup : spimData.getSequenceDescription().getViewSetupsOrdered() )
+			initSetupNumericType( spimData, setup, converterSetups, sources, resources );
 	}
 
 	@Deprecated
@@ -353,8 +429,11 @@ public class BigDataViewer
 	{
 		final KeymapManager optionsKeymapManager = options.values.getKeymapManager();
 		final AppearanceManager optionsAppearanceManager = options.values.getAppearanceManager();
+		final LinkSettingsManager optionsLinkSettingsManager = options.values.getLinkSettingsManager();
 		keymapManager = optionsKeymapManager != null ? optionsKeymapManager : new KeymapManager( configDir );
 		appearanceManager = optionsAppearanceManager != null ? optionsAppearanceManager : new AppearanceManager( configDir );
+		linkSettingsManager = optionsLinkSettingsManager != null ? optionsLinkSettingsManager : new LinkSettingsManager( configDir );
+		resourceManager = options.values.getResourceManager();
 
 		InputTriggerConfig inputTriggerConfig = options.values.getInputTriggerConfig();
 		final Keymap keymap = this.keymapManager.getForwardSelectedKeymap();
@@ -442,6 +521,7 @@ public class BigDataViewer
 		preferencesDialog = new PreferencesDialog( viewerFrame, keymap, new String[] { KeyConfigContexts.BIGDATAVIEWER } );
 		preferencesDialog.addPage( new AppearanceSettingsPage( "Appearance", appearanceManager ) );
 		preferencesDialog.addPage( new KeymapSettingsPage( "Keymap", this.keymapManager, this.keymapManager.getCommandDescriptions() ) );
+		preferencesDialog.addPage( new LinkSettingsPage( "Links", linkSettingsManager ) );
 		appearanceManager.appearance().updateListeners().add( viewerFrame::repaint );
 		appearanceManager.addLafComponent( fileChooser );
 		SwingUtilities.invokeLater(() -> appearanceManager.updateLookAndFeel());
@@ -454,9 +534,17 @@ public class BigDataViewer
 		bdvActions.install( viewerFrame.getKeybindings(), "bdv" );
 		BigDataViewerActions.install( bdvActions, this );
 
+		final Actions linkActions = new Actions( inputTriggerConfig, "bdv" );
+		linkActions.install( viewerFrame.getKeybindings(), "links" );
+		final PasteSettings pasteSettings = linkSettingsManager.linkSettings().pasteSettings();
+		LinkActions.install( linkActions, viewerFrame.getViewerPanel(), viewerFrame.getConverterSetups(), pasteSettings, resourceManager );
+
+		LinkCard.install( linkSettingsManager.linkSettings(), viewerFrame.getCardPanel() );
+
 		keymap.updateListeners().add( () -> {
 			navigationActions.updateKeyConfig( keymap.getConfig() );
 			bdvActions.updateKeyConfig( keymap.getConfig() );
+			linkActions.updateKeyConfig( keymap.getConfig() );
 			viewerFrame.getTransformBehaviours().updateKeyConfig( keymap.getConfig() );
 		} );
 
@@ -531,7 +619,8 @@ public class BigDataViewer
 
 		final ArrayList< ConverterSetup > converterSetups = new ArrayList<>();
 		final ArrayList< SourceAndConverter< ? > > sources = new ArrayList<>();
-		initSetups( spimData, converterSetups, sources );
+		final ResourceManager resources = options.values.getResourceManager();
+		initSetups( spimData, converterSetups, sources, resources );
 
 		final AbstractSequenceDescription< ?, ?, ? > seq = spimData.getSequenceDescription();
 		final int numTimepoints = seq.getTimePoints().size();
@@ -549,6 +638,8 @@ public class BigDataViewer
 	public static BigDataViewer open( final String xmlFilename, final String windowTitle, final ProgressWriter progressWriter, final ViewerOptions options ) throws SpimDataException
 	{
 		final SpimDataMinimal spimData = new XmlIoSpimDataMinimal().load( xmlFilename );
+		final ResourceManager resources = options.values.getResourceManager();
+		resources.put( spimData, new SpimDataMinimalFileResource.Spec( xmlFilename ) );
 		final BigDataViewer bdv = open( spimData, windowTitle, progressWriter, options );
 		if ( !bdv.tryLoadSettings( xmlFilename ) )
 			InitializeViewerState.initBrightness( 0.001, 0.999, bdv.viewerFrame );
@@ -607,6 +698,16 @@ public class BigDataViewer
 	public AppearanceManager getAppearanceManager()
 	{
 		return appearanceManager;
+	}
+
+	public LinkSettingsManager getLinkSettingsManager()
+	{
+		return linkSettingsManager;
+	}
+
+	public ResourceManager getResourceManager()
+	{
+		return resourceManager;
 	}
 
 	public boolean tryLoadSettings( final String xmlFilename )

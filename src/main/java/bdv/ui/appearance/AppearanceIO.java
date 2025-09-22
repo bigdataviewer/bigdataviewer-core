@@ -39,6 +39,8 @@ import java.util.Map;
 
 import javax.swing.UIManager.LookAndFeelInfo;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.LoaderOptions;
 import org.yaml.snakeyaml.Yaml;
@@ -58,6 +60,8 @@ import bdv.util.Prefs.OverlayPosition;
  */
 public class AppearanceIO
 {
+	private static final Logger LOG = LoggerFactory.getLogger( AppearanceIO.class );
+
 	public static Appearance load( final String filename ) throws IOException
 	{
 		final FileReader input = new FileReader( filename );
@@ -182,7 +186,7 @@ public class AppearanceIO
 				}
 				catch( final Exception e )
 				{
-					e.printStackTrace();
+					LOG.info( "Error constructing Appearance", e );
 				}
 				return null;
 			}

@@ -28,9 +28,11 @@
  */
 package bdv.util;
 
+import bdv.tools.links.ResourceManager;
 import bdv.ui.CardPanel;
 import bdv.ui.appearance.AppearanceManager;
 import bdv.ui.keymap.KeymapManager;
+import bdv.ui.links.LinkSettingsManager;
 import bdv.ui.splitpanel.SplitPanel;
 import bdv.viewer.ConverterSetups;
 import bdv.viewer.ViewerStateChangeListener;
@@ -129,6 +131,10 @@ public abstract class BdvHandle implements Bdv
 	public abstract KeymapManager getKeymapManager();
 
 	public abstract AppearanceManager getAppearanceManager();
+
+	public abstract LinkSettingsManager getLinkSettingsManager();
+
+	public abstract ResourceManager getResourceManager();
 
 	@Deprecated
 	int getUnusedSetupId()
