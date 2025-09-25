@@ -32,12 +32,23 @@ import static net.imglib2.view.fluent.RandomAccessibleIntervalView.Extension.zer
 
 import bdv.spimdata.SpimDataMinimal;
 import bdv.spimdata.XmlIoSpimDataMinimal;
+import bdv.util.Bdv;
+import bdv.util.BdvFunctions;
+import bdv.util.BdvSource;
+import bdv.util.BdvStackSource;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.blocks.PrimitiveBlocks;
+import net.imglib2.blocks.VolatilePrimitiveBlocks;
+import net.imglib2.img.Img;
+import net.imglib2.img.array.ArrayImg;
+import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.img.basictypeaccess.array.ShortArray;
+import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.volatiles.VolatileUnsignedShortType;
 import net.imglib2.util.Cast;
 import net.imglib2.util.Intervals;
+import net.imglib2.util.Util;
 import net.imglib2.view.Views;
 import net.imglib2.view.fluent.RandomAccessibleIntervalView;
 import net.imglib2.view.fluent.RandomAccessibleIntervalView.Extension;
@@ -61,10 +72,7 @@ public class VolatileBlocksPlayground
 		final int[] size = { 200, 200, 10 };
 		final short[] data = new short[ ( int ) Intervals.numElements( size ) ];
 		vblocks.copy( pos, data, size );
-
-
 	}
-
 
 
 	public static void main( String[] args ) throws Exception
@@ -81,13 +89,39 @@ public class VolatileBlocksPlayground
 		System.out.println( "vimg = " + vimg );
 		System.out.println( "vimg.getType().getClass() = " + vimg.getType().getClass() );
 
-		final PrimitiveBlocks< VolatileUnsignedShortType > vblocks = PrimitiveBlocks.of( vimg );
+		final VolatilePrimitiveBlocks< VolatileUnsignedShortType > vblocks = VolatilePrimitiveBlocks.of( vimg );
 		System.out.println( "vblocks = " + vblocks );
 
-		final long[] pos = { -5, -5, 0 };
-		final int[] size = { 200, 200, 10 };
-		final short[] data = new short[ ( int ) Intervals.numElements( size ) ];
-		vblocks.copy( pos, data, size );
+		final long[] pos = { -50, -50, 0 };
+		final int[] size = { 1000, 400, 50 };
+//		final long[] pos = { 0, 0, 0 };
+//		final int[] size = { 2, 2, 2 };
+		final int len = ( int ) Intervals.numElements( size );
+
+		for ( int i = 0; i < 2; ++i )
+		{
+			final short[] data = new short[ len ];
+			final byte[] valid = new byte[ len ];
+			vblocks.copy( pos, data, valid, size );
+			System.out.println();
+			for ( int j = 0; j < valid.length; j++ )
+				if ( valid[ j ] == 0 )
+					valid[ j ] = 2;
+			show( size, data, valid);
+		}
+	}
+
+	private static void show( final int[] size, final short[] data, final byte[] valid )
+	{
+		final Img< UnsignedShortType > dataImg = ArrayImgs.unsignedShorts( data, Util.int2long( size ) );
+		final Img< UnsignedByteType > validImg = ArrayImgs.unsignedBytes( valid, Util.int2long( size ) );
+
+		final BdvSource dataSrc = BdvFunctions.show( dataImg, "image data" );
+		final BdvSource validSrc = BdvFunctions.show( validImg, "validity mask", Bdv.options().addTo( dataSrc ) );
+
+		dataSrc.setDisplayRange( 0, 2000 );
+		dataSrc.setDisplayRangeBounds( 0, 2000 );
+		validSrc.setDisplayRange( 0, 8 );
 	}
 }
 
