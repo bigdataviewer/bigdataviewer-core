@@ -35,23 +35,18 @@ import bdv.spimdata.XmlIoSpimDataMinimal;
 import bdv.util.Bdv;
 import bdv.util.BdvFunctions;
 import bdv.util.BdvSource;
-import bdv.util.BdvStackSource;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.blocks.PrimitiveBlocks;
+import net.imglib2.blocks.VolatileArray;
 import net.imglib2.blocks.VolatilePrimitiveBlocks;
 import net.imglib2.img.Img;
-import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgs;
-import net.imglib2.img.basictypeaccess.array.ShortArray;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.volatiles.VolatileUnsignedShortType;
 import net.imglib2.util.Cast;
 import net.imglib2.util.Intervals;
 import net.imglib2.util.Util;
-import net.imglib2.view.Views;
-import net.imglib2.view.fluent.RandomAccessibleIntervalView;
-import net.imglib2.view.fluent.RandomAccessibleIntervalView.Extension;
 
 public class VolatileBlocksPlayground
 {
@@ -89,7 +84,7 @@ public class VolatileBlocksPlayground
 		System.out.println( "vimg = " + vimg );
 		System.out.println( "vimg.getType().getClass() = " + vimg.getType().getClass() );
 
-		final VolatilePrimitiveBlocks< VolatileUnsignedShortType > vblocks = VolatilePrimitiveBlocks.of( vimg );
+		final PrimitiveBlocks< VolatileUnsignedShortType > vblocks = VolatilePrimitiveBlocks.of( vimg );
 		System.out.println( "vblocks = " + vblocks );
 
 		final long[] pos = { -50, -50, 0 };
@@ -102,7 +97,7 @@ public class VolatileBlocksPlayground
 		{
 			final short[] data = new short[ len ];
 			final byte[] valid = new byte[ len ];
-			vblocks.copy( pos, data, valid, size );
+			vblocks.copy( pos, new VolatileArray<>(data, valid), size );
 			System.out.println();
 			for ( int j = 0; j < valid.length; j++ )
 				if ( valid[ j ] == 0 )
