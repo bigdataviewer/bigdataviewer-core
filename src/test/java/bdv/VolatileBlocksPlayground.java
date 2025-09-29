@@ -36,6 +36,11 @@ import bdv.util.Bdv;
 import bdv.util.BdvFunctions;
 import bdv.util.BdvSource;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.algorithm.blocks.BlockSupplier;
+import net.imglib2.algorithm.blocks.VolatileBlockSupplier;
+import net.imglib2.algorithm.blocks.convert.Convert;
+import net.imglib2.algorithm.blocks.util.UnaryOperatorType;
+import net.imglib2.blocks.BlockInterval;
 import net.imglib2.blocks.PrimitiveBlocks;
 import net.imglib2.blocks.VolatileArray;
 import net.imglib2.blocks.VolatilePrimitiveBlocks;
@@ -43,6 +48,8 @@ import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
+import net.imglib2.type.numeric.real.FloatType;
+import net.imglib2.type.volatiles.VolatileFloatType;
 import net.imglib2.type.volatiles.VolatileUnsignedShortType;
 import net.imglib2.util.Cast;
 import net.imglib2.util.Intervals;
@@ -70,7 +77,7 @@ public class VolatileBlocksPlayground
 	}
 
 
-	public static void main( String[] args ) throws Exception
+	public static void main3( String[] args ) throws Exception
 	{
 		final String fn = "/Users/pietzsch/workspace/data/111010_weber_resave.xml";
 		final SpimDataMinimal spim = new XmlIoSpimDataMinimal().load( fn );
@@ -106,6 +113,90 @@ public class VolatileBlocksPlayground
 		}
 	}
 
+	public static void main4( String[] args ) throws Exception
+	{
+		final String fn = "/Users/pietzsch/workspace/data/111010_weber_resave.xml";
+		final SpimDataMinimal spim = new XmlIoSpimDataMinimal().load( fn );
+		final ViewerSetupImgLoader<UnsignedShortType, VolatileUnsignedShortType > setupImgLoader = Cast.unchecked( spim.getSequenceDescription().getImgLoader().getSetupImgLoader( 0 ) );
+
+		final RandomAccessibleInterval< UnsignedShortType > img = setupImgLoader.getImage( 1 );
+		final PrimitiveBlocks< UnsignedShortType > blocks = PrimitiveBlocks.of( img );
+		System.out.println( "blocks = " + blocks );
+
+		final RandomAccessibleInterval< VolatileUnsignedShortType > vimg = setupImgLoader.getVolatileImage( 1, 0 );
+		System.out.println( "vimg = " + vimg );
+		System.out.println( "vimg.getType().getClass() = " + vimg.getType().getClass() );
+
+		final BlockSupplier< VolatileUnsignedShortType > vblocks = VolatileBlockSupplier.of( vimg );
+		System.out.println( "vblocks = " + vblocks );
+
+		final long[] pos = { -50, -50, 0 };
+		final int[] size = { 1000, 400, 50 };
+//		final long[] pos = { 0, 0, 0 };
+//		final int[] size = { 2, 2, 2 };
+		final int len = ( int ) Intervals.numElements( size );
+
+		for ( int i = 0; i < 2; ++i )
+		{
+			final short[] data = new short[ len ];
+			final byte[] valid = new byte[ len ];
+			vblocks.copy(
+					BlockInterval.wrap( pos, size ),
+					new VolatileArray<>( data, valid ) );
+			System.out.println();
+			for ( int j = 0; j < valid.length; j++ )
+				if ( valid[ j ] == 0 )
+					valid[ j ] = 2;
+			show( size, data, valid);
+		}
+	}
+
+	public static void main( String[] args ) throws Exception
+	{
+		final String fn = "/Users/pietzsch/workspace/data/111010_weber_resave.xml";
+		final SpimDataMinimal spim = new XmlIoSpimDataMinimal().load( fn );
+		final ViewerSetupImgLoader<UnsignedShortType, VolatileUnsignedShortType > setupImgLoader = Cast.unchecked( spim.getSequenceDescription().getImgLoader().getSetupImgLoader( 0 ) );
+
+		final RandomAccessibleInterval< UnsignedShortType > img = setupImgLoader.getImage( 1 );
+		final PrimitiveBlocks< UnsignedShortType > blocks = PrimitiveBlocks.of( img );
+		System.out.println( "blocks = " + blocks );
+
+		final RandomAccessibleInterval< VolatileUnsignedShortType > vimg = setupImgLoader.getVolatileImage( 1, 0 );
+		System.out.println( "vimg = " + vimg );
+		System.out.println( "vimg.getType().getClass() = " + vimg.getType().getClass() );
+
+
+		VolatileUnsignedShortType t = vimg.getType();
+		final UnaryOperatorType uot = UnaryOperatorType.of( t.get(), new VolatileFloatType().get() );
+		System.out.println( "uot = " + uot );
+
+
+		final BlockSupplier< VolatileFloatType > vblocks = VolatileBlockSupplier
+				.of( vimg )
+				.andThen( Convert.convert( new VolatileFloatType() ) );
+		System.out.println( "vblocks = " + vblocks );
+
+		final long[] pos = { -50, -50, 0 };
+		final int[] size = { 1000, 400, 50 };
+//		final long[] pos = { 0, 0, 0 };
+//		final int[] size = { 2, 2, 2 };
+		final int len = ( int ) Intervals.numElements( size );
+
+		for ( int i = 0; i < 2; ++i )
+		{
+			final float[] data = new float[ len ];
+			final byte[] valid = new byte[ len ];
+			vblocks.copy(
+					BlockInterval.wrap( pos, size ),
+					new VolatileArray<>( data, valid ) );
+			System.out.println();
+			for ( int j = 0; j < valid.length; j++ )
+				if ( valid[ j ] == 0 )
+					valid[ j ] = 2;
+			show( size, data, valid );
+		}
+	}
+
 	private static void show( final int[] size, final short[] data, final byte[] valid )
 	{
 		final Img< UnsignedShortType > dataImg = ArrayImgs.unsignedShorts( data, Util.int2long( size ) );
@@ -114,8 +205,21 @@ public class VolatileBlocksPlayground
 		final BdvSource dataSrc = BdvFunctions.show( dataImg, "image data" );
 		final BdvSource validSrc = BdvFunctions.show( validImg, "validity mask", Bdv.options().addTo( dataSrc ) );
 
-		dataSrc.setDisplayRange( 0, 2000 );
-		dataSrc.setDisplayRangeBounds( 0, 2000 );
+		dataSrc.setDisplayRange( 0, 5000 );
+		dataSrc.setDisplayRangeBounds( 0, 5000 );
+		validSrc.setDisplayRange( 0, 8 );
+	}
+
+	private static void show( final int[] size, final float[] data, final byte[] valid )
+	{
+		final Img< FloatType > dataImg = ArrayImgs.floats( data, Util.int2long( size ) );
+		final Img< UnsignedByteType > validImg = ArrayImgs.unsignedBytes( valid, Util.int2long( size ) );
+
+		final BdvSource dataSrc = BdvFunctions.show( dataImg, "image data" );
+		final BdvSource validSrc = BdvFunctions.show( validImg, "validity mask", Bdv.options().addTo( dataSrc ) );
+
+		dataSrc.setDisplayRange( 0, 5000 );
+		dataSrc.setDisplayRangeBounds( 0, 5000 );
 		validSrc.setDisplayRange( 0, 8 );
 	}
 }
