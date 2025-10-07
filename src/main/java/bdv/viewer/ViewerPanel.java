@@ -453,6 +453,14 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 		state.getViewerTransform().applyInverse( gPos, lPos );
 	}
 
+	public double[] getDisplayCenterCoordinates() {
+		return new double[] {
+				getDisplay().getWidth() / 2.0,
+				getDisplay().getHeight() / 2.0,
+				0.0
+		};
+	}
+
 	@Override
 	public void paint()
 	{
@@ -506,7 +514,7 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 			requiresRepaint = multiBoxOverlayRenderer.isHighlightInProgress();
 		}
 
-		if ( Prefs.showTextOverlay() )
+		if ( Prefs.showTextOverlay() && (! Prefs.showSourceInfoToolBar()) )
 		{
 			final Font font = UIUtils.getFont( "monospaced.small.font" );
 			sourceInfoOverlayRenderer.setViewerState( state );
@@ -1036,4 +1044,24 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 		display.overlays().add( overlay );
 		return overlay;
 	}
+
+	/** Centers the viewer at the given global position in the specified dimension. */
+	public void centerViewAt(final double globalPosition,
+							 final int dimension) {
+
+		// NOTE: getViewerTransform() transforms from global to display (window) coordinates
+		final double[] displayCenter = getDisplayCenterCoordinates();
+		final double[] gCenterPos = new double[3];
+		state().getViewerTransform().applyInverse(gCenterPos, displayCenter);
+
+		final double deltaPos = gCenterPos[dimension] - globalPosition;
+
+		final AffineTransform3D invertedViewerTransform = state().getViewerTransform().inverse();
+		final double q = invertedViewerTransform.get(dimension, 3) - deltaPos;
+		invertedViewerTransform.set(q, dimension, 3);
+
+		final AffineTransform3D updatedViewerTransform = invertedViewerTransform.inverse();
+		state().setViewerTransform(updatedViewerTransform);
+	}
+
 }

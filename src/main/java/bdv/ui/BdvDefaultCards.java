@@ -35,6 +35,7 @@ import bdv.ui.viewermodepanel.DisplaySettingsPanel;
 import bdv.viewer.AbstractViewerPanel;
 import bdv.viewer.ConverterSetups;
 import bdv.viewer.ViewerState;
+
 import java.awt.BorderLayout;
 import java.awt.Component;
 import java.awt.Dimension;
@@ -62,6 +63,8 @@ public class BdvDefaultCards
 	public static final String DEFAULT_SOURCEGROUPS_CARD = "default bdv groups card";
 
 	public static final String DEFAULT_VIEWERMODES_CARD = "default bdv viewer modes card";
+
+	public static final String DEFAULT_LOCATIONS_CARD = "default bdv locations card";
 
 	public static void setup( final CardPanel cards, final AbstractViewerPanel viewer, final ConverterSetups converterSetups )
 	{
