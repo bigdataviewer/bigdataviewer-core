@@ -39,6 +39,7 @@ import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.algorithm.blocks.BlockSupplier;
 import net.imglib2.algorithm.blocks.VolatileBlockSupplier;
 import net.imglib2.algorithm.blocks.convert.Convert;
+import net.imglib2.algorithm.blocks.transform.Transform;
 import net.imglib2.algorithm.blocks.util.UnaryOperatorType;
 import net.imglib2.blocks.BlockInterval;
 import net.imglib2.blocks.PrimitiveBlocks;
@@ -46,6 +47,7 @@ import net.imglib2.blocks.VolatileArray;
 import net.imglib2.blocks.VolatilePrimitiveBlocks;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgs;
+import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
@@ -151,7 +153,7 @@ public class VolatileBlocksPlayground
 		}
 	}
 
-	public static void main( String[] args ) throws Exception
+	public static void main5( String[] args ) throws Exception
 	{
 		final String fn = "/Users/pietzsch/workspace/data/111010_weber_resave.xml";
 		final SpimDataMinimal spim = new XmlIoSpimDataMinimal().load( fn );
@@ -185,6 +187,54 @@ public class VolatileBlocksPlayground
 		for ( int i = 0; i < 2; ++i )
 		{
 			final float[] data = new float[ len ];
+			final byte[] valid = new byte[ len ];
+			vblocks.copy(
+					BlockInterval.wrap( pos, size ),
+					new VolatileArray<>( data, valid ) );
+			System.out.println();
+			for ( int j = 0; j < valid.length; j++ )
+				if ( valid[ j ] == 0 )
+					valid[ j ] = 2;
+			show( size, data, valid );
+		}
+	}
+
+	public static void main( String[] args ) throws Exception
+	{
+		final String fn = "/Users/pietzsch/workspace/data/111010_weber_resave.xml";
+		final SpimDataMinimal spim = new XmlIoSpimDataMinimal().load( fn );
+		final ViewerSetupImgLoader<UnsignedShortType, VolatileUnsignedShortType > setupImgLoader = Cast.unchecked( spim.getSequenceDescription().getImgLoader().getSetupImgLoader( 0 ) );
+
+		final RandomAccessibleInterval< UnsignedShortType > img = setupImgLoader.getImage( 1 );
+		final PrimitiveBlocks< UnsignedShortType > blocks = PrimitiveBlocks.of( img );
+		System.out.println( "blocks = " + blocks );
+
+		final RandomAccessibleInterval< VolatileUnsignedShortType > vimg = setupImgLoader.getVolatileImage( 1, 0 );
+		System.out.println( "vimg = " + vimg );
+		System.out.println( "vimg.getType().getClass() = " + vimg.getType().getClass() );
+
+
+		VolatileUnsignedShortType t = vimg.getType();
+		final UnaryOperatorType uot = UnaryOperatorType.of( t.get(), new VolatileFloatType().get() );
+		System.out.println( "uot = " + uot );
+
+
+		final AffineTransform3D transform = new AffineTransform3D();
+		final Transform.Interpolation interpolation = Transform.Interpolation.NEARESTNEIGHBOR;
+		final BlockSupplier< VolatileUnsignedShortType > vblocks = VolatileBlockSupplier
+				.of( vimg )
+				.andThen( Transform.affine( transform, interpolation ) );
+		System.out.println( "vblocks = " + vblocks );
+
+		final long[] pos = { -50, -50, 0 };
+		final int[] size = { 1000, 400, 50 };
+//		final long[] pos = { 0, 0, 0 };
+//		final int[] size = { 2, 2, 2 };
+		final int len = ( int ) Intervals.numElements( size );
+
+		for ( int i = 0; i < 2; ++i )
+		{
+			final short[] data = new short[ len ];
 			final byte[] valid = new byte[ len ];
 			vblocks.copy(
 					BlockInterval.wrap( pos, size ),
