@@ -112,12 +112,6 @@ abstract class AbstractVolatileHierarchyProjector< A, B extends SetZero > implem
 	private long lastFrameIoNanoTime; // TODO move to derived implementation for local sources only
 
 	/**
-	 * temporary variable to store the number of invalid pixels in the current
-	 * rendering pass.
-	 */
-	private int numInvalidPixels;
-
-	/**
 	 * Flag to indicate that someone is trying to {@link #cancel()} rendering.
 	 */
 	private volatile boolean canceled = false;
@@ -205,16 +199,14 @@ abstract class AbstractVolatileHierarchyProjector< A, B extends SetZero > implem
 		final long startTimeIo = iostat.getIoNanoTime();
 
 		/*
-		 * After the for loop, resolutionLevel is the highest (coarsest)
+		 * After the for loop, numInvalidLevels is the highest (coarsest)
 		 * resolution for which all pixels could be filled from valid data. This
 		 * means that in the next pass, i.e., map() call, levels up to
-		 * resolutionLevel have to be re-rendered.
+		 * numInvalidLevels have to be re-rendered.
 		 */
-		int resolutionLevel;
-		for ( resolutionLevel = 0; resolutionLevel < numInvalidLevels; ++resolutionLevel )
+		for ( int resolutionLevel = 0; resolutionLevel < numInvalidLevels; ++resolutionLevel )
 		{
-			numInvalidPixels = 0;
-			map( ( byte ) resolutionLevel);
+			int numInvalidPixels = map( ( byte ) resolutionLevel);
 			if ( canceled )
 				return false;
 			if ( numInvalidPixels == 0 )
@@ -222,7 +214,9 @@ abstract class AbstractVolatileHierarchyProjector< A, B extends SetZero > implem
 				numInvalidLevels = resolutionLevel;
 		}
 
-		if ( clearUntouchedTargetPixels && numInvalidPixels != 0 && !canceled )
+		valid = numInvalidLevels == 0;
+
+		if ( clearUntouchedTargetPixels && valid && !canceled )
 			clearUntouchedTargetPixels();
 
 		lastFrameIoNanoTime = iostat.getIoNanoTime() - startTimeIo;
@@ -232,14 +226,11 @@ abstract class AbstractVolatileHierarchyProjector< A, B extends SetZero > implem
 		//  --> requires additional API in IoStatistics (imglib2-cache)
 		lastFrameRenderNanoTime = lastFrameTime - lastFrameIoNanoTime;
 
-		valid = numInvalidLevels == 0;
-
 		return !canceled;
 	}
 
 	/**
-	 * Copy lines from {@code y = startHeight} up to {@code endHeight}
-	 * (exclusive) from source {@code resolutionIndex} to target. Check after
+	 * Copy lines from source {@code resolutionIndex} to target. Check after
 	 * each line whether rendering was {@link #cancel() canceled}.
 	 * <p>
 	 * Only valid source pixels with a current mask value
@@ -251,18 +242,19 @@ abstract class AbstractVolatileHierarchyProjector< A, B extends SetZero > implem
 	 *
 	 * @param resolutionIndex
 	 *     index of source resolution level
+	 * @return the number of pixels that remain invalid afterward
 	 */
-	private void map( final byte resolutionIndex )
+	private int map( final byte resolutionIndex )
 	{
 		if ( canceled )
-			return;
+			return 0;
 
 		final RandomAccess< B > targetRandomAccess = target.randomAccess( target );
 		final RandomAccess< A > sourceRandomAccess = sources.get( resolutionIndex ).randomAccess( sourceInterval );
 		final int width = ( int ) target.dimension( 0 );
 		final int height = ( int ) target.dimension( 1 );
 		final long[] smin = Intervals.minAsLongArray( sourceInterval );
-		int myNumInvalidPixels = 0;
+		int numInvalidPixels = 0;
 
 		for ( int y = 0; y < height; ++y )
 		{
@@ -270,15 +262,14 @@ abstract class AbstractVolatileHierarchyProjector< A, B extends SetZero > implem
 			//   projectors shouldn't check after each line for cancellation
 			//   (maybe not at all).
 			if ( canceled )
-				return;
+				return 0;
 
 			sourceRandomAccess.setPosition( smin );
 			targetRandomAccess.setPosition( smin );
-			myNumInvalidPixels += processLine( sourceRandomAccess, targetRandomAccess, resolutionIndex, width, y );
+			numInvalidPixels += processLine( sourceRandomAccess, targetRandomAccess, resolutionIndex, width, y );
 			++smin[ 1 ];
 		}
-
-		numInvalidPixels += myNumInvalidPixels;
+		return numInvalidPixels;
 	}
 
 	abstract int processLine(RandomAccess< A > sourceRandomAccess, RandomAccess< B > targetRandomAccess, byte resolutionIndex, int width, int y );
