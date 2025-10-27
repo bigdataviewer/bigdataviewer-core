@@ -28,13 +28,25 @@
  */
 package bdv.viewer.render;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.RealRandomAccessible;
 import net.imglib2.Volatile;
+import net.imglib2.algorithm.blocks.BlockSupplier;
+import net.imglib2.algorithm.blocks.transform.Transform;
 import net.imglib2.converter.Converter;
+import net.imglib2.interpolation.Interpolant;
+import net.imglib2.interpolation.InterpolatorFactory;
+import net.imglib2.interpolation.randomaccess.ClampingNLinearInterpolatorFactory;
+import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory;
+import net.imglib2.realtransform.AffineGet;
+import net.imglib2.realtransform.AffineRandomAccessible;
+import net.imglib2.type.NativeType;
+import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.operators.SetZero;
 
 /**
@@ -62,6 +74,53 @@ public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends SetZ
 			final byte[] maskArray )
 	{
 		super( sources, converter, target, maskArray );
+
+
+
+
+		System.out.println( "VolatileHierarchyProjector.VolatileHierarchyProjector" );
+		final List< BlockSupplier< ? > > blks = new ArrayList<>();
+		for ( RandomAccessible< A > source : sources )
+		{
+			blks.add( getBlockSupplierIfPossible( ( RandomAccessible ) source ) );
+		}
+		System.out.println( "blks = " + blks );
+		final BlockSupplier< ARGBType > blk = ProjectHierarchy.of( ( List ) blks, maskArray );
+		System.out.println( "blk = " + blk );
+	}
+
+	static < A extends NativeType< A > > BlockSupplier< A > getBlockSupplierIfPossible(
+			final RandomAccessible< A > source )
+	{
+		if ( !( source instanceof AffineRandomAccessible ) )
+			return null;
+		final AffineRandomAccessible< A, ? > s0 = ( AffineRandomAccessible< A, ? > ) source;
+		final AffineGet transformFromSource = s0.getTransformToSource().inverse();
+
+		final RealRandomAccessible< A > s1 = s0.getSource();
+		if ( !( s1 instanceof Interpolant ) )
+			return null;
+		final Interpolant< A, ? > s2 = ( Interpolant< A, ? > ) s1;
+
+		final InterpolatorFactory< A, ? > f = s2.getInterpolatorFactory();
+		final Transform.Interpolation interpolation;
+		if ( f instanceof ClampingNLinearInterpolatorFactory )
+		{
+			interpolation = Transform.Interpolation.NLINEAR;
+		}
+		else if ( f instanceof NearestNeighborInterpolatorFactory )
+		{
+			interpolation = Transform.Interpolation.NEARESTNEIGHBOR;
+		}
+		else
+		{
+			System.out.println( "cannot handle " + f.getClass() + " (yet)" );
+			return null;
+		}
+
+		final RandomAccessible< A > s3 = ( RandomAccessible< A > ) s2.getSource();
+		return BlockSupplier.of( s3 )
+				.andThen( Transform.affine( transformFromSource, interpolation ) );
 	}
 
 	@Override
