@@ -30,12 +30,16 @@ package bdv;
 
 import static net.imglib2.view.fluent.RandomAccessibleIntervalView.Extension.zero;
 
+import java.util.ArrayList;
+
 import bdv.spimdata.SpimDataMinimal;
 import bdv.spimdata.XmlIoSpimDataMinimal;
 import bdv.util.Bdv;
 import bdv.util.BdvFunctions;
 import bdv.util.BdvSource;
+import bdv.viewer.SourceAndConverter;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.Volatile;
 import net.imglib2.algorithm.blocks.BlockSupplier;
 import net.imglib2.algorithm.blocks.VolatileBlockSupplier;
 import net.imglib2.algorithm.blocks.convert.Convert;
@@ -45,9 +49,12 @@ import net.imglib2.blocks.BlockInterval;
 import net.imglib2.blocks.PrimitiveBlocks;
 import net.imglib2.blocks.VolatileArray;
 import net.imglib2.blocks.VolatilePrimitiveBlocks;
+import net.imglib2.converter.Converter;
+import net.imglib2.display.ColorConverter;
 import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.realtransform.AffineTransform3D;
+import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.integer.UnsignedShortType;
 import net.imglib2.type.numeric.real.FloatType;
@@ -199,7 +206,7 @@ public class VolatileBlocksPlayground
 		}
 	}
 
-	public static void main( String[] args ) throws Exception
+	public static void main6( String[] args ) throws Exception
 	{
 		final String fn = "/Users/pietzsch/workspace/data/111010_weber_resave.xml";
 		final SpimDataMinimal spim = new XmlIoSpimDataMinimal().load( fn );
@@ -247,6 +254,48 @@ public class VolatileBlocksPlayground
 		}
 	}
 
+	public static void main( String[] args ) throws Exception
+	{
+		final String fn = "/Users/pietzsch/workspace/data/111010_weber_resave.xml";
+		final SpimDataMinimal spim = new XmlIoSpimDataMinimal().load( fn );
+		final ViewerSetupImgLoader<UnsignedShortType, VolatileUnsignedShortType > setupImgLoader = Cast.unchecked( spim.getSequenceDescription().getImgLoader().getSetupImgLoader( 0 ) );
+
+		final ArrayList< SourceAndConverter< ? > > socs = new ArrayList<>();
+		BigDataViewer.initSetups( spim, new ArrayList<>(), socs );
+		final SourceAndConverter< UnsignedShortType > soc = Cast.unchecked(socs.get( 0 ) );
+		final SourceAndConverter< VolatileUnsignedShortType > vsoc = Cast.unchecked( soc.asVolatile() );
+
+		final RandomAccessibleInterval< VolatileUnsignedShortType > vimg = vsoc.getSpimSource().getSource( 0, 0 );
+		System.out.println( "vimg = " + vimg );
+		System.out.println( "vimg.getType().getClass() = " + vimg.getType().getClass() );
+
+		final Converter< VolatileUnsignedShortType, ARGBType > converter = vsoc.getConverter();
+		( ( ColorConverter ) converter ).setMin( 962 );
+		( ( ColorConverter ) converter ).setMax( 4104 );
+		( ( ColorConverter ) converter ).setColor( new ARGBType( 0xffffffff ) );
+
+		final AffineTransform3D transform = new AffineTransform3D();
+		final Transform.Interpolation interpolation = Transform.Interpolation.NEARESTNEIGHBOR;
+		final BlockSupplier< VolatileUnsignedShortType > vblocks = VolatileBlockSupplier
+				.of( vimg )
+				.andThen( Transform.affine( transform, interpolation ) );
+		System.out.println( "vblocks = " + vblocks );
+
+		final BlockSupplier< ARGBType > argbBlocks = vblocks.andThen( Convert.convert( new ARGBType(), () -> converter ) );
+		System.out.println( "argbBlocks = " + argbBlocks );
+
+
+		final long[] pos = { -50, -50, 0 };
+		final int[] size = { 1000, 400, 50 };
+//		final long[] pos = { 0, 0, 0 };
+//		final int[] size = { 2, 2, 2 };
+		final int len = ( int ) Intervals.numElements( size );
+
+		final int[] data = new int[ len ];
+		argbBlocks.copy( BlockInterval.wrap( pos, size ), data );
+		show( size, data );
+	}
+
 	private static void show( final int[] size, final short[] data, final byte[] valid )
 	{
 		final Img< UnsignedShortType > dataImg = ArrayImgs.unsignedShorts( data, Util.int2long( size ) );
@@ -271,6 +320,12 @@ public class VolatileBlocksPlayground
 		dataSrc.setDisplayRange( 0, 5000 );
 		dataSrc.setDisplayRangeBounds( 0, 5000 );
 		validSrc.setDisplayRange( 0, 8 );
+	}
+
+	private static void show( final int[] size, final int[] data )
+	{
+		final Img< ARGBType > dataImg = ArrayImgs.argbs( data, Util.int2long( size ) );
+		final BdvSource dataSrc = BdvFunctions.show( dataImg, "image data" );
 	}
 }
 
