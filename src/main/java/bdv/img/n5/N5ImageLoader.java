@@ -31,6 +31,7 @@ package bdv.img.n5;
 import static net.imglib2.cache.volatiles.LoadingStrategy.BLOCKING;
 import static net.imglib2.cache.volatiles.LoadingStrategy.BUDGETED;
 
+import bdv.export.n5.meta.AttributesCaching;
 import java.io.File;
 import java.io.IOException;
 import java.net.URI;
@@ -47,6 +48,7 @@ import java.util.function.IntFunction;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import org.janelia.saalfeldlab.n5.CachedGsonKeyValueN5Reader;
 import org.janelia.saalfeldlab.n5.DataBlock;
 import org.janelia.saalfeldlab.n5.DataType;
 import org.janelia.saalfeldlab.n5.DatasetAttributes;
@@ -115,6 +117,7 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 	{
 		this( n5URI, sequenceDescription );
 		n5 = n5Reader;
+		injectCachedAttributes();
 	}
 
 	public URI getN5URI()
@@ -251,11 +254,18 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 		if ( n5 == null )
 		{
 			n5 = instantiateN5Reader();
+			injectCachedAttributes();
 		}
 
 		if ( n5properties == null )
 		{
 			n5properties = createN5PropertiesInstance();
+		}
+	}
+
+	private void injectCachedAttributes() {
+		if (n5 instanceof CachedGsonKeyValueN5Reader) {
+			AttributesCaching.injectCachedAttributes((CachedGsonKeyValueN5Reader) n5);
 		}
 	}
 
