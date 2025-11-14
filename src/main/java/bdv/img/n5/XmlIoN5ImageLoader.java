@@ -106,7 +106,7 @@ public class XmlIoN5ImageLoader implements XmlIoBasicImgLoader< N5ImageLoader >
 				final String path = hasScheme
 						? new File( uri ).getAbsolutePath()
 						: uri.getPath();
-				final N5FSReader n5 = new N5FSReader( path );
+				final N5FSReader n5 = new N5FSReader( path, true );
 				return new N5ImageLoader( n5, uri, sequenceDescription );
 			}
 		}
