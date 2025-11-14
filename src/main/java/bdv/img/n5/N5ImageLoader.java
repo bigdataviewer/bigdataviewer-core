@@ -140,7 +140,7 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 	 */
 	protected N5Reader instantiateN5Reader()
 	{
-		return new N5FSReader( getN5File().getAbsolutePath() );
+		return new N5FSReader( getN5File().getAbsolutePath(), true );
 	}
 
 	/**
