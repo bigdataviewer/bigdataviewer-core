@@ -1,25 +1,32 @@
 package bdv.viewer.render;
 
+import java.util.ArrayList;
 import java.util.List;
 
-import net.imglib2.Interval;
+import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.RealRandomAccessible;
 import net.imglib2.Volatile;
 import net.imglib2.algorithm.blocks.BlockProcessor;
 import net.imglib2.algorithm.blocks.BlockSupplier;
 import net.imglib2.algorithm.blocks.DefaultUnaryBlockOperator;
 import net.imglib2.algorithm.blocks.UnaryBlockOperator;
 import net.imglib2.algorithm.blocks.convert.Convert;
-import net.imglib2.blocks.BlockInterval;
+import net.imglib2.algorithm.blocks.transform.Transform;
 import net.imglib2.blocks.SubArrayCopy;
 import net.imglib2.blocks.TempArray;
 import net.imglib2.blocks.VolatileArray;
 import net.imglib2.converter.Converter;
+import net.imglib2.interpolation.Interpolant;
+import net.imglib2.interpolation.InterpolatorFactory;
+import net.imglib2.interpolation.randomaccess.ClampingNLinearInterpolatorFactory;
+import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory;
+import net.imglib2.realtransform.AffineGet;
+import net.imglib2.realtransform.AffineRandomAccessible;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.PrimitiveType;
+import net.imglib2.type.operators.SetZero;
 import net.imglib2.util.Cast;
-import net.imglib2.util.Intervals;
-import net.imglib2.util.Util;
 
 /**
  *
@@ -32,41 +39,89 @@ import net.imglib2.util.Util;
  * @param <O>
  * 		output primitive array type, e.g., int[]. Must correspond to T.
  */
-public class ProjectHierarchy< S extends NativeType< S >, T extends NativeType< T >, I, O >
+public class VolatileHierarchyBlockProjector< S extends NativeType< S >, T extends NativeType< T >, I, O >
+		extends AbstractVolatileHierarchyBlockProjector
 {
-	// TODO: Probably this will not be a BlockSupplier in the end, because the
-	//       target interval is always the same, and must be the same, because
-	//       it corresponds to the mask array dimensions.
-	//       For now it's convenient. After working out the rough outlines of
-	//       what needs to happen, look at what AbstractBlockSupplier provides
-	//       in terms of useful inherited behaviour. And replicate that.
-	//       ==>
-	//       Should have a public map() method that just does everything that
-	//       VolatileHierarchyProjector does
+	public static boolean DEBUG_USE_BLK_AFFINE = true;
+
+	static < S extends Volatile< ? > & NativeType< S >, T extends NativeType< T > & SetZero > VolatileProjector tryCreate(
+			final List< ? extends RandomAccessible< S > > sources,
+			final Converter< ? super S, T > converter,
+			final RandomAccessibleInterval< T > target,
+			final byte[] maskArray )
+	{
+		if ( !DEBUG_USE_BLK_AFFINE )
+			return null;
+
+		final List< BlockSupplier< S > > blks = new ArrayList<>();
+		for ( RandomAccessible< S > source : sources )
+		{
+			final BlockSupplier< S > sourceBlocks = getBlockSupplierIfPossible( source );
+			if ( sourceBlocks == null )
+				return null;
+			blks.add( sourceBlocks );
+		}
+
+		return new VolatileHierarchyBlockProjector<>( blks, converter, target, maskArray );
+	}
+
+	static < A extends NativeType< A > > BlockSupplier< A > getBlockSupplierIfPossible(
+			final RandomAccessible< A > source )
+	{
+		if ( !( source instanceof AffineRandomAccessible ) )
+			return null;
+		final AffineRandomAccessible< A, ? > s0 = ( AffineRandomAccessible< A, ? > ) source;
+		final AffineGet transformFromSource = s0.getTransformToSource().inverse();
+
+		final RealRandomAccessible< A > s1 = s0.getSource();
+		if ( !( s1 instanceof Interpolant ) )
+			return null;
+		final Interpolant< A, ? > s2 = ( Interpolant< A, ? > ) s1;
+
+		final InterpolatorFactory< A, ? > f = s2.getInterpolatorFactory();
+		final Transform.Interpolation interpolation;
+		if ( f instanceof ClampingNLinearInterpolatorFactory )
+		{
+			interpolation = Transform.Interpolation.NLINEAR;
+		}
+		else if ( f instanceof NearestNeighborInterpolatorFactory )
+		{
+			interpolation = Transform.Interpolation.NEARESTNEIGHBOR;
+		}
+		else
+		{
+			System.out.println( "cannot handle " + f.getClass() + " (yet)" );
+			return null;
+		}
+
+		final RandomAccessible< A > s3 = ( RandomAccessible< A > ) s2.getSource();
+		return BlockSupplier.of( s3 )
+				.andThen( Transform.affine( transformFromSource, interpolation ) );
+	}
 
 
-	public static < S extends NativeType< S >, T extends NativeType< T > > ProjectHierarchy<S,T,?,?> of(
+
+
+
+
+
+
+
+
+
+
+
+
+	public static < S extends NativeType< S >, T extends NativeType< T > > VolatileHierarchyBlockProjector< S, T, ?, ? > of(
 			final List< BlockSupplier< S > > sources,
 			final Converter< ? super S, T > converter,
 			final RandomAccessibleInterval< T > target,
 			final byte[] maskArray )
 	{
-		return new ProjectHierarchy<>( sources, converter, target, maskArray );
+		return new VolatileHierarchyBlockProjector<>( sources, converter, target, maskArray );
 	}
 
 	private List< BlockSupplier< S > > sources;
-
-	private final BlockInterval interval;
-
-	private final int length;
-
-	/**
-	 * Records, for every target pixel, the best (smallest index) source
-	 * resolution level that has provided a valid value. Only better (lower
-	 * index) resolutions are re-tried in successive {@link #map(byte)}
-	 * calls.
-	 */
-	private final byte[] mask;
 
 	/**
 	 * Currently rendered output, before converting to the target type.
@@ -88,23 +143,28 @@ public class ProjectHierarchy< S extends NativeType< S >, T extends NativeType< 
 	 */
 	private final ProjectorUtils.ArrayData targetData;
 
-	/**
-	 * How many levels (starting from level {@code 0}) have to be re-rendered in
-	 * the next rendering pass, i.e., {@code map()} call.
-	 */
-	private int numInvalidLevels;
-
 	private final VolatileArray< I > transformedSourceI;
 
 	private final CopyValidPixels< I > copyValidPixels;
 
-	private ProjectHierarchy(
+	/**
+	 *
+	 * @param sources
+	 * @param converter A converter from the source pixel type to the target pixel type.
+	 * @param target
+	 * @param maskArray
+	 */
+	VolatileHierarchyBlockProjector(
 			final List< BlockSupplier< S > > sources,
 			final Converter< ? super S, T > converter,
 			final RandomAccessibleInterval< T > target,
 			final byte[] maskArray )
 	{
-		final S sourceType = sources.get(0).getType();
+		super( sources.size(),
+				Math.max( 2, sources.get( 0 ).numDimensions() ),
+				target, maskArray );
+
+		final S sourceType = sources.get( 0 ).getType();
 		assert sourceType instanceof Volatile;
 		final PrimitiveType sourcePrimitiveType = sourceType.getNativeTypeFactory().getPrimitiveType();
 
@@ -112,93 +172,45 @@ public class ProjectHierarchy< S extends NativeType< S >, T extends NativeType< 
 		final PrimitiveType targetPrimitiveType = targetType.getNativeTypeFactory().getPrimitiveType();
 
 		this.sources = sources;
-		interval = BlockInterval.asBlockInterval( target );
-		length = Util.safeInt( Intervals.numElements( interval ) );
-		mask = maskArray;
 
 		destI = Cast.unchecked( TempArray.forPrimitiveType( sourcePrimitiveType, false ).get( length ) );
 		destO = Cast.unchecked( TempArray.forPrimitiveType( targetPrimitiveType, false ).get( length ) );
 		transformedSourceI = Cast.unchecked( TempArray.forPrimitiveType( sourcePrimitiveType, true ).get( length ) );
 		copyValidPixels = CopyValidPixels.of( sourcePrimitiveType );
 
+		// TODO: Pass in ProjectorUtils.ArrayData instead of target RAI.
+		//       We need to provide it to the super() constructor as an Interval.
+		//       Maybe just let ArrayData implement interval?
 		targetData = ProjectorUtils.getARGBArrayData( target );
 
 		final UnaryBlockOperator< S, T > op = Convert.createOperator( sourceType, targetType, () -> converter );
 		// NB: cast to DefaultUnaryBlockOperator so that we can extract the BlockProcessor
 		convertBlockProcessor = ( ( DefaultUnaryBlockOperator< S, T > ) op ).blockProcessor();
-		convertBlockProcessor.setTargetInterval( interval );
-
-		numInvalidLevels = sources.size();
+		convertBlockProcessor.setTargetInterval( sourceInterval );
 	}
 
-	public void map()
+	@Override
+	int map( final byte resolutionIndex )
 	{
-		// TODO: Later, probably we want to allow cancelling between levels.
-		//       But first get it right without thinking about that...
+		final BlockSupplier< S > source = sources.get( resolutionIndex );
+		source.copy( sourceInterval, transformedSourceI );
+		return copyValidPixels.copy( transformedSourceI, mask, resolutionIndex, destI, length );
+	}
 
-		/*
-		 * After the for loop, numInvalidLevels is the highest (coarsest)
-		 * resolution for which all pixels could be filled from valid data. This
-		 * means that in the next pass, i.e., map() call, levels up to
-		 * numInvalidLevels have to be re-rendered.
-		 */
-		for ( int resolutionLevel = 0; resolutionLevel < numInvalidLevels; ++resolutionLevel )
-		{
-			int numInvalidPixels = map( ( byte ) resolutionLevel);
-			if ( numInvalidPixels == 0 )
-				// if this pass was all valid
-				numInvalidLevels = resolutionLevel;
-		}
-
+	@Override
+	void convert()
+	{
 		convertBlockProcessor.compute( destI, destO );
 
 		final int[] o_src = { 0, 0 };
-		final int[] size_src = interval.size();
+		final int[] size_src = sourceInterval.size();
 		final int[] o_dst = { targetData.ox(), targetData.oy() };
 		final int[] size_dst = { targetData.stride(), 1 };
+
 		SubArrayCopy
 				.forPrimitiveType( PrimitiveType.INT )
 				.copy( destO, size_src, o_src, targetData.data(), size_dst, o_dst, size_src );
 	}
-
-	/**
-	 * Copy from source {@code resolutionIndex} to target.
-	 * <p>
-	 * Only valid source pixels with a current mask value
-	 * {@code mask>resolutionIndex} are copied to target, and their mask value
-	 * is set to {@code mask=resolutionIndex}. Invalid source pixels are
-	 * ignored. Pixels with {@code mask<=resolutionIndex} are ignored, because
-	 * they have already been written to target during a previous pass.
-	 * <p>
-	 *
-	 * @param resolutionIndex
-	 *     index of source resolution level
-	 * @return the number of pixels that remain invalid afterward
-	 */
-	private int map( final byte resolutionIndex )
-	{
-		final BlockSupplier< S > source = sources.get( resolutionIndex );
-		source.copy( interval, transformedSourceI );
-		return copyValidPixels.copy( transformedSourceI, mask, resolutionIndex, destI, length );
-
-		// TODO:
-		//   We maybe want to track which pixels were modified in this pass
-		//   to avoid having to convert everything to ARGB in every pass?
-	}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
@@ -228,7 +240,8 @@ public class ProjectHierarchy< S extends NativeType< S >, T extends NativeType< 
 
 		static < T > CopyValidPixels< T > of( final PrimitiveType primitiveType )
 		{
-			switch(primitiveType) {
+			switch ( primitiveType )
+			{
 			case BOOLEAN:
 				throw new UnsupportedOperationException();
 			case BYTE:
@@ -258,7 +271,7 @@ public class ProjectHierarchy< S extends NativeType< S >, T extends NativeType< 
 			int numInvalidPixels = 0;
 			for ( int i = 0; i < length; ++i )
 			{
-				if( mask[ i ] > resolutionIndex )
+				if ( mask[ i ] > resolutionIndex )
 				{
 					if ( valid[ i ] != ( byte ) 0 )
 					{

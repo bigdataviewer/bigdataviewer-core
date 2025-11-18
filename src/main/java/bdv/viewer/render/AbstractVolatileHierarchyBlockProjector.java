@@ -28,22 +28,16 @@
  */
 package bdv.viewer.render;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
-import net.imglib2.FinalInterval;
-import net.imglib2.RandomAccess;
-import net.imglib2.RandomAccessible;
-import net.imglib2.RandomAccessibleInterval;
+import net.imglib2.Interval;
 import net.imglib2.Volatile;
+import net.imglib2.blocks.BlockInterval;
 import net.imglib2.cache.iotiming.CacheIoTiming;
 import net.imglib2.cache.iotiming.IoStatistics;
-import net.imglib2.converter.Converter;
-import net.imglib2.type.operators.SetZero;
 import net.imglib2.util.Intervals;
 import net.imglib2.util.StopWatch;
-import net.imglib2.view.Views;
+import net.imglib2.util.Util;
 
 /**
  * {@link VolatileProjector} for a hierarchy of {@link Volatile} inputs.  After each
@@ -53,28 +47,8 @@ import net.imglib2.view.Views;
  * @author Stephan Saalfeld
  * @author Tobias Pietzsch
  */
-// TODO: Let AbstractVolatileHierarchyProjector extend AbstractVolatileHierarchyBlockProjector
-//       and rename both to something more reasonable
-abstract class AbstractVolatileHierarchyProjector< A, B extends SetZero > implements VolatileProjector
+abstract class AbstractVolatileHierarchyBlockProjector implements VolatileProjector
 {
-	/**
-	 * A converter from the source pixel type to the target pixel type.
-	 */
-	final Converter< ? super A, B > converter;
-
-	/**
-	 * The target interval. Pixels of the target interval should be set by
-	 * {@link #map}
-	 */
-	private final RandomAccessibleInterval< B > target;
-
-	/**
-	 * List of source resolutions starting with the optimal resolution at index
-	 * 0. During each {@link #map(boolean)}, for every pixel, resolution levels
-	 * are successively queried until a valid pixel is found.
-	 */
-	private final List< RandomAccessible< A > > sources;
-
 	/**
 	 * Records, for every target pixel, the best (smallest index) source
 	 * resolution level that has provided a valid value. Only better (lower
@@ -82,6 +56,23 @@ abstract class AbstractVolatileHierarchyProjector< A, B extends SetZero > implem
 	 * calls.
 	 */
 	final byte[] mask;
+
+	/**
+	 * Number of elements in the target interval.
+	 */
+	final int length;
+
+	/**
+	 * Source interval which will be used for rendering. This is the 2D target
+	 * interval expanded to source dimensionality (usually 3D) with
+	 * {@code min=max=0} in the additional dimensions.
+	 */
+	final BlockInterval sourceInterval;
+
+	/**
+	 * How many sources (resolution levels) there are.
+	 */
+	private final int numSources;
 
 	/**
 	 * {@code true} iff all target pixels were rendered with valid data from the
@@ -94,13 +85,6 @@ abstract class AbstractVolatileHierarchyProjector< A, B extends SetZero > implem
 	 * the next rendering pass, i.e., {@code map()} call.
 	 */
 	private int numInvalidLevels;
-
-	/**
-	 * Source interval which will be used for rendering. This is the 2D target
-	 * interval expanded to source dimensionality (usually 3D) with
-	 * {@code min=max=0} in the additional dimensions.
-	 */
-	private final FinalInterval sourceInterval;
 
 	/**
 	 * Time needed for rendering the last frame, in nano-seconds.
@@ -118,26 +102,23 @@ abstract class AbstractVolatileHierarchyProjector< A, B extends SetZero > implem
 	 */
 	private volatile boolean canceled = false;
 
-	AbstractVolatileHierarchyProjector(
-			final List< ? extends RandomAccessible< A > > sources,
-			final Converter< ? super A, B > converter,
-			final RandomAccessibleInterval< B > target,
-			final byte[] maskArray)
+	/**
+	 */
+	AbstractVolatileHierarchyBlockProjector(
+			final int numSources,
+			final int numSourceDimensions,
+			final Interval target,
+			final byte[] maskArray )
 	{
-		this.converter = converter;
-		this.target = target;
-		this.sources = new ArrayList<>( sources );
-		numInvalidLevels = sources.size();
+		this.numSources = numSources;
+		numInvalidLevels = numSources;
 		mask = maskArray;
 
-		final int n = Math.max( 2, sources.get( 0 ).numDimensions() );
-		final long[] min = new long[ n ];
-		final long[] max = new long[ n ];
-		min[ 0 ] = target.min( 0 );
-		max[ 0 ] = target.max( 0 );
-		min[ 1 ] = target.min( 1 );
-		max[ 1 ] = target.max( 1 );
-		sourceInterval = new FinalInterval( min, max );
+		sourceInterval = new BlockInterval( numSourceDimensions );
+		Arrays.setAll( sourceInterval.min(), d -> d < 2 ? target.min( d ) : 0 );
+		Arrays.setAll( sourceInterval.size(), d -> d < 2 ? Util.safeInt( target.dimension( d ) ) : 1 );
+
+		length = Util.safeInt( Intervals.numElements( sourceInterval ) );
 
 		lastFrameRenderNanoTime = -1;
 		clearMask();
@@ -167,25 +148,12 @@ abstract class AbstractVolatileHierarchyProjector< A, B extends SetZero > implem
 	}
 
 	/**
-	 * Set all pixels in target to 100% transparent zero, and mask to all
-	 * Integer.MAX_VALUE.
+	 * Set all mask pixels to Integer.MAX_VALUE.
 	 */
 	public void clearMask()
 	{
-		final int size = ( int ) Intervals.numElements( target );
-		Arrays.fill( mask, 0, size, Byte.MAX_VALUE );
-		numInvalidLevels = sources.size();
-	}
-
-	/**
-	 * Clear target pixels that were never written.
-	 */
-	private void clearUntouchedTargetPixels()
-	{
-		int i = 0;
-		for ( final B t : Views.flatIterable( target ) )
-			if ( mask[ i++ ] == Byte.MAX_VALUE )
-				t.setZero();
+		Arrays.fill( mask, 0, length, Byte.MAX_VALUE );
+		numInvalidLevels = numSources;
 	}
 
 	@Override
@@ -218,8 +186,12 @@ abstract class AbstractVolatileHierarchyProjector< A, B extends SetZero > implem
 
 		valid = numInvalidLevels == 0;
 
-		if ( clearUntouchedTargetPixels && valid && !canceled )
-			clearUntouchedTargetPixels();
+		// TODO: REMOVE!?
+		//		if ( clearUntouchedTargetPixels && valid && !canceled )
+		//			clearUntouchedTargetPixels();
+
+		if ( !canceled )
+			convert();
 
 		lastFrameIoNanoTime = iostat.getIoNanoTime() - startTimeIo;
 		final long lastFrameTime = stopWatch.nanoTime();
@@ -232,47 +204,23 @@ abstract class AbstractVolatileHierarchyProjector< A, B extends SetZero > implem
 	}
 
 	/**
-	 * Copy lines from source {@code resolutionIndex} to target. Check after
-	 * each line whether rendering was {@link #cancel() canceled}.
+	 * Render source {@code resolutionIndex} to the temporary target buffer.
 	 * <p>
 	 * Only valid source pixels with a current mask value
 	 * {@code mask>resolutionIndex} are copied to target, and their mask value
 	 * is set to {@code mask=resolutionIndex}. Invalid source pixels are
 	 * ignored. Pixels with {@code mask<=resolutionIndex} are ignored, because
 	 * they have already been written to target during a previous pass.
-	 * <p>
 	 *
 	 * @param resolutionIndex
 	 *     index of source resolution level
 	 * @return the number of pixels that remain invalid afterward
 	 */
-	private int map( final byte resolutionIndex )
-	{
-		if ( canceled )
-			return 0;
+	abstract int map( final byte resolutionIndex );
 
-		final RandomAccess< B > targetRandomAccess = target.randomAccess( target );
-		final RandomAccess< A > sourceRandomAccess = sources.get( resolutionIndex ).randomAccess( sourceInterval );
-		final int width = ( int ) target.dimension( 0 );
-		final int height = ( int ) target.dimension( 1 );
-		final long[] smin = Intervals.minAsLongArray( sourceInterval );
-		int numInvalidPixels = 0;
-
-		for ( int y = 0; y < height; ++y )
-		{
-			// TODO (FORKJOIN) With tiles being granular enough, probably
-			//   projectors shouldn't check after each line for cancellation
-			//   (maybe not at all).
-			if ( canceled )
-				return 0;
-
-			sourceRandomAccess.setPosition( smin );
-			targetRandomAccess.setPosition( smin );
-			numInvalidPixels += processLine( sourceRandomAccess, targetRandomAccess, resolutionIndex, width, y );
-			++smin[ 1 ];
-		}
-		return numInvalidPixels;
-	}
-
-	abstract int processLine(RandomAccess< A > sourceRandomAccess, RandomAccess< B > targetRandomAccess, byte resolutionIndex, int width, int y );
+	/**
+	 * Convert the temporary target buffer to target type {@code B} and copy to
+	 * {@code target}.
+	 */
+	abstract void convert();
 }
