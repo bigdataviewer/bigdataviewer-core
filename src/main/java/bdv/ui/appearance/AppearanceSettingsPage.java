@@ -30,8 +30,9 @@ package bdv.ui.appearance;
 
 import bdv.ui.settings.ModificationListener;
 import bdv.ui.settings.SettingsPage;
+import bdv.ui.settings.StyleElements;
 import bdv.util.Prefs;
-import bdv.ui.appearance.StyleElements.ComboBoxEntry;
+import bdv.ui.settings.StyleElements.ComboBoxEntry;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -44,14 +45,14 @@ import javax.swing.UIManager.LookAndFeelInfo;
 import net.miginfocom.swing.MigLayout;
 import org.scijava.listeners.Listeners;
 
-import static bdv.ui.appearance.StyleElements.booleanElement;
-import static bdv.ui.appearance.StyleElements.cbentry;
-import static bdv.ui.appearance.StyleElements.colorElement;
-import static bdv.ui.appearance.StyleElements.comboBoxElement;
-import static bdv.ui.appearance.StyleElements.linkedCheckBox;
-import static bdv.ui.appearance.StyleElements.linkedColorButton;
-import static bdv.ui.appearance.StyleElements.linkedComboBox;
-import static bdv.ui.appearance.StyleElements.separator;
+import static bdv.ui.settings.StyleElements.booleanElement;
+import static bdv.ui.settings.StyleElements.cbentry;
+import static bdv.ui.settings.StyleElements.colorElement;
+import static bdv.ui.settings.StyleElements.comboBoxElement;
+import static bdv.ui.settings.StyleElements.linkedCheckBox;
+import static bdv.ui.settings.StyleElements.linkedColorButton;
+import static bdv.ui.settings.StyleElements.linkedComboBox;
+import static bdv.ui.settings.StyleElements.separator;
 
 /**
  * Preferences page for changing {@link Appearance}.
@@ -131,7 +132,7 @@ public class AppearanceSettingsPage implements SettingsPage
 				lafs.add( cbentry( feel, feel.getName() ) );
 
 			final List< StyleElements.StyleElement > styleElements = Arrays.asList(
-					comboBoxElement( "look-and-feel", appearance::lookAndFeel, appearance::setLookAndFeel, lafs ),
+					comboBoxElement( "look-and-feel:", appearance::lookAndFeel, appearance::setLookAndFeel, lafs ),
 					separator(),
 					booleanElement( "show scalebar", appearance::showScaleBar, appearance::setShowScaleBar ),
 					booleanElement( "show scalebar in movies", appearance::showScaleBarInMovie, appearance::setShowScaleBarInMovie ),
@@ -140,7 +141,8 @@ public class AppearanceSettingsPage implements SettingsPage
 					separator(),
 					booleanElement( "show minimap", appearance::showMultibox, appearance::setShowMultibox ),
 					booleanElement( "show source info", appearance::showTextOverlay, appearance::setShowTextOverlay ),
-					comboBoxElement( "source name position", appearance::sourceNameOverlayPosition, appearance::setSourceNameOverlayPosition, Prefs.OverlayPosition.values() )
+					separator(),
+					comboBoxElement( "source name position:", appearance::sourceNameOverlayPosition, appearance::setSourceNameOverlayPosition, Prefs.OverlayPosition.values() )
 			);
 
 			final JColorChooser colorChooser = new JColorChooser();
@@ -156,22 +158,25 @@ public class AppearanceSettingsPage implements SettingsPage
 						@Override
 						public void visit( final StyleElements.ColorElement element )
 						{
-							add( new JLabel( element.getLabel() ), "r" );
-							add( linkedColorButton( element, colorChooser ), "l, wrap" );
+							JPanel row = new JPanel(new MigLayout( "insets 0, fillx", "[r][l]", "" ));
+							row.add( linkedColorButton( element, colorChooser ), "l" );
+							row.add( new JLabel( element.getLabel() ), "l, growx" );
+							add( row, "l, span 2, wrap" );
 						}
 
 						@Override
 						public void visit( final StyleElements.BooleanElement element )
 						{
-							add( new JLabel( element.getLabel() ), "r" );
-							add( linkedCheckBox( element ), "l, wrap" );
+							add( linkedCheckBox( element, element.getLabel() ), "l, span 2, wrap" );
 						}
 
 						@Override
 						public void visit( final StyleElements.ComboBoxElement< ? > element )
 						{
-							add( new JLabel( element.getLabel() ), "r" );
-							add( linkedComboBox( element ), "l, wrap" );
+							JPanel row = new JPanel(new MigLayout( "insets 0, fillx", "[r][l]", "" ));
+							row.add( new JLabel( element.getLabel() ), "l" );
+							row.add( linkedComboBox( element ), "l, growx" );
+							add( row, "l, span 2, wrap" );
 						}
 					} ) );
 

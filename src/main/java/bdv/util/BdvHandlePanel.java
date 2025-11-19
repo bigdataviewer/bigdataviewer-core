@@ -28,11 +28,15 @@
  */
 package bdv.util;
 
+import bdv.tools.links.LinkActions;
+import bdv.tools.links.PasteSettings;
+import bdv.tools.links.ResourceManager;
 import bdv.ui.BdvDefaultCards;
 import bdv.ui.CardPanel;
 import bdv.ui.UIUtils;
 import bdv.ui.appearance.AppearanceManager;
 import bdv.ui.keymap.KeymapManager;
+import bdv.ui.links.LinkSettingsManager;
 import bdv.ui.splitpanel.SplitPanel;
 import bdv.viewer.ConverterSetups;
 import java.awt.Frame;
@@ -92,6 +96,10 @@ public class BdvHandlePanel extends BdvHandle
 
 	private final AppearanceManager appearanceManager;
 
+	private final LinkSettingsManager linkSettingsManager;
+
+	private final ResourceManager resourceManager;
+
 	public BdvHandlePanel( final Frame dialogOwner, final BdvOptions options )
 	{
 		super( options );
@@ -99,8 +107,11 @@ public class BdvHandlePanel extends BdvHandle
 
 		final KeymapManager optionsKeymapManager = options.values.getKeymapManager();
 		final AppearanceManager optionsAppearanceManager = options.values.getAppearanceManager();
+		final LinkSettingsManager optionsLinkSettingsManager = options.values.getLinkSettingsManager();
 		keymapManager = optionsKeymapManager != null ? optionsKeymapManager : new KeymapManager( BigDataViewer.configDir );
 		appearanceManager = optionsAppearanceManager != null ? optionsAppearanceManager : new AppearanceManager( BigDataViewer.configDir );
+		linkSettingsManager = optionsLinkSettingsManager != null ? optionsLinkSettingsManager : new LinkSettingsManager( BigDataViewer.configDir );
+		resourceManager = options.values.getResourceManager();
 
 		cacheControls = new CacheControls();
 
@@ -167,6 +178,11 @@ public class BdvHandlePanel extends BdvHandle
 		bdvActions.runnableAction( this::expandAndFocusCardPanel, EXPAND_CARDS, EXPAND_CARDS_KEYS );
 		bdvActions.runnableAction( this::collapseCardPanel, COLLAPSE_CARDS, COLLAPSE_CARDS_KEYS );
 
+		final Actions linkActions = new Actions( inputTriggerConfig, "bdv" );
+		linkActions.install( keybindings, "links" );
+		final PasteSettings pasteSettings = linkSettingsManager.linkSettings().pasteSettings();
+		LinkActions.install( linkActions, viewer, setups, pasteSettings, resourceManager );
+
 		viewer.setDisplayMode( DisplayMode.FUSED );
 	}
 
@@ -186,6 +202,18 @@ public class BdvHandlePanel extends BdvHandle
 	public AppearanceManager getAppearanceManager()
 	{
 		return appearanceManager;
+	}
+
+	@Override
+	public LinkSettingsManager getLinkSettingsManager()
+	{
+		return linkSettingsManager;
+	}
+
+	@Override
+	public ResourceManager getResourceManager()
+	{
+		return resourceManager;
 	}
 
 	@Override

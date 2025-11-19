@@ -38,7 +38,7 @@ public enum DisplayMode
 	private final int id;
 	private final String name;
 
-	private DisplayMode( final int id, final String name )
+	DisplayMode( final int id, final String name )
 	{
 		this.id = id;
 		this.name = name;

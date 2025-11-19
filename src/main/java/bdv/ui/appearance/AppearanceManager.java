@@ -162,7 +162,7 @@ public class AppearanceManager
 		catch ( final Exception e )
 		{
 			e.printStackTrace();
-			System.out.println( "Error while reading appearance settings file " + filename + ". Using defaults." );
+			System.out.println( "Error while writing appearance settings file " + filename + "." );
 		}
 	}
 

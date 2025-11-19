@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -26,9 +26,10 @@
  * POSSIBILITY OF SUCH DAMAGE.
  * #L%
  */
-package bdv.ui.appearance;
+package bdv.ui.settings;
 
 import bdv.tools.brightness.ColorIcon;
+
 import java.awt.Color;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
@@ -38,13 +39,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
-import java.util.Vector;
 import java.util.function.BooleanSupplier;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 import java.util.function.IntSupplier;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
+
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JColorChooser;
@@ -57,11 +57,9 @@ import javax.swing.border.EmptyBorder;
  * Helpers for building settings pages:
  * Checkboxes, color-selection icons, ...
  */
-// TODO: Polish a bit and make public.
-//       This is a modified version of the StyleElements class from Mastodon.
-//       Currently it's only used in AppearanceSettingsPage.
+// TODO: This is a modified version of the StyleElements class from Mastodon.
 //       Eventually this should be unified with the Mastodon one and reused.
-class StyleElements
+public class StyleElements
 {
 	public static Separator separator()
 	{
@@ -115,10 +113,21 @@ class StyleElements
 			final Supplier< T > get, final Consumer< T > set,
 			final T[] entries )
 	{
-		final List< ComboBoxEntry< T > > list = Arrays.stream( entries )
-				.map( v -> new ComboBoxEntry<>( v, v.toString() ) )
-				.collect( Collectors.toList() );
-		return comboBoxElement( label, get, set, list );
+		final String[] entryLabels = new String[entries.length];
+		Arrays.setAll( entryLabels, i -> entries[ i ].toString() );
+		return comboBoxElement( label, get, set, entries, entryLabels );
+	}
+
+	public static < T extends Enum< T > > ComboBoxElement< T > comboBoxElement( final String label,
+			final Supplier< T > get, final Consumer< T > set,
+			final T[] entries,
+			final String[] entryLabels )
+	{
+		if ( entries.length != entryLabels.length )
+			throw new IllegalArgumentException( "lengths of entries and entryLabels arrays do not match" );
+		final ComboBoxEntry< T >[] cbentries = new ComboBoxEntry[ entries.length ];
+		Arrays.setAll( cbentries, i -> new ComboBoxEntry<>( entries[ i ], entryLabels[ i ] ) );
+		return comboBoxElement( label, get, set, Arrays.asList( cbentries ) );
 	}
 
 	public static < T > ComboBoxElement< T > comboBoxElement( final String label,
@@ -269,7 +278,7 @@ class StyleElements
 		public abstract void set( boolean b );
 	}
 
-	static class ComboBoxEntry< T >
+	public static class ComboBoxEntry< T >
 	{
 		private final T value;
 
@@ -350,7 +359,6 @@ class StyleElements
 	public static JCheckBox linkedCheckBox( final BooleanElement element, final String label )
 	{
 		final JCheckBox checkbox = new JCheckBox( label, element.get() );
-		checkbox.setFocusable( false );
 		checkbox.addActionListener( ( e ) -> element.set( checkbox.isSelected() ) );
 		element.onSet( b -> {
 			if ( b != checkbox.isSelected() )
@@ -416,11 +424,11 @@ class StyleElements
 		return button;
 	}
 
+	@SuppressWarnings( "unchecked" )
 	public static < T > JComboBox< ComboBoxEntry< T > > linkedComboBox( final ComboBoxElement< T > element )
 	{
-		Vector< ComboBoxEntry< T > > vector = new Vector<>();
-		vector.addAll( element.entries() );
-		final JComboBox< ComboBoxEntry< T > > comboBox = new JComboBox<>( vector );
+		final ComboBoxEntry< T >[] cbentries = element.entries.toArray( new ComboBoxEntry[ 0 ] );
+		final JComboBox< ComboBoxEntry< T > > comboBox = new JComboBox<>( cbentries );
 		comboBox.setEditable( false );
 		comboBox.addItemListener( e -> {
 			if ( e.getStateChange() == ItemEvent.SELECTED )
@@ -430,7 +438,7 @@ class StyleElements
 			}
 		} );
 		final Consumer< T > setEntryForValue = value -> {
-			for ( ComboBoxEntry< T > entry : vector )
+			for ( ComboBoxEntry< T > entry : cbentries )
 				if ( Objects.equals( entry.value(), value ) )
 				{
 					comboBox.setSelectedItem( entry );
