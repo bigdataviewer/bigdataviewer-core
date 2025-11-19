@@ -206,7 +206,7 @@ public class VolatileBlocksPlayground
 		}
 	}
 
-	public static void main6( String[] args ) throws Exception
+	public static void main( String[] args ) throws Exception
 	{
 		final String fn = "/Users/pietzsch/workspace/data/111010_weber_resave.xml";
 		final SpimDataMinimal spim = new XmlIoSpimDataMinimal().load( fn );
@@ -227,7 +227,7 @@ public class VolatileBlocksPlayground
 
 
 		final AffineTransform3D transform = new AffineTransform3D();
-		final Transform.Interpolation interpolation = Transform.Interpolation.NEARESTNEIGHBOR;
+		final Transform.Interpolation interpolation = Transform.Interpolation.NLINEAR;
 		final BlockSupplier< VolatileUnsignedShortType > vblocks = VolatileBlockSupplier
 				.of( vimg )
 				.andThen( Transform.affine( transform, interpolation ) );
@@ -254,7 +254,7 @@ public class VolatileBlocksPlayground
 		}
 	}
 
-	public static void main( String[] args ) throws Exception
+	public static void main7( String[] args ) throws Exception
 	{
 		final String fn = "/Users/pietzsch/workspace/data/111010_weber_resave.xml";
 		final SpimDataMinimal spim = new XmlIoSpimDataMinimal().load( fn );
