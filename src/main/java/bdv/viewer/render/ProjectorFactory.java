@@ -425,6 +425,13 @@ class ProjectorFactory
 		}
 		else
 		{
+			// TODO:
+			// extract VolatileBlockSupplier for
+			//    final RandomAccessibleInterval< ? > img = source.getSource( timepoint, mipmapIndex );
+			//    put it into a static HashMap with key type {SourceAndConverter, int timepoint, int mimpapIndex}
+			//    later, the Source interface should expose the BlockSupplier
+
+
 			final ArrayList< RandomAccessible< T > > renderList = new ArrayList<>();
 			for ( final MipmapOrdering.Level l : mipmapLevels )
 				renderList.add( getTransformedSource( viewerState, source.getSpimSource(), screenTransform, l.getMipmapLevel() ) );
