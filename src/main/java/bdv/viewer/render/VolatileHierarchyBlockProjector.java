@@ -312,7 +312,7 @@ public class VolatileHierarchyBlockProjector< S extends NativeType< S >, T exten
 		{
 			T wrap( final Object array );
 
-			static < T extends NativeType< T > > Wrapper<T> of( T type )
+			static < T extends NativeType< T > > Wrapper< T > of( T type )
 			{
 				return new WrapperImpl<>( type );
 			}
@@ -320,7 +320,7 @@ public class VolatileHierarchyBlockProjector< S extends NativeType< S >, T exten
 
 		private static class WrapperImpl< T extends NativeType< T >, A > extends AbstractImg< T > implements NativeImg< T, A >, Wrapper< T >
 		{
-			private final PrimitiveTypeProperties< ?, A, ? > props;
+			private final PrimitiveTypeProperties< ?, A > props;
 			private Object array;
 			private final T wrapper;
 
@@ -328,7 +328,7 @@ public class VolatileHierarchyBlockProjector< S extends NativeType< S >, T exten
 			{
 				super( new long[ 0 ] );
 				final NativeTypeFactory< T, A > nativeTypeFactory = Cast.unchecked( type.getNativeTypeFactory() );
-				props = Cast.unchecked( PrimitiveTypeProperties.get( nativeTypeFactory.getPrimitiveType() ) );
+				props = Cast.unchecked( PrimitiveTypeProperties.get( nativeTypeFactory.getPrimitiveType(), type instanceof Volatile ) );
 				wrapper = nativeTypeFactory.createLinkedType( this );
 			}
 
@@ -359,24 +359,19 @@ public class VolatileHierarchyBlockProjector< S extends NativeType< S >, T exten
 
 		/**
 		 * @param <P> a primitive array type, e.g., {@code byte[]}.
-		 * @param <A> the corresponding {@code ArrayDataAccess} type.
-		 * @param <V> the corresponding {@code VolatileArrayDataAccess} type.
+		 * @param <A> the corresponding {@code ArrayDataAccess}
 		 */
-		private static class PrimitiveTypeProperties< P, A, V >
+		private static class PrimitiveTypeProperties< P, A >
 		{
 			final Class< P > primitiveArrayClass;
 
-			final IntFunction< P > createPrimitiveArray;
-
-			final ToIntFunction< P > primitiveArrayLength;
-
 			final Function< P, A > wrapAsAccess;
 
-			final Function< P, V > wrapAsVolatileAccess;
-
-			static PrimitiveTypeProperties< ?, ?, ? > get( final PrimitiveType primitiveType )
+			static PrimitiveTypeProperties< ?, ? > get( final PrimitiveType primitiveType, final boolean isVolatile )
 			{
-				final PrimitiveTypeProperties< ?, ?, ? > props = creators.get( primitiveType );
+				final PrimitiveTypeProperties< ?, ? > props = isVolatile
+						? volatileCreators.get( primitiveType )
+						: creators.get( primitiveType );
 				if ( props == null )
 					throw new IllegalArgumentException();
 				return props;
@@ -397,48 +392,35 @@ public class VolatileHierarchyBlockProjector< S extends NativeType< S >, T exten
 				return wrapAsAccess.apply( ( P ) data );
 			}
 
-			/**
-			 * Allocate a primitive array (type {@code P}) with {@code length} elements.
-			 */
-			P allocate( int length )
-			{
-				return createPrimitiveArray.apply( length );
-			}
-
-			/**
-			 * Get the length of a primitive array (type {@code P}).
-			 */
-			int length( P array )
-			{
-				return primitiveArrayLength.applyAsInt( array );
-			}
-
 			private PrimitiveTypeProperties(
 					final Class< P > primitiveArrayClass,
-					final IntFunction< P > createPrimitiveArray,
-					final ToIntFunction< P > primitiveArrayLength,
-					final Function< P, A > wrapAsAccess,
-					final Function< P, V > wrapAsVolatileAccess )
+					final Function< P, A > wrapAsAccess )
 			{
 				this.primitiveArrayClass = primitiveArrayClass;
-				this.createPrimitiveArray = createPrimitiveArray;
-				this.primitiveArrayLength = primitiveArrayLength;
 				this.wrapAsAccess = wrapAsAccess;
-				this.wrapAsVolatileAccess = wrapAsVolatileAccess;
 			}
 
-			private static final EnumMap< PrimitiveType, PrimitiveTypeProperties< ?, ?, ? > > creators = new EnumMap<>( PrimitiveType.class );
+			private static final EnumMap< PrimitiveType, PrimitiveTypeProperties< ?, ? > > creators = new EnumMap<>( PrimitiveType.class );
+			private static final EnumMap< PrimitiveType, PrimitiveTypeProperties< ?, ? > > volatileCreators = new EnumMap<>( PrimitiveType.class );
 
 			static
 			{
-				creators.put( BOOLEAN, new PrimitiveTypeProperties<>( boolean[].class, boolean[]::new, a -> a.length, BooleanArray::new, a -> new VolatileBooleanArray( a, true ) ) );
-				creators.put( BYTE, new PrimitiveTypeProperties<>( byte[].class, byte[]::new, a -> a.length, ByteArray::new, a -> new VolatileByteArray( a, true ) ) );
-				creators.put( CHAR, new PrimitiveTypeProperties<>( char[].class, char[]::new, a -> a.length, CharArray::new, a -> new VolatileCharArray( a, true ) ) );
-				creators.put( SHORT, new PrimitiveTypeProperties<>( short[].class, short[]::new, a -> a.length, ShortArray::new, a -> new VolatileShortArray( a, true ) ) );
-				creators.put( INT, new PrimitiveTypeProperties<>( int[].class, int[]::new, a -> a.length, IntArray::new, a -> new VolatileIntArray( a, true ) ) );
-				creators.put( LONG, new PrimitiveTypeProperties<>( long[].class, long[]::new, a -> a.length, LongArray::new, a -> new VolatileLongArray( a, true ) ) );
-				creators.put( FLOAT, new PrimitiveTypeProperties<>( float[].class, float[]::new, a -> a.length, FloatArray::new, a -> new VolatileFloatArray( a, true ) ) );
-				creators.put( DOUBLE, new PrimitiveTypeProperties<>( double[].class, double[]::new, a -> a.length, DoubleArray::new, a -> new VolatileDoubleArray( a, true ) ) );
+				creators.put( BOOLEAN, new PrimitiveTypeProperties<>( boolean[].class, BooleanArray::new ) );
+				creators.put( BYTE, new PrimitiveTypeProperties<>( byte[].class, ByteArray::new ) );
+				creators.put( CHAR, new PrimitiveTypeProperties<>( char[].class, CharArray::new ) );
+				creators.put( SHORT, new PrimitiveTypeProperties<>( short[].class, ShortArray::new ) );
+				creators.put( INT, new PrimitiveTypeProperties<>( int[].class, IntArray::new ) );
+				creators.put( LONG, new PrimitiveTypeProperties<>( long[].class, LongArray::new ) );
+				creators.put( FLOAT, new PrimitiveTypeProperties<>( float[].class, FloatArray::new ) );
+				creators.put( DOUBLE, new PrimitiveTypeProperties<>( double[].class, DoubleArray::new ) );
+				volatileCreators.put( BOOLEAN, new PrimitiveTypeProperties<>( boolean[].class, a -> new VolatileBooleanArray( a, true ) ) );
+				volatileCreators.put( BYTE, new PrimitiveTypeProperties<>( byte[].class, a -> new VolatileByteArray( a, true ) ) );
+				volatileCreators.put( CHAR, new PrimitiveTypeProperties<>( char[].class, a -> new VolatileCharArray( a, true ) ) );
+				volatileCreators.put( SHORT, new PrimitiveTypeProperties<>( short[].class, a -> new VolatileShortArray( a, true ) ) );
+				volatileCreators.put( INT, new PrimitiveTypeProperties<>( int[].class, a -> new VolatileIntArray( a, true ) ) );
+				volatileCreators.put( LONG, new PrimitiveTypeProperties<>( long[].class, a -> new VolatileLongArray( a, true ) ) );
+				volatileCreators.put( FLOAT, new PrimitiveTypeProperties<>( float[].class, a -> new VolatileFloatArray( a, true ) ) );
+				volatileCreators.put( DOUBLE, new PrimitiveTypeProperties<>( double[].class, a -> new VolatileDoubleArray( a, true ) ) );
 			}
 		}
 	}
