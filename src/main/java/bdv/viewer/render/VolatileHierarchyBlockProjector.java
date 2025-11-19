@@ -10,12 +10,10 @@ import static net.imglib2.type.PrimitiveType.LONG;
 import static net.imglib2.type.PrimitiveType.SHORT;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.function.Function;
-import java.util.function.IntFunction;
-import java.util.function.Supplier;
-import java.util.function.ToIntFunction;
 
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
@@ -23,12 +21,8 @@ import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.Volatile;
-import net.imglib2.algorithm.blocks.BlockProcessor;
 import net.imglib2.algorithm.blocks.BlockSupplier;
-import net.imglib2.algorithm.blocks.DefaultUnaryBlockOperator;
-import net.imglib2.algorithm.blocks.UnaryBlockOperator;
 import net.imglib2.algorithm.blocks.VolatileBlockSupplier;
-import net.imglib2.algorithm.blocks.convert.Convert;
 import net.imglib2.algorithm.blocks.transform.Transform;
 import net.imglib2.blocks.SubArrayCopy;
 import net.imglib2.blocks.TempArray;
@@ -237,7 +231,7 @@ public class VolatileHierarchyBlockProjector< S extends NativeType< S >, T exten
 		convertBlockProcessor.compute( destI, destO, length );
 
 		final int[] o_src = { 0, 0 };
-		final int[] size_src = sourceInterval.size();
+		final int[] size_src = Arrays.copyOf( sourceInterval.size(), 2 );
 		final int[] o_dst = { targetData.ox(), targetData.oy() };
 		final int[] size_dst = { targetData.stride(), 1 };
 
