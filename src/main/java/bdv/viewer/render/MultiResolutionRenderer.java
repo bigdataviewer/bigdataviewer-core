@@ -6,13 +6,13 @@
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * 
+ *
  * 1. Redistributions of source code must retain the above copyright notice,
  *    this list of conditions and the following disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright notice,
  *    this list of conditions and the following disclaimer in the documentation
  *    and/or other materials provided with the distribution.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
  * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
  * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
@@ -632,6 +632,7 @@ public class MultiResolutionRenderer
 			final int offsetX,
 			final int offsetY )
 	{
+		final long t0 = System.currentTimeMillis();
 		final ScreenScale screenScale = screenScales.get( screenScaleIndex );
 
 		final AffineTransform3D screenTransform = viewerState.getViewerTransform().preConcatenate( screenScale.scaleTransform() );
@@ -688,8 +689,17 @@ public class MultiResolutionRenderer
 			debugTileOverlay.setTiling( renderTiles, screenScale.scale(), offsetX, offsetY );
 
 		CacheIoTiming.getIoTimeBudget().reset( iobudget );
-		return new TiledProjector( tileProjectors );
+		final TiledProjector tiledProjector = new TiledProjector( tileProjectors );
+		final long t1 = System.currentTimeMillis();
+		final long t = t1 - t0;
+		acc_t += t;
+		num_calls += 1;
+		System.out.println( "t = " + t + " ms, avg t = " + ((double)acc_t / num_calls) + " ms" );
+		return tiledProjector;
 	}
+
+	long acc_t = 0;
+	int num_calls = 0;
 
 	DebugTilingOverlay debugTileOverlay;
 }
