@@ -50,7 +50,7 @@ class Tile
 	private final List< SourceBounds > bounds;
 
 	// sources that are visible in all tiles
-	private final List< SourceAndConverter< ? > > alwaysVisibleSources;
+	private final List< SourceBounds > alwaysVisibleSources;
 
 	private final int tileMinX;
 	private final int tileMinY;
@@ -60,7 +60,7 @@ class Tile
 	private List< SourceAndConverter< ? > > sources;
 
 	Tile( final List< SourceBounds > bounds,
-			final List< SourceAndConverter< ? > > alwaysVisibleSources,
+			final List< SourceBounds > alwaysVisibleSources,
 			final int tileMinX,
 			final int tileMinY,
 			final int tileMaxX,
@@ -75,7 +75,7 @@ class Tile
 	}
 
 	Tile( final List< SourceBounds > bounds,
-			final List< SourceAndConverter< ? > > alwaysVisibleSources,
+			final List< SourceBounds > alwaysVisibleSources,
 			final Interval interval )
 	{
 		this( bounds, alwaysVisibleSources,
@@ -104,7 +104,7 @@ class Tile
 		return bounds;
 	}
 
-	public List< SourceAndConverter< ? > > alwaysVisibleSources()
+	public List< SourceBounds > alwaysVisibleSources()
 	{
 		return alwaysVisibleSources;
 	}
@@ -119,7 +119,11 @@ class Tile
 				SourceAndConverter< ? > source = sourceBounds.source();
 				sources.add( source );
 			}
-			sources.addAll( alwaysVisibleSources );
+			for ( SourceBounds sourceBounds : alwaysVisibleSources )
+			{
+				SourceAndConverter< ? > source = sourceBounds.source();
+				sources.add( source );
+			}
 			this.sources = sources;
 		}
 		return sources;

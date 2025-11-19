@@ -67,10 +67,11 @@ class VisibleSourcesOnScreenBounds
 	private final List< SourceBounds > bounds;
 
 	/**
-	 * List of sources, that do not participate in bounding box culling (and are
-	 * therefore always rendered).
+	 * List of sources that do not participate in bounding box culling (and are
+	 * therefore always rendered). Their {@code SourceBounds} cover the full
+	 * screen image
 	 */
-	private final List< SourceAndConverter< ? > > unculledSources;
+	private final List< SourceBounds > unculledSources;
 
 	private final int screenMinX;
 	private final int screenMinY;
@@ -137,7 +138,7 @@ class VisibleSourcesOnScreenBounds
 		{
 			if ( !source.getSpimSource().doBoundingBoxCulling() )
 			{
-				unculledSources.add( source );
+				unculledSources.add( new SourceBounds( source, screenMinX, screenMinY, screenMaxX, screenMaxY ) );
 				continue;
 			}
 
@@ -189,7 +190,7 @@ class VisibleSourcesOnScreenBounds
 	 * <p>
 	 * Note that the returned list is disjoint with {@link #sourceBoundsForVisibleSource()}.
 	 */
-	public List< SourceAndConverter< ? > > alwaysVisibleSources()
+	public List< SourceBounds > alwaysVisibleSources()
 	{
 		return unculledSources;
 	}

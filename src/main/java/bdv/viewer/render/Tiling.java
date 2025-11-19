@@ -86,7 +86,7 @@ class Tiling
 	public static List< Tile > findTiles( final VisibleSourcesOnScreenBounds onScreenBounds )
 	{
 		final List< SourceBounds > bounds = onScreenBounds.sourceBoundsForVisibleSource();
-		final List< SourceAndConverter< ? > > alwaysVisibleSources = onScreenBounds.alwaysVisibleSources();
+		final List< SourceBounds > alwaysVisibleSources = onScreenBounds.alwaysVisibleSources();
 		final Tile tile = new Tile( bounds, alwaysVisibleSources, onScreenBounds.screenInterval() );
 		final List< Tile > tiles = split( tile );
 		return tiles;
@@ -166,7 +166,7 @@ class Tiling
 		final int h = ( int ) Math.ceil( tileSizeY / numTiles );
 
 		final List< SourceBounds > bounds = tile.sourceBounds();
-		final List< SourceAndConverter< ? > > alwaysVisibleSources = tile.alwaysVisibleSources();
+		final List< SourceBounds > alwaysVisibleSources = tile.alwaysVisibleSources();
 		final int minX = tile.tileMinX();
 		final int maxX = tile.tileMaxX();
 
