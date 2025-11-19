@@ -174,7 +174,7 @@ public class VolatileHierarchyBlockProjector< S extends NativeType< S >, T exten
 	/**
 	 * Convert I to O using the Converter provided in the constructor
 	 */
-	private final BlockProcessor< I, O > convertBlockProcessor;
+	private final ConverterBlockProcessor< S, T, I, O > convertBlockProcessor;
 
 	/**
 	 * Underlying primitive array of target
@@ -220,11 +220,7 @@ public class VolatileHierarchyBlockProjector< S extends NativeType< S >, T exten
 		//       We need to provide it to the super() constructor as an Interval.
 		//       Maybe just let ArrayData implement interval?
 		targetData = ProjectorUtils.getARGBArrayData( target );
-
-		final UnaryBlockOperator< S, T > op = Convert.createOperator( sourceType, targetType, () -> converter );
-		// NB: cast to DefaultUnaryBlockOperator so that we can extract the BlockProcessor
-		convertBlockProcessor = ( ( DefaultUnaryBlockOperator< S, T > ) op ).blockProcessor();
-		convertBlockProcessor.setTargetInterval( sourceInterval );
+		convertBlockProcessor = new ConverterBlockProcessor<>( sourceType, targetType, converter );
 	}
 
 	@Override
@@ -238,7 +234,7 @@ public class VolatileHierarchyBlockProjector< S extends NativeType< S >, T exten
 	@Override
 	void convert()
 	{
-		convertBlockProcessor.compute( destI, destO );
+		convertBlockProcessor.compute( destI, destO, length );
 
 		final int[] o_src = { 0, 0 };
 		final int[] size_src = sourceInterval.size();
@@ -265,12 +261,6 @@ public class VolatileHierarchyBlockProjector< S extends NativeType< S >, T exten
 	// TODO rename
 	static class ConverterBlockProcessor< S extends NativeType< S >, T extends NativeType< T >, I, O >
 	{
-		private final S sourceType;
-
-		private final T targetType;
-
-		private final Supplier< Converter< ? super S, T > > converterSupplier;
-
 		private final Converter< ? super S, T > converter;
 
 		private final Wrapper< S > wrapSource;
@@ -280,13 +270,9 @@ public class VolatileHierarchyBlockProjector< S extends NativeType< S >, T exten
 		ConverterBlockProcessor(
 				final S sourceType,
 				final T targetType,
-				final Supplier< Converter< ? super S, T > > converterSupplier )
+				final Converter< ? super S, T > converter )
 		{
-			this.sourceType = sourceType;
-			this.targetType = targetType;
-			this.converterSupplier = converterSupplier;
-
-			converter = converterSupplier.get();
+			this.converter = converter;
 			wrapSource = Wrapper.of( sourceType );
 			wrapTarget = Wrapper.of( targetType );
 		}
@@ -320,7 +306,7 @@ public class VolatileHierarchyBlockProjector< S extends NativeType< S >, T exten
 
 		private static class WrapperImpl< T extends NativeType< T >, A > extends AbstractImg< T > implements NativeImg< T, A >, Wrapper< T >
 		{
-			private final PrimitiveTypeProperties< ?, A > props;
+			private final PrimitiveTypeProperties< ?, A > props; // TODO: get rid of this. just put final Function< P, A > wrapAsAccess directly
 			private Object array;
 			private final T wrapper;
 
