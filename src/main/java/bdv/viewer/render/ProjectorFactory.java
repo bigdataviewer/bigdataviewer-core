@@ -136,12 +136,14 @@ class ProjectorFactory
 	 * timepoint of the {@code ViewerState}, and the specified
 	 * {@code screenTransform} from global coordinates to coordinates in the
 	 * {@code screenImage}.
+	 * <p>
+	 * Note that for tile rendering the {@code screenImage} interval is not
+	 * zero-min.
 	 *
 	 * @param viewerState
 	 * 		the ViewerState to render
 	 * @param visibleSourcesOnScreen
-	 * @param accumulateProjectorFactory
-	 * 		constructs a projector that combines the rendered ARGB images for individual sources into the final screen image.
+	 * 	    the sources that are visible in the screenImage interval
 	 * @param screenImage
 	 * 		the ARGB screen image to render to
 	 * @param screenTransform
