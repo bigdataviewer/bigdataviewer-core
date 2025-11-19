@@ -36,6 +36,7 @@ import bdv.spimdata.XmlIoSpimDataMinimal;
 import bdv.viewer.ViewerPanel;
 import bdv.viewer.render.DebugTilingOverlay;
 import bdv.viewer.render.SimpleVolatileProjector;
+import bdv.viewer.render.VolatileHierarchyBlockProjector;
 import mpicbg.spim.data.SpimDataException;
 
 public class ExampleVolatileBlkAffine
@@ -46,10 +47,13 @@ public class ExampleVolatileBlkAffine
 
 		final String fn = "/Users/pietzsch/workspace/data/111010_weber_resave.xml";
 		final SpimDataMinimal spim = new XmlIoSpimDataMinimal().load( fn );
-		final Bdv bdv = BdvFunctions.show( spim ).get( 0 );
+		final Bdv bdv = BdvFunctions.show( spim
+//				,Bdv.options().targetRenderNanos( 1000_000L )
+		).get( 0 );
 
 		final ViewerPanel viewer = bdv.getBdvHandle().getViewerPanel();
 		final DebugTilingOverlay tilingOverlay = viewer.showDebugTileOverlay();
+		tilingOverlay.setShowTiles( false );
 		final Runnable toggleShowTiles = () -> {
 			tilingOverlay.setShowTiles( !tilingOverlay.getShowTiles() );
 			viewer.getDisplay().repaint();
@@ -60,12 +64,10 @@ public class ExampleVolatileBlkAffine
 		actions.install( bdv.getBdvHandle().getKeybindings(), "tile overlay" );
 		actions.runnableAction( toggleShowTiles, "toggle draw tiles", "T" );
 
-
-		// TODO
-//		actions.runnableAction( () -> {
-//			SimpleVolatileProjector.DEBUG_USE_BLK_AFFINE = !SimpleVolatileProjector.DEBUG_USE_BLK_AFFINE;
-//			System.out.println( "SimpleVolatileProjector.DEBUG_USE_BLK_AFFINE = " + SimpleVolatileProjector.DEBUG_USE_BLK_AFFINE );
-//		}, "toggle blk transform", "B" );
+		actions.runnableAction( () -> {
+			VolatileHierarchyBlockProjector.DEBUG_USE_BLK_AFFINE = !VolatileHierarchyBlockProjector.DEBUG_USE_BLK_AFFINE;
+			System.out.println( "VolatileHierarchyBlockProjector.DEBUG_USE_BLK_AFFINE = " + VolatileHierarchyBlockProjector.DEBUG_USE_BLK_AFFINE );
+		}, "toggle blk transform", "B" );
 
 //		// print current transform
 //		viewer.state().changeListeners().add( change -> {
