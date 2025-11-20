@@ -641,18 +641,16 @@ public class MultiResolutionRenderer
 
 		{
 			// TODO: extract to separate methods?
-
 			final ArrayList< SourceBounds > allBounds = new ArrayList<>( onScreenBounds.sourceBoundsForVisibleSource() );
 			allBounds.addAll( onScreenBounds.alwaysVisibleSources() );
-
-			// -- set mipmapHinte for all sources --
 			final int timepoint = viewerState.getCurrentTimepoint();
 			for ( final SourceBounds b : allBounds )
-				b.setMipmapHints( projectorFactory.getMipmapHints( b.source(), timepoint, screenTransform ) );
-
-			// -- prefetch all sources --
-			for ( final SourceBounds b : allBounds )
-				projectorFactory.prefetchAndPrepare( viewerState, b, screenTransform, screenImage );
+			{
+				final SourceRenderInfo info = b.renderInfo();
+				projectorFactory.setupRenderVolatile( info );
+				projectorFactory.setupMipmapHints( info, timepoint, screenTransform );
+				projectorFactory.prefetchAndPrepare( viewerState, info, screenTransform, screenImage );
+			}
 		}
 
 		final List< Tile > tiles = Tiling.findTiles( onScreenBounds );
