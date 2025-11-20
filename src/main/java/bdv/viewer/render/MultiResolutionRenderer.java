@@ -28,13 +28,13 @@
  */
 package bdv.viewer.render;
 
-import bdv.viewer.SourceAndConverter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinTask;
+
 import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.Volatile;
@@ -639,15 +639,20 @@ public class MultiResolutionRenderer
 
 		final VisibleSourcesOnScreenBounds onScreenBounds = new VisibleSourcesOnScreenBounds( viewerState, screenImage, screenTransform );
 
-		final int timepoint = viewerState.getCurrentTimepoint();
 		{
-			// TODO: extract to separate method?
-			// -- set mipmapHinte for all sources --
+			// TODO: extract to separate methods?
+
 			final ArrayList< SourceBounds > allBounds = new ArrayList<>( onScreenBounds.sourceBoundsForVisibleSource() );
 			allBounds.addAll( onScreenBounds.alwaysVisibleSources() );
+
+			// -- set mipmapHinte for all sources --
+			final int timepoint = viewerState.getCurrentTimepoint();
 			for ( final SourceBounds b : allBounds )
 				b.setMipmapHints( projectorFactory.getMipmapHints( b.source(), timepoint, screenTransform ) );
-			// ------------------------------------
+
+			// -- prefetch all sources --
+			for ( final SourceBounds b : allBounds )
+				projectorFactory.prefetchAndPrepare( viewerState, b, screenTransform, screenImage );
 		}
 
 		final List< Tile > tiles = Tiling.findTiles( onScreenBounds );
@@ -669,11 +674,11 @@ public class MultiResolutionRenderer
 			final int h = tile.tileSizeY();
 			final int ox = tile.tileMinX();
 			final int oy = tile.tileMinY();
-			final List< SourceAndConverter< ? > > sources = tile.sources();
+			final List< SourceBounds > sources = tile.allSources();
 			final RenderStorage tileRenderStorage = new RenderStorage( w, h, sources.size() );
 
 			final RandomAccessibleInterval< ARGBType > tileImage = Views.interval( screenImage, Intervals.createMinSize( ox, oy, w, h ) );
-			tileProjectors.add( projectorFactory.createProjector(
+			tileProjectors.add( projectorFactory.createProjector2(
 					viewerState,
 					sources,
 					tileImage,
