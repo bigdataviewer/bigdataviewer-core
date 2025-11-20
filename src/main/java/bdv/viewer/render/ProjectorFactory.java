@@ -370,16 +370,16 @@ class ProjectorFactory
 			( ( VolatileCachedCellImg< ?, ? > ) img ).setCacheHints( cacheHints );
 	}
 
-	private static < T > void prefetch(
+	private static void prefetch(
 			final ViewerState viewerState,
-			final Source< T > source,
+			final Source< ? > source,
 			final AffineTransform3D screenTransform,
 			final int mipmapIndex,
 			final CacheHints prefetchCacheHints,
 			final Dimensions screenInterval )
 	{
 		final int timepoint = viewerState.getCurrentTimepoint();
-		final RandomAccessibleInterval< T > img = source.getSource( timepoint, mipmapIndex );
+		final RandomAccessibleInterval< ? > img = source.getSource( timepoint, mipmapIndex );
 		if ( img instanceof VolatileCachedCellImg )
 		{
 			final VolatileCachedCellImg< ?, ? > cellImg = ( VolatileCachedCellImg< ?, ? > ) img;
@@ -418,6 +418,34 @@ class ProjectorFactory
 		return newFrameRequest;
 	}
 
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	//
+	// == REVISED ==============================================================
+	//
+	//
+
 	/**
 	 * Evaluate relevant mipmap levels of the given source such that they can be
 	 * ordered for rendering and/or prefetching.
@@ -436,12 +464,10 @@ class ProjectorFactory
 			final int timepoint,
 			final AffineTransform3D screenTransform )
 	{
-		final Source< ? > spimSource = ( source.asVolatile() != null && useVolatileIfAvailable )
-				? source.asVolatile().getSpimSource()
-				: source.getSpimSource();
-
-		if ( useVolatileIfAvailable && spimSource.getType() instanceof Volatile )
+		final SourceAndConverter< ? > vsource = asVolatile( source );
+		if ( vsource != null )
 		{
+			final Source< ? > spimSource = source.getSpimSource();
 			final MipmapOrdering ordering = spimSource instanceof MipmapOrdering
 					? ( MipmapOrdering ) spimSource
 					: new DefaultMipmapOrdering( spimSource );
@@ -449,8 +475,238 @@ class ProjectorFactory
 		}
 		else
 		{
+			final Source< ? > spimSource = source.getSpimSource();
 			final int bestLevel = MipmapTransforms.getBestMipMapLevel( screenTransform, spimSource, timepoint );
 			return new MipmapHints( bestLevel );
 		}
 	}
+
+	/**
+	 * Prefetch cells of the given source in the screen area.
+	 * Reorder {@link MipmapOrdering.Level mipmap levels} for rendering.
+	 * Set rendering cache hints for the source image.
+	 */
+	void prefetchAndPrepare(
+			final ViewerState viewerState,
+			final SourceBounds sourceBounds,
+			final AffineTransform3D screenTransform,
+			final Dimensions screenSize )
+	{
+		SourceAndConverter< ? > source = asVolatile( sourceBounds.source() );
+		if ( source == null )
+			source = sourceBounds.source();
+		final Source< ? > spimSource = source.getSpimSource();
+
+		final MipmapHints hints = sourceBounds.getMipmapHints();
+		final List< MipmapOrdering.Level > levels = hints.getLevels();
+
+		// NB: currently prefetchCells==true always
+		if ( prefetchCells )
+		{
+			levels.sort( MipmapOrdering.prefetchOrderComparator );
+			for ( final MipmapOrdering.Level l : levels )
+			{
+				final CacheHints cacheHints = l.getPrefetchCacheHints();
+				if ( cacheHints == null || cacheHints.getLoadingStrategy() != LoadingStrategy.DONTLOAD )
+				{
+					prefetch( viewerState, spimSource, screenTransform, l.getMipmapLevel(), cacheHints, screenSize );
+				}
+			}
+		}
+
+		levels.sort( MipmapOrdering.renderOrderComparator );
+		final int timepoint = viewerState.getCurrentTimepoint();
+		for ( final MipmapOrdering.Level l : levels )
+			applyCacheHints( spimSource, timepoint, l.getMipmapLevel(), l.getRenderCacheHints() );
+
+		if ( hints.renewHintsAfterPaintingOnce() )
+			newFrameRequest = true;
+	}
+
+	/**
+	 * Tries to extract a volatile {@code SourceAndConverter}. This might be the
+	 * {@code source} itself or a nested volatile source (or just {@code null}
+	 * if no volatile version is available).
+	 * <p>
+	 * Always returns {@code null} if {@code useVolatileIfAvailable==null}.
+	 */
+	@SuppressWarnings( "unchecked" )
+	private < V extends Volatile< ? > > SourceAndConverter< V > asVolatile( final SourceAndConverter< ? > source )
+	{
+		if ( useVolatileIfAvailable )
+		{
+			if ( source.asVolatile() != null )
+				return ( SourceAndConverter< V > ) source.asVolatile();
+			if ( source.getSpimSource().getType() instanceof Volatile )
+				return ( SourceAndConverter< V > ) source;
+		}
+		return null;
+	}
+
+	/**
+	 * Create a projector for rendering the specified {@code ViewerState} to the
+	 * specified {@code screenImage}, with the current visible sources (visible
+	 * in {@code ViewerState} and actually currently visible on screen) and
+	 * timepoint of the {@code ViewerState}, and the specified
+	 * {@code screenTransform} from global coordinates to coordinates in the
+	 * {@code screenImage}.
+	 * <p>
+	 * Note that for tile rendering the {@code screenImage} interval is not
+	 * zero-min.
+	 *
+	 * @param viewerState
+	 * 		the ViewerState to render
+	 * @param visibleSourcesOnScreen
+	 * 	    the sources that are visible in the screenImage interval
+	 * @param screenImage
+	 * 		the ARGB screen image to render to
+	 * @param screenTransform
+	 * 		transforms global to screenImage coordinates
+	 * @param renderStorage
+	 * 		temporary storage
+	 *
+	 * @return a new projector
+	 */
+	// TODO
+	//  Rename to createProjector() when the signature changes.
+	//  Currently same erasure as createProjector() with SourceAndConverter.
+	public VolatileProjector createProjector2(
+			final ViewerState viewerState,
+			final List< SourceBounds > visibleSourcesOnScreen,
+			final RandomAccessibleInterval< ARGBType > screenImage,
+			final AffineTransform3D screenTransform,
+			final RenderStorage renderStorage )
+	{
+		/*
+		 * This shouldn't be necessary, with
+		 * CacheHints.LoadingStrategy==VOLATILE
+		 */
+//		CacheIoTiming.getIoTimeBudget().clear(); // clear time budget such that prefetching doesn't wait for loading blocks.
+
+		final int width = ( int ) screenImage.dimension( 0 );
+		final int height = ( int ) screenImage.dimension( 1 );
+
+		final AccumulateProjectorFactory< ARGBType > accumulateProjectorFactory = viewerState.getAccumulateProjectorFactory();
+		final boolean useAlphaMaskedSources = accumulateProjectorFactory.requiresMaskedSources();
+
+		VolatileProjector projector;
+		if ( visibleSourcesOnScreen.isEmpty() )
+			projector = new EmptyProjector<>( screenImage );
+		else if ( visibleSourcesOnScreen.size() == 1 )
+		{
+			final byte[] maskArray = renderStorage.getMaskArray( 0 );
+			projector = createSingleSourceProjector2( viewerState, visibleSourcesOnScreen.get( 0 ), useAlphaMaskedSources, screenImage, screenTransform, maskArray );
+		}
+		else
+		{
+			final int offsetX = ( int ) screenImage.min( 0 );
+			final int offsetY = ( int ) screenImage.min( 1 );
+			final ArrayList< VolatileProjector > sourceProjectors = new ArrayList<>();
+			final ArrayList< RandomAccessibleInterval< ARGBType > > sourceImages = new ArrayList<>();
+			int j = 0;
+			for ( final SourceBounds source : visibleSourcesOnScreen )
+			{
+				final RandomAccessibleInterval< ARGBType > renderImage = renderStorage.getRenderImage( width, height, j );
+				final byte[] maskArray = renderStorage.getMaskArray( j );
+				++j;
+				final AffineTransform3D renderTransform = screenTransform.copy();
+				renderTransform.translate( -offsetX, -offsetY, 0 );
+				final VolatileProjector p = createSingleSourceProjector2( viewerState, source, useAlphaMaskedSources,renderImage, renderTransform, maskArray );
+				sourceProjectors.add( p );
+				sourceImages.add( renderImage );
+			}
+
+			final List< SourceAndConverter< ? > > sources = new ArrayList<>(visibleSourcesOnScreen.size());
+			for ( SourceBounds bounds : visibleSourcesOnScreen )
+				sources.add( bounds.source() );
+			projector = accumulateProjectorFactory.createProjector( sourceProjectors, sources, sourceImages, Views.zeroMin( screenImage ), numRenderingThreads, renderingExecutorService );
+		}
+		return projector;
+	}
+
+	/**
+	 * NB. Unfortunately, "mask" refers both to the target mask and the source
+	 * alpha mask.
+	 * <p>
+	 * The target mask records, for every target pixel, the best resolution
+	 * level (so far) that has provided a valid value.
+	 * <p>
+	 * The {@code useAlphaMaskedSources} determines whether {@link
+	 * Source#getMaskedSource masked} versions of sources should be used for
+	 * rendering (to provide accurate alpha values for the final ARGBType
+	 * accumulation).
+	 *
+	 * @param useAlphaMaskedSources whether to use the {@link Source#getMaskedSource masked} version of the source for rendering
+	 * @param maskArray the target mask
+	 */
+	private VolatileProjector createSingleSourceProjector2(
+			final ViewerState viewerState,
+			final SourceBounds sourceBounds, // TODO: rename "source"?
+			final boolean useAlphaMaskedSources,
+			final RandomAccessibleInterval< ARGBType > screenImage,
+			final AffineTransform3D screenTransform,
+			final byte[] maskArray )
+	{
+		final SourceAndConverter< ? > source = sourceBounds.source(); // TODO: rename "soc"
+
+		final SourceAndConverter< ? extends Volatile< ? > > vsource = asVolatile( source );
+		if ( vsource != null )
+		{
+			final List< MipmapOrdering.Level > levels = sourceBounds.getMipmapHints().getLevels();
+			return createSingleSourceVolatileProjector2( viewerState, vsource, levels, useAlphaMaskedSources, screenImage, screenTransform, maskArray );
+		}
+		else
+		{
+			final int bestLevel = sourceBounds.getMipmapHints().getBestMipmapLevel();
+			return createSimpleProjector( viewerState, vsource, bestLevel, useAlphaMaskedSources, screenImage, screenTransform );
+		}
+	}
+
+	private < T > VolatileProjector createSimpleProjector(
+			final ViewerState viewerState,
+			final SourceAndConverter< T > source,
+			final int bestLevel,
+			final boolean useAlphaMaskedSources,
+			final RandomAccessibleInterval< ARGBType > screenImage,
+			final AffineTransform3D screenTransform )
+	{
+		if ( useAlphaMaskedSources )
+		{
+			return new SimpleVolatileProjector<>(
+					getTransformedMaskedSource( viewerState, source.getSpimSource(), screenTransform, bestLevel, null ),
+					MaskedToARGBConverter.wrap( source.getConverter() ), screenImage );
+		}
+		else
+		{
+			return new SimpleVolatileProjector<>(
+					getTransformedSource( viewerState, source.getSpimSource(), screenTransform, bestLevel, null ),
+					source.getConverter(), screenImage );
+		}
+	}
+	private < T extends Volatile< ? >, M extends Masked< T > > VolatileProjector createSingleSourceVolatileProjector2(
+			final ViewerState viewerState,
+			final SourceAndConverter< T > source,
+			final List< MipmapOrdering.Level > mipmapLevels,
+			final boolean useAlphaMaskedSources,
+			final RandomAccessibleInterval< ARGBType > screenImage,
+			final AffineTransform3D screenTransform,
+			final byte[] maskArray )
+	{
+		final Source< T > spimSource = source.getSpimSource();
+		if ( useAlphaMaskedSources )
+		{
+			final ArrayList< RandomAccessible< M > > renderList = new ArrayList<>();
+			for ( final MipmapOrdering.Level l : mipmapLevels )
+				renderList.add( Cast.unchecked(getTransformedMaskedSource( viewerState, spimSource, screenTransform, l.getMipmapLevel(), l.getRenderCacheHints() ) ) );
+			return new MaskedVolatileHierarchyProjector<>( renderList, MaskedToARGBConverter.wrap( source.getConverter() ), screenImage, maskArray );
+		}
+		else
+		{
+			final ArrayList< RandomAccessible< T > > renderList = new ArrayList<>();
+			for ( final MipmapOrdering.Level l : mipmapLevels )
+				renderList.add( getTransformedSource( viewerState, spimSource, screenTransform, l.getMipmapLevel(), l.getRenderCacheHints() ) );
+			return new VolatileHierarchyProjector<>( renderList, source.getConverter(), screenImage, maskArray );
+		}
+	}
+
 }

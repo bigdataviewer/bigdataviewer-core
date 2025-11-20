@@ -28,7 +28,6 @@
  */
 package bdv.viewer.render;
 
-import bdv.viewer.SourceAndConverter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -57,7 +56,7 @@ class Tile
 	private final int tileMaxX;
 	private final int tileMaxY;
 
-	private List< SourceAndConverter< ? > > sources;
+	private List< SourceBounds > allSources;
 
 	Tile( final List< SourceBounds > bounds,
 			final List< SourceBounds > alwaysVisibleSources,
@@ -109,24 +108,15 @@ class Tile
 		return alwaysVisibleSources;
 	}
 
-	public List< SourceAndConverter< ? > > sources()
+	public List< SourceBounds > allSources()
 	{
-		if ( sources == null )
+		if ( allSources == null )
 		{
-			final List< SourceAndConverter< ? > > sources = new ArrayList<>( bounds.size() + alwaysVisibleSources.size() );
-			for ( SourceBounds sourceBounds : bounds )
-			{
-				SourceAndConverter< ? > source = sourceBounds.source();
-				sources.add( source );
-			}
-			for ( SourceBounds sourceBounds : alwaysVisibleSources )
-			{
-				SourceAndConverter< ? > source = sourceBounds.source();
-				sources.add( source );
-			}
-			this.sources = sources;
+			allSources = new ArrayList<>( bounds.size() + alwaysVisibleSources.size() );
+			allSources.addAll( bounds );
+			allSources.addAll( alwaysVisibleSources );
 		}
-		return sources;
+		return allSources;
 	}
 
 	public int tileMinX()

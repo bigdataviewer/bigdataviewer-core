@@ -81,7 +81,7 @@ public class DebugTilingOverlay implements OverlayRenderer
 						g.drawLine( x1, y0, x1, y1 );
 						g.drawLine( x1, y1, x0, y1 );
 						g.drawLine( x0, y1, x0, y0 );
-						g.drawString( String.format( "%d, %d", i++, tile.sources().size() ), x0 + 5, y0 + 17 );
+						g.drawString( String.format( "%d, %d", i++, tile.allSources().size() ), x0 + 5, y0 + 17 );
 					}
 				}
 			}
@@ -89,7 +89,7 @@ public class DebugTilingOverlay implements OverlayRenderer
 			int maxSourcesPerTile = 0;
 			if ( tiles != null )
 				for ( Tile tile : tiles )
-					maxSourcesPerTile = Math.max( maxSourcesPerTile, tile.sources().size() );
+					maxSourcesPerTile = Math.max( maxSourcesPerTile, tile.allSources().size() );
 
 			g.setColor( Color.WHITE );
 			g.setFont( new Font( "Monospaced", Font.BOLD, 14 ) );
