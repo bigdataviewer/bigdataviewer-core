@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
+import bdv.ui.settings.SelectAndEditProfileSettingsPage;
 import bdv.viewer.render.MipmapOrdering.MipmapHints;
 import net.imglib2.Dimensions;
 import net.imglib2.RandomAccess;
@@ -39,6 +40,8 @@ import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.Volatile;
+import net.imglib2.algorithm.blocks.BlockSupplier;
+import net.imglib2.algorithm.blocks.VolatileBlockSupplier;
 import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.cache.volatiles.LoadingStrategy;
 import net.imglib2.display.MaskedToARGBConverter;
@@ -191,6 +194,15 @@ class ProjectorFactory
 			final int bestLevel = MipmapTransforms.getBestMipMapLevel( screenTransform, spimSource, timepoint );
 			info.setMipmapHints( new MipmapHints( bestLevel ) );
 		}
+	}
+
+	public void setupBlockSuppliers(
+			final ViewerState viewerState,
+			final SourceRenderInfo info )
+	{
+		final int timepoint = viewerState.getCurrentTimepoint();
+		final Interpolation interpolation = viewerState.getInterpolation();
+		info.setupBlockSuppliers( timepoint, interpolation );
 	}
 
 	/**
@@ -375,8 +387,7 @@ class ProjectorFactory
 		if ( sourceRenderInfo.renderVolatile() )
 		{
 			final SourceAndConverter< ? extends Volatile< ? > > vsource = sourceRenderInfo.getVolatileSource();
-			final List< MipmapOrdering.Level > levels = sourceRenderInfo.getMipmapHints().getLevels();
-			return createSingleSourceVolatileProjector( viewerState, vsource, levels, useAlphaMaskedSources, screenImage, screenTransform, maskArray );
+			return createSingleSourceVolatileProjector( viewerState, vsource, sourceRenderInfo, useAlphaMaskedSources, screenImage, screenTransform, maskArray );
 		}
 		else
 		{
@@ -407,35 +418,58 @@ class ProjectorFactory
 					source.getConverter(), screenImage );
 		}
 	}
+
 	private static < T extends Volatile< ? >, M extends Masked< T > > VolatileProjector createSingleSourceVolatileProjector(
 			final ViewerState viewerState,
 			final SourceAndConverter< T > source,
-			final List< MipmapOrdering.Level > mipmapLevels,
+			final SourceRenderInfo sourceRenderInfo,
 			final boolean useAlphaMaskedSources,
 			final RandomAccessibleInterval< ARGBType > screenImage,
 			final AffineTransform3D screenTransform,
 			final byte[] maskArray )
 	{
+		final List< MipmapOrdering.Level > mipmapLevels = sourceRenderInfo.getMipmapHints().getLevels();
 		if ( useAlphaMaskedSources )
 		{
-			final ArrayList< RandomAccessible< M > > renderList = new ArrayList<>();
+			final List< RandomAccessible< M > > renderList = new ArrayList<>();
 			for ( final MipmapOrdering.Level l : mipmapLevels )
 				renderList.add( Cast.unchecked(getTransformedMaskedSource( viewerState, source.getSpimSource(), screenTransform, l.getMipmapLevel() ) ) );
 			return new MaskedVolatileHierarchyProjector<>( renderList, MaskedToARGBConverter.wrap( source.getConverter() ), screenImage, maskArray );
 		}
 		else
 		{
-			// TODO:
-			// extract VolatileBlockSupplier for
-			//    final RandomAccessibleInterval< ? > img = source.getSource( timepoint, mipmapIndex );
-			//    put it into a static HashMap with key type {SourceAndConverter, int timepoint, int mimpapIndex}
-			//    later, the Source interface should expose the BlockSupplier
+			if ( sourceRenderInfo.supportsBlockSuppliers() && VolatileHierarchyBlockProjector.DEBUG_USE_BLK_AFFINE )
+			{
+				final List< BlockSupplier< ? > > renderList = new ArrayList<>();
+				for ( final MipmapOrdering.Level l : mipmapLevels ) {
+					renderList.add(
+							// TODO: implement this method
+							// TODO: implement this method
+							// TODO: implement this method
+							// TODO: implement this method
+							// TODO: implement this method
+							// TODO: implement this method
+							getTransformedBlockSupplier(
+								viewerState, sourceRenderInfo, screenTransform, l.getMipmapLevel() )
+					);
+				}
 
 
-			final ArrayList< RandomAccessible< T > > renderList = new ArrayList<>();
-			for ( final MipmapOrdering.Level l : mipmapLevels )
-				renderList.add( getTransformedSource( viewerState, source.getSpimSource(), screenTransform, l.getMipmapLevel() ) );
-			return VolatileHierarchyProjector.create( renderList, source.getConverter(), screenImage, maskArray );
+//				public static < S extends NativeType< S >, T extends NativeType< T > > VolatileHierarchyBlockProjector< S, T, ?, ? > of(
+//				final List< BlockSupplier< S > > sources,
+//				final Converter< ? super S, T > converter,
+//				final RandomAccessibleInterval< T > target,
+//				final byte[] maskArray )
+
+				throw new UnsupportedOperationException("TODO");
+			}
+			else
+			{
+				final List< RandomAccessible< T > > renderList = new ArrayList<>();
+				for ( final MipmapOrdering.Level l : mipmapLevels )
+					renderList.add( getTransformedSource( viewerState, source.getSpimSource(), screenTransform, l.getMipmapLevel() ) );
+				return new VolatileHierarchyProjector<>( renderList, source.getConverter(), screenImage, maskArray );
+			}
 		}
 	}
 

@@ -1,7 +1,20 @@
 package bdv.viewer.render;
 
+import bdv.viewer.Interpolation;
+import bdv.viewer.Source;
 import bdv.viewer.SourceAndConverter;
+import net.imglib2.RandomAccessible;
+import net.imglib2.RealRandomAccessible;
 import net.imglib2.Volatile;
+import net.imglib2.algorithm.blocks.BlockSupplier;
+import net.imglib2.algorithm.blocks.VolatileBlockSupplier;
+import net.imglib2.algorithm.blocks.transform.Transform;
+import net.imglib2.interpolation.Interpolant;
+import net.imglib2.interpolation.InterpolatorFactory;
+import net.imglib2.interpolation.randomaccess.ClampingNLinearInterpolatorFactory;
+import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory;
+import net.imglib2.type.NativeType;
+import net.imglib2.util.Cast;
 
 class SourceRenderInfo
 {
@@ -63,4 +76,107 @@ class SourceRenderInfo
 	{
 		return renderVolatile() ? volatileSource : source;
 	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+	private BlockSupplierInfo[] blockSupplierInfos;
+
+	public BlockSupplierInfo getBlockSupplierInfo( final int mipmapLevel )
+	{
+		return blockSupplierInfos[ mipmapLevel ];
+	}
+
+	public boolean supportsBlockSuppliers()
+	{
+		return blockSupplierInfos != null;
+	}
+
+	static class BlockSupplierInfo
+	{
+		final BlockSupplier< ? > blockSupplier;
+		final Transform.Interpolation interpolation;
+
+		BlockSupplierInfo(
+				final BlockSupplier< ? > blockSupplier,
+				final Transform.Interpolation interpolation )
+		{
+			this.blockSupplier = blockSupplier;
+			this.interpolation = interpolation;
+		}
+	}
+
+	public void setupBlockSuppliers(
+			final int timepoint,
+			final Interpolation method )
+	{
+		final Source< ? extends Volatile< ? > > spimSource = getVolatileSource().getSpimSource();
+		final BlockSupplierInfo[] infos = new BlockSupplierInfo[ spimSource.getNumMipmapLevels() ];
+		if ( renderVolatile() )
+		{
+			for ( final MipmapOrdering.Level level : getMipmapHints().getLevels() )
+			{
+				final int mipmapLevel = level.getMipmapLevel();
+				final RealRandomAccessible< ? extends Volatile< ? > > interpolated = spimSource.getInterpolatedSource( timepoint, mipmapLevel, method );
+				final BlockSupplierInfo supplierInfo = tryGetVolatileBlockSupplier( interpolated );
+				if ( supplierInfo == null )
+					return;
+				infos[ mipmapLevel ] = supplierInfo;
+			}
+			blockSupplierInfos = infos;
+		}
+		else
+		{
+			// TODO extract BlockSuppliers for non-volatile rendering
+			throw new UnsupportedOperationException("NOT IMPLEMENTED YET");
+		}
+	}
+
+	private static < T extends Volatile< ? > & NativeType< T > > BlockSupplierInfo tryGetVolatileBlockSupplier(
+			final RealRandomAccessible< ? extends Volatile< ? > > rra )
+	{
+		if ( !( rra.getType() instanceof NativeType ) )
+			return null;
+		final RealRandomAccessible< T > s1 = Cast.unchecked( rra );
+
+		if ( !( s1 instanceof Interpolant ) )
+			return null;
+		final Interpolant< T, ? > s2 = ( Interpolant< T, ? > ) s1;
+
+		final InterpolatorFactory< T, ? > f = s2.getInterpolatorFactory();
+		final Transform.Interpolation interpolation;
+		if ( f instanceof ClampingNLinearInterpolatorFactory )
+			interpolation = Transform.Interpolation.NLINEAR;
+		else if ( f instanceof NearestNeighborInterpolatorFactory )
+			interpolation = Transform.Interpolation.NEARESTNEIGHBOR;
+		else
+			return null;
+		final RandomAccessible< T > s3 = Cast.unchecked( s2.getSource() );
+
+		try
+		{
+			final BlockSupplier< T > blockSupplier = VolatileBlockSupplier.of( s3 );
+			return new BlockSupplierInfo( blockSupplier, interpolation );
+		}
+		catch ( IllegalArgumentException e )
+		{
+			return null;
+		}
+	}
+
+
 }
