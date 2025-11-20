@@ -144,14 +144,6 @@ public class VolatileHierarchyBlockProjector< S extends NativeType< S >, T exten
 
 
 
-	public static < S extends NativeType< S >, T extends NativeType< T > > VolatileHierarchyBlockProjector< S, T, ?, ? > of(
-			final List< BlockSupplier< S > > sources,
-			final Converter< ? super S, T > converter,
-			final RandomAccessibleInterval< T > target,
-			final byte[] maskArray )
-	{
-		return new VolatileHierarchyBlockProjector<>( sources, converter, target, maskArray );
-	}
 
 	private List< BlockSupplier< S > > sources;
 
@@ -186,7 +178,7 @@ public class VolatileHierarchyBlockProjector< S extends NativeType< S >, T exten
 	 * @param target
 	 * @param maskArray
 	 */
-	VolatileHierarchyBlockProjector(
+	public VolatileHierarchyBlockProjector(
 			final List< BlockSupplier< S > > sources,
 			final Converter< ? super S, T > converter,
 			final RandomAccessibleInterval< T > target,

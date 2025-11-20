@@ -48,23 +48,6 @@ import net.imglib2.type.operators.SetZero;
  */
 public class VolatileHierarchyProjector< A extends Volatile< ? >, B extends SetZero > extends AbstractVolatileHierarchyProjector< A, B >
 {
-
-	static < A extends Volatile< ? >, B extends SetZero > VolatileProjector create(
-			final List< ? extends RandomAccessible< A > > sources,
-			final Converter< ? super A, B > converter,
-			final RandomAccessibleInterval< B > target,
-			final byte[] maskArray )
-	{
-		if ( sources.get( 0 ).getType() instanceof NativeType && target.getType() instanceof NativeType )
-		{
-			VolatileProjector blk = VolatileHierarchyBlockProjector.tryCreate( ( List ) sources, ( Converter ) converter, ( RandomAccessibleInterval ) target, maskArray );
-			if ( blk != null ) {
-				return blk;
-			}
-		}
-		return new VolatileHierarchyProjector<>( sources, converter, target, maskArray );
-	}
-
 	public VolatileHierarchyProjector(
 			final List< ? extends RandomAccessible< A > > sources,
 			final Converter< ? super A, B > converter,

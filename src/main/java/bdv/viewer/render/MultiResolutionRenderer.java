@@ -632,7 +632,8 @@ public class MultiResolutionRenderer
 			final int offsetX,
 			final int offsetY )
 	{
-		final long t0 = System.currentTimeMillis();
+							// TODO: REMOVE
+							final long t0 = System.currentTimeMillis();
 		final ScreenScale screenScale = screenScales.get( screenScaleIndex );
 
 		final AffineTransform3D screenTransform = viewerState.getViewerTransform().preConcatenate( screenScale.scaleTransform() );
@@ -648,8 +649,10 @@ public class MultiResolutionRenderer
 			for ( final SourceBounds b : allBounds )
 			{
 				final SourceRenderInfo info = b.renderInfo();
+				// TODO: make API more consistent: always pass relevant pieces of viewerState instead of viewerState
 				projectorFactory.setupRenderVolatile( info );
 				projectorFactory.setupMipmapHints( info, timepoint, screenTransform );
+				projectorFactory.setupBlockSuppliers( viewerState, info );
 				projectorFactory.prefetchAndPrepare( viewerState, info, screenTransform, screenImage );
 			}
 		}
@@ -690,16 +693,17 @@ public class MultiResolutionRenderer
 
 		CacheIoTiming.getIoTimeBudget().reset( iobudget );
 		final TiledProjector tiledProjector = new TiledProjector( tileProjectors );
-		final long t1 = System.currentTimeMillis();
-		final long t = t1 - t0;
-		acc_t += t;
-		num_calls += 1;
-		System.out.println( "t = " + t + " ms, avg t = " + ((double)acc_t / num_calls) + " ms" );
+						// TODO: REMOVE
+						final long t1 = System.currentTimeMillis();
+						final long t = t1 - t0;
+						acc_t += t;
+						num_calls += 1;
+						// System.out.println( "t = " + t + " ms, avg t = " + ((double)acc_t / num_calls) + " ms" );
 		return tiledProjector;
 	}
 
-	long acc_t = 0;
-	int num_calls = 0;
+						long acc_t = 0;
+						int num_calls = 0;
 
 	DebugTilingOverlay debugTileOverlay;
 }
