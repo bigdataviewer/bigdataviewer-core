@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 
+import bdv.viewer.render.MipmapOrdering.MipmapHints;
 import net.imglib2.Dimensions;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
@@ -268,7 +269,7 @@ class ProjectorFactory
 		final MipmapOrdering ordering = spimSource instanceof MipmapOrdering ?
 				( MipmapOrdering ) spimSource : new DefaultMipmapOrdering( spimSource );
 
-		final MipmapOrdering.MipmapHints hints = ordering.getMipmapHints( screenTransform, t, previousTimepoint );
+		final MipmapHints hints = ordering.getMipmapHints( screenTransform, t, previousTimepoint );
 		final List< MipmapOrdering.Level > levels = hints.getLevels();
 
 		if ( prefetchCells )
@@ -415,5 +416,41 @@ class ProjectorFactory
 	public boolean requestNewFrameIfIncomplete()
 	{
 		return newFrameRequest;
+	}
+
+	/**
+	 * Evaluate relevant mipmap levels of the given source such that they can be
+	 * ordered for rendering and/or prefetching.
+	 *
+	 * @param source
+	 * 		the source to evaluate
+	 * @param timepoint
+	 * 		current timepoint index
+	 * @param screenTransform
+	 * 		transforms screen coordinates to global coordinates.
+	 *
+	 * @return relevant mipmap levels and ordering
+	 */
+	MipmapHints getMipmapHints(
+			final SourceAndConverter< ? > source,
+			final int timepoint,
+			final AffineTransform3D screenTransform )
+	{
+		final Source< ? > spimSource = ( source.asVolatile() != null && useVolatileIfAvailable )
+				? source.asVolatile().getSpimSource()
+				: source.getSpimSource();
+
+		if ( useVolatileIfAvailable && spimSource.getType() instanceof Volatile )
+		{
+			final MipmapOrdering ordering = spimSource instanceof MipmapOrdering
+					? ( MipmapOrdering ) spimSource
+					: new DefaultMipmapOrdering( spimSource );
+			return ordering.getMipmapHints( screenTransform, timepoint, previousTimepoint );
+		}
+		else
+		{
+			final int bestLevel = MipmapTransforms.getBestMipMapLevel( screenTransform, spimSource, timepoint );
+			return new MipmapHints( bestLevel );
+		}
 	}
 }

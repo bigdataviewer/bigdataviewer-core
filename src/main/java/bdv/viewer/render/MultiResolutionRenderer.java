@@ -638,6 +638,18 @@ public class MultiResolutionRenderer
 		screenTransform.translate( -offsetX, -offsetY, 0 );
 
 		final VisibleSourcesOnScreenBounds onScreenBounds = new VisibleSourcesOnScreenBounds( viewerState, screenImage, screenTransform );
+
+		final int timepoint = viewerState.getCurrentTimepoint();
+		{
+			// TODO: extract to separate method?
+			// -- set mipmapHinte for all sources --
+			final ArrayList< SourceBounds > allBounds = new ArrayList<>( onScreenBounds.sourceBoundsForVisibleSource() );
+			allBounds.addAll( onScreenBounds.alwaysVisibleSources() );
+			for ( final SourceBounds b : allBounds )
+				b.setMipmapHints( projectorFactory.getMipmapHints( b.source(), timepoint, screenTransform ) );
+			// ------------------------------------
+		}
+
 		final List< Tile > tiles = Tiling.findTiles( onScreenBounds );
 		final List< Tile > renderTiles = Tiling.splitForRendering( tiles );
 

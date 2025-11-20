@@ -29,6 +29,7 @@
 package bdv.viewer.render;
 
 import bdv.viewer.SourceAndConverter;
+import bdv.viewer.render.MipmapOrdering.MipmapHints;
 
 /**
  * A {@code SourceAndConverter} and its 2D bounding box.
@@ -41,6 +42,13 @@ class SourceBounds
 	private final int minY;
 	private final int maxX;
 	private final int maxY;
+
+	/**
+	 * NB: MipmapHints are not really related to SourceBounds. This is just a
+	 * convenient place to attach something to {@code SourceAndConverter}
+	 * without needing an additional HashMap in MultiResolutionRenderer.
+	 */
+	private MipmapHints mipmapHints;
 
 	public SourceBounds( final SourceAndConverter< ? > source, final int minX, final int minY, final int maxX, final int maxY )
 	{
@@ -74,6 +82,16 @@ class SourceBounds
 	public int maxY()
 	{
 		return maxY;
+	}
+
+	public MipmapHints getMipmapHints()
+	{
+		return mipmapHints;
+	}
+
+	public void setMipmapHints( final MipmapHints mipmapHints )
+	{
+		this.mipmapHints = mipmapHints;
 	}
 
 	@Override

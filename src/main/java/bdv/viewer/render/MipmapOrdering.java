@@ -28,6 +28,7 @@
  */
 package bdv.viewer.render;
 
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -143,6 +144,27 @@ public interface MipmapOrdering
 		{
 			this.levels = levels;
 			this.renewHintsAfterPaintingOnce = renewHintsAfterPaintingOnce;
+		}
+
+		public MipmapHints( final int bestMipmapLevel )
+		{
+			levels = new ArrayList<>();
+			levels.add( new Level( bestMipmapLevel, 0, 0 ) );
+			renewHintsAfterPaintingOnce = false;
+		}
+
+		public int getBestMipmapLevel()
+		{
+			int bestLevel = 0;
+			int leastRenderOrder = Integer.MAX_VALUE;
+			for ( Level level : levels )
+			{
+				if( leastRenderOrder > level.renderOrder ) {
+					leastRenderOrder = level.renderOrder;
+					bestLevel = level.mipmapLevel;
+				}
+			}
+			return bestLevel;
 		}
 
 		public List< Level > getLevels()
