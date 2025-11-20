@@ -676,7 +676,7 @@ public class MultiResolutionRenderer
 			final RenderStorage tileRenderStorage = new RenderStorage( w, h, sources.size() );
 
 			final RandomAccessibleInterval< ARGBType > tileImage = Views.interval( screenImage, Intervals.createMinSize( ox, oy, w, h ) );
-			tileProjectors.add( projectorFactory.createProjector2(
+			tileProjectors.add( projectorFactory.createProjector(
 					viewerState,
 					sources,
 					tileImage,
