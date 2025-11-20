@@ -29,30 +29,22 @@
 package bdv.viewer.render;
 
 import bdv.viewer.SourceAndConverter;
-import bdv.viewer.render.MipmapOrdering.MipmapHints;
 
 /**
  * A {@code SourceAndConverter} and its 2D bounding box.
  */
 class SourceBounds
 {
-	private final SourceAndConverter< ? > source;
+	private final SourceRenderInfo renderInfo;
 
 	private final int minX;
 	private final int minY;
 	private final int maxX;
 	private final int maxY;
 
-	/**
-	 * NB: MipmapHints are not really related to SourceBounds. This is just a
-	 * convenient place to attach something to {@code SourceAndConverter}
-	 * without needing an additional HashMap in MultiResolutionRenderer.
-	 */
-	private MipmapHints mipmapHints;
-
 	public SourceBounds( final SourceAndConverter< ? > source, final int minX, final int minY, final int maxX, final int maxY )
 	{
-		this.source = source;
+		this.renderInfo = new SourceRenderInfo( source );
 		this.minX = minX;
 		this.minY = minY;
 		this.maxX = maxX;
@@ -61,7 +53,7 @@ class SourceBounds
 
 	public SourceAndConverter< ? > source()
 	{
-		return source;
+		return renderInfo.source();
 	}
 
 	public int minX()
@@ -84,21 +76,21 @@ class SourceBounds
 		return maxY;
 	}
 
-	public MipmapHints getMipmapHints()
+	/**
+	 * NB: These are not really related to SourceBounds. This is just a
+	 * convenient way to attach something to {@code SourceAndConverter}
+	 * without needing an additional HashMap in MultiResolutionRenderer.
+	 */
+	public SourceRenderInfo renderInfo()
 	{
-		return mipmapHints;
-	}
-
-	public void setMipmapHints( final MipmapHints mipmapHints )
-	{
-		this.mipmapHints = mipmapHints;
+		return renderInfo;
 	}
 
 	@Override
 	public String toString()
 	{
 		final StringBuilder sb = new StringBuilder( "SourceBounds{" );
-		sb.append( "\"" ).append( source.getSpimSource().getName() ).append( "\" " );
+		sb.append( "\"" ).append( source().getSpimSource().getName() ).append( "\" " );
 		sb.append( "(" ).append( minX );
 		sb.append( ", " ).append( minY );
 		sb.append( ") -- (" ).append( maxX );
