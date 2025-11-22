@@ -94,9 +94,9 @@ class SourceRenderInfo
 
 
 
-	private BlockSupplierInfo[] blockSupplierInfos;
+	private BlockSupplierInfo< ? >[] blockSupplierInfos;
 
-	public BlockSupplierInfo getBlockSupplierInfo( final int mipmapLevel )
+	public BlockSupplierInfo< ? > getBlockSupplierInfo( final int mipmapLevel )
 	{
 		return blockSupplierInfos[ mipmapLevel ];
 	}
@@ -106,13 +106,13 @@ class SourceRenderInfo
 		return blockSupplierInfos != null;
 	}
 
-	static class BlockSupplierInfo
+	static class BlockSupplierInfo< T extends NativeType< T > >
 	{
-		final BlockSupplier< ? > blockSupplier;
+		final BlockSupplier< T > blockSupplier;
 		final Transform.Interpolation interpolation;
 
 		BlockSupplierInfo(
-				final BlockSupplier< ? > blockSupplier,
+				final BlockSupplier< T > blockSupplier,
 				final Transform.Interpolation interpolation )
 		{
 			this.blockSupplier = blockSupplier;
@@ -125,14 +125,14 @@ class SourceRenderInfo
 			final Interpolation method )
 	{
 		final Source< ? extends Volatile< ? > > spimSource = getVolatileSource().getSpimSource();
-		final BlockSupplierInfo[] infos = new BlockSupplierInfo[ spimSource.getNumMipmapLevels() ];
+		final BlockSupplierInfo< ? >[] infos = new BlockSupplierInfo[ spimSource.getNumMipmapLevels() ];
 		if ( renderVolatile() )
 		{
 			for ( final MipmapOrdering.Level level : getMipmapHints().getLevels() )
 			{
 				final int mipmapLevel = level.getMipmapLevel();
 				final RealRandomAccessible< ? extends Volatile< ? > > interpolated = spimSource.getInterpolatedSource( timepoint, mipmapLevel, method );
-				final BlockSupplierInfo supplierInfo = tryGetVolatileBlockSupplier( interpolated );
+				final BlockSupplierInfo< ? > supplierInfo = tryGetVolatileBlockSupplier( interpolated );
 				if ( supplierInfo == null )
 					return;
 				infos[ mipmapLevel ] = supplierInfo;
@@ -146,7 +146,7 @@ class SourceRenderInfo
 		}
 	}
 
-	private static < T extends Volatile< ? > & NativeType< T > > BlockSupplierInfo tryGetVolatileBlockSupplier(
+	private static < T extends Volatile< ? > & NativeType< T > > BlockSupplierInfo< T > tryGetVolatileBlockSupplier(
 			final RealRandomAccessible< ? extends Volatile< ? > > rra )
 	{
 		if ( !( rra.getType() instanceof NativeType ) )
@@ -170,7 +170,7 @@ class SourceRenderInfo
 		try
 		{
 			final BlockSupplier< T > blockSupplier = VolatileBlockSupplier.of( s3 );
-			return new BlockSupplierInfo( blockSupplier, interpolation );
+			return new BlockSupplierInfo<>( blockSupplier, interpolation );
 		}
 		catch ( IllegalArgumentException e )
 		{

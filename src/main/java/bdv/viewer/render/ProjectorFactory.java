@@ -34,6 +34,7 @@ import java.util.concurrent.ExecutorService;
 
 import bdv.ui.settings.SelectAndEditProfileSettingsPage;
 import bdv.viewer.render.MipmapOrdering.MipmapHints;
+import bdv.viewer.render.SourceRenderInfo.BlockSupplierInfo;
 import net.imglib2.Dimensions;
 import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
@@ -42,11 +43,13 @@ import net.imglib2.RealRandomAccessible;
 import net.imglib2.Volatile;
 import net.imglib2.algorithm.blocks.BlockSupplier;
 import net.imglib2.algorithm.blocks.VolatileBlockSupplier;
+import net.imglib2.algorithm.blocks.transform.Transform;
 import net.imglib2.cache.volatiles.CacheHints;
 import net.imglib2.cache.volatiles.LoadingStrategy;
 import net.imglib2.display.MaskedToARGBConverter;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.realtransform.RealViews;
+import net.imglib2.type.NativeType;
 import net.imglib2.type.mask.Masked;
 import net.imglib2.type.numeric.ARGBType;
 
@@ -441,27 +444,9 @@ class ProjectorFactory
 			if ( sourceRenderInfo.supportsBlockSuppliers() && VolatileHierarchyBlockProjector.DEBUG_USE_BLK_AFFINE )
 			{
 				final List< BlockSupplier< ? > > renderList = new ArrayList<>();
-				for ( final MipmapOrdering.Level l : mipmapLevels ) {
-					renderList.add(
-							// TODO: implement this method
-							// TODO: implement this method
-							// TODO: implement this method
-							// TODO: implement this method
-							// TODO: implement this method
-							// TODO: implement this method
-							getTransformedBlockSupplier(
-								viewerState, sourceRenderInfo, screenTransform, l.getMipmapLevel() )
-					);
-				}
-
-
-//				public static < S extends NativeType< S >, T extends NativeType< T > > VolatileHierarchyBlockProjector< S, T, ?, ? > of(
-//				final List< BlockSupplier< S > > sources,
-//				final Converter< ? super S, T > converter,
-//				final RandomAccessibleInterval< T > target,
-//				final byte[] maskArray )
-
-				throw new UnsupportedOperationException("TODO");
+				for ( final MipmapOrdering.Level l : mipmapLevels )
+					renderList.add( getTransformedBlockSupplier( viewerState, sourceRenderInfo, screenTransform, l.getMipmapLevel() ) );
+				return new VolatileHierarchyBlockProjector( renderList, source.getConverter(), screenImage, maskArray );
 			}
 			else
 			{
@@ -471,6 +456,22 @@ class ProjectorFactory
 				return new VolatileHierarchyProjector<>( renderList, source.getConverter(), screenImage, maskArray );
 			}
 		}
+	}
+
+	private static BlockSupplier< ? > getTransformedBlockSupplier(
+			final ViewerState viewerState,
+			final SourceRenderInfo sourceRenderInfo,
+			final AffineTransform3D screenTransform,
+			final int mipmapIndex )
+	{
+		final int timepoint = viewerState.getCurrentTimepoint();
+		final AffineTransform3D sourceToScreen = new AffineTransform3D();
+		final Source< ? > source = sourceRenderInfo.getRenderSource().getSpimSource();
+		source.getSourceTransform( timepoint, mipmapIndex, sourceToScreen );
+		sourceToScreen.preConcatenate( screenTransform );
+		final BlockSupplierInfo< ? > info = sourceRenderInfo.getBlockSupplierInfo( mipmapIndex );
+		final BlockSupplier< ? > blocks = info.blockSupplier.threadSafe();
+		return blocks.andThen( Transform.affine( sourceToScreen, info.interpolation ) );
 	}
 
 	private static < T > RandomAccessible< T > getTransformedSource(
