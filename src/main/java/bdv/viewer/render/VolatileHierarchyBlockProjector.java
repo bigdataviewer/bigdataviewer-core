@@ -9,7 +9,6 @@ import static net.imglib2.type.PrimitiveType.INT;
 import static net.imglib2.type.PrimitiveType.LONG;
 import static net.imglib2.type.PrimitiveType.SHORT;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumMap;
 import java.util.List;
@@ -17,13 +16,9 @@ import java.util.function.Function;
 
 import net.imglib2.Cursor;
 import net.imglib2.RandomAccess;
-import net.imglib2.RandomAccessible;
 import net.imglib2.RandomAccessibleInterval;
-import net.imglib2.RealRandomAccessible;
 import net.imglib2.Volatile;
 import net.imglib2.algorithm.blocks.BlockSupplier;
-import net.imglib2.algorithm.blocks.VolatileBlockSupplier;
-import net.imglib2.algorithm.blocks.transform.Transform;
 import net.imglib2.blocks.SubArrayCopy;
 import net.imglib2.blocks.TempArray;
 import net.imglib2.blocks.VolatileArray;
@@ -48,16 +43,9 @@ import net.imglib2.img.basictypeaccess.volatiles.array.VolatileFloatArray;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileIntArray;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileLongArray;
 import net.imglib2.img.basictypeaccess.volatiles.array.VolatileShortArray;
-import net.imglib2.interpolation.Interpolant;
-import net.imglib2.interpolation.InterpolatorFactory;
-import net.imglib2.interpolation.randomaccess.ClampingNLinearInterpolatorFactory;
-import net.imglib2.interpolation.randomaccess.NearestNeighborInterpolatorFactory;
-import net.imglib2.realtransform.AffineGet;
-import net.imglib2.realtransform.AffineRandomAccessible;
 import net.imglib2.type.NativeType;
 import net.imglib2.type.NativeTypeFactory;
 import net.imglib2.type.PrimitiveType;
-import net.imglib2.type.operators.SetZero;
 import net.imglib2.util.Cast;
 
 /**
@@ -91,7 +79,7 @@ public class VolatileHierarchyBlockProjector< S extends NativeType< S >, T exten
 	/**
 	 * Convert I to O using the Converter provided in the constructor
 	 */
-	private final ConverterBlockProcessor< S, T, I, O > convertBlockProcessor;
+	private final ConvertProcessor< S, T, I, O > convertProcessor;
 
 	/**
 	 * Underlying primitive array of target
@@ -137,7 +125,7 @@ public class VolatileHierarchyBlockProjector< S extends NativeType< S >, T exten
 		//       We need to provide it to the super() constructor as an Interval.
 		//       Maybe just let ArrayData implement interval?
 		targetData = ProjectorUtils.getARGBArrayData( target );
-		convertBlockProcessor = new ConverterBlockProcessor<>( sourceType, targetType, converter );
+		convertProcessor = new ConvertProcessor<>( sourceType, targetType, converter );
 	}
 
 	@Override
@@ -151,7 +139,7 @@ public class VolatileHierarchyBlockProjector< S extends NativeType< S >, T exten
 	@Override
 	void convert()
 	{
-		convertBlockProcessor.compute( destI, destO, length );
+		convertProcessor.compute( destI, destO, length );
 
 		final int[] o_src = { 0, 0 };
 		final int[] size_src = Arrays.copyOf( sourceInterval.size(), 2 );
@@ -165,6 +153,11 @@ public class VolatileHierarchyBlockProjector< S extends NativeType< S >, T exten
 
 	/**
 	 * Convert primitive arrays between ImgLib2 {@code NativeType}s using a {@link Converter}.
+	 * <p>
+	 * This is a modified version of {@code net.imglib2.algorithm.blocks.convert.ConverterBlockProcessor}.
+	 * It uses the modified {@code PrimitiveTypeProperties} below. THis also wraps {@code VolatileNativeType}
+	 * and just ignores the isValid flag. This is useful here, because we just want to convert the rendered
+	 * values using a {@code Converter} from {@code VolatileNativeType} to (typically) {@code ARGBType}.
 	 *
 	 * @param <S>
 	 * 		source type
@@ -175,8 +168,7 @@ public class VolatileHierarchyBlockProjector< S extends NativeType< S >, T exten
 	 * @param <O>
 	 * 		output primitive array type, e.g., float[]. Must correspond to T.
 	 */
-	// TODO rename
-	static class ConverterBlockProcessor< S extends NativeType< S >, T extends NativeType< T >, I, O >
+	static class ConvertProcessor< S extends NativeType< S >, T extends NativeType< T >, I, O >
 	{
 		private final Converter< ? super S, T > converter;
 
@@ -184,7 +176,7 @@ public class VolatileHierarchyBlockProjector< S extends NativeType< S >, T exten
 
 		private final Wrapper< T > wrapTarget;
 
-		ConverterBlockProcessor(
+		ConvertProcessor(
 				final S sourceType,
 				final T targetType,
 				final Converter< ? super S, T > converter )
