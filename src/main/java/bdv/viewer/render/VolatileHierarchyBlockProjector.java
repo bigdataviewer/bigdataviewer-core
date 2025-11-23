@@ -349,30 +349,177 @@ public class VolatileHierarchyBlockProjector< S extends NativeType< S >, T exten
 			switch ( primitiveType )
 			{
 			case BOOLEAN:
-				throw new UnsupportedOperationException();
+				return ( CopyValidPixels< T > ) _boolean;
 			case BYTE:
-				throw new UnsupportedOperationException();
+				return ( CopyValidPixels< T > ) _byte;
 			case CHAR:
-				throw new UnsupportedOperationException();
+				return ( CopyValidPixels< T > ) _char;
 			case SHORT:
 				return ( CopyValidPixels< T > ) _short;
 			case INT:
-				throw new UnsupportedOperationException();
+				return ( CopyValidPixels< T > ) _int;
 			case LONG:
-				throw new UnsupportedOperationException();
+				return ( CopyValidPixels< T > ) _long;
 			case FLOAT:
-				throw new UnsupportedOperationException();
+				return ( CopyValidPixels< T > ) _float;
 			case DOUBLE:
-				throw new UnsupportedOperationException();
+				return ( CopyValidPixels< T > ) _double;
 			case UNDEFINED:
 				throw new UnsupportedOperationException();
 			}
 			throw new IllegalArgumentException();
 		}
 
+		CopyValidPixels< boolean[] > _boolean = ( src, mask, resolutionIndex, dest, length ) ->
+		{
+			final boolean[] data = src.data();
+			final byte[] valid = src.valid();
+			int numInvalidPixels = 0;
+			for ( int i = 0; i < length; ++i )
+			{
+				if ( mask[ i ] > resolutionIndex )
+				{
+					if ( valid[ i ] != ( byte ) 0 )
+					{
+						dest[ i ] = data[ i ];
+						mask[ i ] = resolutionIndex;
+					}
+					else
+						++numInvalidPixels;
+				}
+			}
+			return numInvalidPixels;
+		};
+
+		CopyValidPixels< byte[] > _byte = ( src, mask, resolutionIndex, dest, length ) ->
+		{
+			final byte[] data = src.data();
+			final byte[] valid = src.valid();
+			int numInvalidPixels = 0;
+			for ( int i = 0; i < length; ++i )
+			{
+				if ( mask[ i ] > resolutionIndex )
+				{
+					if ( valid[ i ] != ( byte ) 0 )
+					{
+						dest[ i ] = data[ i ];
+						mask[ i ] = resolutionIndex;
+					}
+					else
+						++numInvalidPixels;
+				}
+			}
+			return numInvalidPixels;
+		};
+
+		CopyValidPixels< char[] > _char = ( src, mask, resolutionIndex, dest, length ) ->
+		{
+			final char[] data = src.data();
+			final byte[] valid = src.valid();
+			int numInvalidPixels = 0;
+			for ( int i = 0; i < length; ++i )
+			{
+				if ( mask[ i ] > resolutionIndex )
+				{
+					if ( valid[ i ] != ( byte ) 0 )
+					{
+						dest[ i ] = data[ i ];
+						mask[ i ] = resolutionIndex;
+					}
+					else
+						++numInvalidPixels;
+				}
+			}
+			return numInvalidPixels;
+		};
+
 		CopyValidPixels< short[] > _short = ( src, mask, resolutionIndex, dest, length ) ->
 		{
 			final short[] data = src.data();
+			final byte[] valid = src.valid();
+			int numInvalidPixels = 0;
+			for ( int i = 0; i < length; ++i )
+			{
+				if ( mask[ i ] > resolutionIndex )
+				{
+					if ( valid[ i ] != ( byte ) 0 )
+					{
+						dest[ i ] = data[ i ];
+						mask[ i ] = resolutionIndex;
+					}
+					else
+						++numInvalidPixels;
+				}
+			}
+			return numInvalidPixels;
+		};
+
+		CopyValidPixels< int[] > _int = ( src, mask, resolutionIndex, dest, length ) ->
+		{
+			final int[] data = src.data();
+			final byte[] valid = src.valid();
+			int numInvalidPixels = 0;
+			for ( int i = 0; i < length; ++i )
+			{
+				if ( mask[ i ] > resolutionIndex )
+				{
+					if ( valid[ i ] != ( byte ) 0 )
+					{
+						dest[ i ] = data[ i ];
+						mask[ i ] = resolutionIndex;
+					}
+					else
+						++numInvalidPixels;
+				}
+			}
+			return numInvalidPixels;
+		};
+
+		CopyValidPixels< long[] > _long = ( src, mask, resolutionIndex, dest, length ) ->
+		{
+			final long[] data = src.data();
+			final byte[] valid = src.valid();
+			int numInvalidPixels = 0;
+			for ( int i = 0; i < length; ++i )
+			{
+				if ( mask[ i ] > resolutionIndex )
+				{
+					if ( valid[ i ] != ( byte ) 0 )
+					{
+						dest[ i ] = data[ i ];
+						mask[ i ] = resolutionIndex;
+					}
+					else
+						++numInvalidPixels;
+				}
+			}
+			return numInvalidPixels;
+		};
+
+		CopyValidPixels< float[] > _float = ( src, mask, resolutionIndex, dest, length ) ->
+		{
+			final float[] data = src.data();
+			final byte[] valid = src.valid();
+			int numInvalidPixels = 0;
+			for ( int i = 0; i < length; ++i )
+			{
+				if ( mask[ i ] > resolutionIndex )
+				{
+					if ( valid[ i ] != ( byte ) 0 )
+					{
+						dest[ i ] = data[ i ];
+						mask[ i ] = resolutionIndex;
+					}
+					else
+						++numInvalidPixels;
+				}
+			}
+			return numInvalidPixels;
+		};
+
+		CopyValidPixels< double[] > _double = ( src, mask, resolutionIndex, dest, length ) ->
+		{
+			final double[] data = src.data();
 			final byte[] valid = src.valid();
 			int numInvalidPixels = 0;
 			for ( int i = 0; i < length; ++i )
