@@ -137,12 +137,50 @@ class SourceRenderInfo
 					return;
 				infos[ mipmapLevel ] = supplierInfo;
 			}
-			blockSupplierInfos = infos;
 		}
 		else
 		{
-			// TODO extract BlockSuppliers for non-volatile rendering
+			final int mipmapLevel = getMipmapHints().getBestMipmapLevel();
+			final RealRandomAccessible< ? extends Volatile< ? > > interpolated = spimSource.getInterpolatedSource( timepoint, mipmapLevel, method );
+			final BlockSupplierInfo< ? > supplierInfo = tryGetBlockSupplier( interpolated );
+			if ( supplierInfo == null )
+				return;
+			infos[ mipmapLevel ] = supplierInfo;
+
 			throw new UnsupportedOperationException("NOT IMPLEMENTED YET");
+		}
+		blockSupplierInfos = infos;
+	}
+
+	private static < T extends NativeType< T > > BlockSupplierInfo< T > tryGetBlockSupplier(
+			final RealRandomAccessible< ? > rra )
+	{
+		if ( !( rra.getType() instanceof NativeType ) )
+			return null;
+		final RealRandomAccessible< T > s1 = Cast.unchecked( rra );
+
+		if ( !( s1 instanceof Interpolant ) )
+			return null;
+		final Interpolant< T, ? > s2 = ( Interpolant< T, ? > ) s1;
+
+		final InterpolatorFactory< T, ? > f = s2.getInterpolatorFactory();
+		final Transform.Interpolation interpolation;
+		if ( f instanceof ClampingNLinearInterpolatorFactory )
+			interpolation = Transform.Interpolation.NLINEAR;
+		else if ( f instanceof NearestNeighborInterpolatorFactory )
+			interpolation = Transform.Interpolation.NEARESTNEIGHBOR;
+		else
+			return null;
+		final RandomAccessible< T > s3 = Cast.unchecked( s2.getSource() );
+
+		try
+		{
+			final BlockSupplier< T > blockSupplier = BlockSupplier.of( s3 );
+			return new BlockSupplierInfo<>( blockSupplier, interpolation );
+		}
+		catch ( IllegalArgumentException e )
+		{
+			return null;
 		}
 	}
 
@@ -177,6 +215,4 @@ class SourceRenderInfo
 			return null;
 		}
 	}
-
-
 }
