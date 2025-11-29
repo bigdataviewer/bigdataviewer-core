@@ -143,7 +143,7 @@
 		<license.licenseName>bsd_2</license.licenseName>
 		<license.copyrightOwners>BigDataViewer developers.</license.copyrightOwners>
 
-		<imglib2.version>8.0.0</imglib2.version>
+		<imglib2.version>8.0.1-SNAPSHOT</imglib2.version>
 		<imglib2-cache.version>1.0.0-beta-20</imglib2-cache.version>
 
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
