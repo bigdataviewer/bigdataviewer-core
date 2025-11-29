@@ -57,7 +57,7 @@ import net.imglib2.Volatile;
 import net.imglib2.converter.Converter;
 import net.imglib2.display.ColorConverter;
 import net.imglib2.display.RealARGBColorConverter;
-import net.imglib2.display.ScaledARGBConverter;
+import net.imglib2.display.ScaledBrightnessARGBConverter;
 import net.imglib2.type.numeric.ARGBType;
 import net.imglib2.type.numeric.NumericType;
 import net.imglib2.type.numeric.RealType;
@@ -190,10 +190,10 @@ public class BigDataViewer
 	 * <ul>
 	 * <li>For {@code RealType}s a {@link RealARGBColorConverter} is
 	 * returned.</li>
-	 * <li>For {@code ARGBType}s a {@link ScaledARGBConverter.ARGB} is
+	 * <li>For {@code ARGBType}s a {@link ScaledBrightnessARGBConverter.ARGB} is
 	 * returned.</li>
 	 * <li>For {@code VolatileARGBType}s a
-	 * {@link ScaledARGBConverter.VolatileARGB} is returned.</li>
+	 * {@link ScaledBrightnessARGBConverter.VolatileARGB} is returned.</li>
 	 * </ul>
 	 */
 	@SuppressWarnings( "unchecked" )
@@ -207,9 +207,9 @@ public class BigDataViewer
 			return ( Converter< T, ARGBType > ) RealARGBColorConverter.create( t, typeMin, typeMax );
 		}
 		else if ( type instanceof ARGBType )
-			return ( Converter< T, ARGBType > ) new ScaledARGBConverter.ARGB( 0, 255 );
+			return ( Converter< T, ARGBType > ) new ScaledBrightnessARGBConverter.ARGB( 0, 255 );
 		else if ( type instanceof VolatileARGBType )
-			return ( Converter< T, ARGBType > ) new ScaledARGBConverter.VolatileARGB( 0, 255 );
+			return ( Converter< T, ARGBType > ) new ScaledBrightnessARGBConverter.VolatileARGB( 0, 255 );
 		else
 			throw new IllegalArgumentException( "ImgLoader of type " + type.getClass() + " not supported." );
 	}
