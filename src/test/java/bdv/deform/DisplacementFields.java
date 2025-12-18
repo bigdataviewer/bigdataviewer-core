@@ -11,6 +11,7 @@ import bdv.ui.UIUtils;
 import bdv.util.AxisOrder;
 import bdv.util.Bdv;
 import bdv.util.BdvFunctions;
+import bdv.util.BdvSource;
 import bdv.util.BdvStackSource;
 import net.imglib2.FinalInterval;
 import net.imglib2.Interval;
@@ -22,15 +23,22 @@ import net.imglib2.algorithm.blocks.BlockSupplier;
 import net.imglib2.algorithm.blocks.ComputationType;
 import net.imglib2.algorithm.blocks.DefaultUnaryBlockOperator;
 import net.imglib2.algorithm.blocks.UnaryBlockOperator;
+import net.imglib2.algorithm.blocks.dfield.AbstractLookupProcessor;
+import net.imglib2.algorithm.blocks.dfield.AbstractTransformProcessor;
 import net.imglib2.algorithm.blocks.dfield.Affine2DProcessor;
 import net.imglib2.algorithm.blocks.dfield.DisplacementFieldTransform;
+import net.imglib2.algorithm.blocks.dfield.DisplacementFieldUnaryBlockOperator;
+import net.imglib2.algorithm.blocks.dfield.Lookup2DProcessor;
+import net.imglib2.algorithm.blocks.transform.Transform;
 import net.imglib2.cache.img.CachedCellImg;
+import net.imglib2.img.Img;
 import net.imglib2.img.array.ArrayImg;
 import net.imglib2.img.array.ArrayImgFactory;
 import net.imglib2.img.array.ArrayImgs;
 import net.imglib2.loops.LoopBuilder;
 import net.imglib2.realtransform.AffineTransform2D;
 import net.imglib2.realtransform.RealTransformRandomAccessible;
+import net.imglib2.type.PrimitiveType;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.real.DoubleType;
 import net.imglib2.util.Intervals;
@@ -57,8 +65,8 @@ public class DisplacementFields
 		final RealRandomAccessible< UnsignedByteType > extip = img.view().extend(zero()).interpolate( nLinear() );
 		final RandomAccessibleInterval< UnsignedByteType > tformedImg = new RealTransformRandomAccessible<>( extip, tform ).view().interval( img );
 
-//		BdvSource bdv = BdvFunctions.show( img, "original image", Bdv.options().is2D() );
-//		BdvFunctions.show( tformedImg, "transformed image", Bdv.options().addTo( bdv ) );
+		BdvSource bdv = BdvFunctions.show( img, "original image", Bdv.options().is2D() );
+		BdvFunctions.show( tformedImg, "transformed image", Bdv.options().addTo( bdv ) );
 
 //		BdvSource bdv = BdvFunctions.show( tformedImg, "transformed image", Bdv.options().is2D() );
 
@@ -66,14 +74,42 @@ public class DisplacementFields
 		System.out.println( "Intervals.toString( dfieldArray ) = " + Intervals.toString( dfieldArray ) );
 		System.out.println( "Intervals.toString( dfieldArray.view().moveAxis( 0, 2 ) ) = " + Intervals.toString( dfieldArray.view().moveAxis( 0, 2 ) ) );
 
-		final ArrayImg< DoubleType, ? > aRender = new ArrayImgFactory<>( new DoubleType() ).create( dfieldArray );
-		LoopBuilder.setImages( dfieldArray, aRender ).forEachPixel( ( i, o ) -> o.set( i ) );
+
+
+		{
+			final AffineTransform2D transformToSource = new AffineTransform2D();
+			final AbstractTransformProcessor fieldProcessor = new Affine2DProcessor<>(
+					transformToSource,
+					new double[] { 1, 1 },
+					Transform.Interpolation.NLINEAR,
+					PrimitiveType.DOUBLE );
+			final BlockSupplier< DoubleType > displacementField = BlockSupplier.of( dfieldArray );
+			final AbstractLookupProcessor lookupProcessor = new Lookup2DProcessor(
+					PrimitiveType.DOUBLE,
+					Transform.Interpolation.NEARESTNEIGHBOR,
+					PrimitiveType.BYTE );
+			final UnaryBlockOperator< UnsignedByteType, UnsignedByteType > operator =
+					new DisplacementFieldUnaryBlockOperator<>(
+							new UnsignedByteType(),
+							2,
+							fieldProcessor,
+							displacementField,
+							lookupProcessor );
+			final BlockSupplier< UnsignedByteType > blocks = BlockSupplier.of( img.view().extend(zero()) ).andThen( operator );
+			final Img< UnsignedByteType > tformedBlocks = BlockAlgoUtils.arrayImg( blocks, img );
+			BdvFunctions.show( tformedBlocks, "transformed image (blocks)", Bdv.options().addTo( bdv ) );
+
+		}
+
 
 //		final BdvStackSource< DoubleType > sources = BdvFunctions.show( dfieldArray.view().moveAxis( 0, 2 ), "displacement field", Bdv.options().is2D().axisOrder( AxisOrder.XYC ) );
 
-		final BdvStackSource< DoubleType > source = BdvFunctions.show( aRender.view().moveAxis( 0, 2 ), "displacement field (LoopBuilder)", Bdv.options().is2D().axisOrder( AxisOrder.XYC ) );
-		source.setDisplayRange( 0, 100 );
-		source.setDisplayRangeBounds( 0, 100 );
+
+//		final ArrayImg< DoubleType, ? > aRender = new ArrayImgFactory<>( new DoubleType() ).create( dfieldArray );
+//		LoopBuilder.setImages( dfieldArray, aRender ).forEachPixel( ( i, o ) -> o.set( i ) );
+//		final BdvStackSource< DoubleType > source = BdvFunctions.show( aRender.view().moveAxis( 0, 2 ), "displacement field (LoopBuilder)", Bdv.options().is2D().axisOrder( AxisOrder.XYC ) );
+//		source.setDisplayRange( 0, 100 );
+//		source.setDisplayRangeBounds( 0, 100 );
 
 
 //		{
@@ -89,7 +125,7 @@ public class DisplacementFields
 //			source2.setDisplayRangeBounds( 0, 100 );
 //		}
 
-
+/*
 		{
 			final double[] data = new double[ Math.toIntExact( Intervals.numElements( dfieldArray ) ) ];
 			final ArrayImg< DoubleType, ? > bRender = ArrayImgs.doubles( data, dfieldArray.dimensionsAsLongArray() );
@@ -111,5 +147,6 @@ public class DisplacementFields
 			source2.setDisplayRange( 0, 100 );
 			source2.setDisplayRangeBounds( 0, 100 );
 		}
+*/
 	}
 }
