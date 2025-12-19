@@ -20,6 +20,7 @@ import net.imglib2.RealRandomAccessible;
 import net.imglib2.algorithm.blocks.BlockAlgoUtils;
 import net.imglib2.algorithm.blocks.BlockProcessor;
 import net.imglib2.algorithm.blocks.BlockSupplier;
+import net.imglib2.algorithm.blocks.ClampType;
 import net.imglib2.algorithm.blocks.ComputationType;
 import net.imglib2.algorithm.blocks.DefaultUnaryBlockOperator;
 import net.imglib2.algorithm.blocks.UnaryBlockOperator;
@@ -41,6 +42,7 @@ import net.imglib2.realtransform.RealTransformRandomAccessible;
 import net.imglib2.type.PrimitiveType;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.real.DoubleType;
+import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Intervals;
 
 public class DisplacementFields
@@ -84,21 +86,31 @@ public class DisplacementFields
 					Transform.Interpolation.NLINEAR,
 					PrimitiveType.DOUBLE );
 			final BlockSupplier< DoubleType > displacementField = BlockSupplier.of( dfieldArray );
+//			final AbstractLookupProcessor lookupProcessor = new Lookup2DProcessor(
+//					PrimitiveType.DOUBLE,
+//					Transform.Interpolation.NEARESTNEIGHBOR,
+//					PrimitiveType.BYTE );
+//			final UnaryBlockOperator< UnsignedByteType, UnsignedByteType > operator =
+//					new DisplacementFieldUnaryBlockOperator<>(
+//							new UnsignedByteType(),
+//							2,
+//							fieldProcessor,
+//							displacementField,
+//							lookupProcessor );
 			final AbstractLookupProcessor lookupProcessor = new Lookup2DProcessor(
 					PrimitiveType.DOUBLE,
-					Transform.Interpolation.NEARESTNEIGHBOR,
-					PrimitiveType.BYTE );
+					Transform.Interpolation.NLINEAR,
+					PrimitiveType.FLOAT );
 			final UnaryBlockOperator< UnsignedByteType, UnsignedByteType > operator =
 					new DisplacementFieldUnaryBlockOperator<>(
-							new UnsignedByteType(),
+							new FloatType(),
 							2,
 							fieldProcessor,
 							displacementField,
-							lookupProcessor );
+							lookupProcessor ).adaptSourceType( new UnsignedByteType(), ClampType.NONE ).adaptTargetType( new UnsignedByteType(), ClampType.CLAMP );;
 			final BlockSupplier< UnsignedByteType > blocks = BlockSupplier.of( img.view().extend(zero()) ).andThen( operator );
 			final Img< UnsignedByteType > tformedBlocks = BlockAlgoUtils.arrayImg( blocks, img );
 			BdvFunctions.show( tformedBlocks, "transformed image (blocks)", Bdv.options().addTo( bdv ) );
-
 		}
 
 
