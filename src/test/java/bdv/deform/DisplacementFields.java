@@ -8,35 +8,23 @@ import org.janelia.saalfeldlab.n5.imglib2.N5Utils;
 import org.janelia.saalfeldlab.n5.universe.N5Factory;
 
 import bdv.ui.UIUtils;
-import bdv.util.AxisOrder;
 import bdv.util.Bdv;
 import bdv.util.BdvFunctions;
 import bdv.util.BdvSource;
-import bdv.util.BdvStackSource;
-import net.imglib2.FinalInterval;
-import net.imglib2.Interval;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
 import net.imglib2.algorithm.blocks.BlockAlgoUtils;
-import net.imglib2.algorithm.blocks.BlockProcessor;
 import net.imglib2.algorithm.blocks.BlockSupplier;
 import net.imglib2.algorithm.blocks.ClampType;
-import net.imglib2.algorithm.blocks.ComputationType;
-import net.imglib2.algorithm.blocks.DefaultUnaryBlockOperator;
 import net.imglib2.algorithm.blocks.UnaryBlockOperator;
 import net.imglib2.algorithm.blocks.dfield.AbstractLookupProcessor;
-import net.imglib2.algorithm.blocks.dfield.AbstractTransformProcessor;
-import net.imglib2.algorithm.blocks.dfield.Affine2DProcessor;
-import net.imglib2.algorithm.blocks.dfield.DisplacementFieldTransform;
+import net.imglib2.algorithm.blocks.dfield.AbstractDispFieldAffineProcessor;
+import net.imglib2.algorithm.blocks.dfield.DispFieldAffine2DProcessor;
 import net.imglib2.algorithm.blocks.dfield.DisplacementFieldUnaryBlockOperator;
 import net.imglib2.algorithm.blocks.dfield.Lookup2DProcessor;
 import net.imglib2.algorithm.blocks.transform.Transform;
 import net.imglib2.cache.img.CachedCellImg;
 import net.imglib2.img.Img;
-import net.imglib2.img.array.ArrayImg;
-import net.imglib2.img.array.ArrayImgFactory;
-import net.imglib2.img.array.ArrayImgs;
-import net.imglib2.loops.LoopBuilder;
 import net.imglib2.realtransform.AffineTransform2D;
 import net.imglib2.realtransform.RealTransformRandomAccessible;
 import net.imglib2.type.PrimitiveType;
@@ -80,7 +68,7 @@ public class DisplacementFields
 
 		{
 			final AffineTransform2D transformToSource = new AffineTransform2D();
-			final AbstractTransformProcessor fieldProcessor = new Affine2DProcessor<>(
+			final AbstractDispFieldAffineProcessor fieldProcessor = new DispFieldAffine2DProcessor<>(
 					transformToSource,
 					new double[] { 1, 1 },
 					Transform.Interpolation.NLINEAR,
