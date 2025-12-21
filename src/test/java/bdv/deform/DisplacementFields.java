@@ -16,10 +16,13 @@ import net.imglib2.RealRandomAccessible;
 import net.imglib2.algorithm.blocks.BlockAlgoUtils;
 import net.imglib2.algorithm.blocks.BlockSupplier;
 import net.imglib2.algorithm.blocks.ClampType;
+import net.imglib2.algorithm.blocks.ComputationType;
 import net.imglib2.algorithm.blocks.UnaryBlockOperator;
 import net.imglib2.algorithm.blocks.dfield.AbstractLookupProcessor;
 import net.imglib2.algorithm.blocks.dfield.AbstractDispFieldAffineProcessor;
 import net.imglib2.algorithm.blocks.dfield.DispFieldAffine2DProcessor;
+import net.imglib2.algorithm.blocks.dfield.DisplacementField;
+import net.imglib2.algorithm.blocks.dfield.DisplacementFieldTransform;
 import net.imglib2.algorithm.blocks.dfield.DisplacementFieldUnaryBlockOperator;
 import net.imglib2.algorithm.blocks.dfield.Lookup2DProcessor;
 import net.imglib2.algorithm.blocks.transform.Transform;
@@ -64,8 +67,6 @@ public class DisplacementFields
 		System.out.println( "Intervals.toString( dfieldArray ) = " + Intervals.toString( dfieldArray ) );
 		System.out.println( "Intervals.toString( dfieldArray.view().moveAxis( 0, 2 ) ) = " + Intervals.toString( dfieldArray.view().moveAxis( 0, 2 ) ) );
 
-
-
 		{
 			final AffineTransform2D transformToSource = new AffineTransform2D();
 			final AbstractDispFieldAffineProcessor fieldProcessor = new DispFieldAffine2DProcessor<>(
@@ -100,6 +101,30 @@ public class DisplacementFields
 			final Img< UnsignedByteType > tformedBlocks = BlockAlgoUtils.arrayImg( blocks, img );
 			BdvFunctions.show( tformedBlocks, "transformed image (blocks)", Bdv.options().addTo( bdv ) );
 		}
+
+
+		{
+			final AffineTransform2D transformToSource = new AffineTransform2D();
+			final DisplacementField< DoubleType > dfield = new DisplacementField<>(
+					BlockSupplier.of( dfieldArray ),
+					new double[] { 1, 1 },
+					new double[] { 0, 0 } );
+
+			final UnaryBlockOperator< UnsignedByteType, UnsignedByteType > operator = DisplacementFieldTransform.createDisplacementFieldOperator(
+					new UnsignedByteType(),
+					transformToSource,
+					dfield,
+					Transform.Interpolation.NLINEAR,
+					ComputationType.AUTO,
+					ClampType.CLAMP );
+
+			final BlockSupplier< UnsignedByteType > blocks = BlockSupplier
+					.of( img.view().extend(zero()) )
+					.andThen( operator );
+			final Img< UnsignedByteType > tformedBlocks = BlockAlgoUtils.arrayImg( blocks, img );
+			BdvFunctions.show( tformedBlocks, "transformed image (createDisplacementFieldOperator)", Bdv.options().addTo( bdv ) );
+		}
+
 
 
 //		final BdvStackSource< DoubleType > sources = BdvFunctions.show( dfieldArray.view().moveAxis( 0, 2 ), "displacement field", Bdv.options().is2D().axisOrder( AxisOrder.XYC ) );
