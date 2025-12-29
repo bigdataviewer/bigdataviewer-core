@@ -245,6 +245,11 @@
 			<artifactId>junit</artifactId>
 			<scope>test</scope>
 		</dependency>
+		<dependency>
+			<groupId>net.imglib2</groupId>
+			<artifactId>imglib2-ij</artifactId>
+			<scope>test</scope>
+		</dependency>
 		<!-- JMH -->
 		<dependency>
 			<groupId>org.openjdk.jmh</groupId>
