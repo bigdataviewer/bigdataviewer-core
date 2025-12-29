@@ -14,25 +14,15 @@ import bdv.util.BdvFunctions;
 import bdv.util.BdvSource;
 import net.imglib2.RandomAccessibleInterval;
 import net.imglib2.RealRandomAccessible;
-import net.imglib2.algorithm.blocks.BlockAlgoUtils;
 import net.imglib2.algorithm.blocks.BlockSupplier;
-import net.imglib2.algorithm.blocks.ClampType;
-import net.imglib2.algorithm.blocks.UnaryBlockOperator;
-import net.imglib2.algorithm.blocks.dfield.AbstractDispFieldAffineProcessor;
-import net.imglib2.algorithm.blocks.dfield.AbstractLookupProcessor;
-import net.imglib2.algorithm.blocks.dfield.DispFieldAffine2DProcessor;
 import net.imglib2.algorithm.blocks.dfield.DisplacementField;
-import net.imglib2.algorithm.blocks.dfield.DisplacementFieldUnaryBlockOperator;
-import net.imglib2.algorithm.blocks.dfield.Lookup2DProcessor;
 import net.imglib2.algorithm.blocks.transform.Transform.Interpolation;
 import net.imglib2.cache.img.CachedCellImg;
 import net.imglib2.img.Img;
 import net.imglib2.realtransform.AffineTransform2D;
 import net.imglib2.realtransform.RealTransformRandomAccessible;
-import net.imglib2.type.PrimitiveType;
 import net.imglib2.type.numeric.integer.UnsignedByteType;
 import net.imglib2.type.numeric.real.DoubleType;
-import net.imglib2.type.numeric.real.FloatType;
 import net.imglib2.util.Intervals;
 
 public class DisplacementFields
@@ -68,14 +58,14 @@ public class DisplacementFields
 
 
 		{
-			final AffineTransform2D transformToSource = new AffineTransform2D();
+			final AffineTransform2D transformFromSource = new AffineTransform2D();
 			final DisplacementField< DoubleType > dfield = new DisplacementField<>(
 					BlockSupplier.of( dfieldArray ),
 					new double[] { 1, 1 },
 					new double[] { 0, 0 } );
 			final BlockSupplier< UnsignedByteType > blocks = BlockSupplier
 					.of( img.view().extend(zero()) )
-					.andThen( displacementFieldAffine( transformToSource, dfield, Interpolation.NLINEAR ) );
+					.andThen( displacementFieldAffine( transformFromSource, dfield, Interpolation.NLINEAR ) );
 			final Img< UnsignedByteType > tformedBlocks = blocks.toCellImg( img.dimensionsAsLongArray(), 8, 8 );
 			BdvFunctions.show( tformedBlocks, "transformed image (displacementFieldAffine)", Bdv.options().addTo( bdv ) );
 		}
@@ -108,14 +98,14 @@ public class DisplacementFields
 
 /*
 		{
-			final AffineTransform2D transformToSource = new AffineTransform2D();
+			final AffineTransform2D transformFromSource = new AffineTransform2D();
 			final DisplacementField< DoubleType > dfield = new DisplacementField<>(
 					BlockSupplier.of( dfieldArray ),
 					new double[] { 1, 1 },
 					new double[] { 0, 0 } );
 			final BlockSupplier< UnsignedByteType > blocks = BlockSupplier
 					.of( img.view().extend(zero()) )
-					.andThen( displacementFieldAffine( transformToSource, dfield, Interpolation.NLINEAR ) );
+					.andThen( displacementFieldAffine( transformFromSource, dfield, Interpolation.NLINEAR ) );
 			final Img< UnsignedByteType > tformedBlocks = BlockAlgoUtils.arrayImg( blocks, img );
 			BdvFunctions.show( tformedBlocks, "transformed image (displacementFieldAffine)", Bdv.options().addTo( bdv ) );
 		}
