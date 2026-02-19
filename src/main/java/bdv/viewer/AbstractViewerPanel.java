@@ -127,6 +127,19 @@ public abstract class AbstractViewerPanel extends JPanel implements RequestRepai
 	 */
 	public abstract Listeners< TransformListener< AffineTransform3D > > transformListeners();
 
+	/**
+	 * Add/remove {@link TimePointListener} to notify about time-point
+	 * changes. Listeners will be notified <em>before</em> calling
+	 * {@link #requestRepaint()} so they have the chance to interfere.
+	 */
+	public abstract Listeners< TimePointListener > timePointListeners();
+
+	/**
+	 * Get the {@link ConverterSetups} which manages the mapping between
+	 * {@link bdv.tools.brightness.ConverterSetup}s and sources.
+	 */
+	public abstract ConverterSetups getConverterSetups();
+
 	public abstract void setTransformAnimator( AbstractTransformAnimator animator );
 
 	/**

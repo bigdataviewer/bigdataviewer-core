@@ -117,8 +117,7 @@ public class BdvHandlePanel extends BdvHandle
 		} );
 
 		setupAssignments = new SetupAssignments( new ArrayList<>(), 0, 65535 );
-		setups = new ConverterSetups( viewer.state() );
-		setups.listeners().add( s -> viewer.requestRepaint() );
+		setups = viewer.getConverterSetups();
 
 		cards = new CardPanel();
 		BdvDefaultCards.setup( cards, viewer, setups );
