@@ -75,8 +75,6 @@ public class ViewerFrame extends JFrame
 
 	private final Behaviours transformBehaviours;
 
-	private final ConverterSetups setups;
-
 	private final KeymapManager keymapManager;
 
 	private final AppearanceManager appearanceManager;
@@ -113,14 +111,12 @@ public class ViewerFrame extends JFrame
 		this.keymapManager = keymapManager;
 		this.appearanceManager = appearanceManager;
 		viewer = new ViewerPanel( sources, numTimepoints, cacheControl, optional );
-		setups = new ConverterSetups( viewer.state() );
-		setups.listeners().add( s -> viewer.requestRepaint() );
 
 		keybindings = new InputActionBindings();
 		triggerbindings = new TriggerBehaviourBindings();
 
 		cards = new CardPanel();
-		BdvDefaultCards.setup( cards, viewer, setups );
+		BdvDefaultCards.setup( cards, viewer, viewer.getConverterSetups() );
 		splitPanel = new SplitPanel( viewer, cards );
 
 		getRootPane().setDoubleBuffered( true );
@@ -190,7 +186,7 @@ public class ViewerFrame extends JFrame
 
 	public ConverterSetups getConverterSetups()
 	{
-		return setups;
+		return viewer.getConverterSetups();
 	}
 
 	public KeymapManager getKeymapManager()

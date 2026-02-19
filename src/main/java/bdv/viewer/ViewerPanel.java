@@ -187,6 +187,8 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 
 	private final Listeners.List< InterpolationModeListener > interpolationModeListeners;
 
+	private final ConverterSetups converterSetups;
+
 	/**
 	 * Current animator for viewer transform, or null. This is for example used
 	 * to make smooth transitions when {@link #align(AlignPlane) aligning to
@@ -258,6 +260,9 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 				renderingExecutorService,
 				options.isUseVolatileIfAvailable(),
 				cacheControl );
+
+		converterSetups = new ConverterSetups( state );
+		converterSetups.listeners().add( s -> requestRepaint() );
 
 		display.addHandler( mouseCoordinates );
 
@@ -893,11 +898,18 @@ public class ViewerPanel extends AbstractViewerPanel implements OverlayRenderer,
 	/**
 	 * Add/remove {@link TimePointListener} to notify about time-point
 	 * changes. Listeners will be notified <em>before</em> calling
-	 * {@link #requestRepaint()} so they have the chance to interfere.
+	 * {@link #requestRepaint()} so listeners have the chance to interfere.
 	 */
+	@Override
 	public Listeners< TimePointListener > timePointListeners()
 	{
 		return timePointListeners;
+	}
+
+	@Override
+	public ConverterSetups getConverterSetups()
+	{
+		return converterSetups;
 	}
 
 	/**
