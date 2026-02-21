@@ -135,7 +135,6 @@ public class BdvHandleFrame extends BdvHandle
 		cards = bdv.getViewerFrame().getCardPanel();
 		splitPanel = bdv.getViewerFrame().getSplitPanel();
 		setupAssignments = bdv.getSetupAssignments();
-		setups = bdv.getConverterSetups();
 
 		// this triggers repaint when PlaceHolderSources are toggled
 		viewer.state().changeListeners().add( change -> {

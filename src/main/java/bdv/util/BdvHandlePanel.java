@@ -117,10 +117,9 @@ public class BdvHandlePanel extends BdvHandle
 		} );
 
 		setupAssignments = new SetupAssignments( new ArrayList<>(), 0, 65535 );
-		setups = viewer.getConverterSetups();
 
 		cards = new CardPanel();
-		BdvDefaultCards.setup( cards, viewer, setups );
+		BdvDefaultCards.setup( cards, viewer, viewer.getConverterSetups() );
 		splitPanel = new SplitPanel( viewer, cards );
 
 		keybindings = new InputActionBindings();

@@ -66,8 +66,6 @@ public abstract class BdvHandle implements Bdv
 
 	protected SplitPanel splitPanel;
 
-	protected ConverterSetups setups;
-
 	// TODO: Remove
 	protected SetupAssignments setupAssignments;
 
@@ -111,7 +109,7 @@ public abstract class BdvHandle implements Bdv
 
 	public ConverterSetups getConverterSetups()
 	{
-		return setups;
+		return viewer.getConverterSetups();
 	}
 
 	// TODO: REMOVE
@@ -148,7 +146,6 @@ public abstract class BdvHandle implements Bdv
 			viewer = null;
 			cards = null;
 			splitPanel = null;
-			setups = null;
 			setupAssignments = null;
 			cacheControls = null;
 		}
@@ -190,7 +187,7 @@ public abstract class BdvHandle implements Bdv
 					final SourceAndConverter< ? > source = sources.get( i );
 					final ConverterSetup setup = converterSetups.get( i );
 					if ( setup != null )
-						setups.put( source, setup );
+						getConverterSetups().put( source, setup );
 				}
 
 				// TODO: REMOVE
