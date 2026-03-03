@@ -61,7 +61,7 @@ public class RandomAccessibleIntervalMipmapSource4D< T extends NumericType< T > 
 	private static boolean assertAllTDimensionsEqual(final Interval[] intervals) {
 
 		final long min = intervals[0].min(3);
-		final long max = intervals[0].min(3);
+		final long max = intervals[0].max(3);
 
 		for (int i = 1; i < intervals.length; ++i)
 			if (!(intervals[i].min(3) == min && intervals[i].max(3) == max))
