@@ -210,7 +210,7 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 						final int setup = viewId.getViewSetupId();
 						final int tp = viewId.getTimePointId();
 						final int numLevels = setupIdToNumLevels.get( setup );
-						IntStream.range( 0, numLevels ).parallel().forEach( level -> n5.getDatasetAttributes( n5properties.getDatasetPath( setup, tp, level ) ) );
+						IntStream.range( 0, numLevels ).parallel().forEach( level -> n5.getDatasetAttributes( n5properties.getDatasetPath( n5, setup, tp, level ) ) );
 					} );
 				} ).join();
 //				System.out.println( "Pre-fetched dataset attributes." );
@@ -379,7 +379,7 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 		{
 			final int priority = numMipmapLevels() - 1 - level;
 			final CacheHints cacheHints = new CacheHints( loadingStrategy, priority, false );
-			final String datasetPath = n5properties.getDatasetPath( setupId, timepointId, level );
+			final String datasetPath = n5properties.getDatasetPath( n5, setupId, timepointId, level );
 			return N5ImageLoader.this.prepareCachedImage( datasetPath, setupId, timepointId, level, cacheHints, type );
 		}
 
