@@ -46,5 +46,5 @@ public interface N5Properties
 
 	long[] getDimensions( N5Reader n5, int setupId, int timepointId, int level );
 
-	String getDatasetPath( int setupId, int timepointId, int level );
+	String getDatasetPath( N5Reader n5, int setupId, int timepointId, int level );
 }

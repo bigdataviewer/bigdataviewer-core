@@ -34,7 +34,7 @@ import org.janelia.saalfeldlab.n5.N5Reader;
 public class DefaultN5Properties implements N5Properties
 {
 	@Override
-	public String getDatasetPath( final int setupId, final int timepointId, final int level )
+	public String getDatasetPath( final N5Reader n5, final int setupId, final int timepointId, final int level )
 	{
 		return BdvN5Format.getPathName( setupId, timepointId, level );
 	}
@@ -56,7 +56,7 @@ public class DefaultN5Properties implements N5Properties
 	@Override
 	public long[] getDimensions( final N5Reader n5, final int setupId, final int timepointId, final int level  )
 	{
-		final String path = getDatasetPath( setupId, timepointId, level );
+		final String path = getDatasetPath( n5, setupId, timepointId, level );
 		return n5.getDatasetAttributes( path ).getDimensions();
 	}
 }
