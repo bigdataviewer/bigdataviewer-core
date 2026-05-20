@@ -291,15 +291,13 @@ public class WriteSequenceToN5
 			final String pathName = getPathName( setupId, timepointId, level );
 			try
 			{
-				n5.createDataset( pathName, dimensions, blockSize, dataType, compression );
+				final DatasetAttributes attributes = n5.createDataset( pathName, dimensions, blockSize, dataType, compression );
+				return new N5Dataset( pathName, attributes );
 			}
 			catch ( final N5Exception e )
 			{
 				throw new IOException( e );
 			}
-
-			final DatasetAttributes attributes = n5.getDatasetAttributes( pathName );
-			return new N5Dataset( pathName, attributes );
 		}
 
 		@Override
