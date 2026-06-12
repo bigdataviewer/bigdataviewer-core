@@ -52,6 +52,7 @@ import bdv.ui.BdvDefaultCards;
 import bdv.ui.CardPanel;
 import bdv.ui.splitpanel.SplitPanel;
 import bdv.util.AWTUtils;
+import bdv.viewer.location.SourceInfoToolbarAndLocationCardManager;
 
 /**
  * A {@link JFrame} containing a {@link ViewerPanel} and associated
@@ -118,6 +119,11 @@ public class ViewerFrame extends JFrame
 		cards = new CardPanel();
 		BdvDefaultCards.setup( cards, viewer, viewer.getConverterSetups() );
 		splitPanel = new SplitPanel( viewer, cards );
+
+		final SourceInfoToolbarAndLocationCardManager manager =
+				new SourceInfoToolbarAndLocationCardManager(appearanceManager, viewer);
+		manager.addToolbarToViewerFrame(this);
+		manager.addLocationCardToSplitPanel(splitPanel, cards);
 
 		getRootPane().setDoubleBuffered( true );
 //		add( viewer, BorderLayout.CENTER );
