@@ -459,7 +459,7 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 		{
 			final DatasetAttributes attributes = n5.getDatasetAttributes( datasetPath );
 			final long[] dimensions = attributes.getDimensions();
-			final int[] cellDimensions = attributes.getBlockSize();
+			final int[] cellDimensions = attributes.getChunkSize();
 			final CellGrid grid = new CellGrid( dimensions, cellDimensions );
 			final DataTypeProperties< ?, ?, ?, ? > dataTypeProperties = DataTypeProperties.of( attributes.getDataType() );
 			final SimpleCacheArrayLoader< ? > loader = new N5CacheArrayLoader<>( n5, datasetPath, attributes, dataTypeProperties );
@@ -512,7 +512,7 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 			final DataBlock< T > dataBlock;
 			try
 			{
-				dataBlock = Cast.unchecked( n5.readBlock( pathName, attributes, gridPosition ) );
+				dataBlock = Cast.unchecked( n5.readChunk( pathName, attributes, gridPosition ) );
 			}
 			catch ( final N5Exception e )
 			{
