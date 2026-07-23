@@ -28,6 +28,8 @@
  */
 package bdv.img.n5;
 
+import static bdv.img.n5.N5ImageLoader.GridSpacing.BLOCKS;
+import static bdv.img.n5.N5ImageLoader.GridSpacing.CHUNKS;
 import static net.imglib2.cache.volatiles.LoadingStrategy.BLOCKING;
 import static net.imglib2.cache.volatiles.LoadingStrategy.BUDGETED;
 
@@ -462,7 +464,7 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 			final int[] cellDimensions = attributes.getChunkSize();
 			final CellGrid grid = new CellGrid( dimensions, cellDimensions );
 			final DataTypeProperties< ?, ?, ?, ? > dataTypeProperties = DataTypeProperties.of( attributes.getDataType() );
-			final SimpleCacheArrayLoader< ? > loader = new N5CacheArrayLoader<>( n5, datasetPath, attributes, dataTypeProperties );
+			final SimpleCacheArrayLoader< ? > loader = new N5CacheArrayLoader<>( n5, datasetPath, attributes, dataTypeProperties, CHUNKS );
 			return cache.createImg( grid, timepointId, setupId, level, cacheHints, loader, type );
 		}
 		catch ( final N5Exception e )
@@ -484,18 +486,21 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 		private final IntFunction< T > createPrimitiveArray;
 		private final Function< T, A > createVolatileArrayAccess;
 		private final SubArrayCopy.Typed< T, T > subArrayCopy;
+		private final boolean useChunks;
 
 		N5CacheArrayLoader( final N5Reader n5, final String pathName, final DatasetAttributes attributes,
-				final DataTypeProperties< ?, ?, T, A > dataTypeProperties )
+				final DataTypeProperties< ?, ?, T, A > dataTypeProperties, final GridSpacing gridSpacing )
 		{
 			this( n5, pathName, attributes, dataTypeProperties.createPrimitiveArray(), dataTypeProperties.createVolatileArrayAccess(),
-					SubArrayCopy.forPrimitiveType( dataTypeProperties.type().getNativeTypeFactory().getPrimitiveType() ) );
+					SubArrayCopy.forPrimitiveType( dataTypeProperties.type().getNativeTypeFactory().getPrimitiveType() ),
+					gridSpacing);
 		}
 
 		N5CacheArrayLoader( final N5Reader n5, final String pathName, final DatasetAttributes attributes,
 				final IntFunction< T > createPrimitiveArray,
 				final Function< T, A > createVolatileArrayAccess,
-				final SubArrayCopy.Typed< T, T > subArrayCopy )
+				final SubArrayCopy.Typed< T, T > subArrayCopy,
+				final GridSpacing gridSpacing )
 		{
 
 			this.n5 = n5;
@@ -504,6 +509,7 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 			this.createPrimitiveArray = createPrimitiveArray;
 			this.createVolatileArrayAccess = createVolatileArrayAccess;
 			this.subArrayCopy = subArrayCopy;
+			this.useChunks = gridSpacing == CHUNKS;
 		}
 
 		@Override
@@ -512,7 +518,9 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 			final DataBlock< T > dataBlock;
 			try
 			{
-				dataBlock = Cast.unchecked( n5.readChunk( pathName, attributes, gridPosition ) );
+				dataBlock = Cast.unchecked( useChunks
+						? n5.readChunk( pathName, attributes, gridPosition )
+						: n5.readBlock( pathName, attributes, gridPosition ) );
 			}
 			catch ( final N5Exception e )
 			{
@@ -541,6 +549,24 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 
 	public static SimpleCacheArrayLoader< ? > createCacheArrayLoader( final N5Reader n5, final String pathName ) throws IOException
 	{
+		return createCacheArrayLoader( n5, pathName, BLOCKS );
+	}
+
+	public enum GridSpacing {
+		BLOCKS,
+		CHUNKS
+	}
+
+	/**
+	 * With {@code GridSpacing.CHUNKS} grid positions of the returned {@code
+	 * SimpleCacheArrayLoader} refer to chunks of the dataset. With {@code
+	 * GridSpacing.BLOCKS} grid positions refer to blocks. (For non-sharded
+	 * datasets it makes no difference because {@link
+	 * DatasetAttributes#getBlockSize()} block size} and {@link
+	 * DatasetAttributes#getChunkSize() chunk size} are the same.)
+	 */
+	public static SimpleCacheArrayLoader< ? > createCacheArrayLoader( final N5Reader n5, final String pathName, final GridSpacing gridSpacing ) throws IOException
+	{
 		final DatasetAttributes attributes;
 		try
 		{
@@ -550,6 +576,6 @@ public class N5ImageLoader implements ViewerImgLoader, MultiResolutionImgLoader
 		{
 			throw new IOException( e );
 		}
-		return new N5CacheArrayLoader<>( n5, pathName, attributes, DataTypeProperties.of( attributes.getDataType() ) );
+		return new N5CacheArrayLoader<>( n5, pathName, attributes, DataTypeProperties.of( attributes.getDataType() ), gridSpacing );
 	}
 }
