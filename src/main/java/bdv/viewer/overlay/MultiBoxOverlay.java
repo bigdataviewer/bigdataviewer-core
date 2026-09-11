@@ -297,13 +297,18 @@ public class MultiBoxOverlay
 		}
 
 		final IntervalAndTransform source = sources.get( 0 );
-		final double sX0 = source.getSourceInterval().min( 0 );
-		final double sY0 = source.getSourceInterval().min( 1 );
-		final double sZ0 = source.getSourceInterval().min( 2 );
+		
+		//swithch to real
+		final double sX0 = source.getSourceInterval().min( 0 ) - 0.5;
+		final double sY0 = source.getSourceInterval().min( 1 ) - 0.5;
+		final double sZ0 = source.getSourceInterval().min( 2 ) - 0.5;
+		final double sXl = ( source.getSourceInterval().max( 0 ) + 0.5 ) - sX0;
+		final double sYl = ( source.getSourceInterval().max( 1 ) + 0.5 ) - sY0;
+		final double sZl = ( source.getSourceInterval().max( 2 ) + 0.5 ) - sZ0;
 
-		final double[] px = new double[] { sX0 + source.getSourceInterval().dimension( 0 ) / 2, sY0, sZ0 };
-		final double[] py = new double[] { sX0, sY0 + source.getSourceInterval().dimension( 1 ) / 2, sZ0 };
-		final double[] pz = new double[] { sX0, sY0, sZ0 + source.getSourceInterval().dimension( 2 ) / 2 };
+		final double[] px = new double[] { sX0 + sXl / 2, sY0, sZ0 };
+		final double[] py = new double[] { sX0, sY0 + sYl / 2, sZ0 };
+		final double[] pz = new double[] { sX0, sY0, sZ0 + sZl / 2 };
 
 		final double[] qx = new double[ 3 ];
 		final double[] qy = new double[ 3 ];
