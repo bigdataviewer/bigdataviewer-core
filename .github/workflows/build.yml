@@ -22,6 +22,19 @@ jobs:
           java-version: '11'
           distribution: 'zulu'
           cache: 'maven'
+      # TEMPORARY: janelia-jhdf5 22.03.01-SNAPSHOT is not published anywhere, so build and
+      # install it into ~/.m2 first. Remove once janelia-jhdf5 is released.
+      - name: Check out janelia-jhdf5
+        uses: actions/checkout@v4
+        with:
+          repository: JaneliaSciComp/janelia-jhdf5
+          # TEMPORARY: the accessors used by HDF5AccessHack are in JaneliaSciComp/janelia-jhdf5#21; use main once merged.
+          ref: native-handles
+          path: janelia-jhdf5
+      - name: Install janelia-jhdf5 snapshot
+        working-directory: janelia-jhdf5
+        run: mvn -B -U install -DskipTests -Djacoco.skip=true -Djavacpp.platform=linux-x86_64
+        shell: bash
       - name: Set up CI environment
         run: .github/setup.sh
         shell: bash
@@ -29,6 +42,8 @@ jobs:
         run: .github/build.sh
         shell: bash
         env:
+          # TEMPORARY (remove once janelia-jhdf5 is released): pom-scijava's enforcer rejects SNAPSHOT dependencies.
+          MAVEN_ARGS: -Denforcer.skip=true
           GPG_KEY_NAME: ${{ secrets.GPG_KEY_NAME }}
           GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
           MAVEN_USER: ${{ secrets.MAVEN_USER }}
