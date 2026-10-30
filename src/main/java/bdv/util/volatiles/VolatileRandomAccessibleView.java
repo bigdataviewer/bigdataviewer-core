@@ -28,13 +28,12 @@
  */
 package bdv.util.volatiles;
 
-import net.imglib2.Interval;
-import net.imglib2.RandomAccess;
 import net.imglib2.RandomAccessible;
 import net.imglib2.Volatile;
+import net.imglib2.view.fluent.RandomAccessibleView;
 
 public class VolatileRandomAccessibleView< T, V extends Volatile< T > >
-	implements VolatileView< T, V >, RandomAccessible< V >
+		implements VolatileView< T, V >, RandomAccessibleView< V, VolatileRandomAccessibleView< T, V > >
 {
 	private final VolatileViewData< T, V > viewData;
 
@@ -51,27 +50,8 @@ public class VolatileRandomAccessibleView< T, V extends Volatile< T > >
 	}
 
 	@Override
-	public RandomAccess< V > randomAccess()
+	public RandomAccessible< V > delegate()
 	{
-		return viewData.getImg().randomAccess();
-	}
-
-	@Override
-	public RandomAccess< V > randomAccess( final Interval interval )
-	{
-		return viewData.getImg().randomAccess( interval );
-	}
-
-	@Override
-	public int numDimensions()
-	{
-		return viewData.getImg().numDimensions();
-
-	}
-
-	@Override
-	public V getType()
-	{
-		return viewData.getVolatileType();
+		return viewData.getImg();
 	}
 }
