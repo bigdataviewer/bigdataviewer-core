@@ -129,12 +129,12 @@ public class RenderBoxHelper
 
 	public void renderBox( final Interval sourceInterval, final AffineTransform3D transform, final GeneralPath front, final GeneralPath back )
 	{
-		final double sX0 = sourceInterval.min( 0 );
-		final double sX1 = sourceInterval.max( 0 );
-		final double sY0 = sourceInterval.min( 1 );
-		final double sY1 = sourceInterval.max( 1 );
-		final double sZ0 = sourceInterval.min( 2 );
-		final double sZ1 = sourceInterval.max( 2 );
+		final double sX0 = sourceInterval.realMin( 0 ) - 0.5;
+		final double sX1 = sourceInterval.realMax( 0 ) + 0.5;
+		final double sY0 = sourceInterval.realMin( 1 ) - 0.5;
+		final double sY1 = sourceInterval.realMax( 1 ) + 0.5;
+		final double sZ0 = sourceInterval.realMin( 2 ) - 0.5;
+		final double sZ1 = sourceInterval.realMax( 2 ) + 0.5;
 
 		final double[] p000 = new double[] { sX0, sY0, sZ0 };
 		final double[] p100 = new double[] { sX1, sY0, sZ0 };
@@ -181,10 +181,10 @@ public class RenderBoxHelper
 
 	public void renderCanvas( final Interval targetInterval,  final GeneralPath canvas )
 	{
-		final double tX0 = targetInterval.min( 0 );
-		final double tX1 = targetInterval.max( 0 );
-		final double tY0 = targetInterval.min( 1 );
-		final double tY1 = targetInterval.max( 1 );
+		final double tX0 = targetInterval.min( 0 ) - 0.5;
+		final double tX1 = targetInterval.max( 0 ) + 0.5;
+		final double tY0 = targetInterval.min( 1 ) - 0.5;
+		final double tY1 = targetInterval.max( 1 ) + 0.5;
 
 		final double[] c000 = new double[] { tX0, tY0, 0 };
 		final double[] c100 = new double[] { tX1, tY0, 0 };
