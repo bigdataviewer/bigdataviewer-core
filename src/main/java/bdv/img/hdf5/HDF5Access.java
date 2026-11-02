@@ -36,9 +36,15 @@ import hdf.hdf5lib.HDF5Constants;
 import hdf.hdf5lib.exceptions.HDF5LibraryException;
 import hdf.hdf5lib.structs.H5O_info_t;
 import java.io.File;
+import java.io.IOException;
+import java.nio.channels.FileChannel;
+import java.nio.file.StandardOpenOption;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicLong;
 import org.janelia.saalfeldlab.n5.DataBlock;
 import org.janelia.saalfeldlab.n5.DataType;
 
@@ -69,10 +75,17 @@ import static net.imglib2.util.Util.long2int;
  *
  * The HDF5 fileId is extracted from a jhdf5 HDF5Reader to avoid having to do
  * everything ourselves.
+ * <p>
+ * Where possible, blocks that are exactly one chunk are not read with
+ * {@code H5Dread} but by reading the chunk's bytes from the file and decoding
+ * them in Java (see {@link RawChunkReader}). {@code H5Dread} calls are
+ * serialized by the HDF5 library lock, so with several fetcher threads this
+ * is much faster. Set the system property {@value #RAW_CHUNK_READS_PROPERTY}
+ * to {@code false} to always use {@code H5Dread}.
  *
  * @author Tobias Pietzsch
  */
-class HDF5Access
+class HDF5Access implements AutoCloseable
 {
 	private final IHDF5Reader hdf5Reader;
 
@@ -81,6 +94,19 @@ class HDF5Access
 	private final long numericConversionXferPropertyListID;
 
 	private static final int MAX_OPEN_DATASETS = 48;
+
+	/** System property that turns reading chunks directly from the file off ({@code false}) or on (default). */
+	static final String RAW_CHUNK_READS_PROPERTY = "bdv.hdf5.rawChunkReads";
+
+	private final boolean rawChunkReads;
+
+	/** Per data set path; empty if the data set cannot be read directly. Created on first use. */
+	private final Map< String, Optional< RawChunkReader > > rawChunkReaders = new ConcurrentHashMap<>();
+
+	private FileChannel channel;
+
+	/** Number of blocks read directly from chunks, see {@link #rawChunkReads()}. */
+	private final AtomicLong rawBlocks = new AtomicLong();
 
 	private class OpenDataSet implements AutoCloseable
 	{
@@ -172,7 +198,13 @@ class HDF5Access
 
 	public HDF5Access( final IHDF5Reader hdf5Reader )
 	{
+		this( hdf5Reader, !"false".equalsIgnoreCase( System.getProperty( RAW_CHUNK_READS_PROPERTY ) ) );
+	}
+
+	HDF5Access( final IHDF5Reader hdf5Reader, final boolean rawChunkReads )
+	{
 		this.hdf5Reader = hdf5Reader;
+		this.rawChunkReads = rawChunkReads;
 
 		// TODO: Do see ch.systemsx.cisd.hdf5.HDF5.createFileAccessPropertyListId for version bounds checking
 		long fileAccessPropertyListId = H5P_DEFAULT;
@@ -235,9 +267,12 @@ class HDF5Access
 		openDataSetCache.clear();
 	}
 
+	@Override
 	public void close()
 	{
 		closeAllDataSets();
+		closeChannel();
+		rawChunkReaders.clear();
 		int status = H5Pclose( numericConversionXferPropertyListID );
 		if ( status < 0 )
 		{
@@ -249,6 +284,54 @@ class HDF5Access
 			throw new RuntimeException( "Error closing file" );
 		}
 		hdf5Reader.close();
+	}
+
+	/** Number of blocks that were read directly from chunks instead of with {@code H5Dread}. */
+	long rawChunkReads()
+	{
+		return rawBlocks.get();
+	}
+
+	private synchronized FileChannel channel() throws IOException
+	{
+		if ( channel == null )
+			channel = FileChannel.open( hdf5Reader.file().getFile().toPath(), StandardOpenOption.READ );
+		return channel;
+	}
+
+	private synchronized void closeChannel()
+	{
+		if ( channel != null )
+		{
+			try
+			{
+				channel.close();
+			}
+			catch ( final IOException e )
+			{
+				// nothing useful to do
+			}
+			channel = null;
+		}
+	}
+
+	/**
+	 * The reader for the chunks of the data set, or {@code null} if it cannot be
+	 * read directly or does not have the memory type {@code memTypeId}.
+	 */
+	private RawChunkReader rawChunkReader( final String pathName, final DataType dataType, final long memTypeId )
+	{
+		final Optional< RawChunkReader > reader = rawChunkReaders.computeIfAbsent( pathName, path -> {
+			try
+			{
+				return Optional.ofNullable( RawChunkReader.tryCreate( hdf5Reader, channel(), fileId, path, dataType, memTypeId, numericConversionXferPropertyListID ) );
+			}
+			catch ( final IOException e )
+			{
+				return Optional.empty();
+			}
+		} );
+		return reader.isPresent() && reader.get().memTypeId() == memTypeId ? reader.get() : null;
 	}
 
 	public DataBlock< ? > readBlock(
@@ -267,6 +350,29 @@ class HDF5Access
 		// TODO: using min for DataBlock.gridPosition is wrong. Should divide min by blockSize instead.
 		//       it's ok for now, because we dont use it, but should be changed when this is pushed down to n5-hdf5
 		final DataBlock< ? > block = dataType.createDataBlock( dimensions, min );
+
+		if ( rawChunkReads )
+		{
+			final RawChunkReader raw = rawChunkReader( pathName, dataType, memTypeId );
+			if ( raw != null )
+			{
+				final int[] reorderedSize = new int[ dimensions.length ];
+				for ( int d = 0; d < dimensions.length; ++d )
+					reorderedSize[ d ] = ( int ) reorderedDimensions[ d ];
+				try
+				{
+					if ( raw.read( reorderedSize, reorderedMin, block.getData() ) )
+					{
+						rawBlocks.incrementAndGet();
+						return block;
+					}
+				}
+				catch ( final IOException e )
+				{
+					// fall through to H5Dread, which reports the problem if there is one
+				}
+			}
+		}
 
 		try ( OpenDataSet dataset = openDataSetCache.getDataSet( pathName ) )
 		{
