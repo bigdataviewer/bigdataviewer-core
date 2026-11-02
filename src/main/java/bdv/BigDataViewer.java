@@ -775,23 +775,18 @@ public class BigDataViewer
 		viewer.requestFocusInWindow();
 	}
 
-	public static void main( final String[] args )
+	public static void main( final String[] args ) throws IOException, SpimDataException
 	{
-		final String fn = "/Users/pietzsch/workspace/data/111010_weber_resave.xml";
-		try
-		{
-			System.setProperty( "apple.laf.useScreenMenuBar", "true" );
-//			System.setProperty( "apple.awt.application.appearance", "system" );
-			UIUtils.installFlatLafInfos();
+		if ( args.length == 0 )
+			throw new IOException( "No input file selected !" );
+		final String fn = args[ 0 ];
+//		final String fn = "/Users/pietzsch/workspace/data/111010_weber_resave.xml";
 
-			System.out.println( "reading config files from \"" + configDir + "\"" );
-			final BigDataViewer bdv = open( fn, new File( fn ).getName(), new ProgressWriterConsole(), ViewerOptions.options() );
+		System.setProperty( "apple.laf.useScreenMenuBar", "true" );
+//		System.setProperty( "apple.awt.application.appearance", "system" );
+		UIUtils.installFlatLafInfos();
 
-//			DumpInputConfig.writeToYaml( System.getProperty( "user.home" ) + "/.bdv/bdvkeyconfig.yaml", bdv.getViewerFrame() );
-		}
-		catch ( final Exception e )
-		{
-			e.printStackTrace();
-		}
+		System.out.println( "reading config files from \"" + configDir + "\"" );
+		final BigDataViewer bdv = open( fn, new File( fn ).getName(), new ProgressWriterConsole(), ViewerOptions.options() );
 	}
 }
