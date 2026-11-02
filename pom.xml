@@ -145,6 +145,13 @@
 
 		<imglib2.version>8.1.0</imglib2.version>
 
+		<!-- TEMPORARY: remove these overrides once janelia-jhdf5 is released
+		     (then use the released version, or the version managed by pom-scijava). -->
+		<janelia-jhdf5.version>26.10.0-SNAPSHOT</janelia-jhdf5.version>
+		<!-- pom-scijava manages older bytedeco versions; match what janelia-jhdf5 is built against. -->
+		<javacpp.version>1.5.15-SNAPSHOT</javacpp.version>
+		<hdf5.version>2.2.0-${javacpp.version}</hdf5.version>
+
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>
 	</properties>
@@ -153,6 +160,14 @@
 		<repository>
 			<id>scijava.public</id>
 			<url>https://maven.scijava.org/content/groups/public</url>
+		</repository>
+		<!-- TEMPORARY: org.bytedeco snapshots (javacpp, hdf5) needed by janelia-jhdf5.
+		     Remove once janelia-jhdf5 is released. -->
+		<repository>
+			<id>central-portal-snapshots</id>
+			<url>https://central.sonatype.com/repository/maven-snapshots/</url>
+			<releases><enabled>false</enabled></releases>
+			<snapshots><enabled>true</enabled></snapshots>
 		</repository>
 	</repositories>
 
@@ -203,8 +218,9 @@
 
 		<!-- Other dependencies -->
 		<dependency>
-			<groupId>cisd</groupId>
-			<artifactId>jhdf5</artifactId>
+			<groupId>org.janelia</groupId>
+			<artifactId>janelia-jhdf5</artifactId>
+			<version>${janelia-jhdf5.version}</version><!-- TEMPORARY version: remove once janelia-jhdf5 is released -->
 		</dependency>
 		<dependency>
 			<groupId>com.formdev</groupId>
@@ -239,6 +255,12 @@
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<!-- hdf.hdf5lib.H5 needs an slf4j binding at runtime; tests don't otherwise have one. -->
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-nop</artifactId>
 			<scope>test</scope>
 		</dependency>
 		<!-- JMH -->
