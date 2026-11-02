@@ -54,7 +54,6 @@ import static hdf.hdf5lib.H5.H5Tis_variable_str;
 import static hdf.hdf5lib.HDF5Constants.*;
 
 import java.io.UnsupportedEncodingException;
-import java.lang.reflect.Field;
 import java.util.LinkedHashMap;
 import java.util.Map.Entry;
 
@@ -131,28 +130,11 @@ public class HDF5AccessHack implements IHDF5Access
 
 	private final OpenDataSetCache openDataSetCache;
 
-	public HDF5AccessHack( final IHDF5Reader hdf5Reader ) throws ClassNotFoundException, SecurityException, NoSuchFieldException, IllegalArgumentException, IllegalAccessException
+	public HDF5AccessHack( final IHDF5Reader hdf5Reader )
 	{
 		this.hdf5Reader = hdf5Reader;
-
-		final Class< ? > k = Class.forName( "ch.systemsx.cisd.hdf5.HDF5Reader" );
-		final Field f = k.getDeclaredField( "baseReader" );
-		f.setAccessible( true );
-		final Object baseReader = f.get( hdf5Reader );
-
-		final Class< ? > k2 = Class.forName( "ch.systemsx.cisd.hdf5.HDF5BaseReader" );
-		final Field f2 = k2.getDeclaredField( "fileId" );
-		f2.setAccessible( true );
-		fileId = ( ( Long ) f2.get( baseReader ) ).longValue();
-
-		final Field f3 = k2.getDeclaredField( "h5" );
-		f3.setAccessible( true );
-		final Object h5 = f3.get( baseReader );
-
-		final Class< ? > k4 = Class.forName( "ch.systemsx.cisd.hdf5.HDF5" );
-		final Field f4 = k4.getDeclaredField( "numericConversionXferPropertyListID" );
-		f4.setAccessible( true );
-		numericConversionXferPropertyListID = ( ( Long ) f4.get( h5 ) ).longValue();
+		fileId = hdf5Reader.getFileId();
+		numericConversionXferPropertyListID = hdf5Reader.getDataTransferPropertyListId();
 
 		openDataSetCache = new OpenDataSetCache();
 	}

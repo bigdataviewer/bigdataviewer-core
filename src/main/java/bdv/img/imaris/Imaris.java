@@ -54,15 +54,7 @@ public class Imaris
 	public static SpimDataMinimal openIms( final String fn ) throws IOException
 	{
 		final IHDF5Reader reader = HDF5Factory.openForReading( fn );
-		final IHDF5Access access;
-		try
-		{
-			access = new HDF5AccessHack( reader );
-		}
-		catch ( final Exception e )
-		{
-			throw new RuntimeException( e );
-		}
+		final IHDF5Access access = new HDF5AccessHack( reader );
 
 		final HashMap< Integer, TimePoint > timepointMap = new HashMap<>();
 		final HashMap< Integer, BasicViewSetup > setupMap = new HashMap<>();
