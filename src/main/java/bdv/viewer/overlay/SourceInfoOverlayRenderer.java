@@ -83,7 +83,19 @@ public class SourceInfoOverlayRenderer
 		}
 	}
 
-	public synchronized void setTimePointsOrdered( final List< TimePoint > timePointsOrdered )
+	public String getSourceName() {
+		return sourceName;
+	}
+
+	public String getGroupName() {
+		return groupName;
+	}
+
+	public String getTimepointString() {
+		return timepointString;
+	}
+
+	public synchronized void setTimePointsOrdered(final List< TimePoint > timePointsOrdered )
 	{
 		this.timePointsOrdered = timePointsOrdered;
 	}

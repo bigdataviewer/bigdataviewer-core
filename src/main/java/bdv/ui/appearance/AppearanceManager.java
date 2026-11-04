@@ -179,7 +179,8 @@ public class AppearanceManager
 		Prefs.sourceNameOverlayPosition( appearance.sourceNameOverlayPosition() );
 		Prefs.scaleBarColor( appearance.scaleBarColor() );
 		Prefs.scaleBarBgColor( appearance.scaleBarBgColor() );
-	}
+		Prefs.showSourceInfoToolBar( appearance.showSourceInfoToolBar() );
+		}
 
 	/**
 	 * @deprecated Prefs will be replaced eventually by directly using {@code Appearance} in BDV
@@ -194,5 +195,6 @@ public class AppearanceManager
 		appearance.setSourceNameOverlayPosition( Prefs.sourceNameOverlayPosition() );
 		appearance.setScaleBarColor( Prefs.scaleBarColor() );
 		appearance.setScaleBarBgColor( Prefs.scaleBarBgColor() );
+		appearance.setShowSourceInfoToolBar(Prefs.showSourceInfoToolBar() );
 	}
 }
