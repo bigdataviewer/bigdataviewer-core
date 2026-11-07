@@ -330,7 +330,7 @@ class Links
 			final double scale = ( rescaleMethod == RescaleMethod.FIT_PANEL )
 					? Math.min( scaleX, scaleY )
 					: Math.max( scaleX, scaleY );
-			t.scale( scale, scale, 1 );
+			t.scale( scale );
 		}
 
 		if ( recenterMethod != RecenterMethod.NONE )
