@@ -39,7 +39,7 @@ class JsonAdapters
 		}
 	}
 
-	@JsonUtils.JsonIo( jsonType = "BdvProperiesV0.SourceConverterConfig", type = BdvPropertiesV0.SourceConverterConfig.class )
+	@JsonUtils.JsonIo( jsonType = "BdvPropertiesV0.SourceConverterConfig", type = BdvPropertiesV0.SourceConverterConfig.class )
 	public static class SourceConverterConfigAdapter implements JsonDeserializer< BdvPropertiesV0.SourceConverterConfig >, JsonSerializer< BdvPropertiesV0.SourceConverterConfig >
 	{
 		@Override
