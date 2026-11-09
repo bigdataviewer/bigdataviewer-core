@@ -76,6 +76,36 @@ class JsonAdapters
 		}
 	}
 
+	@JsonUtils.JsonIo( jsonType = "BdvPropertiesV0.SourceGroupConfig", type = BdvPropertiesV0.SourceGroupConfig.class )
+	public static class SourceGroupConfigAdapter implements JsonDeserializer< BdvPropertiesV0.SourceGroupConfig >, JsonSerializer< BdvPropertiesV0.SourceGroupConfig >
+	{
+		@Override
+		public BdvPropertiesV0.SourceGroupConfig deserialize(
+				final JsonElement json,
+				final Type typeOfT,
+				final JsonDeserializationContext context )
+		{
+			JsonObject obj = json.getAsJsonObject();
+			final JsonElement nameElement = obj.get( "name" );
+			final String name = ( nameElement == null || nameElement.isJsonNull() ) ? null : nameElement.getAsString();
+			final int[] sources = context.deserialize( obj.get( "sources" ), int[].class );
+			return new BdvPropertiesV0.SourceGroupConfig( name, sources == null ? new int[ 0 ] : sources );
+		}
+
+		@Override
+		public JsonElement serialize(
+				final BdvPropertiesV0.SourceGroupConfig src,
+				final Type typeOfSrc,
+				final JsonSerializationContext context )
+		{
+			final JsonObject obj = new JsonObject();
+			if ( src.name != null )
+				obj.addProperty( "name", src.name );
+			obj.add( "sources", context.serialize( src.sources ) );
+			return obj;
+		}
+	}
+
 	@JsonUtils.JsonIo( jsonType = "DisplayMode", type = DisplayMode.class )
 	public static class DisplayModeAdapter implements JsonDeserializer< DisplayMode >, JsonSerializer< DisplayMode >
 	{

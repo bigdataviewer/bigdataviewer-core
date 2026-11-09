@@ -3,6 +3,7 @@ package bdv.tools.links;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.IntStream;
 
 import bdv.tools.brightness.ConverterSetup;
@@ -12,6 +13,7 @@ import bdv.viewer.ConverterSetups;
 import bdv.viewer.DisplayMode;
 import bdv.viewer.Interpolation;
 import bdv.viewer.SourceAndConverter;
+import bdv.viewer.SourceGroup;
 import bdv.viewer.ViewerState;
 import net.imglib2.Dimensions;
 import net.imglib2.FinalDimensions;
@@ -30,6 +32,9 @@ class BdvPropertiesV0
 	private final List< SourceConverterConfig > converterConfigs;
 	private final int currentSourceIndex;
 	private final int[] activeSourceIndices;
+	private final List< SourceGroupConfig > groupConfigs;
+	private final int currentGroupIndex;
+	private final int[] activeGroupIndices;
 	private final long[] panelsize;
 	private final long[] mousepos;
 
@@ -73,6 +78,9 @@ class BdvPropertiesV0
 		converterConfigs = new ArrayList<>();
 		currentSourceIndex = -1;
 		activeSourceIndices = new int[ 0 ];
+		groupConfigs = new ArrayList<>();
+		currentGroupIndex = -1;
+		activeGroupIndices = new int[ 0 ];
 		panelsize = new long[ 2 ];
 		mousepos = new long[ 2 ];
 		anchor = Anchor.CENTER;
@@ -94,6 +102,9 @@ class BdvPropertiesV0
 		this.converterConfigs = getSourceConverterConfigs( state.getSources(), converterSetups );
 		this.currentSourceIndex = getCurrentSourceIndex( state );
 		this.activeSourceIndices = getActiveSourceIndices( state );
+		this.groupConfigs = getGroupConfigs( state );
+		this.currentGroupIndex = getCurrentGroupIndex( state );
+		this.activeGroupIndices = getActiveGroupIndices( state );
 		this.panelsize = panelsize.dimensionsAsLongArray();
 		this.mousepos = mousepos.positionAsLongArray();
 		this.anchor = Anchor.CENTER;
@@ -108,6 +119,32 @@ class BdvPropertiesV0
 	{
 		final List< SourceAndConverter< ? > > sources = state.getSources();
 		return IntStream.range( 0, sources.size() ).filter( i -> state.isSourceActive( sources.get( i ) ) ).toArray();
+	}
+
+	private static int getCurrentGroupIndex( final ViewerState state )
+	{
+		return state.getGroups().indexOf( state.getCurrentGroup() );
+	}
+
+	private static int[] getActiveGroupIndices( final ViewerState state )
+	{
+		final List< SourceGroup > groups = state.getGroups();
+		return IntStream.range( 0, groups.size() ).filter( i -> state.isGroupActive( groups.get( i ) ) ).toArray();
+	}
+
+	private static List< SourceGroupConfig > getGroupConfigs( final ViewerState state )
+	{
+		final List< SourceGroupConfig > configs = new ArrayList<>();
+		final List< SourceAndConverter< ? > > sources = state.getSources();
+		for ( SourceGroup group : state.getGroups() )
+		{
+			final String name = state.getGroupName( group );
+			final Set< SourceAndConverter< ? > > sourcesInGroup = state.getSourcesInGroup( group );
+			final int[] indices = IntStream.range( 0, sources.size() ).filter( i -> sourcesInGroup.contains( sources.get( i ) ) ).toArray();
+			final SourceGroupConfig config = new SourceGroupConfig( name, indices );
+			configs.add( config );
+		}
+		return configs;
 	}
 
 	private static List< SourceConverterConfig > getSourceConverterConfigs( final List< SourceAndConverter< ? > > sources, final ConverterSetups converterSetups )
@@ -192,7 +229,7 @@ class BdvPropertiesV0
 		return sourceConfigs.list();
 	}
 
-	public  List< SourceConverterConfig > converterConfigs()
+	public List< SourceConverterConfig > converterConfigs()
 	{
 		return converterConfigs;
 	}
@@ -205,6 +242,21 @@ class BdvPropertiesV0
 	public int[] activeSourceIndices()
 	{
 		return activeSourceIndices;
+	}
+
+	public List< SourceGroupConfig > groupConfigs()
+	{
+		return groupConfigs;
+	}
+
+	public int currentGroupIndex()
+	{
+		return currentGroupIndex;
+	}
+
+	public int[] activeGroupIndices()
+	{
+		return activeGroupIndices;
 	}
 
 	@Override
@@ -220,6 +272,9 @@ class BdvPropertiesV0
 				", converterConfigs=" + converterConfigs +
 				", currentSourceIndex=" + currentSourceIndex +
 				", activeSourceIndices=" + Arrays.toString( activeSourceIndices ) +
+				", groupConfigs=" + groupConfigs +
+				", currentGroupIndex=" + currentGroupIndex +
+				", activeGroupIndices=" + Arrays.toString( activeGroupIndices ) +
 				", panelsize=" + Arrays.toString( panelsize ) +
 				", mousepos=" + Arrays.toString( mousepos ) +
 				", anchor=" + anchor +
@@ -271,6 +326,37 @@ class BdvPropertiesV0
 					", max=" + max +
 					", minBound=" + minBound +
 					", maxBound=" + maxBound +
+					'}';
+		}
+	}
+
+	public static class SourceGroupConfig
+	{
+		final String name;
+		final int[] sources;
+
+		public SourceGroupConfig( final String name, final int[] sources )
+		{
+			this.name = name;
+			this.sources = sources;
+		}
+
+		public String name()
+		{
+			return name;
+		}
+
+		public int[] sources()
+		{
+			return sources;
+		}
+
+		@Override
+		public String toString()
+		{
+			return "SourceGroupConfig{" +
+					"name='" + name + '\'' +
+					", sources=" + Arrays.toString( sources ) +
 					'}';
 		}
 	}

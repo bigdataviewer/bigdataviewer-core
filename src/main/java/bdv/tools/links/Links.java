@@ -7,8 +7,13 @@ import static bdv.tools.links.PasteSettings.SourceMatchingMethod.BY_INDEX;
 import static bdv.tools.links.PasteSettings.SourceMatchingMethod.BY_SPEC_LOAD_MISSING;
 
 import java.lang.reflect.Type;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Deque;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -25,11 +30,13 @@ import com.google.gson.JsonSerializer;
 import bdv.tools.JsonUtils;
 import bdv.tools.brightness.ConverterSetup;
 import bdv.tools.links.BdvPropertiesV0.SourceConverterConfig;
+import bdv.tools.links.BdvPropertiesV0.SourceGroupConfig;
 import bdv.tools.links.PasteSettings.RecenterMethod;
 import bdv.tools.links.PasteSettings.RescaleMethod;
 import bdv.viewer.AbstractViewerPanel;
 import bdv.viewer.ConverterSetups;
 import bdv.viewer.SourceAndConverter;
+import bdv.viewer.SourceGroup;
 import bdv.viewer.ViewerState;
 import net.imglib2.Dimensions;
 import net.imglib2.FinalDimensions;
@@ -138,6 +145,13 @@ class Links
 			if ( pasteSettings.pasteSourceVisibility() )
 			{
 				setSourceVisibility( sourceMapping, properties.currentSourceIndex(), properties.activeSourceIndices(), state );
+
+				// TODO: This could be behind another pasteSettings flag?
+				final int[] groupMapping = getGroupMapping(
+						properties.groupConfigs(),
+						sourceMapping,
+						state );
+				setGroupVisibility( groupMapping, properties.currentGroupIndex(), properties.activeGroupIndices(), state );
 			}
 		}
 	}
@@ -225,6 +239,98 @@ class Links
 		}
 	}
 
+	/**
+	 * Match {@code configs} to groups in the {@code ViewerState}, and re-populate matched groups to contain the configured sources.
+	 * <p>
+	 * The returned {@code int[] mapping} maps from {@code configs} to {@code state.getGroups()}.
+	 * For each {@code SourceGroupConfig} {configs.get(i)}, {@code mapping[i]} is the index of the corresponding group in {@code state.getGroups()}.
+	 * <p>
+	 * For {@code configs} that cannot be matched by name, new groups are added to the {@code ViewerState}.
+	 *
+	 * @param configs list of {@code SourceGroupConfig} to match
+	 * @param sourceMapping maps source indices occurring in {@code SourceGroupConfig} to sources in the {@code ViewerState}
+	 * @param state the ViewerState containing the sources and groups
+	 * @return a mapping from index in {@code configs} to index in {@code state.getGroups()}
+	 */
+	private static int[] getGroupMapping(
+			final List< SourceGroupConfig > configs,
+			final int[] sourceMapping,
+			final ViewerState state )
+	{
+		final int[] groupMapping = matchGroups( configs, state );
+		createUnmatchedGroups( groupMapping, configs, state );
+		setGroupMembers( sourceMapping, groupMapping, configs, state );
+		return groupMapping;
+	}
+
+	private static int[] matchGroups(
+			final List< SourceGroupConfig > configs,
+			final ViewerState state )
+	{
+		// existing groups by name, in order of appearance (HashMap allows null key for collecting unnamed SourceGroups)
+		final Map< String, Deque< SourceGroup > > byName = new HashMap<>();
+		for ( final SourceGroup group : state.getGroups() )
+			byName.computeIfAbsent( state.getGroupName( group ), k -> new ArrayDeque<>() ).add( group );
+
+		final int[] matches = new int[ configs.size() ];
+		for ( int i = 0; i < configs.size(); i++ )
+		{
+			final Deque< SourceGroup > candidates = byName.get( configs.get( i ).name() );
+			final SourceGroup group = candidates == null ? null : candidates.poll();
+			matches[ i ] = group == null ? -1 : state.getGroups().indexOf( group );
+		}
+
+		return matches;
+	}
+
+	private static void createUnmatchedGroups(
+			final int[] groupMapping,
+			final List< SourceGroupConfig > configs,
+			final ViewerState state )
+	{
+		for ( int i = 0; i < groupMapping.length; i++ )
+		{
+			if ( groupMapping[ i ] < 0 )
+			{
+				final SourceGroupConfig config = configs.get( i );
+				final SourceGroup group = new SourceGroup();
+				state.addGroup( group );
+				state.setGroupName( group, config.name() );
+				groupMapping[ i ] = state.getGroups().indexOf( group );
+			}
+		}
+	}
+
+	private static void setGroupMembers(
+			final int[] sourceMapping,
+			final int[] groupMapping,
+			final List< SourceGroupConfig > configs,
+			final ViewerState state )
+	{
+		for ( int i = 0; i < groupMapping.length; i++ )
+		{
+			if ( groupMapping[ i ] < 0 )
+				continue;
+
+			final SourceGroup group = state.getGroups().get( groupMapping[ i ] );
+			final SourceGroupConfig config = configs.get( i );
+
+			// Add/remove sources to group to match groupConfig
+			final List< SourceAndConverter< ? > > sourcesToRemove = new ArrayList<>( state.getSourcesInGroup( group ) );
+			final List< SourceAndConverter< ? > > sourcesToAdd = new ArrayList<>();
+			for ( final int s : config.sources() )
+			{
+				if ( s < 0 || s >= sourceMapping.length || sourceMapping[ s ] < 0 )
+					continue;
+				final SourceAndConverter< ? > source = state.getSources().get( sourceMapping[ s ] );
+				if ( !sourcesToRemove.remove( source ) )
+					sourcesToAdd.add( source );
+			}
+			state.removeSourcesFromGroup( sourcesToRemove, group );
+			state.addSourcesToGroup( sourcesToAdd, group );
+		}
+	}
+
 	private static void setSourceConfigs(
 			final int[] sourceMapping,
 			final List< ResourceConfig > configs,
@@ -285,6 +391,25 @@ class Links
 				state.setSourceActive( soc, contains( activeSourceIndices, i ) );
 				if ( currentSourceIndex == i )
 					state.setCurrentSource( soc );
+			}
+		}
+	}
+
+	private static void setGroupVisibility(
+			final int[] groupMapping,
+			final int currentGroupIndex,
+			final int[] activeGroupIndices,
+			final ViewerState state )
+	{
+		final List< SourceGroup > groups = state.getGroups();
+		for ( int i = 0; i < groupMapping.length; i++ )
+		{
+			if ( groupMapping[ i ] >= 0 )
+			{
+				final SourceGroup group = groups.get( groupMapping[ i ] );
+				state.setGroupActive( group, contains( activeGroupIndices, i ) );
+				if ( currentGroupIndex == i )
+					state.setCurrentGroup( group );
 			}
 		}
 	}
