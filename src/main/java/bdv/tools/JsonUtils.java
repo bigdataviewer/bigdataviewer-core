@@ -23,8 +23,11 @@ import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonDeserializer;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
+
+import net.imglib2.util.Cast;
 
 public class JsonUtils
 {
@@ -215,7 +218,10 @@ public class JsonUtils
 				{
 					throw new RuntimeException( "could not create \"" + adapterClassName + "\" instance", e );
 				}
-				gsonBuilder.registerTypeAdapter( type, adapter );
+				if ( adapter instanceof JsonSerializer && adapter instanceof JsonDeserializer )
+					gsonBuilder.registerTypeAdapter( type, new GuardedAdapter<>( Cast.unchecked( adapter ) ) );
+				else
+					gsonBuilder.registerTypeAdapter( type, adapter );
 			} );
 		}
 
@@ -278,5 +284,55 @@ public class JsonUtils
 	{
 		Gson gson = new GsonBuilder().setPrettyPrinting().create();
 		return gson.toJson( jsonElement );
+	}
+
+	/**
+	 * Wraps a two-way adapter such that any {@code RuntimeException} thrown
+	 * during deserialization is re-thrown as {@code JsonParseException}.
+	 */
+	private static class GuardedAdapter< T, A extends JsonSerializer< T > & JsonDeserializer< T > >
+			implements JsonSerializer< T >, JsonDeserializer< T >
+	{
+		private final A delegate;
+
+		GuardedAdapter( final A delegate )
+		{
+			this.delegate = delegate;
+		}
+
+		@Override
+		public T deserialize(
+				final JsonElement json,
+				final Type typeOfT,
+				final JsonDeserializationContext context ) throws JsonParseException
+		{
+			try
+			{
+				return delegate.deserialize( json, typeOfT, context );
+			}
+			catch ( final JsonParseException e )
+			{
+				throw e;
+			}
+			catch ( final RuntimeException e )
+			{
+				throw new JsonParseException( "could not deserialize " + typeOfT + " from " + abbreviate( json ), e );
+			}
+		}
+
+		@Override
+		public JsonElement serialize(
+				final T src,
+				final Type typeOfSrc,
+				final JsonSerializationContext context )
+		{
+			return delegate.serialize( src, typeOfSrc, context );
+		}
+
+		private static String abbreviate( final JsonElement json )
+		{
+			final String s = String.valueOf( json );
+			return s.length() <= 200 ? s : s.substring( 0, 200 ) + "...";
+		}
 	}
 }
