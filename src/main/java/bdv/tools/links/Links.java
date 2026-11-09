@@ -47,7 +47,7 @@ import net.imglib2.Point;
 import net.imglib2.realtransform.AffineTransform3D;
 import net.imglib2.util.Cast;
 
-class Links
+public class Links
 {
 	private static final Logger LOG = LoggerFactory.getLogger( Links.class );
 
@@ -61,9 +61,64 @@ class Links
 		return gson.toJsonTree( versionAndProperties );
 	}
 
+	/**
+	 * Paste the link {@code json} into a {@code panel}.
+	 * <p>
+	 * The viewer transform is adjusted to the current size of the panel's
+	 * display component.
+	 *
+	 * @throws JsonParseException
+	 * 		if {@code json} is not a valid link
+	 */
 	static void paste(
 			final JsonElement json,
 			final AbstractViewerPanel panel,
+			final PasteSettings pasteSettings,
+			final ResourceManager resources ) throws JsonParseException
+	{
+		paste( json,
+				panel.state(),
+				panel.getConverterSetups(),
+				panel.getDisplayComponent().getWidth(),
+				panel.getDisplayComponent().getHeight(),
+				pasteSettings,
+				resources );
+		panel.requestRepaint();
+	}
+
+	/**
+	 * Paste the link {@code json} into a {@code state}, without requiring a
+	 * viewer panel (e.g., for rendering headless).
+	 * <p>
+	 * The viewer transform is adjusted to a target display of size {@code width} x {@code height}
+	 * (according to {@code pasteSettings.recenterMethod()} and {@code pasteSettings.rescaleMethod()}).
+	 *
+	 * @param json
+	 * 		the link
+	 * @param state
+	 * 		the {@code ViewerState} to modify
+	 * @param converterSetups
+	 * 		the {@code ConverterSetups} for the sources in {@code state}.
+	 * 		{@code ConverterSetup}s for newly loaded sources are added here.
+	 * @param width
+	 * 		width of the target display
+	 * @param height
+	 * 		height of the target display
+	 * @param pasteSettings
+	 * 		which parts of the link to apply, and how
+	 * @param resources
+	 * 		used to match sources in {@code state} to the link, and to load
+	 * 		missing sources.
+	 *
+	 * @throws JsonParseException
+	 * 		if {@code json} is not a valid link
+	 */
+	public static void paste(
+			final JsonElement json,
+			final ViewerState state,
+			final ConverterSetups converterSetups,
+			final int width,
+			final int height,
 			final PasteSettings pasteSettings,
 			final ResourceManager resources ) throws JsonParseException
 	{
@@ -73,8 +128,7 @@ class Links
 		{
 			final BdvPropertiesV0 properties = gson.fromJson( versionAndProperties.properties(), BdvPropertiesV0.class );
 			properties.validateDeserialized();
-			pasteV0( properties, panel, resources, pasteSettings );
-			panel.requestRepaint();
+			pasteV0( properties, state, converterSetups, width, height, resources, pasteSettings );
 		}
 		else
 		{
@@ -100,19 +154,19 @@ class Links
 
 	private static void pasteV0(
 			final BdvPropertiesV0 properties,
-			final AbstractViewerPanel panel,
+			final ViewerState state,
+			final ConverterSetups converterSetups,
+			final int width,
+			final int height,
 			final ResourceManager resources,
 			final PasteSettings pasteSettings )
 	{
-		final ViewerState state = panel.state();
 		synchronized ( state )
 		{
 			if ( pasteSettings.pasteViewerTransform() )
 			{
-				final int panelWidth = panel.getDisplayComponent().getWidth();
-				final int panelHeight = panel.getDisplayComponent().getHeight();
 				final AffineTransform3D transform = adjustedViewerTransform(
-						properties, panelWidth, panelHeight,
+						properties, width, height,
 						pasteSettings.recenterMethod(),
 						pasteSettings.rescaleMethod() );
 				state.setViewerTransform( transform );
@@ -121,7 +175,7 @@ class Links
 			final int[] sourceMapping = getSourceMapping(
 					pasteSettings.sourceMatchingMethod(),
 					properties.sourceSpecs(),
-					state, panel.getConverterSetups(), resources );
+					state, converterSetups, resources );
 
 			// When loading sources from the link, also extend the number of timepoints
 			if ( pasteSettings.sourceMatchingMethod() == BY_SPEC_LOAD_MISSING )
@@ -157,7 +211,7 @@ class Links
 			}
 			if ( pasteSettings.pasteConverterConfigs() )
 			{
-				setConverterConfigs( sourceMapping, properties.converterConfigs(), state.getSources(), panel.getConverterSetups() );
+				setConverterConfigs( sourceMapping, properties.converterConfigs(), state.getSources(), converterSetups );
 			}
 			if ( pasteSettings.pasteSourceVisibility() )
 			{
