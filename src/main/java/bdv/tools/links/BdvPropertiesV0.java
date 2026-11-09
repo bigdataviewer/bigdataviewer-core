@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.IntStream;
 
+import com.google.gson.JsonParseException;
+
 import bdv.tools.brightness.ConverterSetup;
 import bdv.tools.JsonUtils.TypedList;
 import bdv.util.Bounds;
@@ -77,6 +79,55 @@ class BdvPropertiesV0
 		this.activeGroupIndices = getActiveGroupIndices( state );
 		this.panelsize = panelsize.dimensionsAsLongArray();
 		this.mousepos = mousepos.positionAsLongArray();
+	}
+
+	/**
+	 * Check that properties obtained from {@code gson.fromJson(...)} are
+	 * complete and consistent, so that pasting them doesn't fail half-way
+	 * through.
+	 * <p>
+	 * This is only needed after deserialization. Gson's reflective adapter
+	 * first creates an instance with the no-arg constructor, then overwrites
+	 * the fields for each matching JSON attribute. This bypasses the
+	 * constructors, and Gson also writes {@code final} fields (via
+	 * reflection). So, although all fields are {@code final} and initialized
+	 * non-{@code null} by both constructors, after deserialization
+	 * <ul>
+	 * <li>an explicit {@code "transform": null} (etc.) leaves the field
+	 * {@code null},</li>
+	 * <li>arrays such as {@code panelsize} may have the wrong length, and</li>
+	 * <li>the per-source lists ({@code sourceSpecs}, {@code sourceConfigs},
+	 * {@code converterConfigs}) may have different lengths.</li>
+	 * </ul>
+	 * Attributes that are missing from the JSON keep the defaults from the
+	 * no-arg constructor, and are fine.
+	 * <p>
+	 * Instances created with the {@code BdvPropertiesV0(ViewerState, ...)}
+	 * constructor are consistent by construction and don't need this check.
+	 *
+	 * @throws JsonParseException
+	 * 		if properties are missing or inconsistent
+	 */
+	void validateDeserialized() throws JsonParseException
+	{
+		final Object[] required = { transform, displaymode, interpolation, sourceSpecs, sourceConfigs, converterConfigs, activeSourceIndices, groupConfigs, activeGroupIndices, panelsize, mousepos };
+		final String[] names = { "transform", "displaymode", "interpolation", "sourceSpecs", "sourceConfigs", "converterConfigs", "activeSourceIndices", "groupConfigs", "activeGroupIndices", "panelsize", "mousepos" };
+		for ( int i = 0; i < required.length; i++ )
+			if ( required[ i ] == null )
+				throw new JsonParseException( "missing attribute \"" + names[ i ] + "\"" );
+
+		if ( panelsize.length != 2 || panelsize[ 0 ] < 0 || panelsize[ 1 ] < 0 )
+			throw new JsonParseException( "expected \"panelsize\" to be 2 non-negative integers (got " + Arrays.toString( panelsize ) + ")" );
+		if ( mousepos.length != 2 )
+			throw new JsonParseException( "expected \"mousepos\" to be 2 integers (got " + Arrays.toString( mousepos ) + ")" );
+
+		final int numSources = sourceSpecs.list().size();
+		if ( sourceConfigs.list().size() != numSources || converterConfigs.size() != numSources )
+			throw new JsonParseException( "expected \"sourceSpecs\", \"sourceConfigs\", and \"converterConfigs\" to have the same length (got "
+					+ numSources + ", " + sourceConfigs.list().size() + ", " + converterConfigs.size() + ")" );
+
+		if ( groupConfigs.contains( null ) )
+			throw new JsonParseException( "unexpected null in \"groupConfigs\"" );
 	}
 
 	private static int getCurrentSourceIndex( final ViewerState state )

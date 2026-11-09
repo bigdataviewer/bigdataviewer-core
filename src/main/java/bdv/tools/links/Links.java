@@ -72,6 +72,7 @@ class Links
 		if ( versionAndProperties.version() == 0 )
 		{
 			final BdvPropertiesV0 properties = gson.fromJson( versionAndProperties.properties(), BdvPropertiesV0.class );
+			properties.validateDeserialized();
 			pasteV0( properties, panel, resources, pasteSettings );
 			panel.requestRepaint();
 		}
@@ -117,15 +118,22 @@ class Links
 				state.setViewerTransform( transform );
 			}
 
-			if ( pasteSettings.pasteCurrentTimepoint() )
-			{
-				state.setCurrentTimepoint( properties.timepoint() );
-			}
-
 			final int[] sourceMapping = getSourceMapping(
 					pasteSettings.sourceMatchingMethod(),
 					properties.sourceSpecs(),
 					state, panel.getConverterSetups(), resources );
+
+			if ( pasteSettings.pasteCurrentTimepoint() )
+			{
+				try
+				{
+					state.setCurrentTimepoint( properties.timepoint() );
+				}
+				catch ( IllegalArgumentException ignored )
+				{
+					// NB: state doesn't have the requested timepoint. ignore for now.
+				}
+			}
 
 			if ( pasteSettings.pasteSourceConfigs() )
 			{
@@ -450,7 +458,8 @@ class Links
 			t = shift( t, sx, sy );
 		}
 
-		if ( rescaleMethod != RescaleMethod.NONE )
+		final boolean hasPanelSize = properties.panelsize().dimension( 0 ) > 0 && properties.panelsize().dimension( 1 ) > 0;
+		if ( rescaleMethod != RescaleMethod.NONE && hasPanelSize )
 		{
 			// scale factors to fit panel width and height
 			final double scaleX = ( double ) panelWidth / properties.panelsize().dimension( 0 );
