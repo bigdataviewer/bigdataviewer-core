@@ -126,7 +126,7 @@ public interface TransformedSourceResource
 				final JsonDeserializationContext context )
 		{
 			final JsonObject obj = asObject( json );
-			final ResourceSpec< SourceAndConverter< ? > > delegateSpec = getTyped( context, obj, "delegate" );
+			final ResourceSpec< SourceAndConverter< ? > > delegateSpec = getTyped( context, obj, "delegate", ResourceSpec.class );
 			return new Spec( delegateSpec );
 		}
 
@@ -152,7 +152,7 @@ public interface TransformedSourceResource
 				final JsonDeserializationContext context )
 		{
 			final JsonObject obj = asObject( json );
-			final ResourceConfig delegateConfig = getTyped( context, obj, "delegate" );
+			final ResourceConfig delegateConfig = getTyped( context, obj, "delegate", ResourceConfig.class );
 			final AffineTransform3D transform = context.deserialize( getMember( obj, "transform" ), AffineTransform3D.class );
 			return new Config( delegateConfig, transform );
 		}

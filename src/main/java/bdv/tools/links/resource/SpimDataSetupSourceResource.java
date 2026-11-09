@@ -123,7 +123,7 @@ public interface SpimDataSetupSourceResource
 				final JsonDeserializationContext context )
 		{
 			final JsonObject obj = asObject( json );
-			final ResourceSpec< ? extends AbstractSpimData< ? > > spimDataSpec = getTyped( context, obj, "spimData" );
+			final ResourceSpec< ? extends AbstractSpimData< ? > > spimDataSpec = getTyped( context, obj, "spimData", ResourceSpec.class );
 			final int setupId = getInt( obj, "setupId" );
 			final String name = getString( obj, "name" );
 			return new Spec( spimDataSpec, setupId, name );
@@ -153,7 +153,7 @@ public interface SpimDataSetupSourceResource
 				final JsonDeserializationContext context )
 		{
 			final JsonObject obj = asObject( json );
-			final ResourceConfig spimDataConfig = getTyped( context, obj, "spimData" );
+			final ResourceConfig spimDataConfig = getTyped( context, obj, "spimData", ResourceConfig.class );
 			return new Config( spimDataConfig );
 		}
 

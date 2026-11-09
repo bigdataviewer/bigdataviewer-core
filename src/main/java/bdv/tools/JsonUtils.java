@@ -4,6 +4,7 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +27,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
+import com.google.gson.reflect.TypeToken;
 
 import net.imglib2.util.Cast;
 
@@ -166,9 +168,13 @@ public class JsonUtils
 					final Type typeOfT,
 					final JsonDeserializationContext context )
 			{
+				// element type T, e.g., ResourceSpec< ? > for TypedList< ResourceSpec< ? > >
+				final Type elementType = typeOfT instanceof ParameterizedType
+						? ( ( ParameterizedType ) typeOfT ).getActualTypeArguments()[ 0 ]
+						: Object.class;
 				final List< T > list = new ArrayList<>();
 				for ( final JsonElement element : asArray( json ) )
-					list.add( asTyped( context, element ) );
+					list.add( asTyped( context, element, elementType ) );
 				return new TypedList<>( list );
 			}
 
@@ -502,11 +508,15 @@ public class JsonUtils
 	 * Deserializes {@code json} as a {@link Typed Typed<T>} and returns the wrapped {@code T}.
 	 *
 	 * @throws JsonParseException
-	 * 		if {@code json} cannot be deserialized
+	 * 		if {@code json} cannot be deserialized, or the wrapped object is not an instance of (the raw type of) {@code typeOfT}
 	 */
-	public static < T > T asTyped( final JsonDeserializationContext context, final JsonElement json ) throws JsonParseException
+	public static < T > T asTyped( final JsonDeserializationContext context, final JsonElement json, final Type typeOfT ) throws JsonParseException
 	{
-		return context.< Typed< T > >deserialize( asObject( json ), Typed.class ).get();
+		final Object obj = context.< Typed< ? > >deserialize( asObject( json ), Typed.class ).get();
+		final Class< ? > rawType = TypeToken.get( typeOfT ).getRawType();
+		if ( !rawType.isInstance( obj ) )
+			throw new JsonParseException( "expected a " + rawType.getSimpleName() + " (got " + abbreviate( json ) + ")" );
+		return Cast.unchecked( obj );
 	}
 
 	/**
@@ -515,9 +525,9 @@ public class JsonUtils
 	 * @throws JsonParseException
 	 * 		if the attribute is missing or cannot be deserialized
 	 */
-	public static < T > T getTyped( final JsonDeserializationContext context, final JsonObject obj, final String key ) throws JsonParseException
+	public static < T > T getTyped( final JsonDeserializationContext context, final JsonObject obj, final String key, final Type typeOfT ) throws JsonParseException
 	{
-		return asTyped( context, getMember( obj, key ) );
+		return asTyped( context, getMember( obj, key ), typeOfT );
 	}
 
 	static String abbreviate( final JsonElement json )
