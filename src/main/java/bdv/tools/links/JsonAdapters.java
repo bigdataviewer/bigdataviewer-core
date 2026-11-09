@@ -17,28 +17,6 @@ import bdv.viewer.Interpolation;
 
 class JsonAdapters
 {
-	@JsonUtils.JsonIo( jsonType = "BdvPropertiesV0.Anchor", type = BdvPropertiesV0.Anchor.class )
-	public static class AnchorAdapter implements JsonDeserializer< BdvPropertiesV0.Anchor >, JsonSerializer< BdvPropertiesV0.Anchor >
-	{
-		@Override
-		public BdvPropertiesV0.Anchor deserialize(
-				final JsonElement json,
-				final Type typeOfT,
-				final JsonDeserializationContext context )
-		{
-			return BdvPropertiesV0.Anchor.fromString( json.getAsString() );
-		}
-
-		@Override
-		public JsonElement serialize(
-				final BdvPropertiesV0.Anchor src,
-				final Type typeOfSrc,
-				final JsonSerializationContext context )
-		{
-			return new JsonPrimitive( src.toString() );
-		}
-	}
-
 	@JsonUtils.JsonIo( jsonType = "BdvPropertiesV0.SourceConverterConfig", type = BdvPropertiesV0.SourceConverterConfig.class )
 	public static class SourceConverterConfigAdapter implements JsonDeserializer< BdvPropertiesV0.SourceConverterConfig >, JsonSerializer< BdvPropertiesV0.SourceConverterConfig >
 	{

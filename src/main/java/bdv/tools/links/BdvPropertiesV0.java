@@ -38,35 +38,6 @@ class BdvPropertiesV0
 	private final long[] panelsize;
 	private final long[] mousepos;
 
-	private final Anchor anchor;
-
-	public enum Anchor
-	{
-		CENTER( "center" ),
-		MOUSE( "mouse" );
-
-		private final String label;
-
-		Anchor( final String label )
-		{
-			this.label = label;
-		}
-
-		@Override
-		public String toString()
-		{
-			return label;
-		}
-
-		public static Anchor fromString( final String string )
-		{
-			for ( final Anchor value : values() )
-				if ( value.toString().equals( string ) )
-					return value;
-			return null;
-		}
-	}
-
 	public BdvPropertiesV0()
 	{
 		transform = new AffineTransform3D();
@@ -83,7 +54,6 @@ class BdvPropertiesV0
 		activeGroupIndices = new int[ 0 ];
 		panelsize = new long[ 2 ];
 		mousepos = new long[ 2 ];
-		anchor = Anchor.CENTER;
 	}
 
 	public BdvPropertiesV0(
@@ -107,7 +77,6 @@ class BdvPropertiesV0
 		this.activeGroupIndices = getActiveGroupIndices( state );
 		this.panelsize = panelsize.dimensionsAsLongArray();
 		this.mousepos = mousepos.positionAsLongArray();
-		this.anchor = Anchor.CENTER;
 	}
 
 	private static int getCurrentSourceIndex( final ViewerState state )
@@ -204,11 +173,6 @@ class BdvPropertiesV0
 		return Point.wrap( mousepos );
 	}
 
-	public Anchor getAnchor()
-	{
-		return anchor;
-	}
-
 	public DisplayMode displaymode()
 	{
 		return displaymode;
@@ -277,7 +241,6 @@ class BdvPropertiesV0
 				", activeGroupIndices=" + Arrays.toString( activeGroupIndices ) +
 				", panelsize=" + Arrays.toString( panelsize ) +
 				", mousepos=" + Arrays.toString( mousepos ) +
-				", anchor=" + anchor +
 				'}';
 	}
 
