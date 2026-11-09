@@ -1,5 +1,11 @@
 package bdv.tools.links;
 
+import static bdv.tools.JsonUtils.asObject;
+import static bdv.tools.JsonUtils.asString;
+import static bdv.tools.JsonUtils.getDouble;
+import static bdv.tools.JsonUtils.getMemberOptional;
+import static bdv.tools.JsonUtils.getString;
+
 import java.lang.reflect.Type;
 
 import com.google.gson.JsonDeserializationContext;
@@ -26,14 +32,13 @@ class JsonAdapters
 				final Type typeOfT,
 				final JsonDeserializationContext context )
 		{
-			JsonObject obj = json.getAsJsonObject();
-			final JsonElement colorElement = obj.get( "color" );
-			final boolean hasColor = colorElement != null;
-			final int color = hasColor ? (int) Long.parseLong( colorElement.getAsString(), 16 ) : -1;
-			final double min = obj.get("min").getAsDouble();
-			final double max = obj.get("max").getAsDouble();
-			final double minBound = obj.get("minBound").getAsDouble();
-			final double maxBound = obj.get("maxBound").getAsDouble();
+			final JsonObject obj = asObject( json );
+			final boolean hasColor = getMemberOptional( obj, "color" ) != null;
+			final int color = hasColor ? ( int ) Long.parseLong( getString( obj, "color" ), 16 ) : -1;
+			final double min = getDouble( obj, "min" );
+			final double max = getDouble( obj, "max" );
+			final double minBound = getDouble( obj, "minBound" );
+			final double maxBound = getDouble( obj, "maxBound" );
 			return new BdvPropertiesV0.SourceConverterConfig( hasColor, color, min, max, minBound, maxBound );
 		}
 
@@ -63,10 +68,9 @@ class JsonAdapters
 				final Type typeOfT,
 				final JsonDeserializationContext context )
 		{
-			JsonObject obj = json.getAsJsonObject();
-			final JsonElement nameElement = obj.get( "name" );
-			final String name = ( nameElement == null || nameElement.isJsonNull() ) ? null : nameElement.getAsString();
-			final int[] sources = context.deserialize( obj.get( "sources" ), int[].class );
+			final JsonObject obj = asObject( json );
+			final String name = getMemberOptional( obj, "name" ) == null ? null : getString( obj, "name" );
+			final int[] sources = context.deserialize( getMemberOptional( obj, "sources" ), int[].class );
 			return new BdvPropertiesV0.SourceGroupConfig( name, sources == null ? new int[ 0 ] : sources );
 		}
 
@@ -93,7 +97,7 @@ class JsonAdapters
 				final Type typeOfT,
 				final JsonDeserializationContext context ) throws JsonParseException
 		{
-			final String mode = json.getAsString();
+			final String mode = asString( json );
 			switch ( mode )
 			{
 			case "single-source":
@@ -146,7 +150,7 @@ class JsonAdapters
 				final Type typeOfT,
 				final JsonDeserializationContext context ) throws JsonParseException
 		{
-			final String mode = json.getAsString();
+			final String mode = asString( json );
 			switch ( mode )
 			{
 			case "nearest":

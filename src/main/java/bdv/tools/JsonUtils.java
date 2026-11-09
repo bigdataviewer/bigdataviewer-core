@@ -102,10 +102,10 @@ public class JsonUtils
 					final Type typeOfT,
 					final JsonDeserializationContext context )
 			{
-				final JsonObject obj = json.getAsJsonObject();
-				final String jsonType = obj.get( "type" ).getAsString();
+				final JsonObject obj = asObject( json );
+				final String jsonType = getString( obj, "type" );
 				final Type type = JsonIos.typeFor( jsonType );
-				return typed( context.deserialize( obj.get( "data" ), type ) );
+				return typed( context.deserialize( getMember( obj, "data" ), type ) );
 			}
 
 			@Override
@@ -167,11 +167,8 @@ public class JsonUtils
 					final JsonDeserializationContext context )
 			{
 				final List< T > list = new ArrayList<>();
-				for ( JsonElement element : json.getAsJsonArray() )
-				{
-					final Typed< T > typed = context.deserialize( element, Typed.class );
-					list.add( typed.get() );
-				}
+				for ( final JsonElement element : asArray( json ) )
+					list.add( asTyped( context, element ) );
 				return new TypedList<>( list );
 			}
 
@@ -239,7 +236,7 @@ public class JsonUtils
 			build();
 			final Type type = jsonType_to_Type.get( jsonType );
 			if ( type == null )
-				throw new RuntimeException( "could not find JsonIo implementation for " + jsonType );
+				throw new JsonParseException( "could not find JsonIo implementation for type \"" + jsonType + "\"" );
 			return type;
 		}
 
@@ -328,11 +325,204 @@ public class JsonUtils
 		{
 			return delegate.serialize( src, typeOfSrc, context );
 		}
+	}
 
-		private static String abbreviate( final JsonElement json )
+	/*
+	 * Helpers for implementing JsonDeserializers.
+	 *
+	 * These check that the input has the expected structure and throw a
+	 * JsonParseException with a descriptive message if it does not. (Instead
+	 * of the IllegalStateException, NullPointerException, etc., that would
+	 * result from using JsonElement.getAsXxx() directly.)
+	 */
+
+	/**
+	 * Returns the attribute {@code key} of {@code obj}, or {@code null} if the
+	 * attribute is missing or {@code null}.
+	 */
+	public static JsonElement getMemberOptional( final JsonObject obj, final String key )
+	{
+		final JsonElement element = obj.get( key );
+		return ( element == null || element.isJsonNull() ) ? null : element;
+	}
+
+	/**
+	 * Returns the attribute {@code key} of {@code obj}.
+	 *
+	 * @throws JsonParseException
+	 * 		if the attribute is missing or {@code null}
+	 */
+	public static JsonElement getMember( final JsonObject obj, final String key ) throws JsonParseException
+	{
+		final JsonElement element = getMemberOptional( obj, key );
+		if ( element == null )
+			throw new JsonParseException( "missing attribute \"" + key + "\" in " + abbreviate( obj ) );
+		return element;
+	}
+
+	/**
+	 * Returns {@code json} as a {@code JsonObject}.
+	 *
+	 * @throws JsonParseException
+	 * 		if {@code json} is not an object
+	 */
+	public static JsonObject asObject( final JsonElement json ) throws JsonParseException
+	{
+		if ( json == null || !json.isJsonObject() )
+			throw new JsonParseException( "expected an object (got " + abbreviate( json ) + ")" );
+		return json.getAsJsonObject();
+	}
+
+	/**
+	 * Returns the attribute {@code key} of {@code obj} as a {@code JsonObject}.
+	 *
+	 * @throws JsonParseException
+	 * 		if the attribute is missing or not an object
+	 */
+	public static JsonObject getObject( final JsonObject obj, final String key ) throws JsonParseException
+	{
+		return asObject( getMember( obj, key ) );
+	}
+
+	/**
+	 * Returns {@code json} as a {@code JsonArray}.
+	 *
+	 * @throws JsonParseException
+	 * 		if {@code json} is not an array
+	 */
+	public static JsonArray asArray( final JsonElement json ) throws JsonParseException
+	{
+		if ( json == null || !json.isJsonArray() )
+			throw new JsonParseException( "expected an array (got " + abbreviate( json ) + ")" );
+		return json.getAsJsonArray();
+	}
+
+	/**
+	 * Returns {@code json} as a {@code String}.
+	 *
+	 * @throws JsonParseException
+	 * 		if {@code json} is not a string
+	 */
+	public static String asString( final JsonElement json ) throws JsonParseException
+	{
+		if ( json == null || !json.isJsonPrimitive() || !json.getAsJsonPrimitive().isString() )
+			throw new JsonParseException( "expected a string (got " + abbreviate( json ) + ")" );
+		return json.getAsString();
+	}
+
+	/**
+	 * Returns the attribute {@code key} of {@code obj} as a {@code String}.
+	 *
+	 * @throws JsonParseException
+	 * 		if the attribute is missing or not a string
+	 */
+	public static String getString( final JsonObject obj, final String key ) throws JsonParseException
+	{
+		return asString( getMember( obj, key ) );
+	}
+
+	/**
+	 * Returns {@code json} as a {@code Number}.
+	 *
+	 * @throws JsonParseException
+	 * 		if {@code json} is not a number
+	 */
+	public static Number asNumber( final JsonElement json ) throws JsonParseException
+	{
+		if ( json == null || !json.isJsonPrimitive() || !json.getAsJsonPrimitive().isNumber() )
+			throw new JsonParseException( "expected a number (got " + abbreviate( json ) + ")" );
+		return json.getAsNumber();
+	}
+
+	/**
+	 * Returns the attribute {@code key} of {@code obj} as a {@code Number}.
+	 * Use {@code .intValue()}, {@code .doubleValue()}, etc. on the result.
+	 *
+	 * @throws JsonParseException
+	 * 		if the attribute is missing or not a number
+	 */
+	public static Number getNumber( final JsonObject obj, final String key ) throws JsonParseException
+	{
+		return asNumber( getMember( obj, key ) );
+	}
+
+	/**
+	 * Returns {@code json} as an {@code int}.
+	 *
+	 * @throws JsonParseException
+	 * 		if {@code json} is not a number that can be represented exactly as {@code int}
+	 */
+	public static int asInt( final JsonElement json ) throws JsonParseException
+	{
+		asNumber( json );
+		try
 		{
-			final String s = String.valueOf( json );
-			return s.length() <= 200 ? s : s.substring( 0, 200 ) + "...";
+			return json.getAsBigDecimal().intValueExact();
 		}
+		catch ( final ArithmeticException e )
+		{
+			throw new JsonParseException( "expected an integer (got " + abbreviate( json ) + ")" );
+		}
+	}
+
+	/**
+	 * Returns the attribute {@code key} of {@code obj} as an {@code int}.
+	 *
+	 * @throws JsonParseException
+	 * 		if the attribute is missing or not a number that can be represented exactly as {@code int}
+	 */
+	public static int getInt( final JsonObject obj, final String key ) throws JsonParseException
+	{
+		return asInt( getMember( obj, key ) );
+	}
+
+	/**
+	 * Returns {@code json} as a {@code double}.
+	 *
+	 * @throws JsonParseException
+	 * 		if {@code json} is not a number
+	 */
+	public static double asDouble( final JsonElement json ) throws JsonParseException
+	{
+		return asNumber( json ).doubleValue();
+	}
+
+	/**
+	 * Returns the attribute {@code key} of {@code obj} as a {@code double}.
+	 *
+	 * @throws JsonParseException
+	 * 		if the attribute is missing or not a number
+	 */
+	public static double getDouble( final JsonObject obj, final String key ) throws JsonParseException
+	{
+		return asDouble( getMember( obj, key ) );
+	}
+
+	/**
+	 * Deserializes {@code json} as a {@link Typed Typed<T>} and returns the wrapped {@code T}.
+	 *
+	 * @throws JsonParseException
+	 * 		if {@code json} cannot be deserialized
+	 */
+	public static < T > T asTyped( final JsonDeserializationContext context, final JsonElement json ) throws JsonParseException
+	{
+		return context.< Typed< T > >deserialize( asObject( json ), Typed.class ).get();
+	}
+
+	/**
+	 * Deserializes the attribute {@code key} of {@code obj} as a {@link Typed Typed<T>} and returns the wrapped {@code T}.
+	 *
+	 * @throws JsonParseException
+	 * 		if the attribute is missing or cannot be deserialized
+	 */
+	public static < T > T getTyped( final JsonDeserializationContext context, final JsonObject obj, final String key ) throws JsonParseException
+	{
+		return asTyped( context, getMember( obj, key ) );
+	}
+
+	static String abbreviate( final JsonElement json )
+	{
+		final String s = String.valueOf( json );
+		return s.length() <= 200 ? s : s.substring( 0, 200 ) + "...";
 	}
 }

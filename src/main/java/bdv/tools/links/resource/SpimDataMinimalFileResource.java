@@ -1,5 +1,8 @@
 package bdv.tools.links.resource;
 
+import static bdv.tools.JsonUtils.asObject;
+import static bdv.tools.JsonUtils.getString;
+
 import java.io.File;
 import java.lang.reflect.Type;
 import java.net.URI;
@@ -108,8 +111,8 @@ public interface SpimDataMinimalFileResource
 				final Type typeOfT,
 				final JsonDeserializationContext context )
 		{
-			final JsonObject obj = json.getAsJsonObject();
-			final String uri = obj.get( "uri" ).getAsString();
+			final JsonObject obj = asObject( json );
+			final String uri = getString( obj, "uri" );
 			return new Spec( URI.create( uri ) );
 		}
 

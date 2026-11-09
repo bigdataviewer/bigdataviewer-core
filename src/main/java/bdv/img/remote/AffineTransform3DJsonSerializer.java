@@ -47,6 +47,8 @@ public class AffineTransform3DJsonSerializer implements JsonDeserializer< Affine
 	public AffineTransform3D deserialize( final JsonElement json, final Type typeOfT, final JsonDeserializationContext context ) throws JsonParseException
 	{
 		final double[] data = context.deserialize( json, double[].class );
+		if ( data == null || data.length != 12 )
+			throw new JsonParseException( "expected an array of 12 numbers (got " + json + ")" );
 		final AffineTransform3D t = new AffineTransform3D();
 		t.set( data );
 		return t;

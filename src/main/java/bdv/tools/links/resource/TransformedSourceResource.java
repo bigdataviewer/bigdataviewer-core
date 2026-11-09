@@ -1,5 +1,8 @@
 package bdv.tools.links.resource;
 
+import static bdv.tools.JsonUtils.asObject;
+import static bdv.tools.JsonUtils.getMember;
+import static bdv.tools.JsonUtils.getTyped;
 import static bdv.tools.JsonUtils.typed;
 
 import java.lang.reflect.Type;
@@ -13,7 +16,6 @@ import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
 import bdv.BigDataViewer;
-import bdv.tools.JsonUtils.Typed;
 import bdv.tools.JsonUtils;
 import bdv.tools.links.ResourceConfig;
 import bdv.tools.links.ResourceCreationException;
@@ -123,9 +125,9 @@ public interface TransformedSourceResource
 				final Type typeOfT,
 				final JsonDeserializationContext context )
 		{
-			final JsonObject obj = json.getAsJsonObject();
-			final Typed< ResourceSpec< SourceAndConverter< ? > > > delegateSpec = context.deserialize( obj.get( "delegate" ), Typed.class );
-			return new Spec( delegateSpec.get() );
+			final JsonObject obj = asObject( json );
+			final ResourceSpec< SourceAndConverter< ? > > delegateSpec = getTyped( context, obj, "delegate" );
+			return new Spec( delegateSpec );
 		}
 
 		@Override
@@ -149,10 +151,10 @@ public interface TransformedSourceResource
 				final Type typeOfT,
 				final JsonDeserializationContext context )
 		{
-			final JsonObject obj = json.getAsJsonObject();
-			final Typed< ResourceConfig > delegateConfig = context.deserialize( obj.get( "delegate" ), Typed.class );
-			final AffineTransform3D transform = context.deserialize( obj.get( "transform" ), AffineTransform3D.class );
-			return new Config( delegateConfig.get(), transform );
+			final JsonObject obj = asObject( json );
+			final ResourceConfig delegateConfig = getTyped( context, obj, "delegate" );
+			final AffineTransform3D transform = context.deserialize( getMember( obj, "transform" ), AffineTransform3D.class );
+			return new Config( delegateConfig, transform );
 		}
 
 		@Override

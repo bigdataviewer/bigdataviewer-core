@@ -1,5 +1,9 @@
 package bdv.tools.links.resource;
 
+import static bdv.tools.JsonUtils.asObject;
+import static bdv.tools.JsonUtils.getInt;
+import static bdv.tools.JsonUtils.getString;
+import static bdv.tools.JsonUtils.getTyped;
 import static bdv.tools.JsonUtils.typed;
 
 import java.lang.reflect.Type;
@@ -13,7 +17,6 @@ import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
 import bdv.BigDataViewer;
-import bdv.tools.JsonUtils.Typed;
 import bdv.tools.JsonUtils;
 import bdv.tools.links.ResourceConfig;
 import bdv.tools.links.ResourceCreationException;
@@ -119,11 +122,11 @@ public interface SpimDataSetupSourceResource
 				final Type typeOfT,
 				final JsonDeserializationContext context )
 		{
-			final JsonObject obj = json.getAsJsonObject();
-			final Typed< ResourceSpec< ? extends AbstractSpimData< ? > > > spimDataSpec = context.deserialize( obj.get( "spimData" ), Typed.class );
-			final int setupId = obj.get( "setupId" ).getAsInt();
-			final String name = obj.get( "name" ).getAsString();
-			return new Spec( spimDataSpec.get(), setupId, name );
+			final JsonObject obj = asObject( json );
+			final ResourceSpec< ? extends AbstractSpimData< ? > > spimDataSpec = getTyped( context, obj, "spimData" );
+			final int setupId = getInt( obj, "setupId" );
+			final String name = getString( obj, "name" );
+			return new Spec( spimDataSpec, setupId, name );
 		}
 
 		@Override
@@ -149,9 +152,9 @@ public interface SpimDataSetupSourceResource
 				final Type typeOfT,
 				final JsonDeserializationContext context )
 		{
-			final JsonObject obj = json.getAsJsonObject();
-			final Typed< ResourceConfig > spimDataConfig = context.deserialize( obj.get( "spimData" ), Typed.class );
-			return new Config( spimDataConfig.get() );
+			final JsonObject obj = asObject( json );
+			final ResourceConfig spimDataConfig = getTyped( context, obj, "spimData" );
+			return new Config( spimDataConfig );
 		}
 
 		@Override

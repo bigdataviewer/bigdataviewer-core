@@ -1,6 +1,9 @@
 package bdv.tools.links;
 
 import static bdv.BigDataViewer.createConverterSetup;
+import static bdv.tools.JsonUtils.asObject;
+import static bdv.tools.JsonUtils.getInt;
+import static bdv.tools.JsonUtils.getObject;
 import static bdv.tools.links.PasteSettings.RecenterMethod.MOUSE_POS;
 import static bdv.tools.links.PasteSettings.RecenterMethod.PANEL_CENTER;
 import static bdv.tools.links.PasteSettings.SourceMatchingMethod.BY_INDEX;
@@ -514,24 +517,9 @@ class Links
 					final Type typeOfT,
 					final JsonDeserializationContext context ) throws JsonParseException
 			{
-				if ( !json.isJsonObject() )
-					throw new JsonParseException( "expected object. (got \"" + json + "\")" );
-
-				final JsonElement bdv = json.getAsJsonObject().get( "bdv" );
-				if ( bdv == null || !bdv.isJsonObject() )
-					throw new JsonParseException( "expected a \"bdv\" object attribute. (got \"" + json + "\")" );
-
-				final int version;
-				try {
-					version = bdv.getAsJsonObject().get( "version" ).getAsInt();
-				} catch ( final Exception e ) {
-					throw new JsonParseException( "expected a \"version\" integer attribute. (got \"" + bdv + "\")" );
-				}
-
-				final JsonElement properties = bdv.getAsJsonObject().get( "properties" );
-				if ( properties == null || !properties.isJsonObject() )
-					throw new JsonParseException( "expected a \"properties\" object attribute. (got \"" + bdv + "\")" );
-
+				final JsonObject bdv = getObject( asObject( json ), "bdv" );
+				final int version = getInt( bdv, "version" );
+				final JsonObject properties = getObject( bdv, "properties" );
 				return new VersionAndProperties( version, properties );
 			}
 
