@@ -123,6 +123,12 @@ class Links
 					properties.sourceSpecs(),
 					state, panel.getConverterSetups(), resources );
 
+			// When loading sources from the link, also extend the number of timepoints
+			if ( pasteSettings.sourceMatchingMethod() == BY_SPEC_LOAD_MISSING )
+			{
+				state.setNumTimepoints( Math.max( state.getNumTimepoints(), properties.numTimepoints() ) );
+			}
+
 			if ( pasteSettings.pasteCurrentTimepoint() )
 			{
 				try

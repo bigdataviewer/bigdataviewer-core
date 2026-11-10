@@ -27,6 +27,7 @@ class BdvPropertiesV0
 {
 	private final AffineTransform3D transform;
 	private final int timepoint;
+	private final int numTimepoints;
 	private final DisplayMode displaymode;
 	private final Interpolation interpolation;
 	private final TypedList< ResourceSpec< ? > > sourceSpecs;
@@ -44,6 +45,7 @@ class BdvPropertiesV0
 	{
 		transform = new AffineTransform3D();
 		timepoint = 0;
+		numTimepoints = 0;
 		displaymode = DisplayMode.SINGLE;
 		interpolation = Interpolation.NLINEAR;
 		sourceSpecs = new TypedList<>();
@@ -67,6 +69,7 @@ class BdvPropertiesV0
 	{
 		this.transform = state.getViewerTransform();
 		this.timepoint = state.getCurrentTimepoint();
+		this.numTimepoints = state.getNumTimepoints();
 		this.displaymode = state.getDisplayMode();
 		this.interpolation = state.getInterpolation();
 		this.sourceSpecs = getSourceSpecs( state.getSources(), resources );
@@ -219,6 +222,11 @@ class BdvPropertiesV0
 		return FinalDimensions.wrap( panelsize );
 	}
 
+	public int numTimepoints()
+	{
+		return numTimepoints;
+	}
+
 	public Point mousepos()
 	{
 		return Point.wrap( mousepos );
@@ -280,6 +288,7 @@ class BdvPropertiesV0
 		return "BdvPropertiesV0{" +
 				"transform=" + transform +
 				", timepoint=" + timepoint +
+				", numTimepoints=" + numTimepoints +
 				", displaymode=" + displaymode +
 				", interpolation=" + interpolation +
 				", sourceSpecs =" + sourceSpecs +
