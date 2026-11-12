@@ -257,11 +257,11 @@ public class RecordMovieDialog extends DelayedPackDialog implements OverlayRende
 
 		final AffineTransform3D affine = new AffineTransform3D();
 		renderState.getViewerTransform( affine );
-		affine.set( affine.get( 0, 3 ) - canvasW / 2, 0, 3 );
-		affine.set( affine.get( 1, 3 ) - canvasH / 2, 1, 3 );
+		affine.set( affine.get( 0, 3 ) - ( canvasW - 1 ) / 2.0, 0, 3 );
+		affine.set( affine.get( 1, 3 ) - ( canvasH - 1 ) / 2.0, 1, 3 );
 		affine.scale( ( double ) width / canvasW );
-		affine.set( affine.get( 0, 3 ) + width / 2, 0, 3 );
-		affine.set( affine.get( 1, 3 ) + height / 2, 1, 3 );
+		affine.set( affine.get( 0, 3 ) + ( width - 1 ) / 2.0, 0, 3 );
+		affine.set( affine.get( 1, 3 ) + ( height - 1 ) / 2.0, 1, 3 );
 		renderState.setViewerTransform( affine );
 
 		final ScaleBarOverlayRenderer scalebar = Prefs.showScaleBarInMovie() ? new ScaleBarOverlayRenderer() : null;

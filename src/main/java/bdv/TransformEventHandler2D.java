@@ -201,9 +201,9 @@ public class TransformEventHandler2D implements TransformEventHandler
 
 	/**
 	 * Screen coordinates to keep centered while zooming or rotating with the
-	 * keyboard. These are set to <em>(canvasW/2, canvasH/2)</em>
+	 * keyboard. These are set to <em>((canvasW-1)/2, (canvasH-1)/2)</em>
 	 */
-	private int centerX = 0, centerY = 0;
+	private double centerX = 0, centerY = 0;
 
 	private final TransformState transform;
 
@@ -286,17 +286,17 @@ public class TransformEventHandler2D implements TransformEventHandler
 		if ( updateTransform )
 		{
 			final AffineTransform3D affine = transform.get();
-			affine.set( affine.get( 0, 3 ) - canvasW / 2, 0, 3 );
-			affine.set( affine.get( 1, 3 ) - canvasH / 2, 1, 3 );
+			affine.set( affine.get( 0, 3 ) - ( canvasW - 1 ) / 2.0, 0, 3 );
+			affine.set( affine.get( 1, 3 ) - ( canvasH - 1 ) / 2.0, 1, 3 );
 			affine.scale( ( double ) width / canvasW );
-			affine.set( affine.get( 0, 3 ) + width / 2, 0, 3 );
-			affine.set( affine.get( 1, 3 ) + height / 2, 1, 3 );
+			affine.set( affine.get( 0, 3 ) + ( width - 1 ) / 2.0, 0, 3 );
+			affine.set( affine.get( 1, 3 ) + ( height - 1 ) / 2.0, 1, 3 );
 			transform.set( affine );
 		}
 		canvasW = width;
 		canvasH = height;
-		centerX = width / 2;
-		centerY = height / 2;
+		centerX = ( width - 1 ) / 2.0;
+		centerY = ( height - 1 ) / 2.0;
 	}
 
 	/**

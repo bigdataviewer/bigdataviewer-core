@@ -100,8 +100,8 @@ public class InitializeViewerState
 	public static AffineTransform3D initTransform( final int viewerWidth, final int viewerHeight, final boolean zoomedIn, final ViewerState state )
 	{
 		final AffineTransform3D viewerTransform = new AffineTransform3D();
-		final double cX = viewerWidth / 2.0;
-		final double cY = viewerHeight / 2.0;
+		final double cX = ( viewerWidth - 1 ) / 2.0;
+		final double cY = ( viewerHeight - 1 ) / 2.0;
 
 		final SourceAndConverter< ? > current = state.getCurrentSource();
 		if ( current == null )
@@ -151,8 +151,8 @@ public class InitializeViewerState
 		final double[] pScreen = new double[ 3 ];
 		sourceTransform.apply( pSource, pGlobal );
 		viewerTransform.apply( pGlobal, pScreen );
-		final double scaleX = cX / pScreen[ 0 ];
-		final double scaleY = cY / pScreen[ 1 ];
+		final double scaleX = viewerWidth / ( 2 * pScreen[ 0 ] );
+		final double scaleY = viewerHeight / ( 2 * pScreen[ 1 ] );
 		final double scale;
 		if ( zoomedIn )
 			scale = Math.max( scaleX, scaleY );
@@ -161,8 +161,8 @@ public class InitializeViewerState
 		viewerTransform.scale( scale );
 
 		// window center offset
-		viewerTransform.set( viewerTransform.get( 0, 3 ) + cX - 0.5, 0, 3 );
-		viewerTransform.set( viewerTransform.get( 1, 3 ) + cY - 0.5, 1, 3 );
+		viewerTransform.set( viewerTransform.get( 0, 3 ) + cX, 0, 3 );
+		viewerTransform.set( viewerTransform.get( 1, 3 ) + cY, 1, 3 );
 		return viewerTransform;
 	}
 
