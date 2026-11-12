@@ -506,8 +506,8 @@ public class Links
 		if ( recenterMethod == PANEL_CENTER )
 		{
 			// shift it to the center of the panel that it was copied from
-			final long sx = properties.panelsize().dimension( 0 ) / 2;
-			final long sy = properties.panelsize().dimension( 1 ) / 2;
+			final double sx = ( properties.panelsize().dimension( 0 ) - 1 ) / 2.0;
+			final double sy = ( properties.panelsize().dimension( 1 ) - 1 ) / 2.0;
 			t = shift( t, sx, sy );
 		}
 		else if ( recenterMethod == MOUSE_POS )
@@ -533,7 +533,7 @@ public class Links
 		if ( recenterMethod != RecenterMethod.NONE )
 		{
 			// shift it back to the top-left corner of the panel we want to paste it into
-			t = shift( t, -panelWidth / 2.0, -panelHeight / 2.0 );
+			t = shift( t, -( panelWidth - 1 ) / 2.0, -( panelHeight - 1 ) / 2.0 );
 		}
 
 		return t;
