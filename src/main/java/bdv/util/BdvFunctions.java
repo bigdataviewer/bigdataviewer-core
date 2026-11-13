@@ -331,7 +331,7 @@ public class BdvFunctions
 			( ( VolatileGlobalCellCache ) cache ).clearCache();
 
 		final ArrayList< SourceAndConverter< ? > > sources = new ArrayList<>();
-		BigDataViewer.initSetups( spimData, new ArrayList<>(), sources );
+		BigDataViewer.initSetups( spimData, new ArrayList<>(), sources, handle.getResourceManager() );
 
 		final List< BdvStackSource< ? > > bdvSources = new ArrayList<>();
 		for ( final SourceAndConverter< ? > source : sources )
