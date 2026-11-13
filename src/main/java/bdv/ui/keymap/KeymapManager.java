@@ -28,7 +28,6 @@
  */
 package bdv.ui.keymap;
 
-import bdv.KeyConfigScopes;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -36,12 +35,16 @@ import java.io.Reader;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.Consumer;
+
 import org.scijava.Context;
 import org.scijava.plugin.PluginService;
 import org.scijava.ui.behaviour.io.InputTriggerConfig;
+import org.scijava.ui.behaviour.io.gui.CommandDescriptionProvider.Scope;
 import org.scijava.ui.behaviour.io.gui.CommandDescriptions;
 import org.scijava.ui.behaviour.io.gui.CommandDescriptionsBuilder;
 import org.scijava.ui.behaviour.io.yaml.YamlConfigIO;
+
+import bdv.KeyConfigScopes;
 
 /**
  * Manages a collection of {@link Keymap}.
@@ -54,23 +57,26 @@ public class KeymapManager extends AbstractKeymapManager< KeymapManager >
 {
 	private static final String CONFIG_FILE_NAME = "keymaps/";
 
+	private final Scope discoveryScope;
+
 	private final String configFile;
 
 	private CommandDescriptions descriptions;
 
 	public KeymapManager( final String configDir )
 	{
-		this( true, configDir );
+		this( KeyConfigScopes.BIGDATAVIEWER, true, configDir );
 		discoverCommandDescriptions();
 	}
 
 	public KeymapManager()
 	{
-		this( false, null );
+		this( null, false, null );
 	}
 
-	private KeymapManager( final boolean loadStyles, final String configDir )
+	protected KeymapManager( final Scope discoveryScope, final boolean loadStyles, final String configDir )
 	{
+		this.discoveryScope = discoveryScope;
 		configFile = configDir == null ? null : configDir + "/" + CONFIG_FILE_NAME;
 		if ( loadStyles )
 			loadStyles();
@@ -90,15 +96,15 @@ public class KeymapManager extends AbstractKeymapManager< KeymapManager >
 	}
 
 	/**
-	 * Discover all {@code CommandDescriptionProvider}s with scope {@link KeyConfigScopes#BIGDATAVIEWER},
-	 * build {@code CommandDescriptions}, and set it.
+	 * Discover all {@code CommandDescriptionProvider}s with scope {@link KeyConfigScopes#BIGDATAVIEWER}
+	 * (possibly overridden in derived classes), build {@code CommandDescriptions}, and set it.
 	 */
 	public synchronized void discoverCommandDescriptions()
 	{
 		final CommandDescriptionsBuilder builder = new CommandDescriptionsBuilder();
 		final Context context = new Context( PluginService.class );
 		context.inject( builder );
-		builder.discoverProviders( KeyConfigScopes.BIGDATAVIEWER );
+		builder.discoverProviders( discoveryScope );
 		context.dispose();
 		setCommandDescriptions( builder.build() );
 	}
