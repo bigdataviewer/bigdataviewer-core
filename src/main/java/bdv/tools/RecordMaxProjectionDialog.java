@@ -287,11 +287,11 @@ public class RecordMaxProjectionDialog extends DelayedPackDialog implements Over
 
 		final AffineTransform3D tGV = new AffineTransform3D();
 		renderState.getViewerTransform( tGV );
-		tGV.set( tGV.get( 0, 3 ) - canvasW / 2, 0, 3 );
-		tGV.set( tGV.get( 1, 3 ) - canvasH / 2, 1, 3 );
+		tGV.set( tGV.get( 0, 3 ) - ( canvasW - 1 ) / 2.0, 0, 3 );
+		tGV.set( tGV.get( 1, 3 ) - ( canvasH - 1 ) / 2.0, 1, 3 );
 		tGV.scale( ( double ) width / canvasW );
-		tGV.set( tGV.get( 0, 3 ) + width / 2, 0, 3 );
-		tGV.set( tGV.get( 1, 3 ) + height / 2, 1, 3 );
+		tGV.set( tGV.get( 0, 3 ) + ( width - 1 ) / 2.0, 0, 3 );
+		tGV.set( tGV.get( 1, 3 ) + ( height - 1 ) / 2.0, 1, 3 );
 
 		final AffineTransform3D affine = new AffineTransform3D();
 

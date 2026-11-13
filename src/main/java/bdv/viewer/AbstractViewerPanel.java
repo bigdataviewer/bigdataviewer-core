@@ -217,8 +217,8 @@ public abstract class AbstractViewerPanel extends JPanel implements RequestRepai
 			}
 			else
 			{
-				centerY = getDisplayComponent().getHeight() / 2.0;
-				centerX = getDisplayComponent().getWidth() / 2.0;
+				centerY = ( getDisplayComponent().getHeight() - 1 ) / 2.0;
+				centerX = ( getDisplayComponent().getWidth() - 1 ) / 2.0;
 			}
 		}
 		setTransformAnimator( new RotationAnimator( transform, centerX, centerY, qTarget, 300 ) );

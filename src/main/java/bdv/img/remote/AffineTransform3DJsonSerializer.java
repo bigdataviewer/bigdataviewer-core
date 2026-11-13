@@ -30,6 +30,7 @@ package bdv.img.remote;
 
 import java.lang.reflect.Type;
 
+import bdv.tools.JsonUtils;
 import net.imglib2.realtransform.AffineTransform3D;
 
 import com.google.gson.JsonDeserializationContext;
@@ -39,12 +40,15 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonSerializationContext;
 import com.google.gson.JsonSerializer;
 
+@JsonUtils.JsonIo( jsonType = "AffineTransform3D.Anchor", type = AffineTransform3D.class )
 public class AffineTransform3DJsonSerializer implements JsonDeserializer< AffineTransform3D >, JsonSerializer< AffineTransform3D >
 {
 	@Override
 	public AffineTransform3D deserialize( final JsonElement json, final Type typeOfT, final JsonDeserializationContext context ) throws JsonParseException
 	{
 		final double[] data = context.deserialize( json, double[].class );
+		if ( data == null || data.length != 12 )
+			throw new JsonParseException( "expected an array of 12 numbers (got " + json + ")" );
 		final AffineTransform3D t = new AffineTransform3D();
 		t.set( data );
 		return t;
