@@ -112,7 +112,7 @@ public class BdvHandleFrame extends BdvHandle
 	@Override
 	public ResourceManager getResourceManager()
 	{
-		return bdvOptions.values.getResourceManager();
+		return bdv.getResourceManager();
 	}
 
 	@Override
